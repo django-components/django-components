@@ -266,10 +266,10 @@ class DynamicExprTests(BaseTestCase):
             rendered.strip(),
             (
                 "<!-- _RENDERED SimpleComponent_e258c0,a1bc3f,, -->\n"
-                "                <div data-djc-id-a1bc3f></div>\n"
-                "                <div data-djc-id-a1bc3f>  abc</div>\n"
-                "                <div data-djc-id-a1bc3f></div>\n"
-                "                <div data-djc-id-a1bc3f>  </div>"
+                '                <div data-djc-id-a1bc3f=""></div>\n'
+                '                <div data-djc-id-a1bc3f="">  abc</div>\n'
+                '                <div data-djc-id-a1bc3f=""></div>\n'
+                '                <div data-djc-id-a1bc3f="">  </div>'
             ),
         )
 
@@ -345,11 +345,11 @@ class DynamicExprTests(BaseTestCase):
             rendered.strip(),
             (
                 "<!-- _RENDERED SimpleComponent_6c8e94,a1bc3f,, -->\n"
-                "                <div data-djc-id-a1bc3f> lorem ipsum dolor </div>\n"
-                "                <div data-djc-id-a1bc3f> lorem ipsum dolor [{'a': 1}] </div>\n"
-                "                <div data-djc-id-a1bc3f> True </div>\n"
-                "                <div data-djc-id-a1bc3f> [{'a': 1}, {'a': 2}] </div>\n"
-                "                <div data-djc-id-a1bc3f> {'a': 3} </div>"
+                '                <div data-djc-id-a1bc3f=""> lorem ipsum dolor </div>\n'
+                '                <div data-djc-id-a1bc3f=""> lorem ipsum dolor [{\'a\': 1}] </div>\n'
+                '                <div data-djc-id-a1bc3f=""> True </div>\n'
+                '                <div data-djc-id-a1bc3f=""> [{\'a\': 1}, {\'a\': 2}] </div>\n'
+                '                <div data-djc-id-a1bc3f=""> {\'a\': 3} </div>'
             ),
         )
 

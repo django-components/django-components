@@ -1,4 +1,5 @@
 django
+djc-core-html-parser
 tox
 pytest
 flake8

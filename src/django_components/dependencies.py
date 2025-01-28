@@ -33,9 +33,9 @@ from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils.decorators import sync_and_async_middleware
 from django.utils.safestring import SafeString, mark_safe
+from djc_core_html_parser import set_html_attributes
 
 from django_components.node import BaseNode
-from django_components.util.html_parser import set_html_attributes
 from django_components.util.misc import get_import_path, is_nonempty_str
 
 if TYPE_CHECKING:
@@ -438,9 +438,9 @@ SCRIPT_NAME_REGEX = re.compile(
     rb"^(?P<comp_cls_hash>[\w\-\./]+?),(?P<id>[\w]+?),(?P<js>[0-9a-f]*?),(?P<css>[0-9a-f]*?)$"
 )
 # E.g. `data-djc-id-a1b2c3`
-MAYBE_COMP_ID = r"(?: data-djc-id-\w{6})?"
+MAYBE_COMP_ID = r'(?: data-djc-id-\w{6}="")?'
 # E.g. `data-djc-css-99914b`
-MAYBE_COMP_CSS_ID = r"(?: data-djc-css-\w{6})?"
+MAYBE_COMP_CSS_ID = r'(?: data-djc-css-\w{6}="")?'
 
 PLACEHOLDER_REGEX = re.compile(
     r"{css_placeholder}|{js_placeholder}".format(

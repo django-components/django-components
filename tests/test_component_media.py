@@ -184,7 +184,7 @@ class MainMediaTest(BaseTestCase):
         rendered = render_dependencies(rendered_raw)
 
         self.assertIn(
-            "Variable: <strong data-djc-id-a1bc41>test</strong>",
+            'Variable: <strong data-djc-id-a1bc41="">test</strong>',
             rendered,
         )
         self.assertInHTML(

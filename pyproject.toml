@@ -29,6 +29,7 @@ classifiers = [
 ]
 dependencies = [
     'Django>=4.2',
+    'djc-core-html-parser>=1.0',
 ]
 license = {text = "MIT"}
 
@@ -118,6 +119,7 @@ requires = [
 [tool.hatch.envs.default]
 dependencies = [
     "django",
+    "djc-core-html-parser",
     "tox",
     "pytest",
     "flake8",
