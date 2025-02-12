@@ -30,9 +30,11 @@ from django.template import Context, TemplateSyntaxError
 from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils.decorators import sync_and_async_middleware
+from django.utils.module_loading import import_string
 from django.utils.safestring import SafeString, mark_safe
 from djc_core_html_parser import set_html_attributes
 
+from django_components.app_settings import app_settings
 from django_components.cache import get_component_media_cache
 from django_components.node import BaseNode
 from django_components.util.misc import is_nonempty_str
@@ -995,6 +997,22 @@ urlpatterns = [
 #########################################################
 
 
+def static_document_render_type(request: HttpRequest, response: HttpResponse) -> Literal["document", "fragment"]:
+    """
+    Used by the ComponentDependencyMiddleware to determine whether the response is a document or a fragment.
+    This specifically will return "document" for all responses.
+    """
+    return "fragment"
+
+
+def static_fragment_render_type(request: HttpRequest, response: HttpResponse) -> Literal["document", "fragment"]:
+    """
+    Used by the ComponentDependencyMiddleware to determine whether the response is a document or a fragment.
+    This specifically will return "fragment" for all responses.
+    """
+    return "document"
+
+
 @sync_and_async_middleware
 class ComponentDependencyMiddleware:
     """
@@ -1009,25 +1027,31 @@ class ComponentDependencyMiddleware:
         if iscoroutinefunction(self._get_response):
             markcoroutinefunction(self)
 
+    @staticmethod
+    def _get_render_type_provider() -> Callable[[HttpRequest, HttpResponse], RenderType]:
+        render_provider_import_str = app_settings.RENDER_TYPE_PROVIDER
+        return import_string(render_provider_import_str)
+
     def __call__(self, request: HttpRequest) -> HttpResponseBase:
         if iscoroutinefunction(self):
             return self.__acall__(request)
 
         response = self._get_response(request)
-        response = self._process_response(response)
+        response = self._process_response(request, response)
         return response
 
     # NOTE: Required to work with async
     async def __acall__(self, request: HttpRequest) -> HttpResponseBase:
         response = await self._get_response(request)
-        response = self._process_response(response)
+        response = self._process_response(request, response)
         return response
 
-    def _process_response(self, response: HttpResponse) -> HttpResponse:
+    def _process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
         if not isinstance(response, StreamingHttpResponse) and response.get("Content-Type", "").startswith(
             "text/html"
         ):
-            response.content = render_dependencies(response.content, type="document")
+            render_type = self._get_render_type_provider()(request, response)
+            response.content = render_dependencies(response.content, type=render_type)
 
         return response
 
