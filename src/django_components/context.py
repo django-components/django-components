@@ -26,6 +26,13 @@ def make_isolated_context_copy(context: Context) -> Context:
     if _COMPONENT_CONTEXT_KEY in context:
         context_copy[_COMPONENT_CONTEXT_KEY] = context[_COMPONENT_CONTEXT_KEY]
 
+    # Pass through context_processors context
+    processors_context = {}
+    if hasattr(context, '_processors_index'):
+        processors_context = context.dicts[context._processors_index]
+        context_copy._processors_index = len(context_copy.dicts)
+        context_copy.update(processors_context)
+
     # Make inject/provide to work in isolated mode
     context_keys = context.flatten().keys()
     for key in context_keys:
