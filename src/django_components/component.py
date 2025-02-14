@@ -737,7 +737,10 @@ class Component(
                 template: Template = cached_template(
                     template_string=template_body,
                     name=self.template_file or self.name,
-                    origin=Origin(name=self.template_file or get_import_path(self.__class__)),
+                    origin=Origin(
+                        name=self.template_file or get_import_path(self.__class__),
+                        template_name=self.template_file or self.name,
+                    ),
                 )
             else:
                 template = template_body
