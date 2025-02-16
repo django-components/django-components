@@ -1,4 +1,5 @@
-from django.template import Context, Template
+from django.http import HttpRequest
+from django.template import Context, RequestContext, Template
 
 from django_components import Component, register, registry, types
 
@@ -56,6 +57,10 @@ class IncrementerComponent(Component):
         else:
             self.call_count = 1
         return {"value": value + 1, "calls": self.call_count}
+
+
+class SimpleComponentWithContextProcessorVariable(Component):
+    template: types.django_html = """{% csrf_token %}"""
 
 
 #########################
@@ -454,6 +459,10 @@ class IsolatedContextSettingTests(BaseTestCase):
     def setUp(self):
         super().setUp()
         registry.register(name="simple_component", component=SimpleComponent)
+        registry.register(
+            name="simple_component_with_context_processor_variable",
+            component=SimpleComponentWithContextProcessorVariable,
+        )
 
     @parametrize_context_behavior(["isolated"])
     def test_component_tag_includes_variable_with_isolated_context_from_settings(
@@ -504,6 +513,22 @@ class IsolatedContextSettingTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({"variable": "outer_value"}))
         self.assertNotIn("outer_value", rendered, rendered)
+
+    @parametrize_context_behavior(["isolated"])
+    def test_component_can_use_context_processors_variables(
+        self,
+    ):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'simple_component_with_context_processor_variable' %}
+            {% endcomponent %}
+        """
+        request = HttpRequest()
+        request_context = RequestContext(request)
+
+        template = Template(template_str)
+        rendered = template.render(request_context)
+        self.assertIn("csrfmiddlewaretoken", rendered, rendered)
 
 
 class OuterContextPropertyTests(BaseTestCase):

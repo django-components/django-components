@@ -339,6 +339,26 @@ class Component(
     def get_context_data(self, *args: Any, **kwargs: Any) -> DataType:
         return cast(DataType, {})
 
+    @property
+    def context_processors_data(self) -> DataType:
+        """Retrieve data injected in RequestContext via context_processors.
+
+        **Exemple:**
+
+        ```py
+        class MyComponent(Component):
+            get_context_data(self):
+            user = self.context_processors_data['user']
+            return {
+                'is_logged_in': user.is_authenticated,
+            }
+        ```
+        """
+        context_processors_data = {}
+        if hasattr(self, 'outer_context') and hasattr(self.outer_context, '_processors_index'):
+            context_processors_data = self.outer_context.dicts[self.outer_context._processors_index]
+        return context_processors_data
+
     js: Optional[str] = None
     """
     Main JS associated with this component inlined as string.
