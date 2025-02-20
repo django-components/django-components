@@ -140,6 +140,8 @@ detached = false
 # We only add black for formatting code in the docs
 dependencies = [
     "black",
+    "pygments",
+    "pygments-djc",
 ]
 
 [tool.hatch.env.collectors.mkdocs.docs]
