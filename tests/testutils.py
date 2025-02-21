@@ -19,14 +19,50 @@ response_stash = None
 middleware = ComponentDependencyMiddleware(get_response=lambda _: response_stash)
 
 
+class GenIdPatcher:
+    def __init__(self):
+        self._gen_id_count = 10599485
+
+    # Mock the `generate` function used inside `gen_id` so it returns deterministic IDs
+    def start(self):
+        # Random number so that the generated IDs are "hex-looking", e.g. a1bc3d
+        self._gen_id_count = 10599485
+
+        def mock_gen_id(*args, **kwargs):
+            self._gen_id_count += 1
+            return hex(self._gen_id_count)[2:]
+
+        self._gen_id_patch = patch("django_components.util.misc.generate", side_effect=mock_gen_id)
+        self._gen_id_patch.start()
+
+    def stop(self):
+        self._gen_id_patch.stop()
+        self._gen_id_count = 10599485
+
+
+class CsrfTokenPatcher:
+    def __init__(self):
+        self._csrf_token = "predictabletoken"
+
+    def start(self):
+        self._csrf_token_patch = patch("django.middleware.csrf.get_token", return_value=self._csrf_token)
+        self._csrf_token_patch.start()
+
+    def stop(self):
+        self._csrf_token_patch.stop()
+
+
 class BaseTestCase(SimpleTestCase):
     def setUp(self):
         super().setUp()
-        self._start_gen_id_patch()
+        self.gen_id_patcher = GenIdPatcher()
+        self.gen_id_patcher.start()
+        self.csrf_token_patcher = CsrfTokenPatcher()
+        self.csrf_token_patcher.start()
 
     def tearDown(self):
-        self._stop_gen_id_patch()
-
+        self.gen_id_patcher.stop()
+        self.csrf_token_patcher.stop()
         super().tearDown()
         registry.clear()
 
@@ -41,22 +77,6 @@ class BaseTestCase(SimpleTestCase):
 
         from django_components.component import component_node_subclasses_by_name
         component_node_subclasses_by_name.clear()
-
-    # Mock the `generate` function used inside `gen_id` so it returns deterministic IDs
-    def _start_gen_id_patch(self):
-        # Random number so that the generated IDs are "hex-looking", e.g. a1bc3d
-        self._gen_id_count = 10599485
-
-        def mock_gen_id(*args, **kwargs):
-            self._gen_id_count += 1
-            return hex(self._gen_id_count)[2:]
-
-        self._gen_id_patch = patch("django_components.util.misc.generate", side_effect=mock_gen_id)
-        self._gen_id_patch.start()
-
-    def _stop_gen_id_patch(self):
-        self._gen_id_patch.stop()
-        self._gen_id_count = 10599485
 
 
 request = Mock()
@@ -179,8 +199,8 @@ def parametrize_context_behavior(cases: List[ContextBehParam], settings: Optiona
                     engine.engine.template_loaders[0].reset()
 
                 # Reset gen_id
-                self._stop_gen_id_patch()
-                self._start_gen_id_patch()
+                self.gen_id_patcher.stop()
+                self.gen_id_patcher.start()
 
                 # Reset template cache
                 from django_components.cache import component_media_cache, template_cache

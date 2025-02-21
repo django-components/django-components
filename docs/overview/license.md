@@ -1,6 +1,6 @@
 ---
 title: License
-weight: 9
+weight: 10
 ---
 
 --8<-- "LICENSE"

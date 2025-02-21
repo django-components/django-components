@@ -29,18 +29,19 @@ def get_template_cache() -> LRUCache:
 
 
 def get_component_media_cache() -> BaseCache:
+    if app_settings.CACHE is not None:
+        return caches[app_settings.CACHE]
+
+    # If no cache is set, use a local memory cache.
     global component_media_cache
     if component_media_cache is None:
-        if app_settings.CACHE is not None:
-            component_media_cache = caches[app_settings.CACHE]
-        else:
-            component_media_cache = LocMemCache(
-                "django-components-media",
-                {
-                    "TIMEOUT": None,  # No timeout
-                    "MAX_ENTRIES": None,  # No max size
-                    "CULL_FREQUENCY": 3,
-                },
-            )
+        component_media_cache = LocMemCache(
+            "django-components-media",
+            {
+                "TIMEOUT": None,  # No timeout
+                "MAX_ENTRIES": None,  # No max size
+                "CULL_FREQUENCY": 3,
+            },
+        )
 
     return component_media_cache

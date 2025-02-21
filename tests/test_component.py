@@ -1115,11 +1115,10 @@ class ComponentRenderTest(BaseTestCase):
             response.content.decode(),
         )
 
-        token_re = re.compile(rb"CSRF token:\s+(?P<token>[0-9a-zA-Z]{64})")
+        token_re = re.compile(rb"CSRF token:\s+predictabletoken")
         token = token_re.findall(response.content)[0]
 
-        self.assertTrue(token)
-        self.assertEqual(len(token), 64)
+        self.assertEqual(token, b'CSRF token: predictabletoken')
 
     def test_request_context_created_when_no_context(self):
         @register("thing")
@@ -1136,11 +1135,10 @@ class ComponentRenderTest(BaseTestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        token_re = re.compile(rb"CSRF token:\s+(?P<token>[0-9a-zA-Z]{64})")
+        token_re = re.compile(rb"CSRF token:\s+predictabletoken")
         token = token_re.findall(response.content)[0]
 
-        self.assertTrue(token)
-        self.assertEqual(len(token), 64)
+        self.assertEqual(token, b'CSRF token: predictabletoken')
 
     def test_request_context_created_when_already_a_context_dict(self):
         @register("thing")
@@ -1158,11 +1156,10 @@ class ComponentRenderTest(BaseTestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        token_re = re.compile(rb"CSRF token:\s+(?P<token>[0-9a-zA-Z]{64})")
+        token_re = re.compile(rb"CSRF token:\s+predictabletoken")
         token = token_re.findall(response.content)[0]
 
-        self.assertTrue(token)
-        self.assertEqual(len(token), 64)
+        self.assertEqual(token, b'CSRF token: predictabletoken')
         self.assertInHTML("Existing context: foo", response.content.decode())
 
     def request_context_ignores_context_when_already_a_context(self):
