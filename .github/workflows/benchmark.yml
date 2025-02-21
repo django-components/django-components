@@ -78,6 +78,7 @@ jobs:
         asv compare upstream/master HEAD --factor 1.1 --split > benchmark_results.md
 
     - name: Comment on PR
+      # See https://github.com/actions/github-script
       uses: actions/github-script@v7
       with:
         github-token: ${{secrets.GITHUB_TOKEN}}
@@ -86,9 +87,11 @@ jobs:
           const results = fs.readFileSync('benchmark_results.md', 'utf8');
           const body = `## Performance Benchmark Results\n\nComparing PR changes against master branch:\n\n${results}`;
 
+          // See https://octokit.github.io/rest.js/v21/#issues-create-comment
           github.rest.issues.createComment({
+            body: body,
+            // See https://github.com/actions/toolkit/blob/662b9d91f584bf29efbc41b86723e0e376010e41/packages/github/src/context.ts#L66
             issue_number: context.issue.number,
-            owner: context.repo.repo,
-            repo: context.repo.name,
-            body: body
+            owner: context.repo.owner,
+            repo: context.repo.repo,
           });
