@@ -25,7 +25,7 @@ jobs:
       id-token: write  # to verify the deployment originates from an appropriate source
     runs-on: ubuntu-latest
     # Only run in original repo (not in forks)
-    if: github.repository == 'django-components/django-components'
+    # if: github.repository == 'django-components/django-components'
     steps:
 
       ##############################
