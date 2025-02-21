@@ -34,6 +34,26 @@ jobs:
 
     - name: Run benchmarks
       run: |
+        # TODO: REMOVE ONCE FIXED UPSTREAM
+        # Fix for https://github.com/airspeed-velocity/asv_runner/issues/45
+        # Prepare virtual environment
+        # Currently, we have to monkeypatch the `timeit` function in the `timeraw` benchmark.
+        # The problem is that `asv` passes the code to execute via command line, and when the
+        # code is too big, it fails with `OSError: [Errno 7] Argument list too long`.
+        # So we have to tweak it to pass the code via STDIN, which doesn't have this limitation.
+        #
+        # 1. First create the virtual environment, so that asv generates the directories where
+        #    the monkeypatch can be applied.
+        asv setup
+        # 2. Now let's apply the monkeypatch by appending it to the `timeraw.py` files.
+        # First find all `timeraw.py` files
+        find .asv/env -type f -path "*/site-packages/asv_runner/benchmarks/timeraw.py" | while read -r file; do
+            # Add a newline and then append the monkeypatch contents
+            echo "" >> "$file"
+            cat "benchmarks/monkeypatch_asv_ci.py" >> "$file"
+        done
+        # END OF MONKEYPATCH
+
         # Prepare the profile under which the benchmarks will be saved.
         # We assume that the CI machine has a name that is unique and stable.
         # See https://github.com/airspeed-velocity/asv/issues/796#issuecomment-1188431794
