@@ -39,7 +39,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.11"
 
       - name: Install Hatch
         run: |
@@ -79,7 +79,7 @@ jobs:
           #       Without it, we would run benchmarks for all commits FROM the tag's commit
           #       TO the start of the branch history.
           #       With it, we run benchmarks ONLY FOR the tag's commit.
-          asv run ${TAG}^!
+          asv run ${TAG}^! -v
 
           # Generate benchmarks site
           # This should save it in `docs/benchmarks/`, so we can then use it when

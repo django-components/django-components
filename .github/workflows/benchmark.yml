@@ -24,7 +24,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: '3.11'
         cache: 'pip'
 
     - name: Install dependencies
@@ -47,8 +47,8 @@ jobs:
         #       Without it, we would run benchmarks for all commits FROM the latest commit
         #       TO the start of the branch history.
         #       With it, we run benchmarks ONLY FOR the latest commit.
-        asv run upstream/master^!
-        asv run HEAD^!
+        asv run upstream/master^! -v
+        asv run HEAD^! -v
 
         # Compare against master
         asv compare upstream/master HEAD --factor 1.1 --split -e > benchmark_results.md
