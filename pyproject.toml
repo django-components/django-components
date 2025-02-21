@@ -110,10 +110,6 @@ testpaths = [
     "tests"
 ]
 
-[tool.coverage.run]
-source = ["django_components"]
-omit = ["tests/*"]
-
 [tool.hatch.env]
 requires = [
     "hatch-mkdocs",
