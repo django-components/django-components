@@ -128,7 +128,7 @@ dependencies = [
     "pre-commit",
     "black",
     "mypy",
-    ]
+]
 type = "pip-compile"
 lock-filename = "requirements-dev.txt"
 
@@ -142,6 +142,7 @@ dependencies = [
     "black",
     "pygments",
     "pygments-djc",
+    "asv",
 ]
 
 [tool.hatch.env.collectors.mkdocs.docs]
