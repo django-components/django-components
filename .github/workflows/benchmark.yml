@@ -75,7 +75,7 @@ jobs:
         asv run HEAD^! -v
 
         # Compare against master
-        asv compare upstream/master HEAD --factor 1.1 --split -e > benchmark_results.md
+        asv compare upstream/master HEAD --factor 1.1 --split > benchmark_results.md
 
     - name: Comment on PR
       uses: actions/github-script@v7
