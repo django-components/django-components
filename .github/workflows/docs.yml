@@ -27,6 +27,11 @@ jobs:
     # Only run in original repo (not in forks)
     if: github.repository == 'django-components/django-components'
     steps:
+
+      ##############################
+      # SETUP
+      ##############################
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -51,6 +56,50 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
 
+      ###########################################
+      # RECORD BENCHMARK - ONLY ON PUSH TO MASTER
+      ###########################################
+
+      - name: Run benchmarks for tag
+        if: github.ref_type == 'tag' && github.event_name == 'push'
+        run: |
+          # Get tag name
+          TAG=${GITHUB_REF#refs/tags/}
+
+          # Prepare the profile under which the benchmarks will be saved.
+          # We assume that the CI machine has a name that is unique and stable.
+          # See https://github.com/airspeed-velocity/asv/issues/796#issuecomment-1188431794
+          asv machine --yes
+
+          # Run benchmarks for the current tag
+          # - `^` means that we mean the COMMIT of the tag's branch, not the BRANCH itself.
+          #       Without it, we would run benchmarks for the whole branch history.
+          #       With it, we run benchmarks FROM the tag's commit (incl) TO ...
+          # - `!` means that we want to select range spanning a single commit.
+          #       Without it, we would run benchmarks for all commits FROM the tag's commit
+          #       TO the start of the branch history.
+          #       With it, we run benchmarks ONLY FOR the tag's commit.
+          asv run ${TAG}^!
+
+          # Generate benchmarks site
+          # This should save it in `docs/benchmarks/`, so we can then use it when
+          # building docs site with `mkdocs`.
+          asv publish
+
+          # Switch to master to save results
+          git fetch origin master:master
+          git checkout master
+
+          # Stage and commit benchmark results
+          git add .asv/results/
+          git add docs/benchmarks/
+          git commit -m "Add benchmark results for ${TAG}"
+          git push origin master
+
+      ##############################
+      # BUILD & DEPLOY DOCS
+      ##############################
+
       # Conditions make sure to select the right step, depending on the job trigger.
       # Only one of the steps below will run at a time. The others will be skipped.
 
@@ -69,12 +118,6 @@ jobs:
 
       - name: Build & deploy docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
-        run: |
-          hatch run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
-          hatch run docs:mike set-default latest --push
-
-      - name: Build & deploy docs for a new release
-        if: github.event_name == 'release'
         run: |
           hatch run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
           hatch run docs:mike set-default latest --push

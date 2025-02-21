@@ -2,6 +2,7 @@ django
 djc-core-html-parser
 tox
 pytest
+syrupy
 flake8
 flake8-pyproject
 isort
@@ -12,4 +13,6 @@ playwright
 requests
 types-requests
 whitenoise
+pygments
 pygments-djc
+asv

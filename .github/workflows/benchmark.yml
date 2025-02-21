@@ -1,0 +1,70 @@
+# Run benchmark report on pull requests to master.
+# The report is added to the PR as a comment.
+
+name: Benchmarks
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Need full history for ASV
+
+    - name: Fetch base branch
+      run: |
+        git remote add upstream https://github.com/${{ github.repository }}.git
+        git fetch upstream master
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install asv
+
+    - name: Run benchmarks
+      run: |
+        # Prepare the profile under which the benchmarks will be saved.
+        # We assume that the CI machine has a name that is unique and stable.
+        # See https://github.com/airspeed-velocity/asv/issues/796#issuecomment-1188431794
+        asv machine --yes
+
+        # Generate benchmark data
+        # - `^` means that we mean the COMMIT of the branch, not the BRANCH itself.
+        #       Without it, we would run benchmarks for the whole branch history.
+        #       With it, we run benchmarks FROM the latest commit (incl) TO ...
+        # - `!` means that we want to select range spanning a single commit.
+        #       Without it, we would run benchmarks for all commits FROM the latest commit
+        #       TO the start of the branch history.
+        #       With it, we run benchmarks ONLY FOR the latest commit.
+        asv run upstream/master^!
+        asv run HEAD^!
+
+        # Compare against master
+        asv compare upstream/master HEAD --factor 1.1 --split -e > benchmark_results.md
+
+    - name: Comment on PR
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
+        script: |
+          const fs = require('fs');
+          const results = fs.readFileSync('benchmark_results.md', 'utf8');
+          const body = `## Performance Benchmark Results\n\nComparing PR changes against master branch:\n\n${results}`;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.name,
+            body: body
+          });

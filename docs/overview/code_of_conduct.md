@@ -1,6 +1,6 @@
 ---
 title: Code of Conduct
-weight: 8
+weight: 9
 ---
 
 --8<-- "CODE_OF_CONDUCT.md"

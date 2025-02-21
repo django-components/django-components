@@ -4,3 +4,4 @@ playwright
 requests
 types-requests
 whitenoise
+asv

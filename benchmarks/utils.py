@@ -1,0 +1,88 @@
+import sys
+from importlib.abc import Loader
+from importlib.util import spec_from_loader, module_from_spec
+from types import ModuleType
+from typing import Any, Dict, List, Optional
+
+
+# NOTE: benchmark_name constraints:
+# - MUST BE UNIQUE
+# - MUST NOT CONTAIN `-`
+# - MUST START WITH `time_`, `mem_`, `peakmem_`
+# See https://github.com/airspeed-velocity/asv/pull/1470
+def benchmark(
+    *,
+    pretty_name: Optional[str] = None,
+    timeout: Optional[int] = None,
+    group_name: Optional[str] = None,
+    params: Optional[Dict[str, List[Any]]] = None,
+    number: Optional[int] = None,
+    min_run_count: Optional[int] = None,
+    **kwargs,
+):
+    def decorator(func):
+        # "group_name" is our custom field, which we actually convert to asv's "benchmark_name"
+        if group_name is not None:
+            benchmark_name = f"{group_name}.{func.__name__}"
+            func.benchmark_name = benchmark_name
+
+        # Also "params" is custom, so we normalize it to "params" and "param_names"
+        if params is not None:
+            func.params, func.param_names = list(params.values()), list(params.keys())
+
+        if pretty_name is not None:
+            func.pretty_name = pretty_name
+        if timeout is not None:
+            func.timeout = timeout
+        if number is not None:
+            func.number = number
+        if min_run_count is not None:
+            func.min_run_count = min_run_count
+
+        # Additional, untyped kwargs
+        for k, v in kwargs.items():
+            setattr(func, k, v)
+
+        return func
+
+    return decorator
+
+
+class VirtualModuleLoader(Loader):
+    def __init__(self, code_string):
+        self.code_string = code_string
+
+    def exec_module(self, module):
+        exec(self.code_string, module.__dict__)
+
+
+def create_virtual_module(name: str, code_string: str, file_path: str) -> ModuleType:
+    """
+    To avoid the headaches of importing the tested code from another diretory,
+    we create a "virtual" module that we can import from anywhere.
+
+    E.g.
+    ```py
+    from benchmarks.utils import create_virtual_module
+
+    create_virtual_module("my_module", "print('Hello, world!')", __file__)
+
+    # Now you can import my_module from anywhere
+    import my_module
+    ```
+    """
+    # Create the module specification
+    spec = spec_from_loader(name, VirtualModuleLoader(code_string))
+
+    # Create the module
+    module = module_from_spec(spec)  # type: ignore[arg-type]
+    module.__file__ = file_path
+    module.__name__ = name
+
+    # Add it to sys.modules
+    sys.modules[name] = module
+
+    # Execute the module
+    spec.loader.exec_module(module)  # type: ignore[union-attr]
+
+    return module
