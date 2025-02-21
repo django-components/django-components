@@ -226,6 +226,7 @@ class DjangoComponentsVsDjangoTests:
         params={
             "renderer": ["django", "django-components"],
         },
+        include_in_quick_benchmark=True,
     )
     def timeraw_render_lg_first(self, renderer: TemplatingRenderer):
         return prepare_templating_benchmark(renderer, "lg", "first", "isolated")

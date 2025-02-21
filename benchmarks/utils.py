@@ -1,3 +1,4 @@
+import os
 import sys
 from importlib.abc import Loader
 from importlib.util import spec_from_loader, module_from_spec
@@ -18,9 +19,19 @@ def benchmark(
     params: Optional[Dict[str, List[Any]]] = None,
     number: Optional[int] = None,
     min_run_count: Optional[int] = None,
+    include_in_quick_benchmark: bool = False,
     **kwargs,
 ):
     def decorator(func):
+        # For pull requests, we want to run benchmarks only for a subset of tests,
+        # because the full set of tests takes about 10 minutes to run (5 min per commit).
+        # This is done by setting DJC_BENCHMARK_QUICK=1 in the environment.
+        if os.getenv("DJC_BENCHMARK_QUICK") and not include_in_quick_benchmark:
+            # By setting the benchmark name to something that does NOT start with
+            # valid prefixes like `time_`, `mem_`, or `peakmem_`, this function will be ignored by asv.
+            func.benchmark_name = "noop"
+            return func
+
         # "group_name" is our custom field, which we actually convert to asv's "benchmark_name"
         if group_name is not None:
             benchmark_name = f"{group_name}.{func.__name__}"
