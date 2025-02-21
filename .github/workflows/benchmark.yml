@@ -88,7 +88,7 @@ jobs:
 
           github.rest.issues.createComment({
             issue_number: context.issue.number,
-            owner: context.repo.owner,
+            owner: context.repo.repo,
             repo: context.repo.name,
             body: body
           });

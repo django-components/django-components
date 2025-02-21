@@ -274,7 +274,7 @@ class Button(Component):
             all_css_class = common_css
         else:
             button_classes = get_styling_css(variant, color, disabled)  # type: ignore[arg-type]
-            all_css_class = f"{ button_classes } { common_css } px-3 py-2 justify-center rounded-md shadow-sm"
+            all_css_class = f"{button_classes} {common_css} px-3 py-2 justify-center rounded-md shadow-sm"
 
         is_link = not disabled and (href or link)
 

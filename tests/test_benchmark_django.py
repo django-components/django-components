@@ -1459,7 +1459,7 @@ def button(context: Context, data: ButtonData):
         all_css_class = common_css
     else:
         button_classes = get_styling_css(data.variant, data.color, data.disabled)  # type: ignore[arg-type]
-        all_css_class = f"{ button_classes } { common_css } px-3 py-2 justify-center rounded-md shadow-sm"
+        all_css_class = f"{button_classes} {common_css} px-3 py-2 justify-center rounded-md shadow-sm"
 
     is_link = not data.disabled and (data.href or data.link)
 
@@ -1717,7 +1717,7 @@ menu_list_template_str: types.django_html = """
             </div>
         {% endfor %}
     </div>
-"""
+"""  # noqa: E501
 
 
 class MenuListData(NamedTuple):
@@ -2091,7 +2091,7 @@ ICONS = {
             {
                 "stroke-linecap": "round",
                 "stroke-linejoin": "round",
-                "d": "M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5",
+                "d": "M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5",  # noqa: E501
             }
         ]
     }
@@ -2229,7 +2229,7 @@ expansion_panel_template_str: types.django_html = """
             Alpine.data("expansion_panel", () => ({
                 // Variables
                 isOpen: false,
-                
+
                 // Methods
                 init() {
                     const initDataStr = this.$el.dataset.init;
@@ -2383,7 +2383,7 @@ def project_page(context: Context, data: ProjectPageData):
                 ProjectNotesData(
                     project_id=data.project["id"],
                     notes=data.notes_1,
-                    comments_by_notes=data.comments_by_notes_1,
+                    comments_by_notes=data.comments_by_notes_1,  # type: ignore[arg-type]
                     editable=data.user_is_project_member,
                 )
             ),
@@ -2395,7 +2395,7 @@ def project_page(context: Context, data: ProjectPageData):
                 ProjectNotesData(
                     project_id=data.project["id"],
                     notes=data.notes_2,
-                    comments_by_notes=data.comments_by_notes_2,
+                    comments_by_notes=data.comments_by_notes_2,  # type: ignore[arg-type]
                     editable=data.user_is_project_member,
                 )
             ),
@@ -2407,7 +2407,7 @@ def project_page(context: Context, data: ProjectPageData):
                 ProjectNotesData(
                     project_id=data.project["id"],
                     notes=data.notes_3,
-                    comments_by_notes=data.comments_by_notes_3,
+                    comments_by_notes=data.comments_by_notes_3,  # type: ignore[arg-type]
                     editable=data.user_is_project_member,
                 )
             ),
@@ -2494,7 +2494,7 @@ project_layout_tabbed_content_template_str: types.django_html = """
     {% endif %}
 
     <div class="flex flex-auto gap-6">
-    
+
     {# Split the content to 2 columns, based on whether `left_panel` slot is filled #}
     {% if slot_left_panel %}
         <div {% html_attrs left_pannel_attrs class="relative h-full pb-4" %}>
@@ -2832,7 +2832,7 @@ base_template_str: types.django_html = """
 
         {# HTMX #}
         <script type="text/javascript" src="{% static 'js/htmx.js' %}"></script>
-        
+
         {# Axios (AJAX) #}
         <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 
@@ -3054,7 +3054,7 @@ base_template_str: types.django_html = """
             // submitForm.js
             ////////////////////////////////////////////////////////////////
 
-            /** 
+            /**
             * @param {HTMLFormElement} formEl
             */
             const getFormData = (formEl) => {
@@ -3368,7 +3368,7 @@ navbar_template_str: types.django_html = """
             </div>
         </div>
     </div>
-"""
+"""  # noqa: E501
 
 
 class NavbarData(NamedTuple):
@@ -3415,7 +3415,7 @@ def construct_btn_onclick(model: str, btn_on_click: Optional[str]):
 dialog_template_str: types.django_html = """
     {# Based on https://tailwindui.com/components/application-ui/overlays/modals #}
 
-    {% comment %} 
+    {% comment %}
     NOTE: {{ model }} is the Alpine variable used for opening/closing. The variable name
         is set dynamically, hence we use Django's double curly braces to refer to it.
     {% endcomment %}
@@ -3502,7 +3502,7 @@ dialog_template_str: types.django_html = """
             </div>
         </div>
     </div>
-"""
+"""  # noqa: E501
 
 
 class DialogData(NamedTuple):
@@ -3559,8 +3559,8 @@ def dialog(context: Context, data: DialogData):
     }
 
     confirm_button_data = ButtonData(
-        variant=data.confirm_variant,
-        color=data.confirm_color,
+        variant=data.confirm_variant,  # type: ignore[arg-type]
+        color=data.confirm_color,  # type: ignore[arg-type]
         disabled=data.confirm_disabled,
         href=data.confirm_href,
         type=data.confirm_type,
@@ -3569,8 +3569,8 @@ def dialog(context: Context, data: DialogData):
     )
 
     cancel_button_data = ButtonData(
-        variant=data.cancel_variant,
-        color=data.cancel_color,
+        variant=data.cancel_variant,  # type: ignore[arg-type]
+        color=data.cancel_color,  # type: ignore[arg-type]
         disabled=data.cancel_disabled,
         href=data.cancel_href,
         type=data.cancel_type,
@@ -3722,7 +3722,7 @@ tags_template_str: types.django_html = """
                         value: t,
                         options: [],
                     }));
-                
+
                     const availableTags = getAvailableTags();
                     tags.value = tags.value.map((t) => ({
                         value: t.value,
@@ -3789,7 +3789,7 @@ tags_template_str: types.django_html = """
                     if (vm.$refs.tagsInput) {
                         vm.$refs.tagsInput.value = tags.value.map((t) => t.value).join(',');
                     }
-                    
+
                     // Emit the final list of selected tags
                     const payload = tags.value.map((t) => t.value);
                     vm.$emit("change", payload);
@@ -3891,7 +3891,7 @@ form_template_str: types.django_html = """
         </{{ form_content_tag }}>
 
         {{ slot_below_form }}
-    
+
         {% if not actions_hide %}
             <div {% html_attrs actions_attrs class="pt-4" %}>
                 {{ slot_actions_prepend }}
@@ -3947,7 +3947,7 @@ form_template_str: types.django_html = """
 
                     data.$dispatch('change', newVal);
                 });
-            
+
                 return data;
             });
         });
@@ -4008,8 +4008,8 @@ def form(context: Context, data: FormData):
     }
 
     submit_button_data = ButtonData(
-        variant=data.submit_variant,
-        color=data.submit_color,
+        variant=data.submit_variant,  # type: ignore[arg-type]
+        color=data.submit_color,  # type: ignore[arg-type]
         disabled=data.submit_disabled,
         type=data.submit_type,
         attrs=submit_attrs,
@@ -4017,8 +4017,8 @@ def form(context: Context, data: FormData):
     )
 
     cancel_button_data = ButtonData(
-        variant=data.cancel_variant,
-        color=data.cancel_color,
+        variant=data.cancel_variant,  # type: ignore[arg-type]
+        color=data.cancel_color,  # type: ignore[arg-type]
         disabled=data.cancel_disabled,
         href=data.cancel_href,
         type=data.cancel_type,
@@ -4130,7 +4130,7 @@ breadcrumbs_template_str: types.django_html = """
                         {% endif %}
 
                         {{ crumb.value }}
-                        
+
                         {% if crumb.link %}
                             </a>
                         {% else %}
@@ -4303,7 +4303,11 @@ def bookmarks(context: Context, data: BookmarksData):
         if is_attachment:
             # Send user to the Output tab in Project page and open and scroll
             # to the relevent output that has the correct attachment.
-            edit_url = f"/edit/{data.project_id}/bookmark/{bookmark['id']}?{ProjectPageTabsToQueryParams.OUTPUTS.value}&panel={bookmark['attachment']['output']['id']}"  # type: ignore[index]
+            edit_url = (
+                f"/edit/{data.project_id}/bookmark/{bookmark['id']}"
+                f"?{ProjectPageTabsToQueryParams.OUTPUTS.value}"
+                f"&panel={bookmark['attachment']['output']['id']}"  # type: ignore[index]
+            )
         else:
             edit_url = f"/edit/{data.project_id}/bookmark/{bookmark['id']}"
 
@@ -4417,11 +4421,11 @@ bookmark_template_str: types.django_html = """
             // Define component similarly to defining Vue components
             const Bookmark = AlpineComposition.defineComponent({
                 name: "bookmark",
-            
+
                 props: {
                     bookmark: { type: Object, required: true },
                 },
-            
+
                 emits: {
                     menuToggle: (obj) => true,
                 },
@@ -4430,14 +4434,14 @@ bookmark_template_str: types.django_html = """
                     const onMenuToggle = () => {
                         vm.$emit('menuToggle', { item: props.bookmark, el: vm.$refs.bookmark_menu });
                     }
-                
+
                     return {
                         bookmark: props.bookmark,
                         onMenuToggle,
                     };
                 },
             });
-            
+
             document.addEventListener('alpine:init', () => {
                 AlpineComposition.registerComponent(Alpine, Bookmark);
             });
@@ -4519,7 +4523,7 @@ list_template_str: types.django_html = """
                         {% if item.link %}
                         <a href="{{ item.link }}">
                         {% endif %}
-                    
+
                         <p class="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-500">
                             {{ item.value }}
                         </p>
@@ -4534,7 +4538,7 @@ list_template_str: types.django_html = """
             {{ slot_empty }}
         {% endfor %}
     </ul>
-"""
+"""  # noqa: E501
 
 
 class ListData(NamedTuple):
@@ -4696,7 +4700,7 @@ tabs_impl_template_str: types.django_html = """
             });
         </script>
     </div>
-"""
+"""  # noqa: E501
 
 
 class TabsImplData(NamedTuple):
@@ -4992,7 +4996,7 @@ def project_info(context: Context, data: ProjectInfoData) -> str:
 
     project_info = [
         ProjectInfoEntry("Org", data.project["organization"]["name"]),
-        ProjectInfoEntry("Duration", f"{ data.project['start_date'] } - { data.project['end_date'] }"),
+        ProjectInfoEntry("Duration", f"{data.project['start_date']} - {data.project['end_date']}"),
         ProjectInfoEntry("Status", data.project["status"]),
         ProjectInfoEntry("Tags", ", ".join(data.project_tags) or "-"),
     ]
@@ -5264,14 +5268,14 @@ def project_outputs_summary(context: Context, data: ProjectOutputsSummaryData) -
                 "outputs": data.outputs,
             }
         ):
-            expansion_panel_content = lazy_load_template(outputs_summary_expansion_content_template_str).render(context)
+            expansion_panel_content = lazy_load_template(outputs_summary_expansion_content_template_str).render(context)  # noqa: E501
 
         expansion_panel_data = ExpansionPanelData(
             open=has_outputs,
             header_attrs={"class": "flex gap-x-2 prose"},
             slot_header=f"""
                 <h3 class="m-0">
-                    { title }
+                    {title}
                 </h3>
             """,
             slot_content=expansion_panel_content,
@@ -5734,7 +5738,7 @@ def project_outputs(context: Context, data: ProjectOutputsData) -> str:
                 "output_form_data": output_form_data,
             }
         ):
-            output_expansion_panel_content = lazy_load_template(output_expansion_panel_content_template_str).render(context)
+            output_expansion_panel_content = lazy_load_template(output_expansion_panel_content_template_str).render(context)  # noqa: E501
 
         expansion_panel_data = ExpansionPanelData(
             panel_id=output["id"],  # type: ignore[arg-type]
@@ -5743,7 +5747,7 @@ def project_outputs(context: Context, data: ProjectOutputsData) -> str:
             header_attrs={"class": "flex align-center justify-between"},
             slot_header=f"""
                 <div>
-                    { output['name'] }
+                    {output['name']}
                 </div>
             """,
             slot_content=output_expansion_panel_content,
@@ -5789,7 +5793,7 @@ project_output_badge_template_str: types.django_html = """
             </span>
         {% endif %}
     </span>
-"""
+"""  # noqa: E501
 
 
 class ProjectOutputBadgeData(NamedTuple):
@@ -5985,7 +5989,7 @@ project_output_attachments_template_str: types.django_html = """
                     </div>
 
                     {# Attachment form #}
-                    <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                    <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                         <label for="id_text">Text:</label>
                         <input
                             type="text"
@@ -6017,7 +6021,7 @@ project_output_attachments_template_str: types.django_html = """
                             <div>
                                 {% button edit_button_data %}
                             </div>
-                            
+
                             <div>
                                 {% button remove_button_data %}
                             </div>
@@ -6036,7 +6040,7 @@ project_output_attachments_template_str: types.django_html = """
             props: {
                 attachments: { type: Object, required: true },
             },
-            
+
             emits: {
                 updateAttachmentData: (index, data) => true,
                 setAttachmentTags: (index, tags) => true,
@@ -6242,12 +6246,12 @@ project_output_form_template_str: types.django_html = """
                 watch(attachments, () => {
                     onAttachmentsChange();
                 }, { immediate: true });
-            
+
                 // Methods
                 const addAttachment = () => {
                     attachments.value = [...attachments.value, { url: "", text: "", tags: [], isPreview: false }];
                 };
-            
+
                 const removeAttachment = (index) => {
                     attachments.value = attachments.value.filter((_, i) => i !== index);
 
@@ -6270,7 +6274,7 @@ project_output_form_template_str: types.django_html = """
                         return { ...attach, tags };
                     });
                 };
-            
+
                 const updateAttachmentData = (index, data) => {
                     attachments.value = attachments.value.map((attach, currIndex) => {
                         if (index !== currIndex) return attach;
@@ -6285,7 +6289,7 @@ project_output_form_template_str: types.django_html = """
                     attachments.value = attachments.value.map((attach, i) => {
                         if (index === i) {
                             attach.isPreview = !attach.isPreview;
-                        
+
                             if (attach.isPreview) didCloseEditing = true;
                         }
                         return attach;
@@ -6310,7 +6314,7 @@ project_output_form_template_str: types.django_html = """
                         });
                     });
                 }
-            
+
                 const onOutputSubmit = ({ reload }) => {
                     /** @type {HTMLFormElement} */
                     const formEl = vm.$el.querySelector('form');

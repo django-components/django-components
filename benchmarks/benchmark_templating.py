@@ -148,10 +148,7 @@ def prepare_templating_benchmark(
         return setup_script
     else:
         # Otherwise include also data generation as part of setup
-        setup_script += (
-            "\n\n"
-            "render_data = gen_render_data()\n"
-        )
+        setup_script += "\n\n" "render_data = gen_render_data()\n"
 
         # Do the first render as part of setup if we're testing the subsequent renders
         if test_type == "subsequent":
@@ -391,7 +388,12 @@ class IsolatedVsDjangoContextModesTests:
         params={
             "context_mode": ["isolated", "django"],
         },
-        setup=lambda context_mode: setup_templating_memory_benchmark("django-components", "sm", "subsequent", context_mode),
+        setup=lambda context_mode: setup_templating_memory_benchmark(
+            "django-components",
+            "sm",
+            "subsequent",
+            context_mode,
+        ),
     )
     def peakmem_render_sm_subsequent(self, context_mode: DjcContextMode):
         do_render()
@@ -404,7 +406,12 @@ class IsolatedVsDjangoContextModesTests:
         params={
             "context_mode": ["isolated", "django"],
         },
-        setup=lambda context_mode: setup_templating_memory_benchmark("django-components", "lg", "first", context_mode),
+        setup=lambda context_mode: setup_templating_memory_benchmark(
+            "django-components",
+            "lg",
+            "first",
+            context_mode,
+        ),
     )
     def peakmem_render_lg_first(self, context_mode: DjcContextMode):
         do_render()
@@ -417,7 +424,12 @@ class IsolatedVsDjangoContextModesTests:
         params={
             "context_mode": ["isolated", "django"],
         },
-        setup=lambda context_mode: setup_templating_memory_benchmark("django-components", "lg", "subsequent", context_mode),
+        setup=lambda context_mode: setup_templating_memory_benchmark(
+            "django-components",
+            "lg",
+            "subsequent",
+            context_mode,
+        ),
     )
     def peakmem_render_lg_subsequent(self, context_mode: DjcContextMode):
         do_render()

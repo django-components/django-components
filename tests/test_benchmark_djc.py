@@ -7,7 +7,21 @@ from inspect import signature
 from itertools import chain
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Callable, Dict, Iterable, List, Literal, NamedTuple, Optional, Tuple, Type, TypedDict, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Type,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 
 import django
 from django import forms
@@ -19,7 +33,7 @@ from django.utils.timezone import now
 from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.template.defaulttags import register as default_library
 
-from django_components import Component, register, types
+from django_components import Component, registry, register, types
 
 
 # ----------- IMPORTS END ------------ #
@@ -103,6 +117,7 @@ def gen_render_data():
 def render(data):
     result = ProjectPage.render(kwargs=data)
     return result
+
 
 #####################################
 # DATA
@@ -639,12 +654,12 @@ def load_project_data_from_json(contents: str) -> dict:
 
     def _get_user(user_id: int):
         return users_by_id[user_id] if user_id in users_by_id else data.get('users', [])[0]
-    
+
     organizations_by_id = {
         org['pk']: {'id': org['pk'], **org['fields']}
         for org in data.get('organizations', [])
     }
-    
+
     phase_templates_by_id = {
         pt['pk']: {'id': pt['pk'], **pt['fields']}
         for pt in data.get('phase_templates', [])
@@ -757,7 +772,7 @@ def load_project_data_from_json(contents: str) -> dict:
     # 12. Resolve outputs references
     resolved_outputs = []
     outputs_by_id = {}  # For resolving dependencies
-    
+
     # First pass: Create all output objects and build lookup
     for output_tuple in data['outputs']:
         output_data = output_tuple[0]
@@ -770,7 +785,7 @@ def load_project_data_from_json(contents: str) -> dict:
     for output_tuple in data['outputs']:
         output_data, attachments_data, dependencies_data = output_tuple
         output = outputs_by_id[output_data['pk']]
-        
+
         # Process attachments
         resolved_attachments = []
         for attachment_tuple in attachments_data:
@@ -782,7 +797,7 @@ def load_project_data_from_json(contents: str) -> dict:
                 attachment['output'] = outputs_by_id[attachment['output']]
             # Keep tags as is
             resolved_attachments.append((attachment, attachment_tuple[1]))
-        
+
         # Process dependencies
         resolved_dependencies = []
         for dep_tuple in dependencies_data:
@@ -790,7 +805,7 @@ def load_project_data_from_json(contents: str) -> dict:
             dep_output = outputs_by_id[dep_data['pk']]
             # Keep the tuple structure but with resolved references
             resolved_dependencies.append((dep_output, dep_tuple[1]))
-        
+
         resolved_outputs.append((output, resolved_attachments, resolved_dependencies))
 
     return {
@@ -1240,6 +1255,7 @@ def get_styling_css(
     css = f"{styling.color} {styling.css}".strip()
     return css
 
+
 #####################################
 # HELPERS
 #####################################
@@ -1355,7 +1371,7 @@ def serialize_to_js(obj):
 
     So given a dict
     `{"a": 123, "b": "console.log('abc')", "c": "'mystring'"}`
-    
+
     The filter exports:
     `"{ a: 123, b: console.log('abc'), c: 'mystring' }"`
     """
@@ -1366,15 +1382,15 @@ def serialize_to_js(obj):
             serialized_value = serialize_to_js(value)  # Recursively serialize the value
             items.append(f"{key}: {serialized_value}")
         return f"{{ {', '.join(items)} }}"
-    
+
     elif isinstance(obj, (list, tuple)):
         # If the object is a list, recursively serialize each item
         serialized_items = [serialize_to_js(item) for item in obj]
         return f"[{', '.join(serialized_items)}]"
-    
+
     elif isinstance(obj, str):
         return obj
-    
+
     else:
         # For other types (int, float, etc.), just return the string representation
         return str(obj)
@@ -1406,7 +1422,7 @@ class Button(Component):
         else:
             button_classes = get_styling_css(variant, color, disabled)  # type: ignore[arg-type]
             all_css_class = (
-                f"{ button_classes } { common_css } px-3 py-2 justify-center rounded-md shadow-sm"
+                f"{button_classes} {common_css} px-3 py-2 justify-center rounded-md shadow-sm"
             )
 
         is_link = not disabled and (href or link)
@@ -1450,6 +1466,7 @@ class Button(Component):
         </button>
         {% endif %}
     """
+
 
 #####################################
 # MENU
@@ -1690,7 +1707,7 @@ class MenuList(Component):
                 </div>
             {% endfor %}
         </div>
-    """
+    """  # noqa: E501
 
 #####################################
 # TABLE
@@ -1825,7 +1842,7 @@ def create_table_row(
     if cols:
         for key, val in cols.items():
             resolved_cols[key] = TableCell(value=val) if not isinstance(val, TableCell) else val
-    
+
     return TableRow(
         cols=resolved_cols,
         row_attrs=row_attrs,
@@ -1937,7 +1954,7 @@ class Table(Component):
                 </div>
             </div>
         </div>
-    """
+    """  # noqa: E501
 
 #####################################
 # ICON
@@ -2028,6 +2045,7 @@ class Icon(Component):
         </div>
     """
 
+
 #####################################
 # HEROICONS
 #####################################
@@ -2036,7 +2054,7 @@ class Icon(Component):
 ICONS = {
     "outline": {
         "academic-cap": [
-            {'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'd': 'M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5'}
+            {'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'd': 'M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5'}  # noqa: E501
         ]
     }
 }
@@ -2206,7 +2224,7 @@ class ExpansionPanel(Component):
             Alpine.data("expansion_panel", () => ({
                 // Variables
                 isOpen: false,
-                
+
                 // Methods
                 init() {
                     const initDataStr = this.$el.dataset.init;
@@ -2486,7 +2504,7 @@ class ProjectLayoutTabbed(Component):
                 {% endif %}
 
                 <div class="flex flex-auto gap-6">
-                
+
                 {# Split the content to 2 columns, based on whether `left_panel` slot is filled #}
                 {% if component_vars.is_filled.left_panel %}
                     <div {% html_attrs left_pannel_attrs class="relative h-full pb-4" %}>
@@ -2710,10 +2728,10 @@ class Base(Component):
 
             {# HTMX #}
             <script type="text/javascript" src="{% static 'js/htmx.js' %}"></script>
-            
+
             {# Axios (AJAX) #}
             <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-        
+
             {# JS scripts from our custom Django components #}
             {% component_js_dependencies %}
 
@@ -2939,7 +2957,7 @@ class Base(Component):
         // submitForm.js
         ////////////////////////////////////////////////////////////////
 
-        /** 
+        /**
          * @param {HTMLFormElement} formEl
          */
         const getFormData = (formEl) => {
@@ -3187,7 +3205,7 @@ class Navbar(Component):
                 </div>
             </div>
         </div>
-    """
+    """  # noqa: E501
 
 #####################################
 # DIALOG
@@ -3292,7 +3310,7 @@ class Dialog(Component):
     template: types.django_html = """
         {# Based on https://tailwindui.com/components/application-ui/overlays/modals #}
 
-        {% comment %} 
+        {% comment %}
         NOTE: {{ model }} is the Alpine variable used for opening/closing. The variable name
             is set dynamically, hence we use Django's double curly braces to refer to it.
         {% endcomment %}
@@ -3397,7 +3415,7 @@ class Dialog(Component):
                 </div>
             </div>
         </div>
-    """
+    """  # noqa: E501
 
 #####################################
 # TAGS
@@ -3415,7 +3433,10 @@ class TagsJsProps(TypedDict):
 
 @register("Tags")
 class Tags(Component):
-    def get_context_data(self, /, *,
+    def get_context_data(
+        self,
+        /,
+        *,
         tag_type: str,
         js_props: dict,
         editable: bool = True,
@@ -3535,7 +3556,7 @@ class Tags(Component):
                         value: t,
                         options: [],
                     }));
-                
+
                     const availableTags = getAvailableTags();
                     tags.value = tags.value.map((t) => ({
                         value: t.value,
@@ -3602,7 +3623,7 @@ class Tags(Component):
                     if (vm.$refs.tagsInput) {
                         vm.$refs.tagsInput.value = tags.value.map((t) => t.value).join(',');
                     }
-                    
+
                     // Emit the final list of selected tags
                     const payload = tags.value.map((t) => t.value);
                     vm.$emit("change", payload);
@@ -3723,7 +3744,7 @@ class Form(Component):
             </{{ form_content_tag }}>
 
             {% slot "below_form" / %}
-        
+
             {% if not actions_hide %}
                 <div {% html_attrs actions_attrs class="pt-4" %}>
                     {% slot "actions_prepend" / %}
@@ -3798,7 +3819,7 @@ class Form(Component):
 
                     data.$dispatch('change', newVal);
                 });
-            
+
                 return data;
             });
         });
@@ -3885,7 +3906,7 @@ class Breadcrumbs(Component):
                             {% endif %}
 
                             {{ crumb.value }}
-                            
+
                             {% if crumb.link %}
                                 </a>
                             {% else %}
@@ -3897,6 +3918,7 @@ class Breadcrumbs(Component):
             </ol>
         </nav>
     """
+
 
 #####################################
 # BOOKMARKS
@@ -3936,7 +3958,11 @@ class Bookmarks(Component):
             if is_attachment:
                 # Send user to the Output tab in Project page and open and scroll
                 # to the relevent output that has the correct attachment.
-                edit_url = f"/edit/{project_id}/bookmark/{bookmark['id']}?{ProjectPageTabsToQueryParams.OUTPUTS.value}&panel={bookmark['attachment']['output']['id']}"  # type: ignore[index]
+                edit_url = (
+                    f"/edit/{project_id}/bookmark/{bookmark['id']}"
+                    f"?{ProjectPageTabsToQueryParams.OUTPUTS.value}"
+                    f"&panel={bookmark['attachment']['output']['id']}"  # type: ignore[index]
+                )  # type: ignore[index]
             else:
                 edit_url = f"/edit/{project_id}/bookmark/{bookmark['id']}"
 
@@ -4160,11 +4186,11 @@ class Bookmark(Component):
         // Define component similarly to defining Vue components
         const Bookmark = AlpineComposition.defineComponent({
             name: "bookmark",
-        
+
             props: {
                 bookmark: { type: Object, required: true },
             },
-        
+
             emits: {
                 menuToggle: (obj) => true,
             },
@@ -4173,14 +4199,14 @@ class Bookmark(Component):
                 const onMenuToggle = () => {
                     vm.$emit('menuToggle', { item: props.bookmark, el: vm.$refs.bookmark_menu });
                 }
-            
+
                 return {
                     bookmark: props.bookmark,
                     onMenuToggle,
                 };
             },
         });
-        
+
         document.addEventListener('alpine:init', () => {
             AlpineComposition.registerComponent(Alpine, Bookmark);
         });
@@ -4239,7 +4265,7 @@ class ListComponent(Component):
                             {% if item.link %}
                             <a href="{{ item.link }}">
                             {% endif %}
-                        
+
                             <p class="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-500">
                                 {{ item.value }}
                             </p>
@@ -4254,7 +4280,7 @@ class ListComponent(Component):
                 {% slot "empty" default / %}
             {% endfor %}
         </ul>
-    """
+    """  # noqa: E501
 
 #####################################
 # TABS
@@ -4342,7 +4368,7 @@ class _TabsImpl(Component):
                 </article>
             </div>
         </div>
-    """
+    """  # noqa: E501
 
     js: types.js = """
         document.addEventListener("alpine:init", () => {
@@ -4625,7 +4651,7 @@ class ProjectInfo(Component):
 
         project_info = [
             ProjectInfoEntry("Org", project['organization']['name']),
-            ProjectInfoEntry("Duration", f"{ project['start_date'] } - { project['end_date'] }"),
+            ProjectInfoEntry("Duration", f"{project['start_date']} - {project['end_date']}"),
             ProjectInfoEntry("Status", project['status']),
             ProjectInfoEntry("Tags", ", ".join(project_tags) or "-"),
         ]
@@ -5045,6 +5071,7 @@ class ProjectStatusUpdates(Component):
         </div>
     """
 
+
 #####################################
 # PROJECT USERS
 #####################################
@@ -5201,13 +5228,13 @@ class ProjectUsers(Component):
                                 / %}
                             </div>
                         {% endfill %}
-                
+
                         {% fill "content" %}
                             <div>
                                 This action cannot be undone.
                             </div>
                         {% endfill %}
-                
+
                     {% endcomponent %}
                 </template>
             {% endif %}
@@ -5442,7 +5469,7 @@ class ProjectOutputBadge(Component):
                 </span>
             {% endif %}
         </span>
-    """
+    """  # noqa: E501
 
 #####################################
 # PROJECT_OUTPUT_DEPENDENCY
@@ -5564,7 +5591,7 @@ class ProjectOutputAttachments(Component):
         js_props: ProjectOutputAttachmentsJsProps,
         editable: bool,
         attrs: Optional[dict] = None,
-    ):      
+    ):
         return {
             "has_attachments": has_attachments,
             "editable": editable,
@@ -5610,7 +5637,7 @@ class ProjectOutputAttachments(Component):
                         </div>
 
                         {# Attachment form #}
-                        <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                        <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                             <label for="id_text">Text:</label>
                             <input
                                 type="text"
@@ -5648,7 +5675,7 @@ class ProjectOutputAttachments(Component):
                                         Edit
                                     {% endcomponent %}
                                 </div>
-                                
+
                                 <div>
                                     {% component "Button"
                                         color="error"
@@ -5681,7 +5708,7 @@ class ProjectOutputAttachments(Component):
             props: {
                 attachments: { type: Object, required: true },
             },
-            
+
             emits: {
                 updateAttachmentData: (index, data) => true,
                 setAttachmentTags: (index, tags) => true,
@@ -5702,6 +5729,7 @@ class ProjectOutputAttachments(Component):
             AlpineComposition.registerComponent(Alpine, ProjectOutputAttachments);
         });
     """
+
 
 #####################################
 # PROJECT_OUTPUT_FORM
@@ -5824,7 +5852,7 @@ class ProjectOutputForm(Component):
                 / %}
             {% endcomponent %}
         </div>
-    """
+    """  # noqa: E501
 
     js: types.js = """
         // Define component similarly to defining Vue components
@@ -5854,12 +5882,12 @@ class ProjectOutputForm(Component):
                 watch(attachments, () => {
                     onAttachmentsChange();
                 }, { immediate: true });
-            
+
                 // Methods
                 const addAttachment = () => {
                     attachments.value = [...attachments.value, { url: "", text: "", tags: [], isPreview: false }];
                 };
-            
+
                 const removeAttachment = (index) => {
                     attachments.value = attachments.value.filter((_, i) => i !== index);
 
@@ -5882,7 +5910,7 @@ class ProjectOutputForm(Component):
                         return { ...attach, tags };
                     });
                 };
-            
+
                 const updateAttachmentData = (index, data) => {
                     attachments.value = attachments.value.map((attach, currIndex) => {
                         if (index !== currIndex) return attach;
@@ -5897,7 +5925,7 @@ class ProjectOutputForm(Component):
                     attachments.value = attachments.value.map((attach, i) => {
                         if (index === i) {
                             attach.isPreview = !attach.isPreview;
-                        
+
                             if (attach.isPreview) didCloseEditing = true;
                         }
                         return attach;
@@ -5922,7 +5950,7 @@ class ProjectOutputForm(Component):
                         });
                     });
                 }
-            
+
                 const onOutputSubmit = ({ reload }) => {
                     /** @type {HTMLFormElement} */
                     const formEl = vm.$el.querySelector('form');
@@ -5961,6 +5989,7 @@ class ProjectOutputForm(Component):
         });
     """
 
+
 #####################################
 #
 # IMPLEMENTATION END
@@ -5978,6 +6007,43 @@ def test_render(snapshot):
     id_patcher.start()
     csrf_token_patcher = CsrfTokenPatcher()
     csrf_token_patcher.start()
+
+    registry.register("Button", Button)
+    registry.register("Menu", Menu)
+    registry.register("MenuList", MenuList)
+    registry.register("Table", Table)
+    registry.register("Icon", Icon)
+    registry.register("heroicons", HeroIcon)
+    registry.register("ExpansionPanel", ExpansionPanel)
+    registry.register("ProjectPage", ProjectPage)
+    registry.register("ProjectLayoutTabbed", ProjectLayoutTabbed)
+    registry.register("Layout", Layout)
+    registry.register("RenderContextProvider", RenderContextProvider)
+    registry.register("Base", Base)
+    registry.register("Sidebar", Sidebar)
+    registry.register("Navbar", Navbar)
+    registry.register("Dialog", Dialog)
+    registry.register("Tags", Tags)
+    registry.register("Form", Form)
+    registry.register("Breadcrumbs", Breadcrumbs)
+    registry.register("Bookmarks", Bookmarks)
+    registry.register("Bookmark", Bookmark)
+    registry.register("List", ListComponent)
+    registry.register("_tabs", _TabsImpl)
+    registry.register("Tabs", Tabs)
+    registry.register("TabItem", TabItem)
+    registry.register("TabsStatic", TabsStatic)
+    registry.register("ProjectInfo", ProjectInfo)
+    registry.register("ProjectNotes", ProjectNotes)
+    registry.register("ProjectOutputsSummary", ProjectOutputsSummary)
+    registry.register("ProjectStatusUpdates", ProjectStatusUpdates)
+    registry.register("ProjectUsers", ProjectUsers)
+    registry.register("ProjectUserAction", ProjectUserAction)
+    registry.register("ProjectOutputs", ProjectOutputs)
+    registry.register("ProjectOutputBadge", ProjectOutputBadge)
+    registry.register("ProjectOutputDependency", ProjectOutputDependency)
+    registry.register("ProjectOutputAttachments", ProjectOutputAttachments)
+    registry.register("ProjectOutputForm", ProjectOutputForm)
 
     data = gen_render_data()
     rendered = render(data)

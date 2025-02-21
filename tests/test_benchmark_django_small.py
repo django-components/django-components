@@ -292,7 +292,7 @@ def button(context: Context, data: ButtonData):
         all_css_class = common_css
     else:
         button_classes = get_styling_css(data.variant, data.color, data.disabled)  # type: ignore[arg-type]
-        all_css_class = f"{ button_classes } { common_css } px-3 py-2 justify-center rounded-md shadow-sm"
+        all_css_class = f"{button_classes} {common_css} px-3 py-2 justify-center rounded-md shadow-sm"
 
     is_link = not data.disabled and (data.href or data.link)
 

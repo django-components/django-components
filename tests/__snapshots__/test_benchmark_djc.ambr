@@ -593,7 +593,7 @@
               
           </div>
       
-                              
+  
                               
                                   </a>
                               
@@ -624,7 +624,7 @@
                               
   
                               Project Name
-                              
+  
                               
                                   </a>
                               
@@ -693,7 +693,7 @@
                   
   
                   <div class="flex flex-auto gap-6">
-                  
+  
                   
                   
                       <div class="w-1/3 relative h-full pb-4">
@@ -708,7 +708,7 @@
                               
                               <a href="/projects/1/phases/PHASE_1">
                               
-                          
+  
                               <p class="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-500">
                                   Phase 1
                               </p>
@@ -726,7 +726,7 @@
                               
                               <a href="/projects/1/phases/PHASE_2">
                               
-                          
+  
                               <p class="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-500">
                                   Phase 2
                               </p>
@@ -744,7 +744,7 @@
                               
                               <a href="/projects/1/phases/PHASE_3">
                               
-                          
+  
                               <p class="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-500">
                                   Phase 3
                               </p>
@@ -762,7 +762,7 @@
                               
                               <a href="/projects/1/phases/PHASE_4">
                               
-                          
+  
                               <p class="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-500">
                                   Phase 4
                               </p>
@@ -780,7 +780,7 @@
                               
                               <a href="/projects/1/phases/PHASE_5">
                               
-                          
+  
                               <p class="text-sm font-semibold leading-6 text-gray-900 hover:text-gray-500">
                                   Phase 5
                               </p>
@@ -1890,7 +1890,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -1940,7 +1940,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -2066,7 +2066,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -2317,7 +2317,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -2534,7 +2534,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -2584,7 +2584,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -2710,7 +2710,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -2917,7 +2917,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -2967,7 +2967,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -3093,7 +3093,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -3300,7 +3300,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -3350,7 +3350,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -3476,7 +3476,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -3683,7 +3683,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -3733,7 +3733,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -3859,7 +3859,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -4066,7 +4066,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -4116,7 +4116,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -4242,7 +4242,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -4436,7 +4436,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -4653,7 +4653,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -4703,7 +4703,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -4829,7 +4829,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -5093,7 +5093,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -5143,7 +5143,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -5269,7 +5269,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -5476,7 +5476,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -5526,7 +5526,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -5652,7 +5652,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -5859,7 +5859,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -5909,7 +5909,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -6035,7 +6035,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -6242,7 +6242,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -6292,7 +6292,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -6418,7 +6418,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -6682,7 +6682,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -6732,7 +6732,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -6858,7 +6858,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -7065,7 +7065,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -7115,7 +7115,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -7241,7 +7241,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -7505,7 +7505,7 @@
                           </div>
   
                           
-                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">            
+                          <div x-show="!attachment.isPreview" class="flex flex-col gap-1">
                               <label for="id_text">Text:</label>
                               <input
                                   type="text"
@@ -7555,7 +7555,7 @@
           
       
                                   </div>
-                                  
+  
                                   <div>
                                       
           
@@ -7681,7 +7681,7 @@
               </div>
   
               
-          
+  
               
           </form>
       
@@ -7732,10 +7732,10 @@
   
               
               <script type="text/javascript" src="js/htmx.js"></script>
-              
+  
               
               <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-          
+  
               
               <script src="django_components/django_components.min.js"></script><script type="application/json" data-djc>{"loadedCssUrls": [], "loadedJsUrls": ["L2NvbXBvbmVudHMvY2FjaGUvQmFzZV9kMTZhNmQuanM=", "L2NvbXBvbmVudHMvY2FjaGUvQm9va21hcmtfMWZkMDFmLmpz", "L2NvbXBvbmVudHMvY2FjaGUvQm9va21hcmtzXzg3ODZmMS5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvRXhwYW5zaW9uUGFuZWxfNjkwMjM5Lmpz", "L2NvbXBvbmVudHMvY2FjaGUvRm9ybV83ODhlMTIuanM=", "L2NvbXBvbmVudHMvY2FjaGUvTGF5b3V0XzZhYmE2Yy5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdE91dHB1dEF0dGFjaG1lbnRzXzE2NGQ2NC5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdE91dHB1dERlcGVuZGVuY3lfZWVkMzI4Lmpz", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdE91dHB1dEZvcm1fODQ3YjM0Lmpz", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdFVzZXJzX2U1NTFmZC5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvVGFnc19iNzMxNTMuanM=", "L2NvbXBvbmVudHMvY2FjaGUvX1RhYnNJbXBsX2NlZWNjMS5qcw=="], "toLoadCssTags": [], "toLoadJsTags": []}</script><script>document.addEventListener('alpine:init', () => {
               // NOTE: Defined as standalone function so we can call it variable initialization
@@ -7967,7 +7967,7 @@
           // submitForm.js
           ////////////////////////////////////////////////////////////////
   
-          /** 
+          /**
            * @param {HTMLFormElement} formEl
            */
           const getFormData = (formEl) => {
@@ -8067,11 +8067,11 @@
           });</script><script>// Define component similarly to defining Vue components
           const Bookmark = AlpineComposition.defineComponent({
               name: "bookmark",
-          
+  
               props: {
                   bookmark: { type: Object, required: true },
               },
-          
+  
               emits: {
                   menuToggle: (obj) => true,
               },
@@ -8080,14 +8080,14 @@
                   const onMenuToggle = () => {
                       vm.$emit('menuToggle', { item: props.bookmark, el: vm.$refs.bookmark_menu });
                   }
-              
+  
                   return {
                       bookmark: props.bookmark,
                       onMenuToggle,
                   };
               },
           });
-          
+  
           document.addEventListener('alpine:init', () => {
               AlpineComposition.registerComponent(Alpine, Bookmark);
           });</script><script>document.addEventListener("alpine:init", () => {
@@ -8179,7 +8179,7 @@
               Alpine.data("expansion_panel", () => ({
                   // Variables
                   isOpen: false,
-                  
+  
                   // Methods
                   init() {
                       const initDataStr = this.$el.dataset.init;
@@ -8227,12 +8227,12 @@
                   watch(attachments, () => {
                       onAttachmentsChange();
                   }, { immediate: true });
-              
+  
                   // Methods
                   const addAttachment = () => {
                       attachments.value = [...attachments.value, { url: "", text: "", tags: [], isPreview: false }];
                   };
-              
+  
                   const removeAttachment = (index) => {
                       attachments.value = attachments.value.filter((_, i) => i !== index);
   
@@ -8255,7 +8255,7 @@
                           return { ...attach, tags };
                       });
                   };
-              
+  
                   const updateAttachmentData = (index, data) => {
                       attachments.value = attachments.value.map((attach, currIndex) => {
                           if (index !== currIndex) return attach;
@@ -8270,7 +8270,7 @@
                       attachments.value = attachments.value.map((attach, i) => {
                           if (index === i) {
                               attach.isPreview = !attach.isPreview;
-                          
+  
                               if (attach.isPreview) didCloseEditing = true;
                           }
                           return attach;
@@ -8295,7 +8295,7 @@
                           });
                       });
                   }
-              
+  
                   const onOutputSubmit = ({ reload }) => {
                       /** @type {HTMLFormElement} */
                       const formEl = vm.$el.querySelector('form');
@@ -8369,7 +8369,7 @@
   
                       data.$dispatch('change', newVal);
                   });
-              
+  
                   return data;
               });
           });</script><script>const ProjectOutputAttachments = AlpineComposition.defineComponent({
@@ -8378,7 +8378,7 @@
               props: {
                   attachments: { type: Object, required: true },
               },
-              
+  
               emits: {
                   updateAttachmentData: (index, data) => true,
                   setAttachmentTags: (index, tags) => true,
@@ -8429,7 +8429,7 @@
                           value: t,
                           options: [],
                       }));
-                  
+  
                       const availableTags = getAvailableTags();
                       tags.value = tags.value.map((t) => ({
                           value: t.value,
@@ -8496,7 +8496,7 @@
                       if (vm.$refs.tagsInput) {
                           vm.$refs.tagsInput.value = tags.value.map((t) => t.value).join(',');
                       }
-                      
+  
                       // Emit the final list of selected tags
                       const payload = tags.value.map((t) => t.value);
                       vm.$emit("change", payload);

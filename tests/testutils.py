@@ -47,7 +47,7 @@ class CsrfTokenPatcher:
     def start(self):
         self._csrf_token_patch = patch("django.middleware.csrf.get_token", return_value=self._csrf_token)
         self._csrf_token_patch.start()
-    
+
     def stop(self):
         self._csrf_token_patch.stop()
 
@@ -199,8 +199,8 @@ def parametrize_context_behavior(cases: List[ContextBehParam], settings: Optiona
                     engine.engine.template_loaders[0].reset()
 
                 # Reset gen_id
-                self._stop_gen_id_patch()
-                self._start_gen_id_patch()
+                self.gen_id_patcher.stop()
+                self.gen_id_patcher.start()
 
                 # Reset template cache
                 from django_components.cache import component_media_cache, template_cache
