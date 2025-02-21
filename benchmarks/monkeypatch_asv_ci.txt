@@ -1,5 +1,8 @@
 # ------------ FIX FOR #45 ------------
 # See https://github.com/airspeed-velocity/asv_runner/issues/45
+# This fix is applied in CI in the `benchmark.yml` file.
+# This file is intentionally named `monkeypatch_asv_ci.txt` to avoid being
+# loaded as a python file by `asv`.
 # -------------------------------------
 
 def timeit(self, number):

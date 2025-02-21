@@ -44,14 +44,18 @@ jobs:
         #
         # 1. First create the virtual environment, so that asv generates the directories where
         #    the monkeypatch can be applied.
-        asv setup
+        echo "Creating virtual environment..."
+        asv setup -v || true
+        echo "Virtual environment created."
         # 2. Now let's apply the monkeypatch by appending it to the `timeraw.py` files.
         # First find all `timeraw.py` files
+        echo "Applying monkeypatch..."
         find .asv/env -type f -path "*/site-packages/asv_runner/benchmarks/timeraw.py" | while read -r file; do
             # Add a newline and then append the monkeypatch contents
             echo "" >> "$file"
-            cat "benchmarks/monkeypatch_asv_ci.py" >> "$file"
+            cat "benchmarks/monkeypatch_asv_ci.txt" >> "$file"
         done
+        echo "Monkeypatch applied."
         # END OF MONKEYPATCH
 
         # Prepare the profile under which the benchmarks will be saved.
