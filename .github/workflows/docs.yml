@@ -44,7 +44,7 @@ jobs:
       - name: Install Hatch
         run: |
             python -m pip install --upgrade pip wheel
-            python -m pip install -q hatch pre-commit
+            python -m pip install -q hatch pre-commit asv
             hatch --version
 
       - name: Create Virtual Environment
