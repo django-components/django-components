@@ -9,11 +9,6 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
     branches: 
       - master
-  pull_request:
-      branches:
-      - main
-  release:
-    types: [published]
   workflow_dispatch:
 
 jobs:
@@ -51,6 +46,11 @@ jobs:
 
       - name: Configure git
         run: |
+          # Get the master branch so we can run benchmarks on it
+          git remote add upstream https://github.com/${{ github.repository }}.git
+          git fetch origin master:master
+          git checkout master
+
           # required for "mike deploy" command below which pushes to gh-pages
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -93,7 +93,9 @@ jobs:
           # Prepare the profile under which the benchmarks will be saved.
           # We assume that the CI machine has a name that is unique and stable.
           # See https://github.com/airspeed-velocity/asv/issues/796#issuecomment-1188431794
+          echo "Preparing benchmarks profile..."
           asv machine --yes
+          echo "Benchmarks profile DONE."
 
           # Run benchmarks for the current tag
           # - `^` means that we mean the COMMIT of the tag's branch, not the BRANCH itself.
@@ -103,22 +105,25 @@ jobs:
           #       Without it, we would run benchmarks for all commits FROM the tag's commit
           #       TO the start of the branch history.
           #       With it, we run benchmarks ONLY FOR the tag's commit.
-          asv run ${TAG}^! -v
+          echo "Running benchmarks for tag ${TAG}..."
+          asv run master^! -v
+          echo "Benchmarks for tag ${TAG} DONE."
 
           # Generate benchmarks site
           # This should save it in `docs/benchmarks/`, so we can then use it when
           # building docs site with `mkdocs`.
+          echo "Generating benchmarks site..."
           asv publish
-
-          # Switch to master to save results
-          git fetch origin master:master
-          git checkout master
+          echo "Benchmarks site DONE."
 
           # Stage and commit benchmark results
+          echo "Staging and committing benchmark results..."
           git add .asv/results/
           git add docs/benchmarks/
           git commit -m "Add benchmark results for ${TAG}"
+          echo "Benchmark results committed."
           git push origin master
+          echo "Benchmark results pushed to master."
 
       ##############################
       # BUILD & DEPLOY DOCS
