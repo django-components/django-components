@@ -36,19 +36,18 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+          cache: 'pip'
 
       - name: Install Hatch
         run: |
             python -m pip install --upgrade pip wheel
-            python -m pip install -q hatch pre-commit
+            python -m pip install -q hatch pre-commit asv
             hatch --version
-
-      - name: Create Virtual Environment
-        run: hatch env create docs
 
       - name: Configure git
         run: |
@@ -63,10 +62,9 @@ jobs:
       - name: Run benchmarks for tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
         run: |
-          hatch shell docs
-
           # Get tag name
           TAG=${GITHUB_REF#refs/tags/}
+          echo "TAG: $TAG"
 
           # TODO: REMOVE ONCE FIXED UPSTREAM
           # Fix for https://github.com/airspeed-velocity/asv_runner/issues/45
@@ -125,6 +123,9 @@ jobs:
       ##############################
       # BUILD & DEPLOY DOCS
       ##############################
+
+      - name: Create Virtual Environment
+        run: hatch env create docs
 
       # Conditions make sure to select the right step, depending on the job trigger.
       # Only one of the steps below will run at a time. The others will be skipped.

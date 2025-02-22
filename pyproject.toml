@@ -142,7 +142,6 @@ dependencies = [
     "black",
     "pygments",
     "pygments-djc",
-    "asv",
 ]
 
 [tool.hatch.env.collectors.mkdocs.docs]
