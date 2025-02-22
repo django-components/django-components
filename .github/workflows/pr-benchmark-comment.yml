@@ -14,7 +14,8 @@ name: PR benchmark comment
 
 on:
   workflow_run:
-    workflows: [Upload data]
+    # NOTE: The name here MUST match the name of the workflow that generates the data
+    workflows: [PR benchmarks generate]
     types:
       - completed
 
