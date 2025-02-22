@@ -23,28 +23,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download benchmark results
-        uses: actions/github-script@v5
+        uses: actions/download-artifact@v4
         with:
-          script: |
-            const fs = require('fs');
-            const allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.payload.workflow_run.id,
-            });
-            const matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
-              return artifact.name == "benchmark_results"
-            })[0];
-            const download = await github.rest.actions.downloadArtifact({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              artifact_id: matchArtifact.id,
-              archive_format: 'zip',
-            });
-            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/benchmark_results.zip`, Buffer.from(download.data));
-
-      - name: Unzip artifact
-        run: unzip benchmark_results.zip
+          name: benchmark_results
+          path: ./
+          # download artifacts from the workflow run that generated them
+          # (AKA the "pr-benchmark-generate" workflow).
+          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Comment on PR
         # See https://github.com/actions/github-script
