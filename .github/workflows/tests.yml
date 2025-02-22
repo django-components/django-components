@@ -17,6 +17,12 @@ jobs:
         os: [ubuntu-20.04, windows-latest]
 
     steps:
+    # Configure git to handle long paths
+    # See https://stackoverflow.com/questions/22575662/filename-too-long-in-git-for-windows
+    - name: Configure git
+      run: |
+        git config --global core.longpaths true
+
     - uses: actions/checkout@v4
 
     - name: Set up Python ${{ matrix.python-version }}
