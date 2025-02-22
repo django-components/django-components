@@ -94,7 +94,7 @@ jobs:
           # We assume that the CI machine has a name that is unique and stable.
           # See https://github.com/airspeed-velocity/asv/issues/796#issuecomment-1188431794
           echo "Preparing benchmarks profile..."
-          asv machine --yes
+          asv machine --yes --machine ci-linux
           echo "Benchmarks profile DONE."
 
           # Run benchmarks for the current tag
