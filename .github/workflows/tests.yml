@@ -19,6 +19,10 @@ jobs:
     steps:
     # Configure git to handle long paths
     # See https://stackoverflow.com/questions/22575662/filename-too-long-in-git-for-windows
+    #
+    # Long paths that are over the limit are because of the benchmarking data
+    # created by asv, as these may look like this:
+    # docs/benchmarks/graphs/arch-x86_64/branch-master/cpu-AMD EPYC 7763 64-Core Processor/django-5.1/djc-core-html-parser/machine-fv-az1693-854/num_cpu-4/os-Linux 6.8.0-1021-azure/python-3.13/ram-16373792/isolated vs django modes.timeraw_render_lg_subsequent.json
     - name: Configure git
       run: |
         git config --global core.longpaths true
