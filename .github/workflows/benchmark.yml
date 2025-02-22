@@ -7,6 +7,11 @@ on:
   pull_request:
     branches: [ master ]
 
+# Allow the workflow to comment on the PR
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   benchmark:
     runs-on: ubuntu-latest
