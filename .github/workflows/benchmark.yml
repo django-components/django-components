@@ -7,11 +7,6 @@ on:
   pull_request:
     branches: [ master ]
 
-# Allow the workflow to comment on the PR
-permissions:
-  pull-requests: write
-  contents: read
-
 jobs:
   benchmark:
     runs-on: ubuntu-latest
@@ -94,7 +89,10 @@ jobs:
       # See https://github.com/actions/github-script
       uses: actions/github-script@v7
       with:
-        github-token: ${{secrets.GITHUB_TOKEN}}
+        # NOTE: A Personal Access Token that can read and post on PRs.
+        #       Expires in Feb 2025.
+        #       See https://github.com/organizations/django-components/settings/personal-access-tokens/active
+        github-token: ${{ secrets.PR_BENCHMARK_TOKEN }}
         script: |
           const fs = require('fs');
           const results = fs.readFileSync('benchmark_results.md', 'utf8');
