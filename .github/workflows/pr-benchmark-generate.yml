@@ -1,7 +1,16 @@
 # Run benchmark report on pull requests to master.
 # The report is added to the PR as a comment.
+#
+# NOTE: When making a PR from a fork, the worker doesn't have sufficient
+# access to make comments on the target repo's PR. And so, this workflow
+# is split to two parts:
+#
+# 1. Benchmarking and saving results as artifacts
+# 2. Downloading the results and commenting on the PR
+#
+# See https://stackoverflow.com/a/71683208/9788634
 
-name: Benchmarks
+name: PR benchmarks generate
 
 on:
   pull_request:
@@ -82,27 +91,11 @@ jobs:
 
         # Compare against master
         echo "Comparing benchmarks..."
-        asv compare upstream/master HEAD --factor 1.1 --split > benchmark_results.md
+        asv compare upstream/master HEAD --factor 1.1 --split > ./pr/benchmark_results.md
         echo "Benchmarks comparison DONE."
 
-    - name: Comment on PR
-      # See https://github.com/actions/github-script
-      uses: actions/github-script@v7
+    - name: Save benchmark results
+      uses: actions/upload-artifact@v3
       with:
-        # NOTE: A Personal Access Token that can read and post on PRs.
-        #       Expires in Feb 2025.
-        #       See https://github.com/organizations/django-components/settings/personal-access-tokens/active
-        github-token: ${{ secrets.PR_BENCHMARK_TOKEN }}
-        script: |
-          const fs = require('fs');
-          const results = fs.readFileSync('benchmark_results.md', 'utf8');
-          const body = `## Performance Benchmark Results\n\nComparing PR changes against master branch:\n\n${results}`;
-
-          // See https://octokit.github.io/rest.js/v21/#issues-create-comment
-          github.rest.issues.createComment({
-            body: body,
-            // See https://github.com/actions/toolkit/blob/662b9d91f584bf29efbc41b86723e0e376010e41/packages/github/src/context.ts#L66
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-          });
+        name: benchmark_results
+        path: pr/

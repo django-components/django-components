@@ -1,0 +1,66 @@
+# Run benchmark report on pull requests to master.
+# The report is added to the PR as a comment.
+#
+# NOTE: When making a PR from a fork, the worker doesn't have sufficient
+# access to make comments on the target repo's PR. And so, this workflow
+# is split to two parts:
+#
+# 1. Benchmarking and saving results as artifacts
+# 2. Downloading the results and commenting on the PR
+#
+# See https://stackoverflow.com/a/71683208/9788634
+
+name: PR benchmark comment
+
+on:
+  workflow_run:
+    workflows: [Upload data]
+    types:
+      - completed
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download benchmark results
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const fs = require('fs');
+            const allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.payload.workflow_run.id,
+            });
+            const matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == "benchmark_results"
+            })[0];
+            const download = await github.rest.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: matchArtifact.id,
+              archive_format: 'zip',
+            });
+            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/benchmark_results.zip`, Buffer.from(download.data));
+
+      - name: Unzip artifact
+        run: unzip benchmark_results.zip
+
+      - name: Comment on PR
+        # See https://github.com/actions/github-script
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const results = fs.readFileSync('./benchmark_results.md', 'utf8');
+            const body = `## Performance Benchmark Results\n\nComparing PR changes against master branch:\n\n${results}`;
+
+            // See https://octokit.github.io/rest.js/v21/#issues-create-comment
+            await github.rest.issues.createComment({
+              body: body,
+              // See https://github.com/actions/toolkit/blob/662b9d91f584bf29efbc41b86723e0e376010e41/packages/github/src/context.ts#L66
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
