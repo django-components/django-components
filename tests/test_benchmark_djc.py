@@ -1,3 +1,8 @@
+# NOTE: This file is used for benchmarking. Before editing this file,
+# please read through these:
+# - `benchmarks/README`
+# - https://github.com/django-components/django-components/pull/999
+
 import difflib
 import json
 from datetime import date, datetime, timedelta
@@ -36,6 +41,7 @@ from django.template.defaulttags import register as default_library
 from django_components import Component, registry, register, types
 
 
+# DO NOT REMOVE - See https://github.com/django-components/django-components/pull/999
 # ----------- IMPORTS END ------------ #
 
 # This variable is overridden by the benchmark runner
@@ -5996,6 +6002,7 @@ class ProjectOutputForm(Component):
 #
 #####################################
 
+# DO NOT REMOVE - See https://github.com/django-components/django-components/pull/999
 # ----------- TESTS START ------------ #
 # The code above is used also used when benchmarking.
 # The section below is NOT included.

@@ -1,3 +1,8 @@
+# NOTE: This file is used for benchmarking. Before editing this file,
+# please read through these:
+# - `benchmarks/README`
+# - https://github.com/django-components/django-components/pull/999
+
 from pathlib import Path
 from typing import Dict, Literal, NamedTuple, Optional, Union
 
@@ -7,6 +12,7 @@ from django.template import Context, Template
 
 from django_components import Component, types
 
+# DO NOT REMOVE - See https://github.com/django-components/django-components/pull/999
 # ----------- IMPORTS END ------------ #
 
 # This variable is overridden by the benchmark runner
@@ -324,6 +330,7 @@ class Button(Component):
 #####################################
 
 
+# DO NOT REMOVE - See https://github.com/django-components/django-components/pull/999
 # ----------- TESTS START ------------ #
 # The code above is used also used when benchmarking.
 # The section below is NOT included.
