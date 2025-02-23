@@ -1,0 +1,12 @@
+# `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
+nav:
+  - Welcome to Django Components: welcome.md
+  - Compatibility: compatibility.md
+  - Installation: installation.md
+  - Security notes 🚨: security_notes.md
+  - Community: community.md
+  - Contributing: contributing.md
+  - Development: development.md
+  - Performance: performance.md
+  - Code of Conduct: code_of_conduct.md
+  - License: license.md

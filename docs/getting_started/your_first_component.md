@@ -1,8 +1,3 @@
----
-title: Create your first component
-weight: 1
----
-
 A component in django-components can be as simple as a Django template and Python code to declare the component:
 
 ```htmldjango title="calendar.html"

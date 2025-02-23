@@ -1,0 +1,5 @@
+# `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
+nav:
+  - Syntax highlighting: syntax_highlight.md
+  - Caching: caching.md
+  - Development server: development_server.md

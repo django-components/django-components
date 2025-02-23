@@ -142,6 +142,7 @@ dependencies = [
     "black",
     "pygments",
     "pygments-djc",
+    "mkdocs-awesome-nav",
 ]
 
 [tool.hatch.env.collectors.mkdocs.docs]

@@ -1,8 +1,3 @@
----
-title: Components as views
-weight: 10
----
-
 _New in version 0.34_
 
 _Note: Since 0.92, Component no longer subclasses View. To configure the View class, set the nested `Component.View` class_

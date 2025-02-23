@@ -1,8 +1,3 @@
----
-title: HTTP Request
-weight: 11
----
-
 The most common use of django-components is to render HTML for a given request. As such,
 there are a few features that are dependent on the request object.
 

@@ -1,8 +1,3 @@
----
-title: Parametrising components
-weight: 4
----
-
 So far, our Calendar component will always render the date `1970-01-01`. Let's make it more useful and flexible
 by being able to pass in custom date.
 

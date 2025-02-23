@@ -1,8 +1,3 @@
----
-title: HTML attributes
-weight: 7
----
-
 _New in version 0.74_:
 
 You can use the `html_attrs` tag to render HTML attributes, given a dictionary

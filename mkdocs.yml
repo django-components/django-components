@@ -20,8 +20,6 @@ watch:
   - scripts
 
 validation:
-  # We get warnings as we use literate-nav
-  omitted_files: ignore
   absolute_links: warn
   unrecognized_links: info
 
@@ -125,9 +123,7 @@ plugins:
       scripts:
         - docs/scripts/setup.py
         - docs/scripts/reference.py
-  - literate-nav:
-      nav_file: SUMMARY.md
-      tab_length: 2
+  - awesome-nav
   - git-revision-date-localized:
       enabled: !ENV [CI, false]
       type: timeago
@@ -144,7 +140,6 @@ plugins:
         - code_of_conduct.md
         - license.md
   - markdown-exec
-  - mkdocs-nav-weight
   # - toc-md:
   - search
   - social:

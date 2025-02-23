@@ -1,8 +1,3 @@
----
-title: Subclassing components
-weight: 12
----
-
 In larger projects, you might need to write multiple components with similar behavior.
 In such cases, you can extract shared behavior into a standalone component class to keep things
 [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).

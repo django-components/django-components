@@ -1,0 +1,11 @@
+# `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
+nav:
+  - Rendering JS / CSS: rendering_js_css.md
+  - HTML fragments: html_fragments.md
+  - Prop drilling and provide / inject: provide_inject.md
+  - Lifecycle hooks: hooks.md
+  - Registering components: component_registry.md
+  - Typing and validation: typing_and_validation.md
+  - Custom template tags: template_tags.md
+  - Tag formatters: tag_formatter.md
+  - Authoring component libraries: authoring_component_libraries.md

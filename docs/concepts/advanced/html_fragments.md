@@ -1,8 +1,3 @@
----
-title: HTML fragments
-weight: 2
----
-
 Django-components provides a seamless integration with HTML fragments ([HTML over the wire](https://hotwired.dev/)),
 whether you're using HTMX, AlpineJS, or vanilla JavaScript.
 

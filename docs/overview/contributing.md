@@ -1,8 +1,3 @@
----
-title: Contributing
-weight: 6
----
-
 ### Bug reports
 
 If you find a bug, please open an issue with detailed description of what happened.

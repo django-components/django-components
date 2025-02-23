@@ -1,8 +1,3 @@
----
-title: Rendering JS / CSS
-weight: 1
----
-
 ### JS and CSS output locations
 
 If:

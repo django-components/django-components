@@ -1,8 +1,3 @@
----
-title: Tag formatters
-weight: 8
----
-
 ## Customizing component tags with TagFormatter
 
 _New in version 0.89_

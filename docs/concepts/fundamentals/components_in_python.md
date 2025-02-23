@@ -1,8 +1,3 @@
----
-title: Components in Python
-weight: 2
----
-
 _New in version 0.81_
 
 Components can be rendered outside of Django templates, calling them as regular functions ("React-style").

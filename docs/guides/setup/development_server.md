@@ -1,8 +1,3 @@
----
-title: Development server
-weight: 3
----
-
 ### Reload dev server on component file changes
 
 This is relevant if you are using the project structure as shown in our examples, where

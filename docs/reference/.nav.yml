@@ -1,0 +1,13 @@
+# `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
+nav:
+  - API: api.md
+  - Commands: commands.md
+  - Components: components.md
+  - Exceptions: exceptions.md
+  - Middlewares: middlewares.md
+  - Settings: settings.md
+  - Signals: signals.md
+  - Tag formatters: tag_formatters.md
+  - Template tags: template_tags.md
+  - Template vars: template_vars.md
+  - URLs: urls.md

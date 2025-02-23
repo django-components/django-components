@@ -1,0 +1,5 @@
+# `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
+nav:
+  - JS and CSS rendering: dependency_mgmt.md
+  - Slot rendering: slot_rendering.md
+  - Using slot and block tags: slots_and_blocks.md

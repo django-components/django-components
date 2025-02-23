@@ -1,0 +1,14 @@
+# `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
+nav:
+  - Single-file components: single_file_components.md
+  - Components in Python: components_in_python.md
+  - Accessing component inputs: access_component_input.md
+  - Component context and scope: component_context_scope.md
+  - Template tag syntax: template_tag_syntax.md
+  - Slots: slots.md
+  - HTML attributes: html_attributes.md
+  - Defining HTML / JS / CSS files: defining_js_css_html_files.md
+  - Autodiscovery: autodiscovery.md
+  - Components as views: components_as_views.md
+  - HTTP Request: http_request.md
+  - Subclassing components: subclassing_components.md

@@ -1,8 +1,3 @@
----
-title: Registering components
-weight: 5
----
-
 In previous examples you could repeatedly see us using `@register()` to "register"
 the components. In this section we dive deeper into what it actually means and how you can
 manage (add or remove) components.

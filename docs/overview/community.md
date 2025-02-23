@@ -1,8 +1,3 @@
----
-title: Community
-weight: 5
----
-
 ## Community questions
 
 The best place to ask questions is in our [Github Discussion board](https://github.com/django-components/django-components/discussions).

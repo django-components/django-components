@@ -1,8 +1,3 @@
----
-title: Syntax highlighting
-weight: 1
----
-
 ## VSCode
 
 1. First install [Python Inline Source Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=samwillis.python-inline-source) extension, it will give you syntax highlighting for the template, CSS, and JS.

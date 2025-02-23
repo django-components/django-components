@@ -1,0 +1,10 @@
+# For navigation content inspo see Pydantic https://docs.pydantic.dev/latest
+#
+# `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
+nav:
+  - overview
+  - Getting Started: getting_started
+  - concepts
+  - guides
+  - API Documentation: reference
+  - Release Notes: release_notes.md

@@ -1,8 +1,3 @@
----
-title: Autodiscovery
-weight: 9
----
-
 Every component that you want to use in the template with the [`{% component %}`](django_components.templateags.component_tags)
 tag needs to be registered with the [`ComponentRegistry`](django_components.component_registry.ComponentRegistry).
 Normally, we use the [`@register`](django_components.component_registry.register) decorator for that:

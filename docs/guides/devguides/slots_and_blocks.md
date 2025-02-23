@@ -1,5 +1,3 @@
-# Using `slot` and `block` tags
-
 1.  First let's clarify how `include` and `extends` tags work inside components.
 
     When component template includes `include` or `extends` tags, it's as if the "included"

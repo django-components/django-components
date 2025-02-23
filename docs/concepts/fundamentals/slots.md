@@ -1,8 +1,3 @@
----
-title: Slots
-weight: 6
----
-
 _New in version 0.26_:
 
 - The `slot` tag now serves only to declare new slots inside the component template.

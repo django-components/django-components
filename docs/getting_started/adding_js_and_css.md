@@ -1,8 +1,3 @@
----
-title: Adding JS and CSS
-weight: 2
----
-
 Next we will add CSS and JavaScript to our template.
 
 !!! info

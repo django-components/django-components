@@ -1,8 +1,3 @@
----
-title: Security notes 🚨
-weight: 4
----
-
 _It is strongly recommended to read this section before using django-components in production._
 
 ## Static files

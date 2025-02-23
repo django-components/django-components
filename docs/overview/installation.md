@@ -1,8 +1,3 @@
----
-title: Installation
-weight: 3
----
-
 1. Install `django_components` into your environment:
 
     ```bash

@@ -1,8 +1,3 @@
----
-title: Prop drilling and provide / inject
-weight: 3
----
-
 _New in version 0.80_:
 
 Django components supports the provide / inject or ContextProvider pattern with the combination of:

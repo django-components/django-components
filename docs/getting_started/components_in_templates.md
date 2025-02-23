@@ -1,8 +1,3 @@
----
-title: Components in templates
-weight: 3
----
-
 By the end of this section, we want to be able to use our components in Django templates like so:
 
 ```htmldjango

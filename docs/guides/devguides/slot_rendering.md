@@ -1,5 +1,3 @@
-# Slot rendering
-
 This doc serves as a primer on how component slots and fills are resolved.
 
 ## Flow

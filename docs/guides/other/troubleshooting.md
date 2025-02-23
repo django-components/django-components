@@ -1,8 +1,3 @@
----
-title: Troubleshooting
-weight: 1
----
-
 As larger projects get more complex, it can be hard to debug issues. Django Components provides a number of tools and approaches that can help you with that.
 
 ## Component and slot highlighting

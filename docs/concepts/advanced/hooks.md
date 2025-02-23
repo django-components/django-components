@@ -1,8 +1,3 @@
----
-title: Lifecycle hooks
-weight: 4
----
-
 _New in version 0.96_
 
 Component hooks are functions that allow you to intercept the rendering process at specific positions.

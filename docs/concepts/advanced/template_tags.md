@@ -1,8 +1,3 @@
----
-title: Custom template tags
-weight: 7
----
-
 Template tags introduced by django-components, such as `{% component %}` and `{% slot %}`,
 offer additional features over the default Django template tags:
 

@@ -1,8 +1,3 @@
----
-title: Adding slots
-weight: 5
----
-
 Our calendar component's looking great! But we just got a new assignment from
 our colleague - The calendar date needs to be shown on 3 different pages:
 

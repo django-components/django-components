@@ -1,8 +1,3 @@
----
-title: Caching
-weight: 2
----
-
 This page describes the kinds of assets that django-components caches and how to configure the cache backends.
 
 ## Component's JS and CSS files

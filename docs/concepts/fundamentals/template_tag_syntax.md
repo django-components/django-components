@@ -1,8 +1,3 @@
----
-title: Template tag syntax
-weight: 5
----
-
 All template tags in django_component, like `{% component %}` or `{% slot %}`, and so on,
 support extra syntax that makes it possible to write components like in Vue or React (JSX).
 

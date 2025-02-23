@@ -1,8 +1,3 @@
----
-title: Authoring component libraries
-weight: 9
----
-
 You can publish and share your components for others to use. Below you will find the steps to do so.
 
 For live examples, see the [Community examples](../../overview/community.md#community-examples).

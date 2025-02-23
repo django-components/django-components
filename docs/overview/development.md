@@ -1,8 +1,3 @@
----
-title: Development
-weight: 7
----
-
 ## Install locally and run the tests
 
 Start by forking the project by clicking the **Fork button** up in the right corner in the [GitHub](https://github.com/django-components/django-components).

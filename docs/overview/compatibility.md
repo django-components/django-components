@@ -1,9 +1,3 @@
----
-title: Compatibility
-weight: 2
----
-## Compatibility
-
 Django-components supports all supported combinations versions of [Django](https://docs.djangoproject.com/en/dev/faq/install/#what-python-version-can-i-use-with-django) and [Python](https://devguide.python.org/versions/#versions).
 
 | Python version | Django version |

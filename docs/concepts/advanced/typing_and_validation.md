@@ -1,8 +1,3 @@
----
-title: Typing and validation
-weight: 6
----
-
 ## Adding type hints with Generics
 
 _New in version 0.92_
