@@ -86,6 +86,10 @@ And this is what gets rendered:
 </div>
 ```
 
+Read on to learn about all the exciting details and configuration possibilities!
+
+(If you instead prefer to jump right into the code, [check out the example project](https://github.com/django-components/django-components/tree/master/sampleproject))
+
 ## Features
 
 ### Modern and modular UI
@@ -278,6 +282,11 @@ Button.render(
 )
 ```
 
+### Handle large projects with ease
+
+- Components can be infinitely nested.
+- (Soon) Optimize performance with component-level caching
+
 ### Debugging features
 
 - **Visual component inspection**: Highlight components and slots directly in your browser.
@@ -291,7 +300,7 @@ Button.render(
 
 - Install and use third-party components from PyPI
 - Or publish your own "component registry"
-- Highly customizable - Choose how the components are called in the template, and more:
+- Highly customizable - Choose how the components are called in the template (and more):
 
     ```django
     {% component "calendar" date="2024-11-06" %}
@@ -311,6 +320,19 @@ Button.render(
 [Read the full documentation here](https://django-components.github.io/django-components/latest/).
 
 ... or jump right into the code, [check out the example project](https://github.com/django-components/django-components/tree/master/sampleproject).
+
+## Performance
+
+Our aim is to be at least as fast as Django templates.
+
+As of `0.130`, `django-components` is ~4x slower than Django templates.
+
+| | Render time|
+|----------|----------------------|
+| django | 68.9±0.6ms |
+| django-components | 259±4ms |
+
+See the [full performance breakdown](https://django-components.github.io/django-components/latest/benchmarks/) for more information.
 
 ## Release notes
 

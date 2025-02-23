@@ -40,7 +40,7 @@ Or a combination of Django template, Python, CSS, and Javascript:
 ```
 
 ```js title="components/calendar/calendar.js"
-document.querySelector(".calendar").onclick = function () {
+document.querySelector(".calendar").onclick = () => {
   alert("Clicked calendar!");
 };
 ```
@@ -195,7 +195,7 @@ class Calendar(Component):
 
 `django-components` makes intergration with HTMX, AlpineJS or jQuery easy by allowing components to be rendered as HTML fragments:
 
-- Components's JS and CSS is loaded automatically when the fragment is inserted into the DOM
+- Components's JS and CSS is loaded automatically when the fragment is inserted into the DOM.
 
 - Expose components as views with `get`, `post`, `put`, `patch`, `delete` methods
 
@@ -267,6 +267,11 @@ Button.render(
 )
 ```
 
+### Handle large projects with ease
+
+- Components can be infinitely nested.
+- (Soon) Optimize performance with component-level caching
+
 ### Debugging features
 
 - **Visual component inspection**: Highlight components and slots directly in your browser.
@@ -294,6 +299,19 @@ Button.render(
 
 - Vue-like provide / inject system
 - Format HTML attributes with `{% html_attrs %}`
+
+## Performance
+
+Our aim is to be at least as fast as Django templates.
+
+As of `0.130`, `django-components` is ~4x slower than Django templates.
+
+| | Render time|
+|----------|----------------------|
+| django | 68.9±0.6ms |
+| django-components | 259±4ms |
+
+See the [full performance breakdown](https://django-components.github.io/django-components/latest/benchmarks/) for more information.
 
 ## Release notes
 
