@@ -1,6 +1,6 @@
 # <img src="https://raw.githubusercontent.com/django-components/django-components/master/logo/logo-black-on-white.svg" alt="django-components" style="max-width: 100%; background: white; color: black;">
 
-[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml)
+[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](https://django-components.github.io/django-components/latest/benchmarks/)
 
 ### <table><td>[Read the full documentation](https://django-components.github.io/django-components/latest/)</td></table>
 
@@ -85,6 +85,10 @@ And this is what gets rendered:
   Today's date is <span>2024-11-06</span>
 </div>
 ```
+
+Read on to learn about all the exciting details and configuration possibilities!
+
+(If you instead prefer to jump right into the code, [check out the example project](https://github.com/django-components/django-components/tree/master/sampleproject))
 
 ## Features
 
@@ -278,6 +282,11 @@ Button.render(
 )
 ```
 
+### Handle large projects with ease
+
+- Components can be infinitely nested.
+- (Soon) Optimize performance with component-level caching
+
 ### Debugging features
 
 - **Visual component inspection**: Highlight components and slots directly in your browser.
@@ -291,7 +300,7 @@ Button.render(
 
 - Install and use third-party components from PyPI
 - Or publish your own "component registry"
-- Highly customizable - Choose how the components are called in the template, and more:
+- Highly customizable - Choose how the components are called in the template (and more):
 
     ```django
     {% component "calendar" date="2024-11-06" %}
@@ -311,6 +320,19 @@ Button.render(
 [Read the full documentation here](https://django-components.github.io/django-components/latest/).
 
 ... or jump right into the code, [check out the example project](https://github.com/django-components/django-components/tree/master/sampleproject).
+
+## Performance
+
+Our aim is to be at least as fast as Django templates.
+
+As of `0.130`, `django-components` is ~4x slower than Django templates.
+
+| | Render time|
+|----------|----------------------|
+| django | 68.9±0.6ms |
+| django-components | 259±4ms |
+
+See the [full performance breakdown](https://django-components.github.io/django-components/latest/benchmarks/) for more information.
 
 ## Release notes
 

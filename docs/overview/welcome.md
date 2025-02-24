@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/django-components/django-components/master/logo/logo-black-on-white.svg" alt="django-components" style="max-width: 100%; background: white; color: black;">
 
-[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml)
+[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](/django-components/benchmarks/)
 
 `django-components` combines Django's templating system with the modularity seen
 in modern frontend frameworks like Vue or React.
@@ -40,7 +40,7 @@ Or a combination of Django template, Python, CSS, and Javascript:
 ```
 
 ```js title="components/calendar/calendar.js"
-document.querySelector(".calendar").onclick = function () {
+document.querySelector(".calendar").onclick = () => {
   alert("Clicked calendar!");
 };
 ```
@@ -195,7 +195,7 @@ class Calendar(Component):
 
 `django-components` makes intergration with HTMX, AlpineJS or jQuery easy by allowing components to be rendered as HTML fragments:
 
-- Components's JS and CSS is loaded automatically when the fragment is inserted into the DOM
+- Components's JS and CSS is loaded automatically when the fragment is inserted into the DOM.
 
 - Expose components as views with `get`, `post`, `put`, `patch`, `delete` methods
 
@@ -267,6 +267,11 @@ Button.render(
 )
 ```
 
+### Handle large projects with ease
+
+- Components can be infinitely nested.
+- (Soon) Optimize performance with component-level caching
+
 ### Debugging features
 
 - **Visual component inspection**: Highlight components and slots directly in your browser.
@@ -294,6 +299,19 @@ Button.render(
 
 - Vue-like provide / inject system
 - Format HTML attributes with `{% html_attrs %}`
+
+## Performance
+
+Our aim is to be at least as fast as Django templates.
+
+As of `0.130`, `django-components` is ~4x slower than Django templates.
+
+| | Render time|
+|----------|----------------------|
+| django | 68.9±0.6ms |
+| django-components | 259±4ms |
+
+See the [full performance breakdown](https://django-components.github.io/django-components/latest/benchmarks/) for more information.
 
 ## Release notes
 
