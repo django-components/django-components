@@ -823,6 +823,11 @@ urlpatterns = [
 #    aggregating logic on all HTML responses.
 #########################################################
 
+def decide_render_type_htmx(request: HttpRequest) -> Literal["fragment", "document"]:
+    assert hasattr(request, "htmx"), "The htmx middleware is not installed"
+    if request.htmx:
+        return "fragment"
+    return "document"
 
 @sync_and_async_middleware
 class ComponentDependencyMiddleware:
@@ -843,19 +848,20 @@ class ComponentDependencyMiddleware:
             return self.__acall__(request)
 
         response = self._get_response(request)
-        response = self._process_response(response)
+        response = self._process_response(request, response)
         return response
 
     # NOTE: Required to work with async
     async def __acall__(self, request: HttpRequest) -> HttpResponseBase:
         response = await self._get_response(request)
-        response = self._process_response(response)
+        response = self._process_response(request, response)
         return response
 
-    def _process_response(self, response: HttpResponse) -> HttpResponse:
+    def _process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
         if not isinstance(response, StreamingHttpResponse) and response.get("Content-Type", "").startswith(
             "text/html"
         ):
-            response.content = render_dependencies(response.content, type="document")
+            render_type = decide_render_type_htmx(request)
+            response.content = render_dependencies(response.content, type=render_type)
 
         return response
