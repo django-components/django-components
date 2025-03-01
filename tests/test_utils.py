@@ -1,20 +1,14 @@
 from django_components.util.misc import is_str_wrapped_in_quotes
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase
-
-setup_test_config({"autodiscover": False})
-
-
-class UtilsTest(BaseTestCase):
+class TestUtils:
     def test_is_str_wrapped_in_quotes(self):
-        self.assertEqual(is_str_wrapped_in_quotes("word"), False)
-        self.assertEqual(is_str_wrapped_in_quotes('word"'), False)
-        self.assertEqual(is_str_wrapped_in_quotes('"word'), False)
-        self.assertEqual(is_str_wrapped_in_quotes('"word"'), True)
-        self.assertEqual(is_str_wrapped_in_quotes("\"word'"), False)
-        self.assertEqual(is_str_wrapped_in_quotes('"word" '), False)
-        self.assertEqual(is_str_wrapped_in_quotes('"'), False)
-        self.assertEqual(is_str_wrapped_in_quotes(""), False)
-        self.assertEqual(is_str_wrapped_in_quotes('""'), True)
-        self.assertEqual(is_str_wrapped_in_quotes("\"'"), False)
+        assert is_str_wrapped_in_quotes("word") is False
+        assert is_str_wrapped_in_quotes('word"') is False
+        assert is_str_wrapped_in_quotes('"word') is False
+        assert is_str_wrapped_in_quotes('"word"') is True
+        assert is_str_wrapped_in_quotes("\"word'") is False
+        assert is_str_wrapped_in_quotes('"word" ') is False
+        assert is_str_wrapped_in_quotes('"') is False
+        assert is_str_wrapped_in_quotes("") is False
+        assert is_str_wrapped_in_quotes('""') is True
+        assert is_str_wrapped_in_quotes("\"'") is False

@@ -671,94 +671,140 @@ defaults = ComponentsSettings(
 # fmt: on
 
 
+# Interface through which we access the settings.
+#
+# This is the only place where we actually access the settings.
+# The settings are merged with defaults, and then validated.
+#
+# The settings are then available through the `app_settings` object.
+#
+# Settings are loaded from Django settings only once, at `apps.py` in `ready()`.
 class InternalSettings:
-    @property
-    def _settings(self) -> ComponentsSettings:
+    def __init__(self, settings: Optional[Dict[str, Any]] = None):
+        self._settings = ComponentsSettings(**settings) if settings else defaults
+
+    def _load_settings(self) -> None:
         data = getattr(settings, "COMPONENTS", {})
-        return ComponentsSettings(**data) if not isinstance(data, ComponentsSettings) else data
+        components_settings = ComponentsSettings(**data) if not isinstance(data, ComponentsSettings) else data
 
-    @property
-    def AUTODISCOVER(self) -> bool:
-        return default(self._settings.autodiscover, cast(bool, defaults.autodiscover))
+        # Merge we defaults and otherwise initialize if necessary
 
-    @property
-    def CACHE(self) -> Optional[str]:
-        return default(self._settings.cache, defaults.cache)
+        # For DIRS setting, we use a getter for the default value, because the default value
+        # uses Django settings, which may not yet be initialized at the time these settings are generated.
+        dirs_default_fn = cast(Dynamic[Sequence[Union[str, Tuple[str, str]]]], defaults.dirs)
+        dirs_default = dirs_default_fn.getter()
 
-    @property
-    def DIRS(self) -> Sequence[Union[str, PathLike, Tuple[str, str], Tuple[str, PathLike]]]:
-        # For DIRS we use a getter, because default values uses Django settings,
-        # which may not yet be initialized at the time these settings are generated.
-        default_fn = cast(Dynamic[Sequence[Union[str, Tuple[str, str]]]], defaults.dirs)
-        default_dirs = default_fn.getter()
-        return default(self._settings.dirs, default_dirs)
+        self._settings = ComponentsSettings(
+            autodiscover=default(components_settings.autodiscover, defaults.autodiscover),
+            cache=default(components_settings.cache, defaults.cache),
+            dirs=default(components_settings.dirs, dirs_default),
+            app_dirs=default(components_settings.app_dirs, defaults.app_dirs),
+            debug_highlight_components=default(
+                components_settings.debug_highlight_components, defaults.debug_highlight_components
+            ),
+            debug_highlight_slots=default(components_settings.debug_highlight_slots, defaults.debug_highlight_slots),
+            dynamic_component_name=default(
+                components_settings.dynamic_component_name, defaults.dynamic_component_name
+            ),
+            libraries=default(components_settings.libraries, defaults.libraries),
+            multiline_tags=default(components_settings.multiline_tags, defaults.multiline_tags),
+            reload_on_file_change=self._prepare_reload_on_file_change(components_settings),
+            template_cache_size=default(components_settings.template_cache_size, defaults.template_cache_size),
+            static_files_allowed=default(components_settings.static_files_allowed, defaults.static_files_allowed),
+            static_files_forbidden=self._prepare_static_files_forbidden(components_settings),
+            context_behavior=self._prepare_context_behavior(components_settings),
+            tag_formatter=default(components_settings.tag_formatter, defaults.tag_formatter),  # type: ignore[arg-type]
+        )
 
-    @property
-    def APP_DIRS(self) -> Sequence[str]:
-        return default(self._settings.app_dirs, cast(List[str], defaults.app_dirs))
-
-    @property
-    def DEBUG_HIGHLIGHT_COMPONENTS(self) -> bool:
-        return default(self._settings.debug_highlight_components, cast(bool, defaults.debug_highlight_components))
-
-    @property
-    def DEBUG_HIGHLIGHT_SLOTS(self) -> bool:
-        return default(self._settings.debug_highlight_slots, cast(bool, defaults.debug_highlight_slots))
-
-    @property
-    def DYNAMIC_COMPONENT_NAME(self) -> str:
-        return default(self._settings.dynamic_component_name, cast(str, defaults.dynamic_component_name))
-
-    @property
-    def LIBRARIES(self) -> List[str]:
-        return default(self._settings.libraries, cast(List[str], defaults.libraries))
-
-    @property
-    def MULTILINE_TAGS(self) -> bool:
-        return default(self._settings.multiline_tags, cast(bool, defaults.multiline_tags))
-
-    @property
-    def RELOAD_ON_FILE_CHANGE(self) -> bool:
-        val = self._settings.reload_on_file_change
+    def _prepare_reload_on_file_change(self, new_settings: ComponentsSettings) -> bool:
+        val = new_settings.reload_on_file_change
         # TODO_REMOVE_IN_V1
         if val is None:
-            val = self._settings.reload_on_template_change
+            val = new_settings.reload_on_template_change
 
         return default(val, cast(bool, defaults.reload_on_file_change))
 
-    @property
-    def TEMPLATE_CACHE_SIZE(self) -> int:
-        return default(self._settings.template_cache_size, cast(int, defaults.template_cache_size))
-
-    @property
-    def STATIC_FILES_ALLOWED(self) -> Sequence[Union[str, re.Pattern]]:
-        return default(self._settings.static_files_allowed, cast(List[str], defaults.static_files_allowed))
-
-    @property
-    def STATIC_FILES_FORBIDDEN(self) -> Sequence[Union[str, re.Pattern]]:
-        val = self._settings.static_files_forbidden
+    def _prepare_static_files_forbidden(self, new_settings: ComponentsSettings) -> List[Union[str, re.Pattern]]:
+        val = new_settings.static_files_forbidden
         # TODO_REMOVE_IN_V1
         if val is None:
-            val = self._settings.forbidden_static_files
+            val = new_settings.forbidden_static_files
 
-        return default(val, cast(List[str], defaults.static_files_forbidden))
+        return default(val, cast(List[Union[str, re.Pattern]], defaults.static_files_forbidden))
 
-    @property
-    def CONTEXT_BEHAVIOR(self) -> ContextBehavior:
-        raw_value = cast(str, default(self._settings.context_behavior, defaults.context_behavior))
-        return self._validate_context_behavior(raw_value)
-
-    def _validate_context_behavior(self, raw_value: Union[ContextBehavior, str]) -> ContextBehavior:
+    def _prepare_context_behavior(self, new_settings: ComponentsSettings) -> Literal["django", "isolated"]:
+        raw_value = cast(
+            Literal["django", "isolated"],
+            default(new_settings.context_behavior, defaults.context_behavior),
+        )
         try:
-            return ContextBehavior(raw_value)
+            ContextBehavior(raw_value)
         except ValueError:
             valid_values = [behavior.value for behavior in ContextBehavior]
             raise ValueError(f"Invalid context behavior: {raw_value}. Valid options are {valid_values}")
 
+        return raw_value
+
+    # TODO REMOVE THE PROPERTIES BELOW? THEY NO LONGER SERVE ANY PURPOSE
+    @property
+    def AUTODISCOVER(self) -> bool:
+        return self._settings.autodiscover  # type: ignore[return-value]
+
+    @property
+    def CACHE(self) -> Optional[str]:
+        return self._settings.cache
+
+    @property
+    def DIRS(self) -> Sequence[Union[str, PathLike, Tuple[str, str], Tuple[str, PathLike]]]:
+        return self._settings.dirs  # type: ignore[return-value]
+
+    @property
+    def APP_DIRS(self) -> Sequence[str]:
+        return self._settings.app_dirs  # type: ignore[return-value]
+
+    @property
+    def DEBUG_HIGHLIGHT_COMPONENTS(self) -> bool:
+        return self._settings.debug_highlight_components  # type: ignore[return-value]
+
+    @property
+    def DEBUG_HIGHLIGHT_SLOTS(self) -> bool:
+        return self._settings.debug_highlight_slots  # type: ignore[return-value]
+
+    @property
+    def DYNAMIC_COMPONENT_NAME(self) -> str:
+        return self._settings.dynamic_component_name  # type: ignore[return-value]
+
+    @property
+    def LIBRARIES(self) -> List[str]:
+        return self._settings.libraries  # type: ignore[return-value]
+
+    @property
+    def MULTILINE_TAGS(self) -> bool:
+        return self._settings.multiline_tags  # type: ignore[return-value]
+
+    @property
+    def RELOAD_ON_FILE_CHANGE(self) -> bool:
+        return self._settings.reload_on_file_change  # type: ignore[return-value]
+
+    @property
+    def TEMPLATE_CACHE_SIZE(self) -> int:
+        return self._settings.template_cache_size  # type: ignore[return-value]
+
+    @property
+    def STATIC_FILES_ALLOWED(self) -> Sequence[Union[str, re.Pattern]]:
+        return self._settings.static_files_allowed  # type: ignore[return-value]
+
+    @property
+    def STATIC_FILES_FORBIDDEN(self) -> Sequence[Union[str, re.Pattern]]:
+        return self._settings.static_files_forbidden  # type: ignore[return-value]
+
+    @property
+    def CONTEXT_BEHAVIOR(self) -> ContextBehavior:
+        return ContextBehavior(self._settings.context_behavior)
+
     @property
     def TAG_FORMATTER(self) -> Union["TagFormatterABC", str]:
-        tag_formatter = default(self._settings.tag_formatter, cast(str, defaults.tag_formatter))
-        return cast(Union["TagFormatterABC", str], tag_formatter)
+        return self._settings.tag_formatter  # type: ignore[return-value]
 
 
 app_settings = InternalSettings()

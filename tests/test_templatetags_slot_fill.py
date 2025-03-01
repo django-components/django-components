@@ -1,11 +1,14 @@
+import re
 from typing import Any, Dict, List, Optional
 
+import pytest
 from django.template import Context, Template, TemplateSyntaxError
+from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, Slot, register, registry, types
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, parametrize_context_behavior
+from django_components.testing import djc_test
+from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -31,9 +34,10 @@ class SlottedComponentWithContext(SlottedComponent):
 #######################
 
 
-class ComponentSlotTests(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slotted_template_basic(self):
+@djc_test
+class TestComponentSlot:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slotted_template_basic(self, components_settings):
         registry.register(name="test1", component=SlottedComponent)
 
         @register("test2")
@@ -64,7 +68,7 @@ class ComponentSlotTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc42>
@@ -77,8 +81,8 @@ class ComponentSlotTests(BaseTestCase):
         """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slotted_template_basic_self_closing(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slotted_template_basic_self_closing(self, components_settings):
         @register("test1")
         class SlottedComponent(Component):
             template: types.django_html = """
@@ -116,7 +120,7 @@ class ComponentSlotTests(BaseTestCase):
         rendered = template.render(Context({}))
 
         # NOTE: <main> is empty, because the fill is provided, even if empty
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc43>
@@ -130,8 +134,17 @@ class ComponentSlotTests(BaseTestCase):
         )
 
     # NOTE: Second arg is the expected output of `{{ variable }}`
-    @parametrize_context_behavior([("django", "test456"), ("isolated", "")])
-    def test_slotted_template_with_context_var(self, context_behavior_data):
+    @djc_test(
+        parametrize=(
+            ["components_settings", "expected"],
+            [
+                [{"context_behavior": "django"}, "test456"],
+                [{"context_behavior": "isolated"}, ""],
+            ],
+            ["django", "isolated"],
+        )
+    )
+    def test_slotted_template_with_context_var(self, components_settings, expected):
         registry.register(name="test1", component=SlottedComponentWithContext)
 
         template_str: types.django_html = """
@@ -150,19 +163,19 @@ class ComponentSlotTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({"my_second_variable": "test321"}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             f"""
             <custom-template data-djc-id-a1bc41>
                 <header>Default header</header>
-                <main>test123 - {context_behavior_data} </main>
+                <main>test123 - {expected} </main>
                 <footer>test321</footer>
             </custom-template>
         """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slotted_template_no_slots_filled(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slotted_template_no_slots_filled(self, components_settings):
         registry.register(name="test", component=SlottedComponent)
 
         template_str: types.django_html = """
@@ -172,7 +185,7 @@ class ComponentSlotTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc3f>
@@ -183,8 +196,8 @@ class ComponentSlotTests(BaseTestCase):
         """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slotted_template_without_slots(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slotted_template_without_slots(self, components_settings):
         @register("test")
         class SlottedComponentNoSlots(Component):
             template: types.django_html = """
@@ -198,10 +211,10 @@ class ComponentSlotTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(rendered, "<custom-template data-djc-id-a1bc3f></custom-template>")
+        assertHTMLEqual(rendered, "<custom-template data-djc-id-a1bc3f></custom-template>")
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slotted_template_without_slots_and_single_quotes(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slotted_template_without_slots_and_single_quotes(self, components_settings):
         @register("test")
         class SlottedComponentNoSlots(Component):
             template: types.django_html = """
@@ -215,10 +228,10 @@ class ComponentSlotTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(rendered, "<custom-template data-djc-id-a1bc3f></custom-template>")
+        assertHTMLEqual(rendered, "<custom-template data-djc-id-a1bc3f></custom-template>")
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_variable_fill_name(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_variable_fill_name(self, components_settings):
         registry.register(name="test", component=SlottedComponent)
         template_str: types.django_html = """
             {% load component_tags %}
@@ -237,10 +250,10 @@ class ComponentSlotTests(BaseTestCase):
             <footer>Default footer</footer>
         </custom-template>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_missing_required_slot_raises_error(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_missing_required_slot_raises_error(self, components_settings):
         class Comp(Component):
             template: types.django_html = """
                 {% load component_tags %}
@@ -259,11 +272,11 @@ class ComponentSlotTests(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaisesMessage(TemplateSyntaxError, "Slot 'title' is marked as 'required'"):
+        with pytest.raises(TemplateSyntaxError, match=re.escape("Slot 'title' is marked as 'required'")):
             template.render(Context())
 
     # NOTE: This is relevant only for the "isolated" mode
-    @parametrize_context_behavior(["isolated"])
+    @djc_test(components_settings={"context_behavior": "isolated"})
     def test_slots_of_top_level_comps_can_access_full_outer_ctx(self):
         class SlottedComponent(Component):
             template: types.django_html = """
@@ -296,7 +309,7 @@ class ComponentSlotTests(BaseTestCase):
         nested_ctx.push({"name": "carl"})
         rendered = self.template.render(nested_ctx)
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <body>
@@ -307,8 +320,8 @@ class ComponentSlotTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_target_default_slot_as_named(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_target_default_slot_as_named(self, components_settings):
         @register("test")
         class Comp(Component):
             template: types.django_html = """
@@ -328,7 +341,7 @@ class ComponentSlotTests(BaseTestCase):
         template = Template(template_str)
 
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc40>
@@ -338,8 +351,8 @@ class ComponentSlotTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_raises_on_doubly_filled_slot__same_name(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_raises_on_doubly_filled_slot__same_name(self, components_settings):
         @register("test")
         class Comp(Component):
             template: types.django_html = """
@@ -359,15 +372,17 @@ class ComponentSlotTests(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Multiple fill tags cannot target the same slot name in component 'test': "
-            "Detected duplicate fill tag name 'title'",
+            match=re.escape(
+                "Multiple fill tags cannot target the same slot name in component 'test': "
+                "Detected duplicate fill tag name 'title'"
+            ),
         ):
             template.render(Context())
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_raises_on_doubly_filled_slot__named_and_default(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_raises_on_doubly_filled_slot__named_and_default(self, components_settings):
         @register("test")
         class Comp(Component):
             template: types.django_html = """
@@ -387,14 +402,16 @@ class ComponentSlotTests(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Slot 'title' of component 'test' was filled twice: once explicitly and once implicitly as 'default'",
+            match=re.escape(
+                "Slot 'title' of component 'test' was filled twice: once explicitly and once implicitly as 'default'"
+            ),
         ):
             template.render(Context())
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_raises_on_doubly_filled_slot__named_and_default_2(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_raises_on_doubly_filled_slot__named_and_default_2(self, components_settings):
         @register("test")
         class Comp(Component):
             template: types.django_html = """
@@ -414,15 +431,17 @@ class ComponentSlotTests(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Multiple fill tags cannot target the same slot name in component 'test': "
-            "Detected duplicate fill tag name 'default'",
+            match=re.escape(
+                "Multiple fill tags cannot target the same slot name in component 'test': "
+                "Detected duplicate fill tag name 'default'"
+            ),
         ):
             template.render(Context())
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_multiple_slots_with_same_name_different_flags(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_multiple_slots_with_same_name_different_flags(self, components_settings):
         class TestComp(Component):
             def get_context_data(self, required: bool) -> Any:
                 return {"required": required}
@@ -455,8 +474,8 @@ class ComponentSlotTests(BaseTestCase):
             render_dependencies=False,
         )
 
-        self.assertHTMLEqual(rendered1, "<div data-djc-id-a1bc3e><div>MAIN</div></div>")
-        self.assertHTMLEqual(rendered2, "<div data-djc-id-a1bc41><div>MAIN</div></div>")
+        assertHTMLEqual(rendered1, "<div data-djc-id-a1bc3e><div>MAIN</div></div>")
+        assertHTMLEqual(rendered2, "<div data-djc-id-a1bc41><div>MAIN</div></div>")
 
         # 3. Specify the required slot by its name
         rendered3 = TestComp.render(
@@ -466,13 +485,13 @@ class ComponentSlotTests(BaseTestCase):
             },
             render_dependencies=False,
         )
-        self.assertHTMLEqual(rendered3, "<div data-djc-id-a1bc42><main>MAIN</main><div>MAIN</div></div>")
+        assertHTMLEqual(rendered3, "<div data-djc-id-a1bc42><main>MAIN</main><div>MAIN</div></div>")
 
         # 4. RAISES: Specify the required slot by the "default" name
         #    This raises because the slot that is marked as 'required' is NOT marked as 'default'.
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Slot 'main' is marked as 'required'",
+            match=re.escape("Slot 'main' is marked as 'required'"),
         ):
             TestComp.render(
                 kwargs={"required": True},
@@ -482,8 +501,8 @@ class ComponentSlotTests(BaseTestCase):
                 render_dependencies=False,
             )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_in_include(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_in_include(self, components_settings):
         @register("slotted")
         class SlottedWithIncludeComponent(Component):
             template: types.django_html = """
@@ -509,10 +528,10 @@ class ComponentSlotTests(BaseTestCase):
                 <footer>Custom footer</footer>
             </custom-template>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_in_include_raises_if_isolated(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_in_include_raises_if_isolated(self, components_settings):
         @register("broken_component")
         class BrokenComponent(Component):
             template: types.django_html = """
@@ -529,16 +548,17 @@ class ComponentSlotTests(BaseTestCase):
             {% endcomponent %}
         """
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Encountered a SlotNode outside of a Component context.",
+            match=re.escape("Encountered a SlotNode outside of a Component context."),
         ):
             Template(template_str).render(Context({}))
 
 
-class ComponentSlotDefaultTests(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_default_slot_is_fillable_by_implicit_fill_content(self):
+@djc_test
+class TestComponentSlotDefault:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_default_slot_is_fillable_by_implicit_fill_content(self, components_settings):
         @register("test_comp")
         class ComponentWithDefaultSlot(Component):
             template: types.django_html = """
@@ -564,10 +584,10 @@ class ComponentSlotDefaultTests(BaseTestCase):
         </div>
         """
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_default_slot_is_fillable_by_explicit_fill_content(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_default_slot_is_fillable_by_explicit_fill_content(self, components_settings):
         @register("test_comp")
         class ComponentWithDefaultSlot(Component):
             template: types.django_html = """
@@ -592,10 +612,10 @@ class ComponentSlotDefaultTests(BaseTestCase):
             </div>
         """
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_multiple_default_slots_with_same_name(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_multiple_default_slots_with_same_name(self, components_settings):
         @register("test_comp")
         class ComponentWithDefaultSlot(Component):
             template: types.django_html = """
@@ -620,10 +640,10 @@ class ComponentSlotDefaultTests(BaseTestCase):
             </div>
         """
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_multiple_default_slots_with_different_names(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_multiple_default_slots_with_different_names(self, components_settings):
         @register("test_comp")
         class ComponentWithDefaultSlot(Component):
             template: types.django_html = """
@@ -642,13 +662,16 @@ class ComponentSlotDefaultTests(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaisesMessage(
-            TemplateSyntaxError, "Only one component slot may be marked as 'default', found 'main' and 'other'"
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape(
+                "Only one component slot may be marked as 'default', found 'main' and 'other'"
+            ),
         ):
             template.render(Context({}))
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_error_raised_when_default_and_required_slot_not_filled(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_error_raised_when_default_and_required_slot_not_filled(self, components_settings):
         @register("test_comp")
         class ComponentWithDefaultAndRequiredSlot(Component):
             template: types.django_html = """
@@ -666,11 +689,14 @@ class ComponentSlotDefaultTests(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaisesMessage(TemplateSyntaxError, "Slot 'main' is marked as 'required'"):
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Slot 'main' is marked as 'required'"),
+        ):
             template.render(Context())
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_fill_tag_can_occur_within_component_nested_in_implicit_fill(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_fill_tag_can_occur_within_component_nested_in_implicit_fill(self, components_settings):
         registry.register("slotted", SlottedComponent)
 
         @register("test_comp")
@@ -705,10 +731,10 @@ class ComponentSlotDefaultTests(BaseTestCase):
             </div>
         """
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_error_from_mixed_implicit_and_explicit_fill_content(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_error_from_mixed_implicit_and_explicit_fill_content(self, components_settings):
         @register("test_comp")
         class ComponentWithDefaultSlot(Component):
             template: types.django_html = """
@@ -718,9 +744,11 @@ class ComponentSlotDefaultTests(BaseTestCase):
                 </div>
             """
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Illegal content passed to component 'test_comp'. Explicit 'fill' tags cannot occur alongside other text",
+            match=re.escape(
+                "Illegal content passed to component 'test_comp'. Explicit 'fill' tags cannot occur alongside other text"  # noqa: E501
+            ),
         ):
             template_str: types.django_html = """
                 {% load component_tags %}
@@ -731,8 +759,8 @@ class ComponentSlotDefaultTests(BaseTestCase):
             """
             Template(template_str).render(Context({}))
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_comments_permitted_inside_implicit_fill_content(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_comments_permitted_inside_implicit_fill_content(self, components_settings):
         @register("test_comp")
         class ComponentWithDefaultSlot(Component):
             template: types.django_html = """
@@ -752,11 +780,18 @@ class ComponentSlotDefaultTests(BaseTestCase):
               {# Nor will this #}
             {% endcomponent %}
         """
-        Template(template_str)
-        self.assertTrue(True)
+        rendered = Template(template_str).render(Context())
+        assertHTMLEqual(
+            rendered,
+            """
+            <div data-djc-id-a1bc3f>
+                <main><p>Main Content</p></main>
+            </div>
+            """,
+        )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_implicit_fill_when_no_slot_marked_default(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_implicit_fill_when_no_slot_marked_default(self, components_settings):
         registry.register("test_comp", SlottedComponent)
         template_str: types.django_html = """
             {% load component_tags %}
@@ -766,7 +801,7 @@ class ComponentSlotDefaultTests(BaseTestCase):
         """
         template = Template(template_str)
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc3f>
@@ -777,8 +812,8 @@ class ComponentSlotDefaultTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_implicit_fill_when_slot_marked_default_not_rendered(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_implicit_fill_when_slot_marked_default_not_rendered(self, components_settings):
         @register("test_comp")
         class ConditionalSlotted(Component):
             def get_context_data(self, var: bool) -> Any:
@@ -804,7 +839,7 @@ class ComponentSlotDefaultTests(BaseTestCase):
         template = Template(template_str)
 
         rendered_truthy = template.render(Context({"var": True}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered_truthy,
             """
             <custom-template data-djc-id-a1bc3f>
@@ -816,7 +851,7 @@ class ComponentSlotDefaultTests(BaseTestCase):
         )
 
         rendered_falsy = template.render(Context({"var": False}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered_falsy,
             """
             <custom-template data-djc-id-a1bc43>
@@ -827,9 +862,10 @@ class ComponentSlotDefaultTests(BaseTestCase):
         )
 
 
-class PassthroughSlotsTest(BaseTestCase):
-    @parametrize_context_behavior(["isolated", "django"])
-    def test_if_for(self):
+@djc_test
+class TestPassthroughSlots:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_if_for(self, components_settings):
         @register("test")
         class SlottedComponent(Component):
             template: types.django_html = """
@@ -867,7 +903,7 @@ class PassthroughSlotsTest(BaseTestCase):
         template = Template(template_str)
 
         rendered = template.render(Context({"slot_names": ["header", "main"]}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc41>
@@ -884,8 +920,8 @@ class PassthroughSlotsTest(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["isolated", "django"])
-    def test_with(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_with(self, components_settings):
         @register("test")
         class SlottedComponent(Component):
             template: types.django_html = """
@@ -915,7 +951,7 @@ class PassthroughSlotsTest(BaseTestCase):
         template = Template(template_str)
 
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc40>
@@ -928,8 +964,8 @@ class PassthroughSlotsTest(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["isolated", "django"])
-    def test_if_for_raises_on_content_outside_fill(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_if_for_raises_on_content_outside_fill(self, components_settings):
         @register("test")
         class SlottedComponent(Component):
             template: types.django_html = """
@@ -967,11 +1003,14 @@ class PassthroughSlotsTest(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaisesMessage(TemplateSyntaxError, "Illegal content passed to component 'test'"):
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Illegal content passed to component 'test'"),
+        ):
             template.render(Context({"slot_names": ["header", "main"]}))
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slots_inside_loops(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slots_inside_loops(self, components_settings):
         @register("test_comp")
         class OuterComp(Component):
             def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
@@ -1009,10 +1048,10 @@ class PassthroughSlotsTest(BaseTestCase):
             <div data-djc-id-a1bc41>CUSTOM MAIN</div>
             <div data-djc-id-a1bc41>footer</div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_passthrough_slots(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_passthrough_slots(self, components_settings):
         registry.register("slotted", SlottedComponent)
 
         @register("test_comp")
@@ -1058,12 +1097,12 @@ class PassthroughSlotsTest(BaseTestCase):
                 </custom-template>
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
     # NOTE: Ideally we'd (optionally) raise an error / warning here, but it's not possible
     # with current implementation. So this tests serves as a documentation of the current behavior.
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_passthrough_slots_unknown_fills_ignored(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_passthrough_slots_unknown_fills_ignored(self, components_settings):
         registry.register("slotted", SlottedComponent)
 
         @register("test_comp")
@@ -1109,11 +1148,12 @@ class PassthroughSlotsTest(BaseTestCase):
                 </custom-template>
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
 
 # See https://github.com/django-components/django-components/issues/698
-class NestedSlotsTests(BaseTestCase):
+@djc_test
+class TestNestedSlots:
     class NestedSlots(Component):
         template: types.django_html = """
             {% load component_tags %}
@@ -1139,12 +1179,9 @@ class NestedSlotsTests(BaseTestCase):
             {% endslot %}
         """
 
-    def setUp(self) -> None:
-        super().setUp()
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_empty(self, components_settings):
         registry.register("example", self.NestedSlots)
-
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_empty(self):
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1166,10 +1203,11 @@ class NestedSlotsTests(BaseTestCase):
                 </div>
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_override_outer(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_override_outer(self, components_settings):
+        registry.register("example", self.NestedSlots)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1187,10 +1225,11 @@ class NestedSlotsTests(BaseTestCase):
                 Entire Wrapper Replaced
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_override_middle(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_override_middle(self, components_settings):
+        registry.register("example", self.NestedSlots)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1214,10 +1253,11 @@ class NestedSlotsTests(BaseTestCase):
                 </div>
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_override_inner(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_override_inner(self, components_settings):
+        registry.register("example", self.NestedSlots)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1244,10 +1284,11 @@ class NestedSlotsTests(BaseTestCase):
                 </div>
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_override_all(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_override_all(self, components_settings):
+        registry.register("example", self.NestedSlots)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1275,12 +1316,13 @@ class NestedSlotsTests(BaseTestCase):
                 Entire Wrapper Replaced
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
 
-class SlottedTemplateRegressionTests(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slotted_template_that_uses_missing_variable(self):
+@djc_test
+class TestSlottedTemplateRegression:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slotted_template_that_uses_missing_variable(self, components_settings):
         @register("test")
         class SlottedComponentWithMissingVariable(Component):
             template: types.django_html = """
@@ -1300,7 +1342,7 @@ class SlottedTemplateRegressionTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc3f>
@@ -1312,13 +1354,11 @@ class SlottedTemplateRegressionTests(BaseTestCase):
         )
 
 
-class SlotDefaultTests(BaseTestCase):
-    def setUp(self):
-        super().setUp()
+@djc_test
+class TestSlotDefault:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_basic(self, components_settings):
         registry.register("test", SlottedComponent)
-
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_basic(self):
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -1330,7 +1370,7 @@ class SlotDefaultTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc42>
@@ -1341,8 +1381,9 @@ class SlotDefaultTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_multiple_calls(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_multiple_calls(self, components_settings):
+        registry.register("test", SlottedComponent)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -1355,7 +1396,7 @@ class SlotDefaultTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc40>
@@ -1366,8 +1407,9 @@ class SlotDefaultTests(BaseTestCase):
         """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_under_if_and_forloop(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_under_if_and_forloop(self, components_settings):
+        registry.register("test", SlottedComponent)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -1385,7 +1427,7 @@ class SlotDefaultTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({"range": range(3)}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc40>
@@ -1396,8 +1438,9 @@ class SlotDefaultTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_nested_fills(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_fills(self, components_settings):
+        registry.register("test", SlottedComponent)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -1419,7 +1462,7 @@ class SlotDefaultTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc43>
@@ -1444,9 +1487,10 @@ class SlotDefaultTests(BaseTestCase):
         )
 
 
-class ScopedSlotTest(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data(self):
+@djc_test
+class TestScopedSlot:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1478,10 +1522,10 @@ class ScopedSlotTest(BaseTestCase):
                 456
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_with_flags(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_with_flags(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1513,10 +1557,10 @@ class ScopedSlotTest(BaseTestCase):
                 456
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_with_slot_default(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_with_slot_default(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1550,10 +1594,10 @@ class ScopedSlotTest(BaseTestCase):
                 456
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_with_variable(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_with_variable(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1586,10 +1630,10 @@ class ScopedSlotTest(BaseTestCase):
                 456
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_with_spread(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_with_spread(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1624,10 +1668,10 @@ class ScopedSlotTest(BaseTestCase):
                 456
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_and_default_on_default_slot(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_and_default_on_default_slot(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1661,10 +1705,10 @@ class ScopedSlotTest(BaseTestCase):
                 <b>xyz Default text B 456</b>
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_raises_on_slot_data_and_slot_default_same_var(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_raises_on_slot_data_and_slot_default_same_var(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1688,14 +1732,14 @@ class ScopedSlotTest(BaseTestCase):
                 {% endfill %}
             {% endcomponent %}
         """
-        with self.assertRaisesMessage(
+        with pytest.raises(
             RuntimeError,
-            "Fill 'my_slot' received the same string for slot default (default=...) and slot data (data=...)",
+            match=re.escape("Fill 'my_slot' received the same string for slot default (default=...) and slot data (data=...)"),  # noqa: E501
         ):
             Template(template).render(Context())
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_fill_without_data(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_fill_without_data(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1721,10 +1765,10 @@ class ScopedSlotTest(BaseTestCase):
         """
         rendered = Template(template).render(Context())
         expected = "<div data-djc-id-a1bc40> overriden </div>"
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_fill_without_slot_data(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_fill_without_slot_data(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1744,10 +1788,10 @@ class ScopedSlotTest(BaseTestCase):
         """
         rendered = Template(template).render(Context())
         expected = "<div data-djc-id-a1bc40> {} </div>"
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_no_fill(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_no_fill(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1770,10 +1814,10 @@ class ScopedSlotTest(BaseTestCase):
         """
         rendered = Template(template).render(Context())
         expected = "<div data-djc-id-a1bc3f> Default text </div>"
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_fill_with_variables(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_fill_with_variables(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1813,10 +1857,10 @@ class ScopedSlotTest(BaseTestCase):
                 456
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_data_fill_with_spread(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_data_fill_with_spread(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1858,10 +1902,10 @@ class ScopedSlotTest(BaseTestCase):
                 456
             </div>
         """
-        self.assertHTMLEqual(rendered, expected)
+        assertHTMLEqual(rendered, expected)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_nested_fills(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_fills(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1894,7 +1938,7 @@ class ScopedSlotTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc42>
@@ -1908,7 +1952,8 @@ class ScopedSlotTest(BaseTestCase):
         )
 
 
-class DuplicateSlotTest(BaseTestCase):
+@djc_test
+class TestDuplicateSlot:
     class DuplicateSlotComponent(Component):
         template: types.django_html = """
             {% load component_tags %}
@@ -1965,22 +2010,23 @@ class DuplicateSlotTest(BaseTestCase):
             </div>
         """
 
-    def setUp(self):
-        super().setUp()
+    # NOTE: Second arg is the input for the "name" component kwarg
+    @djc_test(
+        parametrize=(
+            ["components_settings", "input"],
+            [
+                # In "django" mode, we MUST pass name as arg through the component
+                [{"context_behavior": "django"}, "Jannete"],
+                # In "isolated" mode, the fill is already using top-level's context, so we pass nothing
+                [{"context_behavior": "isolated"}, None],
+            ],
+            ["django", "isolated"],
+        )
+    )
+    def test_duplicate_slots(self, components_settings, input):
         registry.register(name="duplicate_slot", component=self.DuplicateSlotComponent)
-        registry.register(name="duplicate_slot_nested", component=self.DuplicateSlotNestedComponent)
         registry.register(name="calendar", component=self.CalendarComponent)
 
-    # NOTE: Second arg is the input for the "name" component kwarg
-    @parametrize_context_behavior(
-        [
-            # In "django" mode, we MUST pass name as arg through the component
-            ("django", "Jannete"),
-            # In "isolated" mode, the fill is already using top-level's context, so we pass nothing
-            ("isolated", None),
-        ]
-    )
-    def test_duplicate_slots(self, context_behavior_data):
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "duplicate_slot" name=comp_input %}
@@ -1994,8 +2040,8 @@ class DuplicateSlotTest(BaseTestCase):
         """
         self.template = Template(template_str)
 
-        rendered = self.template.render(Context({"name": "Jannete", "comp_input": context_behavior_data}))
-        self.assertHTMLEqual(
+        rendered = self.template.render(Context({"name": "Jannete", "comp_input": input}))
+        assertHTMLEqual(
             rendered,
             """
             <header data-djc-id-a1bc41>Name: Jannete</header>
@@ -2004,8 +2050,11 @@ class DuplicateSlotTest(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_duplicate_slots_fallback(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_duplicate_slots_fallback(self, components_settings):
+        registry.register(name="duplicate_slot", component=self.DuplicateSlotComponent)
+        registry.register(name="calendar", component=self.CalendarComponent)
+
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "duplicate_slot" %}
@@ -2015,7 +2064,7 @@ class DuplicateSlotTest(BaseTestCase):
         rendered = self.template.render(Context({}))
 
         # NOTE: Slots should have different fallbacks even though they use the same name
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <header data-djc-id-a1bc3f>Default header</header>
@@ -2024,8 +2073,11 @@ class DuplicateSlotTest(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_duplicate_slots_nested(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_duplicate_slots_nested(self, components_settings):
+        registry.register(name="duplicate_slot_nested", component=self.DuplicateSlotNestedComponent)
+        registry.register(name="calendar", component=self.CalendarComponent)
+
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "duplicate_slot_nested" items=items %}
@@ -2038,7 +2090,7 @@ class DuplicateSlotTest(BaseTestCase):
         rendered = self.template.render(Context({"items": [1, 2, 3]}))
 
         # NOTE: Slots should have different fallbacks even though they use the same name
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             OVERRIDDEN!
@@ -2064,8 +2116,11 @@ class DuplicateSlotTest(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_duplicate_slots_nested_fallback(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_duplicate_slots_nested_fallback(self, components_settings):
+        registry.register(name="duplicate_slot_nested", component=self.DuplicateSlotNestedComponent)
+        registry.register(name="calendar", component=self.CalendarComponent)
+
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "duplicate_slot_nested" items=items %}
@@ -2075,7 +2130,7 @@ class DuplicateSlotTest(BaseTestCase):
         rendered = self.template.render(Context({"items": [1, 2, 3]}))
 
         # NOTE: Slots should have different fallbacks even though they use the same name
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             START
@@ -2102,16 +2157,13 @@ class DuplicateSlotTest(BaseTestCase):
         )
 
 
-class SlotFillTemplateSyntaxErrorTests(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        registry.register("test", SlottedComponent)
-
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_fill_with_no_parent_is_error(self):
-        with self.assertRaisesMessage(
+@djc_test
+class TestSlotFillTemplateSyntaxError:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_fill_with_no_parent_is_error(self, components_settings):
+        with pytest.raises(
             TemplateSyntaxError,
-            "FillNode.render() (AKA {% fill ... %} block) cannot be rendered outside of a Component context",
+            match=re.escape("FillNode.render() (AKA {% fill ... %} block) cannot be rendered outside of a Component context"),  # noqa: E501
         ):
             template_str: types.django_html = """
                 {% load component_tags %}
@@ -2119,12 +2171,15 @@ class SlotFillTemplateSyntaxErrorTests(BaseTestCase):
             """
             Template(template_str).render(Context({}))
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_non_unique_fill_names_is_error(self):
-        with self.assertRaisesMessage(
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_non_unique_fill_names_is_error(self, components_settings):
+        registry.register("test", SlottedComponent)
+        with pytest.raises(
             TemplateSyntaxError,
-            "Multiple fill tags cannot target the same slot name in component 'test': "
-            "Detected duplicate fill tag name 'header'",
+            match=re.escape(
+                "Multiple fill tags cannot target the same slot name in component 'test': "
+                "Detected duplicate fill tag name 'header'"
+            ),
         ):
             template_str: types.django_html = """
                 {% load component_tags %}
@@ -2135,12 +2190,15 @@ class SlotFillTemplateSyntaxErrorTests(BaseTestCase):
             """
             Template(template_str).render(Context({}))
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_non_unique_fill_names_is_error_via_vars(self):
-        with self.assertRaisesMessage(
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_non_unique_fill_names_is_error_via_vars(self, components_settings):
+        registry.register("test", SlottedComponent)
+        with pytest.raises(
             TemplateSyntaxError,
-            "Multiple fill tags cannot target the same slot name in component 'test': "
-            "Detected duplicate fill tag name 'header'",
+            match=re.escape(
+                "Multiple fill tags cannot target the same slot name in component 'test': "
+                "Detected duplicate fill tag name 'header'"
+            ),
         ):
             template_str: types.django_html = """
                 {% load component_tags %}
@@ -2154,9 +2212,10 @@ class SlotFillTemplateSyntaxErrorTests(BaseTestCase):
             Template(template_str).render(Context({}))
 
 
-class SlotBehaviorTests(BaseTestCase):
+@djc_test
+class TestSlotBehavior:
     # NOTE: This is standalone function instead of setUp, so we can configure
-    # Django settings per test with `@override_settings`
+    # Django settings per test with `@override_settings` / `@djc_test`
     def make_template(self) -> Template:
         class SlottedComponent(Component):
             template: types.django_html = """
@@ -2198,12 +2257,12 @@ class SlotBehaviorTests(BaseTestCase):
         """
         return Template(template_str)
 
-    @parametrize_context_behavior(["django"])
+    @djc_test(components_settings={"context_behavior": "django"})
     def test_slot_context__django(self):
         template = self.make_template()
         # {{ name }} should be neither Jannete not empty, because overriden everywhere
         rendered = template.render(Context({"day": "Monday", "name": "Jannete"}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc45>
@@ -2222,7 +2281,7 @@ class SlotBehaviorTests(BaseTestCase):
 
         # {{ name }} should be effectively the same as before, because overriden everywhere
         rendered2 = template.render(Context({"day": "Monday"}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered2,
             """
             <custom-template data-djc-id-a1bc4a>
@@ -2239,12 +2298,12 @@ class SlotBehaviorTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["isolated"])
+    @djc_test(components_settings={"context_behavior": "isolated"})
     def test_slot_context__isolated(self):
         template = self.make_template()
         # {{ name }} should be "Jannete" everywhere
         rendered = template.render(Context({"day": "Monday", "name": "Jannete"}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc45>
@@ -2263,7 +2322,7 @@ class SlotBehaviorTests(BaseTestCase):
 
         # {{ name }} should be empty everywhere
         rendered2 = template.render(Context({"day": "Monday"}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered2,
             """
             <custom-template data-djc-id-a1bc4a>
@@ -2281,9 +2340,10 @@ class SlotBehaviorTests(BaseTestCase):
         )
 
 
-class SlotInputTests(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slots_accessible_when_python_render(self):
+@djc_test
+class TestSlotInput:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slots_accessible_when_python_render(self, components_settings):
         slots: Dict = {}
 
         @register("test")
@@ -2300,7 +2360,7 @@ class SlotInputTests(BaseTestCase):
                 slots = self.input.slots
                 return {}
 
-        self.assertEqual(slots, {})
+        assert slots == {}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -2314,16 +2374,13 @@ class SlotInputTests(BaseTestCase):
         template = Template(template_str)
         template.render(Context())
 
-        self.assertListEqual(
-            list(slots.keys()),
-            ["header", "main"],
-        )
-        self.assertTrue(callable(slots["header"]))
-        self.assertTrue(callable(slots["main"]))
-        self.assertTrue("footer" not in slots)
+        assert list(slots.keys()) == ["header", "main"]
+        assert callable(slots["header"])
+        assert callable(slots["main"])
+        assert "footer" not in slots
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slots_normalized_as_slot_instances(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slots_normalized_as_slot_instances(self, components_settings):
         slots: Dict[str, Slot] = {}
 
         @register("test")
@@ -2340,7 +2397,7 @@ class SlotInputTests(BaseTestCase):
                 slots = self.input.slots
                 return {}
 
-        self.assertEqual(slots, {})
+        assert slots == {}
 
         header_slot = Slot(lambda *a, **kw: "HEADER_SLOT")
         main_slot_str = "MAIN_SLOT"
@@ -2354,11 +2411,11 @@ class SlotInputTests(BaseTestCase):
             }
         )
 
-        self.assertIsInstance(slots["header"], Slot)
-        self.assertEqual(slots["header"](Context(), None, None), "HEADER_SLOT")  # type: ignore[arg-type]
+        assert isinstance(slots["header"], Slot)
+        assert slots["header"](Context(), None, None) == "HEADER_SLOT"  # type: ignore[arg-type]
 
-        self.assertIsInstance(slots["main"], Slot)
-        self.assertEqual(slots["main"](Context(), None, None), "MAIN_SLOT")  # type: ignore[arg-type]
+        assert isinstance(slots["main"], Slot)
+        assert slots["main"](Context(), None, None) == "MAIN_SLOT"  # type: ignore[arg-type]
 
-        self.assertIsInstance(slots["footer"], Slot)
-        self.assertEqual(slots["footer"](Context(), None, None), "FOOTER_SLOT")  # type: ignore[arg-type]
+        assert isinstance(slots["footer"], Slot)
+        assert slots["footer"](Context(), None, None) == "FOOTER_SLOT"  # type: ignore[arg-type]

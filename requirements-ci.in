@@ -5,3 +5,5 @@ requests
 types-requests
 whitenoise
 asv
+pytest-asyncio
+pytest-django

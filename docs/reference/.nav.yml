@@ -11,3 +11,4 @@ nav:
   - Template tags: template_tags.md
   - Template vars: template_vars.md
   - URLs: urls.md
+  - Testing API: testing_api.md

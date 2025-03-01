@@ -106,9 +106,16 @@ class StringifiedNode(Node):
 
 
 def is_aggregate_key(key: str) -> bool:
+    key = key.strip()
     # NOTE: If we get a key that starts with `:`, like `:class`, we do not split it.
     # This syntax is used by Vue and AlpineJS.
-    return ":" in key and not key.startswith(":")
+    return (
+        ":" in key
+        # `:` or `:class` is NOT ok
+        and not key.startswith(":")
+        # `attrs:class` is OK, but `attrs:` is NOT ok
+        and bool(key.split(":", maxsplit=1)[1])
+    )
 
 
 # A string that must start and end with quotes, and somewhere inside includes

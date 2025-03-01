@@ -1,20 +1,22 @@
-from django.test import TestCase
+from pytest_django.asserts import assertHTMLEqual
 
 from djc_core_html_parser import set_html_attributes
 
-from .django_test_setup import setup_test_config
+from django_components.testing import djc_test
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
 
 # This same set of tests is also found in djc_html_parser, to ensure that
 # this implementation can be replaced with the djc_html_parser's Rust-based implementation
-class TestHTMLParser(TestCase):
+@djc_test
+class TestHTMLParser:
     def test_basic_transformation(self):
         html = "<div><p>Hello</p></div>"
         result, _ = set_html_attributes(html, root_attributes=["data-root"], all_attributes=["data-all"])
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             result,
             """
             <div data-root data-all>
@@ -27,7 +29,7 @@ class TestHTMLParser(TestCase):
         html = "<div>First</div><span>Second</span>"
         result, _ = set_html_attributes(html, root_attributes=["data-root"], all_attributes=["data-all"])
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             result,
             """
             <div data-root data-all>First</div>
@@ -81,7 +83,7 @@ class TestHTMLParser(TestCase):
                 <p data-all data-v-123>&copy; 2024</p>
             </footer>
         """  # noqa: E501
-        self.assertHTMLEqual(result, expected)
+        assertHTMLEqual(result, expected)
 
     def test_void_elements(self):
         test_cases = [
@@ -93,7 +95,7 @@ class TestHTMLParser(TestCase):
 
         for input_html, expected in test_cases:
             result, _ = set_html_attributes(input_html, ["data-root"], ["data-v-123"])
-            self.assertHTMLEqual(result, expected)
+            assertHTMLEqual(result, expected)
 
     def test_html_head_with_meta(self):
         html = """
@@ -106,7 +108,7 @@ class TestHTMLParser(TestCase):
 
         result, _ = set_html_attributes(html, ["data-root"], ["data-v-123"])
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             result,
             """
             <head data-root data-v-123>
@@ -128,7 +130,7 @@ class TestHTMLParser(TestCase):
 
         result, captured = set_html_attributes(html, ["data-root"], ["data-v-123"], watch_on_attribute="data-id")
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             result,
             """
             <div data-id="123" data-root data-v-123>
@@ -140,14 +142,14 @@ class TestHTMLParser(TestCase):
         )
 
         # Verify attribute capturing
-        self.assertEqual(len(captured), 3)
+        assert len(captured) == 3
 
         # Root element should have both root and all attributes
-        self.assertEqual(captured["123"], ["data-root", "data-v-123"])
+        assert captured["123"] == ["data-root", "data-v-123"]
 
         # Non-root elements should only have all attributes
-        self.assertEqual(captured["456"], ["data-v-123"])
-        self.assertEqual(captured["789"], ["data-v-123"])
+        assert captured["456"] == ["data-v-123"]
+        assert captured["789"] == ["data-v-123"]
 
     def test_whitespace_preservation(self):
         html = """<div>
@@ -161,4 +163,4 @@ class TestHTMLParser(TestCase):
             <span data-all=""> Text with spaces </span>
         </div>"""
 
-        self.assertEqual(result, expected)
+        assert result == expected

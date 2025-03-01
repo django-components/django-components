@@ -2,6 +2,8 @@ django
 djc-core-html-parser
 tox
 pytest
+pytest-asyncio
+pytest-django
 syrupy
 flake8
 flake8-pyproject

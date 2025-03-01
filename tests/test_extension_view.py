@@ -3,14 +3,14 @@ from typing import Any, Dict
 from django.conf import settings
 from django.http import HttpResponse
 from django.template import Context, Template
-from django.test import Client
+from django.test import Client, SimpleTestCase
 from django.urls import path
 
 from django_components import Component, ComponentView, register, types
 from django_components.urls import urlpatterns as dc_urlpatterns
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, parametrize_context_behavior
+from django_components.testing import djc_test
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -29,7 +29,8 @@ class CustomClient(Client):
         super().__init__(*args, **kwargs)
 
 
-class TestComponentAsView(BaseTestCase):
+@djc_test
+class TestComponentAsView(SimpleTestCase):
     def test_render_component_from_template(self):
         @register("testcomponent")
         class MockComponentRequest(Component):
@@ -183,7 +184,6 @@ class TestComponentAsView(BaseTestCase):
             response.content.decode(),
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
     def test_replace_slot_in_view(self):
         class MockComponentSlot(Component):
             template = """
@@ -212,7 +212,6 @@ class TestComponentAsView(BaseTestCase):
             response.content,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
     def test_replace_slot_in_view_with_insecure_content(self):
         class MockInsecureComponentSlot(Component):
             template = """
@@ -234,7 +233,6 @@ class TestComponentAsView(BaseTestCase):
             response.content,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
     def test_replace_context_in_view(self):
         class TestComponent(Component):
             template = """
@@ -255,7 +253,6 @@ class TestComponentAsView(BaseTestCase):
             response.content,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
     def test_replace_context_in_view_with_insecure_content(self):
         class MockInsecureComponentContext(Component):
             template = """

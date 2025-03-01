@@ -6,11 +6,17 @@
 #
 asgiref==3.8.1
     # via django
-black==24.10.0
+asv==0.6.4
     # via -r requirements-dev.in
-cachetools==5.5.1
+asv-runner==0.2.1
+    # via asv
+black==25.1.0
+    # via -r requirements-dev.in
+build==1.2.2.post1
+    # via asv
+cachetools==5.5.2
     # via tox
-certifi==2024.8.30
+certifi==2025.1.31
     # via requests
 cfgv==3.4.0
     # via pre-commit
@@ -28,7 +34,7 @@ django==5.1.6
     # via -r requirements-dev.in
 djc-core-html-parser==1.0.1
     # via -r requirements-dev.in
-filelock==3.16.1
+filelock==3.17.0
     # via
     #   tox
     #   virtualenv
@@ -40,14 +46,18 @@ flake8-pyproject==1.2.3
     # via -r requirements-dev.in
 greenlet==3.1.1
     # via playwright
-identify==2.6.7
+identify==2.6.8
     # via pre-commit
 idna==3.10
     # via requests
+importlib-metadata==8.6.1
+    # via asv-runner
 iniconfig==2.0.0
     # via pytest
-isort==6.0.0
+isort==6.0.1
     # via -r requirements-dev.in
+json5==0.10.0
+    # via asv
 mccabe==0.7.0
     # via flake8
 mypy==1.15.0
@@ -61,6 +71,7 @@ nodeenv==1.9.1
 packaging==24.2
     # via
     #   black
+    #   build
     #   pyproject-api
     #   pytest
     #   tox
@@ -71,7 +82,7 @@ platformdirs==4.3.6
     #   black
     #   tox
     #   virtualenv
-playwright==1.49.0
+playwright==1.50.0
     # via -r requirements-dev.in
 pluggy==1.5.0
     # via
@@ -81,24 +92,44 @@ pre-commit==4.1.0
     # via -r requirements-dev.in
 pycodestyle==2.12.1
     # via flake8
-pyee==12.0.0
+pyee==12.1.1
     # via playwright
 pyflakes==3.2.0
     # via flake8
 pygments==2.19.1
-    # via pygments-djc
+    # via
+    #   -r requirements-dev.in
+    #   pygments-djc
 pygments-djc==1.0.1
     # via -r requirements-dev.in
-pyproject-api==1.8.0
+pympler==1.1
+    # via asv
+pyproject-api==1.9.0
     # via tox
+pyproject-hooks==1.2.0
+    # via build
 pytest==8.3.4
+    # via
+    #   -r requirements-dev.in
+    #   pytest-asyncio
+    #   pytest-django
+    #   syrupy
+pytest-asyncio==0.25.3
+    # via -r requirements-dev.in
+pytest-django==4.10.0
     # via -r requirements-dev.in
 pyyaml==6.0.2
-    # via pre-commit
+    # via
+    #   asv
+    #   pre-commit
 requests==2.32.3
     # via -r requirements-dev.in
 sqlparse==0.5.3
     # via django
+syrupy==4.8.2
+    # via -r requirements-dev.in
+tabulate==0.9.0
+    # via asv
 tox==4.24.1
     # via -r requirements-dev.in
 types-requests==2.32.0.20241016
@@ -107,13 +138,16 @@ typing-extensions==4.12.2
     # via
     #   mypy
     #   pyee
-urllib3==2.2.3
+urllib3==2.3.0
     # via
     #   requests
     #   types-requests
-virtualenv==20.28.0
+virtualenv==20.29.2
     # via
+    #   asv
     #   pre-commit
     #   tox
-whitenoise==6.8.2
+whitenoise==6.9.0
     # via -r requirements-dev.in
+zipp==3.21.0
+    # via importlib-metadata

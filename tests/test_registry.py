@@ -1,7 +1,5 @@
-import unittest
-
+import pytest
 from django.template import Context, Engine, Library, Template
-from django.test import override_settings
 
 from django_components import (
     AlreadyRegistered,
@@ -17,9 +15,10 @@ from django_components import (
     registry,
     types,
 )
+from pytest_django.asserts import assertHTMLEqual
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, parametrize_context_behavior
+from django_components.testing import djc_test
+from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -37,17 +36,14 @@ class MockComponentView(Component):
         pass
 
 
-class ComponentRegistryTest(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.registry = ComponentRegistry()
-
+@djc_test
+class TestComponentRegistry:
     def test_register_class_decorator(self):
         @register("decorated_component")
         class TestComponent(Component):
             pass
 
-        self.assertEqual(registry.get("decorated_component"), TestComponent)
+        assert registry.get("decorated_component") == TestComponent
 
         # Cleanup
         registry.unregister("decorated_component")
@@ -58,94 +54,95 @@ class ComponentRegistryTest(unittest.TestCase):
 
         default_registry_comps_before = len(registry.all())
 
-        self.assertDictEqual(my_reg.all(), {})
+        assert my_reg.all() == {}
 
         @register("decorated_component", registry=my_reg)
         class TestComponent(Component):
             pass
 
-        self.assertDictEqual(my_reg.all(), {"decorated_component": TestComponent})
+        assert my_reg.all() == {"decorated_component": TestComponent}
 
         # Check that the component was NOT added to the default registry
         default_registry_comps_after = len(registry.all())
-        self.assertEqual(default_registry_comps_before, default_registry_comps_after)
+        assert default_registry_comps_before == default_registry_comps_after
 
     def test_simple_register(self):
-        self.registry.register(name="testcomponent", component=MockComponent)
-        self.assertEqual(self.registry.all(), {"testcomponent": MockComponent})
+        custom_registry = ComponentRegistry()
+        custom_registry.register(name="testcomponent", component=MockComponent)
+        assert custom_registry.all() == {"testcomponent": MockComponent}
 
     def test_register_two_components(self):
-        self.registry.register(name="testcomponent", component=MockComponent)
-        self.registry.register(name="testcomponent2", component=MockComponent)
-        self.assertEqual(
-            self.registry.all(),
-            {
-                "testcomponent": MockComponent,
-                "testcomponent2": MockComponent,
-            },
-        )
+        custom_registry = ComponentRegistry()
+        custom_registry.register(name="testcomponent", component=MockComponent)
+        custom_registry.register(name="testcomponent2", component=MockComponent)
+        assert custom_registry.all() == {
+            "testcomponent": MockComponent,
+            "testcomponent2": MockComponent,
+        }
 
     def test_unregisters_only_unused_tags(self):
-        self.assertDictEqual(self.registry._tags, {})
+        custom_library = Library()
+        custom_registry = ComponentRegistry(library=custom_library)
+        assert custom_registry._tags == {}
+
         # NOTE: We preserve the default component tags
-        self.assertNotIn("component", self.registry.library.tags)
+        assert "component" not in custom_registry.library.tags
 
         # Register two components that use the same tag
-        self.registry.register(name="testcomponent", component=MockComponent)
-        self.registry.register(name="testcomponent2", component=MockComponent)
+        custom_registry.register(name="testcomponent", component=MockComponent)
+        custom_registry.register(name="testcomponent2", component=MockComponent)
 
-        self.assertDictEqual(
-            self.registry._tags,
-            {
-                "component": {"testcomponent", "testcomponent2"},
-            },
-        )
+        assert custom_registry._tags == {
+            "component": {"testcomponent", "testcomponent2"},
+        }
 
-        self.assertIn("component", self.registry.library.tags)
+        assert "component" in custom_registry.library.tags
 
         # Unregister only one of the components. The tags should remain
-        self.registry.unregister(name="testcomponent")
+        custom_registry.unregister(name="testcomponent")
 
-        self.assertDictEqual(
-            self.registry._tags,
-            {
-                "component": {"testcomponent2"},
-            },
-        )
+        assert custom_registry._tags == {
+            "component": {"testcomponent2"},
+        }
 
-        self.assertIn("component", self.registry.library.tags)
+        assert "component" in custom_registry.library.tags
 
         # Unregister the second components. The tags should be removed
-        self.registry.unregister(name="testcomponent2")
+        custom_registry.unregister(name="testcomponent2")
 
-        self.assertDictEqual(self.registry._tags, {})
-        self.assertNotIn("component", self.registry.library.tags)
+        assert custom_registry._tags == {}
+        assert "component" not in custom_registry.library.tags
 
     def test_prevent_registering_different_components_with_the_same_name(self):
-        self.registry.register(name="testcomponent", component=MockComponent)
-        with self.assertRaises(AlreadyRegistered):
-            self.registry.register(name="testcomponent", component=MockComponent2)
+        custom_registry = ComponentRegistry()
+        custom_registry.register(name="testcomponent", component=MockComponent)
+        with pytest.raises(AlreadyRegistered):
+            custom_registry.register(name="testcomponent", component=MockComponent2)
 
     def test_allow_duplicated_registration_of_the_same_component(self):
+        custom_registry = ComponentRegistry()
         try:
-            self.registry.register(name="testcomponent", component=MockComponentView)
-            self.registry.register(name="testcomponent", component=MockComponentView)
+            custom_registry.register(name="testcomponent", component=MockComponentView)
+            custom_registry.register(name="testcomponent", component=MockComponentView)
         except AlreadyRegistered:
-            self.fail("Should not raise AlreadyRegistered")
+            pytest.fail("Should not raise AlreadyRegistered")
 
     def test_simple_unregister(self):
-        self.registry.register(name="testcomponent", component=MockComponent)
-        self.registry.unregister(name="testcomponent")
-        self.assertEqual(self.registry.all(), {})
+        custom_registry = ComponentRegistry()
+        custom_registry.register(name="testcomponent", component=MockComponent)
+        custom_registry.unregister(name="testcomponent")
+        assert custom_registry.all() == {}
 
     def test_raises_on_failed_unregister(self):
-        with self.assertRaises(NotRegistered):
-            self.registry.unregister(name="testcomponent")
+        custom_registry = ComponentRegistry()
+        with pytest.raises(NotRegistered):
+            custom_registry.unregister(name="testcomponent")
 
 
-class MultipleComponentRegistriesTest(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_different_registries_have_different_settings(self):
+@djc_test
+class TestMultipleComponentRegistries:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_different_registries_have_different_settings(self, components_settings):
         library_a = Library()
         registry_a = ComponentRegistry(
             library=library_a,
@@ -200,7 +197,7 @@ class MultipleComponentRegistriesTest(BaseTestCase):
 
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Variable: <strong data-djc-id-a1bc40>123</strong>
@@ -218,14 +215,15 @@ class MultipleComponentRegistriesTest(BaseTestCase):
         engine.template_builtins.remove(library_b)
 
 
-class ProtectedTagsTest(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
-        self.registry = ComponentRegistry()
-
+@djc_test
+class TestProtectedTags:
     # NOTE: Use the `component_shorthand_formatter` formatter, so the components
     # are registered under that tag
-    @override_settings(COMPONENTS={"tag_formatter": "django_components.component_shorthand_formatter"})
+    @djc_test(
+        components_settings={
+            "tag_formatter": "django_components.component_shorthand_formatter",
+        },
+    )
     def test_raises_on_overriding_our_tags(self):
         for tag in [
             "component_css_dependencies",
@@ -235,7 +233,7 @@ class ProtectedTagsTest(unittest.TestCase):
             "provide",
             "slot",
         ]:
-            with self.assertRaises(TagProtectedError):
+            with pytest.raises(TagProtectedError):
 
                 @register(tag)
                 class TestComponent(Component):

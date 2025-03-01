@@ -1,15 +1,18 @@
 """Catch-all for tests that use template tags and don't fit other files"""
 
+import re
 from typing import Any, Dict
 
+import pytest
 from django.template import Context, Template, TemplateSyntaxError
 from django.template.base import FilterExpression, Node, Parser, Token
+from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
 from django_components.expression import DynamicFilterExpression, is_aggregate_key
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, parametrize_context_behavior
+from django_components.testing import djc_test
+from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -47,19 +50,20 @@ def make_context(d: Dict):
 
 
 # NOTE: Django calls the `{{ }}` syntax "variables" and `{% %}` "blocks"
-class DynamicExprTests(BaseTestCase):
+@djc_test
+class TestDynamicExpr:
     def test_variable_resolve_dynamic_expr(self):
         expr = DynamicFilterExpression(default_parser, '"{{ var_a|lower }}"')
 
         ctx = make_context({"var_a": "LoREM"})
-        self.assertEqual(expr.resolve(ctx), "lorem")
+        assert expr.resolve(ctx) == "lorem"
 
     def test_variable_raises_on_dynamic_expr_with_quotes_mismatch(self):
-        with self.assertRaises(TemplateSyntaxError):
+        with pytest.raises(TemplateSyntaxError):
             DynamicFilterExpression(default_parser, "'{{ var_a|lower }}\"")
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_variable_in_template(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_variable_in_template(self, components_settings):
         captured = {}
 
         @register("test")
@@ -110,11 +114,11 @@ class DynamicExprTests(BaseTestCase):
         )
 
         # Check that variables passed to the component are of correct type
-        self.assertEqual(captured["pos_var1"], "lorem")
-        self.assertEqual(captured["bool_var"], True)
-        self.assertEqual(captured["list_var"], [{"a": 1}, {"a": 2}])
+        assert captured["pos_var1"] == "lorem"
+        assert captured["bool_var"] is True
+        assert captured["list_var"] == [{"a": 1}, {"a": 2}]
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <!-- _RENDERED SimpleComponent_5b8d97,a1bc3f,, -->
@@ -124,8 +128,8 @@ class DynamicExprTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_block_in_template(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_block_in_template(self, components_settings):
         registry.library.tag(noop)
         captured = {}
 
@@ -183,11 +187,11 @@ class DynamicExprTests(BaseTestCase):
         )
 
         # Check that variables passed to the component are of correct type
-        self.assertEqual(captured["bool_var"], True)
-        self.assertEqual(captured["dict_var"], {"a": 3})
-        self.assertEqual(captured["list_var"], [{"a": 1}, {"a": 2}])
+        assert captured["bool_var"] is True
+        assert captured["dict_var"] == {"a": 3}
+        assert captured["list_var"] == [{"a": 1}, {"a": 2}]
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <!-- _RENDERED SimpleComponent_743413,a1bc3f,, -->
@@ -198,8 +202,8 @@ class DynamicExprTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_comment_in_template(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_comment_in_template(self, components_settings):
         registry.library.tag(noop)
         captured = {}
 
@@ -256,25 +260,22 @@ class DynamicExprTests(BaseTestCase):
         )
 
         # Check that variables passed to the component are of correct type
-        self.assertEqual(captured["pos_var1"], "")
-        self.assertEqual(captured["pos_var2"], "  abc")
-        self.assertEqual(captured["bool_var"], "")
-        self.assertEqual(captured["list_var"], "  ")
+        assert captured["pos_var1"] == ""
+        assert captured["pos_var2"] == "  abc"
+        assert captured["bool_var"] == ""
+        assert captured["list_var"] == "  "
 
         # NOTE: This is whitespace-sensitive test, so we check exact output
-        self.assertEqual(
-            rendered.strip(),
-            (
-                "<!-- _RENDERED SimpleComponent_e258c0,a1bc3f,, -->\n"
-                '                <div data-djc-id-a1bc3f=""></div>\n'
-                '                <div data-djc-id-a1bc3f="">  abc</div>\n'
-                '                <div data-djc-id-a1bc3f=""></div>\n'
-                '                <div data-djc-id-a1bc3f="">  </div>'
-            ),
+        assert rendered.strip() == (
+            "<!-- _RENDERED SimpleComponent_6f07b3,a1bc3f,, -->\n"
+            '                <div data-djc-id-a1bc3f=""></div>\n'
+            '                <div data-djc-id-a1bc3f="">  abc</div>\n'
+            '                <div data-djc-id-a1bc3f=""></div>\n'
+            '                <div data-djc-id-a1bc3f="">  </div>'
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_mixed_in_template(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_mixed_in_template(self, components_settings):
         registry.library.tag(noop)
         captured = {}
 
@@ -336,25 +337,22 @@ class DynamicExprTests(BaseTestCase):
         )
 
         # Check that variables passed to the component are of correct type
-        self.assertEqual(captured["bool_var"], " True ")
-        self.assertEqual(captured["dict_var"], " {'a': 3} ")
-        self.assertEqual(captured["list_var"], " [{'a': 1}, {'a': 2}] ")
+        assert captured["bool_var"] == " True "
+        assert captured["dict_var"] == " {'a': 3} "
+        assert captured["list_var"] == " [{'a': 1}, {'a': 2}] "
 
         # NOTE: This is whitespace-sensitive test, so we check exact output
-        self.assertEqual(
-            rendered.strip(),
-            (
-                "<!-- _RENDERED SimpleComponent_6c8e94,a1bc3f,, -->\n"
-                '                <div data-djc-id-a1bc3f=""> lorem ipsum dolor </div>\n'
-                '                <div data-djc-id-a1bc3f=""> lorem ipsum dolor [{\'a\': 1}] </div>\n'
-                '                <div data-djc-id-a1bc3f=""> True </div>\n'
-                '                <div data-djc-id-a1bc3f=""> [{\'a\': 1}, {\'a\': 2}] </div>\n'
-                '                <div data-djc-id-a1bc3f=""> {\'a\': 3} </div>'
-            ),
+        assert rendered.strip() == (
+            "<!-- _RENDERED SimpleComponent_85c7eb,a1bc3f,, -->\n"
+            '                <div data-djc-id-a1bc3f=""> lorem ipsum dolor </div>\n'
+            '                <div data-djc-id-a1bc3f=""> lorem ipsum dolor [{\'a\': 1}] </div>\n'
+            '                <div data-djc-id-a1bc3f=""> True </div>\n'
+            '                <div data-djc-id-a1bc3f=""> [{\'a\': 1}, {\'a\': 2}] </div>\n'
+            '                <div data-djc-id-a1bc3f=""> {\'a\': 3} </div>'
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_ignores_invalid_tag(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_ignores_invalid_tag(self, components_settings):
         registry.library.tag(noop)
 
         @register("test")
@@ -390,7 +388,7 @@ class DynamicExprTests(BaseTestCase):
             Context({"is_active": True}),
         )
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <!-- _RENDERED SimpleComponent_c7a5c3,a1bc3f,, -->
@@ -400,8 +398,8 @@ class DynamicExprTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_nested_in_template(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_in_template(self, components_settings):
         registry.library.tag(noop)
 
         @register("test")
@@ -442,7 +440,7 @@ class DynamicExprTests(BaseTestCase):
             ),
         )
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
                 <!-- _RENDERED SimpleComponent_5c8766,a1bc41,, -->
@@ -456,9 +454,9 @@ class DynamicExprTests(BaseTestCase):
         )
 
 
-class SpreadOperatorTests(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_component(self):
+class TestSpreadOperator:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component(self, components_settings):
         captured = {}
 
         @register("test")
@@ -513,12 +511,12 @@ class SpreadOperatorTests(BaseTestCase):
         )
 
         # Check that variables passed to the component are of correct type
-        self.assertEqual(captured["attrs"], {"@click": "() => {}", "style": "height: 20px"})
-        self.assertEqual(captured["items"], [1, 2, 3])
-        self.assertEqual(captured["a"], 1)
-        self.assertEqual(captured["x"], 123)
+        assert captured["attrs"] == {"@click": "() => {}", "style": "height: 20px"}
+        assert captured["items"] == [1, 2, 3]
+        assert captured["a"] == 1
+        assert captured["x"] == 123
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc3f>LoREM</div>
@@ -529,8 +527,8 @@ class SpreadOperatorTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
             def get_context_data(self):
@@ -559,15 +557,15 @@ class SpreadOperatorTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             {'items': [1, 2, 3], 'a': 1, 'x': 123, 'attrs': {'@click': '() =&gt; {}', 'style': 'height: 20px'}}
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_fill(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_fill(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
             def get_context_data(self):
@@ -608,7 +606,7 @@ class SpreadOperatorTests(BaseTestCase):
             ),
         )
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             {'items': [1, 2, 3], 'a': 1, 'x': 123, 'attrs': {'@click': '() =&gt; {}', 'style': 'height: 20px'}}
@@ -616,8 +614,8 @@ class SpreadOperatorTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
             def get_context_data(self):
@@ -655,7 +653,7 @@ class SpreadOperatorTests(BaseTestCase):
             ),
         )
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc41>{'@click': '() =&gt; {}', 'style': 'height: 20px'}</div>
@@ -664,8 +662,8 @@ class SpreadOperatorTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_html_attrs(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_html_attrs(self, components_settings):
         template_str: types.django_html = """
             {% load component_tags %}
             <div {% html_attrs defaults:test="hi" ...my_dict attrs:lol="123" %}>
@@ -683,15 +681,15 @@ class SpreadOperatorTests(BaseTestCase):
                 }
             ),
         )
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div test="hi" class="my-class button" style="height: 20px" lol="123">
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_later_spreads_do_not_overwrite_earlier(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_later_spreads_do_not_overwrite_earlier(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
             def get_context_data(
@@ -737,7 +735,7 @@ class SpreadOperatorTests(BaseTestCase):
 
         template1 = Template(template_str1)
 
-        with self.assertRaisesMessage(TypeError, "got multiple values for argument 'x'"):
+        with pytest.raises(TypeError, match=re.escape("got multiple values for argument 'x'")):
             template1.render(context)
 
         # But, similarly to python, we can merge multiple **kwargs by instead
@@ -759,7 +757,7 @@ class SpreadOperatorTests(BaseTestCase):
         template2 = Template(template_str2)
         rendered2 = template2.render(context)
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered2,
             """
             <div data-djc-id-a1bc40>{'@click': '() =&gt; {}', 'style': 'OVERWRITTEN'}</div>
@@ -769,8 +767,8 @@ class SpreadOperatorTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_raises_on_missing_value(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_raises_on_missing_value(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
             pass
@@ -785,11 +783,11 @@ class SpreadOperatorTests(BaseTestCase):
             """
         )
 
-        with self.assertRaisesMessage(TemplateSyntaxError, "Spread syntax '...' is missing a value"):
+        with pytest.raises(TemplateSyntaxError, match=re.escape("Spread syntax '...' is missing a value")):
             Template(template_str)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_spread_list_and_iterables(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_spread_list_and_iterables(self, components_settings):
         captured = None
 
         @register("test")
@@ -821,16 +819,13 @@ class SpreadOperatorTests(BaseTestCase):
 
         template.render(context)
 
-        self.assertEqual(
-            captured,
-            (
-                ("a", "b", "c", 1, 2, 3),
-                {},
-            ),
+        assert captured == (
+            ("a", "b", "c", 1, 2, 3),
+            {},
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_raises_on_non_dict(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_raises_on_non_dict(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
             pass
@@ -847,11 +842,15 @@ class SpreadOperatorTests(BaseTestCase):
         template = Template(template_str)
 
         # List
-        with self.assertRaisesMessage(ValueError, "Cannot spread non-iterable value: '...var_b' resolved to 123"):
+        with pytest.raises(
+            ValueError,
+            match=re.escape("Cannot spread non-iterable value: '...var_b' resolved to 123")
+        ):
             template.render(Context({"var_b": 123}))
 
 
-class AggregateKwargsTest(BaseTestCase):
+@djc_test
+class TestAggregateKwargs:
     def test_aggregate_kwargs(self):
         captured = None
 
@@ -879,31 +878,28 @@ class AggregateKwargsTest(BaseTestCase):
         template = Template(template_str)
         template.render(Context({"class_var": "padding-top-8", "four": 4}))
 
-        self.assertEqual(
-            captured,
-            (
-                (),
-                {
-                    "attrs": {
-                        "@click.stop": "dispatch('click_event')",
-                        "x-data": "{hello: 'world'}",
-                        "class": "padding-top-8",
-                        ":placeholder": "No text",
-                    },
-                    "my_dict": {"one": 2},
-                    "three": 4,
+        assert captured == (
+            (),
+            {
+                "attrs": {
+                    "@click.stop": "dispatch('click_event')",
+                    "x-data": "{hello: 'world'}",
+                    "class": "padding-top-8",
+                    ":placeholder": "No text",
                 },
-            ),
+                "my_dict": {"one": 2},
+                "three": 4,
+            },
         )
 
-    def is_aggregate_key(self):
-        self.assertEqual(is_aggregate_key(""), False)
-        self.assertEqual(is_aggregate_key(" "), False)
-        self.assertEqual(is_aggregate_key(" : "), False)
-        self.assertEqual(is_aggregate_key("attrs"), False)
-        self.assertEqual(is_aggregate_key(":attrs"), False)
-        self.assertEqual(is_aggregate_key(" :attrs "), False)
-        self.assertEqual(is_aggregate_key("attrs:"), False)
-        self.assertEqual(is_aggregate_key(":attrs:"), False)
-        self.assertEqual(is_aggregate_key("at:trs"), True)
-        self.assertEqual(is_aggregate_key(":at:trs"), False)
+    def test_is_aggregate_key(self):
+        assert not is_aggregate_key("")
+        assert not is_aggregate_key(" ")
+        assert not is_aggregate_key(" : ")
+        assert not is_aggregate_key("attrs")
+        assert not is_aggregate_key(":attrs")
+        assert not is_aggregate_key(" :attrs ")
+        assert not is_aggregate_key("attrs:")
+        assert not is_aggregate_key(":attrs:")
+        assert is_aggregate_key("at:trs")
+        assert not is_aggregate_key(":at:trs")

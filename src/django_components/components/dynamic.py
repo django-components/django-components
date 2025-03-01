@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Type, Union, cast
 from django.template import Context, Template
 
 from django_components import Component, ComponentRegistry, NotRegistered, types
-from django_components.component_registry import all_registries
+from django_components.component_registry import ALL_REGISTRIES
 
 
 class DynamicComponent(Component):
@@ -170,7 +170,11 @@ class DynamicComponent(Component):
                 component_cls = registry.get(comp_name_or_class)
             else:
                 # Search all registries for the first match
-                for reg in all_registries:
+                for reg_ref in ALL_REGISTRIES:
+                    reg = reg_ref()
+                    if not reg:
+                        continue
+
                     try:
                         component_cls = reg.get(comp_name_or_class)
                         break

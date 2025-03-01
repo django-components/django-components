@@ -1,11 +1,12 @@
 from django.template import Context
 from django.template.base import Template, Token, TokenType
+from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
 from django_components.util.template_parser import parse_template
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase
+from django_components.testing import djc_test
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -19,7 +20,8 @@ def token2tuple(token: Token):
     )
 
 
-class TemplateParserTests(BaseTestCase):
+@djc_test
+class TestTemplateParser:
     def test_template_text(self):
         tokens = parse_template("Hello world")
 
@@ -28,7 +30,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.TEXT, "Hello world", (0, 11), 1),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     def test_template_variable(self):
         tokens = parse_template("Hello {{ name }}")
@@ -39,7 +41,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.VAR, "name", (6, 16), 1),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     # NOTE(Juro): IMO this should be a TemplateSyntaxError, but Django doesn't raise it
     def test_template_variable_unterminated(self):
@@ -50,7 +52,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.TEXT, "Hello {{ name", (0, 13), 1),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     def test_template_tag(self):
         tokens = parse_template("{% component 'my_comp' key=val %}")
@@ -60,7 +62,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.BLOCK, "component 'my_comp' key=val", (0, 33), 1),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     # NOTE(Juro): IMO this should be a TemplateSyntaxError, but Django doesn't raise it
     def test_template_tag_unterminated(self):
@@ -71,7 +73,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.TEXT, "{% if true", (0, 10), 1),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     def test_template_comment(self):
         tokens = parse_template("Hello{# this is a comment #}World")
@@ -83,7 +85,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.TEXT, "World", (28, 33), 1),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     # NOTE(Juro): IMO this should be a TemplateSyntaxError, but Django doesn't raise it
     def test_template_comment_unterminated(self):
@@ -94,7 +96,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.TEXT, "{# comment", (0, 10), 1),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     def test_template_verbatim(self):
         tokens = parse_template(
@@ -115,7 +117,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.BLOCK, "endverbatim", (107, 124), 4),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     def test_template_verbatim_with_name(self):
         tokens = parse_template(
@@ -142,7 +144,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.BLOCK, "endverbatim myblock", (184, 209), 6),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     def test_template_nested_tags(self):
         tokens = parse_template("""{% component 'test' "{% lorem var_a w %}" %}""")
@@ -152,7 +154,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.BLOCK, "component 'test' \"{% lorem var_a w %}\"", (0, 44), 1),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     def test_brackets_and_percent_in_text(self):
         tokens = parse_template('{% component \'test\' \'"\' "{%}" bool_var="{% noop is_active %}" / %}')
@@ -163,7 +165,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.BLOCK, 'component \'test\' \'"\' "{%}" bool_var="{% noop is_active %}" /', (0, 66), 1),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     def test_template_mixed(self):
         tokens = parse_template(
@@ -201,7 +203,7 @@ class TemplateParserTests(BaseTestCase):
             (TokenType.BLOCK, "endif", (341, 352), 10),
         ]
 
-        self.assertEqual(token_tuples, expected_tokens)
+        assert token_tuples == expected_tokens
 
     # Check that a template that contains `{% %}` inside of a component tag is parsed correctly
     def test_component_mixed(self):
@@ -234,7 +236,7 @@ class TemplateParserTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({"name": "John", "show_greeting": True, "var_a": 2}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div>

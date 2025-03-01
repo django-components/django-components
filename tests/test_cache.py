@@ -1,15 +1,16 @@
-from django.test import TestCase, override_settings
 from django.core.cache.backends.locmem import LocMemCache
 
-from django_components.util.cache import LRUCache
 from django_components import Component, register
+from django_components.testing import djc_test
+from django_components.util.cache import LRUCache
 
-from .django_test_setup import setup_test_config
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
 
-class CacheTests(TestCase):
+@djc_test
+class TestCache:
     def test_cache(self):
         cache = LRUCache[int](maxsize=3)
 
@@ -17,58 +18,59 @@ class CacheTests(TestCase):
         cache.set("b", 2)
         cache.set("c", 3)
 
-        self.assertEqual(cache.get("a"), 1)
-        self.assertEqual(cache.get("b"), 2)
-        self.assertEqual(cache.get("c"), 3)
+        assert cache.get("a") == 1
+        assert cache.get("b") == 2
+        assert cache.get("c") == 3
 
         cache.set("d", 4)
 
-        self.assertEqual(cache.get("a"), None)
-        self.assertEqual(cache.get("b"), 2)
-        self.assertEqual(cache.get("c"), 3)
-        self.assertEqual(cache.get("d"), 4)
+        assert cache.get("a") is None
+        assert cache.get("b") == 2
+        assert cache.get("c") == 3
+        assert cache.get("d") == 4
 
         cache.set("e", 5)
         cache.set("f", 6)
 
-        self.assertEqual(cache.get("b"), None)
-        self.assertEqual(cache.get("c"), None)
-        self.assertEqual(cache.get("d"), 4)
-        self.assertEqual(cache.get("e"), 5)
-        self.assertEqual(cache.get("f"), 6)
+        assert cache.get("b") is None
+        assert cache.get("c") is None
+        assert cache.get("d") == 4
+        assert cache.get("e") == 5
+        assert cache.get("f") == 6
 
         cache.clear()
 
-        self.assertEqual(cache.get("d"), None)
-        self.assertEqual(cache.get("e"), None)
-        self.assertEqual(cache.get("f"), None)
+        assert cache.get("d") is None
+        assert cache.get("e") is None
+        assert cache.get("f") is None
 
     def test_cache_maxsize_zero(self):
         cache = LRUCache[int](maxsize=0)
 
         cache.set("a", 1)
-        self.assertEqual(cache.get("a"), None)
+        assert cache.get("a") is None
 
         cache.set("b", 2)
         cache.set("c", 3)
-        self.assertEqual(cache.get("b"), None)
-        self.assertEqual(cache.get("c"), None)
+        assert cache.get("b") is None
+        assert cache.get("c") is None
 
         # Same with negative numbers
         cache = LRUCache[int](maxsize=-1)
         cache.set("a", 1)
-        self.assertEqual(cache.get("a"), None)
+        assert cache.get("a") is None
 
         cache.set("b", 2)
         cache.set("c", 3)
-        self.assertEqual(cache.get("b"), None)
-        self.assertEqual(cache.get("c"), None)
+        assert cache.get("b") is None
+        assert cache.get("c") is None
 
 
-class ComponentMediaCacheTests(TestCase):
-    def setUp(self):
-        # Create a custom locmem cache for testing
-        self.test_cache = LocMemCache(
+@djc_test
+class TestComponentMediaCache:
+    @djc_test(components_settings={"cache": "test-cache"})
+    def test_component_media_caching(self):
+        test_cache = LocMemCache(
             "test-cache",
             {
                 "TIMEOUT": None,  # No timeout
@@ -77,8 +79,6 @@ class ComponentMediaCacheTests(TestCase):
             },
         )
 
-    @override_settings(COMPONENTS={"cache": "test-cache"})
-    def test_component_media_caching(self):
         @register("test_simple")
         class TestSimpleComponent(Component):
             template = """
@@ -123,28 +123,22 @@ class ComponentMediaCacheTests(TestCase):
         # Register our test cache
         from django.core.cache import caches
 
-        caches["test-cache"] = self.test_cache
+        caches["test-cache"] = test_cache
 
         # Render the components to trigger caching
         TestMediaAndVarsComponent.render()
 
         # Check that JS/CSS is cached for components that have them
-        self.assertTrue(self.test_cache.has_key(f"__components:{TestMediaAndVarsComponent._class_hash}:js"))
-        self.assertTrue(self.test_cache.has_key(f"__components:{TestMediaAndVarsComponent._class_hash}:css"))
-        self.assertTrue(self.test_cache.has_key(f"__components:{TestMediaNoVarsComponent._class_hash}:js"))
-        self.assertTrue(self.test_cache.has_key(f"__components:{TestMediaNoVarsComponent._class_hash}:css"))
-        self.assertFalse(self.test_cache.has_key(f"__components:{TestSimpleComponent._class_hash}:js"))
-        self.assertFalse(self.test_cache.has_key(f"__components:{TestSimpleComponent._class_hash}:css"))
+        assert test_cache.has_key(f"__components:{TestMediaAndVarsComponent._class_hash}:js")
+        assert test_cache.has_key(f"__components:{TestMediaAndVarsComponent._class_hash}:css")
+        assert test_cache.has_key(f"__components:{TestMediaNoVarsComponent._class_hash}:js")
+        assert test_cache.has_key(f"__components:{TestMediaNoVarsComponent._class_hash}:css")
+        assert not test_cache.has_key(f"__components:{TestSimpleComponent._class_hash}:js")
+        assert not test_cache.has_key(f"__components:{TestSimpleComponent._class_hash}:css")
 
         # Check that we cache `Component.js` / `Component.css`
-        self.assertEqual(
-            self.test_cache.get(f"__components:{TestMediaNoVarsComponent._class_hash}:js").strip(),
-            "console.log('Hello from JS');",
-        )
-        self.assertEqual(
-            self.test_cache.get(f"__components:{TestMediaNoVarsComponent._class_hash}:css").strip(),
-            ".novars-component { color: blue; }",
-        )
+        assert test_cache.get(f"__components:{TestMediaNoVarsComponent._class_hash}:js").strip() == "console.log('Hello from JS');"  # noqa: E501
+        assert test_cache.get(f"__components:{TestMediaNoVarsComponent._class_hash}:css").strip() == ".novars-component { color: blue; }"  # noqa: E501
 
         # Check that we cache JS / CSS scripts generated from `get_js_data` / `get_css_data`
         # NOTE: The hashes is generated from the data.
@@ -152,11 +146,5 @@ class ComponentMediaCacheTests(TestCase):
         css_vars_hash = "d039a3"
 
         # TODO - Update once JS and CSS vars are enabled
-        self.assertEqual(
-            self.test_cache.get(f"__components:{TestMediaAndVarsComponent._class_hash}:js:{js_vars_hash}").strip(),
-            "",
-        )
-        self.assertEqual(
-            self.test_cache.get(f"__components:{TestMediaAndVarsComponent._class_hash}:css:{css_vars_hash}").strip(),
-            "",
-        )
+        assert test_cache.get(f"__components:{TestMediaAndVarsComponent._class_hash}:js:{js_vars_hash}").strip() == ""
+        assert test_cache.get(f"__components:{TestMediaAndVarsComponent._class_hash}:css:{css_vars_hash}").strip() == ""  # noqa: E501

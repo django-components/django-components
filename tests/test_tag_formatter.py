@@ -1,10 +1,14 @@
+import re
+
+import pytest
 from django.template import Context, Template
+from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
 from django_components.tag_formatter import ShorthandComponentFormatter
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, parametrize_context_behavior
+from django_components.testing import djc_test
+from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -43,9 +47,10 @@ def create_validator_tag_formatter(tag_name: str):
     return ValidatorTagFormatter()
 
 
-class ComponentTagTests(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_formatter_default_inline(self):
+@djc_test
+class TestComponentTag:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_formatter_default_inline(self, components_settings):
         @register("simple")
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -64,7 +69,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             hello1
@@ -75,8 +80,8 @@ class ComponentTagTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_formatter_default_block(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_formatter_default_block(self, components_settings):
         @register("simple")
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -97,7 +102,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             hello1
@@ -108,15 +113,13 @@ class ComponentTagTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(
-        cases=["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": "django_components.component_formatter",
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": "django_components.component_formatter",
         },
     )
-    def test_formatter_component_inline(self):
+    def test_formatter_component_inline(self, components_settings):
         @register("simple")
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -135,7 +138,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             hello1
@@ -146,15 +149,13 @@ class ComponentTagTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(
-        cases=["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": "django_components.component_formatter",
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": "django_components.component_formatter",
         },
     )
-    def test_formatter_component_block(self):
+    def test_formatter_component_block(self, components_settings):
         @register("simple")
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -175,7 +176,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             hello1
@@ -186,15 +187,13 @@ class ComponentTagTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(
-        cases=["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": "django_components.component_shorthand_formatter",
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": "django_components.component_shorthand_formatter",
         },
     )
-    def test_formatter_shorthand_inline(self):
+    def test_formatter_shorthand_inline(self, components_settings):
         @register("simple")
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -213,7 +212,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             hello1
@@ -224,15 +223,13 @@ class ComponentTagTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(
-        cases=["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": "django_components.component_shorthand_formatter",
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": "django_components.component_shorthand_formatter",
         },
     )
-    def test_formatter_shorthand_block(self):
+    def test_formatter_shorthand_block(self, components_settings):
         @register("simple")
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -253,7 +250,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             hello1
@@ -264,15 +261,13 @@ class ComponentTagTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(
-        cases=["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": SlashEndTagFormatter(),
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": SlashEndTagFormatter(),
         },
     )
-    def test_forward_slash_in_end_tag(self):
+    def test_forward_slash_in_end_tag(self, components_settings):
         @register("simple")
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -293,7 +288,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             hello1
@@ -304,15 +299,13 @@ class ComponentTagTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(
-        cases=["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": ShorthandComponentFormatter(),
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": ShorthandComponentFormatter(),
         },
     )
-    def test_import_formatter_by_value(self):
+    def test_import_formatter_by_value(self, components_settings):
         @register("simple")
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -331,7 +324,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc3f>
@@ -340,34 +333,32 @@ class ComponentTagTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(
-        cases=["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": MultiwordStartTagFormatter(),
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": MultiwordStartTagFormatter(),
         },
     )
-    def test_raises_on_invalid_start_tag(self):
-        with self.assertRaisesMessage(
-            ValueError, "MultiwordStartTagFormatter returned an invalid tag for start_tag: 'simple comp'"
+    def test_raises_on_invalid_start_tag(self, components_settings):
+        with pytest.raises(
+            ValueError,
+            match=re.escape("MultiwordStartTagFormatter returned an invalid tag for start_tag: 'simple comp'"),
         ):
 
             @register("simple")
             class SimpleComponent(Component):
                 template = """{% load component_tags %}"""
 
-    @parametrize_context_behavior(
-        cases=["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": MultiwordBlockEndTagFormatter(),
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": MultiwordBlockEndTagFormatter(),
         },
     )
-    def test_raises_on_invalid_block_end_tag(self):
-        with self.assertRaisesMessage(
-            ValueError, "MultiwordBlockEndTagFormatter returned an invalid tag for end_tag: 'end simple'"
+    def test_raises_on_invalid_block_end_tag(self, components_settings):
+        with pytest.raises(
+            ValueError,
+            match=re.escape("MultiwordBlockEndTagFormatter returned an invalid tag for end_tag: 'end simple'"),
         ):
 
             @register("simple")
@@ -388,15 +379,13 @@ class ComponentTagTests(BaseTestCase):
             """
             )
 
-    @parametrize_context_behavior(
-        cases=["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": create_validator_tag_formatter("simple"),
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": create_validator_tag_formatter("simple"),
         },
     )
-    def test_method_args(self):
+    def test_method_args(self, components_settings):
         @register("simple")
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -415,7 +404,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             hello1
@@ -435,7 +424,7 @@ class ComponentTagTests(BaseTestCase):
         """
         )
         rendered = template.render(Context())
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             hello1

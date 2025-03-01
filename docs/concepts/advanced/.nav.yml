@@ -8,4 +8,5 @@ nav:
   - Typing and validation: typing_and_validation.md
   - Custom template tags: template_tags.md
   - Tag formatters: tag_formatter.md
+  - Testing: testing.md
   - Authoring component libraries: authoring_component_libraries.md
