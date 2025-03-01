@@ -1,4 +1,5 @@
-from typing import Any, Dict, TypeVar
+import sys
+from typing import Any, Dict, TypeVar, overload
 from weakref import ReferenceType, finalize, ref
 
 GLOBAL_REFS: Dict[Any, ReferenceType] = {}
@@ -6,8 +7,14 @@ GLOBAL_REFS: Dict[Any, ReferenceType] = {}
 
 T = TypeVar("T")
 
+# NOTE: `ReferenceType` is NOT a generic pre-3.9
+if sys.version_info >= (3, 9):
 
-def cached_ref(obj: T) -> ReferenceType[T]:
+    @overload  # type: ignore[misc]
+    def cached_ref(obj: T) -> ReferenceType[T]: ...  # noqa: E704
+
+
+def cached_ref(obj: Any) -> ReferenceType:
     """
     Same as `weakref.ref()`, creating a weak reference to a given objet.
     But unlike `weakref.ref()`, this function also caches the result,

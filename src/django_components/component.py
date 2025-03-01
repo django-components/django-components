@@ -1,3 +1,4 @@
+import sys
 import types
 from collections import deque
 from contextlib import contextmanager
@@ -101,8 +102,15 @@ JsDataType = TypeVar("JsDataType", bound=Mapping[str, Any])
 CssDataType = TypeVar("CssDataType", bound=Mapping[str, Any])
 
 
+# NOTE: `ReferenceType` is NOT a generic pre-3.9
+if sys.version_info >= (3, 9):
+    AllComponents = List[ReferenceType["ComponentRegistry"]]
+else:
+    AllComponents = List[ReferenceType]
+
+
 # Keep track of all the Component classes created, so we can clean up after tests
-ALL_COMPONENTS: List[ReferenceType[Type["Component"]]] = []
+ALL_COMPONENTS: AllComponents = []
 
 
 @dataclass(frozen=True)
@@ -619,7 +627,7 @@ class Component(
         cls._class_hash = hash_comp_cls(cls)
         comp_hash_mapping[cls._class_hash] = cls
 
-        ALL_COMPONENTS.append(cached_ref(cls))
+        ALL_COMPONENTS.append(cached_ref(cls))  # type: ignore[arg-type]
 
     @contextmanager
     def _with_metadata(self, item: MetadataItem) -> Generator[None, None, None]:

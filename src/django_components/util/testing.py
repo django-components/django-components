@@ -6,8 +6,8 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set,
 from unittest.mock import patch
 from weakref import ReferenceType
 
-from django.template import engines
 from django.conf import settings as _django_settings
+from django.template import engines
 from django.test import override_settings
 
 from django_components.autodiscovery import LOADED_MODULES
@@ -15,25 +15,35 @@ from django_components.component import ALL_COMPONENTS, Component, component_nod
 from django_components.component_media import ComponentMedia
 from django_components.component_registry import ALL_REGISTRIES, ComponentRegistry
 
+# NOTE: `ReferenceType` is NOT a generic pre-3.9
+if sys.version_info >= (3, 9):
+    RegistryRef = ReferenceType[ComponentRegistry]
+    RegistriesCopies = List[Tuple[ReferenceType[ComponentRegistry], List[str]]]
+    InitialComponents = List[ReferenceType[Type[Component]]]
+else:
+    RegistriesCopies = List[Tuple[ReferenceType, List[str]]]
+    InitialComponents = List[ReferenceType]
+    RegistryRef = ReferenceType
+
 
 class GenIdPatcher:
-    def __init__(self):
+    def __init__(self) -> None:
         self._gen_id_count = 10599485
-        self._gen_id_patch = None
+        self._gen_id_patch: Any = None
 
     # Mock the `generate` function used inside `gen_id` so it returns deterministic IDs
-    def start(self):
+    def start(self) -> None:
         # Random number so that the generated IDs are "hex-looking", e.g. a1bc3d
         self._gen_id_count = 10599485
 
-        def mock_gen_id(*args, **kwargs):
+        def mock_gen_id(*args: Any, **kwargs: Any) -> str:
             self._gen_id_count += 1
             return hex(self._gen_id_count)[2:]
 
         self._gen_id_patch = patch("django_components.util.misc.generate", side_effect=mock_gen_id)
         self._gen_id_patch.start()
 
-    def stop(self):
+    def stop(self) -> None:
         if not self._gen_id_patch:
             return
 
@@ -42,15 +52,15 @@ class GenIdPatcher:
 
 
 class CsrfTokenPatcher:
-    def __init__(self):
+    def __init__(self) -> None:
         self._csrf_token = "predictabletoken"
-        self._csrf_token_patch = None
+        self._csrf_token_patch: Any = None
 
-    def start(self):
+    def start(self) -> None:
         self._csrf_token_patch = patch("django.middleware.csrf.get_token", return_value=self._csrf_token)
         self._csrf_token_patch.start()
 
-    def stop(self):
+    def stop(self) -> None:
         if self._csrf_token_patch:
             self._csrf_token_patch.stop()
             self._csrf_token_patch = None
@@ -169,7 +179,7 @@ def djc_test(
     - `parametrize`: Parametrize the test function with
         [`pytest.mark.parametrize`](https://docs.pytest.org/en/stable/how-to/parametrize.html#pytest-mark-parametrize).
         This requires [pytest](https://docs.pytest.org/) to be installed.
-      
+
         The input is a tuple of:
 
         - `(param_names, param_values)` or
@@ -239,9 +249,9 @@ def djc_test(
         3. The parametrized `components_settings` override the fields on the `components_settings` kwarg.
 
         Priority: `components_settings` (parametrized) > `components_settings` > `django_settings["COMPONENTS"]` > `django.conf.settings.COMPONENTS`
-    """
+    """  # noqa: E501
 
-    def decorator(func):
+    def decorator(func: Callable) -> Callable:
         if isinstance(func, type):
             # If `djc_test` is applied to a class, we need to apply it to each test method
             # individually.
@@ -272,7 +282,7 @@ def djc_test(
         csrf_token_patcher = CsrfTokenPatcher()
 
         # Contents of this function will run as the test
-        def _wrapper_impl(*args, **kwargs):
+        def _wrapper_impl(*args: Any, **kwargs: Any) -> Any:
             # Merge the settings
             current_django_settings = django_settings if not callable(django_settings) else None
             current_django_settings = current_django_settings.copy() if current_django_settings else {}
@@ -295,7 +305,7 @@ def djc_test(
                 # Since the tests require Django to be configured, this should contain any
                 # components that were registered with autodiscovery / at `AppConfig.ready()`.
                 _ALL_COMPONENTS = ALL_COMPONENTS.copy()
-                _ALL_REGISTRIES_COPIES: List[Tuple[ReferenceType[ComponentRegistry], List[str]]] = []
+                _ALL_REGISTRIES_COPIES: RegistriesCopies = []
                 for reg_ref in ALL_REGISTRIES:
                     reg = reg_ref()
                     if not reg:
@@ -305,8 +315,13 @@ def djc_test(
                 # Prepare global state
                 _setup_djc_global_state(gen_id_patcher, csrf_token_patcher)
 
-                def cleanup():
-                    _clear_djc_global_state(gen_id_patcher, csrf_token_patcher, _ALL_COMPONENTS, _ALL_REGISTRIES_COPIES)
+                def cleanup() -> None:
+                    _clear_djc_global_state(
+                        gen_id_patcher,
+                        csrf_token_patcher,
+                        _ALL_COMPONENTS,  # type: ignore[arg-type]
+                        _ALL_REGISTRIES_COPIES,
+                    )
 
                 try:
                     # Execute
@@ -323,12 +338,12 @@ def djc_test(
         # Handle async test functions
         if inspect.iscoroutinefunction(func):
 
-            async def wrapper_outer(*args, **kwargs):
+            async def wrapper_outer(*args: Any, **kwargs: Any) -> Any:
                 return await _wrapper_impl(*args, **kwargs)
 
         else:
 
-            def wrapper_outer(*args, **kwargs):
+            def wrapper_outer(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
                 return _wrapper_impl(*args, **kwargs)
 
         wrapper = wraps(func)(wrapper_outer)
@@ -378,7 +393,7 @@ def djc_test(
 def _merge_django_settings(
     django_settings: Optional[Dict] = None,
     components_settings: Optional[Dict] = None,
-):
+) -> Dict:
     merged_settings = {} if not django_settings else django_settings.copy()
 
     merged_settings["COMPONENTS"] = {
@@ -392,7 +407,10 @@ def _merge_django_settings(
     return merged_settings
 
 
-def _setup_djc_global_state(gen_id_patcher: GenIdPatcher, csrf_token_patcher: CsrfTokenPatcher):
+def _setup_djc_global_state(
+    gen_id_patcher: GenIdPatcher,
+    csrf_token_patcher: CsrfTokenPatcher,
+) -> None:
     # Declare that the code is running in test mode - this is used
     # by the import / autodiscover mechanism to clean up loaded modules
     # between tests.
@@ -410,9 +428,9 @@ def _setup_djc_global_state(gen_id_patcher: GenIdPatcher, csrf_token_patcher: Cs
 def _clear_djc_global_state(
     gen_id_patcher: GenIdPatcher,
     csrf_token_patcher: CsrfTokenPatcher,
-    initial_components: List[ReferenceType[Type[Component]]],
-    initial_registries_copies: List[Tuple[ReferenceType[ComponentRegistry], List[str]]],
-):
+    initial_components: InitialComponents,
+    initial_registries_copies: RegistriesCopies,
+) -> None:
     gen_id_patcher.stop()
     csrf_token_patcher.stop()
 
@@ -463,9 +481,7 @@ def _clear_djc_global_state(
             del ALL_COMPONENTS[reverse_index]
 
     # Remove registries that were created during the test
-    initial_registries_set: Set[ReferenceType[ComponentRegistry]] = set(
-        [reg_ref for reg_ref, init_keys in initial_registries_copies]
-    )
+    initial_registries_set: Set[RegistryRef] = set([reg_ref for reg_ref, init_keys in initial_registries_copies])
     for index in range(len(ALL_REGISTRIES)):
         registry_ref = ALL_REGISTRIES[len(ALL_REGISTRIES) - index - 1]
         if registry_ref not in initial_registries_set:

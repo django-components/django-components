@@ -1,3 +1,4 @@
+import sys
 from typing import TYPE_CHECKING, Callable, Dict, List, NamedTuple, Optional, Set, Type, Union
 from weakref import ReferenceType, finalize
 
@@ -19,6 +20,13 @@ if TYPE_CHECKING:
         KwargsType,
         SlotsType,
     )
+
+
+# NOTE: `ReferenceType` is NOT a generic pre-3.9
+if sys.version_info >= (3, 9):
+    AllRegistries = List[ReferenceType["ComponentRegistry"]]
+else:
+    AllRegistries = List[ReferenceType]
 
 
 class AlreadyRegistered(Exception):
@@ -132,7 +140,7 @@ class InternalRegistrySettings(NamedTuple):
 # We keep track of all registries that exist so that, when users want to
 # dynamically resolve component name to component class, they would be able
 # to search across all registries.
-ALL_REGISTRIES: List[ReferenceType["ComponentRegistry"]] = []
+ALL_REGISTRIES: AllRegistries = []
 
 
 class ComponentRegistry:
