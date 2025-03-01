@@ -50,7 +50,7 @@ identify==2.6.8
     # via pre-commit
 idna==3.10
     # via requests
-importlib-metadata==8.6.1
+importlib-metadata==8.5.0
     # via asv-runner
 iniconfig==2.0.0
     # via pytest
@@ -82,7 +82,7 @@ platformdirs==4.3.6
     #   black
     #   tox
     #   virtualenv
-playwright==1.50.0
+playwright==1.48.0
     # via -r requirements-dev.in
 pluggy==1.5.0
     # via
@@ -92,7 +92,7 @@ pre-commit==4.1.0
     # via -r requirements-dev.in
 pycodestyle==2.12.1
     # via flake8
-pyee==12.1.1
+pyee==12.0.0
     # via playwright
 pyflakes==3.2.0
     # via flake8
@@ -104,7 +104,7 @@ pygments-djc==1.0.1
     # via -r requirements-dev.in
 pympler==1.1
     # via asv
-pyproject-api==1.9.0
+pyproject-api==1.8.0
     # via tox
 pyproject-hooks==1.2.0
     # via build
@@ -114,7 +114,7 @@ pytest==8.3.4
     #   pytest-asyncio
     #   pytest-django
     #   syrupy
-pytest-asyncio==0.25.3
+pytest-asyncio==0.24.0
     # via -r requirements-dev.in
 pytest-django==4.10.0
     # via -r requirements-dev.in
@@ -138,7 +138,7 @@ typing-extensions==4.12.2
     # via
     #   mypy
     #   pyee
-urllib3==2.3.0
+urllib3==2.2.3
     # via
     #   requests
     #   types-requests
@@ -147,7 +147,7 @@ virtualenv==20.29.2
     #   asv
     #   pre-commit
     #   tox
-whitenoise==6.9.0
+whitenoise==6.7.0
     # via -r requirements-dev.in
-zipp==3.21.0
+zipp==3.20.2
     # via importlib-metadata
