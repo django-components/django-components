@@ -1,5 +1,23 @@
 # Release notes
 
+## v0.131
+
+#### Feat
+
+- `@djc_test` decorator for writing tests that involve Components.
+
+    - The decorator manages global state, ensuring that tests don't leak.
+    - If using `pytest`, the decorator allows you to parametrize Django or Components settings.
+    - The decorator also serves as a stand-in for Django's `@override_settings`.
+
+    See the API reference for [`@djc_test`](https://django-components.github.io/django-components/0.131/reference/testing_api/#djc_test) for more details.
+
+#### Internal
+
+- Settings are now loaded only once, and thus are considered immutable once loaded. Previously,
+  django-components would load settings from `settings.COMPONENTS` on each access. The new behavior
+  aligns with Django's settings.
+
 ## v0.130
 
 #### Feat

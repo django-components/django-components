@@ -34,7 +34,7 @@ django==5.1.6
     # via -r requirements-dev.in
 djc-core-html-parser==1.0.1
     # via -r requirements-dev.in
-filelock==3.17.0
+filelock==3.16.1
     # via
     #   tox
     #   virtualenv
