@@ -1,5 +1,4 @@
 import inspect
-import os
 import sys
 from functools import wraps
 from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, Union
@@ -10,7 +9,6 @@ from django.conf import settings as _django_settings
 from django.template import engines
 from django.test import override_settings
 
-from django_components.autodiscovery import LOADED_MODULES
 from django_components.component import ALL_COMPONENTS, Component, component_node_subclasses_by_name
 from django_components.component_media import ComponentMedia
 from django_components.component_registry import ALL_REGISTRIES, ComponentRegistry
@@ -24,6 +22,15 @@ else:
     RegistriesCopies = List[Tuple[ReferenceType, List[str]]]
     InitialComponents = List[ReferenceType]
     RegistryRef = ReferenceType
+
+
+# Whether we're inside a test that was wrapped with `djc_test`.
+# This is used so that we capture which modules we imported only if inside a test.
+IS_TESTING = False
+
+
+def is_testing() -> bool:
+    return IS_TESTING
 
 
 class GenIdPatcher:
@@ -414,7 +421,8 @@ def _setup_djc_global_state(
     # Declare that the code is running in test mode - this is used
     # by the import / autodiscover mechanism to clean up loaded modules
     # between tests.
-    os.environ["DJC_TESTING"] = "1"
+    global IS_TESTING
+    IS_TESTING = True
 
     gen_id_patcher.start()
     csrf_token_patcher.start()
@@ -507,7 +515,11 @@ def _clear_djc_global_state(
 
     # Delete autoimported modules from memory, so the module
     # is executed also the next time one of the tests calls `autodiscover`.
+    from django_components.autodiscovery import LOADED_MODULES
+
     for mod in LOADED_MODULES:
         sys.modules.pop(mod, None)
     LOADED_MODULES.clear()
-    os.environ.pop("DJC_TESTING", None)
+
+    global IS_TESTING
+    IS_TESTING = False

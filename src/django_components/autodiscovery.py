@@ -1,9 +1,9 @@
 import importlib
-import os
 from typing import Callable, List, Optional
 
 from django_components.util.loader import get_component_files
 from django_components.util.logger import logger
+from django_components.util.testing import is_testing
 
 # In tests, we want to capture which modules have been loaded, so we can
 # clean them up between tests. But there's no need to track this in
@@ -103,7 +103,7 @@ def _import_modules(
 
         # In tests tagged with `@djc_test`, we want to capture the modules that
         # are imported so we can clean them up between tests.
-        if os.environ.get("DJC_TESTING"):
+        if is_testing():
             LOADED_MODULES.append(module_name)
 
     return imported_modules
