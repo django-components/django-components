@@ -1,24 +1,28 @@
+import re
 from typing import Any
 
+import pytest
 from django.template import Context, Template, TemplateSyntaxError
+from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
 from django_components.perfutil.provide import provide_cache, provide_references, all_reference_ids
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, parametrize_context_behavior
+from django_components.testing import djc_test
+from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
 
-class ProvideTemplateTagTest(BaseTestCase):
+@djc_test
+class TestProvideTemplateTag:
     def _assert_clear_cache(self):
-        self.assertEqual(provide_cache, {})
-        self.assertEqual(provide_references, {})
-        self.assertEqual(all_reference_ids, set())
+        assert provide_cache == {}
+        assert provide_references == {}
+        assert all_reference_ids == set()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_basic(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_basic(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -39,7 +43,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc41> injected: DepInject(key='hi', another=1) </div>
@@ -47,8 +51,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_basic_self_closing(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_basic_self_closing(self, components_settings):
         template_str: types.django_html = """
             {% load component_tags %}
             <div>
@@ -58,7 +62,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div></div>
@@ -66,8 +70,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_access_keys_in_python(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_access_keys_in_python(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -92,7 +96,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc41> key: hi </div>
@@ -101,8 +105,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_access_keys_in_django(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_access_keys_in_django(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -126,7 +130,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc41> key: hi </div>
@@ -135,8 +139,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_does_not_leak(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_does_not_leak(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -157,7 +161,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc41> injected: default </div>
@@ -165,8 +169,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_empty(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_empty(self, components_settings):
         """Check provide tag with no kwargs"""
 
         @register("injectee")
@@ -191,7 +195,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc42> injected: DepInject() </div>
@@ -200,7 +204,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django"])
+    @djc_test(components_settings={"context_behavior": "django"})
     def test_provide_no_inject(self):
         """Check that nothing breaks if we do NOT inject even if some data is provided"""
 
@@ -225,7 +229,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc42></div>
@@ -234,8 +238,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_name_single_quotes(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_name_single_quotes(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -258,7 +262,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc42> injected: DepInject(key='hi', another=7) </div>
@@ -267,8 +271,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_name_as_var(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_name_as_var(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -297,7 +301,7 @@ class ProvideTemplateTagTest(BaseTestCase):
             )
         )
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc42> injected: DepInject(key='hi', another=8) </div>
@@ -306,8 +310,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_name_as_spread(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_name_as_spread(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -340,7 +344,7 @@ class ProvideTemplateTagTest(BaseTestCase):
             )
         )
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc42> injected: DepInject(key='hi', another=9) </div>
@@ -349,8 +353,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_no_name_raises(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_no_name_raises(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -370,16 +374,16 @@ class ProvideTemplateTagTest(BaseTestCase):
             {% component "injectee" %}
             {% endcomponent %}
         """
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TypeError,
-            "Invalid parameters for tag 'provide': missing a required argument: 'name'",
+            match=re.escape("Invalid parameters for tag 'provide': missing a required argument: 'name'"),
         ):
             Template(template_str).render(Context({}))
 
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_name_must_be_string_literal(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_name_must_be_string_literal(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -399,16 +403,16 @@ class ProvideTemplateTagTest(BaseTestCase):
             {% component "injectee" %}
             {% endcomponent %}
         """
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Provide tag received an empty string. Key must be non-empty and a valid identifier",
+            match=re.escape("Provide tag received an empty string. Key must be non-empty and a valid identifier"),
         ):
             Template(template_str).render(Context({}))
 
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_name_must_be_identifier(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_name_must_be_identifier(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -430,12 +434,12 @@ class ProvideTemplateTagTest(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaises(TemplateSyntaxError):
+        with pytest.raises(TemplateSyntaxError):
             template.render(Context({}))
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_aggregate_dics(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_aggregate_dics(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -456,7 +460,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc41> injected: DepInject(var1={'key': 'hi', 'another': 13}, var2={'x': 'y'}) </div>
@@ -464,8 +468,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_does_not_expose_kwargs_to_context(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_does_not_expose_kwargs_to_context(self, components_settings):
         """Check that `provide` tag doesn't assign the keys to the context like `with` tag does"""
 
         @register("injectee")
@@ -490,7 +494,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({"var": "123"}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             var_out: 123
@@ -501,8 +505,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_nested_in_provide_same_key(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_nested_in_provide_same_key(self, components_settings):
         """Check that inner `provide` with same key overshadows outer `provide`"""
 
         @register("injectee")
@@ -532,7 +536,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc45> injected: DepInject(key='hi1', another=16, new=3) </div>
@@ -543,8 +547,8 @@ class ProvideTemplateTagTest(BaseTestCase):
 
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_nested_in_provide_different_key(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_nested_in_provide_different_key(self, components_settings):
         """Check that `provide` tag with different keys don't affect each other"""
 
         @register("injectee")
@@ -574,7 +578,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc43> first_provide: DepInject(key='hi', another=17, lost=0) </div>
@@ -583,8 +587,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_provide_in_include(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_in_include(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -604,7 +608,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div>
@@ -614,8 +618,8 @@ class ProvideTemplateTagTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_slot_in_provide(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_in_provide(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -644,7 +648,7 @@ class ProvideTemplateTagTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc40 data-djc-id-a1bc44>
@@ -655,14 +659,15 @@ class ProvideTemplateTagTest(BaseTestCase):
         self._assert_clear_cache()
 
 
-class InjectTest(BaseTestCase):
+@djc_test
+class TestInject:
     def _assert_clear_cache(self):
-        self.assertEqual(provide_cache, {})
-        self.assertEqual(provide_references, {})
-        self.assertEqual(all_reference_ids, set())
+        assert provide_cache == {}
+        assert provide_references == {}
+        assert all_reference_ids == set()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_inject_basic(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_inject_basic(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -683,7 +688,7 @@ class InjectTest(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc41> injected: DepInject(key='hi', another=21) </div>
@@ -691,8 +696,8 @@ class InjectTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_inject_missing_key_raises_without_default(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_inject_missing_key_raises_without_default(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -710,13 +715,13 @@ class InjectTest(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaises(KeyError):
+        with pytest.raises(KeyError):
             template.render(Context({}))
 
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_inject_missing_key_ok_with_default(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_inject_missing_key_ok_with_default(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -734,7 +739,7 @@ class InjectTest(BaseTestCase):
         """
         template = Template(template_str)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc3f> injected: default </div>
@@ -742,8 +747,8 @@ class InjectTest(BaseTestCase):
         )
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_inject_empty_string(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_inject_empty_string(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -765,13 +770,13 @@ class InjectTest(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaises(KeyError):
+        with pytest.raises(KeyError):
             template.render(Context({}))
 
         self._assert_clear_cache()
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_inject_raises_on_called_outside_get_context_data(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_inject_raises_on_called_outside_get_context_data(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -783,14 +788,14 @@ class InjectTest(BaseTestCase):
                 return {"var": var}
 
         comp = InjectComponent("")
-        with self.assertRaises(RuntimeError):
+        with pytest.raises(RuntimeError):
             comp.inject("abc", "def")
 
         self._assert_clear_cache()
 
     # See https://github.com/django-components/django-components/pull/778
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_inject_in_fill(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_inject_in_fill(self, components_settings):
         @register("injectee")
         class Injectee(Component):
             template: types.django_html = """
@@ -844,7 +849,7 @@ class InjectTest(BaseTestCase):
 
         rendered = Root.render()
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc3e data-djc-id-a1bc41 data-djc-id-a1bc45 data-djc-id-a1bc49>
@@ -858,8 +863,8 @@ class InjectTest(BaseTestCase):
         self._assert_clear_cache()
 
     # See https://github.com/django-components/django-components/pull/786
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_inject_in_slot_in_fill(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_inject_in_slot_in_fill(self, components_settings):
         @register("injectee")
         class Injectee(Component):
             template: types.django_html = """
@@ -909,7 +914,7 @@ class InjectTest(BaseTestCase):
 
         rendered = Root.render()
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc3e data-djc-id-a1bc41 data-djc-id-a1bc44 data-djc-id-a1bc48>
@@ -928,15 +933,14 @@ class InjectTest(BaseTestCase):
 #
 # Instead, we manage the state ourselves, and remove the cache entry
 # when the component rendered is done.
-class ProvideCacheTest(BaseTestCase):
+@djc_test
+class TestProvideCache:
     def _assert_clear_cache(self):
-        self.assertEqual(provide_cache, {})
-        self.assertEqual(provide_references, {})
-        self.assertEqual(all_reference_ids, set())
+        assert provide_cache == {}
+        assert provide_references == {}
+        assert all_reference_ids == set()
 
     def test_provide_outside_component(self):
-        tester = self
-
         @register("injectee")
         class Injectee(Component):
             template: types.django_html = """
@@ -946,7 +950,7 @@ class ProvideCacheTest(BaseTestCase):
             """
 
             def get_context_data(self):
-                tester.assertEqual(len(provide_cache), 1)
+                assert len(provide_cache) == 1
 
                 data = self.inject("my_provide")
                 return {"data": data, "ran": True}
@@ -965,7 +969,7 @@ class ProvideCacheTest(BaseTestCase):
 
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc41>
@@ -980,14 +984,13 @@ class ProvideCacheTest(BaseTestCase):
 
     # Cache should be cleared even if there is an error.
     def test_provide_outside_component_with_error(self):
-        tester = self
 
         @register("injectee")
         class Injectee(Component):
             template = ""
 
             def get_context_data(self):
-                tester.assertEqual(len(provide_cache), 1)
+                assert len(provide_cache) == 1
                 data = self.inject("my_provide")
 
                 raise ValueError("Oops")
@@ -1005,14 +1008,12 @@ class ProvideCacheTest(BaseTestCase):
         template = Template(template_str)
         self._assert_clear_cache()
 
-        with self.assertRaisesMessage(ValueError, "Oops"):
+        with pytest.raises(ValueError, match=re.escape("Oops")):
             template.render(Context({}))
 
         self._assert_clear_cache()
 
     def test_provide_inside_component(self):
-        tester = self
-
         @register("injectee")
         class Injectee(Component):
             template: types.django_html = """
@@ -1022,7 +1023,7 @@ class ProvideCacheTest(BaseTestCase):
             """
 
             def get_context_data(self):
-                tester.assertEqual(len(provide_cache), 1)
+                assert len(provide_cache) == 1
 
                 data = self.inject("my_provide")
                 return {"data": data, "ran": True}
@@ -1040,7 +1041,7 @@ class ProvideCacheTest(BaseTestCase):
 
         rendered = Root.render()
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc3e data-djc-id-a1bc42>
@@ -1054,14 +1055,12 @@ class ProvideCacheTest(BaseTestCase):
         self._assert_clear_cache()
 
     def test_provide_inside_component_with_error(self):
-        tester = self
-
         @register("injectee")
         class Injectee(Component):
             template = ""
 
             def get_context_data(self):
-                tester.assertEqual(len(provide_cache), 1)
+                assert len(provide_cache) == 1
 
                 data = self.inject("my_provide")
                 raise ValueError("Oops")
@@ -1078,7 +1077,7 @@ class ProvideCacheTest(BaseTestCase):
 
         self._assert_clear_cache()
 
-        with self.assertRaisesMessage(ValueError, "Oops"):
+        with pytest.raises(ValueError, match=re.escape("Oops")):
             Root.render()
 
         self._assert_clear_cache()

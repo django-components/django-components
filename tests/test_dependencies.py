@@ -8,15 +8,17 @@ For checking the OUTPUT of the dependencies, see `test_dependency_rendering.py`.
 import re
 from unittest.mock import Mock
 
+import pytest
 from django.http import HttpResponseNotModified
 from django.template import Context, Template
+from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, registry, render_dependencies, types
 from django_components.components.dynamic import DynamicComponent
 from django_components.middleware import ComponentDependencyMiddleware
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, create_and_process_template_response
+from django_components.testing import djc_test
+from .testutils import create_and_process_template_response, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -47,7 +49,8 @@ class SimpleComponent(Component):
         js = "script.js"
 
 
-class RenderDependenciesTests(BaseTestCase):
+@djc_test
+class TestRenderDependencies:
     def test_standalone_render_dependencies(self):
         registry.register(name="test", component=SimpleComponent)
 
@@ -61,23 +64,23 @@ class RenderDependenciesTests(BaseTestCase):
         rendered_raw = template.render(Context({}))
 
         # Placeholders
-        self.assertEqual(rendered_raw.count('<link name="CSS_PLACEHOLDER">'), 1)
-        self.assertEqual(rendered_raw.count('<script name="JS_PLACEHOLDER"></script>'), 1)
+        assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
+        assert rendered_raw.count('<script name="JS_PLACEHOLDER"></script>') == 1
 
-        self.assertEqual(rendered_raw.count("<script"), 1)
-        self.assertEqual(rendered_raw.count("<style"), 0)
-        self.assertEqual(rendered_raw.count("<link"), 1)
-        self.assertEqual(rendered_raw.count("_RENDERED"), 1)
+        assert rendered_raw.count("<script") == 1
+        assert rendered_raw.count("<style") == 0
+        assert rendered_raw.count("<link") == 1
+        assert rendered_raw.count("_RENDERED") == 1
 
         rendered = render_dependencies(rendered_raw)
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
-        self.assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
+        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
 
-        self.assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
+        assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
 
     def test_middleware_renders_dependencies(self):
         registry.register(name="test", component=SimpleComponent)
@@ -92,14 +95,14 @@ class RenderDependenciesTests(BaseTestCase):
         rendered = create_and_process_template_response(template, use_middleware=True)
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
-        self.assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
+        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
 
-        self.assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
-        self.assertEqual(rendered.count("<link"), 1)
-        self.assertEqual(rendered.count("<style"), 1)
+        assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
+        assert rendered.count("<link") == 1
+        assert rendered.count("<style") == 1
 
     def test_component_render_renders_dependencies(self):
         class SimpleComponentWithDeps(SimpleComponent):
@@ -119,14 +122,14 @@ class RenderDependenciesTests(BaseTestCase):
         )
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
-        self.assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
+        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
 
-        self.assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
-        self.assertEqual(rendered.count("<link"), 1)
-        self.assertEqual(rendered.count("<style"), 1)
+        assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
+        assert rendered.count("<link") == 1
+        assert rendered.count("<style") == 1
 
     def test_component_render_renders_dependencies_opt_out(self):
         class SimpleComponentWithDeps(SimpleComponent):
@@ -146,18 +149,18 @@ class RenderDependenciesTests(BaseTestCase):
             render_dependencies=False,
         )
 
-        self.assertEqual(rendered_raw.count("<script"), 1)
-        self.assertEqual(rendered_raw.count("<style"), 0)
-        self.assertEqual(rendered_raw.count("<link"), 1)
-        self.assertEqual(rendered_raw.count("_RENDERED"), 1)
+        assert rendered_raw.count("<script") == 1
+        assert rendered_raw.count("<style") == 0
+        assert rendered_raw.count("<link") == 1
+        assert rendered_raw.count("_RENDERED") == 1
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered_raw, count=0)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered_raw, count=0)
 
-        self.assertInHTML("<style>.xyz { color: red; }</style>", rendered_raw, count=0)  # Inlined CSS
-        self.assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered_raw, count=0)  # Media.css
+        assertInHTML("<style>.xyz { color: red; }</style>", rendered_raw, count=0)  # Inlined CSS
+        assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered_raw, count=0)  # Media.css
 
-        self.assertInHTML(
+        assertInHTML(
             '<script>console.log("xyz");</script>',
             rendered_raw,
             count=0,
@@ -182,14 +185,14 @@ class RenderDependenciesTests(BaseTestCase):
         rendered = response.content.decode()
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
-        self.assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
+        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
 
-        self.assertEqual(rendered.count('<link href="style.css" media="all" rel="stylesheet">'), 1)  # Media.css
-        self.assertEqual(rendered.count("<link"), 1)
-        self.assertEqual(rendered.count("<style"), 1)
+        assert rendered.count('<link href="style.css" media="all" rel="stylesheet">') == 1  # Media.css
+        assert rendered.count("<link") == 1
+        assert rendered.count("<style") == 1
 
     def test_inserts_styles_and_script_to_default_places_if_not_overriden(self):
         registry.register(name="test", component=SimpleComponent)
@@ -207,12 +210,12 @@ class RenderDependenciesTests(BaseTestCase):
         rendered_raw = Template(template_str).render(Context({}))
         rendered = render_dependencies(rendered_raw)
 
-        self.assertEqual(rendered.count("<script"), 4)
-        self.assertEqual(rendered.count("<style"), 1)
-        self.assertEqual(rendered.count("<link"), 1)
-        self.assertEqual(rendered.count("_RENDERED"), 0)
+        assert rendered.count("<script") == 4
+        assert rendered.count("<style") == 1
+        assert rendered.count("<link") == 1
+        assert rendered.count("_RENDERED") == 0
 
-        self.assertInHTML(
+        assertInHTML(
             """
             <head>
                 <style>.xyz { color: red; }</style>
@@ -226,12 +229,12 @@ class RenderDependenciesTests(BaseTestCase):
         body_re = re.compile(r"<body>(.*?)</body>", re.DOTALL)
         rendered_body = body_re.search(rendered).group(1)  # type: ignore[union-attr]
 
-        self.assertInHTML(
+        assertInHTML(
             """<script src="django_components/django_components.min.js">""",
             rendered_body,
             count=1,
         )
-        self.assertInHTML(
+        assertInHTML(
             '<script>console.log("xyz");</script>',
             rendered_body,
             count=1,
@@ -256,12 +259,12 @@ class RenderDependenciesTests(BaseTestCase):
         rendered_raw = Template(template_str).render(Context({}))
         rendered = render_dependencies(rendered_raw)
 
-        self.assertEqual(rendered.count("<script"), 4)
-        self.assertEqual(rendered.count("<style"), 1)
-        self.assertEqual(rendered.count("<link"), 1)
-        self.assertEqual(rendered.count("_RENDERED"), 0)
+        assert rendered.count("<script") == 4
+        assert rendered.count("<style") == 1
+        assert rendered.count("<link") == 1
+        assert rendered.count("_RENDERED") == 0
 
-        self.assertInHTML(
+        assertInHTML(
             """
             <body>
                 Variable: <strong data-djc-id-a1bc41>foo</strong>
@@ -277,12 +280,12 @@ class RenderDependenciesTests(BaseTestCase):
         head_re = re.compile(r"<head>(.*?)</head>", re.DOTALL)
         rendered_head = head_re.search(rendered).group(1)  # type: ignore[union-attr]
 
-        self.assertInHTML(
+        assertInHTML(
             """<script src="django_components/django_components.min.js">""",
             rendered_head,
             count=1,
         )
-        self.assertInHTML(
+        assertInHTML(
             '<script>console.log("xyz");</script>',
             rendered_head,
             count=1,
@@ -300,7 +303,7 @@ class RenderDependenciesTests(BaseTestCase):
         rendered_raw = Template(template_str).render(Context({"formset": [1]}))
         rendered = render_dependencies(rendered_raw, type="fragment")
 
-        self.assertHTMLEqual(rendered, "<thead>")
+        assertHTMLEqual(rendered, "<thead>")
 
     def test_does_not_modify_html_when_no_component_used(self):
         registry.register(name="test", component=SimpleComponent)
@@ -358,7 +361,7 @@ class RenderDependenciesTests(BaseTestCase):
             </table>
         """
 
-        self.assertHTMLEqual(expected, rendered)
+        assertHTMLEqual(expected, rendered)
 
     # Explanation: The component is used in the template, but the template doesn't use
     # {% component_js_dependencies %} or {% component_css_dependencies %} tags,
@@ -435,7 +438,7 @@ class RenderDependenciesTests(BaseTestCase):
             </script>
         """  # noqa: E501
 
-        self.assertHTMLEqual(expected, rendered)
+        assertHTMLEqual(expected, rendered)
 
     def test_raises_if_script_end_tag_inside_component_js(self):
         class ComponentWithScript(SimpleComponent):
@@ -445,9 +448,9 @@ class RenderDependenciesTests(BaseTestCase):
 
         registry.register(name="test", component=ComponentWithScript)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             RuntimeError,
-            "Content of `Component.js` for component 'ComponentWithScript' contains '</script>' end tag.",
+            match=re.escape("Content of `Component.js` for component 'ComponentWithScript' contains '</script>' end tag."),  # noqa: E501
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
 
@@ -462,19 +465,20 @@ class RenderDependenciesTests(BaseTestCase):
 
         registry.register(name="test", component=ComponentWithScript)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             RuntimeError,
-            "Content of `Component.css` for component 'ComponentWithScript' contains '</style>' end tag.",
+            match=re.escape("Content of `Component.css` for component 'ComponentWithScript' contains '</style>' end tag."),  # noqa: E501
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
 
 
-class MiddlewareTests(BaseTestCase):
+@djc_test
+class TestMiddleware:
     def test_middleware_response_without_content_type(self):
         response = HttpResponseNotModified()
         middleware = ComponentDependencyMiddleware(get_response=lambda _: response)
         request = Mock()
-        self.assertEqual(response, middleware(request=request))
+        assert response == middleware(request=request)
 
     def test_middleware_response_with_components_with_slash_dash_and_underscore(self):
         registry.register("dynamic", DynamicComponent)
@@ -492,14 +496,14 @@ class MiddlewareTests(BaseTestCase):
 
         def assert_dependencies(content: str):
             # Dependency manager script (empty)
-            self.assertInHTML('<script src="django_components/django_components.min.js"></script>', content, count=1)
+            assertInHTML('<script src="django_components/django_components.min.js"></script>', content, count=1)
 
             # Inlined JS
-            self.assertInHTML('<script>console.log("xyz");</script>', content, count=1)
+            assertInHTML('<script>console.log("xyz");</script>', content, count=1)
             # Inlined CSS
-            self.assertInHTML("<style>.xyz { color: red; }</style>", content, count=1)
+            assertInHTML("<style>.xyz { color: red; }</style>", content, count=1)
             # Media.css
-            self.assertInHTML('<link href="style.css" media="all" rel="stylesheet">', content, count=1)
+            assertInHTML('<link href="style.css" media="all" rel="stylesheet">', content, count=1)
 
         rendered1 = create_and_process_template_response(
             template,
@@ -507,10 +511,7 @@ class MiddlewareTests(BaseTestCase):
         )
 
         assert_dependencies(rendered1)
-        self.assertEqual(
-            rendered1.count('Variable: <strong data-djc-id-a1bc42="" data-djc-id-a1bc41="">value</strong>'),
-            1,
-        )
+        assert rendered1.count('Variable: <strong data-djc-id-a1bc42="" data-djc-id-a1bc41="">value</strong>') == 1
 
         rendered2 = create_and_process_template_response(
             template,
@@ -518,10 +519,7 @@ class MiddlewareTests(BaseTestCase):
         )
 
         assert_dependencies(rendered2)
-        self.assertEqual(
-            rendered2.count('Variable: <strong data-djc-id-a1bc44="" data-djc-id-a1bc43="">value</strong>'),
-            1,
-        )
+        assert rendered2.count('Variable: <strong data-djc-id-a1bc44="" data-djc-id-a1bc43="">value</strong>') == 1
 
         rendered3 = create_and_process_template_response(
             template,
@@ -529,7 +527,4 @@ class MiddlewareTests(BaseTestCase):
         )
 
         assert_dependencies(rendered3)
-        self.assertEqual(
-            rendered3.count('Variable: <strong data-djc-id-a1bc46="" data-djc-id-a1bc45="">value</strong>'),
-            1,
-        )
+        assert rendered3.count('Variable: <strong data-djc-id-a1bc46="" data-djc-id-a1bc45="">value</strong>') == 1

@@ -1,83 +1,72 @@
 import os
 import sys
 from pathlib import Path
+from textwrap import dedent
 
 from django.forms.widgets import Media
 from django.template import Context, Template
 from django.templatetags.static import static
-from django.test import override_settings
 from django.utils.html import format_html, html_safe
 from django.utils.safestring import mark_safe
+from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
-from django_components import Component, registry, render_dependencies, types
+from django_components import Component, autodiscover, registry, render_dependencies, types
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, autodiscover_with_cleanup
+from django_components.testing import djc_test
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
 
 # "Main media" refer to the HTML, JS, and CSS set on the Component class itself
 # (as opposed via the `Media` class). These have special handling in the Component.
-class MainMediaTest(BaseTestCase):
+@djc_test
+class TestMainMedia:
     def test_html_js_css_inlined(self):
         class TestComponent(Component):
-            template = """
+            template = dedent("""
                 {% load component_tags %}
                 {% component_js_dependencies %}
                 {% component_css_dependencies %}
                 <div class='html-css-only'>Content</div>
-            """
+            """)
             css = ".html-css-only { color: blue; }"
             js = "console.log('HTML and JS only');"
 
-        self.assertEqual(
-            TestComponent.css,
-            ".html-css-only { color: blue; }",
-        )
-        self.assertEqual(
-            TestComponent.js,
-            "console.log('HTML and JS only');",
-        )
+        assert TestComponent.css == ".html-css-only { color: blue; }"
+        assert TestComponent.js == "console.log('HTML and JS only');"
 
         rendered = TestComponent.render()
 
-        self.assertInHTML(
+        assertInHTML(
             '<div class="html-css-only" data-djc-id-a1bc3e>Content</div>',
             rendered,
         )
-        self.assertInHTML(
+        assertInHTML(
             "<style>.html-css-only { color: blue; }</style>",
             rendered,
         )
-        self.assertInHTML(
+        assertInHTML(
             "<script>console.log('HTML and JS only');</script>",
             rendered,
         )
 
         # Check that the HTML / JS / CSS can be accessed on the component class
-        self.assertEqual(
-            TestComponent.template,
-            """
-                {% load component_tags %}
-                {% component_js_dependencies %}
-                {% component_css_dependencies %}
-                <div class='html-css-only'>Content</div>
-            """,
-        )
-        self.assertEqual(
-            TestComponent.css,
-            ".html-css-only { color: blue; }",
-        )
-        self.assertEqual(
-            TestComponent.js,
-            "console.log('HTML and JS only');",
-        )
+        assert TestComponent.template == dedent("""
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            <div class='html-css-only'>Content</div>
+        """)
+        assert TestComponent.css == ".html-css-only { color: blue; }"
+        assert TestComponent.js == "console.log('HTML and JS only');"
 
-    @override_settings(
-        STATICFILES_DIRS=[
-            os.path.join(Path(__file__).resolve().parent, "static_root"),
-        ],
+    @djc_test(
+        django_settings={
+            "STATICFILES_DIRS": [
+                os.path.join(Path(__file__).resolve().parent, "static_root"),
+            ],
+        }
     )
     def test_html_js_css_filepath_rel_to_component(self):
         from tests.test_app.components.app_lvl_comp.app_lvl_comp import AppLvlCompComponent
@@ -87,14 +76,8 @@ class MainMediaTest(BaseTestCase):
 
         registry.register("test", TestComponent)
 
-        self.assertIn(
-            ".html-css-only {\n  color: blue;\n}",
-            TestComponent.css,
-        )
-        self.assertIn(
-            'console.log("JS file");',
-            TestComponent.js,
-        )
+        assert ".html-css-only {\n  color: blue;\n}" in TestComponent.css  # type: ignore[operator]
+        assert 'console.log("JS file");' in TestComponent.js  # type: ignore[operator]
 
         rendered_raw = Template(
             """
@@ -106,7 +89,7 @@ class MainMediaTest(BaseTestCase):
         ).render(Context())
         rendered = render_dependencies(rendered_raw)
 
-        self.assertInHTML(
+        assertInHTML(
             """
             <form data-djc-id-a1bc41 method="post">
                 <input name="variable" type="text" value="test"/>
@@ -115,37 +98,33 @@ class MainMediaTest(BaseTestCase):
             """,
             rendered,
         )
-        self.assertInHTML(
+        assertInHTML(
             "<style>.html-css-only {  color: blue;  }</style>",
             rendered,
         )
-        self.assertInHTML(
+        assertInHTML(
             '<script>console.log("JS file");</script>',
             rendered,
         )
 
         # Check that the HTML / JS / CSS can be accessed on the component class
-        self.assertEqual(
-            TestComponent.template,
-            (
-                '<form method="post">\n'
-                "  {% csrf_token %}\n"
-                '  <input type="text" name="variable" value="{{ variable }}">\n'
-                '  <input type="submit">\n'
-                "</form>\n"
-            ),
+        assert TestComponent.template == (
+            '<form method="post">\n'
+            "  {% csrf_token %}\n"
+            '  <input type="text" name="variable" value="{{ variable }}">\n'
+            '  <input type="submit">\n'
+            "</form>\n"
         )
 
-        self.assertEqual(TestComponent.css, ".html-css-only {\n" "  color: blue;\n" "}\n")
-        self.assertEqual(
-            TestComponent.js,
-            'console.log("JS file");\n',
-        )
+        assert TestComponent.css == ".html-css-only {\n  color: blue;\n}\n"
+        assert TestComponent.js == 'console.log("JS file");\n'
 
-    @override_settings(
-        STATICFILES_DIRS=[
-            os.path.join(Path(__file__).resolve().parent, "static_root"),
-        ],
+    @djc_test(
+        django_settings={
+            "STATICFILES_DIRS": [
+                os.path.join(Path(__file__).resolve().parent, "static_root"),
+            ],
+        }
     )
     def test_html_js_css_filepath_from_static(self):
         class TestComponent(Component):
@@ -160,18 +139,9 @@ class MainMediaTest(BaseTestCase):
 
         registry.register("test", TestComponent)
 
-        self.assertIn(
-            "Variable: <strong>{{ variable }}</strong>",
-            TestComponent.template,
-        )
-        self.assertIn(
-            ".html-css-only {\n    color: blue;\n}",
-            TestComponent.css,
-        )
-        self.assertIn(
-            'console.log("HTML and JS only");',
-            TestComponent.js,
-        )
+        assert "Variable: <strong>{{ variable }}</strong>" in TestComponent.template  # type: ignore[operator]
+        assert ".html-css-only {\n    color: blue;\n}" in TestComponent.css  # type: ignore[operator]
+        assert 'console.log("HTML and JS only");' in TestComponent.js  # type: ignore[operator]
 
         rendered_raw = Template(
             """
@@ -183,45 +153,35 @@ class MainMediaTest(BaseTestCase):
         ).render(Context())
         rendered = render_dependencies(rendered_raw)
 
-        self.assertIn(
-            'Variable: <strong data-djc-id-a1bc41="">test</strong>',
-            rendered,
-        )
-        self.assertInHTML(
+        assert 'Variable: <strong data-djc-id-a1bc41="">test</strong>' in rendered
+        assertInHTML(
             "<style>/* Used in `MainMediaTest` tests in `test_component_media.py` */\n.html-css-only {\n    color: blue;\n}</style>",
             rendered,
         )
-        self.assertInHTML(
+        assertInHTML(
             '<script>/* Used in `MainMediaTest` tests in `test_component_media.py` */\nconsole.log("HTML and JS only");</script>',
             rendered,
         )
 
         # Check that the HTML / JS / CSS can be accessed on the component class
-        self.assertEqual(
-            TestComponent.template,
-            "Variable: <strong>{{ variable }}</strong>\n",
+        assert TestComponent.template == "Variable: <strong>{{ variable }}</strong>\n"
+        assert TestComponent.css == (
+            "/* Used in `MainMediaTest` tests in `test_component_media.py` */\n"
+            ".html-css-only {\n"
+            "    color: blue;\n"
+            "}"
         )
-        self.assertEqual(
-            TestComponent.css,
-            (
-                "/* Used in `MainMediaTest` tests in `test_component_media.py` */\n"
-                ".html-css-only {\n"
-                "    color: blue;\n"
-                "}"
-            ),
-        )
-        self.assertEqual(
-            TestComponent.js,
-            (
-                "/* Used in `MainMediaTest` tests in `test_component_media.py` */\n"
-                'console.log("HTML and JS only");\n'
-            ),
+        assert TestComponent.js == (
+            "/* Used in `MainMediaTest` tests in `test_component_media.py` */\n"
+            'console.log("HTML and JS only");\n'
         )
 
-    @override_settings(
-        STATICFILES_DIRS=[
-            os.path.join(Path(__file__).resolve().parent, "static_root"),
-        ],
+    @djc_test(
+        django_settings={
+            "STATICFILES_DIRS": [
+                os.path.join(Path(__file__).resolve().parent, "static_root"),
+            ],
+        }
     )
     def test_html_js_css_filepath_lazy_loaded(self):
         from tests.test_app.components.app_lvl_comp.app_lvl_comp import AppLvlCompComponent
@@ -231,51 +191,26 @@ class MainMediaTest(BaseTestCase):
 
         # NOTE: Since this is a subclass, actual CSS is defined on the parent class, and thus
         # the corresponding ComponentMedia instance is also on the parent class.
-        self.assertEqual(
-            AppLvlCompComponent._component_media.css,  # type: ignore[attr-defined]
-            None,
-        )
-        self.assertEqual(
-            AppLvlCompComponent._component_media.css_file,  # type: ignore[attr-defined]
-            "app_lvl_comp.css",
-        )
+        assert AppLvlCompComponent._component_media.css is None  # type: ignore[attr-defined]
+        assert AppLvlCompComponent._component_media.css_file == "app_lvl_comp.css"  # type: ignore[attr-defined]
 
         # Access the property to load the CSS
         _ = TestComponent.css
 
-        self.assertEqual(
-            AppLvlCompComponent._component_media.css,  # type: ignore[attr-defined]
-            (".html-css-only {\n" "  color: blue;\n" "}\n"),
-        )
-        self.assertEqual(
-            AppLvlCompComponent._component_media.css_file,  # type: ignore[attr-defined]
-            "app_lvl_comp/app_lvl_comp.css",
-        )
+        assert AppLvlCompComponent._component_media.css == (".html-css-only {\n" "  color: blue;\n" "}\n")  # type: ignore[attr-defined]
+        assert AppLvlCompComponent._component_media.css_file == "app_lvl_comp/app_lvl_comp.css"  # type: ignore[attr-defined]
 
         # Also check JS and HTML while we're at it
-        self.assertEqual(
-            AppLvlCompComponent._component_media.template,  # type: ignore[attr-defined]
-            (
-                '<form method="post">\n'
-                "  {% csrf_token %}\n"
-                '  <input type="text" name="variable" value="{{ variable }}">\n'
-                '  <input type="submit">\n'
-                "</form>\n"
-            ),
+        assert AppLvlCompComponent._component_media.template == (  # type: ignore[attr-defined]
+            '<form method="post">\n'
+            "  {% csrf_token %}\n"
+            '  <input type="text" name="variable" value="{{ variable }}">\n'
+            '  <input type="submit">\n'
+            "</form>\n"
         )
-        self.assertEqual(
-            AppLvlCompComponent._component_media.template_file,  # type: ignore[attr-defined]
-            "app_lvl_comp/app_lvl_comp.html",
-        )
-
-        self.assertEqual(
-            AppLvlCompComponent._component_media.js,  # type: ignore[attr-defined]
-            'console.log("JS file");\n',
-        )
-        self.assertEqual(
-            AppLvlCompComponent._component_media.js_file,  # type: ignore[attr-defined]
-            "app_lvl_comp/app_lvl_comp.js",
-        )
+        assert AppLvlCompComponent._component_media.template_file == "app_lvl_comp/app_lvl_comp.html"  # type: ignore[attr-defined]
+        assert AppLvlCompComponent._component_media.js == 'console.log("JS file");\n'  # type: ignore[attr-defined]
+        assert AppLvlCompComponent._component_media.js_file == "app_lvl_comp/app_lvl_comp.js"  # type: ignore[attr-defined]
 
     def test_html_variable(self):
         class VariableHTMLComponent(Component):
@@ -284,7 +219,7 @@ class MainMediaTest(BaseTestCase):
 
         comp = VariableHTMLComponent("variable_html_component")
         context = Context({"variable": "Dynamic Content"})
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             comp.render(context),
             '<div class="variable-html" data-djc-id-a1bc3e>Dynamic Content</div>',
         )
@@ -303,7 +238,7 @@ class MainMediaTest(BaseTestCase):
                 }
 
         rendered = FilteredComponent.render(kwargs={"var1": "test1", "var2": "test2"})
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Var1: <strong data-djc-id-a1bc3e>test1</strong>
@@ -312,7 +247,8 @@ class MainMediaTest(BaseTestCase):
         )
 
 
-class ComponentMediaTests(BaseTestCase):
+@djc_test
+class TestComponentMedia:
     def test_empty_media(self):
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -327,10 +263,10 @@ class ComponentMediaTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertEqual(rendered.count("<style"), 0)
-        self.assertEqual(rendered.count("<link"), 0)
+        assert rendered.count("<style") == 0
+        assert rendered.count("<link") == 0
 
-        self.assertEqual(rendered.count("<script"), 1)  # 1 Boilerplate script
+        assert rendered.count("<script") == 1  # 1 Boilerplate script
 
     def test_css_js_as_lists(self):
         class SimpleComponent(Component):
@@ -346,10 +282,10 @@ class ComponentMediaTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style2.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script src="path/to/script.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script.js"></script>', rendered)
 
     def test_css_js_as_string(self):
         class SimpleComponent(Component):
@@ -365,8 +301,8 @@ class ComponentMediaTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<script src="path/to/script.js"></script>', rendered)
+        assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<script src="path/to/script.js"></script>', rendered)
 
     def test_css_as_dict(self):
         class SimpleComponent(Component):
@@ -386,11 +322,11 @@ class ComponentMediaTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style2.css" media="print" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style3.css" media="screen" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style2.css" media="print" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style3.css" media="screen" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script src="path/to/script.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script.js"></script>', rendered)
 
     def test_media_custom_render_js(self):
         class MyMedia(Media):
@@ -415,8 +351,8 @@ class ComponentMediaTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertIn('<script defer src="path/to/script.js"></script>', rendered)
-        self.assertIn('<script defer src="path/to/script2.js"></script>', rendered)
+        assert '<script defer src="path/to/script.js"></script>' in rendered
+        assert '<script defer src="path/to/script2.js"></script>' in rendered
 
     def test_media_custom_render_css(self):
         class MyMedia(Media):
@@ -446,12 +382,13 @@ class ComponentMediaTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link abc href="path/to/style.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link abc href="path/to/style2.css" media="print" rel="stylesheet">', rendered)
-        self.assertInHTML('<link abc href="path/to/style3.css" media="screen" rel="stylesheet">', rendered)
+        assertInHTML('<link abc href="path/to/style.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link abc href="path/to/style2.css" media="print" rel="stylesheet">', rendered)
+        assertInHTML('<link abc href="path/to/style3.css" media="screen" rel="stylesheet">', rendered)
 
 
-class MediaPathAsObjectTests(BaseTestCase):
+@djc_test
+class TestMediaPathAsObject:
     def test_safestring(self):
         """
         Test that media work with paths defined as instances of classes that define
@@ -513,15 +450,15 @@ class MediaPathAsObjectTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link css_tag href="path/to/style.css" rel="stylesheet" />', rendered)
-        self.assertInHTML('<link hi href="path/to/style2.css" rel="stylesheet" />', rendered)
-        self.assertInHTML('<link css_tag href="path/to/style3.css" rel="stylesheet" />', rendered)
-        self.assertInHTML('<link href="path/to/style4.css" media="screen" rel="stylesheet">', rendered)
+        assertInHTML('<link css_tag href="path/to/style.css" rel="stylesheet" />', rendered)
+        assertInHTML('<link hi href="path/to/style2.css" rel="stylesheet" />', rendered)
+        assertInHTML('<link css_tag href="path/to/style3.css" rel="stylesheet" />', rendered)
+        assertInHTML('<link href="path/to/style4.css" media="screen" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script js_tag src="path/to/script.js" type="module"></script>', rendered)
-        self.assertInHTML('<script hi src="path/to/script2.js"></script>', rendered)
-        self.assertInHTML('<script type="module" src="path/to/script3.js"></script>', rendered)
-        self.assertInHTML('<script src="path/to/script4.js"></script>', rendered)
+        assertInHTML('<script js_tag src="path/to/script.js" type="module"></script>', rendered)
+        assertInHTML('<script hi src="path/to/script2.js"></script>', rendered)
+        assertInHTML('<script type="module" src="path/to/script3.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script4.js"></script>', rendered)
 
     def test_pathlike(self):
         """
@@ -562,14 +499,14 @@ class MediaPathAsObjectTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style2.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style3.css" media="print" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style4.css" media="screen" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style3.css" media="print" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style4.css" media="screen" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script src="path/to/script.js"></script>', rendered)
-        self.assertInHTML('<script src="path/to/script2.js"></script>', rendered)
-        self.assertInHTML('<script src="path/to/script3.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script2.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script3.js"></script>', rendered)
 
     def test_str(self):
         """
@@ -605,13 +542,13 @@ class MediaPathAsObjectTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style2.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style3.css" media="print" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style4.css" media="screen" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style3.css" media="print" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style4.css" media="screen" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script src="path/to/script.js"></script>', rendered)
-        self.assertInHTML('<script src="path/to/script2.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script2.js"></script>', rendered)
 
     def test_bytes(self):
         """
@@ -647,13 +584,13 @@ class MediaPathAsObjectTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style2.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style3.css" media="print" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="path/to/style4.css" media="screen" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style3.css" media="print" rel="stylesheet">', rendered)
+        assertInHTML('<link href="path/to/style4.css" media="screen" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script src="path/to/script.js"></script>', rendered)
-        self.assertInHTML('<script src="path/to/script2.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script.js"></script>', rendered)
+        assertInHTML('<script src="path/to/script2.js"></script>', rendered)
 
     def test_function(self):
         class SimpleComponent(Component):
@@ -679,17 +616,21 @@ class MediaPathAsObjectTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link hi href="calendar/style.css" rel="stylesheet" />', rendered)
-        self.assertInHTML('<link href="calendar/style1.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="calendar/style2.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="calendar/style3.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link hi href="calendar/style.css" rel="stylesheet" />', rendered)
+        assertInHTML('<link href="calendar/style1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="calendar/style2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="calendar/style3.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script hi src="calendar/script.js"></script>', rendered)
-        self.assertInHTML('<script src="calendar/script1.js"></script>', rendered)
-        self.assertInHTML('<script src="calendar/script2.js"></script>', rendered)
-        self.assertInHTML('<script src="calendar/script3.js"></script>', rendered)
+        assertInHTML('<script hi src="calendar/script.js"></script>', rendered)
+        assertInHTML('<script src="calendar/script1.js"></script>', rendered)
+        assertInHTML('<script src="calendar/script2.js"></script>', rendered)
+        assertInHTML('<script src="calendar/script3.js"></script>', rendered)
 
-    @override_settings(STATIC_URL="static/")
+    @djc_test(
+        django_settings={
+            "STATIC_URL": "static/",
+        }
+    )
     def test_works_with_static(self):
         """Test that all the different ways of defining media files works with Django's staticfiles"""
 
@@ -718,32 +659,35 @@ class MediaPathAsObjectTests(BaseTestCase):
 
         rendered = SimpleComponent.render()
 
-        self.assertInHTML('<link hi href="/static/calendar/style.css" rel="stylesheet" />', rendered)
-        self.assertInHTML('<link href="/static/calendar/style1.css" media="all" rel="stylesheet" />', rendered)
-        self.assertInHTML('<link href="/static/calendar/style1.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="/static/calendar/style2.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="/static/calendar/style3.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link hi href="/static/calendar/style.css" rel="stylesheet" />', rendered)
+        assertInHTML('<link href="/static/calendar/style1.css" media="all" rel="stylesheet" />', rendered)
+        assertInHTML('<link href="/static/calendar/style1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="/static/calendar/style2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="/static/calendar/style3.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script hi src="/static/calendar/script.js"></script>', rendered)
-        self.assertInHTML('<script src="/static/calendar/script1.js"></script>', rendered)
-        self.assertInHTML('<script src="/static/calendar/script2.js"></script>', rendered)
-        self.assertInHTML('<script src="/static/calendar/script3.js"></script>', rendered)
+        assertInHTML('<script hi src="/static/calendar/script.js"></script>', rendered)
+        assertInHTML('<script src="/static/calendar/script1.js"></script>', rendered)
+        assertInHTML('<script src="/static/calendar/script2.js"></script>', rendered)
+        assertInHTML('<script src="/static/calendar/script3.js"></script>', rendered)
 
 
-class MediaStaticfilesTests(BaseTestCase):
+@djc_test
+class TestMediaStaticfiles:
     # For context see https://github.com/django-components/django-components/issues/522
-    @override_settings(
-        # Configure static files. The dummy files are set up in the `./static_root` dir.
-        # The URL should have path prefix /static/.
-        # NOTE: We don't need STATICFILES_DIRS, because we don't run collectstatic
-        #       See https://docs.djangoproject.com/en/5.0/ref/settings/#std-setting-STATICFILES_DIRS
-        STATIC_URL="static/",
-        STATIC_ROOT=os.path.join(Path(__file__).resolve().parent, "static_root"),
-        # `django.contrib.staticfiles` MUST be installed for staticfiles resolution to work.
-        INSTALLED_APPS=[
-            "django.contrib.staticfiles",
-            "django_components",
-        ],
+    @djc_test(
+        django_settings={
+            # Configure static files. The dummy files are set up in the `./static_root` dir.
+            # The URL should have path prefix /static/.
+            # NOTE: We don't need STATICFILES_DIRS, because we don't run collectstatic
+            #       See https://docs.djangoproject.com/en/5.0/ref/settings/#std-setting-STATICFILES_DIRS
+            "STATIC_URL": "static/",
+            "STATIC_ROOT": os.path.join(Path(__file__).resolve().parent, "static_root"),
+            # `django.contrib.staticfiles` MUST be installed for staticfiles resolution to work.
+            "INSTALLED_APPS": [
+                "django.contrib.staticfiles",
+                "django_components",
+            ],
+        }
     )
     def test_default_static_files_storage(self):
         """Test integration with Django's staticfiles app"""
@@ -773,35 +717,37 @@ class MediaStaticfilesTests(BaseTestCase):
 
         # NOTE: Since we're using the default storage class for staticfiles, the files should
         # be searched as specified above (e.g. `calendar/script.js`) inside `static_root` dir.
-        self.assertInHTML('<link href="/static/calendar/style.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="/static/calendar/style.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script defer src="/static/calendar/script.js"></script>', rendered)
+        assertInHTML('<script defer src="/static/calendar/script.js"></script>', rendered)
 
     # For context see https://github.com/django-components/django-components/issues/522
-    @override_settings(
-        # Configure static files. The dummy files are set up in the `./static_root` dir.
-        # The URL should have path prefix /static/.
-        # NOTE: We don't need STATICFILES_DIRS, because we don't run collectstatic
-        #       See https://docs.djangoproject.com/en/5.0/ref/settings/#std-setting-STATICFILES_DIRS
-        STATIC_URL="static/",
-        STATIC_ROOT=os.path.join(Path(__file__).resolve().parent, "static_root"),
-        # NOTE: STATICFILES_STORAGE is deprecated since 5.1, use STORAGES instead
-        #       See https://docs.djangoproject.com/en/5.0/ref/settings/#staticfiles-storage
-        STORAGES={
-            # This was NOT changed
-            "default": {
-                "BACKEND": "django.core.files.storage.FileSystemStorage",
+    @djc_test(
+        django_settings={
+            # Configure static files. The dummy files are set up in the `./static_root` dir.
+            # The URL should have path prefix /static/.
+            # NOTE: We don't need STATICFILES_DIRS, because we don't run collectstatic
+            #       See https://docs.djangoproject.com/en/5.0/ref/settings/#std-setting-STATICFILES_DIRS
+            "STATIC_URL": "static/",
+            "STATIC_ROOT": os.path.join(Path(__file__).resolve().parent, "static_root"),
+            # NOTE: STATICFILES_STORAGE is deprecated since 5.1, use STORAGES instead
+            #       See https://docs.djangoproject.com/en/5.0/ref/settings/#staticfiles-storage
+            "STORAGES": {
+                # This was NOT changed
+                "default": {
+                    "BACKEND": "django.core.files.storage.FileSystemStorage",
+                },
+                # This WAS changed so that static files are looked up by the `staticfiles.json`
+                "staticfiles": {
+                    "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
+                },
             },
-            # This WAS changed so that static files are looked up by the `staticfiles.json`
-            "staticfiles": {
-                "BACKEND": "django.contrib.staticfiles.storage.ManifestStaticFilesStorage",
-            },
-        },
-        # `django.contrib.staticfiles` MUST be installed for staticfiles resolution to work.
-        INSTALLED_APPS=[
-            "django.contrib.staticfiles",
-            "django_components",
-        ],
+            # `django.contrib.staticfiles` MUST be installed for staticfiles resolution to work.
+            "INSTALLED_APPS": [
+                "django.contrib.staticfiles",
+                "django_components",
+            ],
+        }
     )
     def test_manifest_static_files_storage(self):
         """Test integration with Django's staticfiles app and ManifestStaticFilesStorage"""
@@ -831,14 +777,15 @@ class MediaStaticfilesTests(BaseTestCase):
 
         # NOTE: Since we're using ManifestStaticFilesStorage, we expect the rendered media to link
         # to the files as defined in staticfiles.json
-        self.assertInHTML(
+        assertInHTML(
             '<link href="/static/calendar/style.0eeb72042b59.css" media="all" rel="stylesheet">', rendered
         )
 
-        self.assertInHTML('<script defer src="/static/calendar/script.e1815e23e0ec.js"></script>', rendered)
+        assertInHTML('<script defer src="/static/calendar/script.e1815e23e0ec.js"></script>', rendered)
 
 
-class MediaRelativePathTests(BaseTestCase):
+@djc_test
+class TestMediaRelativePath:
     class ParentComponent(Component):
         template: types.django_html = """
             {% load component_tags %}
@@ -874,94 +821,103 @@ class MediaRelativePathTests(BaseTestCase):
                 context["unique_variable"] = new_variable
             return context
 
-    def setUp(self):
-        super().setUp()
+    # Settings required for autodiscover to work
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).resolve().parent,
+            "STATICFILES_DIRS": [
+                Path(__file__).resolve().parent / "components",
+            ],
+        }
+    )
+    def test_component_with_relative_media_paths(self):
         registry.register(name="parent_component", component=self.ParentComponent)
         registry.register(name="variable_display", component=self.VariableDisplay)
 
-    # Settings required for autodiscover to work
-    @override_settings(
-        BASE_DIR=Path(__file__).resolve().parent,
-        STATICFILES_DIRS=[
-            Path(__file__).resolve().parent / "components",
-        ],
-    )
-    def test_component_with_relative_media_paths(self):
         # Ensure that the module is executed again after import in autodiscovery
         if "tests.components.relative_file.relative_file" in sys.modules:
             del sys.modules["tests.components.relative_file.relative_file"]
 
         # Fix the paths, since the "components" dir is nested
-        with autodiscover_with_cleanup(map_module=lambda p: f"tests.{p}" if p.startswith("components") else p):
-            # Make sure that only relevant components are registered:
-            comps_to_remove = [
-                comp_name
-                for comp_name in registry.all()
-                if comp_name not in ["relative_file_component", "parent_component", "variable_display"]
-            ]
-            for comp_name in comps_to_remove:
-                registry.unregister(comp_name)
+        autodiscover(map_module=lambda p: f"tests.{p}" if p.startswith("components") else p)
 
-            template_str: types.django_html = """
-                {% load component_tags %}
-                {% component_js_dependencies %}
-                {% component_css_dependencies %}
-                {% component name='relative_file_component' variable=variable / %}
+        # Make sure that only relevant components are registered:
+        comps_to_remove = [
+            comp_name
+            for comp_name in registry.all()
+            if comp_name not in ["relative_file_component", "parent_component", "variable_display"]
+        ]
+        for comp_name in comps_to_remove:
+            registry.unregister(comp_name)
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% component name='relative_file_component' variable=variable / %}
+        """
+        template = Template(template_str)
+        rendered = render_dependencies(template.render(Context({"variable": "test"})))
+
+        assertInHTML('<link href="relative_file/relative_file.css" media="all" rel="stylesheet">', rendered)
+
+        assertInHTML(
             """
-            template = Template(template_str)
-            rendered = render_dependencies(template.render(Context({"variable": "test"})))
+            <form data-djc-id-a1bc41 method="post">
+                <input type="text" name="variable" value="test">
+                <input type="submit">
+            </form>
+            """,
+            rendered,
+        )
 
-            self.assertInHTML('<link href="relative_file/relative_file.css" media="all" rel="stylesheet">', rendered)
-
-            self.assertInHTML(
-                """
-                <form data-djc-id-a1bc41 method="post">
-                    <input type="text" name="variable" value="test">
-                    <input type="submit">
-                </form>
-                """,
-                rendered,
-            )
-
-            self.assertInHTML('<link href="relative_file/relative_file.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="relative_file/relative_file.css" media="all" rel="stylesheet">', rendered)
 
     # Settings required for autodiscover to work
-    @override_settings(
-        BASE_DIR=Path(__file__).resolve().parent,
-        STATICFILES_DIRS=[
-            Path(__file__).resolve().parent / "components",
-        ],
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).resolve().parent,
+            "STATICFILES_DIRS": [
+                Path(__file__).resolve().parent / "components",
+            ],
+        }
     )
     def test_component_with_relative_media_paths_as_subcomponent(self):
+        registry.register(name="parent_component", component=self.ParentComponent)
+        registry.register(name="variable_display", component=self.VariableDisplay)
+
         # Ensure that the module is executed again after import in autodiscovery
         if "tests.components.relative_file.relative_file" in sys.modules:
             del sys.modules["tests.components.relative_file.relative_file"]
 
         # Fix the paths, since the "components" dir is nested
-        with autodiscover_with_cleanup(map_module=lambda p: f"tests.{p}" if p.startswith("components") else p):
-            registry.unregister("relative_file_pathobj_component")
+        autodiscover(map_module=lambda p: f"tests.{p}" if p.startswith("components") else p)
 
-            template_str: types.django_html = """
-                {% load component_tags %}
-                {% component_js_dependencies %}
-                {% component_css_dependencies %}
-                {% component 'parent_component' %}
-                    {% fill 'content' %}
-                        {% component name='relative_file_component' variable='hello' %}
-                        {% endcomponent %}
-                    {% endfill %}
-                {% endcomponent %}
-            """
-            template = Template(template_str)
-            rendered = template.render(Context({}))
-            self.assertInHTML('<input type="text" name="variable" value="hello">', rendered)
+        registry.unregister("relative_file_pathobj_component")
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% component 'parent_component' %}
+                {% fill 'content' %}
+                    {% component name='relative_file_component' variable='hello' %}
+                    {% endcomponent %}
+                {% endfill %}
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        assertInHTML('<input type="text" name="variable" value="hello">', rendered)
 
     # Settings required for autodiscover to work
-    @override_settings(
-        BASE_DIR=Path(__file__).resolve().parent,
-        STATICFILES_DIRS=[
-            Path(__file__).resolve().parent / "components",
-        ],
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).resolve().parent,
+            "STATICFILES_DIRS": [
+                Path(__file__).resolve().parent / "components",
+            ],
+        }
     )
     def test_component_with_relative_media_does_not_trigger_safestring_path_at__new__(self):
         """
@@ -974,28 +930,32 @@ class MediaRelativePathTests(BaseTestCase):
 
         https://github.com/django-components/django-components/issues/522#issuecomment-2173577094
         """
+        registry.register(name="parent_component", component=self.ParentComponent)
+        registry.register(name="variable_display", component=self.VariableDisplay)
 
         # Ensure that the module is executed again after import in autodiscovery
         if "tests.components.relative_file_pathobj.relative_file_pathobj" in sys.modules:
             del sys.modules["tests.components.relative_file_pathobj.relative_file_pathobj"]
 
         # Fix the paths, since the "components" dir is nested
-        with autodiscover_with_cleanup(map_module=lambda p: f"tests.{p}" if p.startswith("components") else p):
-            # Mark the PathObj instances of 'relative_file_pathobj_component' so they won't raise
-            # error if PathObj.__str__ is triggered.
-            CompCls = registry.get("relative_file_pathobj_component")
-            CompCls.Media.js[0].throw_on_calling_str = False  # type: ignore
-            CompCls.Media.css["all"][0].throw_on_calling_str = False  # type: ignore
+        autodiscover(map_module=lambda p: f"tests.{p}" if p.startswith("components") else p)
 
-            rendered = CompCls.render(kwargs={"variable": "abc"})
+        # Mark the PathObj instances of 'relative_file_pathobj_component' so they won't raise
+        # error if PathObj.__str__ is triggered.
+        CompCls = registry.get("relative_file_pathobj_component")
+        CompCls.Media.js[0].throw_on_calling_str = False  # type: ignore
+        CompCls.Media.css["all"][0].throw_on_calling_str = False  # type: ignore
 
-            self.assertInHTML('<input type="text" name="variable" value="abc">', rendered)
-            self.assertInHTML('<link href="relative_file_pathobj.css" rel="stylesheet">', rendered)
+        rendered = CompCls.render(kwargs={"variable": "abc"})
 
-            self.assertInHTML('<script type="module" src="relative_file_pathobj.js"></script>', rendered)
+        assertInHTML('<input type="text" name="variable" value="abc">', rendered)
+        assertInHTML('<link href="relative_file_pathobj.css" rel="stylesheet">', rendered)
+
+        assertInHTML('<script type="module" src="relative_file_pathobj.js"></script>', rendered)
 
 
-class SubclassingMediaTests(BaseTestCase):
+@djc_test
+class TestSubclassingMedia:
     def test_media_in_child_and_parent(self):
         class ParentComponent(Component):
             template: types.django_html = """
@@ -1015,11 +975,11 @@ class SubclassingMediaTests(BaseTestCase):
 
         rendered = ChildComponent.render()
 
-        self.assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="parent.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="parent.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script src="child.js"></script>', rendered)
-        self.assertInHTML('<script src="parent.js"></script>', rendered)
+        assertInHTML('<script src="child.js"></script>', rendered)
+        assertInHTML('<script src="parent.js"></script>', rendered)
 
     def test_media_in_child_and_grandparent(self):
         class GrandParentComponent(Component):
@@ -1043,11 +1003,11 @@ class SubclassingMediaTests(BaseTestCase):
 
         rendered = ChildComponent.render()
 
-        self.assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="grandparent.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="grandparent.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script src="child.js"></script>', rendered)
-        self.assertInHTML('<script src="grandparent.js"></script>', rendered)
+        assertInHTML('<script src="child.js"></script>', rendered)
+        assertInHTML('<script src="grandparent.js"></script>', rendered)
 
     def test_media_in_parent_and_grandparent(self):
         class GrandParentComponent(Component):
@@ -1071,11 +1031,11 @@ class SubclassingMediaTests(BaseTestCase):
 
         rendered = ChildComponent.render()
 
-        self.assertInHTML('<link href="parent.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="grandparent.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="parent.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="grandparent.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script src="parent.js"></script>', rendered)
-        self.assertInHTML('<script src="grandparent.js"></script>', rendered)
+        assertInHTML('<script src="parent.js"></script>', rendered)
+        assertInHTML('<script src="grandparent.js"></script>', rendered)
 
     def test_media_in_multiple_bases(self):
         class GrandParent1Component(Component):
@@ -1118,15 +1078,15 @@ class SubclassingMediaTests(BaseTestCase):
 
         rendered = ChildComponent.render()
 
-        self.assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="parent1.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="grandparent1.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="grandparent3.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="parent1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="grandparent1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="grandparent3.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertInHTML('<script src="child.js"></script>', rendered)
-        self.assertInHTML('<script src="parent1.js"></script>', rendered)
-        self.assertInHTML('<script src="grandparent1.js"></script>', rendered)
-        self.assertInHTML('<script src="grandparent3.js"></script>', rendered)
+        assertInHTML('<script src="child.js"></script>', rendered)
+        assertInHTML('<script src="parent1.js"></script>', rendered)
+        assertInHTML('<script src="grandparent1.js"></script>', rendered)
+        assertInHTML('<script src="grandparent3.js"></script>', rendered)
 
     def test_extend_false_in_child(self):
         class Parent1Component(Component):
@@ -1153,13 +1113,13 @@ class SubclassingMediaTests(BaseTestCase):
 
         rendered = ChildComponent.render()
 
-        self.assertNotIn("parent1.css", rendered)
-        self.assertNotIn("parent2.css", rendered)
-        self.assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
+        assert "parent1.css" not in rendered
+        assert "parent2.css" not in rendered
+        assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertNotIn("parent1.js", rendered)
-        self.assertNotIn("parent2.js", rendered)
-        self.assertInHTML('<script src="child.js"></script>', rendered)
+        assert "parent1.js" not in rendered
+        assert "parent2.js" not in rendered
+        assertInHTML('<script src="child.js"></script>', rendered)
 
     def test_extend_false_in_parent(self):
         class GrandParentComponent(Component):
@@ -1191,15 +1151,15 @@ class SubclassingMediaTests(BaseTestCase):
 
         rendered = ChildComponent.render()
 
-        self.assertNotIn("grandparent.css", rendered)
-        self.assertInHTML('<link href="parent1.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="parent2.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
+        assert "grandparent.css" not in rendered
+        assertInHTML('<link href="parent1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="parent2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertNotIn("grandparent.js", rendered)
-        self.assertInHTML('<script src="parent1.js"></script>', rendered)
-        self.assertInHTML('<script src="parent2.js"></script>', rendered)
-        self.assertInHTML('<script src="child.js"></script>', rendered)
+        assert "grandparent.js" not in rendered
+        assertInHTML('<script src="parent1.js"></script>', rendered)
+        assertInHTML('<script src="parent2.js"></script>', rendered)
+        assertInHTML('<script src="child.js"></script>', rendered)
 
     def test_extend_list_in_child(self):
         class Parent1Component(Component):
@@ -1236,17 +1196,17 @@ class SubclassingMediaTests(BaseTestCase):
 
         rendered = ChildComponent.render()
 
-        self.assertNotIn("parent1.css", rendered)
-        self.assertNotIn("parent2.css", rendered)
-        self.assertInHTML('<link href="other1.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="other2.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
+        assert "parent1.css" not in rendered
+        assert "parent2.css" not in rendered
+        assertInHTML('<link href="other1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="other2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertNotIn("parent1.js", rendered)
-        self.assertNotIn("parent2.js", rendered)
-        self.assertInHTML('<script src="other1.js"></script>', rendered)
-        self.assertInHTML('<script src="other2.js"></script>', rendered)
-        self.assertInHTML('<script src="child.js"></script>', rendered)
+        assert "parent1.js" not in rendered
+        assert "parent2.js" not in rendered
+        assertInHTML('<script src="other1.js"></script>', rendered)
+        assertInHTML('<script src="other2.js"></script>', rendered)
+        assertInHTML('<script src="child.js"></script>', rendered)
 
     def test_extend_list_in_parent(self):
         class Other1Component(Component):
@@ -1288,16 +1248,16 @@ class SubclassingMediaTests(BaseTestCase):
 
         rendered = ChildComponent.render()
 
-        self.assertNotIn("grandparent.css", rendered)
-        self.assertInHTML('<link href="other1.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="other2.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="parent1.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="parent2.css" media="all" rel="stylesheet">', rendered)
-        self.assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
+        assert "grandparent.css" not in rendered
+        assertInHTML('<link href="other1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="other2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="parent1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="parent2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
 
-        self.assertNotIn("grandparent.js", rendered)
-        self.assertInHTML('<script src="other1.js"></script>', rendered)
-        self.assertInHTML('<script src="other2.js"></script>', rendered)
-        self.assertInHTML('<script src="parent1.js"></script>', rendered)
-        self.assertInHTML('<script src="parent2.js"></script>', rendered)
-        self.assertInHTML('<script src="child.js"></script>', rendered)
+        assert "grandparent.js" not in rendered
+        assertInHTML('<script src="other1.js"></script>', rendered)
+        assertInHTML('<script src="other2.js"></script>', rendered)
+        assertInHTML('<script src="parent1.js"></script>', rendered)
+        assertInHTML('<script src="parent2.js"></script>', rendered)
+        assertInHTML('<script src="child.js"></script>', rendered)

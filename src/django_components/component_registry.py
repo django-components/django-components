@@ -1,4 +1,6 @@
+import sys
 from typing import TYPE_CHECKING, Callable, Dict, List, NamedTuple, Optional, Set, Type, Union
+from weakref import ReferenceType, finalize
 
 from django.template import Library
 from django.template.base import Parser, Token
@@ -6,6 +8,7 @@ from django.template.base import Parser, Token
 from django_components.app_settings import ContextBehaviorType, app_settings
 from django_components.library import is_tag_protected, mark_protected_tags, register_tag
 from django_components.tag_formatter import TagFormatterABC, get_tag_formatter
+from django_components.util.weakref import cached_ref
 
 if TYPE_CHECKING:
     from django_components.component import (
@@ -17,6 +20,13 @@ if TYPE_CHECKING:
         KwargsType,
         SlotsType,
     )
+
+
+# NOTE: `ReferenceType` is NOT a generic pre-3.9
+if sys.version_info >= (3, 9):
+    AllRegistries = List[ReferenceType["ComponentRegistry"]]
+else:
+    AllRegistries = List[ReferenceType]
 
 
 class AlreadyRegistered(Exception):
@@ -130,7 +140,7 @@ class InternalRegistrySettings(NamedTuple):
 # We keep track of all registries that exist so that, when users want to
 # dynamically resolve component name to component class, they would be able
 # to search across all registries.
-all_registries: List["ComponentRegistry"] = []
+ALL_REGISTRIES: AllRegistries = []
 
 
 class ComponentRegistry:
@@ -223,10 +233,19 @@ class ComponentRegistry:
         self._registry: Dict[str, ComponentRegistryEntry] = {}  # component name -> component_entry mapping
         self._tags: Dict[str, Set[str]] = {}  # tag -> list[component names]
         self._library = library
-        self._settings_input = settings
-        self._settings: Optional[Callable[[], InternalRegistrySettings]] = None
+        self._settings = settings
 
-        all_registries.append(self)
+        ALL_REGISTRIES.append(cached_ref(self))
+
+    def __del__(self) -> None:
+        # Unregister all components when the registry is deleted
+        self.clear()
+
+    def __copy__(self) -> "ComponentRegistry":
+        new_registry = ComponentRegistry(self.library, self._settings)
+        new_registry._registry = self._registry.copy()
+        new_registry._tags = self._tags.copy()
+        return new_registry
 
     @property
     def library(self) -> Library:
@@ -254,40 +273,24 @@ class ComponentRegistry:
         """
         [Registry settings](../api#django_components.RegistrySettings) configured for this registry.
         """
-        # This is run on subsequent calls
-        if self._settings is not None:
-            # NOTE: Registry's settings can be a function, so we always take
-            # the latest value from Django's settings.
-            settings = self._settings()
-
-        # First-time initialization
         # NOTE: We allow the settings to be given as a getter function
         # so the settings can respond to changes.
-        # So we wrapp that in our getter, which assigns default values from the settings.
+        if callable(self._settings):
+            settings_input: Optional[RegistrySettings] = self._settings(self)
         else:
+            settings_input = self._settings
 
-            def get_settings() -> InternalRegistrySettings:
-                if callable(self._settings_input):
-                    settings_input: Optional[RegistrySettings] = self._settings_input(self)
-                else:
-                    settings_input = self._settings_input
+        if settings_input:
+            context_behavior = settings_input.context_behavior or settings_input.CONTEXT_BEHAVIOR
+            tag_formatter = settings_input.tag_formatter or settings_input.TAG_FORMATTER
+        else:
+            context_behavior = None
+            tag_formatter = None
 
-                if settings_input:
-                    context_behavior = settings_input.context_behavior or settings_input.CONTEXT_BEHAVIOR
-                    tag_formatter = settings_input.tag_formatter or settings_input.TAG_FORMATTER
-                else:
-                    context_behavior = None
-                    tag_formatter = None
-
-                return InternalRegistrySettings(
-                    context_behavior=context_behavior or app_settings.CONTEXT_BEHAVIOR.value,
-                    tag_formatter=tag_formatter or app_settings.TAG_FORMATTER,
-                )
-
-            self._settings = get_settings
-            settings = self._settings()
-
-        return settings
+        return InternalRegistrySettings(
+            context_behavior=context_behavior or app_settings.CONTEXT_BEHAVIOR.value,
+            tag_formatter=tag_formatter or app_settings.TAG_FORMATTER,
+        )
 
     def register(self, name: str, component: Type["Component"]) -> None:
         """
@@ -330,6 +333,9 @@ class ComponentRegistry:
 
         self._registry[name] = entry
 
+        # If the component class is deleted, unregister it from this registry.
+        finalize(entry.cls, lambda: self.unregister(name) if name in self._registry else None)
+
     def unregister(self, name: str) -> None:
         """
         Unregister the [`Component`](../api#django_components.Component) class
@@ -360,22 +366,27 @@ class ComponentRegistry:
         entry = self._registry[name]
         tag = entry.tag
 
-        # Unregister the tag from library if this was the last component using this tag
-        # Unlink component from tag
-        self._tags[tag].remove(name)
+        # Unregister the tag from library.
+        # If this was the last component using this tag, unlink component from tag.
+        if tag in self._tags:
+            if name in self._tags[tag]:
+                self._tags[tag].remove(name)
 
-        # Cleanup
-        is_tag_empty = not len(self._tags[tag])
-        if is_tag_empty:
-            del self._tags[tag]
+            # Cleanup
+            is_tag_empty = not len(self._tags[tag])
+            if is_tag_empty:
+                self._tags.pop(tag, None)
+        else:
+            is_tag_empty = True
 
         # Only unregister a tag if it's NOT protected
         is_protected = is_tag_protected(self.library, tag)
         if not is_protected:
             # Unregister the tag from library if this was the last component using this tag
             if is_tag_empty and tag in self.library.tags:
-                del self.library.tags[tag]
+                self.library.tags.pop(tag, None)
 
+        entry = self._registry[name]
         del self._registry[name]
 
     def get(self, name: str) -> Type["Component"]:

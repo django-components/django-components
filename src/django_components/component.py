@@ -1,3 +1,4 @@
+import sys
 import types
 from collections import deque
 from contextlib import contextmanager
@@ -22,6 +23,7 @@ from typing import (
     Union,
     cast,
 )
+from weakref import ReferenceType
 
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.widgets import Media as MediaCls
@@ -77,6 +79,7 @@ from django_components.util.logger import trace_component_msg
 from django_components.util.misc import gen_id, get_import_path, hash_comp_cls
 from django_components.util.template_tag import TagAttr
 from django_components.util.validation import validate_typed_dict, validate_typed_tuple
+from django_components.util.weakref import cached_ref
 
 # TODO_REMOVE_IN_V1 - Users should use top-level import instead
 # isort: off
@@ -97,6 +100,17 @@ SlotsType = TypeVar("SlotsType", bound=Mapping[SlotName, SlotContent])
 DataType = TypeVar("DataType", bound=Mapping[str, Any], covariant=True)
 JsDataType = TypeVar("JsDataType", bound=Mapping[str, Any])
 CssDataType = TypeVar("CssDataType", bound=Mapping[str, Any])
+
+
+# NOTE: `ReferenceType` is NOT a generic pre-3.9
+if sys.version_info >= (3, 9):
+    AllComponents = List[ReferenceType["ComponentRegistry"]]
+else:
+    AllComponents = List[ReferenceType]
+
+
+# Keep track of all the Component classes created, so we can clean up after tests
+ALL_COMPONENTS: AllComponents = []
 
 
 @dataclass(frozen=True)
@@ -612,6 +626,8 @@ class Component(
     def __init_subclass__(cls, **kwargs: Any) -> None:
         cls._class_hash = hash_comp_cls(cls)
         comp_hash_mapping[cls._class_hash] = cls
+
+        ALL_COMPONENTS.append(cached_ref(cls))  # type: ignore[arg-type]
 
     @contextmanager
     def _with_metadata(self, item: MetadataItem) -> Generator[None, None, None]:

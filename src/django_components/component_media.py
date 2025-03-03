@@ -1,6 +1,7 @@
 import os
 import sys
 from collections import deque
+from copy import copy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional, Protocol, Tuple, Type, Union, cast
@@ -238,6 +239,13 @@ class ComponentMedia:
                     f"Received non-null value from both '{inlined_attr}' and '{file_attr}' in"
                     f" Component {self.comp_cls.__name__}. Only one of the two must be set."
                 )
+        # Make a copy of the original state, so we can reset it in tests
+        self._original = copy(self)
+
+    # Return ComponentMedia to its original state before the media was resolved
+    def reset(self) -> None:
+        self.__dict__.update(self._original.__dict__)
+        self.resolved = False
 
 
 # This metaclass is all about one thing - lazily resolving the media files.

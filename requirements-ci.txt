@@ -4,17 +4,23 @@
 #
 #    pip-compile requirements-ci.in
 #
-cachetools==5.5.0
+asv==0.6.4
+    # via -r requirements-ci.in
+asv-runner==0.2.1
+    # via asv
+build==1.2.2.post1
+    # via asv
+cachetools==5.5.2
     # via tox
-certifi==2024.8.30
+certifi==2025.1.31
     # via requests
 chardet==5.2.0
     # via tox
-charset-normalizer==3.3.2
+charset-normalizer==3.4.1
     # via requests
 colorama==0.4.6
     # via tox
-distlib==0.3.8
+distlib==0.3.9
     # via virtualenv
 filelock==3.16.1
     # via
@@ -24,9 +30,17 @@ greenlet==3.1.1
     # via playwright
 idna==3.10
     # via requests
+importlib-metadata==8.5.0
+    # via asv-runner
+iniconfig==2.0.0
+    # via pytest
+json5==0.10.0
+    # via asv
 packaging==24.2
     # via
+    #   build
     #   pyproject-api
+    #   pytest
     #   tox
 platformdirs==4.3.6
     # via
@@ -35,18 +49,36 @@ platformdirs==4.3.6
 playwright==1.48.0
     # via -r requirements-ci.in
 pluggy==1.5.0
-    # via tox
+    # via
+    #   pytest
+    #   tox
 pyee==12.0.0
     # via playwright
+pympler==1.1
+    # via asv
 pyproject-api==1.8.0
     # via tox
+pyproject-hooks==1.2.0
+    # via build
+pytest==8.3.4
+    # via
+    #   pytest-asyncio
+    #   pytest-django
+pytest-asyncio==0.24.0
+    # via -r requirements-ci.in
+pytest-django==4.10.0
+    # via -r requirements-ci.in
+pyyaml==6.0.2
+    # via asv
 requests==2.32.3
     # via -r requirements-ci.in
+tabulate==0.9.0
+    # via asv
 tox==4.24.1
     # via
     #   -r requirements-ci.in
     #   tox-gh-actions
-tox-gh-actions==3.2.0
+tox-gh-actions==3.3.0
     # via -r requirements-ci.in
 types-requests==2.32.0.20241016
     # via -r requirements-ci.in
@@ -56,7 +88,11 @@ urllib3==2.2.3
     # via
     #   requests
     #   types-requests
-virtualenv==20.29.1
-    # via tox
+virtualenv==20.29.2
+    # via
+    #   asv
+    #   tox
 whitenoise==6.7.0
     # via -r requirements-ci.in
+zipp==3.20.2
+    # via importlib-metadata

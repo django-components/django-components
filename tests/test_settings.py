@@ -1,38 +1,66 @@
+import re
 from pathlib import Path
 
+import pytest
 from django.test import override_settings
 
-from django_components import ComponentsSettings
-from django_components.app_settings import app_settings
+from django_components.app_settings import ComponentsSettings, app_settings
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase
+from django_components.testing import djc_test
+from .testutils import setup_test_config
 
 setup_test_config(components={"autodiscover": False})
 
 
-class SettingsTestCase(BaseTestCase):
-    @override_settings(COMPONENTS={"context_behavior": "isolated"})
+@djc_test
+class TestSettings:
+    @djc_test(
+        components_settings={
+            "context_behavior": "isolated",
+        },
+    )
     def test_valid_context_behavior(self):
-        self.assertEqual(app_settings.CONTEXT_BEHAVIOR, "isolated")
+        assert app_settings.CONTEXT_BEHAVIOR == "isolated"
 
-    @override_settings(COMPONENTS={"context_behavior": "invalid_value"})
+    # NOTE: Since the part that we want to test here is otherwise part of the test setup
+    # this test places the `override_settings` and `_load_settings` (which is called by `djc_test`)
+    # inside the test.
     def test_raises_on_invalid_context_behavior(self):
-        with self.assertRaises(ValueError):
-            app_settings.CONTEXT_BEHAVIOR
+        with override_settings(COMPONENTS={"context_behavior": "invalid_value"}):
+            with pytest.raises(
+                ValueError,
+                match=re.escape("Invalid context behavior: invalid_value. Valid options are ['django', 'isolated']"),
+            ):
+                app_settings._load_settings()
 
-    @override_settings(BASE_DIR="base_dir")
+    @djc_test(
+        django_settings={
+            "BASE_DIR": "base_dir",
+        },
+    )
     def test_works_when_base_dir_is_string(self):
-        self.assertEqual(app_settings.DIRS, [Path("base_dir/components")])
+        assert app_settings.DIRS == [Path("base_dir/components")]
 
-    @override_settings(BASE_DIR=Path("base_dir"))
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path("base_dir"),
+        },
+    )
     def test_works_when_base_dir_is_path(self):
-        self.assertEqual(app_settings.DIRS, [Path("base_dir/components")])
+        assert app_settings.DIRS == [Path("base_dir/components")]
 
-    @override_settings(COMPONENTS={"context_behavior": "isolated"})
+    @djc_test(
+        components_settings={
+            "context_behavior": "isolated",
+        },
+    )
     def test_settings_as_dict(self):
-        self.assertEqual(app_settings.CONTEXT_BEHAVIOR, "isolated")
+        assert app_settings.CONTEXT_BEHAVIOR == "isolated"
 
-    @override_settings(COMPONENTS=ComponentsSettings(context_behavior="isolated"))
+    # NOTE: Since the part that we want to test here is otherwise part of the test setup
+    # this test places the `override_settings` and `_load_settings` (which is called by `djc_test`)
+    # inside the test.
     def test_settings_as_instance(self):
-        self.assertEqual(app_settings.CONTEXT_BEHAVIOR, "isolated")
+        with override_settings(COMPONENTS=ComponentsSettings(context_behavior="isolated")):
+            app_settings._load_settings()
+            assert app_settings.CONTEXT_BEHAVIOR == "isolated"

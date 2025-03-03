@@ -1,21 +1,25 @@
+import re
 import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from django.conf import settings
-from django.test import override_settings
 
 from django_components.util.loader import _filepath_to_python_module, get_component_dirs, get_component_files
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase
+from django_components.testing import djc_test
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
 
-class ComponentDirsTest(BaseTestCase):
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
+@djc_test
+class TestComponentDirs:
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+        },
     )
     def test_get_dirs__base_dir(self):
         dirs = sorted(get_component_dirs())
@@ -23,24 +27,23 @@ class ComponentDirsTest(BaseTestCase):
         apps_dirs = [dirs[0], dirs[2]]
         own_dirs = [dirs[1], *dirs[3:]]
 
-        self.assertEqual(
-            own_dirs,
-            [
-                # Top-level /components dir
-                Path(__file__).parent.resolve()
-                / "components",
-            ],
-        )
+        assert own_dirs == [
+            # Top-level /components dir
+            Path(__file__).parent.resolve()
+            / "components",
+        ]
 
         # Apps with a `components` dir
-        self.assertEqual(len(apps_dirs), 2)
+        assert len(apps_dirs) == 2
 
         # NOTE: Compare parts so that the test works on Windows too
-        self.assertTupleEqual(apps_dirs[0].parts[-2:], ("django_components", "components"))
-        self.assertTupleEqual(apps_dirs[1].parts[-3:], ("tests", "test_app", "components"))
+        assert apps_dirs[0].parts[-2:] == ("django_components", "components")
+        assert apps_dirs[1].parts[-3:] == ("tests", "test_app", "components")
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve() / "test_structures" / "test_structure_1",  # noqa
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve() / "test_structures" / "test_structure_1",  # noqa
+        },
     )
     def test_get_dirs__base_dir__complex(self):
         dirs = sorted(get_component_dirs())
@@ -49,25 +52,27 @@ class ComponentDirsTest(BaseTestCase):
         own_dirs = dirs[2:]
 
         # Apps with a `components` dir
-        self.assertEqual(len(apps_dirs), 2)
+        assert len(apps_dirs) == 2
 
         # NOTE: Compare parts so that the test works on Windows too
-        self.assertTupleEqual(apps_dirs[0].parts[-2:], ("django_components", "components"))
-        self.assertTupleEqual(apps_dirs[1].parts[-3:], ("tests", "test_app", "components"))
+        assert apps_dirs[0].parts[-2:] == ("django_components", "components")
+        assert apps_dirs[1].parts[-3:] == ("tests", "test_app", "components")
 
         expected = [
             Path(__file__).parent.resolve() / "test_structures" / "test_structure_1" / "components",
         ]
-        self.assertEqual(own_dirs, expected)
+        assert own_dirs == expected
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
-        STATICFILES_DIRS=[
-            Path(__file__).parent.resolve() / "components",
-            ("with_alias", Path(__file__).parent.resolve() / "components"),
-            ("too_many", Path(__file__).parent.resolve() / "components", Path(__file__).parent.resolve()),
-            ("with_not_str_alias", 3),
-        ],  # noqa
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+            "STATICFILES_DIRS": [
+                Path(__file__).parent.resolve() / "components",
+                ("with_alias", Path(__file__).parent.resolve() / "components"),
+                ("too_many", Path(__file__).parent.resolve() / "components", Path(__file__).parent.resolve()),
+                ("with_not_str_alias", 3),
+            ],  # noqa
+        },
     )
     @patch("django_components.util.loader.logger.warning")
     def test_get_dirs__components_dirs(self, mock_warning: MagicMock):
@@ -78,27 +83,26 @@ class ComponentDirsTest(BaseTestCase):
         own_dirs = [dirs[1], *dirs[3:]]
 
         # Apps with a `components` dir
-        self.assertEqual(len(apps_dirs), 2)
+        assert len(apps_dirs) == 2
 
         # NOTE: Compare parts so that the test works on Windows too
-        self.assertTupleEqual(apps_dirs[0].parts[-2:], ("django_components", "components"))
-        self.assertTupleEqual(apps_dirs[1].parts[-3:], ("tests", "test_app", "components"))
+        assert apps_dirs[0].parts[-2:] == ("django_components", "components")
+        assert apps_dirs[1].parts[-3:] == ("tests", "test_app", "components")
 
-        self.assertEqual(
-            own_dirs,
-            [
-                # Top-level /components dir
-                Path(__file__).parent.resolve()
-                / "components",
-            ],
-        )
+        assert own_dirs == [
+            # Top-level /components dir
+            Path(__file__).parent.resolve()
+            / "components",
+        ]
 
         warn_inputs = [warn.args[0] for warn in mock_warning.call_args_list]
         assert "Got <class 'int'> : 3" in warn_inputs[0]
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
-        COMPONENTS={
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+        },
+        components_settings={
             "dirs": [],
         },
     )
@@ -108,35 +112,41 @@ class ComponentDirsTest(BaseTestCase):
         apps_dirs = dirs
 
         # Apps with a `components` dir
-        self.assertEqual(len(apps_dirs), 2)
+        assert len(apps_dirs) == 2
 
         # NOTE: Compare parts so that the test works on Windows too
-        self.assertTupleEqual(apps_dirs[0].parts[-2:], ("django_components", "components"))
-        self.assertTupleEqual(apps_dirs[1].parts[-3:], ("tests", "test_app", "components"))
+        assert apps_dirs[0].parts[-2:] == ("django_components", "components")
+        assert apps_dirs[1].parts[-3:] == ("tests", "test_app", "components")
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
-        COMPONENTS={
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+        },
+        components_settings={
             "dirs": ["components"],
         },
     )
     def test_get_dirs__componenents_dirs__raises_on_relative_path_1(self):
-        with self.assertRaisesMessage(ValueError, "COMPONENTS.dirs must contain absolute paths"):
+        with pytest.raises(ValueError, match=re.escape("COMPONENTS.dirs must contain absolute paths")):
             get_component_dirs()
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
-        COMPONENTS={
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+        },
+        components_settings={
             "dirs": [("with_alias", "components")],
         },
     )
     def test_get_dirs__component_dirs__raises_on_relative_path_2(self):
-        with self.assertRaisesMessage(ValueError, "COMPONENTS.dirs must contain absolute paths"):
+        with pytest.raises(ValueError, match=re.escape("COMPONENTS.dirs must contain absolute paths")):
             get_component_dirs()
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
-        COMPONENTS={
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+        },
+        components_settings={
             "app_dirs": ["custom_comps_dir"],
         },
     )
@@ -147,23 +157,22 @@ class ComponentDirsTest(BaseTestCase):
         own_dirs = dirs[:1]
 
         # Apps with a `components` dir
-        self.assertEqual(len(apps_dirs), 1)
+        assert len(apps_dirs) == 1
 
         # NOTE: Compare parts so that the test works on Windows too
-        self.assertTupleEqual(apps_dirs[0].parts[-3:], ("tests", "test_app", "custom_comps_dir"))
+        assert apps_dirs[0].parts[-3:] == ("tests", "test_app", "custom_comps_dir")
 
-        self.assertEqual(
-            own_dirs,
-            [
-                # Top-level /components dir
-                Path(__file__).parent.resolve()
-                / "components",
-            ],
-        )
+        assert own_dirs == [
+            # Top-level /components dir
+            Path(__file__).parent.resolve()
+            / "components",
+        ]
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
-        COMPONENTS={
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+        },
+        components_settings={
             "app_dirs": [],
         },
     )
@@ -172,18 +181,17 @@ class ComponentDirsTest(BaseTestCase):
 
         own_dirs = dirs
 
-        self.assertEqual(
-            own_dirs,
-            [
-                # Top-level /components dir
-                Path(__file__).parent.resolve()
-                / "components",
-            ],
-        )
+        assert own_dirs == [
+            # Top-level /components dir
+            Path(__file__).parent.resolve()
+            / "components",
+        ]
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
-        COMPONENTS={
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+        },
+        components_settings={
             "app_dirs": ["this_dir_does_not_exist"],
         },
     )
@@ -192,18 +200,17 @@ class ComponentDirsTest(BaseTestCase):
 
         own_dirs = dirs
 
-        self.assertEqual(
-            own_dirs,
-            [
-                # Top-level /components dir
-                Path(__file__).parent.resolve()
-                / "components",
-            ],
-        )
+        assert own_dirs == [
+            # Top-level /components dir
+            Path(__file__).parent.resolve()
+            / "components",
+        ]
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
-        INSTALLED_APPS=("django_components", "tests.test_app_nested.app"),
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+            "INSTALLED_APPS": ("django_components", "tests.test_app_nested.app"),
+        },
     )
     def test_get_dirs__nested_apps(self):
         dirs = sorted(get_component_dirs())
@@ -212,25 +219,25 @@ class ComponentDirsTest(BaseTestCase):
         own_dirs = [dirs[1]]
 
         # Apps with a `components` dir
-        self.assertEqual(len(apps_dirs), 2)
+        assert len(apps_dirs) == 2
 
         # NOTE: Compare parts so that the test works on Windows too
-        self.assertTupleEqual(apps_dirs[0].parts[-2:], ("django_components", "components"))
-        self.assertTupleEqual(apps_dirs[1].parts[-4:], ("tests", "test_app_nested", "app", "components"))
+        assert apps_dirs[0].parts[-2:] == ("django_components", "components")
+        assert apps_dirs[1].parts[-4:] == ("tests", "test_app_nested", "app", "components")
 
-        self.assertEqual(
-            own_dirs,
-            [
-                # Top-level /components dir
-                Path(__file__).parent.resolve()
-                / "components",
-            ],
-        )
+        assert own_dirs == [
+            # Top-level /components dir
+            Path(__file__).parent.resolve()
+            / "components",
+        ]
 
 
-class ComponentFilesTest(BaseTestCase):
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
+@djc_test
+class TestComponentFiles:
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+        },
     )
     def test_get_files__py(self):
         files = sorted(get_component_files(".py"))
@@ -238,40 +245,35 @@ class ComponentFilesTest(BaseTestCase):
         dot_paths = [f.dot_path for f in files]
         file_paths = [f.filepath for f in files]
 
-        self.assertEqual(
-            dot_paths,
-            [
-                "components",
-                "components.multi_file.multi_file",
-                "components.relative_file.relative_file",
-                "components.relative_file_pathobj.relative_file_pathobj",
-                "components.single_file",
-                "components.staticfiles.staticfiles",
-                "components.urls",
-                "django_components.components",
-                "django_components.components.dynamic",
-                "tests.test_app.components.app_lvl_comp.app_lvl_comp",
-            ],
-        )
+        assert dot_paths == [
+            "components",
+            "components.multi_file.multi_file",
+            "components.relative_file.relative_file",
+            "components.relative_file_pathobj.relative_file_pathobj",
+            "components.single_file",
+            "components.staticfiles.staticfiles",
+            "components.urls",
+            "django_components.components",
+            "django_components.components.dynamic",
+            "tests.test_app.components.app_lvl_comp.app_lvl_comp",
+        ]
 
         # NOTE: Compare parts so that the test works on Windows too
-        self.assertTupleEqual(file_paths[0].parts[-3:], ("tests", "components", "__init__.py"))
-        self.assertTupleEqual(file_paths[1].parts[-4:], ("tests", "components", "multi_file", "multi_file.py"))
-        self.assertTupleEqual(file_paths[2].parts[-4:], ("tests", "components", "relative_file", "relative_file.py"))
-        self.assertTupleEqual(
-            file_paths[3].parts[-4:], ("tests", "components", "relative_file_pathobj", "relative_file_pathobj.py")
-        )
-        self.assertTupleEqual(file_paths[4].parts[-3:], ("tests", "components", "single_file.py"))
-        self.assertTupleEqual(file_paths[5].parts[-4:], ("tests", "components", "staticfiles", "staticfiles.py"))
-        self.assertTupleEqual(file_paths[6].parts[-3:], ("tests", "components", "urls.py"))
-        self.assertTupleEqual(file_paths[7].parts[-3:], ("django_components", "components", "__init__.py"))
-        self.assertTupleEqual(file_paths[8].parts[-3:], ("django_components", "components", "dynamic.py"))
-        self.assertTupleEqual(
-            file_paths[9].parts[-5:], ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.py")
-        )
+        assert file_paths[0].parts[-3:] == ("tests", "components", "__init__.py")
+        assert file_paths[1].parts[-4:] == ("tests", "components", "multi_file", "multi_file.py")
+        assert file_paths[2].parts[-4:] == ("tests", "components", "relative_file", "relative_file.py")
+        assert file_paths[3].parts[-4:] == ("tests", "components", "relative_file_pathobj", "relative_file_pathobj.py")
+        assert file_paths[4].parts[-3:] == ("tests", "components", "single_file.py")
+        assert file_paths[5].parts[-4:] == ("tests", "components", "staticfiles", "staticfiles.py")
+        assert file_paths[6].parts[-3:] == ("tests", "components", "urls.py")
+        assert file_paths[7].parts[-3:] == ("django_components", "components", "__init__.py")
+        assert file_paths[8].parts[-3:] == ("django_components", "components", "dynamic.py")
+        assert file_paths[9].parts[-5:] == ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.py")
 
-    @override_settings(
-        BASE_DIR=Path(__file__).parent.resolve(),
+    @djc_test(
+        django_settings={
+            "BASE_DIR": Path(__file__).parent.resolve(),
+        },
     )
     def test_get_files__js(self):
         files = sorted(get_component_files(".js"))
@@ -279,82 +281,52 @@ class ComponentFilesTest(BaseTestCase):
         dot_paths = [f.dot_path for f in files]
         file_paths = [f.filepath for f in files]
 
-        self.assertEqual(
-            dot_paths,
-            [
-                "components.relative_file.relative_file",
-                "components.relative_file_pathobj.relative_file_pathobj",
-                "components.staticfiles.staticfiles",
-                "tests.test_app.components.app_lvl_comp.app_lvl_comp",
-            ],
-        )
+        assert dot_paths == [
+            "components.relative_file.relative_file",
+            "components.relative_file_pathobj.relative_file_pathobj",
+            "components.staticfiles.staticfiles",
+            "tests.test_app.components.app_lvl_comp.app_lvl_comp",
+        ]
 
         # NOTE: Compare parts so that the test works on Windows too
-        self.assertTupleEqual(file_paths[0].parts[-4:], ("tests", "components", "relative_file", "relative_file.js"))
-        self.assertTupleEqual(
-            file_paths[1].parts[-4:], ("tests", "components", "relative_file_pathobj", "relative_file_pathobj.js")
-        )
-        self.assertTupleEqual(file_paths[2].parts[-4:], ("tests", "components", "staticfiles", "staticfiles.js"))
-        self.assertTupleEqual(
-            file_paths[3].parts[-5:], ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.js")
-        )
+        assert file_paths[0].parts[-4:] == ("tests", "components", "relative_file", "relative_file.js")
+        assert file_paths[1].parts[-4:] == ("tests", "components", "relative_file_pathobj", "relative_file_pathobj.js")
+        assert file_paths[2].parts[-4:] == ("tests", "components", "staticfiles", "staticfiles.js")
+        assert file_paths[3].parts[-5:] == ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.js")
 
 
-class TestFilepathToPythonModule(BaseTestCase):
+@djc_test
+class TestFilepathToPythonModule:
     def test_prepares_path(self):
         base_path = str(settings.BASE_DIR)
 
         the_path = os.path.join(base_path, "tests.py")
-        self.assertEqual(
-            _filepath_to_python_module(the_path, base_path, None),
-            "tests",
-        )
+        assert _filepath_to_python_module(the_path, base_path, None) == "tests"
 
         the_path = os.path.join(base_path, "tests/components/relative_file/relative_file.py")
-        self.assertEqual(
-            _filepath_to_python_module(the_path, base_path, None),
-            "tests.components.relative_file.relative_file",
-        )
+        assert _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"
 
     def test_handles_separators_based_on_os_name(self):
         base_path = str(settings.BASE_DIR)
 
         with patch("os.name", new="posix"):
             the_path = base_path + "/" + "tests.py"
-            self.assertEqual(
-                _filepath_to_python_module(the_path, base_path, None),
-                "tests",
-            )
+            assert _filepath_to_python_module(the_path, base_path, None) == "tests"
 
             the_path = base_path + "/" + "tests/components/relative_file/relative_file.py"
-            self.assertEqual(
-                _filepath_to_python_module(the_path, base_path, None),
-                "tests.components.relative_file.relative_file",
-            )
+            assert _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"  # noqa: E501
 
         base_path = str(settings.BASE_DIR).replace("/", "\\")
         with patch("os.name", new="nt"):
             the_path = base_path + "\\" + "tests.py"
-            self.assertEqual(
-                _filepath_to_python_module(the_path, base_path, None),
-                "tests",
-            )
+            assert _filepath_to_python_module(the_path, base_path, None) == "tests"
 
             the_path = base_path + "\\" + "tests\\components\\relative_file\\relative_file.py"
-            self.assertEqual(
-                _filepath_to_python_module(the_path, base_path, None),
-                "tests.components.relative_file.relative_file",
-            )
+            assert _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"  # noqa: E501
 
             # NOTE: Windows should handle also POSIX separator
             the_path = base_path + "/" + "tests.py"
-            self.assertEqual(
-                _filepath_to_python_module(the_path, base_path, None),
-                "tests",
-            )
+            assert _filepath_to_python_module(the_path, base_path, None) == "tests"
 
             the_path = base_path + "/" + "tests/components/relative_file/relative_file.py"
-            self.assertEqual(
-                _filepath_to_python_module(the_path, base_path, None),
-                "tests.components.relative_file.relative_file",
-            )
+            assert _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"  # noqa: E501

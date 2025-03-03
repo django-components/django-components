@@ -6007,14 +6007,10 @@ class ProjectOutputForm(Component):
 # The code above is used also used when benchmarking.
 # The section below is NOT included.
 
-from .testutils import CsrfTokenPatcher, GenIdPatcher  # noqa: E402
+from django_components.testing import djc_test  # noqa: E402
 
+@djc_test
 def test_render(snapshot):
-    id_patcher = GenIdPatcher()
-    id_patcher.start()
-    csrf_token_patcher = CsrfTokenPatcher()
-    csrf_token_patcher.start()
-
     registry.register("Button", Button)
     registry.register("Menu", Menu)
     registry.register("MenuList", MenuList)
@@ -6055,6 +6051,3 @@ def test_render(snapshot):
     data = gen_render_data()
     rendered = render(data)
     assert rendered == snapshot
-
-    id_patcher.stop()
-    csrf_token_patcher.stop()

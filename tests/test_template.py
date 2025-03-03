@@ -2,27 +2,28 @@ from django.template import Context, Template
 
 from django_components import Component, cached_template, types
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase
+from django_components.testing import djc_test
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
 
-class TemplateCacheTest(BaseTestCase):
+@djc_test
+class TestTemplateCache:
     def test_cached_template(self):
         template_1 = cached_template("Variable: <strong>{{ variable }}</strong>")
         template_1._test_id = "123"
 
         template_2 = cached_template("Variable: <strong>{{ variable }}</strong>")
 
-        self.assertEqual(template_2._test_id, "123")
+        assert template_2._test_id == "123"
 
     def test_cached_template_accepts_class(self):
         class MyTemplate(Template):
             pass
 
         template = cached_template("Variable: <strong>{{ variable }}</strong>", MyTemplate)
-        self.assertIsInstance(template, MyTemplate)
+        assert isinstance(template, MyTemplate)
 
     def test_component_template_is_cached(self):
         class SimpleComponent(Component):
@@ -42,4 +43,4 @@ class TemplateCacheTest(BaseTestCase):
         template_1._test_id = "123"
 
         template_2 = comp._get_template(Context({}), component_id="123")
-        self.assertEqual(template_2._test_id, "123")
+        assert template_2._test_id == "123"

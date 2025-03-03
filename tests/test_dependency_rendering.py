@@ -6,11 +6,12 @@ During actual rendering, the HTML is then picked up by the JS-side dependency ma
 import re
 
 from django.template import Context, Template
+from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, registry, types
+from django_components.testing import djc_test
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, create_and_process_template_response
+from .testutils import create_and_process_template_response, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -108,7 +109,8 @@ class MultistyleComponent(Component):
         js = ["script.js", "script2.js"]
 
 
-class DependencyRenderingTests(BaseTestCase):
+@djc_test
+class TestDependencyRendering:
     def test_no_dependencies_when_no_components_used(self):
         registry.register(name="test", component=SimpleComponent)
 
@@ -121,16 +123,16 @@ class DependencyRenderingTests(BaseTestCase):
         rendered = create_and_process_template_response(template)
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertEqual(rendered.count("<script"), 1)  # 1 boilerplate script
-        self.assertEqual(rendered.count("<link"), 0)  # No CSS
-        self.assertEqual(rendered.count("<style"), 0)
+        assert rendered.count("<script") == 1  # 1 boilerplate script
+        assert rendered.count("<link") == 0  # No CSS
+        assert rendered.count("<style") == 0
 
-        self.assertNotIn("loadedJsUrls", rendered)
-        self.assertNotIn("loadedCssUrls", rendered)
-        self.assertNotIn("toLoadJsTags", rendered)
-        self.assertNotIn("toLoadCssTags", rendered)
+        assert "loadedJsUrls" not in rendered
+        assert "loadedCssUrls" not in rendered
+        assert "toLoadJsTags" not in rendered
+        assert "toLoadCssTags" not in rendered
 
     def test_no_js_dependencies_when_no_components_used(self):
         registry.register(name="test", component=SimpleComponent)
@@ -142,16 +144,16 @@ class DependencyRenderingTests(BaseTestCase):
         rendered = create_and_process_template_response(template)
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertEqual(rendered.count("<script"), 1)  # 1 boilerplate script
-        self.assertEqual(rendered.count("<link"), 0)  # No CSS
-        self.assertEqual(rendered.count("<style"), 0)
+        assert rendered.count("<script") == 1  # 1 boilerplate script
+        assert rendered.count("<link") == 0  # No CSS
+        assert rendered.count("<style") == 0
 
-        self.assertNotIn("loadedJsUrls", rendered)
-        self.assertNotIn("loadedCssUrls", rendered)
-        self.assertNotIn("toLoadJsTags", rendered)
-        self.assertNotIn("toLoadCssTags", rendered)
+        assert "loadedJsUrls" not in rendered
+        assert "loadedCssUrls" not in rendered
+        assert "toLoadJsTags" not in rendered
+        assert "toLoadCssTags" not in rendered
 
     def test_no_css_dependencies_when_no_components_used(self):
         registry.register(name="test", component=SimpleComponent)
@@ -162,9 +164,9 @@ class DependencyRenderingTests(BaseTestCase):
         template = Template(template_str)
         rendered = create_and_process_template_response(template)
 
-        self.assertEqual(rendered.count("<script"), 0)  # No JS
-        self.assertEqual(rendered.count("<link"), 0)  # No CSS
-        self.assertEqual(rendered.count("<style"), 0)
+        assert rendered.count("<script") == 0  # No JS
+        assert rendered.count("<link") == 0  # No CSS
+        assert rendered.count("<style") == 0
 
     def test_single_component_dependencies(self):
         registry.register(name="test", component=SimpleComponent)
@@ -179,16 +181,16 @@ class DependencyRenderingTests(BaseTestCase):
         rendered = create_and_process_template_response(template)
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertEqual(rendered.count('<link href="style.css" media="all" rel="stylesheet">'), 1)  # Media.css
-        self.assertEqual(rendered.count("<link"), 1)
-        self.assertEqual(rendered.count("<style"), 0)
-        self.assertEqual(rendered.count("<script"), 3)
+        assert rendered.count('<link href="style.css" media="all" rel="stylesheet">') == 1  # Media.css
+        assert rendered.count("<link") == 1
+        assert rendered.count("<style") == 0
+        assert rendered.count("<script") == 3
 
         # `c3R5bGUuY3Nz` is base64 encoded `style.css`
         # `c2NyaXB0Lmpz` is base64 encoded `style.js`
-        self.assertInHTML(
+        assertInHTML(
             """
             <script type="application/json" data-djc>
                 {"loadedCssUrls": ["c3R5bGUuY3Nz"],
@@ -214,16 +216,16 @@ class DependencyRenderingTests(BaseTestCase):
         rendered = create_and_process_template_response(template)
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertEqual(rendered.count('<link href="style.css" media="all" rel="stylesheet">'), 1)  # Media.css
-        self.assertEqual(rendered.count("<link"), 1)
-        self.assertEqual(rendered.count("<style"), 0)
-        self.assertEqual(rendered.count("<script"), 3)
+        assert rendered.count('<link href="style.css" media="all" rel="stylesheet">') == 1  # Media.css
+        assert rendered.count("<link") == 1
+        assert rendered.count("<style") == 0
+        assert rendered.count("<script") == 3
 
         # `c3R5bGUuY3Nz` is base64 encoded `style.css`
         # `c2NyaXB0Lmpz` is base64 encoded `style.js`
-        self.assertInHTML(
+        assertInHTML(
             """
             <script type="application/json" data-djc>
                 {"loadedCssUrls": ["c3R5bGUuY3Nz"],
@@ -248,7 +250,7 @@ class DependencyRenderingTests(BaseTestCase):
         template = Template(template_str)
         rendered = create_and_process_template_response(template)
 
-        self.assertNotIn("_RENDERED", rendered)
+        assert "_RENDERED" not in rendered
 
     def test_single_component_css_dependencies(self):
         registry.register(name="test", component=SimpleComponent)
@@ -261,13 +263,13 @@ class DependencyRenderingTests(BaseTestCase):
         rendered = create_and_process_template_response(template)
 
         # Dependency manager script - NOT present
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
 
-        self.assertEqual(rendered.count("<link"), 1)
-        self.assertEqual(rendered.count("<style"), 0)
-        self.assertEqual(rendered.count("<script"), 0)  # No JS scripts
+        assert rendered.count("<link") == 1
+        assert rendered.count("<style") == 0
+        assert rendered.count("<script") == 0  # No JS scripts
 
-        self.assertEqual(rendered.count('<link href="style.css" media="all" rel="stylesheet">'), 1)  # Media.css
+        assert rendered.count('<link href="style.css" media="all" rel="stylesheet">') == 1  # Media.css
 
     def test_single_component_js_dependencies(self):
         registry.register(name="test", component=SimpleComponent)
@@ -280,16 +282,16 @@ class DependencyRenderingTests(BaseTestCase):
         rendered = create_and_process_template_response(template)
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
         # CSS NOT included
-        self.assertEqual(rendered.count("<link"), 0)
-        self.assertEqual(rendered.count("<style"), 0)
-        self.assertEqual(rendered.count("<script"), 3)
+        assert rendered.count("<link") == 0
+        assert rendered.count("<style") == 0
+        assert rendered.count("<script") == 3
 
         # `c3R5bGUuY3Nz` is base64 encoded `style.css`
         # `c2NyaXB0Lmpz` is base64 encoded `style.js`
-        self.assertInHTML(
+        assertInHTML(
             """
             <script type="application/json" data-djc>
                 {"loadedCssUrls": ["c3R5bGUuY3Nz"],
@@ -316,14 +318,14 @@ class DependencyRenderingTests(BaseTestCase):
         rendered = create_and_process_template_response(template)
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertEqual(rendered.count("<link"), 2)
-        self.assertEqual(rendered.count("<style"), 0)
-        self.assertEqual(rendered.count("<script"), 4)  # 2 scripts belong to the boilerplate
+        assert rendered.count("<link") == 2
+        assert rendered.count("<style") == 0
+        assert rendered.count("<script") == 4  # 2 scripts belong to the boilerplate
 
         # Media.css
-        self.assertInHTML(
+        assertInHTML(
             """
             <link href="style.css" media="all" rel="stylesheet">
             <link href="style2.css" media="all" rel="stylesheet">
@@ -333,7 +335,7 @@ class DependencyRenderingTests(BaseTestCase):
         )
 
         # Media.js
-        self.assertInHTML(
+        assertInHTML(
             """
             <script src="script.js"></script>
             <script src="script2.js"></script>
@@ -347,7 +349,7 @@ class DependencyRenderingTests(BaseTestCase):
         # `c3R5bGUyLmNzcw==` -> `style2.css`
         # `c2NyaXB0Lmpz` -> `script.js`
         # `c2NyaXB0Mi5qcw==` -> `script2.js`
-        self.assertInHTML(
+        assertInHTML(
             """
             <script type="application/json" data-djc>
                 {"loadedCssUrls": ["c3R5bGUuY3Nz", "c3R5bGUyLmNzcw=="],
@@ -373,16 +375,16 @@ class DependencyRenderingTests(BaseTestCase):
         rendered = create_and_process_template_response(template)
 
         # Dependency manager script
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertEqual(rendered.count("<script"), 1)  # 1 boilerplate script
-        self.assertEqual(rendered.count("<link"), 0)  # No CSS
-        self.assertEqual(rendered.count("<style"), 0)
+        assert rendered.count("<script") == 1  # 1 boilerplate script
+        assert rendered.count("<link") == 0  # No CSS
+        assert rendered.count("<style") == 0
 
-        self.assertNotIn("loadedJsUrls", rendered)
-        self.assertNotIn("loadedCssUrls", rendered)
-        self.assertNotIn("toLoadJsTags", rendered)
-        self.assertNotIn("toLoadCssTags", rendered)
+        assert "loadedJsUrls" not in rendered
+        assert "loadedCssUrls" not in rendered
+        assert "toLoadJsTags" not in rendered
+        assert "toLoadCssTags" not in rendered
 
     def test_multiple_components_dependencies(self):
         registry.register(name="inner", component=SimpleComponent)
@@ -402,15 +404,15 @@ class DependencyRenderingTests(BaseTestCase):
 
         # Dependency manager script
         # NOTE: Should be present only ONCE!
-        self.assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        self.assertEqual(rendered.count("<script"), 7)  # 2 scripts belong to the boilerplate
-        self.assertEqual(rendered.count("<link"), 3)
-        self.assertEqual(rendered.count("<style"), 2)
+        assert rendered.count("<script") == 7  # 2 scripts belong to the boilerplate
+        assert rendered.count("<link") == 3
+        assert rendered.count("<style") == 2
 
         # Components' inlined CSS
         # NOTE: Each of these should be present only ONCE!
-        self.assertInHTML(
+        assertInHTML(
             """
             <style>.my-class { color: red; }</style>
             <style>.xyz { color: red; }</style>
@@ -424,7 +426,7 @@ class DependencyRenderingTests(BaseTestCase):
         # - "style.css", "style2.css" (from SimpleComponentNested)
         # - "style.css" (from SimpleComponent inside SimpleComponentNested)
         # - "xyz1.css" (from OtherComponent inserted into SimpleComponentNested)
-        self.assertInHTML(
+        assertInHTML(
             """
             <link href="style.css" media="all" rel="stylesheet">
             <link href="style2.css" media="all" rel="stylesheet">
@@ -439,7 +441,7 @@ class DependencyRenderingTests(BaseTestCase):
         # - "script2.js" (from SimpleComponentNested)
         # - "script.js" (from SimpleComponent inside SimpleComponentNested)
         # - "xyz1.js" (from OtherComponent inserted into SimpleComponentNested)
-        self.assertInHTML(
+        assertInHTML(
             """
             <script src="script2.js"></script>
             <script src="script.js"></script>
@@ -462,7 +464,7 @@ class DependencyRenderingTests(BaseTestCase):
         # `c2NyaXB0Lmpz` -> `script.js`
         # `c2NyaXB0Mi5qcw==` -> `script2.js`
         # `eHl6MS5qcw==` -> `xyz1.js`
-        self.assertInHTML(
+        assertInHTML(
             """
             <script type="application/json" data-djc>
                 {"loadedCssUrls": ["L2NvbXBvbmVudHMvY2FjaGUvT3RoZXJDb21wb25lbnRfNjMyOWFlLmNzcw==",
@@ -498,7 +500,7 @@ class DependencyRenderingTests(BaseTestCase):
         """
         template = Template(template_str)
         rendered = create_and_process_template_response(template)
-        self.assertNotIn("_RENDERED", rendered)
+        assert "_RENDERED" not in rendered
 
     def test_adds_component_id_html_attr_single(self):
         registry.register(name="test", component=SimpleComponent)
@@ -510,7 +512,7 @@ class DependencyRenderingTests(BaseTestCase):
         template = Template(template_str)
         rendered = create_and_process_template_response(template)
 
-        self.assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>foo</strong>")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>foo</strong>")
 
     def test_adds_component_id_html_attr_single_multiroot(self):
         class SimpleMultiroot(SimpleComponent):
@@ -529,7 +531,7 @@ class DependencyRenderingTests(BaseTestCase):
         template = Template(template_str)
         rendered = create_and_process_template_response(template)
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Variable: <strong data-djc-id-a1bc3f>foo</strong>
@@ -565,7 +567,7 @@ class DependencyRenderingTests(BaseTestCase):
         template = Template(template_str)
         rendered = create_and_process_template_response(template)
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc41>foo</strong>
@@ -608,7 +610,7 @@ class DependencyRenderingTests(BaseTestCase):
             context=Context({"lst": range(3)}),
         )
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc41>foo</strong>

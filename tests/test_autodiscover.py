@@ -1,65 +1,60 @@
 import sys
-from unittest import TestCase
 
-from django.conf import settings
+import pytest
 
 from django_components import AlreadyRegistered, registry
 from django_components.autodiscovery import autodiscover, import_libraries
+from django_components.testing import djc_test
 
-from .django_test_setup import setup_test_config
+from .testutils import setup_test_config
 
-
-# NOTE: This is different from BaseTestCase in testutils.py, because here we need
-# TestCase instead of SimpleTestCase.
-class _TestCase(TestCase):
-    def tearDown(self) -> None:
-        super().tearDown()
-        registry.clear()
+setup_test_config({"autodiscover": False})
 
 
-class TestAutodiscover(_TestCase):
+@djc_test
+class TestAutodiscover:
     def test_autodiscover(self):
-        setup_test_config({"autodiscover": False})
-
         all_components = registry.all().copy()
-        self.assertNotIn("single_file_component", all_components)
-        self.assertNotIn("multi_file_component", all_components)
-        self.assertNotIn("relative_file_component", all_components)
-        self.assertNotIn("relative_file_pathobj_component", all_components)
+        assert "single_file_component" not in all_components
+        assert "multi_file_component" not in all_components
+        assert "relative_file_component" not in all_components
+        assert "relative_file_pathobj_component" not in all_components
 
         try:
             modules = autodiscover(map_module=lambda p: "tests." + p if p.startswith("components") else p)
         except AlreadyRegistered:
-            self.fail("Autodiscover should not raise AlreadyRegistered exception")
+            pytest.fail("Autodiscover should not raise AlreadyRegistered exception")
 
-        self.assertIn("tests.components", modules)
-        self.assertIn("tests.components.single_file", modules)
-        self.assertIn("tests.components.staticfiles.staticfiles", modules)
-        self.assertIn("tests.components.multi_file.multi_file", modules)
-        self.assertIn("tests.components.relative_file_pathobj.relative_file_pathobj", modules)
-        self.assertIn("tests.components.relative_file.relative_file", modules)
-        self.assertIn("tests.test_app.components.app_lvl_comp.app_lvl_comp", modules)
-        self.assertIn("django_components.components", modules)
-        self.assertIn("django_components.components.dynamic", modules)
+        assert "tests.components" in modules
+        assert "tests.components.single_file" in modules
+        assert "tests.components.staticfiles.staticfiles" in modules
+        assert "tests.components.multi_file.multi_file" in modules
+        assert "tests.components.relative_file_pathobj.relative_file_pathobj" in modules
+        assert "tests.components.relative_file.relative_file" in modules
+        assert "tests.test_app.components.app_lvl_comp.app_lvl_comp" in modules
+        assert "django_components.components" in modules
+        assert "django_components.components.dynamic" in modules
 
         all_components = registry.all().copy()
-        self.assertIn("single_file_component", all_components)
-        self.assertIn("multi_file_component", all_components)
-        self.assertIn("relative_file_component", all_components)
-        self.assertIn("relative_file_pathobj_component", all_components)
+        assert "single_file_component" in all_components
+        assert "multi_file_component" in all_components
+        assert "relative_file_component" in all_components
+        assert "relative_file_pathobj_component" in all_components
 
 
-class TestImportLibraries(_TestCase):
+@djc_test
+class TestImportLibraries:
+    @djc_test(
+        components_settings={
+            "libraries": ["tests.components.single_file", "tests.components.multi_file.multi_file"]
+        }
+    )
     def test_import_libraries(self):
-        # Prepare settings
-        setup_test_config({"autodiscover": False})
-        settings.COMPONENTS["libraries"] = ["tests.components.single_file", "tests.components.multi_file.multi_file"]
-
         # Ensure we start with a clean state
         registry.clear()
         all_components = registry.all().copy()
-        self.assertNotIn("single_file_component", all_components)
-        self.assertNotIn("multi_file_component", all_components)
+        assert "single_file_component" not in all_components
+        assert "multi_file_component" not in all_components
 
         # Ensure that the modules are executed again after import
         if "tests.components.single_file" in sys.modules:
@@ -70,31 +65,26 @@ class TestImportLibraries(_TestCase):
         try:
             modules = import_libraries()
         except AlreadyRegistered:
-            self.fail("Autodiscover should not raise AlreadyRegistered exception")
+            pytest.fail("Autodiscover should not raise AlreadyRegistered exception")
 
-        self.assertIn("tests.components.single_file", modules)
-        self.assertIn("tests.components.multi_file.multi_file", modules)
+        assert "tests.components.single_file" in modules
+        assert "tests.components.multi_file.multi_file" in modules
 
         all_components = registry.all().copy()
-        self.assertIn("single_file_component", all_components)
-        self.assertIn("multi_file_component", all_components)
+        assert "single_file_component" in all_components
+        assert "multi_file_component" in all_components
 
-        settings.COMPONENTS["libraries"] = []
-
+    @djc_test(
+        components_settings={
+            "libraries": ["components.single_file", "components.multi_file.multi_file"]
+        }
+    )
     def test_import_libraries_map_modules(self):
-        # Prepare settings
-        setup_test_config(
-            {
-                "autodiscover": False,
-            }
-        )
-        settings.COMPONENTS["libraries"] = ["components.single_file", "components.multi_file.multi_file"]
-
         # Ensure we start with a clean state
         registry.clear()
         all_components = registry.all().copy()
-        self.assertNotIn("single_file_component", all_components)
-        self.assertNotIn("multi_file_component", all_components)
+        assert "single_file_component" not in all_components
+        assert "multi_file_component" not in all_components
 
         # Ensure that the modules are executed again after import
         if "tests.components.single_file" in sys.modules:
@@ -105,13 +95,11 @@ class TestImportLibraries(_TestCase):
         try:
             modules = import_libraries(map_module=lambda p: "tests." + p if p.startswith("components") else p)
         except AlreadyRegistered:
-            self.fail("Autodiscover should not raise AlreadyRegistered exception")
+            pytest.fail("Autodiscover should not raise AlreadyRegistered exception")
 
-        self.assertIn("tests.components.single_file", modules)
-        self.assertIn("tests.components.multi_file.multi_file", modules)
+        assert "tests.components.single_file" in modules
+        assert "tests.components.multi_file.multi_file" in modules
 
         all_components = registry.all().copy()
-        self.assertIn("single_file_component", all_components)
-        self.assertIn("multi_file_component", all_components)
-
-        settings.COMPONENTS["libraries"] = []
+        assert "single_file_component" in all_components
+        assert "multi_file_component" in all_components

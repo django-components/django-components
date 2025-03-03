@@ -1,5 +1,7 @@
+import re
 from unittest import skip
 
+import pytest
 from django.template import Context, Template, TemplateSyntaxError
 from django.template.base import Parser
 from django.template.engine import Engine
@@ -7,8 +9,8 @@ from django.template.engine import Engine
 from django_components import Component, register, types
 from django_components.util.tag_parser import TagAttr, TagValue, TagValuePart, TagValueStruct, parse_tag
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase
+from django_components.testing import djc_test
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -24,7 +26,8 @@ def _get_parser() -> Parser:
     )
 
 
-class TagParserTests(BaseTestCase):
+@djc_test
+class TestTagParser:
     def test_args_kwargs(self):
         _, attrs = parse_tag("component 'my_comp' key=val key2='val2 two' ", None)
 
@@ -99,16 +102,13 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                "'my_comp'",
-                "key=val",
-                "key2='val2 two'",
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            "'my_comp'",
+            "key=val",
+            "key2='val2 two'",
+        ]
 
     def test_nested_quotes(self):
         _, attrs = parse_tag("component 'my_comp' key=val key2='val2 \"two\"' text=\"organisation's\" ", None)
@@ -205,17 +205,14 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                "'my_comp'",
-                "key=val",
-                "key2='val2 \"two\"'",
-                'text="organisation\'s"',
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            "'my_comp'",
+            "key=val",
+            "key2='val2 \"two\"'",
+            'text="organisation\'s"',
+        ]
 
     def test_trailing_quote_single(self):
         _, attrs = parse_tag("component 'my_comp' key=val key2='val2 \"two\"' text=\"organisation's\" 'abc", None)
@@ -329,18 +326,15 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                "'my_comp'",
-                "key=val",
-                "key2='val2 \"two\"'",
-                'text="organisation\'s"',
-                "'abc",
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            "'my_comp'",
+            "key=val",
+            "key2='val2 \"two\"'",
+            'text="organisation\'s"',
+            "'abc",
+        ]
 
     def test_trailing_quote_double(self):
         _, attrs = parse_tag('component "my_comp" key=val key2="val2 \'two\'" text=\'organisation"s\' "abc', None)
@@ -454,18 +448,15 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                '"my_comp"',
-                "key=val",
-                "key2=\"val2 'two'\"",
-                "text='organisation\"s'",
-                '"abc',
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            '"my_comp"',
+            "key=val",
+            "key2=\"val2 'two'\"",
+            "text='organisation\"s'",
+            '"abc',
+        ]
 
     def test_trailing_quote_as_value_single(self):
         _, attrs = parse_tag(
@@ -582,18 +573,15 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                "'my_comp'",
-                "key=val",
-                "key2='val2 \"two\"'",
-                'text="organisation\'s"',
-                "value='abc",
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            "'my_comp'",
+            "key=val",
+            "key2='val2 \"two\"'",
+            'text="organisation\'s"',
+            "value='abc",
+        ]
 
     def test_trailing_quote_as_value_double(self):
         _, attrs = parse_tag(
@@ -710,18 +698,15 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                '"my_comp"',
-                "key=val",
-                "key2=\"val2 'two'\"",
-                "text='organisation\"s'",
-                'value="abc',
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            '"my_comp"',
+            "key=val",
+            "key2=\"val2 'two'\"",
+            "text='organisation\"s'",
+            'value="abc',
+        ]
 
     def test_translation(self):
         _, attrs = parse_tag('component "my_comp" _("one") key=_("two")', None)
@@ -795,16 +780,13 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                '"my_comp"',
-                '_("one")',
-                'key=_("two")',
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            '"my_comp"',
+            '_("one")',
+            'key=_("two")',
+        ]
 
     def test_tag_parser_filters(self):
         _, attrs = parse_tag(
@@ -908,17 +890,14 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                '"my_comp"',
-                "value|lower",
-                'key=val|yesno:"yes,no"',
-                'key2=val2|default:"N/A"|upper',
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            '"my_comp"',
+            "value|lower",
+            'key=val|yesno:"yes,no"',
+            'key2=val2|default:"N/A"|upper',
+        ]
 
     def test_translation_whitespace(self):
         _, attrs = parse_tag('component value=_(  "test"  )', None)
@@ -961,7 +940,7 @@ class TagParserTests(BaseTestCase):
                 start_index=10,
             ),
         ]
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     def test_filter_whitespace(self):
         _, attrs = parse_tag("component value  |  lower    key=val  |  upper    key2=val2", None)
@@ -1041,12 +1020,12 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     def test_filter_argument_must_follow_filter(self):
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Filter argument (':arg') must follow a filter ('|filter')",
+            match=re.escape("Filter argument (':arg') must follow a filter ('|filter')"),
         ):
             parse_tag('component value=val|yesno:"yes,no":arg', None)
 
@@ -1097,7 +1076,7 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     def test_dict_trailing_comma(self):
         _, attrs = parse_tag('component data={ "key": "val", }', None)
@@ -1146,18 +1125,27 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     def test_dict_missing_colon(self):
-        with self.assertRaisesMessage(TemplateSyntaxError, "Dictionary key is missing a value"):
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Dictionary key is missing a value"),
+        ):
             parse_tag('component data={ "key" }', None)
 
     def test_dict_missing_colon_2(self):
-        with self.assertRaisesMessage(TemplateSyntaxError, "Dictionary key is missing a value"):
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Dictionary key is missing a value"),
+        ):
             parse_tag('component data={ "key", "val" }', None)
 
     def test_dict_extra_colon(self):
-        with self.assertRaisesMessage(TemplateSyntaxError, "Unexpected colon"):
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Unexpected colon"),
+        ):
             _, attrs = parse_tag("component data={ key:: key }", None)
 
     def test_dict_spread(self):
@@ -1202,7 +1190,7 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     def test_dict_spread_between_key_value_pairs(self):
         _, attrs = parse_tag('component data={ "key": val, **spread, "key2": val2 }', None)
@@ -1266,14 +1254,15 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     # Test that dictionary keys cannot have filter arguments - The `:` is parsed as dictionary key separator
     # So instead, the content below will be parsed as key `"key"|filter`, and value `"arg":"value"'
     # And the latter is invalid because it's missing the `|` separator.
     def test_colon_in_dictionary_keys(self):
-        with self.assertRaisesMessage(
-            TemplateSyntaxError, "Filter argument (':arg') must follow a filter ('|filter')"
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Filter argument (':arg') must follow a filter ('|filter')"),
         ):
             _, attrs = parse_tag('component data={"key"|filter:"arg": "value"}', None)
 
@@ -1329,7 +1318,7 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     def test_list_trailing_comma(self):
         _, attrs = parse_tag("component data=[1, 2, 3, ]", None)
@@ -1383,7 +1372,7 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     def test_lists_complex(self):
         _, attrs = parse_tag(
@@ -1552,16 +1541,13 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                "nums=[1, 2|add:3, *spread]",
-                'items=["a"|upper, \'b\'|lower, c|default:"d"]',
-                'mixed=[1, [*nested], {"key": "val"}]',
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            "nums=[1, 2|add:3, *spread]",
+            'items=["a"|upper, \'b\'|lower, c|default:"d"]',
+            'mixed=[1, [*nested], {"key": "val"}]',
+        ]
 
     def test_dicts_complex(self):
         _, attrs = parse_tag(
@@ -1728,16 +1714,13 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                'simple={"a": 1|add:2}',
-                'nested={"key"|upper: val|lower, **spread, "obj": {"x": 1|add:2}}',
-                'filters={"a"|lower: "b"|upper, c|default: "e"|yesno:"yes,no"}',
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            'simple={"a": 1|add:2}',
+            'nested={"key"|upper: val|lower, **spread, "obj": {"x": 1|add:2}}',
+            'filters={"a"|lower: "b"|upper, c|default: "e"|yesno:"yes,no"}',
+        ]
 
     def test_mixed_complex(self):
         _, attrs = parse_tag(
@@ -2053,42 +2036,39 @@ class TagParserTests(BaseTestCase):
             ),
         ]
 
-        self.assertEqual(attrs, expected_attrs)
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                'data={"items": [1|add:2, {"x"|upper: 2|add:3}, *spread_items|default:""], "nested": {"a": [1|add:2, *nums|default:""], "b": {"x": [*more|default:""]}}, **rest|default, "key": _(\'value\')|upper}',  # noqa: E501
-            ],
-        )
+        assert attrs == expected_attrs
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            'data={"items": [1|add:2, {"x"|upper: 2|add:3}, *spread_items|default:""], "nested": {"a": [1|add:2, *nums|default:""], "b": {"x": [*more|default:""]}}, **rest|default, "key": _(\'value\')|upper}',  # noqa: E501
+        ]
 
     # Test that spread operator cannot be used as dictionary value
     def test_spread_as_dictionary_value(self):
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax cannot be used in place of a dictionary value",
+            match=re.escape("Spread syntax cannot be used in place of a dictionary value"),
         ):
             parse_tag('component data={"key": **spread}', None)
 
     def test_spread_with_colon_interpreted_as_key(self):
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax cannot be used in place of a dictionary key",
+            match=re.escape("Spread syntax cannot be used in place of a dictionary key"),
         ):
             _, attrs = parse_tag("component data={**spread|abc: 123 }", None)
 
     def test_spread_in_filter_position(self):
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax cannot be used inside of a filter",
+            match=re.escape("Spread syntax cannot be used inside of a filter"),
         ):
             _, attrs = parse_tag("component data=val|...spread|abc }", None)
 
     def test_spread_whitespace(self):
         # NOTE: Separating `...` from its variable is NOT valid, and will result in error.
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '...' is missing a value",
+            match=re.escape("Spread syntax '...' is missing a value"),
         ):
             _, attrs = parse_tag("component ... attrs", None)
 
@@ -2166,75 +2146,75 @@ class TagParserTests(BaseTestCase):
                 start_index=38,
             ),
         ]
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     # Test that one cannot use e.g. `...`, `**`, `*` in wrong places
     def test_spread_incorrect_syntax(self):
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '*' found outside of a list",
+            match=re.escape("Spread syntax '*' found outside of a list"),
         ):
             _, attrs = parse_tag('component dict={"a": "b", *my_attr}', None)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '...' found in dict. It must be used on tag attributes only",
+            match=re.escape("Spread syntax '...' found in dict. It must be used on tag attributes only"),
         ):
             _, attrs = parse_tag('component dict={"a": "b", ...my_attr}', None)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '**' found outside of a dictionary",
+            match=re.escape("Spread syntax '**' found outside of a dictionary"),
         ):
             _, attrs = parse_tag('component list=["a", "b", **my_list]', None)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '...' found in list. It must be used on tag attributes only",
+            match=re.escape("Spread syntax '...' found in list. It must be used on tag attributes only"),
         ):
             _, attrs = parse_tag('component list=["a", "b", ...my_list]', None)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '*' found outside of a list",
+            match=re.escape("Spread syntax '*' found outside of a list"),
         ):
             _, attrs = parse_tag("component *attrs", None)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '**' found outside of a dictionary",
+            match=re.escape("Spread syntax '**' found outside of a dictionary"),
         ):
             _, attrs = parse_tag("component **attrs", None)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '*' found outside of a list",
+            match=re.escape("Spread syntax '*' found outside of a list"),
         ):
             _, attrs = parse_tag("component key=*attrs", None)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '**' found outside of a dictionary",
+            match=re.escape("Spread syntax '**' found outside of a dictionary"),
         ):
             _, attrs = parse_tag("component key=**attrs", None)
 
     # Test that one cannot do `key=...{"a": "b"}`
     def test_spread_onto_key(self):
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '...' cannot follow a key ('key=...attrs')",
+            match=re.escape("Spread syntax '...' cannot follow a key ('key=...attrs')"),
         ):
             _, attrs = parse_tag('component key=...{"a": "b"}', None)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '...' cannot follow a key ('key=...attrs')",
+            match=re.escape("Spread syntax '...' cannot follow a key ('key=...attrs')"),
         ):
             _, attrs = parse_tag('component key=...["a", "b"]', None)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Spread syntax '...' cannot follow a key ('key=...attrs')",
+            match=re.escape("Spread syntax '...' cannot follow a key ('key=...attrs')"),
         ):
             _, attrs = parse_tag("component key=...attrs", None)
 
@@ -2312,15 +2292,12 @@ class TagParserTests(BaseTestCase):
                 start_index=10,
             ),
         ]
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                '{**{"key": val2}, "key": val1}',
-            ],
-        )
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            '{**{"key": val2}, "key": val1}',
+        ]
 
     def test_spread_dict_literal_as_attribute(self):
         _, attrs = parse_tag('component ...{"key": val2}', None)
@@ -2366,15 +2343,12 @@ class TagParserTests(BaseTestCase):
                 start_index=10,
             ),
         ]
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                '...{"key": val2}',
-            ],
-        )
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            '...{"key": val2}',
+        ]
 
     def test_spread_list_literal_nested(self):
         _, attrs = parse_tag("component [ *[val1], val2 ]", None)
@@ -2436,15 +2410,12 @@ class TagParserTests(BaseTestCase):
                 start_index=10,
             ),
         ]
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                "[*[val1], val2]",
-            ],
-        )
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            "[*[val1], val2]",
+        ]
 
     def test_spread_list_literal_as_attribute(self):
         _, attrs = parse_tag("component ...[val1]", None)
@@ -2487,15 +2458,12 @@ class TagParserTests(BaseTestCase):
                 start_index=10,
             ),
         ]
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
-        self.assertEqual(
-            [a.serialize() for a in attrs],
-            [
-                "component",
-                "...[val1]",
-            ],
-        )
+        assert [a.serialize() for a in attrs] == [
+            "component",
+            "...[val1]",
+        ]
 
     def test_dynamic_expressions(self):
         _, attrs = parse_tag("component '{% lorem w 4 %}'", None)
@@ -2540,7 +2508,7 @@ class TagParserTests(BaseTestCase):
                 start_index=10,
             ),
         ]
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     def test_dynamic_expressions_in_dict(self):
         _, attrs = parse_tag('component { "key": "{% lorem w 4 %}" }', None)
@@ -2588,7 +2556,7 @@ class TagParserTests(BaseTestCase):
                 start_index=10,
             ),
         ]
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
     def test_dynamic_expressions_in_list(self):
         _, attrs = parse_tag("component [ '{% lorem w 4 %}' ]", None)
@@ -2633,49 +2601,50 @@ class TagParserTests(BaseTestCase):
                 start_index=10,
             ),
         ]
-        self.assertEqual(attrs, expected_attrs)
+        assert attrs == expected_attrs
 
 
-class ResolverTests(BaseTestCase):
+@djc_test
+class TestResolver:
     def test_resolve_simple(self):
         _, attrs = parse_tag("123", None)
         resolved = attrs[0].value.resolve(Context())
-        self.assertEqual(resolved, 123)
+        assert resolved == 123
 
         _, attrs = parse_tag("'123'", None)
         resolved = attrs[0].value.resolve(Context())
-        self.assertEqual(resolved, "123")
+        assert resolved == "123"
 
         _, attrs = parse_tag("abc", None)
         resolved = attrs[0].value.resolve(Context({"abc": "foo"}))
-        self.assertEqual(resolved, "foo")
+        assert resolved == "foo"
 
     def test_resolve_list(self):
         _, attrs = parse_tag("[1, 2, 3,]", None)
         resolved = attrs[0].value.resolve(Context())
-        self.assertEqual(resolved, [1, 2, 3])
+        assert resolved == [1, 2, 3]
 
     def test_resolve_list_with_spread(self):
         _, attrs = parse_tag("[ 1, 2, *[3, val1, *val2, 5], val3, 6 ]", None)
         resolved = attrs[0].value.resolve(Context({"val1": "foo", "val2": ["bar", "baz"], "val3": "qux"}))
-        self.assertEqual(resolved, [1, 2, 3, "foo", "bar", "baz", 5, "qux", 6])
+        assert resolved == [1, 2, 3, "foo", "bar", "baz", 5, "qux", 6]
 
     def test_resolve_dict(self):
         _, attrs = parse_tag('{"a": 1, "b": 2,}', None)
         resolved = attrs[0].value.resolve(Context())
-        self.assertEqual(resolved, {"a": 1, "b": 2})
+        assert resolved == {"a": 1, "b": 2}
 
     def test_resolve_dict_with_spread(self):
         _, attrs = parse_tag('{ **{"key": val2, **{ val3: val4 }, "key3": val4 } }', None)
         context = Context({"val2": "foo", "val3": "bar", "val4": "baz"})
         resolved = attrs[0].value.resolve(context)
-        self.assertEqual(resolved, {"key": "foo", "bar": "baz", "key3": "baz"})
+        assert resolved == {"key": "foo", "bar": "baz", "key3": "baz"}
 
     def test_resolve_dynamic_expr(self):
         parser = _get_parser()
         _, attrs = parse_tag("'{% lorem 4 w %}'", parser)
         resolved = attrs[0].value.resolve(Context())
-        self.assertEqual(resolved, "lorem ipsum dolor sit")
+        assert resolved == "lorem ipsum dolor sit"
 
     def test_resolve_complex(self):
         parser = _get_parser()
@@ -2718,21 +2687,18 @@ class ResolverTests(BaseTestCase):
         )
         resolved = attrs[0].value.resolve(context)
 
-        self.assertEqual(
-            resolved,
-            {
-                "items": [3, {"X": 5}, "foo", "bar"],
-                "nested": {
-                    "a": [3, 1, 2, 3, "l", "o", "r", "e", "m"],
-                    "b": {
-                        "x": ["b", "a", "z"],
-                        "lorem ipsum": "lorem ipsum dolor",
-                    },
+        assert resolved == {
+            "items": [3, {"X": 5}, "foo", "bar"],
+            "nested": {
+                "a": [3, 1, 2, 3, "l", "o", "r", "e", "m"],
+                "b": {
+                    "x": ["b", "a", "z"],
+                    "lorem ipsum": "lorem ipsum dolor",
                 },
-                "a": "b",
-                "key": "VALUE",
             },
-        )
+            "a": "b",
+            "key": "VALUE",
+        }
 
     @skip("TODO: Enable once template parsing is fixed by us")
     def test_resolve_complex_as_component(self):
@@ -2785,21 +2751,18 @@ class ResolverTests(BaseTestCase):
             )
         )
 
-        self.assertEqual(
-            captured,
-            {
-                "items": [3, {"X": 5}, "foo", "bar"],
-                "nested": {
-                    "a": [3, 1, 2, 3, "l", "o", "r", "e", "m"],
-                    "b": {
-                        "x": ["b", "a", "z"],
-                        "lorem ipsum": "lorem ipsum dolor",
-                    },
+        assert captured == {
+            "items": [3, {"X": 5}, "foo", "bar"],
+            "nested": {
+                "a": [3, 1, 2, 3, "l", "o", "r", "e", "m"],
+                "b": {
+                    "x": ["b", "a", "z"],
+                    "lorem ipsum": "lorem ipsum dolor",
                 },
-                "a": "b",
-                "key": "VALUE",
             },
-        )
+            "a": "b",
+            "key": "VALUE",
+        }
 
     def test_component_args_kwargs(self):
         captured = None
@@ -2820,7 +2783,7 @@ class ResolverTests(BaseTestCase):
         """
         Template(template_str).render(Context({"myvar": "myval", "val2": [1, 2, 3]}))
 
-        self.assertEqual(captured, ((42, "myval"), {"key": "val", "key2": [1, 2, 3]}))
+        assert captured == ((42, "myval"), {"key": "val", "key2": [1, 2, 3]})
 
     def test_component_special_kwargs(self):
         captured = None
@@ -2841,16 +2804,13 @@ class ResolverTests(BaseTestCase):
         """
         Template(template_str).render(Context({"date": 2024, "bzz": "fzz"}))
 
-        self.assertEqual(
-            captured,
-            (
-                tuple([]),
-                {
-                    "date": 2024,
-                    "@lol": 2,
-                    "na-me": "fzz",
-                    "@event": {"na-me.mod": "fzz"},
-                    "#my-id": True,
-                },
-            ),
+        assert captured == (
+            tuple([]),
+            {
+                "date": 2024,
+                "@lol": 2,
+                "na-me": "fzz",
+                "@event": {"na-me.mod": "fzz"},
+                "#my-id": True,
+            },
         )

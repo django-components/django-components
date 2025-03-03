@@ -109,6 +109,7 @@ disallow_untyped_defs = true
 testpaths = [
     "tests"
 ]
+asyncio_mode = "auto"
 
 [tool.hatch.env]
 requires = [

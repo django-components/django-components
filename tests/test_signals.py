@@ -1,11 +1,11 @@
-from typing import Callable
+from functools import wraps
 
 from django.template import Context, Template
 
-from django_components import Component, register, registry, types
+from django_components import Component, registry, types
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, parametrize_context_behavior
+from django_components.testing import djc_test
+from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -29,51 +29,56 @@ def _get_templates_used_to_render(subject_template, render_context=None):
     return templates_used
 
 
-class TemplateSignalTest(BaseTestCase):
-    saved_render_method: Callable  # Assigned during setup.
-
-    def tearDown(self):
-        super().tearDown()
-        Template._render = self.saved_render_method
-
-    def setUp(self):
-        """Emulate Django test instrumentation for TestCase (see setup_test_environment)"""
-        super().setUp()
-
+def with_template_signal(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Emulate Django test instrumentation for TestCase (see setup_test_environment)
         from django.test.utils import instrumented_test_render
+        from django.template import Template
 
-        self.saved_render_method = Template._render
+        original_template_render = Template._render
         Template._render = instrumented_test_render
 
-        registry.clear()
+        func(*args, **kwargs)
+
+        Template._render = original_template_render
+
+    return wrapper
+
+
+@djc_test
+class TestTemplateSignal:
+    class InnerComponent(Component):
+        template_file = "simple_template.html"
+
+        def get_context_data(self, variable, variable2="default"):
+            return {
+                "variable": variable,
+                "variable2": variable2,
+            }
+
+        class Media:
+            css = "style.css"
+            js = "script.js"
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    @with_template_signal
+    def test_template_rendered(self, components_settings):
         registry.register("test_component", SlottedComponent)
-
-        @register("inner_component")
-        class SimpleComponent(Component):
-            template_file = "simple_template.html"
-
-            def get_context_data(self, variable, variable2="default"):
-                return {
-                    "variable": variable,
-                    "variable2": variable2,
-                }
-
-            class Media:
-                css = "style.css"
-                js = "script.js"
-
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_template_rendered(self):
+        registry.register("inner_component", self.InnerComponent)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test_component' %}{% endcomponent %}
         """
         template = Template(template_str, name="root")
         templates_used = _get_templates_used_to_render(template)
-        self.assertIn("slotted_template.html", templates_used)
+        assert "slotted_template.html" in templates_used
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_template_rendered_nested_components(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    @with_template_signal
+    def test_template_rendered_nested_components(self, components_settings):
+        registry.register("test_component", SlottedComponent)
+        registry.register("inner_component", self.InnerComponent)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test_component' %}
@@ -84,5 +89,5 @@ class TemplateSignalTest(BaseTestCase):
         """
         template = Template(template_str, name="root")
         templates_used = _get_templates_used_to_render(template)
-        self.assertIn("slotted_template.html", templates_used)
-        self.assertIn("simple_template.html", templates_used)
+        assert "slotted_template.html" in templates_used
+        assert "simple_template.html" in templates_used

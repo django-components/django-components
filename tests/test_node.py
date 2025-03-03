@@ -1,5 +1,6 @@
 import inspect
-
+import re
+import pytest
 from django.template import Context, Template
 from django.template.exceptions import TemplateSyntaxError
 
@@ -7,15 +8,16 @@ from django_components import types
 from django_components.node import BaseNode, template_tag
 from django_components.templatetags import component_tags
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase
+from django_components.testing import djc_test
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
 
-class NodeTests(BaseTestCase):
+@djc_test
+class TestNode:
     def test_node_class_requires_tag(self):
-        with self.assertRaises(ValueError):
+        with pytest.raises(ValueError):
 
             class CaptureNode(BaseNode):
                 pass
@@ -41,14 +43,14 @@ class NodeTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertEqual(rendered.strip(), "Hello, John!\n            Shorthand: Hello, Mary!")
+        assert rendered.strip() == "Hello, John!\n            Shorthand: Hello, Mary!"
 
         # But raises if missing end tag
         template_str2: types.django_html = """
             {% load component_tags %}
             {% mytag 'John' %}
         """
-        with self.assertRaisesMessage(TemplateSyntaxError, "Unclosed tag on line 3: 'mytag'"):
+        with pytest.raises(TemplateSyntaxError, match=re.escape("Unclosed tag on line 3: 'mytag'")):
             Template(template_str2)
 
         TestNode.unregister(component_tags.register)
@@ -69,7 +71,7 @@ class NodeTests(BaseTestCase):
             {% endmytag %}
             Shorthand: {% mytag 'Mary' / %}
         """
-        with self.assertRaisesMessage(TemplateSyntaxError, "Invalid block tag on line 4: 'endmytag'"):
+        with pytest.raises(TemplateSyntaxError, match=re.escape("Invalid block tag on line 4: 'endmytag'")):
             Template(template_str)
 
         # Works when missing end tag
@@ -79,7 +81,7 @@ class NodeTests(BaseTestCase):
         """
         template2 = Template(template_str2)
         rendered2 = template2.render(Context({}))
-        self.assertEqual(rendered2.strip(), "Hello, John!")
+        assert rendered2.strip() == "Hello, John!"
 
         TestNode.unregister(component_tags.register)
 
@@ -107,9 +109,9 @@ class NodeTests(BaseTestCase):
         template.render(Context({}))
 
         allowed_flags, flags, active_flags = captured  # type: ignore
-        self.assertEqual(allowed_flags, ["required", "default"])
-        self.assertEqual(flags, {"required": True, "default": False})
-        self.assertEqual(active_flags, ["required"])
+        assert allowed_flags == ["required", "default"]
+        assert flags == {"required": True, "default": False}
+        assert active_flags == ["required"]
 
         TestNode.unregister(component_tags.register)
 
@@ -135,13 +137,16 @@ class NodeTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({"name": "John"}))
 
-        self.assertEqual(captured, {"False": False, "None": None, "True": True, "name": "John"})
-        self.assertEqual(rendered.strip(), "Hello, John!")
+        assert captured == {"False": False, "None": None, "True": True, "name": "John"}
+        assert rendered.strip() == "Hello, John!"
 
         TestNode.unregister(component_tags.register)
 
     def test_node_render_raises_if_no_context_arg(self):
-        with self.assertRaisesMessage(TypeError, "`render()` method of TestNode must have at least two parameters"):
+        with pytest.raises(
+            TypeError,
+            match=re.escape("`render()` method of TestNode must have at least two parameters"),
+        ):
 
             class TestNode(BaseNode):
                 tag = "mytag"
@@ -171,7 +176,7 @@ class NodeTests(BaseTestCase):
         """
         )
         template1.render(Context({}))
-        self.assertEqual(captured, ("John", 1, "Hello", "default"))
+        assert captured == ("John", 1, "Hello", "default")
 
         # Set all params
         template2 = Template(
@@ -181,7 +186,7 @@ class NodeTests(BaseTestCase):
         """
         )
         template2.render(Context({}))
-        self.assertEqual(captured, ("John2", 2, "Hello", "custom"))
+        assert captured == ("John2", 2, "Hello", "custom")
 
         # Set no params
         template3 = Template(
@@ -190,8 +195,9 @@ class NodeTests(BaseTestCase):
             {% mytag %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': missing a required argument: 'name'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
         ):
             template3.render(Context({}))
 
@@ -202,8 +208,9 @@ class NodeTests(BaseTestCase):
             {% mytag msg='Hello' %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': missing a required argument: 'name'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
         ):
             template4.render(Context({}))
 
@@ -214,8 +221,9 @@ class NodeTests(BaseTestCase):
             {% mytag name='John' %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': missing a required argument: 'msg'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'msg'"),
         ):
             template5.render(Context({}))
 
@@ -226,8 +234,9 @@ class NodeTests(BaseTestCase):
             {% mytag 123 count=1 name='John' %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': got multiple values for argument 'name'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': got multiple values for argument 'name'"),
         ):
             template6.render(Context({}))
 
@@ -238,7 +247,10 @@ class NodeTests(BaseTestCase):
             {% mytag count=1 name='John' 123 %}
         """
         )
-        with self.assertRaisesMessage(TypeError, "positional argument follows keyword argument"):
+        with pytest.raises(
+            TypeError,
+            match=re.escape("positional argument follows keyword argument"),
+        ):
             template6.render(Context({}))
 
         # Extra kwargs
@@ -248,8 +260,9 @@ class NodeTests(BaseTestCase):
             {% mytag 'John' msg='Hello' mode='custom' var=123 %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': got an unexpected keyword argument 'var'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'var'"),
         ):
             template7.render(Context({}))
 
@@ -260,8 +273,9 @@ class NodeTests(BaseTestCase):
             {% mytag 'John' msg='Hello' mode='custom' data-id=123 class="pa-4" @click.once="myVar" %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': got an unexpected keyword argument 'data-id'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'data-id'"),
         ):
             template8.render(Context({}))
 
@@ -272,7 +286,10 @@ class NodeTests(BaseTestCase):
             {% mytag data-id=123 'John' msg='Hello' %}
         """
         )
-        with self.assertRaisesMessage(SyntaxError, "positional argument follows keyword argument"):
+        with pytest.raises(
+            SyntaxError,
+            match=re.escape("positional argument follows keyword argument"),
+        ):
             template9.render(Context({}))
 
         TestNode1.unregister(component_tags.register)
@@ -301,14 +318,11 @@ class NodeTests(BaseTestCase):
         """
         )
         template1.render(Context({}))
-        self.assertEqual(
-            captured,
-            (
-                "John",
-                (123, 456, 789),
-                "Hello",
-                {"a": 1, "b": 2, "c": 3, "data-id": 123, "class": "pa-4", "@click.once": "myVar"},
-            ),
+        assert captured == (
+            "John",
+            (123, 456, 789),
+            "Hello",
+            {"a": 1, "b": 2, "c": 3, "data-id": 123, "class": "pa-4", "@click.once": "myVar"},
         )
 
         TestNode1.unregister(component_tags.register)
@@ -343,17 +357,14 @@ class NodeTests(BaseTestCase):
         template.render(Context({}))
 
         # All kwargs should be accepted since the function accepts **kwargs
-        self.assertEqual(
-            captured,
-            {
-                "name": "John",
-                "age": 25,
-                "data-id": 123,
-                "class": "header",
-                "@click": "handleClick",
-                "v-if": "isVisible",
-            },
-        )
+        assert captured == {
+            "name": "John",
+            "age": 25,
+            "data-id": 123,
+            "class": "header",
+            "@click": "handleClick",
+            "v-if": "isVisible",
+        }
 
         # Test with positional args (should fail since function only accepts kwargs)
         template2 = Template(
@@ -362,17 +373,22 @@ class NodeTests(BaseTestCase):
             {% mytag "John" name="Mary" %}
             """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': takes 0 positional arguments but 1 was given"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': takes 0 positional arguments but 1 was given"),
         ):
             template2.render(Context({}))
 
         TestNode.unregister(component_tags.register)
 
 
-class DecoratorTests(BaseTestCase):
+@djc_test
+class TestDecorator:
     def test_decorator_requires_tag(self):
-        with self.assertRaisesMessage(TypeError, "template_tag() missing 1 required positional argument: 'tag'"):
+        with pytest.raises(
+            TypeError,
+            match=re.escape("template_tag() missing 1 required positional argument: 'tag'"),
+        ):
 
             @template_tag(component_tags.register)  # type: ignore
             def mytag(node: BaseNode, context: Context) -> str:
@@ -394,14 +410,17 @@ class DecoratorTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertEqual(rendered.strip(), "Hello, John!\n            Shorthand: Hello, Mary!")
+        assert rendered.strip() == "Hello, John!\n            Shorthand: Hello, Mary!"
 
         # But raises if missing end tag
         template_str2: types.django_html = """
             {% load component_tags %}
             {% mytag 'John' %}
         """
-        with self.assertRaisesMessage(TemplateSyntaxError, "Unclosed tag on line 3: 'mytag'"):
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Unclosed tag on line 3: 'mytag'"),
+        ):
             Template(template_str2)
 
         render._node.unregister(component_tags.register)  # type: ignore[attr-defined]
@@ -418,7 +437,10 @@ class DecoratorTests(BaseTestCase):
             {% endmytag %}
             Shorthand: {% mytag 'Mary' / %}
         """
-        with self.assertRaisesMessage(TemplateSyntaxError, "Invalid block tag on line 4: 'endmytag'"):
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Invalid block tag on line 4: 'endmytag'"),
+        ):
             Template(template_str)
 
         # Works when missing end tag
@@ -428,7 +450,7 @@ class DecoratorTests(BaseTestCase):
         """
         template2 = Template(template_str2)
         rendered2 = template2.render(Context({}))
-        self.assertEqual(rendered2.strip(), "Hello, John!")
+        assert rendered2.strip() == "Hello, John!"
 
         render._node.unregister(component_tags.register)  # type: ignore[attr-defined]
 
@@ -456,15 +478,15 @@ class DecoratorTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({"name": "John"}))
 
-        self.assertEqual(captured, {"False": False, "None": None, "True": True, "name": "John"})
-        self.assertEqual(rendered.strip(), "Hello, John!")
+        assert captured == {"False": False, "None": None, "True": True, "name": "John"}
+        assert rendered.strip() == "Hello, John!"
 
         render._node.unregister(component_tags.register)  # type: ignore[attr-defined]
 
     def test_decorator_render_raises_if_no_context_arg(self):
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TypeError,
-            "Failed to create node class in 'template_tag()' for 'render'",
+            match=re.escape("Failed to create node class in 'template_tag()' for 'render'"),
         ):
 
             @template_tag(component_tags.register, tag="mytag")  # type: ignore
@@ -490,7 +512,7 @@ class DecoratorTests(BaseTestCase):
         """
         )
         template1.render(Context({}))
-        self.assertEqual(captured, ("John", 1, "Hello", "default"))
+        assert captured == ("John", 1, "Hello", "default")
 
         # Set all params
         template2 = Template(
@@ -500,7 +522,7 @@ class DecoratorTests(BaseTestCase):
         """
         )
         template2.render(Context({}))
-        self.assertEqual(captured, ("John2", 2, "Hello", "custom"))
+        assert captured == ("John2", 2, "Hello", "custom")
 
         # Set no params
         template3 = Template(
@@ -509,8 +531,9 @@ class DecoratorTests(BaseTestCase):
             {% mytag %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': missing a required argument: 'name'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
         ):
             template3.render(Context({}))
 
@@ -521,8 +544,9 @@ class DecoratorTests(BaseTestCase):
             {% mytag msg='Hello' %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': missing a required argument: 'name'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
         ):
             template4.render(Context({}))
 
@@ -533,8 +557,9 @@ class DecoratorTests(BaseTestCase):
             {% mytag name='John' %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': missing a required argument: 'msg'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'msg'"),
         ):
             template5.render(Context({}))
 
@@ -545,8 +570,9 @@ class DecoratorTests(BaseTestCase):
             {% mytag 123 count=1 name='John' %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': got multiple values for argument 'name'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': got multiple values for argument 'name'"),
         ):
             template6.render(Context({}))
 
@@ -557,7 +583,10 @@ class DecoratorTests(BaseTestCase):
             {% mytag count=1 name='John' 123 %}
         """
         )
-        with self.assertRaisesMessage(TypeError, "positional argument follows keyword argument"):
+        with pytest.raises(
+            TypeError,
+            match=re.escape("positional argument follows keyword argument"),
+        ):
             template6.render(Context({}))
 
         # Extra kwargs
@@ -567,8 +596,9 @@ class DecoratorTests(BaseTestCase):
             {% mytag 'John' msg='Hello' mode='custom' var=123 %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': got an unexpected keyword argument 'var'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'var'"),
         ):
             template7.render(Context({}))
 
@@ -579,8 +609,9 @@ class DecoratorTests(BaseTestCase):
             {% mytag 'John' msg='Hello' mode='custom' data-id=123 class="pa-4" @click.once="myVar" %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': got an unexpected keyword argument 'data-id'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'data-id'"),
         ):
             template8.render(Context({}))
 
@@ -591,7 +622,10 @@ class DecoratorTests(BaseTestCase):
             {% mytag data-id=123 'John' msg='Hello' %}
         """
         )
-        with self.assertRaisesMessage(SyntaxError, "positional argument follows keyword argument"):
+        with pytest.raises(
+            SyntaxError,
+            match=re.escape("positional argument follows keyword argument"),
+        ):
             template9.render(Context({}))
 
         render._node.unregister(component_tags.register)  # type: ignore[attr-defined]
@@ -615,14 +649,11 @@ class DecoratorTests(BaseTestCase):
         """
         )
         template1.render(Context({}))
-        self.assertEqual(
-            captured,
-            (
-                "John",
-                (123, 456, 789),
-                "Hello",
-                {"a": 1, "b": 2, "c": 3, "data-id": 123, "class": "pa-4", "@click.once": "myVar"},
-            ),
+        assert captured == (
+            "John",
+            (123, 456, 789),
+            "Hello",
+            {"a": 1, "b": 2, "c": 3, "data-id": 123, "class": "pa-4", "@click.once": "myVar"},
         )
 
         render._node.unregister(component_tags.register)  # type: ignore[attr-defined]
@@ -653,17 +684,14 @@ class DecoratorTests(BaseTestCase):
         template.render(Context({}))
 
         # All kwargs should be accepted since the function accepts **kwargs
-        self.assertEqual(
-            captured,
-            {
-                "name": "John",
-                "age": 25,
-                "data-id": 123,
-                "class": "header",
-                "@click": "handleClick",
-                "v-if": "isVisible",
-            },
-        )
+        assert captured == {
+            "name": "John",
+            "age": 25,
+            "data-id": 123,
+            "class": "header",
+            "@click": "handleClick",
+            "v-if": "isVisible",
+        }
 
         # Test with positional args (should fail since function only accepts kwargs)
         template2 = Template(
@@ -672,8 +700,9 @@ class DecoratorTests(BaseTestCase):
             {% mytag "John" name="Mary" %}
             """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': takes 0 positional arguments but 1 was given"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': takes 0 positional arguments but 1 was given"),
         ):
             template2.render(Context({}))
 
@@ -704,7 +733,8 @@ def force_signature_validation(fn):
     return SignatureOnlyFunction(fn)
 
 
-class SignatureBasedValidationTests(BaseTestCase):
+@djc_test
+class TestSignatureBasedValidation:
     # Test that the template tag can be used within the template under the registered tag
     def test_node_class_tags(self):
         class TestNode(BaseNode):
@@ -727,14 +757,17 @@ class SignatureBasedValidationTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertEqual(rendered.strip(), "Hello, John!\n            Shorthand: Hello, Mary!")
+        assert rendered.strip() == "Hello, John!\n            Shorthand: Hello, Mary!"
 
         # But raises if missing end tag
         template_str2: types.django_html = """
             {% load component_tags %}
             {% mytag 'John' %}
         """
-        with self.assertRaisesMessage(TemplateSyntaxError, "Unclosed tag on line 3: 'mytag'"):
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Unclosed tag on line 3: 'mytag'"),
+        ):
             Template(template_str2)
 
         TestNode.unregister(component_tags.register)
@@ -756,7 +789,10 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% endmytag %}
             Shorthand: {% mytag 'Mary' / %}
         """
-        with self.assertRaisesMessage(TemplateSyntaxError, "Invalid block tag on line 4: 'endmytag'"):
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Invalid block tag on line 4: 'endmytag'"),
+        ):
             Template(template_str)
 
         # Works when missing end tag
@@ -766,7 +802,7 @@ class SignatureBasedValidationTests(BaseTestCase):
         """
         template2 = Template(template_str2)
         rendered2 = template2.render(Context({}))
-        self.assertEqual(rendered2.strip(), "Hello, John!")
+        assert rendered2.strip() == "Hello, John!"
 
         TestNode.unregister(component_tags.register)
 
@@ -794,9 +830,9 @@ class SignatureBasedValidationTests(BaseTestCase):
         template.render(Context({}))
 
         allowed_flags, flags, active_flags = captured  # type: ignore
-        self.assertEqual(allowed_flags, ["required", "default"])
-        self.assertEqual(flags, {"required": True, "default": False})
-        self.assertEqual(active_flags, ["required"])
+        assert allowed_flags == ["required", "default"]
+        assert flags == {"required": True, "default": False}
+        assert active_flags == ["required"]
 
         TestNode.unregister(component_tags.register)
 
@@ -822,13 +858,16 @@ class SignatureBasedValidationTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({"name": "John"}))
 
-        self.assertEqual(captured, {"False": False, "None": None, "True": True, "name": "John"})
-        self.assertEqual(rendered.strip(), "Hello, John!")
+        assert captured == {"False": False, "None": None, "True": True, "name": "John"}
+        assert rendered.strip() == "Hello, John!"
 
         TestNode.unregister(component_tags.register)
 
     def test_node_render_raises_if_no_context_arg(self):
-        with self.assertRaisesMessage(TypeError, "`render()` method of TestNode must have at least two parameters"):
+        with pytest.raises(
+            TypeError,
+            match=re.escape("`render()` method of TestNode must have at least two parameters"),
+        ):
 
             class TestNode(BaseNode):
                 tag = "mytag"
@@ -859,7 +898,7 @@ class SignatureBasedValidationTests(BaseTestCase):
         """
         )
         template1.render(Context({}))
-        self.assertEqual(captured, ("John", 1, "Hello", "default"))
+        assert captured == ("John", 1, "Hello", "default")
 
         # Set all params
         template2 = Template(
@@ -869,7 +908,7 @@ class SignatureBasedValidationTests(BaseTestCase):
         """
         )
         template2.render(Context({}))
-        self.assertEqual(captured, ("John2", 2, "Hello", "custom"))
+        assert captured == ("John2", 2, "Hello", "custom")
 
         # Set no params
         template3 = Template(
@@ -878,8 +917,9 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% mytag %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': missing a required argument: 'name'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
         ):
             template3.render(Context({}))
 
@@ -890,8 +930,9 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% mytag msg='Hello' %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': missing a required argument: 'name'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
         ):
             template4.render(Context({}))
 
@@ -902,8 +943,9 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% mytag name='John' %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': missing a required argument: 'msg'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'msg'"),
         ):
             template5.render(Context({}))
 
@@ -914,8 +956,9 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% mytag 123 count=1 name='John' %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': got multiple values for argument 'name'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': got multiple values for argument 'name'"),
         ):
             template6.render(Context({}))
 
@@ -926,7 +969,10 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% mytag count=1 name='John' 123 %}
         """
         )
-        with self.assertRaisesMessage(TypeError, "positional argument follows keyword argument"):
+        with pytest.raises(
+            TypeError,
+            match=re.escape("positional argument follows keyword argument"),
+        ):
             template6.render(Context({}))
 
         # Extra kwargs
@@ -936,8 +982,9 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% mytag 'John' msg='Hello' mode='custom' var=123 %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': got an unexpected keyword argument 'var'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'var'"),
         ):
             template7.render(Context({}))
 
@@ -948,8 +995,9 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% mytag 'John' msg='Hello' mode='custom' data-id=123 class="pa-4" @click.once="myVar" %}
         """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': got an unexpected keyword argument 'data-id'"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'data-id'"),
         ):
             template8.render(Context({}))
 
@@ -960,7 +1008,10 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% mytag data-id=123 'John' msg='Hello' %}
         """
         )
-        with self.assertRaisesMessage(SyntaxError, "positional argument follows keyword argument"):
+        with pytest.raises(
+            SyntaxError,
+            match=re.escape("positional argument follows keyword argument"),
+        ):
             template9.render(Context({}))
 
         TestNode1.unregister(component_tags.register)
@@ -990,14 +1041,11 @@ class SignatureBasedValidationTests(BaseTestCase):
         """
         )
         template1.render(Context({}))
-        self.assertEqual(
-            captured,
-            (
-                "John",
-                (123, 456, 789),
-                "Hello",
-                {"a": 1, "b": 2, "c": 3, "data-id": 123, "class": "pa-4", "@click.once": "myVar"},
-            ),
+        assert captured == (
+            "John",
+            (123, 456, 789),
+            "Hello",
+            {"a": 1, "b": 2, "c": 3, "data-id": 123, "class": "pa-4", "@click.once": "myVar"},
         )
 
         TestNode1.unregister(component_tags.register)
@@ -1033,17 +1081,14 @@ class SignatureBasedValidationTests(BaseTestCase):
         template.render(Context({}))
 
         # All kwargs should be accepted since the function accepts **kwargs
-        self.assertEqual(
-            captured,
-            {
-                "name": "John",
-                "age": 25,
-                "data-id": 123,
-                "class": "header",
-                "@click": "handleClick",
-                "v-if": "isVisible",
-            },
-        )
+        assert captured == {
+            "name": "John",
+            "age": 25,
+            "data-id": 123,
+            "class": "header",
+            "@click": "handleClick",
+            "v-if": "isVisible",
+        }
 
         # Test with positional args (should fail since function only accepts kwargs)
         template2 = Template(
@@ -1052,8 +1097,9 @@ class SignatureBasedValidationTests(BaseTestCase):
             {% mytag "John" name="Mary" %}
             """
         )
-        with self.assertRaisesMessage(
-            TypeError, "Invalid parameters for tag 'mytag': takes 0 positional arguments but 1 was given"
+        with pytest.raises(
+            TypeError,
+            match=re.escape("Invalid parameters for tag 'mytag': takes 0 positional arguments but 1 was given"),
         ):
             template2.render(Context({}))
 

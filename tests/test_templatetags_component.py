@@ -1,9 +1,12 @@
-from django.template import Context, Template, TemplateSyntaxError
+import re
 
+import pytest
+from django.template import Context, Template, TemplateSyntaxError
+from pytest_django.asserts import assertHTMLEqual
 from django_components import AlreadyRegistered, Component, NotRegistered, register, registry, types
 
-from .django_test_setup import setup_test_config
-from .testutils import BaseTestCase, parametrize_context_behavior
+from django_components.testing import djc_test
+from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -31,7 +34,8 @@ class SlottedComponentWithContext(Component):
 #######################
 
 
-class ComponentTemplateTagTest(BaseTestCase):
+@djc_test
+class TestComponentTemplateTag:
     class SimpleComponent(Component):
         template: types.django_html = """
             Variable: <strong>{{ variable }}</strong>
@@ -47,8 +51,8 @@ class ComponentTemplateTagTest(BaseTestCase):
             css = "style.css"
             js = "script.js"
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_single_component(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_single_component(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -58,10 +62,10 @@ class ComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_single_component_self_closing(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_single_component_self_closing(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -71,10 +75,10 @@ class ComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_call_with_invalid_name(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_call_with_invalid_name(self, components_settings):
         registry.register(name="test_one", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -83,11 +87,11 @@ class ComponentTemplateTagTest(BaseTestCase):
         """
 
         template = Template(simple_tag_template)
-        with self.assertRaises(NotRegistered):
+        with pytest.raises(NotRegistered):
             template.render(Context({}))
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_component_called_with_positional_name(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_called_with_positional_name(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -97,10 +101,10 @@ class ComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_call_component_with_two_variables(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_call_component_with_two_variables(self, components_settings):
         @register("test")
         class IffedComponent(Component):
             template: types.django_html = """
@@ -127,7 +131,7 @@ class ComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Variable: <strong data-djc-id-a1bc3f>variable</strong>
@@ -135,8 +139,8 @@ class ComponentTemplateTagTest(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_component_called_with_singlequoted_name(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_called_with_singlequoted_name(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -146,10 +150,10 @@ class ComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_raises_on_component_called_with_variable_as_name(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_raises_on_component_called_with_variable_as_name(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -159,14 +163,14 @@ class ComponentTemplateTagTest(BaseTestCase):
             {% endwith %}
         """
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Component name must be a string 'literal', got: component_name",
+            match=re.escape("Component name must be a string 'literal', got: component_name"),
         ):
             Template(simple_tag_template)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_component_accepts_provided_and_default_parameters(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_accepts_provided_and_default_parameters(self, components_settings):
         @register("test")
         class ComponentWithProvidedAndDefaultParameters(Component):
             template: types.django_html = """
@@ -184,7 +188,7 @@ class ComponentTemplateTagTest(BaseTestCase):
         """
         template = Template(template_str)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Provided variable: <strong data-djc-id-a1bc3f>provided value</strong>
@@ -193,7 +197,8 @@ class ComponentTemplateTagTest(BaseTestCase):
         )
 
 
-class DynamicComponentTemplateTagTest(BaseTestCase):
+@djc_test
+class TestDynamicComponentTemplateTag:
     class SimpleComponent(Component):
         template: types.django_html = """
             Variable: <strong>{{ variable }}</strong>
@@ -209,16 +214,8 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
             css = "style.css"
             js = "script.js"
 
-    def setUp(self):
-        super().setUp()
-
-        # Run app installation so the `dynamic` component is defined
-        from django_components.apps import ComponentsConfig
-
-        ComponentsConfig.ready(None)  # type: ignore[arg-type]
-
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_basic(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_basic(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -228,13 +225,13 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_call_with_invalid_name(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_call_with_invalid_name(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -243,11 +240,11 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
         """
 
         template = Template(simple_tag_template)
-        with self.assertRaisesMessage(NotRegistered, "The component 'haber_der_baber' was not found"):
+        with pytest.raises(NotRegistered, match=re.escape("The component 'haber_der_baber' was not found")):
             template.render(Context({}))
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_component_called_with_variable_as_name(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_called_with_variable_as_name(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -259,13 +256,13 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_component_called_with_variable_as_spread(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_called_with_variable_as_spread(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -284,13 +281,13 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
                 }
             )
         )
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_component_as_class(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_as_class(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -306,21 +303,19 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
                 }
             )
         )
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
         )
 
-    @parametrize_context_behavior(
-        ["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "tag_formatter": "django_components.component_shorthand_formatter",
-                "autodiscover": False,
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "tag_formatter": "django_components.component_shorthand_formatter",
+            "autodiscover": False,
         },
     )
-    def test_shorthand_formatter(self):
+    def test_shorthand_formatter(self, components_settings):
         from django_components.apps import ComponentsConfig
 
         ComponentsConfig.ready(None)  # type: ignore[arg-type]
@@ -334,19 +329,17 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>\n")
 
-    @parametrize_context_behavior(
-        ["django", "isolated"],
-        settings={
-            "COMPONENTS": {
-                "dynamic_component_name": "uno_reverse",
-                "tag_formatter": "django_components.component_shorthand_formatter",
-                "autodiscover": False,
-            },
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        components_settings={
+            "dynamic_component_name": "uno_reverse",
+            "tag_formatter": "django_components.component_shorthand_formatter",
+            "autodiscover": False,
         },
     )
-    def test_component_name_is_configurable(self):
+    def test_component_name_is_configurable(self, components_settings):
         from django_components.apps import ComponentsConfig
 
         ComponentsConfig.ready(None)  # type: ignore[arg-type]
@@ -360,18 +353,21 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_raises_already_registered_on_name_conflict(self):
-        with self.assertRaisesMessage(AlreadyRegistered, 'The component "dynamic" has already been registered'):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_raises_already_registered_on_name_conflict(self, components_settings):
+        with pytest.raises(
+            AlreadyRegistered,
+            match=re.escape('The component "dynamic" has already been registered'),
+        ):
             registry.register(name="dynamic", component=self.SimpleComponent)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_component_called_with_default_slot(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_called_with_default_slot(self, components_settings):
         class SimpleSlottedComponent(Component):
             template: types.django_html = """
                 {% load component_tags %}
@@ -398,7 +394,7 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>
@@ -406,8 +402,8 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_component_called_with_named_slots(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_called_with_named_slots(self, components_settings):
         class SimpleSlottedComponent(Component):
             template: types.django_html = """
                 {% load component_tags %}
@@ -440,7 +436,7 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Variable: <strong data-djc-id-a1bc41 data-djc-id-a1bc42>variable</strong>
@@ -449,8 +445,8 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_ignores_invalid_slots(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_ignores_invalid_slots(self, components_settings):
         class SimpleSlottedComponent(Component):
             template: types.django_html = """
                 {% load component_tags %}
@@ -483,7 +479,7 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             Variable: <strong data-djc-id-a1bc41 data-djc-id-a1bc42>variable</strong>
@@ -492,8 +488,8 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_raises_on_invalid_args(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_raises_on_invalid_args(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """
@@ -504,13 +500,17 @@ class DynamicComponentTemplateTagTest(BaseTestCase):
         """
 
         template = Template(simple_tag_template)
-        with self.assertRaisesMessage(TypeError, "got an unexpected keyword argument 'invalid_variable'"):
+        with pytest.raises(
+            TypeError,
+            match=re.escape("got an unexpected keyword argument 'invalid_variable'"),
+        ):
             template.render(Context({}))
 
 
-class MultiComponentTests(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_both_components_render_correctly_with_no_slots(self):
+@djc_test
+class TestMultiComponent:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_both_components_render_correctly_with_no_slots(self, components_settings):
         registry.register("first_component", SlottedComponent)
         registry.register("second_component", SlottedComponentWithContext)
 
@@ -524,7 +524,7 @@ class MultiComponentTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context())
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc40>
@@ -534,7 +534,7 @@ class MultiComponentTests(BaseTestCase):
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-a1bc44>
+            <custom-template data-djc-id-a1bc47>
                 <header>
                     Default header
                 </header>
@@ -544,8 +544,8 @@ class MultiComponentTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_both_components_render_correctly_with_slots(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_both_components_render_correctly_with_slots(self, components_settings):
         registry.register("first_component", SlottedComponent)
         registry.register("second_component", SlottedComponentWithContext)
 
@@ -561,7 +561,7 @@ class MultiComponentTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context())
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc42>
@@ -571,7 +571,7 @@ class MultiComponentTests(BaseTestCase):
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-a1bc46>
+            <custom-template data-djc-id-a1bc49>
                 <header>
                     <div>Slot #2</div>
                 </header>
@@ -581,16 +581,8 @@ class MultiComponentTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(
-        # TODO: Why is this the only place where this needs to be parametrized?
-        cases=[
-            ("django", "data-djc-id-a1bc48"),
-            ("isolated", "data-djc-id-a1bc45"),
-        ]
-    )
-    def test_both_components_render_correctly_when_only_first_has_slots(self, context_behavior_data):
-        second_id = context_behavior_data
-
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_both_components_render_correctly_when_only_first_has_slots(self, components_settings):
         registry.register("first_component", SlottedComponent)
         registry.register("second_component", SlottedComponentWithContext)
 
@@ -605,9 +597,9 @@ class MultiComponentTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
-            f"""
+            """
             <custom-template data-djc-id-a1bc41>
                 <header>
                     <p>Slot #1</p>
@@ -615,7 +607,7 @@ class MultiComponentTests(BaseTestCase):
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template {second_id}>
+            <custom-template data-djc-id-a1bc48>
                 <header>
                     Default header
                 </header>
@@ -625,8 +617,8 @@ class MultiComponentTests(BaseTestCase):
             """,
         )
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_both_components_render_correctly_when_only_second_has_slots(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_both_components_render_correctly_when_only_second_has_slots(self, components_settings):
         registry.register("first_component", SlottedComponent)
         registry.register("second_component", SlottedComponentWithContext)
 
@@ -641,7 +633,7 @@ class MultiComponentTests(BaseTestCase):
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc41>
@@ -651,7 +643,7 @@ class MultiComponentTests(BaseTestCase):
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-a1bc45>
+            <custom-template data-djc-id-a1bc48>
                 <header>
                     <div>Slot #2</div>
                 </header>
@@ -662,7 +654,8 @@ class MultiComponentTests(BaseTestCase):
         )
 
 
-class ComponentIsolationTests(BaseTestCase):
+@djc_test
+class TestComponentIsolation:
     class SlottedComponent(Component):
         template: types.django_html = """
             {% load component_tags %}
@@ -673,12 +666,9 @@ class ComponentIsolationTests(BaseTestCase):
             </custom-template>
         """
 
-    def setUp(self):
-        super().setUp()
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_instances_of_component_do_not_share_slots(self, components_settings):
         registry.register("test", self.SlottedComponent)
-
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_instances_of_component_do_not_share_slots(self):
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -696,7 +686,7 @@ class ComponentIsolationTests(BaseTestCase):
         template.render(Context({}))
         rendered = template.render(Context({}))
 
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <custom-template data-djc-id-a1bc4a>
@@ -718,9 +708,10 @@ class ComponentIsolationTests(BaseTestCase):
         )
 
 
-class AggregateInputTests(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_agg_input_accessible_in_get_context_data(self):
+@djc_test
+class TestAggregateInput:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_agg_input_accessible_in_get_context_data(self, components_settings):
         @register("test")
         class AttrsComponent(Component):
             template: types.django_html = """
@@ -741,7 +732,7 @@ class AggregateInputTests(BaseTestCase):
         """  # noqa: E501
         template = Template(template_str)
         rendered = template.render(Context({"class_var": "padding-top-8"}))
-        self.assertHTMLEqual(
+        assertHTMLEqual(
             rendered,
             """
             <div data-djc-id-a1bc3f>
@@ -752,9 +743,10 @@ class AggregateInputTests(BaseTestCase):
         )
 
 
-class RecursiveComponentTests(BaseTestCase):
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_recursive_component(self):
+@djc_test
+class TestRecursiveComponent:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_recursive_component(self, components_settings):
         DEPTH = 100
 
         @register("recursive")
@@ -775,16 +767,14 @@ class RecursiveComponentTests(BaseTestCase):
         result = Recursive.render()
 
         for i in range(DEPTH):
-            self.assertIn(f"<span> depth: {i + 1} </span>", result)
+            assert f"<span> depth: {i + 1} </span>" in result
 
 
-class ComponentTemplateSyntaxErrorTests(BaseTestCase):
-    def setUp(self):
-        super().setUp()
+@djc_test
+class TestComponentTemplateSyntaxError:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_variable_outside_fill_tag_compiles_w_out_error(self, components_settings):
         registry.register("test", SlottedComponent)
-
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_variable_outside_fill_tag_compiles_w_out_error(self):
         # As of v0.28 this is valid, provided the component registered under "test"
         # contains a slot tag marked as 'default'. This is verified outside
         # template compilation time.
@@ -796,8 +786,9 @@ class ComponentTemplateSyntaxErrorTests(BaseTestCase):
         """
         Template(template_str)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_text_outside_fill_tag_is_not_error_when_no_fill_tags(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_text_outside_fill_tag_is_not_error_when_no_fill_tags(self, components_settings):
+        registry.register("test", SlottedComponent)
         # As of v0.28 this is valid, provided the component registered under "test"
         # contains a slot tag marked as 'default'. This is verified outside
         # template compilation time.
@@ -809,8 +800,9 @@ class ComponentTemplateSyntaxErrorTests(BaseTestCase):
         """
         Template(template_str)
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_text_outside_fill_tag_is_error_when_fill_tags(self):
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_text_outside_fill_tag_is_error_when_fill_tags(self, components_settings):
+        registry.register("test", SlottedComponent)
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -820,17 +812,18 @@ class ComponentTemplateSyntaxErrorTests(BaseTestCase):
         """
         template = Template(template_str)
 
-        with self.assertRaisesMessage(
+        with pytest.raises(
             TemplateSyntaxError,
-            "Illegal content passed to component 'test'. Explicit 'fill' tags cannot occur alongside other text",
+            match=re.escape("Illegal content passed to component 'test'. Explicit 'fill' tags cannot occur alongside other text"),  # noqa: E501
         ):
             template.render(Context())
 
-    @parametrize_context_behavior(["django", "isolated"])
-    def test_unclosed_component_is_error(self):
-        with self.assertRaisesMessage(
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_unclosed_component_is_error(self, components_settings):
+        registry.register("test", SlottedComponent)
+        with pytest.raises(
             TemplateSyntaxError,
-            "Unclosed tag on line 3: 'component'",
+            match=re.escape("Unclosed tag on line 3: 'component'"),
         ):
             template_str: types.django_html = """
                 {% load component_tags %}
