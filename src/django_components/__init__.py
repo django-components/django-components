@@ -6,7 +6,7 @@
 # isort: off
 from django_components.app_settings import ContextBehavior, ComponentsSettings
 from django_components.autodiscovery import autodiscover, import_libraries
-from django_components.component import Component, ComponentVars, ComponentView
+from django_components.component import Component, ComponentVars
 from django_components.component_media import ComponentMediaInput, ComponentMediaInputPath
 from django_components.component_registry import (
     AlreadyRegistered,
@@ -18,6 +18,18 @@ from django_components.component_registry import (
 )
 from django_components.components import DynamicComponent
 from django_components.dependencies import render_dependencies
+from django_components.extension import (
+    ComponentExtension,
+    OnComponentRegisteredContext,
+    OnComponentUnregisteredContext,
+    OnRegistryCreatedContext,
+    OnRegistryDeletedContext,
+    OnComponentClassCreatedContext,
+    OnComponentClassDeletedContext,
+    OnComponentInputContext,
+    OnComponentDataContext,
+)
+from django_components.extensions.view import ComponentView
 from django_components.library import TagProtectedError
 from django_components.node import BaseNode, template_tag
 from django_components.slots import SlotContent, Slot, SlotFunc, SlotRef, SlotResult
@@ -45,6 +57,7 @@ __all__ = [
     "ContextBehavior",
     "ComponentsSettings",
     "Component",
+    "ComponentExtension",
     "ComponentFileEntry",
     "ComponentFormatter",
     "ComponentMediaInput",
@@ -61,6 +74,14 @@ __all__ = [
     "get_component_files",
     "import_libraries",
     "NotRegistered",
+    "OnComponentClassCreatedContext",
+    "OnComponentClassDeletedContext",
+    "OnComponentDataContext",
+    "OnComponentInputContext",
+    "OnComponentRegisteredContext",
+    "OnComponentUnregisteredContext",
+    "OnRegistryCreatedContext",
+    "OnRegistryDeletedContext",
     "register",
     "registry",
     "RegistrySettings",

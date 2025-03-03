@@ -16,14 +16,13 @@ from typing import (
     Mapping,
     NamedTuple,
     Optional,
-    Protocol,
     Tuple,
     Type,
     TypeVar,
     Union,
     cast,
 )
-from weakref import ReferenceType
+from weakref import ReferenceType, finalize
 
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.widgets import Media as MediaCls
@@ -54,6 +53,14 @@ from django_components.dependencies import render_dependencies as _render_depend
 from django_components.dependencies import (
     set_component_attrs_for_js_and_css,
 )
+from django_components.extension import (
+    OnComponentClassCreatedContext,
+    OnComponentClassDeletedContext,
+    OnComponentDataContext,
+    OnComponentInputContext,
+    extensions,
+)
+from django_components.extensions.view import ViewFn
 from django_components.node import BaseNode
 from django_components.perfutil.component import ComponentRenderer, component_context_cache, component_post_render
 from django_components.perfutil.provide import register_provide_reference, unregister_provide_reference
@@ -131,10 +138,6 @@ class MetadataItem(Generic[ArgsType, KwargsType, SlotsType]):
     request: Optional[HttpRequest]
 
 
-class ViewFn(Protocol):
-    def __call__(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Any: ...  # noqa: E704
-
-
 class ComponentVars(NamedTuple):
     """
     Type for the variables available inside the component templates.
@@ -199,40 +202,10 @@ class ComponentMeta(ComponentMediaMeta):
 
         return super().__new__(mcs, name, bases, attrs)
 
-
-# NOTE: We use metaclass to automatically define the HTTP methods as defined
-# in `View.http_method_names`.
-class ComponentViewMeta(type):
-    def __new__(mcs, name: str, bases: Any, dct: Dict) -> Any:
-        # Default implementation shared by all HTTP methods
-        def create_handler(method: str) -> Callable:
-            def handler(self, request: HttpRequest, *args: Any, **kwargs: Any):  # type: ignore[no-untyped-def]
-                component: "Component" = self.component
-                return getattr(component, method)(request, *args, **kwargs)
-
-            return handler
-
-        # Add methods to the class
-        for method_name in View.http_method_names:
-            if method_name not in dct:
-                dct[method_name] = create_handler(method_name)
-
-        return super().__new__(mcs, name, bases, dct)
-
-
-class ComponentView(View, metaclass=ComponentViewMeta):
-    """
-    Subclass of `django.views.View` where the `Component` instance is available
-    via `self.component`.
-    """
-
-    # NOTE: This attribute must be declared on the class for `View.as_view` to allow
-    # us to pass `component` kwarg.
-    component = cast("Component", None)
-
-    def __init__(self, component: "Component", **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.component = component
+    # This runs when a Component class is being deleted
+    def __del__(cls) -> None:
+        comp_cls = cast(Type["Component"], cls)
+        extensions.on_component_class_deleted(OnComponentClassDeletedContext(comp_cls))
 
 
 # Internal data that are made available within the component's template
@@ -562,7 +535,6 @@ class Component(
 
     response_class = HttpResponse
     """This allows to configure what class is used to generate response from `render_to_response`"""
-    View = ComponentView
 
     # #####################################
     # PUBLIC API - HOOKS
@@ -623,11 +595,15 @@ class Component(
         # None == uninitialized, False == No types, Tuple == types
         self._types: Optional[Union[Tuple[Any, Any, Any, Any, Any, Any], Literal[False]]] = None
 
+        extensions._init_component_instance(self)
+
     def __init_subclass__(cls, **kwargs: Any) -> None:
         cls._class_hash = hash_comp_cls(cls)
         comp_hash_mapping[cls._class_hash] = cls
 
         ALL_COMPONENTS.append(cached_ref(cls))  # type: ignore[arg-type]
+        extensions._init_component_class(cls)
+        extensions.on_component_class_created(OnComponentClassCreatedContext(cls))
 
     @contextmanager
     def _with_metadata(self, item: MetadataItem) -> Generator[None, None, None]:
@@ -922,8 +898,10 @@ class Component(
         else:
             comp = cls()
 
-        # Allow the View class to access this component via `self.component`
-        return comp.View.as_view(**initkwargs, component=comp)
+        # `view` is a built-in extension defined in `extensions.view`. It subclasses
+        # from Django's `View` class, and adds the `component` attribute to it.
+        view_inst = cast(View, comp.view)  # type: ignore[attr-defined]
+        return view_inst.__class__.as_view(**initkwargs, component=comp)
 
     # #####################################
     # RENDERING
@@ -1152,6 +1130,19 @@ class Component(
             request=request,
         )
 
+        # Allow plugins to modify or validate the inputs
+        extensions.on_component_input(
+            OnComponentInputContext(
+                component=self,
+                component_cls=self.__class__,
+                component_id=render_id,
+                args=args,  # type: ignore[arg-type]
+                kwargs=kwargs,  # type: ignore[arg-type]
+                slots=slots,  # type: ignore[arg-type]
+                context=context,
+            )
+        )
+
         # We pass down the components the info about the component's parent.
         # This is used for correctly resolving slot fills, correct rendering order,
         # or CSS scoping.
@@ -1214,6 +1205,17 @@ class Component(
             js_data = self.get_js_data(*args, **kwargs) if hasattr(self, "get_js_data") else {}  # type: ignore
             css_data = self.get_css_data(*args, **kwargs) if hasattr(self, "get_css_data") else {}  # type: ignore
         self._validate_outputs(data=context_data)
+
+        extensions.on_component_data(
+            OnComponentDataContext(
+                component=self,
+                component_cls=self.__class__,
+                component_id=render_id,
+                context_data=cast(Dict, context_data),
+                js_data=cast(Dict, js_data),
+                css_data=cast(Dict, css_data),
+            )
+        )
 
         # Process Component's JS and CSS
         cache_component_js(self.__class__)
@@ -1699,6 +1701,10 @@ class ComponentNode(BaseNode):
         if start_tag not in component_node_subclasses_by_name:
             subcls: Type[ComponentNode] = type(subcls_name, (cls,), {"tag": start_tag, "end_tag": end_tag})
             component_node_subclasses_by_name[start_tag] = (subcls, registry)
+
+            # Remove the cache entry when either the registry or the component are deleted
+            finalize(subcls, lambda: component_node_subclasses_by_name.pop(start_tag, None))
+            finalize(registry, lambda: component_node_subclasses_by_name.pop(start_tag, None))
 
         cached_subcls, cached_registry = component_node_subclasses_by_name[start_tag]
 

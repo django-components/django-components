@@ -17,6 +17,7 @@ class ComponentsConfig(AppConfig):
         from django_components.autodiscovery import autodiscover, import_libraries
         from django_components.component_registry import registry
         from django_components.components.dynamic import DynamicComponent
+        from django_components.extension import extensions
         from django_components.util.django_monkeypatch import monkeypatch_template_cls
 
         app_settings._load_settings()
@@ -56,6 +57,9 @@ class ComponentsConfig(AppConfig):
 
         # Register the dynamic component under the name as given in settings
         registry.register(app_settings.DYNAMIC_COMPONENT_NAME, DynamicComponent)
+
+        # Let extensions process any components which may have been created before the app was ready
+        extensions._init_app()
 
 
 # See https://github.com/django-components/django-components/issues/586#issue-2472678136

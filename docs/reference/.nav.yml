@@ -4,6 +4,7 @@ nav:
   - Commands: commands.md
   - Components: components.md
   - Exceptions: exceptions.md
+  - Extension hooks: extension_hooks.md
   - Middlewares: middlewares.md
   - Settings: settings.md
   - Signals: signals.md
