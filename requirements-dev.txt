@@ -108,7 +108,7 @@ pyproject-api==1.8.0
     # via tox
 pyproject-hooks==1.2.0
     # via build
-pytest==8.3.4
+pytest==8.3.5
     # via
     #   -r requirements-dev.in
     #   pytest-asyncio
