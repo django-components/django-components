@@ -1,3 +1,4 @@
+import gc
 import inspect
 import sys
 from functools import wraps
@@ -12,6 +13,7 @@ from django.test import override_settings
 from django_components.component import ALL_COMPONENTS, Component, component_node_subclasses_by_name
 from django_components.component_media import ComponentMedia
 from django_components.component_registry import ALL_REGISTRIES, ComponentRegistry
+from django_components.extension import extensions
 
 # NOTE: `ReferenceType` is NOT a generic pre-3.9
 if sys.version_info >= (3, 9):
@@ -100,6 +102,7 @@ def djc_test(
             ],
         ]
     ] = None,
+    gc_collect: bool = True,
 ) -> Callable:
     """
     Decorator for testing components from django-components.
@@ -237,6 +240,9 @@ def djc_test(
             ...
         ```
 
+    - `gc_collect`: By default `djc_test` runs garbage collection after each test to force the state cleanup.
+      Set this to `False` to skip this.
+
     **Settings resolution:**
 
     `@djc_test` accepts settings from different sources. The settings are resolved in the following order:
@@ -328,6 +334,7 @@ def djc_test(
                         csrf_token_patcher,
                         _ALL_COMPONENTS,  # type: ignore[arg-type]
                         _ALL_REGISTRIES_COPIES,
+                        gc_collect,
                     )
 
                 try:
@@ -431,6 +438,7 @@ def _setup_djc_global_state(
     from django_components.app_settings import app_settings
 
     app_settings._load_settings()
+    extensions._init_app()
 
 
 def _clear_djc_global_state(
@@ -438,6 +446,7 @@ def _clear_djc_global_state(
     csrf_token_patcher: CsrfTokenPatcher,
     initial_components: InitialComponents,
     initial_registries_copies: RegistriesCopies,
+    gc_collect: bool = False,
 ) -> None:
     gen_id_patcher.stop()
     csrf_token_patcher.stop()
@@ -485,14 +494,16 @@ def _clear_djc_global_state(
     for index in range(all_comps_len):
         reverse_index = all_comps_len - index - 1
         comp_cls_ref = ALL_COMPONENTS[reverse_index]
-        if comp_cls_ref not in initial_components_set:
+        is_ref_deleted = comp_cls_ref() is None
+        if is_ref_deleted or comp_cls_ref not in initial_components_set:
             del ALL_COMPONENTS[reverse_index]
 
     # Remove registries that were created during the test
     initial_registries_set: Set[RegistryRef] = set([reg_ref for reg_ref, init_keys in initial_registries_copies])
     for index in range(len(ALL_REGISTRIES)):
         registry_ref = ALL_REGISTRIES[len(ALL_REGISTRIES) - index - 1]
-        if registry_ref not in initial_registries_set:
+        is_ref_deleted = registry_ref() is None
+        if is_ref_deleted or registry_ref not in initial_registries_set:
             del ALL_REGISTRIES[len(ALL_REGISTRIES) - index - 1]
 
     # For the remaining registries, unregistr components that were registered
@@ -520,6 +531,12 @@ def _clear_djc_global_state(
     for mod in LOADED_MODULES:
         sys.modules.pop(mod, None)
     LOADED_MODULES.clear()
+
+    # Force garbage collection, so that any finalizers are run.
+    # If garbage collection is skipped, then in some cases the finalizers
+    # are run too late, in the context of the next test, causing flaky tests.
+    if gc_collect:
+        gc.collect()
 
     global IS_TESTING
     IS_TESTING = False

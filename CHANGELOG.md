@@ -4,6 +4,10 @@
 
 #### Feat
 
+- Support for extensions (plugins) for django-components!
+
+    Read more on [Extensions](https://django-components.github.io/django-components/0.131/concepts/advanced/extensions/).
+
 - `@djc_test` decorator for writing tests that involve Components.
 
     - The decorator manages global state, ensuring that tests don't leak.

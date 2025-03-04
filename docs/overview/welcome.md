@@ -267,6 +267,43 @@ Button.render(
 )
 ```
 
+### Extensions
+
+Django-components functionality can be extended with "extensions". Extensions allow for powerful customization and integrations. They can:
+
+- Tap into lifecycle events, such as when a component is created, deleted, or registered.
+- Add new attributes and methods to the components under an extension-specific nested class.
+
+Some of the planned extensions include:
+
+- Caching
+- AlpineJS integration
+- Storybook integration
+- Pydantic validation
+- Component-level benchmarking with asv
+
+### Simple testing
+
+- Write tests for components with `@djc_test` decorator.
+- The decorator manages global state, ensuring that tests don't leak.
+- If using `pytest`, the decorator allows you to parametrize Django or Components settings.
+- The decorator also serves as a stand-in for Django's `@override_settings`.
+
+```python
+from djc_test import djc_test
+
+from components.my_component import MyTable
+
+@djc_test
+def test_my_table():
+    rendered = MyTable.render(
+        kwargs={
+            "title": "My table",
+        },
+    )
+    assert rendered == "<table>My table</table>"
+```
+
 ### Handle large projects with ease
 
 - Components can be infinitely nested.

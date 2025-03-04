@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass
 from enum import Enum
+from importlib import import_module
 from os import PathLike
 from pathlib import Path
 from typing import (
@@ -15,6 +16,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    Type,
     TypeVar,
     Union,
     cast,
@@ -25,6 +27,7 @@ from django.conf import settings
 from django_components.util.misc import default
 
 if TYPE_CHECKING:
+    from django_components.extension import ComponentExtension
     from django_components.tag_formatter import TagFormatterABC
 
 
@@ -142,6 +145,29 @@ class ComponentsSettings(NamedTuple):
     COMPONENTS = ComponentsSettings(
         autodiscover=False,
         dirs = [BASE_DIR / "components"],
+    )
+    ```
+    """
+
+    extensions: Optional[Sequence[Union["ComponentExtension", Type["ComponentExtension"], str]]] = None
+    """
+    List of [extensions](../../concepts/advanced/extensions) to be loaded.
+
+    The extensions can be specified as:
+
+    - Python import path, e.g. `"path.to.my_extension"`.
+    - Extension class, e.g. `my_extension.MyExtension`.
+    - Extension instance, e.g. `my_extension.MyExtension()`.
+
+    ```python
+    COMPONENTS = ComponentsSettings(
+        extensions=[
+            "path.to.my_extension",
+            my_other_extension,
+            StorybookExtension(
+                outdir="path/to/storybook",
+            ),
+        ],
     )
     ```
     """
@@ -647,6 +673,7 @@ defaults = ComponentsSettings(
     debug_highlight_components=False,
     debug_highlight_slots=False,
     dynamic_component_name="dynamic",
+    extensions=[],
     libraries=[],  # E.g. ["mysite.components.forms", ...]
     multiline_tags=True,
     reload_on_file_change=False,
@@ -709,6 +736,7 @@ class InternalSettings:
                 components_settings.dynamic_component_name, defaults.dynamic_component_name
             ),
             libraries=default(components_settings.libraries, defaults.libraries),
+            extensions=self._prepare_extensions(components_settings),
             multiline_tags=default(components_settings.multiline_tags, defaults.multiline_tags),
             reload_on_file_change=self._prepare_reload_on_file_change(components_settings),
             template_cache_size=default(components_settings.template_cache_size, defaults.template_cache_size),
@@ -717,6 +745,35 @@ class InternalSettings:
             context_behavior=self._prepare_context_behavior(components_settings),
             tag_formatter=default(components_settings.tag_formatter, defaults.tag_formatter),  # type: ignore[arg-type]
         )
+
+    def _prepare_extensions(self, new_settings: ComponentsSettings) -> List["ComponentExtension"]:
+        extensions: Sequence[Union["ComponentExtension", Type["ComponentExtension"], str]] = default(
+            new_settings.extensions, cast(List[str], defaults.extensions)
+        )
+
+        # Prepend built-in extensions
+        from django_components.extensions.view import ViewExtension
+
+        extensions = [ViewExtension()] + list(extensions)
+
+        # Since the user may set an extension as an import string, we allow to point to
+        # either an instance or a class, so they don't have to needlessly create an instance.
+        # So if we come across any classes, we initialize them.
+        extension_instances: List["ComponentExtension"] = []
+        for extension in extensions:
+            if isinstance(extension, str):
+                import_path, class_name = extension.rsplit(".", 1)
+                extension_module = import_module(import_path)
+                extension = cast(
+                    Union[Type["ComponentExtension"], "ComponentExtension"], getattr(extension_module, class_name)
+                )
+
+            if isinstance(extension, type):
+                extension = extension()
+
+            extension_instances.append(extension)
+
+        return extension_instances
 
     def _prepare_reload_on_file_change(self, new_settings: ComponentsSettings) -> bool:
         val = new_settings.reload_on_file_change
@@ -779,6 +836,10 @@ class InternalSettings:
     @property
     def LIBRARIES(self) -> List[str]:
         return self._settings.libraries  # type: ignore[return-value]
+
+    @property
+    def EXTENSIONS(self) -> List["ComponentExtension"]:
+        return self._settings.extensions  # type: ignore[return-value]
 
     @property
     def MULTILINE_TAGS(self) -> bool:

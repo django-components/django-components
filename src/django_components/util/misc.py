@@ -28,6 +28,10 @@ def is_str_wrapped_in_quotes(s: str) -> bool:
     return s.startswith(('"', "'")) and s[0] == s[-1] and len(s) >= 2
 
 
+def snake_to_pascal(name: str) -> str:
+    return "".join(word.title() for word in name.split("_"))
+
+
 def is_identifier(value: Any) -> bool:
     if not isinstance(value, str):
         return False

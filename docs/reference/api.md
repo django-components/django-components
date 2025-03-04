@@ -11,6 +11,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.ComponentExtension
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.ComponentFileEntry
     options:
       show_if_no_docstring: true
@@ -48,6 +52,38 @@
       show_if_no_docstring: true
 
 ::: django_components.EmptyTuple
+    options:
+      show_if_no_docstring: true
+
+::: django_components.OnComponentClassCreatedContext
+    options:
+      show_if_no_docstring: true
+
+::: django_components.OnComponentClassDeletedContext
+    options:
+      show_if_no_docstring: true
+
+::: django_components.OnComponentDataContext
+    options:
+      show_if_no_docstring: true
+
+::: django_components.OnComponentInputContext
+    options:
+      show_if_no_docstring: true
+
+::: django_components.OnComponentRegisteredContext
+    options:
+      show_if_no_docstring: true
+
+::: django_components.OnComponentUnregisteredContext
+    options:
+      show_if_no_docstring: true
+
+::: django_components.OnRegistryCreatedContext
+    options:
+      show_if_no_docstring: true
+
+::: django_components.OnRegistryDeletedContext
     options:
       show_if_no_docstring: true
 
