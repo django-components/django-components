@@ -28,19 +28,19 @@ jobs:
       repository-projects: write
     steps:
       ########## USE FOR DEBUGGING ##########
-      # - name: Debug workflow run info
-      #   uses: actions/github-script@v7
-      #   with:
-      #     script: |
-      #       console.log('Workflow Run ID:', context.payload.workflow_run.id);
-      #       const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
-      #         owner: context.repo.owner,
-      #         repo: context.repo.repo,
-      #         run_id: context.payload.workflow_run.id
-      #       });
-      #       console.log('Available artifacts:');
-      #       console.log(JSON.stringify(artifacts.data, null, 2));
-      #       console.log(`PRs: ` + JSON.stringify(context.payload.workflow_run.pull_requests));
+      - name: Debug workflow run info
+        uses: actions/github-script@v7
+        with:
+          script: |
+            console.log('Workflow Run ID:', context.payload.workflow_run.id);
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.payload.workflow_run.id
+            });
+            console.log('Available artifacts:');
+            console.log(JSON.stringify(artifacts.data, null, 2));
+            console.log(`PRs: ` + JSON.stringify(context.payload.workflow_run.pull_requests));
       #########################################
 
       # NOTE: The next two steps (download and unzip) are equivalent to using `actions/download-artifact@v4`
