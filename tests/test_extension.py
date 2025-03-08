@@ -92,7 +92,7 @@ def with_registry(on_created: Callable):
 @djc_test
 class TestExtension:
     @djc_test(
-        components_settings={"extensions": [DummyExtension()]}
+        components_settings={"extensions": [DummyExtension]}
     )
     def test_extensios_setting(self):
         assert len(app_settings.EXTENSIONS) == 2
@@ -100,7 +100,7 @@ class TestExtension:
         assert isinstance(app_settings.EXTENSIONS[1], DummyExtension)
 
     @djc_test(
-        components_settings={"extensions": [DummyExtension()]}
+        components_settings={"extensions": [DummyExtension]}
     )
     def test_component_class_lifecycle_hooks(self):
         extension = cast(DummyExtension, app_settings.EXTENSIONS[1])
@@ -131,7 +131,7 @@ class TestExtension:
         assert extension.calls["on_component_class_deleted"][0] == "TestComponent"
 
     @djc_test(
-        components_settings={"extensions": [DummyExtension()]}
+        components_settings={"extensions": [DummyExtension]}
     )
     def test_registry_lifecycle_hooks(self):
         extension = cast(DummyExtension, app_settings.EXTENSIONS[1])
@@ -163,7 +163,7 @@ class TestExtension:
         assert extension.calls["on_registry_deleted"][0] == reg_id
 
     @djc_test(
-        components_settings={"extensions": [DummyExtension()]}
+        components_settings={"extensions": [DummyExtension]}
     )
     def test_component_registration_hooks(self):
         class TestComponent(Component):
@@ -192,7 +192,7 @@ class TestExtension:
         assert unreg_call.component_cls == TestComponent
 
     @djc_test(
-        components_settings={"extensions": [DummyExtension()]}
+        components_settings={"extensions": [DummyExtension]}
     )
     def test_component_render_hooks(self):
         @register("test_comp")

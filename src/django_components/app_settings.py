@@ -149,24 +149,20 @@ class ComponentsSettings(NamedTuple):
     ```
     """
 
-    extensions: Optional[Sequence[Union["ComponentExtension", Type["ComponentExtension"], str]]] = None
+    extensions: Optional[Sequence[Union[Type["ComponentExtension"], str]]] = None
     """
     List of [extensions](../../concepts/advanced/extensions) to be loaded.
 
     The extensions can be specified as:
 
-    - Python import path, e.g. `"path.to.my_extension"`.
+    - Python import path, e.g. `"path.to.my_extension.MyExtension"`.
     - Extension class, e.g. `my_extension.MyExtension`.
-    - Extension instance, e.g. `my_extension.MyExtension()`.
 
     ```python
     COMPONENTS = ComponentsSettings(
         extensions=[
-            "path.to.my_extension",
-            my_other_extension,
-            StorybookExtension(
-                outdir="path/to/storybook",
-            ),
+            "path.to.my_extension.MyExtension",
+            StorybookExtension,
         ],
     )
     ```
@@ -736,7 +732,9 @@ class InternalSettings:
                 components_settings.dynamic_component_name, defaults.dynamic_component_name
             ),
             libraries=default(components_settings.libraries, defaults.libraries),
-            extensions=self._prepare_extensions(components_settings),
+            # NOTE: Internally we store the extensions as a list of instances, but the user
+            #       can pass in either a list of classes or a list of import strings.
+            extensions=self._prepare_extensions(components_settings),  # type: ignore[arg-type]
             multiline_tags=default(components_settings.multiline_tags, defaults.multiline_tags),
             reload_on_file_change=self._prepare_reload_on_file_change(components_settings),
             template_cache_size=default(components_settings.template_cache_size, defaults.template_cache_size),
@@ -747,31 +745,29 @@ class InternalSettings:
         )
 
     def _prepare_extensions(self, new_settings: ComponentsSettings) -> List["ComponentExtension"]:
-        extensions: Sequence[Union["ComponentExtension", Type["ComponentExtension"], str]] = default(
+        extensions: Sequence[Union[Type["ComponentExtension"], str]] = default(
             new_settings.extensions, cast(List[str], defaults.extensions)
         )
 
         # Prepend built-in extensions
         from django_components.extensions.view import ViewExtension
 
-        extensions = [ViewExtension()] + list(extensions)
+        extensions = [ViewExtension] + list(extensions)
 
-        # Since the user may set an extension as an import string, we allow to point to
-        # either an instance or a class, so they don't have to needlessly create an instance.
-        # So if we come across any classes, we initialize them.
+        # Extensions may be passed in either as classes or import strings.
         extension_instances: List["ComponentExtension"] = []
         for extension in extensions:
             if isinstance(extension, str):
                 import_path, class_name = extension.rsplit(".", 1)
                 extension_module = import_module(import_path)
-                extension = cast(
-                    Union[Type["ComponentExtension"], "ComponentExtension"], getattr(extension_module, class_name)
-                )
+                extension = cast(Type["ComponentExtension"], getattr(extension_module, class_name))
 
             if isinstance(extension, type):
-                extension = extension()
+                extension_instance = extension()
+            else:
+                extension_instances.append(extension)
 
-            extension_instances.append(extension)
+            extension_instances.append(extension_instance)
 
         return extension_instances
 

@@ -7,14 +7,24 @@ Django-components functionality can be extended with "extensions". Extensions al
 
 ## Setting up extensions
 
-Extensions are configured in the Django settings under [`COMPONENTS.extensions`](../../../reference/settings#django_components.app_settings.ComponentsSettings.extensions):
+Extensions are configured in the Django settings under [`COMPONENTS.extensions`](../../../reference/settings#django_components.app_settings.ComponentsSettings.extensions).
+
+Extensions can be set by either as an import string or by passing in a class:
 
 ```python
 # settings.py
+
+class MyExtension(ComponentsExtension):
+    name = "my_extension"
+
+    class ExtensionClass(BaseExtensionClass):
+        ...
+
 COMPONENTS = ComponentsSettings(
     extensions=[
-        "my_app.extensions.MyExtension",
+        MyExtension,
         "another_app.extensions.AnotherExtension",
+        "my_app.extensions.ThirdExtension",
     ],
 )
 ```
@@ -219,12 +229,14 @@ class MyTable(Component):
 !!! warning
 
     When writing an extension, the `ExtensionClass` MUST subclass the base class [`BaseExtensionClass`](../../../reference/api/#django_components.ComponentExtension.BaseExtensionClass).
-    
+
     This base class ensures that the extension class will have access to the component instance.
 
 ### Registering extensions
 
 Once the extension is defined, it needs to be registered in the Django settings to be used by the application.
+
+Extensions can be given either as an extension class, or its import string:
 
 ```python
 # settings.py
@@ -243,7 +255,7 @@ from my_app.extensions import MyExtension
 
 COMPONENTS = {
     "extensions": [
-        MyExtension(),
+        MyExtension,
     ],
 }
 ```
@@ -302,7 +314,7 @@ To use the `ColorLoggerExtension`, add it to your settings:
 # settings.py
 COMPONENTS = {
     "extensions": [
-        ColorLoggerExtension(),
+        ColorLoggerExtension,
     ],
 }
 ```
