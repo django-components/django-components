@@ -17,7 +17,11 @@ from django_components.component_registry import (
     registry,
 )
 from django_components.components import DynamicComponent
-from django_components.dependencies import render_dependencies
+from django_components.dependencies import (
+    render_dependencies,
+    static_document_render_type,
+    static_fragment_render_type,
+)
 from django_components.library import TagProtectedError
 from django_components.node import BaseNode, template_tag
 from django_components.slots import SlotContent, Slot, SlotFunc, SlotRef, SlotResult
@@ -71,6 +75,8 @@ __all__ = [
     "SlotFunc",
     "SlotRef",
     "SlotResult",
+    "static_document_render_type",
+    "static_fragment_render_type",
     "TagFormatterABC",
     "TagProtectedError",
     "TagResult",

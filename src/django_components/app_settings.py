@@ -495,6 +495,8 @@ class ComponentsSettings(NamedTuple):
         See [Security notes](../../overview/security_notes).
     """
 
+    render_type_provider: Optional[str] = None
+
     tag_formatter: Optional[Union["TagFormatterABC", str]] = None
     """
     Configure what syntax is used inside Django templates to render components.
@@ -666,6 +668,7 @@ defaults = ComponentsSettings(
         # Python files
         ".py", ".pyc",
     ],
+    render_type_provider="django_components.static_document_render_type",
     tag_formatter="django_components.component_formatter",
     template_cache_size=128,
 )
@@ -803,6 +806,10 @@ class InternalSettings:
     @property
     def CONTEXT_BEHAVIOR(self) -> ContextBehavior:
         return ContextBehavior(self._settings.context_behavior)
+
+    @property
+    def RENDER_TYPE_PROVIDER(self) -> str:
+        return default(self._settings.render_type_provider, cast(str, defaults.render_type_provider))
 
     @property
     def TAG_FORMATTER(self) -> Union["TagFormatterABC", str]:
