@@ -6,7 +6,18 @@
 
 - Support for extensions (plugins) for django-components!
 
+    - Hook into lifecycle events of django-components
+    - Pre-/post-process component inputs, outputs, and templates
+    - Add extra methods or attributes to Components
+    - Add custom CLI commands to django-components
+
     Read more on [Extensions](https://django-components.github.io/django-components/0.131/concepts/advanced/extensions/).
+
+- New CLI commands:
+    - `components create <name>` - Create a new component (supersedes `startcomponent`)
+    - `components upgrade <name>` - Upgrade a component (supersedes `upgradecomponent`)
+    - `components ext list` - List all extensions
+    - `components ext run <extension> <command>` - Run a command added by an extension
 
 - `@djc_test` decorator for writing tests that involve Components.
 
@@ -15,6 +26,12 @@
     - The decorator also serves as a stand-in for Django's `@override_settings`.
 
     See the API reference for [`@djc_test`](https://django-components.github.io/django-components/0.131/reference/testing_api/#djc_test) for more details.
+
+#### Refactor
+
+- The `startcomponent` and `upgradecomponent` commands are deprecated, and will be removed in v1.
+
+    Instead, use `components start <name>` and `components upgrade`.
 
 #### Internal
 

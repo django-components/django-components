@@ -6,6 +6,15 @@
 # isort: off
 from django_components.app_settings import ContextBehavior, ComponentsSettings
 from django_components.autodiscovery import autodiscover, import_libraries
+from django_components.util.command import (
+    CommandArg,
+    CommandArgGroup,
+    CommandHandler,
+    CommandLiteralAction,
+    CommandParserInput,
+    CommandSubcommand,
+    ComponentCommand,
+)
 from django_components.component import Component, ComponentVars
 from django_components.component_media import ComponentMediaInput, ComponentMediaInputPath
 from django_components.component_registry import (
@@ -52,9 +61,15 @@ from django_components.util.types import EmptyTuple, EmptyDict
 __all__ = [
     "AlreadyRegistered",
     "autodiscover",
-    "cached_template",
     "BaseNode",
-    "ContextBehavior",
+    "cached_template",
+    "CommandArg",
+    "CommandArgGroup",
+    "CommandHandler",
+    "CommandLiteralAction",
+    "CommandParserInput",
+    "CommandSubcommand",
+    "ComponentCommand",
     "ComponentsSettings",
     "Component",
     "ComponentExtension",
@@ -67,6 +82,7 @@ __all__ = [
     "ComponentView",
     "component_formatter",
     "component_shorthand_formatter",
+    "ContextBehavior",
     "DynamicComponent",
     "EmptyTuple",
     "EmptyDict",

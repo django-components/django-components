@@ -6,21 +6,361 @@ These are all the [Django management commands](https://docs.djangoproject.com/en
 that will be added by installing `django_components`:
 
 
-## `upgradecomponent`
+## ` components`
 
 ```txt
-usage: manage.py upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
-                                  [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color] [--skip-checks]
+usage: python manage.py  components [-h] {create,upgrade,ext} ...
 
 ```
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/upgradecomponent.py#L12" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/components.py#L9" target="_blank">See source code</a>
 
 
 
-Updates component and component_block tags to the new syntax
+The entrypoint for the 'components' commands.
+
+**Options:**
+
+- `-h`, `--help`
+    - show this help message and exit
+
+**Subcommands:**
+
+- [`create`](../commands#components-`create`)
+    - Create a new django component.
+- [`upgrade`](../commands#components-`upgrade`)
+    - Upgrade django components syntax from '{% component_block ... %}' to '{% component ... %}'.
+- [`ext`](../commands#components-`ext`)
+    - Run extension commands.
+
+
+
+
+The entrypoint for the "components" commands.
+
+```bash
+python manage.py components start <name>
+python manage.py components upgrade <name>
+python manage.py components ext list
+python manage.py components ext run <extension> <command>
+```
+
+
+## `components create`
+
+```txt
+usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run] name
+
+```
+
+
+
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/create.py#L11" target="_blank">See source code</a>
+
+
+
+Create a new django component.
+
+**Positional Arguments:**
+
+- `name`
+    - The name of the component to create. This is a required argument.
+
+**Options:**
+
+- `-h`, `--help`
+    - show this help message and exit
+- `--path PATH`
+    - The path to the component's directory. This is an optional argument. If not provided, the command will use the `COMPONENTS.dirs` setting from your Django settings.
+- `--js JS`
+    - The name of the JavaScript file. This is an optional argument. The default value is `script.js`.
+- `--css CSS`
+    - The name of the CSS file. This is an optional argument. The default value is `style.css`.
+- `--template TEMPLATE`
+    - The name of the template file. This is an optional argument. The default value is `template.html`.
+- `--force`
+    - This option allows you to overwrite existing files if they exist. This is an optional argument.
+- `--verbose`
+    - This option allows the command to print additional information during component creation. This is an optional argument.
+- `--dry-run`
+    - This option allows you to simulate component creation without actually creating any files. This is an optional argument. The default value is `False`.
+
+
+
+
+### Usage
+
+To use the command, run the following command in your terminal:
+
+```bash
+python manage.py components create <name> --path <path> --js <js_filename> --css <css_filename> --template <template_filename> --force --verbose --dry-run
+```
+
+Replace `<name>`, `<path>`, `<js_filename>`, `<css_filename>`, and `<template_filename>` with your desired values.
+
+### Examples
+
+Here are some examples of how you can use the command:
+
+**Creating a Component with Default Settings**
+
+To create a component with the default settings, you only need to provide the name of the component:
+
+```bash
+python manage.py components create my_component
+```
+
+This will create a new component named `my_component` in the `components` directory of your Django project. The JavaScript, CSS, and template files will be named `script.js`, `style.css`, and `template.html`, respectively.
+
+**Creating a Component with Custom Settings**
+
+You can also create a component with custom settings by providing additional arguments:
+
+```bash
+python manage.py components create new_component --path my_components --js my_script.js --css my_style.css --template my_template.html
+```
+
+This will create a new component named `new_component` in the `my_components` directory. The JavaScript, CSS, and template files will be named `my_script.js`, `my_style.css`, and `my_template.html`, respectively.
+
+**Overwriting an Existing Component**
+
+If you want to overwrite an existing component, you can use the `--force` option:
+
+```bash
+python manage.py components create my_component --force
+```
+
+This will overwrite the existing `my_component` if it exists.
+
+**Simulating Component Creation**
+
+If you want to simulate the creation of a component without actually creating any files, you can use the `--dry-run` option:
+
+```bash
+python manage.py components create my_component --dry-run
+```
+
+This will simulate the creation of `my_component` without creating any files.
+
+
+## `components upgrade`
+
+```txt
+usage: python manage.py components upgrade [-h] [--path PATH]
+
+```
+
+
+
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/upgrade.py#L13" target="_blank">See source code</a>
+
+
+
+Upgrade django components syntax from '{% component_block ... %}' to '{% component ... %}'.
+
+**Options:**
+
+- `-h`, `--help`
+    - show this help message and exit
+- `--path PATH`
+    - Path to search for components
+
+
+
+
+
+## `components ext`
+
+```txt
+usage: python manage.py components ext [-h] {list,run} ...
+
+```
+
+
+
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/ext.py#L5" target="_blank">See source code</a>
+
+
+
+Run extension commands.
+
+**Options:**
+
+- `-h`, `--help`
+    - show this help message and exit
+
+**Subcommands:**
+
+- [`list`](../commands#components-ext-`list`)
+    - List all extensions.
+- [`run`](../commands#components-ext-`run`)
+    - Run a command added by an extension.
+
+
+
+
+Run extension commands.
+
+```bash
+python manage.py components ext list
+python manage.py components ext run <extension> <command>
+```
+
+
+## `components ext list`
+
+```txt
+usage: python manage.py components ext list [-h] [-v {0,1}]
+
+```
+
+
+
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/ext_list.py#L6" target="_blank">See source code</a>
+
+
+
+List all extensions.
+
+**Options:**
+
+- `-h`, `--help`
+    - show this help message and exit
+- `-v {0,1}`, `--verbosity {0,1}`
+    -  Verbosity level; 0=minimal output, 1=normal output
+
+
+
+
+List all extensions.
+
+```bash
+python manage.py components ext list
+```
+
+Prints the list of installed extensions:
+
+```txt
+Installed extensions:
+view
+my_extension
+```
+
+If you need to omit the title in order to programmatically post-process the output,
+you can use the `--verbosity` (or `-v`) flag:
+
+```bash
+python manage.py components ext list -v 0
+```
+
+Which prints just:
+
+```txt
+view
+my_extension
+```
+
+
+## `components ext run`
+
+```txt
+usage: python manage.py components ext run [-h]
+
+```
+
+
+
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/ext_run.py#L48" target="_blank">See source code</a>
+
+
+
+Run a command added by an extension.
+
+**Options:**
+
+- `-h`, `--help`
+    - show this help message and exit
+
+
+
+
+Run a command added by an [extension](../../concepts/advanced/extensions).
+
+Each extension can add its own commands, which will be available to run with this command.
+
+For example, if you define and install the following extension:
+
+```python
+from django_components ComponentCommand, ComponentsExtension
+
+class HelloCommand(ComponentCommand):
+    name = "hello"
+    help = "Say hello"
+    def handle(self, *args, **kwargs):
+        print("Hello, world!")
+
+class MyExt(ComponentsExtension):
+    name = "my_ext"
+    commands = [HelloCommand]
+```
+
+You can run the `hello` command with:
+
+```bash
+python manage.py components ext run my_ext hello
+```
+
+You can also define arguments for the command, which will be passed to the command's `handle` method.
+
+```python
+from django_components import CommandArg, ComponentCommand, ComponentsExtension
+
+class HelloCommand(ComponentCommand):
+    name = "hello"
+    help = "Say hello"
+    arguments = [
+        CommandArg(name="name", help="The name to say hello to"),
+        CommandArg(name=["--shout", "-s"], action="store_true"),
+    ]
+
+    def handle(self, name: str, *args, **kwargs):
+        shout = kwargs.get("shout", False)
+        msg = f"Hello, {name}!"
+        if shout:
+            msg = msg.upper()
+        print(msg)
+```
+
+You can run the command with:
+
+```bash
+python manage.py components ext run my_ext hello --name John --shout
+```
+
+!!! note
+
+    Command arguments and options are based on Python's `argparse` module.
+
+    For more information, see the [argparse documentation](https://docs.python.org/3/library/argparse.html).
+
+
+## `upgradecomponent`
+
+```txt
+usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH]
+                        [--traceback] [--no-color] [--force-color] [--skip-checks]
+
+```
+
+
+
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/upgradecomponent.py#L83" target="_blank">See source code</a>
+
+
+
+Deprecated. Use `components upgrade` instead.
 
 **Options:**
 
@@ -48,24 +388,26 @@ Updates component and component_block tags to the new syntax
 
 
 
+**Deprecated**. Use [`components upgrade`](../commands#components-upgrade) instead.
+
 
 ## `startcomponent`
 
 ```txt
-usage: manage.py startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose]
-                                [--dry-run] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH]
-                                [--traceback] [--no-color] [--force-color] [--skip-checks]
-                                name
+usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run]
+                      [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback]
+                      [--no-color] [--force-color] [--skip-checks]
+                      name
 
 ```
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/startcomponent.py#L8" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/startcomponent.py#L83" target="_blank">See source code</a>
 
 
 
-Create a new django component.
+Deprecated. Use `components create` instead.
 
 **Positional Arguments:**
 
@@ -110,58 +452,6 @@ Create a new django component.
 
 
 
-### Management Command Usage
-
-To use the command, run the following command in your terminal:
-
-```bash
-python manage.py startcomponent <name> --path <path> --js <js_filename> --css <css_filename> --template <template_filename> --force --verbose --dry-run
-```
-
-Replace `<name>`, `<path>`, `<js_filename>`, `<css_filename>`, and `<template_filename>` with your desired values.
-
-### Management Command Examples
-
-Here are some examples of how you can use the command:
-
-#### Creating a Component with Default Settings
-
-To create a component with the default settings, you only need to provide the name of the component:
-
-```bash
-python manage.py startcomponent my_component
-```
-
-This will create a new component named `my_component` in the `components` directory of your Django project. The JavaScript, CSS, and template files will be named `script.js`, `style.css`, and `template.html`, respectively.
-
-#### Creating a Component with Custom Settings
-
-You can also create a component with custom settings by providing additional arguments:
-
-```bash
-python manage.py startcomponent new_component --path my_components --js my_script.js --css my_style.css --template my_template.html
-```
-
-This will create a new component named `new_component` in the `my_components` directory. The JavaScript, CSS, and template files will be named `my_script.js`, `my_style.css`, and `my_template.html`, respectively.
-
-#### Overwriting an Existing Component
-
-If you want to overwrite an existing component, you can use the `--force` option:
-
-```bash
-python manage.py startcomponent my_component --force
-```
-
-This will overwrite the existing `my_component` if it exists.
-
-#### Simulating Component Creation
-
-If you want to simulate the creation of a component without actually creating any files, you can use the `--dry-run` option:
-
-```bash
-python manage.py startcomponent my_component --dry-run
-```
-
-This will simulate the creation of `my_component` without creating any files.
+**Deprecated**. Use [`components create`](../commands#components-create) instead.
 
 

@@ -2,15 +2,15 @@ import os
 import tempfile
 from io import StringIO
 from shutil import rmtree
+from unittest.mock import patch
 
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
-
 from django_components.testing import djc_test
 from .testutils import setup_test_config
 
-setup_test_config()
+setup_test_config({"autodiscover": False})
 
 
 @djc_test
@@ -19,7 +19,7 @@ class TestCreateComponentCommand:
         temp_dir = tempfile.mkdtemp()
 
         component_name = "defaultcomponent"
-        call_command("startcomponent", component_name, "--path", temp_dir)
+        call_command("components", "create", component_name, "--path", temp_dir)
 
         expected_files = [
             os.path.join(temp_dir, component_name, "script.js"),
@@ -36,7 +36,8 @@ class TestCreateComponentCommand:
 
         component_name = "testcomponent"
         call_command(
-            "startcomponent",
+            "components",
+            "create",
             component_name,
             "--path",
             temp_dir,
@@ -65,7 +66,8 @@ class TestCreateComponentCommand:
 
         component_name = "dryruncomponent"
         call_command(
-            "startcomponent",
+            "components",
+            "create",
             component_name,
             "--path",
             temp_dir,
@@ -88,7 +90,8 @@ class TestCreateComponentCommand:
             f.write("hello world")
 
         call_command(
-            "startcomponent",
+            "components",
+            "create",
             component_name,
             "--path",
             temp_dir,
@@ -108,7 +111,7 @@ class TestCreateComponentCommand:
         os.makedirs(component_path)
 
         with pytest.raises(CommandError):
-            call_command("startcomponent", component_name, "--path", temp_dir)
+            call_command("components", "create", component_name, "--path", temp_dir)
 
         rmtree(temp_dir)
 
@@ -117,15 +120,34 @@ class TestCreateComponentCommand:
 
         component_name = "verbosecomponent"
         out = StringIO()
-        call_command(
-            "startcomponent",
-            component_name,
-            "--path",
-            temp_dir,
-            "--verbose",
-            stdout=out,
-        )
+        with patch("sys.stdout", new=out):
+            call_command(
+                "components",
+                "create",
+                component_name,
+                "--path",
+                temp_dir,
+                "--verbose",
+                stdout=out,
+            )
         output = out.getvalue()
         assert "component at" in output
+
+        rmtree(temp_dir)
+
+    # TODO_V1 - REMOVE - deprecated
+    def test_startcomponent(self):
+        temp_dir = tempfile.mkdtemp()
+
+        component_name = "defaultcomponent"
+        call_command("startcomponent", component_name, "--path", temp_dir)
+
+        expected_files = [
+            os.path.join(temp_dir, component_name, "script.js"),
+            os.path.join(temp_dir, component_name, "style.css"),
+            os.path.join(temp_dir, component_name, "template.html"),
+        ]
+        for file_path in expected_files:
+            assert os.path.exists(file_path)
 
         rmtree(temp_dir)

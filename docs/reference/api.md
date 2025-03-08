@@ -7,6 +7,30 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.CommandArg
+    options:
+      show_if_no_docstring: true
+
+::: django_components.CommandArgGroup
+    options:
+      show_if_no_docstring: true
+
+::: django_components.CommandHandler
+    options:
+      show_if_no_docstring: true
+
+::: django_components.CommandLiteralAction
+    options:
+      show_if_no_docstring: true
+
+::: django_components.CommandParserInput
+    options:
+      show_if_no_docstring: true
+
+::: django_components.CommandSubcommand
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.Component
     options:
       show_if_no_docstring: true
@@ -36,6 +60,10 @@
       show_if_no_docstring: true
 
 ::: django_components.ComponentView
+    options:
+      show_if_no_docstring: true
+
+::: django_components.ComponentCommand
     options:
       show_if_no_docstring: true
 
