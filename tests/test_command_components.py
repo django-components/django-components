@@ -1,4 +1,3 @@
-import sys
 from io import StringIO
 from unittest.mock import patch
 
@@ -7,13 +6,6 @@ from django_components.testing import djc_test
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
-
-
-# NOTE: Argparse changed how the optional args are displayed in Python 3.11+
-if sys.version_info >= (3, 11):
-    OPTIONS_TITLE = "options"
-else:
-    OPTIONS_TITLE = "optional arguments"
 
 
 @djc_test
@@ -35,7 +27,7 @@ class TestComponentCommand:
         #
         # The entrypoint for the 'components' commands.
         #
-        # {OPTIONS_TITLE}:
+        # optional arguments:
         #   -h, --help            show this help message and exit
         #   --version             Show program's version number and exit.
         #   -v {{0,1,2,3}}, --verbosity {{0,1,2,3}}

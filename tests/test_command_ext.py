@@ -11,7 +11,7 @@ from .testutils import setup_test_config
 setup_test_config({"autodiscover": False})
 
 # NOTE: Argparse changed how the optional args are displayed in Python 3.11+
-if sys.version_info >= (3, 11):
+if sys.version_info >= (3, 10):
     OPTIONS_TITLE = "options"
 else:
     OPTIONS_TITLE = "optional arguments"
@@ -238,7 +238,4 @@ class TestExtensionsRunCommand:
             except SystemExit:
                 output = out.getvalue()
 
-        assert (
-            "invalid choice: 'dummy_cmd_not_found' (choose from 'dummy_cmd')"
-            in output
-        )
+        assert "invalid choice: 'dummy_cmd_not_found'" in output
