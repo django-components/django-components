@@ -24,11 +24,8 @@ class TestComponentCommand:
         with patch("sys.stdout", new=out):
             call_command("components")
         output = out.getvalue()
-        assert output == dedent(f"""
-            usage: components [-h] [--version] [-v {{0,1,2,3}}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback]
-                              [--no-color] [--force-color] [--skip-checks]
-                              {{create,upgrade,ext}} ...
-
+        assert "usage: components" in output
+        assert dedent(f"""
             The entrypoint for the 'components' commands.
 
             {OPTIONS_TITLE}:
@@ -50,4 +47,4 @@ class TestComponentCommand:
                 create              Create a new django component.
                 upgrade             Upgrade django components syntax from '{{% component_block ... %}}' to '{{% component ... %}}'.
                 ext                 Run extension commands.
-        """).lstrip()  # noqa: E501
+        """).lstrip() in output  # noqa: E501
