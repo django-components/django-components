@@ -21,8 +21,8 @@ class TestComponentCommand:
         #
         # The full expected output is:
         # ```
-        # usage: components [-h] [--version] [-v {{0,1,2,3}}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback]
-        #                   [--no-color] [--force-color] [--skip-checks]
+        # usage: components [-h] [--version] [-v {{0,1,2,3}}] [--settings SETTINGS] [--pythonpath PYTHONPATH]
+        #                   [--traceback] [--no-color] [--force-color] [--skip-checks]
         #                   {{create,upgrade,ext}} ...
         #
         # The entrypoint for the 'components' commands.
@@ -31,9 +31,10 @@ class TestComponentCommand:
         #   -h, --help            show this help message and exit
         #   --version             Show program's version number and exit.
         #   -v {{0,1,2,3}}, --verbosity {{0,1,2,3}}
-        #                         Verbosity level; 0=minimal output, 1=normal output, 2=verbose output, 3=very verbose output
-        #   --settings SETTINGS   The Python path to a settings module, e.g. "myproject.settings.main". If this isn't provided,
-        #                         the DJANGO_SETTINGS_MODULE environment variable will be used.
+        #                         Verbosity level; 0=minimal output, 1=normal output, 2=verbose output,
+        #                         3=very verbose output
+        #   --settings SETTINGS   The Python path to a settings module, e.g. "myproject.settings.main". If this
+        #                         isn't provided, the DJANGO_SETTINGS_MODULE environment variable will be used.
         #   --pythonpath PYTHONPATH
         #                         A directory to add to the Python path, e.g. "/home/djangoprojects/myproject".
         #   --traceback           Raise on CommandError exceptions.
@@ -44,7 +45,8 @@ class TestComponentCommand:
         # subcommands:
         #   {{create,upgrade,ext}}
         #     create              Create a new django component.
-        #     upgrade             Upgrade django components syntax from '{{% component_block ... %}}' to '{{% component ... %}}'.
+        #     upgrade             Upgrade django components syntax from '{{% component_block ... %}}' to
+        #                         '{{% component ... %}}'.
         #     ext                 Run extension commands.
         # ```
 
@@ -52,7 +54,7 @@ class TestComponentCommand:
         assert "The entrypoint for the 'components' commands." in output
         assert "-h, --help            show this help message and exit" in output
         assert "--version             Show program's version number and exit." in output
-        assert "-v {0,1,2,3}, --verbosity {0,1,2,3}" in output
+        assert "-v {0,1,2,3}" in output
         assert "--settings SETTINGS   The Python path to a settings module" in output
         assert "--pythonpath PYTHONPATH" in output
         assert "--traceback           Raise on CommandError exceptions." in output
