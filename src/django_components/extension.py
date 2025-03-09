@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Tuple, 
 from django.template import Context
 
 from django_components.app_settings import app_settings
+from django_components.util.command import ComponentCommand
 from django_components.util.misc import snake_to_pascal
 
 if TYPE_CHECKING:
@@ -182,6 +183,65 @@ class ComponentExtension:
     ```
 
     This setting decides what the extension class will inherit from.
+    """
+
+    commands: List[Type[ComponentCommand]] = []
+    """
+    List of commands that can be run by the extension.
+
+    These commands will be available to the user as `components ext run <extension> <command>`.
+
+    Commands are defined as subclasses of [`ComponentCommand`](../api#django_components.ComponentCommand).
+
+    **Example:**
+
+    This example defines an extension with a command that prints "Hello world". To run the command,
+    the user would run `components ext run hello_world hello`.
+
+    ```python
+    from django_components import ComponentCommand, ComponentExtension, CommandArg, CommandArgGroup
+
+    class HelloWorldCommand(ComponentCommand):
+        name = "hello"
+        help = "Hello world command."
+
+        # Allow to pass flags `--foo`, `--bar` and `--baz`.
+        # Argument parsing is managed by `argparse`.
+        arguments = [
+            CommandArg(
+                name_or_flags="--foo",
+                help="Foo description.",
+            ),
+            # When printing the command help message, `bar` and `baz`
+            # will be grouped under "group bar".
+            CommandArgGroup(
+                title="group bar",
+                description="Group description.",
+                arguments=[
+                    CommandArg(
+                        name_or_flags="--bar",
+                        help="Bar description.",
+                    ),
+                    CommandArg(
+                        name_or_flags="--baz",
+                        help="Baz description.",
+                    ),
+                ],
+            ),
+        ]
+
+        # Callback that receives the parsed arguments and options.
+        def handle(self, *args, **kwargs):
+            print(f"HelloWorldCommand.handle: args={args}, kwargs={kwargs}")
+
+    # Associate the command with the extension
+    class HelloWorldExtension(ComponentExtension):
+        name = "hello_world"
+
+        commands = [
+            HelloWorldCommand,
+        ]
+    ```
     """
 
     def __init_subclass__(cls) -> None:
@@ -528,6 +588,19 @@ class ExtensionManager:
                 self._init_component_class(on_component_created_data.component_cls)
             getattr(self, hook)(data)
         self._events = []
+
+    def get_extension(self, name: str) -> ComponentExtension:
+        for extension in self.extensions:
+            if extension.name == name:
+                return extension
+        raise ValueError(f"Extension {name} not found")
+
+    def get_extension_command(self, name: str, command_name: str) -> Type[ComponentCommand]:
+        extension = self.get_extension(name)
+        for command in extension.commands:
+            if command.name == command_name:
+                return command
+        raise ValueError(f"Command {command_name} not found in extension {name}")
 
     #############################
     # Component lifecycle hooks

@@ -891,17 +891,24 @@ class Component(
         """
         Shortcut for calling `Component.View.as_view` and passing component instance to it.
         """
-        # This method may be called as class method or as instance method.
-        # If called as class method, create a new instance.
-        if isinstance(cls, Component):
-            comp: Component = cls
-        else:
-            comp = cls()
 
-        # `view` is a built-in extension defined in `extensions.view`. It subclasses
-        # from Django's `View` class, and adds the `component` attribute to it.
-        view_inst = cast(View, comp.view)  # type: ignore[attr-defined]
-        return view_inst.__class__.as_view(**initkwargs, component=comp)
+        # NOTE: `Component.View` may not be available at the time that URLs are being
+        # defined. So we return a view that calls `View.as_view()` only once it's actually called.
+        def outer_view(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+            # This method may be called as class method or as instance method.
+            # If called as class method, create a new instance.
+            if isinstance(cls, Component):
+                comp: Component = cls
+            else:
+                comp = cls()
+
+            # `view` is a built-in extension defined in `extensions.view`. It subclasses
+            # from Django's `View` class, and adds the `component` attribute to it.
+            view_cls = cast(View, cls.View)  # type: ignore[attr-defined]
+            inner_view = view_cls.as_view(**initkwargs, component=comp)
+            return inner_view(request, *args, **kwargs)
+
+        return outer_view
 
     # #####################################
     # RENDERING

@@ -4,6 +4,7 @@ Django-components functionality can be extended with "extensions". Extensions al
 
 - Tap into lifecycle events, such as when a component is created, deleted, registered, or unregistered.
 - Add new attributes and methods to the components under an extension-specific nested class.
+- Define custom commands that can be executed via the Django management command interface.
 
 ## Setting up extensions
 
@@ -328,3 +329,286 @@ class MyComponent(Component):
 ```
 
 This will log the component name and color when the component is created, deleted, or rendered.
+
+## Extension Commands
+
+Extensions in django-components can define custom commands that can be executed via the Django management command interface. This allows for powerful automation and customization capabilities.
+
+For example, if you have an extension that defines a command that prints "Hello world", you can run the command with:
+
+```bash
+python manage.py components ext run my_ext hello
+```
+
+Where:
+
+- `python manage.py components ext run` - is the Django command run
+- `my_ext` - is the extension name
+- `hello` - is the command name
+
+### Defining Commands
+
+To define a command, subclass from [`ComponentCommand`](../../../reference/api#django_components.ComponentCommand).
+This subclass should define:
+
+- `name` - the command's name
+- `help` - the command's help text
+- `handle` - the logic to execute when the command is run
+
+```python
+from django_components import ComponentCommand, ComponentsExtension
+
+class HelloCommand(ComponentCommand):
+    name = "hello"
+    help = "Say hello"
+
+    def handle(self, *args, **kwargs):
+        print("Hello, world!")
+
+class MyExt(ComponentsExtension):
+    name = "my_ext"
+    commands = [HelloCommand]
+```
+
+### Defining Command Arguments and Options
+
+Commands can accept positional arguments and options (e.g. `--foo`), which are defined using the
+[`arguments`](../../../reference/api#django_components.ComponentCommand.arguments)
+attribute of the [`ComponentCommand`](../../../reference/api#django_components.ComponentCommand) class.
+
+The arguments are parsed with [`argparse`](https://docs.python.org/3/library/argparse.html)
+into a dictionary of arguments and options. These are then available
+as keyword arguments to the [`handle`](../../../reference/api#django_components.ComponentCommand.handle)
+method of the command.
+
+```python
+from django_components import CommandArg, ComponentCommand, ComponentsExtension
+
+class HelloCommand(ComponentCommand):
+    name = "hello"
+    help = "Say hello"
+
+    arguments = [
+        # Positional argument
+        CommandArg(
+            name_or_flags="name",
+            help="The name to say hello to",
+        ),
+        # Optional argument
+        CommandArg(
+            name_or_flags=["--shout", "-s"],
+            action="store_true",
+            help="Shout the hello",
+        ),
+    ]
+
+    def handle(self, name: str, *args, **kwargs):
+        shout = kwargs.get("shout", False)
+        msg = f"Hello, {name}!"
+        if shout:
+            msg = msg.upper()
+        print(msg)
+```
+
+You can run the command with arguments and options:
+
+```bash
+python manage.py components ext run my_ext hello John --shout
+>>> HELLO, JOHN!
+```
+
+!!! note
+
+    Command definitions are parsed with `argparse`, so you can use all the features of `argparse` to define your arguments and options.
+
+    See the [argparse documentation](https://docs.python.org/3/library/argparse.html) for more information.
+
+    django-components defines types as
+    [`CommandArg`](../../../reference/api#django_components.CommandArg),
+    [`CommandArgGroup`](../../../reference/api#django_components.CommandArgGroup),
+    [`CommandSubcommand`](../../../reference/api#django_components.CommandSubcommand),
+    and [`CommandParserInput`](../../../reference/api#django_components.CommandParserInput)
+    to help with type checking.
+
+!!! note
+
+    If a command doesn't have the [`handle`](../../../reference/api#django_components.ComponentCommand.handle)
+    method defined, the command will print a help message and exit.
+
+### Grouping Arguments
+
+Arguments can be grouped using [`CommandArgGroup`](../../../reference/api#django_components.CommandArgGroup)
+to provide better organization and help messages.
+
+Read more on [argparse argument groups](https://docs.python.org/3/library/argparse.html#argument-groups).
+
+```python
+from django_components import CommandArg, CommandArgGroup, ComponentCommand, ComponentsExtension
+
+class HelloCommand(ComponentCommand):
+    name = "hello"
+    help = "Say hello"
+
+    # Argument parsing is managed by `argparse`.
+    arguments = [
+        # Positional argument
+        CommandArg(
+            name_or_flags="name",
+            help="The name to say hello to",
+        ),
+        # Optional argument
+        CommandArg(
+            name_or_flags=["--shout", "-s"],
+            action="store_true",
+            help="Shout the hello",
+        ),
+        # When printing the command help message, `--bar` and `--baz`
+        # will be grouped under "group bar".
+        CommandArgGroup(
+            title="group bar",
+            description="Group description.",
+            arguments=[
+                CommandArg(
+                    name_or_flags="--bar",
+                    help="Bar description.",
+                ),
+                CommandArg(
+                    name_or_flags="--baz",
+                    help="Baz description.",
+                ),
+            ],
+        ),
+    ]
+
+    def handle(self, name: str, *args, **kwargs):
+        shout = kwargs.get("shout", False)
+        msg = f"Hello, {name}!"
+        if shout:
+            msg = msg.upper()
+        print(msg)
+```
+
+### Subcommands
+
+Extensions can define subcommands, allowing for more complex command structures.
+
+Subcommands are defined similarly to root commands, as subclasses of
+[`ComponentCommand`](../../../reference/api#django_components.ComponentCommand) class.
+
+However, instead of defining the subcommands in the
+[`commands`](../../../reference/api#django_components.ComponentExtension.commands)
+attribute of the extension, you define them in the
+[`subcommands`](../../../reference/api#django_components.ComponentCommand.subcommands)
+attribute of the parent command:
+
+```python
+from django_components import CommandArg, CommandArgGroup, ComponentCommand, ComponentsExtension
+
+class ChildCommand(ComponentCommand):
+    name = "child"
+    help = "Child command"
+
+    def handle(self, *args, **kwargs):
+        print("Child command")
+
+class ParentCommand(ComponentCommand):
+    name = "parent"
+    help = "Parent command"
+    subcommands = [
+        ChildCommand,
+    ]
+
+    def handle(self, *args, **kwargs):
+        print("Parent command")
+```
+
+In this example, we can run two commands.
+
+Either the parent command:
+
+```bash
+python manage.py components ext run parent
+>>> Parent command
+```
+
+Or the child command:
+
+```bash
+python manage.py components ext run parent child
+>>> Child command
+```
+
+!!! warning
+
+    Subcommands are independent of the parent command. When a subcommand runs, the parent command is NOT executed.
+
+    As such, if you want to pass arguments to both the parent and child commands, e.g.:
+
+    ```bash
+    python manage.py components ext run parent --foo child --bar
+    ```
+
+    You should instead pass all the arguments to the subcommand:
+
+    ```bash
+    python manage.py components ext run parent child --foo --bar
+    ```
+
+### Print command help
+
+By default, all commands will print their help message when run with the `--help` / `-h` flag.
+
+```bash
+python manage.py components ext run my_ext --help
+```
+
+The help message prints out all the arguments and options available for the command, as well as any subcommands.
+
+### Testing Commands
+
+Commands can be tested using Django's [`call_command()`](https://docs.djangoproject.com/en/5.1/ref/django-admin/#running-management-commands-from-your-code)
+function, which allows you to simulate running the command in tests.
+
+```python
+from django.core.management import call_command
+
+call_command('components', 'ext', 'run', 'my_ext', 'hello', '--name', 'John')
+```
+
+To capture the output of the command, you can use the [`StringIO`](https://docs.python.org/3/library/io.html#io.StringIO)
+module to redirect the output to a string:
+
+```python
+from io import StringIO
+
+out = StringIO()
+with patch("sys.stdout", new=out):
+    call_command('components', 'ext', 'run', 'my_ext', 'hello', '--name', 'John')
+output = out.getvalue()
+```
+
+And to temporarily set the extensions, you can use the [`@djc_test`](../../../reference/testing_api#djc_test) decorator.
+
+Thus, a full test example can then look like this:
+
+```python
+from io import StringIO
+from unittest.mock import patch
+
+from django.core.management import call_command
+from django_components.testing import djc_test
+
+@djc_test(
+    components_settings={
+        "extensions": [
+            "my_app.extensions.MyExtension",
+        ],
+    },
+)
+def test_hello_command(self):
+    out = StringIO()
+    with patch("sys.stdout", new=out):
+        call_command('components', 'ext', 'run', 'my_ext', 'hello', '--name', 'John')
+    output = out.getvalue()
+    assert output == "Hello, John!\n"
+```
