@@ -30,7 +30,7 @@ colorama==0.4.6
     # via tox
 distlib==0.3.9
     # via virtualenv
-django==5.1.6
+django==5.1.7
     # via -r requirements-dev.in
 djc-core-html-parser==1.0.1
     # via -r requirements-dev.in
