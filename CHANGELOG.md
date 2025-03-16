@@ -9,7 +9,8 @@
     - Hook into lifecycle events of django-components
     - Pre-/post-process component inputs, outputs, and templates
     - Add extra methods or attributes to Components
-    - Add custom CLI commands to django-components
+    - Add custom extension-specific CLI commands
+    - Add custom extension-specific URL routes
 
     Read more on [Extensions](https://django-components.github.io/django-components/0.131/concepts/advanced/extensions/).
 

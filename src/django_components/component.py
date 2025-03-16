@@ -111,7 +111,7 @@ CssDataType = TypeVar("CssDataType", bound=Mapping[str, Any])
 
 # NOTE: `ReferenceType` is NOT a generic pre-3.9
 if sys.version_info >= (3, 9):
-    AllComponents = List[ReferenceType["ComponentRegistry"]]
+    AllComponents = List[ReferenceType["Component"]]
 else:
     AllComponents = List[ReferenceType]
 

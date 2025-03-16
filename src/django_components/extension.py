@@ -1,11 +1,15 @@
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Tuple, Type, TypeVar
 
+import django.urls
 from django.template import Context
+from django.urls import URLResolver
 
 from django_components.app_settings import app_settings
+from django_components.compat.django import routes_to_django
 from django_components.util.command import ComponentCommand
 from django_components.util.misc import snake_to_pascal
+from django_components.util.routing import URLRoute
 
 if TYPE_CHECKING:
     from django_components import Component
@@ -93,6 +97,11 @@ class OnComponentDataContext(NamedTuple):
     """Dictionary of CSS data from `Component.get_css_data()`"""
 
 
+################################################
+# EXTENSIONS CORE
+################################################
+
+
 class BaseExtensionClass:
     def __init__(self, component: "Component") -> None:
         self.component = component
@@ -178,7 +187,7 @@ class ComponentExtension:
 
     ```python
     class MyComp(Component):
-        class MyExtension(BaseExtensionClass):
+        class MyExtension(ComponentExtension.ExtensionClass):
             ...
     ```
 
@@ -243,6 +252,8 @@ class ComponentExtension:
         ]
     ```
     """
+
+    urls: List[URLRoute] = []
 
     def __init_subclass__(cls) -> None:
         if not cls.name.isidentifier():
@@ -562,32 +573,50 @@ class ExtensionManager:
             extension_instance = used_ext_class(component)
             setattr(component, extension.name, extension_instance)
 
-    # The triggers for following hooks may occur before the `apps.py` `ready()` hook is called.
-    # - on_component_class_created
-    # - on_component_class_deleted
-    # - on_registry_created
-    # - on_registry_deleted
-    # - on_component_registered
-    # - on_component_unregistered
-    #
-    # The problem is that the extensions are set up only at the initialization (`ready()` hook in `apps.py`).
-    #
-    # So in the case that these hooks are triggered before initialization,
-    # we store these "events" in a list, and then "flush" them all when `ready()` is called.
-    #
-    # This way, we can ensure that all extensions are present before any hooks are called.
     def _init_app(self) -> None:
         if self._initialized:
             return
 
         self._initialized = True
 
+        # The triggers for following hooks may occur before the `apps.py` `ready()` hook is called.
+        # - on_component_class_created
+        # - on_component_class_deleted
+        # - on_registry_created
+        # - on_registry_deleted
+        # - on_component_registered
+        # - on_component_unregistered
+        #
+        # The problem is that the extensions are set up only at the initialization (`ready()` hook in `apps.py`).
+        #
+        # So in the case that these hooks are triggered before initialization,
+        # we store these "events" in a list, and then "flush" them all when `ready()` is called.
+        #
+        # This way, we can ensure that all extensions are present before any hooks are called.
         for hook, data in self._events:
             if hook == "on_component_class_created":
                 on_component_created_data: OnComponentClassCreatedContext = data
                 self._init_component_class(on_component_created_data.component_cls)
             getattr(self, hook)(data)
         self._events = []
+
+        # Populate the `urlpatterns` with URLs specified by the extensions
+        # TODO_V3 - Django-specific logic - replace with hook
+        urls: List[URLResolver] = []
+        for extension in self.extensions:
+            ext_urls = routes_to_django(extension.urls)
+            ext_url_path = django.urls.path(f"{extension.name}/", django.urls.include(ext_urls))
+            urls.append(ext_url_path)
+
+        # NOTE: `urlconf_name` is the actual source of truth that holds either a list of URLPatterns
+        # or an import string thereof.
+        # However, Django's `URLResolver` caches the resolved value of `urlconf_name`
+        # under the key `url_patterns`.
+        # So we set both:
+        # - `urlconf_name` to update the source of truth
+        # - `url_patterns` to override the caching
+        ext_url_resolver.urlconf_name = urls
+        ext_url_resolver.url_patterns = urls
 
     def get_extension(self, name: str) -> ComponentExtension:
         for extension in self.extensions:
@@ -651,3 +680,25 @@ class ExtensionManager:
 
 # NOTE: This is a singleton which is takes the extensions from `app_settings.EXTENSIONS`
 extensions = ExtensionManager()
+
+
+################################
+# VIEW
+################################
+
+# Extensions can define their own URLs, which will be added to the `urlpatterns` list.
+# These will be available under the `/components/ext/<extension_name>/` path, e.g.:
+# `/components/ext/my_extension/path/to/route/<str:name>/<int:id>/`
+urlpatterns = [
+    django.urls.path("ext/", django.urls.include([])),
+]
+
+# NOTE: Normally we'd pass all the routes introduced by extensions to `django.urls.include()` and
+#       `django.urls.path()` to construct the `URLResolver` objects that would take care of the rest.
+#
+#       However, Django's `urlpatterns` are constructed BEFORE the `ready()` hook is called,
+#       and so before the extensions are ready.
+#
+#       As such, we lazily set the extensions' routes to the `URLResolver` object. And we use the `include()
+#       and `path()` funtions above to ensure that the `URLResolver` object is created correctly.
+ext_url_resolver: URLResolver = urlpatterns[0]

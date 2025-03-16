@@ -1,8 +1,10 @@
 from argparse import ArgumentParser
-from typing import Any, Optional, Type
+from typing import Any, List, Optional, Type
 
 import django
+import django.urls as django_urls
 from django.core.management.base import BaseCommand as DjangoCommand
+from django.urls import URLPattern
 
 from django_components.util.command import (
     CommandArg,
@@ -10,6 +12,11 @@ from django_components.util.command import (
     _setup_command_arg,
     setup_parser_from_command,
 )
+from django_components.util.routing import URLRoute
+
+################################################
+# COMMANDS
+################################################
 
 # Django command arguments added to all commands
 # NOTE: Many of these MUST be present for the command to work with Django
@@ -114,3 +121,44 @@ def load_as_django_command(command: Type[ComponentCommand]) -> Type[DjangoComman
     Command.__doc__ = command.__doc__
 
     return Command
+
+
+################################################
+# ROUTING
+################################################
+
+
+def routes_to_django(routes: List[URLRoute]) -> List[URLPattern]:
+    """
+    Convert a list of `URLRoute` objects to a list of `URLPattern` objects.
+
+    The result is similar to Django's `django.urls.path()` function.
+
+    Nested routes are recursively converted to Django with `django.urls.include()`.
+
+    **Example:**
+
+    ```python
+    urls_to_django([
+        URLPattern(
+            "/my/path",
+            handler=my_handler,
+            name="my_name",
+            extra={"kwargs": {"my_extra": "my_value"} },
+        ),
+    ])
+    ```
+    """
+    django_routes: List[URLPattern] = []
+    for route in routes:
+        # The handler is equivalent to `view` function in Django
+        if route.handler is not None:
+            django_handler = route.handler
+        else:
+            # If the URL has children paths, it's equivalent to "including" another `urlpatterns` in Django
+            subpaths = routes_to_django(route.children)
+            django_handler = django_urls.include(subpaths)
+
+        django_route = django_urls.path(route.path, django_handler, name=route.name, **route.extra)
+        django_routes.append(django_route)
+    return django_routes

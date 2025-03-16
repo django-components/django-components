@@ -438,6 +438,7 @@ def _setup_djc_global_state(
     from django_components.app_settings import app_settings
 
     app_settings._load_settings()
+    extensions._initialized = False
     extensions._init_app()
 
 

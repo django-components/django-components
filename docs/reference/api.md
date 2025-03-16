@@ -35,6 +35,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.ComponentCommand
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.ComponentExtension
     options:
       show_if_no_docstring: true
@@ -60,10 +64,6 @@
       show_if_no_docstring: true
 
 ::: django_components.ComponentView
-    options:
-      show_if_no_docstring: true
-
-::: django_components.ComponentCommand
     options:
       show_if_no_docstring: true
 
@@ -147,6 +147,14 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.URLRoute
+    options:
+      show_if_no_docstring: true
+
+::: django_components.URLRouteHandler
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.autodiscover
     options:
       show_if_no_docstring: true
@@ -182,4 +190,3 @@
 ::: django_components.template_tag
     options:
       show_if_no_docstring: true
-

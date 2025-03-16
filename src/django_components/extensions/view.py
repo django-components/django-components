@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Protocol, cast
 from django.http import HttpRequest, HttpResponse
 from django.views.generic import View
 
-from django_components.extension import BaseExtensionClass, ComponentExtension
+from django_components.extension import ComponentExtension
 
 if TYPE_CHECKING:
     from django_components.component import Component
@@ -13,7 +13,7 @@ class ViewFn(Protocol):
     def __call__(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Any: ...  # noqa: E704
 
 
-class ComponentView(BaseExtensionClass, View):
+class ComponentView(ComponentExtension.ExtensionClass, View):
     """
     Subclass of `django.views.View` where the `Component` instance is available
     via `self.component`.
@@ -24,7 +24,7 @@ class ComponentView(BaseExtensionClass, View):
     component = cast("Component", None)
 
     def __init__(self, component: "Component", **kwargs: Any) -> None:
-        BaseExtensionClass.__init__(self, component)
+        ComponentExtension.ExtensionClass.__init__(self, component)
         View.__init__(self, **kwargs)
 
     # NOTE: The methods below are defined to satisfy the `View` class. All supported methods

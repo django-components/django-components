@@ -1,12 +1,15 @@
 import gc
 from typing import Any, Callable, Dict, List, cast
 
+from django.http import HttpRequest, HttpResponse
 from django.template import Context
+from django.test import Client
 
 from django_components import Component, Slot, register, registry
 from django_components.app_settings import app_settings
 from django_components.component_registry import ComponentRegistry
 from django_components.extension import (
+    URLRoute,
     ComponentExtension,
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
@@ -23,6 +26,16 @@ from django_components.testing import djc_test
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
+
+
+def dummy_view(request: HttpRequest):
+    # Test that the request object is passed to the view
+    assert isinstance(request, HttpRequest)
+    return HttpResponse("Hello, world!")
+
+
+def dummy_view_2(request: HttpRequest, id: int, name: str):
+    return HttpResponse(f"Hello, world! {id} {name}")
 
 
 class DummyExtension(ComponentExtension):
@@ -43,6 +56,11 @@ class DummyExtension(ComponentExtension):
             "on_component_input": [],
             "on_component_data": [],
         }
+
+    urls = [
+        URLRoute(path="dummy-view/", handler=dummy_view, name="dummy"),
+        URLRoute(path="dummy-view-2/<int:id>/<str:name>/", handler=dummy_view_2, name="dummy-2"),
+    ]
 
     def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
         # NOTE: Store only component name to avoid strong references
@@ -73,6 +91,20 @@ class DummyExtension(ComponentExtension):
         self.calls["on_component_data"].append(ctx)
 
 
+class DummyNestedExtension(ComponentExtension):
+    name = "test_nested_extension"
+
+    urls = [
+        URLRoute(
+            path="nested-view/",
+            children=[
+                URLRoute(path="<int:id>/<str:name>/", handler=dummy_view_2, name="dummy-2"),
+            ],
+            name="dummy",
+        ),
+    ]
+
+
 def with_component_cls(on_created: Callable):
     class TestComponent(Component):
         template = "Hello {{ name }}!"
@@ -91,17 +123,16 @@ def with_registry(on_created: Callable):
 
 @djc_test
 class TestExtension:
-    @djc_test(
-        components_settings={"extensions": [DummyExtension]}
-    )
+    @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_extensios_setting(self):
         assert len(app_settings.EXTENSIONS) == 2
         assert isinstance(app_settings.EXTENSIONS[0], ViewExtension)
         assert isinstance(app_settings.EXTENSIONS[1], DummyExtension)
 
-    @djc_test(
-        components_settings={"extensions": [DummyExtension]}
-    )
+
+@djc_test
+class TestExtensionHooks:
+    @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_component_class_lifecycle_hooks(self):
         extension = cast(DummyExtension, app_settings.EXTENSIONS[1])
 
@@ -130,9 +161,7 @@ class TestExtension:
         assert len(extension.calls["on_component_class_deleted"]) == 1
         assert extension.calls["on_component_class_deleted"][0] == "TestComponent"
 
-    @djc_test(
-        components_settings={"extensions": [DummyExtension]}
-    )
+    @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_registry_lifecycle_hooks(self):
         extension = cast(DummyExtension, app_settings.EXTENSIONS[1])
 
@@ -162,9 +191,7 @@ class TestExtension:
         assert len(extension.calls["on_registry_deleted"]) == 1
         assert extension.calls["on_registry_deleted"][0] == reg_id
 
-    @djc_test(
-        components_settings={"extensions": [DummyExtension]}
-    )
+    @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_component_registration_hooks(self):
         class TestComponent(Component):
             template = "Hello {{ name }}!"
@@ -191,9 +218,7 @@ class TestExtension:
         assert unreg_call.name == "test_comp"
         assert unreg_call.component_cls == TestComponent
 
-    @djc_test(
-        components_settings={"extensions": [DummyExtension]}
-    )
+    @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_component_render_hooks(self):
         @register("test_comp")
         class TestComponent(Component):
@@ -211,9 +236,7 @@ class TestExtension:
         # Render the component with some args and kwargs
         test_context = Context({"foo": "bar"})
         test_slots = {"content": "Some content"}
-        TestComponent.render(
-            context=test_context, args=("arg1", "arg2"), kwargs={"name": "Test"}, slots=test_slots
-        )
+        TestComponent.render(context=test_context, args=("arg1", "arg2"), kwargs={"name": "Test"}, slots=test_slots)
 
         extension = cast(DummyExtension, app_settings.EXTENSIONS[1])
 
@@ -236,3 +259,34 @@ class TestExtension:
         assert data_call.context_data == {"name": "Test"}
         assert data_call.js_data == {"script": "console.log('Hello!')"}
         assert data_call.css_data == {"style": "body { color: blue; }"}
+
+
+@djc_test
+class TestExtensionViews:
+    @djc_test(components_settings={"extensions": [DummyExtension]})
+    def test_views(self):
+        client = Client()
+
+        # Check basic view
+        response = client.get("/components/ext/test_extension/dummy-view/")
+        assert response.status_code == 200
+        assert response.content == b"Hello, world!"
+
+        # Check that URL parameters are passed to the view
+        response2 = client.get("/components/ext/test_extension/dummy-view-2/123/John/")
+        assert response2.status_code == 200
+        assert response2.content == b"Hello, world! 123 John"
+
+    @djc_test(components_settings={"extensions": [DummyNestedExtension]})
+    def test_nested_views(self):
+        client = Client()
+
+        # Check basic view
+        # NOTE: Since the parent route contains child routes, the parent route should not be matched
+        response = client.get("/components/ext/test_nested_extension/nested-view/")
+        assert response.status_code == 404
+
+        # Check that URL parameters are passed to the view
+        response2 = client.get("/components/ext/test_nested_extension/nested-view/123/John/")
+        assert response2.status_code == 200
+        assert response2.content == b"Hello, world! 123 John"

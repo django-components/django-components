@@ -51,7 +51,9 @@ python manage.py components ext run <extension> <command>
 ## `components create`
 
 ```txt
-usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run] name
+usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose]
+              [--dry-run]
+              name
 
 ```
 
@@ -293,7 +295,7 @@ Each extension can add its own commands, which will be available to run with thi
 For example, if you define and install the following extension:
 
 ```python
-from django_components ComponentCommand, ComponentsExtension
+from django_components import ComponentCommand, ComponentExtension
 
 class HelloCommand(ComponentCommand):
     name = "hello"
@@ -301,7 +303,7 @@ class HelloCommand(ComponentCommand):
     def handle(self, *args, **kwargs):
         print("Hello, world!")
 
-class MyExt(ComponentsExtension):
+class MyExt(ComponentExtension):
     name = "my_ext"
     commands = [HelloCommand]
 ```
@@ -315,7 +317,7 @@ python manage.py components ext run my_ext hello
 You can also define arguments for the command, which will be passed to the command's `handle` method.
 
 ```python
-from django_components import CommandArg, ComponentCommand, ComponentsExtension
+from django_components import CommandArg, ComponentCommand, ComponentExtension
 
 class HelloCommand(ComponentCommand):
     name = "hello"
@@ -349,14 +351,15 @@ python manage.py components ext run my_ext hello --name John --shout
 ## `upgradecomponent`
 
 ```txt
-usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH]
-                        [--traceback] [--no-color] [--force-color] [--skip-checks]
+usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
+                        [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
+                        [--skip-checks]
 
 ```
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/upgradecomponent.py#L83" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/upgradecomponent.py#L89" target="_blank">See source code</a>
 
 
 
@@ -394,16 +397,17 @@ Deprecated. Use `components upgrade` instead.
 ## `startcomponent`
 
 ```txt
-usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run]
-                      [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback]
-                      [--no-color] [--force-color] [--skip-checks]
+usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force]
+                      [--verbose] [--dry-run] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
+                      [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
+                      [--skip-checks]
                       name
 
 ```
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/startcomponent.py#L83" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/startcomponent.py#L89" target="_blank">See source code</a>
 
 
 

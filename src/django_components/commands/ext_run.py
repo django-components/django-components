@@ -55,7 +55,7 @@ class ExtRunCommand(ComponentCommand):
     For example, if you define and install the following extension:
 
     ```python
-    from django_components ComponentCommand, ComponentsExtension
+    from django_components import ComponentCommand, ComponentExtension
 
     class HelloCommand(ComponentCommand):
         name = "hello"
@@ -63,7 +63,7 @@ class ExtRunCommand(ComponentCommand):
         def handle(self, *args, **kwargs):
             print("Hello, world!")
 
-    class MyExt(ComponentsExtension):
+    class MyExt(ComponentExtension):
         name = "my_ext"
         commands = [HelloCommand]
     ```
@@ -77,7 +77,7 @@ class ExtRunCommand(ComponentCommand):
     You can also define arguments for the command, which will be passed to the command's `handle` method.
 
     ```python
-    from django_components import CommandArg, ComponentCommand, ComponentsExtension
+    from django_components import CommandArg, ComponentCommand, ComponentExtension
 
     class HelloCommand(ComponentCommand):
         name = "hello"

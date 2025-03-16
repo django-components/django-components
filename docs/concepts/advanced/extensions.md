@@ -15,10 +15,10 @@ Extensions can be set by either as an import string or by passing in a class:
 ```python
 # settings.py
 
-class MyExtension(ComponentsExtension):
+class MyExtension(ComponentExtension):
     name = "my_extension"
 
-    class ExtensionClass(BaseExtensionClass):
+    class ExtensionClass(ComponentExtension.ExtensionClass):
         ...
 
 COMPONENTS = ComponentsSettings(
@@ -188,13 +188,13 @@ This is how extensions define the "default" behavior of their nested extension c
 For example, the `View` base extension class defines the handlers for GET, POST, etc:
 
 ```python
-from django_components.extension import ComponentExtension, BaseExtensionClass
+from django_components.extension import ComponentExtension
 
 class ViewExtension(ComponentExtension):
     name = "view"
 
     # The default behavior of the `View` extension class.
-    class ExtensionClass(BaseExtensionClass):
+    class ExtensionClass(ComponentExtension.ExtensionClass):
         def get(self, request):
             return self.component.get(request)
 
@@ -229,7 +229,7 @@ class MyTable(Component):
 
 !!! warning
 
-    When writing an extension, the `ExtensionClass` MUST subclass the base class [`BaseExtensionClass`](../../../reference/api/#django_components.ComponentExtension.BaseExtensionClass).
+    When writing an extension, the `ExtensionClass` MUST subclass the base class [`ComponentExtension.ExtensionClass`](../../../reference/api/#django_components.ComponentExtension.ExtensionClass).
 
     This base class ensures that the extension class will have access to the component instance.
 
@@ -276,7 +276,7 @@ from django_components.extension import (
     OnComponentInputContext,
 )
 
-class ColorLoggerExtensionClass(BaseExtensionClass):
+class ColorLoggerExtensionClass(ComponentExtension.ExtensionClass):
     color: str
 
 
@@ -356,7 +356,7 @@ This subclass should define:
 - `handle` - the logic to execute when the command is run
 
 ```python
-from django_components import ComponentCommand, ComponentsExtension
+from django_components import ComponentCommand, ComponentExtension
 
 class HelloCommand(ComponentCommand):
     name = "hello"
@@ -365,7 +365,7 @@ class HelloCommand(ComponentCommand):
     def handle(self, *args, **kwargs):
         print("Hello, world!")
 
-class MyExt(ComponentsExtension):
+class MyExt(ComponentExtension):
     name = "my_ext"
     commands = [HelloCommand]
 ```
@@ -382,7 +382,7 @@ as keyword arguments to the [`handle`](../../../reference/api#django_components.
 method of the command.
 
 ```python
-from django_components import CommandArg, ComponentCommand, ComponentsExtension
+from django_components import CommandArg, ComponentCommand, ComponentExtension
 
 class HelloCommand(ComponentCommand):
     name = "hello"
@@ -443,7 +443,7 @@ to provide better organization and help messages.
 Read more on [argparse argument groups](https://docs.python.org/3/library/argparse.html#argument-groups).
 
 ```python
-from django_components import CommandArg, CommandArgGroup, ComponentCommand, ComponentsExtension
+from django_components import CommandArg, CommandArgGroup, ComponentCommand, ComponentExtension
 
 class HelloCommand(ComponentCommand):
     name = "hello"
@@ -502,7 +502,7 @@ attribute of the extension, you define them in the
 attribute of the parent command:
 
 ```python
-from django_components import CommandArg, CommandArgGroup, ComponentCommand, ComponentsExtension
+from django_components import CommandArg, CommandArgGroup, ComponentCommand, ComponentExtension
 
 class ChildCommand(ComponentCommand):
     name = "child"
@@ -611,4 +611,129 @@ def test_hello_command(self):
         call_command('components', 'ext', 'run', 'my_ext', 'hello', '--name', 'John')
     output = out.getvalue()
     assert output == "Hello, John!\n"
+```
+
+## Extension URLs
+
+Extensions can define custom views and endpoints that can be accessed through the Django application.
+
+To define URLs for an extension, set them in the [`urls`](../../../reference/api#django_components.ComponentExtension.urls) attribute of your [`ComponentExtension`](../../../reference/api#django_components.ComponentExtension) class. Each URL is defined using the [`URLRoute`](../../../reference/api#django_components.URLRoute) class, which specifies the path, handler, and optional name for the route.
+
+Here's an example of how to define URLs within an extension:
+
+```python
+from django_components.extension import ComponentExtension, URLRoute
+from django.http import HttpResponse
+
+def my_view(request):
+    return HttpResponse("Hello from my extension!")
+
+class MyExtension(ComponentExtension):
+    name = "my_extension"
+
+    urls = [
+        URLRoute(path="my-view/", handler=my_view, name="my_view"),
+        URLRoute(path="another-view/<int:id>/", handler=my_view, name="another_view"),
+    ]
+```
+
+!!! warning
+
+    The [`URLRoute`](../../../reference/api#django_components.URLRoute) objects
+    are different from objects created with Django's
+    [`django.urls.path()`](https://docs.djangoproject.com/en/5.1/ref/urls/#path).
+    Do NOT use `URLRoute` objects in Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.1/topics/http/urls/#example)
+    and vice versa!
+
+    django-components uses a custom [`URLRoute`](../../../reference/api#django_components.URLRoute) class to define framework-agnostic routing rules.
+
+    As of v0.131, `URLRoute` objects are directly converted to Django's `URLPattern` and `URLResolver` objects.
+
+### Accessing Extension URLs
+
+The URLs defined in an extension are available under the path
+
+```
+/components/ext/<extension_name>/
+```
+
+For example, if you have defined a URL with the path `my-view/<str:name>/` in an extension named `my_extension`, it can be accessed at:
+
+```
+/components/ext/my_extension/my-view/john/
+```
+
+### Nested URLs
+
+Extensions can also define nested URLs to allow for more complex routing structures.
+
+To define nested URLs, set the [`children`](../../../reference/api#django_components.URLRoute.children)
+attribute of the [`URLRoute`](../../../reference/api#django_components.URLRoute) object to
+a list of child [`URLRoute`](../../../reference/api#django_components.URLRoute) objects:
+
+```python
+class MyExtension(ComponentExtension):
+    name = "my_extension"
+
+    urls = [
+        URLRoute(
+            path="parent/",
+            name="parent_view",
+            children=[
+                URLRoute(path="child/<str:name>/", handler=my_view, name="child_view"),
+            ],
+        ),
+    ]
+```
+
+In this example, the URL
+
+```
+/components/ext/my_extension/parent/child/john/
+```
+
+would call the `my_view` handler with the parameter `name` set to `"John"`.
+
+### Passing kwargs and other extra fields to URL routes
+
+The [`URLRoute`](../../../reference/api#django_components.URLRoute) class is framework-agnostic,
+so that extensions could be used with non-Django frameworks in the future.
+
+However, that means that there may be some extra fields that Django's
+[`django.urls.path()`](https://docs.djangoproject.com/en/5.1/ref/urls/#path)
+accepts, but which are not defined on the `URLRoute` object.
+
+To address this, the [`URLRoute`](../../../reference/api#django_components.URLRoute) object has
+an [`extra`](../../../reference/api#django_components.URLRoute.extra) attribute,
+which is a dictionary that can be used to pass any extra kwargs to `django.urls.path()`:
+
+```python
+URLRoute(
+    path="my-view/<str:name>/",
+    handler=my_view,
+    name="my_view",
+    extra={"kwargs": {"foo": "bar"} },
+)
+```
+
+Is the same as:
+
+```python
+django.urls.path(
+    "my-view/<str:name>/",
+    view=my_view,
+    name="my_view",
+    kwargs={"foo": "bar"},
+)
+```
+
+because `URLRoute` is converted to Django's route like so:
+
+```python
+django.urls.path(
+    route.path,
+    view=route.handler,
+    name=route.name,
+    **route.extra,
+)
 ```
