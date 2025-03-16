@@ -13,7 +13,7 @@ class ViewFn(Protocol):
     def __call__(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Any: ...  # noqa: E704
 
 
-class ComponentView(ComponentExtension.ExtensionClass, View):
+class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
     """
     Subclass of `django.views.View` where the `Component` instance is available
     via `self.component`.

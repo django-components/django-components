@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Protocol
 class URLRouteHandler(Protocol):
     """Framework-agnostic 'view' function for routes"""
 
-    def __call__(self, request: Any, *args: Any, **kwargs: Any) -> Any: ...
+    def __call__(self, request: Any, *args: Any, **kwargs: Any) -> Any: ...  # noqa: E704
 
 
 @dataclass
