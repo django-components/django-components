@@ -13,41 +13,23 @@ from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 setup_test_config({"autodiscover": False})
 
 
-class SlottedComponent(Component):
-    template: types.django_html = """
-        {% load component_tags %}
-        <custom-template>
-            <header>{% slot "header" %}Default header{% endslot %}</header>
-            <main>{% slot "main" %}Default main{% endslot %}</main>
-            <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
-        </custom-template>
-    """
-
-
-class SlottedComponentWithContext(SlottedComponent):
-    def get_context_data(self, variable):
-        return {"variable": variable}
-
-
-#######################
-# TESTS
-#######################
-
-
 @djc_test
 class TestNestedSlot:
-    class NestedComponent(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            {% slot 'outer' %}
-                <div id="outer">{% slot 'inner' %}Default{% endslot %}</div>
-            {% endslot %}
-        """
+    def _get_nested_component(self):
+        class NestedComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot 'outer' %}
+                    <div id="outer">{% slot 'inner' %}Default{% endslot %}</div>
+                {% endslot %}
+            """
+
+        return NestedComponent
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_default_slot_contents_render_correctly(self, components_settings):
         registry.clear()
-        registry.register("test", self.NestedComponent)
+        registry.register("test", self._get_nested_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test' %}{% endcomponent %}
@@ -59,7 +41,7 @@ class TestNestedSlot:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_inner_slot_overriden(self, components_settings):
         registry.clear()
-        registry.register("test", self.NestedComponent)
+        registry.register("test", self._get_nested_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test' %}
@@ -73,7 +55,7 @@ class TestNestedSlot:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_outer_slot_overriden(self, components_settings):
         registry.clear()
-        registry.register("test", self.NestedComponent)
+        registry.register("test", self._get_nested_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test' %}{% fill 'outer' %}<p>Override</p>{% endfill %}{% endcomponent %}
@@ -85,7 +67,7 @@ class TestNestedSlot:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_both_overriden_and_inner_removed(self, components_settings):
         registry.clear()
-        registry.register("test", self.NestedComponent)
+        registry.register("test", self._get_nested_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test' %}
@@ -175,22 +157,25 @@ class TestNestedSlot:
 # as provided by {% if %} tags was previously provided by this library.
 @djc_test
 class TestConditionalSlot:
-    class ConditionalComponent(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            {% if branch == 'a' %}
-                <p id="a">{% slot 'a' %}Default A{% endslot %}</p>
-            {% elif branch == 'b' %}
-                <p id="b">{% slot 'b' %}Default B{% endslot %}</p>
-            {% endif %}
-        """
+    def _get_conditional_component(self):
+        class ConditionalComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% if branch == 'a' %}
+                    <p id="a">{% slot 'a' %}Default A{% endslot %}</p>
+                {% elif branch == 'b' %}
+                    <p id="b">{% slot 'b' %}Default B{% endslot %}</p>
+                {% endif %}
+            """
 
-        def get_context_data(self, branch=None):
-            return {"branch": branch}
+            def get_context_data(self, branch=None):
+                return {"branch": branch}
+
+        return ConditionalComponent
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_no_content_if_branches_are_false(self, components_settings):
-        registry.register("test", self.ConditionalComponent)
+        registry.register("test", self._get_conditional_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test' %}
@@ -204,7 +189,7 @@ class TestConditionalSlot:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_default_content_if_no_slots(self, components_settings):
-        registry.register("test", self.ConditionalComponent)
+        registry.register("test", self._get_conditional_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test' branch='a' %}{% endcomponent %}
@@ -222,7 +207,7 @@ class TestConditionalSlot:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_one_slot_overridden(self, components_settings):
-        registry.register("test", self.ConditionalComponent)
+        registry.register("test", self._get_conditional_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test' branch='a' %}
@@ -244,7 +229,7 @@ class TestConditionalSlot:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_both_slots_overridden(self, components_settings):
-        registry.register("test", self.ConditionalComponent)
+        registry.register("test", self._get_conditional_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test' branch='a' %}
@@ -271,20 +256,23 @@ class TestConditionalSlot:
 class TestSlotIteration:
     """Tests a behaviour of {% fill .. %} tag which is inside a template {% for .. %} loop."""
 
-    class ComponentSimpleSlotInALoop(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            {% for object in objects %}
-                {% slot 'slot_inner' %}
-                    {{ object }} default
-                {% endslot %}
-            {% endfor %}
-        """
+    def _get_component_simple_slot_in_a_loop(self):
+        class ComponentSimpleSlotInALoop(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% for object in objects %}
+                    {% slot 'slot_inner' %}
+                        {{ object }} default
+                    {% endslot %}
+                {% endfor %}
+            """
 
-        def get_context_data(self, objects, *args, **kwargs) -> dict:
-            return {
-                "objects": objects,
-            }
+            def get_context_data(self, objects, *args, **kwargs) -> dict:
+                return {
+                    "objects": objects,
+                }
+
+        return ComponentSimpleSlotInALoop
 
     # NOTE: Second arg in tuple is expected result. In isolated mode, loops should NOT leak.
     @djc_test(
@@ -298,7 +286,7 @@ class TestSlotIteration:
         )
     )
     def test_inner_slot_iteration_basic(self, components_settings, expected):
-        registry.register("slot_in_a_loop", self.ComponentSimpleSlotInALoop)
+        registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -327,7 +315,7 @@ class TestSlotIteration:
         )
     )
     def test_inner_slot_iteration_with_variable_from_outer_scope(self, components_settings, expected):
-        registry.register("slot_in_a_loop", self.ComponentSimpleSlotInALoop)
+        registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -363,7 +351,7 @@ class TestSlotIteration:
         )
     )
     def test_inner_slot_iteration_nested(self, components_settings, expected):
-        registry.register("slot_in_a_loop", self.ComponentSimpleSlotInALoop)
+        registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
 
         objects = [
             {"inner": ["ITER1_OBJ1", "ITER1_OBJ2"]},
@@ -414,7 +402,7 @@ class TestSlotIteration:
         )
     )
     def test_inner_slot_iteration_nested_with_outer_scope_variable(self, components_settings, expected):
-        registry.register("slot_in_a_loop", self.ComponentSimpleSlotInALoop)
+        registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
 
         objects = [
             {"inner": ["ITER1_OBJ1", "ITER1_OBJ2"]},
@@ -460,7 +448,7 @@ class TestSlotIteration:
         )
     )
     def test_inner_slot_iteration_nested_with_slot_default(self, components_settings, expected):
-        registry.register("slot_in_a_loop", self.ComponentSimpleSlotInALoop)
+        registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
 
         objects = [
             {"inner": ["ITER1_OBJ1", "ITER1_OBJ2"]},
@@ -517,7 +505,7 @@ class TestSlotIteration:
         components_settings,
         expected,
     ):
-        registry.register("slot_in_a_loop", self.ComponentSimpleSlotInALoop)
+        registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
 
         objects = [
             {"inner": ["ITER1_OBJ1", "ITER1_OBJ2"]},
@@ -554,7 +542,7 @@ class TestSlotIteration:
     def test_inner_slot_iteration_nested_with_slot_default_and_outer_scope_variable__isolated_2(
         self,
     ):
-        registry.register("slot_in_a_loop", self.ComponentSimpleSlotInALoop)
+        registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
 
         objects = [
             {"inner": ["ITER1_OBJ1", "ITER1_OBJ2"]},
@@ -608,40 +596,44 @@ class TestSlotIteration:
 
 @djc_test
 class TestComponentNesting:
-    class CalendarComponent(Component):
-        """Nested in ComponentWithNestedComponent"""
+    def _get_calendar_component(self):
+        class CalendarComponent(Component):
+            """Nested in ComponentWithNestedComponent"""
 
-        template: types.django_html = """
-            {% load component_tags %}
-            <div class="calendar-component">
-            <h1>
-                {% slot "header" %}Today's date is <span>{{ date }}</span>{% endslot %}
-            </h1>
-            <main>
-            {% slot "body" %}
-                You have no events today.
-            {% endslot %}
-            </main>
-            </div>
-        """
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="calendar-component">
+                <h1>
+                    {% slot "header" %}Today's date is <span>{{ date }}</span>{% endslot %}
+                </h1>
+                <main>
+                {% slot "body" %}
+                    You have no events today.
+                {% endslot %}
+                </main>
+                </div>
+            """
+        return CalendarComponent
 
-    class DashboardComponent(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            <div class="dashboard-component">
-            {% component "calendar" date="2020-06-06" %}
-                {% fill "header" %}  {# fills and slots with same name relate to diff. things. #}
-                    {% slot "header" %}Welcome to your dashboard!{% endslot %}
-                {% endfill %}
-                {% fill "body" %}Here are your to-do items for today:{% endfill %}
-            {% endcomponent %}
-            <ol>
-                {% for item in items %}
-                <li>{{ item }}</li>
-                {% endfor %}
-            </ol>
-            </div>
-        """
+    def _get_dashboard_component(self):
+        class DashboardComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="dashboard-component">
+                {% component "calendar" date="2020-06-06" %}
+                    {% fill "header" %}  {# fills and slots with same name relate to diff. things. #}
+                        {% slot "header" %}Welcome to your dashboard!{% endslot %}
+                    {% endfill %}
+                    {% fill "body" %}Here are your to-do items for today:{% endfill %}
+                {% endcomponent %}
+                <ol>
+                    {% for item in items %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ol>
+                </div>
+            """
+        return DashboardComponent
 
     # NOTE: Second arg in tuple are expected names in nested fills. In "django" mode,
     # the value should be overridden by the component, while in "isolated" it should
@@ -657,8 +649,8 @@ class TestComponentNesting:
         )
     )
     def test_component_inside_slot(self, components_settings, first_name, second_name):
-        registry.register("dashboard", self.DashboardComponent)
-        registry.register("calendar", self.CalendarComponent)
+        registry.register("dashboard", self._get_dashboard_component())
+        registry.register("calendar", self._get_calendar_component())
 
         class SlottedComponent(Component):
             template: types.django_html = """
@@ -730,8 +722,8 @@ class TestComponentNesting:
         )
     )
     def test_component_nesting_component_without_fill(self, components_settings, expected):
-        registry.register("dashboard", self.DashboardComponent)
-        registry.register("calendar", self.CalendarComponent)
+        registry.register("dashboard", self._get_dashboard_component())
+        registry.register("calendar", self._get_calendar_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -768,8 +760,8 @@ class TestComponentNesting:
         )
     )
     def test_component_nesting_slot_inside_component_fill(self, components_settings, expected):
-        registry.register("dashboard", self.DashboardComponent)
-        registry.register("calendar", self.CalendarComponent)
+        registry.register("dashboard", self._get_dashboard_component())
+        registry.register("calendar", self._get_calendar_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -970,8 +962,8 @@ class TestComponentNesting:
         )
     )
     def test_component_nesting_component_with_slot_default(self, components_settings, expected):
-        registry.register("dashboard", self.DashboardComponent)
-        registry.register("calendar", self.CalendarComponent)
+        registry.register("dashboard", self._get_dashboard_component())
+        registry.register("calendar", self._get_calendar_component())
 
         template_str: types.django_html = """
             {% load component_tags %}

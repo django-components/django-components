@@ -13,21 +13,17 @@ from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 setup_test_config({"autodiscover": False})
 
 
-class SlottedComponent(Component):
-    template: types.django_html = """
-        {% load component_tags %}
-        <custom-template>
-            <header>{% slot "header" %}Default header{% endslot %}</header>
-            <main>{% slot "main" %}Default main{% endslot %}</main>
-            <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
-        </custom-template>
-    """
-
-
-class SlottedComponentWithContext(SlottedComponent):
-    def get_context_data(self, variable):
-        return {"variable": variable}
-
+def _gen_slotted_component():
+    class SlottedComponent(Component):
+        template: types.django_html = """
+            {% load component_tags %}
+            <custom-template>
+                <header>{% slot "header" %}Default header{% endslot %}</header>
+                <main>{% slot "main" %}Default main{% endslot %}</main>
+                <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
+            </custom-template>
+        """
+    return SlottedComponent
 
 #######################
 # TESTS
@@ -38,7 +34,7 @@ class SlottedComponentWithContext(SlottedComponent):
 class TestComponentSlot:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_slotted_template_basic(self, components_settings):
-        registry.register(name="test1", component=SlottedComponent)
+        registry.register(name="test1", component=_gen_slotted_component())
 
         @register("test2")
         class SimpleComponent(Component):
@@ -145,7 +141,19 @@ class TestComponentSlot:
         )
     )
     def test_slotted_template_with_context_var(self, components_settings, expected):
-        registry.register(name="test1", component=SlottedComponentWithContext)
+        @register("test1")
+        class SlottedComponentWithContext(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <custom-template>
+                    <header>{% slot "header" %}Default header{% endslot %}</header>
+                    <main>{% slot "main" %}Default main{% endslot %}</main>
+                    <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
+                </custom-template>
+            """
+
+            def get_context_data(self, variable):
+                return {"variable": variable}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -176,7 +184,7 @@ class TestComponentSlot:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_slotted_template_no_slots_filled(self, components_settings):
-        registry.register(name="test", component=SlottedComponent)
+        registry.register(name="test", component=_gen_slotted_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -232,7 +240,7 @@ class TestComponentSlot:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_variable_fill_name(self, components_settings):
-        registry.register(name="test", component=SlottedComponent)
+        registry.register(name="test", component=_gen_slotted_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% with slotname="header" %}
@@ -697,7 +705,7 @@ class TestComponentSlotDefault:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_fill_tag_can_occur_within_component_nested_in_implicit_fill(self, components_settings):
-        registry.register("slotted", SlottedComponent)
+        registry.register("slotted", _gen_slotted_component())
 
         @register("test_comp")
         class ComponentWithDefaultSlot(Component):
@@ -792,7 +800,7 @@ class TestComponentSlotDefault:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_implicit_fill_when_no_slot_marked_default(self, components_settings):
-        registry.register("test_comp", SlottedComponent)
+        registry.register("test_comp", _gen_slotted_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test_comp' %}
@@ -1052,7 +1060,7 @@ class TestPassthroughSlots:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_passthrough_slots(self, components_settings):
-        registry.register("slotted", SlottedComponent)
+        registry.register("slotted", _gen_slotted_component())
 
         @register("test_comp")
         class OuterComp(Component):
@@ -1103,7 +1111,7 @@ class TestPassthroughSlots:
     # with current implementation. So this tests serves as a documentation of the current behavior.
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_passthrough_slots_unknown_fills_ignored(self, components_settings):
-        registry.register("slotted", SlottedComponent)
+        registry.register("slotted", _gen_slotted_component())
 
         @register("test_comp")
         class OuterComp(Component):
@@ -1154,34 +1162,36 @@ class TestPassthroughSlots:
 # See https://github.com/django-components/django-components/issues/698
 @djc_test
 class TestNestedSlots:
-    class NestedSlots(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            {% slot 'wrapper' %}
-                <div>
-                    Wrapper Default
-                    {% slot 'parent1' %}
-                        <div>
-                            Parent1 Default
-                            {% slot 'child1' %}
-                                <div>
-                                    Child 1 Default
-                                </div>
-                            {% endslot %}
-                        </div>
-                    {% endslot %}
-                    {% slot 'parent2' %}
-                        <div>
-                            Parent2 Default
-                        </div>
-                    {% endslot %}
-                </div>
-            {% endslot %}
-        """
+    def _gen_nested_slots_component(self):
+        class NestedSlots(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot 'wrapper' %}
+                    <div>
+                        Wrapper Default
+                        {% slot 'parent1' %}
+                            <div>
+                                Parent1 Default
+                                {% slot 'child1' %}
+                                    <div>
+                                        Child 1 Default
+                                    </div>
+                                {% endslot %}
+                            </div>
+                        {% endslot %}
+                        {% slot 'parent2' %}
+                            <div>
+                                Parent2 Default
+                            </div>
+                        {% endslot %}
+                    </div>
+                {% endslot %}
+            """
+        return NestedSlots
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_empty(self, components_settings):
-        registry.register("example", self.NestedSlots)
+        registry.register("example", self._gen_nested_slots_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1207,7 +1217,7 @@ class TestNestedSlots:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_override_outer(self, components_settings):
-        registry.register("example", self.NestedSlots)
+        registry.register("example", self._gen_nested_slots_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1229,7 +1239,7 @@ class TestNestedSlots:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_override_middle(self, components_settings):
-        registry.register("example", self.NestedSlots)
+        registry.register("example", self._gen_nested_slots_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1257,7 +1267,7 @@ class TestNestedSlots:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_override_inner(self, components_settings):
-        registry.register("example", self.NestedSlots)
+        registry.register("example", self._gen_nested_slots_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1288,7 +1298,7 @@ class TestNestedSlots:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_override_all(self, components_settings):
-        registry.register("example", self.NestedSlots)
+        registry.register("example", self._gen_nested_slots_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'example' %}
@@ -1358,7 +1368,7 @@ class TestSlottedTemplateRegression:
 class TestSlotDefault:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_basic(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", _gen_slotted_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -1383,7 +1393,7 @@ class TestSlotDefault:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_multiple_calls(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", _gen_slotted_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -1409,7 +1419,7 @@ class TestSlotDefault:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_under_if_and_forloop(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", _gen_slotted_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -1440,7 +1450,7 @@ class TestSlotDefault:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_nested_fills(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", _gen_slotted_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -1954,61 +1964,67 @@ class TestScopedSlot:
 
 @djc_test
 class TestDuplicateSlot:
-    class DuplicateSlotComponent(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            <header>{% slot "header" %}Default header{% endslot %}</header>
-             {# Slot name 'header' used twice. #}
-            <main>{% slot "header" %}Default main header{% endslot %}</main>
-            <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
-        """
+    def _gen_duplicate_slot_component(self):
+        class DuplicateSlotComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <header>{% slot "header" %}Default header{% endslot %}</header>
+                {# Slot name 'header' used twice. #}
+                <main>{% slot "header" %}Default main header{% endslot %}</main>
+                <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
+            """
 
-        def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
-            return {
-                "name": name,
-            }
+            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+                return {
+                    "name": name,
+                }
+        return DuplicateSlotComponent
 
-    class DuplicateSlotNestedComponent(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            {% slot "header" %}START{% endslot %}
-            <div class="dashboard-component">
-            {% component "calendar" date="2020-06-06" %}
-                {% fill "header" %}  {# fills and slots with same name relate to diff. things. #}
-                    {% slot "header" %}NESTED{% endslot %}
-                {% endfill %}
-                {% fill "body" %}Here are your to-do items for today:{% endfill %}
-            {% endcomponent %}
-            <ol>
-                {% for item in items %}
-                    <li>{{ item }}</li>
-                    {% slot "header" %}LOOP {{ item }} {% endslot %}
-                {% endfor %}
-            </ol>
-            </div>
-        """
+    def _gen_duplicate_slot_nested_component(self):
+        class DuplicateSlotNestedComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "header" %}START{% endslot %}
+                <div class="dashboard-component">
+                {% component "calendar" date="2020-06-06" %}
+                    {% fill "header" %}  {# fills and slots with same name relate to diff. things. #}
+                        {% slot "header" %}NESTED{% endslot %}
+                    {% endfill %}
+                    {% fill "body" %}Here are your to-do items for today:{% endfill %}
+                {% endcomponent %}
+                <ol>
+                    {% for item in items %}
+                        <li>{{ item }}</li>
+                        {% slot "header" %}LOOP {{ item }} {% endslot %}
+                    {% endfor %}
+                </ol>
+                </div>
+            """
 
-        def get_context_data(self, items: List) -> Dict[str, Any]:
-            return {
-                "items": items,
-            }
+            def get_context_data(self, items: List) -> Dict[str, Any]:
+                return {
+                    "items": items,
+                }
+        return DuplicateSlotNestedComponent
 
-    class CalendarComponent(Component):
-        """Nested in ComponentWithNestedComponent"""
+    def _gen_calendar_component(self):
+        class CalendarComponent(Component):
+            """Nested in ComponentWithNestedComponent"""
 
-        template: types.django_html = """
-            {% load component_tags %}
-            <div class="calendar-component">
-            <h1>
-                {% slot "header" %}Today's date is <span>{{ date }}</span>{% endslot %}
-            </h1>
-            <main>
-                {% slot "body" %}
-                    You have no events today.
-                {% endslot %}
-            </main>
-            </div>
-        """
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="calendar-component">
+                <h1>
+                    {% slot "header" %}Today's date is <span>{{ date }}</span>{% endslot %}
+                </h1>
+                <main>
+                    {% slot "body" %}
+                        You have no events today.
+                    {% endslot %}
+                </main>
+                </div>
+            """
+        return CalendarComponent
 
     # NOTE: Second arg is the input for the "name" component kwarg
     @djc_test(
@@ -2024,8 +2040,8 @@ class TestDuplicateSlot:
         )
     )
     def test_duplicate_slots(self, components_settings, input):
-        registry.register(name="duplicate_slot", component=self.DuplicateSlotComponent)
-        registry.register(name="calendar", component=self.CalendarComponent)
+        registry.register(name="duplicate_slot", component=self._gen_duplicate_slot_component())
+        registry.register(name="calendar", component=self._gen_calendar_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -2052,8 +2068,8 @@ class TestDuplicateSlot:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_duplicate_slots_fallback(self, components_settings):
-        registry.register(name="duplicate_slot", component=self.DuplicateSlotComponent)
-        registry.register(name="calendar", component=self.CalendarComponent)
+        registry.register(name="duplicate_slot", component=self._gen_duplicate_slot_component())
+        registry.register(name="calendar", component=self._gen_calendar_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -2075,8 +2091,8 @@ class TestDuplicateSlot:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_duplicate_slots_nested(self, components_settings):
-        registry.register(name="duplicate_slot_nested", component=self.DuplicateSlotNestedComponent)
-        registry.register(name="calendar", component=self.CalendarComponent)
+        registry.register(name="duplicate_slot_nested", component=self._gen_duplicate_slot_nested_component())
+        registry.register(name="calendar", component=self._gen_calendar_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -2118,8 +2134,8 @@ class TestDuplicateSlot:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_duplicate_slots_nested_fallback(self, components_settings):
-        registry.register(name="duplicate_slot_nested", component=self.DuplicateSlotNestedComponent)
-        registry.register(name="calendar", component=self.CalendarComponent)
+        registry.register(name="duplicate_slot_nested", component=self._gen_duplicate_slot_nested_component())
+        registry.register(name="calendar", component=self._gen_calendar_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -2173,7 +2189,7 @@ class TestSlotFillTemplateSyntaxError:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_non_unique_fill_names_is_error(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", _gen_slotted_component())
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
@@ -2192,7 +2208,7 @@ class TestSlotFillTemplateSyntaxError:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_non_unique_fill_names_is_error_via_vars(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", _gen_slotted_component())
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
