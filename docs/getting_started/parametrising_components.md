@@ -9,8 +9,8 @@ What we want is to be able to use the Calendar component within the template lik
 
 ### 1. Understading component inputs
 
-In section [Create your first component](./your_first_component.md), we defined
-the [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data) method
+In section [Create your first component](../your_first_component), we defined
+the [`get_context_data()`](../../reference/api#django_components.Component.get_context_data) method
 that defines what variables will be available within the template:
 
 ```python title="[project root]/components/calendar/calendar.py"
@@ -26,7 +26,7 @@ class Calendar(Component):
         }
 ```
 
-What we didn't say is that [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+What we didn't say is that [`get_context_data()`](../../reference/api#django_components.Component.get_context_data)
 actually receives the args and kwargs that were passed to a component.
 
 So if we call a component with a `date` and `extra_class` keywords:
@@ -56,7 +56,7 @@ Calendar.get_context_data("2024-12-13", extra_class="text-red")
 ### 2. Define inputs for `get_context_data`
 
 Let's put this to test. We want to pass `date` and `extra_class` kwargs to the component.
-And so, we can write the [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+And so, we can write the [`get_context_data()`](../../reference/api#django_components.Component.get_context_data)
 method such that it expects those parameters:
 
 ```python title="[project root]/components/calendar/calendar.py"
@@ -77,12 +77,12 @@ class Calendar(Component):
 
 !!! info
 
-    Since [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+    Since [`get_context_data()`](../../reference/api#django_components.Component.get_context_data)
     is just a regular Python function, type hints annotations work the same way as anywhere else.
 
 !!! warning
 
-    Since [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+    Since [`get_context_data()`](../../reference/api#django_components.Component.get_context_data)
     is just a regular Python function, it will raise TypeError if it receives incorrect parameters.
 
 Since `extra_class` is optional in the function signature, it's optional also in the template.
@@ -107,7 +107,7 @@ However, `date` is required. Thus we MUST provide it. Same with regular Python f
 
 ### 3. Process inputs in `get_context_data`
 
-The [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+The [`get_context_data()`](../../reference/api#django_components.Component.get_context_data)
 method is powerful, because it allows us to decouple
 component inputs from the template variables. In other words, we can pre-process
 the component inputs, and massage them into a shape that's most appropriate for

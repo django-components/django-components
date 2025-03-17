@@ -119,15 +119,15 @@ If you want to use a different Response class in `render_to_response`, set the `
 
 ```py
 class MyResponse(HttpResponse):
-   def __init__(self, *args, **kwargs) -> None:
-      super().__init__(*args, **kwargs)
-      # Configure response
-      self.headers = ...
-      self.status = ...
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        # Configure response
+        self.headers = ...
+        self.status = ...
 
 class SimpleComponent(Component):
-   response_class = MyResponse
-   template: types.django_html = "HELLO"
+    response_class = MyResponse
+    template: types.django_html = "HELLO"
 
 response = SimpleComponent.render_to_response()
 assert isinstance(response, MyResponse)

@@ -51,8 +51,8 @@ Be sure to prefix your rules with unique CSS class like `calendar`, so the CSS d
     about CSS class clashes.
 
 This CSS will be inserted into the page as an inlined `<style>` tag, at the position defined by
-[`{% component_css_dependencies %}`](../../reference/template_tags.md#component_css_dependencies),
-or at the end of the inside the `<head>` tag (See [JS and CSS output locations](../../advanced/rendering_js_css/#js-and-css-output-locations)).
+[`{% component_css_dependencies %}`](../../reference/template_tags#component_css_dependencies),
+or at the end of the inside the `<head>` tag (See [JS and CSS output locations](../../concepts/advanced/rendering_js_css/#js-and-css-output-locations)).
 
 So in your HTML, you may see something like this:
 
@@ -102,8 +102,8 @@ This makes all variables defined only be defined inside this component and not a
     (except for JS defined with `<script type="module">`).
 
 Similarly to CSS, JS will be inserted into the page as an inlined `<script>` tag, at the position defined by
-[`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies),
-or at the end of the inside the `<body>` tag (See [JS and CSS output locations](../../advanced/rendering_js_css/#js-and-css-output-locations)).
+[`{% component_js_dependencies %}`](../../reference/template_tags#component_js_dependencies),
+or at the end of the inside the `<body>` tag (See [JS and CSS output locations](../../concepts/advanced/rendering_js_css/#js-and-css-output-locations)).
 
 So in your HTML, you may see something like this:
 
@@ -173,8 +173,8 @@ So in your HTML, you may see something like this:
 
 Finally, we return to our Python component in `calendar.py` to tie this together.
 
-To link JS and CSS defined in other files, use [`js_file`](../../../reference/api#django_components.Component.js_file)
-and [`css_file`](../../../reference/api#django_components.Component.css_file) attributes:
+To link JS and CSS defined in other files, use [`js_file`](../../reference/api#django_components.Component.js_file)
+and [`css_file`](../../reference/api#django_components.Component.css_file) attributes:
 
 ```python title="[project root]/components/calendar/calendar.py"
 from django_components import Component
@@ -199,8 +199,8 @@ automatically embed the associated JS and CSS.
 
     1. Relative to the Python component file (as seen above),
     2. Relative to any of the component directories as defined by
-    [`COMPONENTS.dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
-    and/or [`COMPONENTS.app_dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.dirs`](../../reference/settings#django_components.app_settings.ComponentsSettings.dirs)
+    and/or [`COMPONENTS.app_dirs`](../../reference/settings#django_components.app_settings.ComponentsSettings.app_dirs)
     (e.g. `[your apps]/components` dir and `[project root]/components`)
     3. Relative to any of the directories defined by `STATICFILES_DIRS`.
 
@@ -223,7 +223,7 @@ automatically embed the associated JS and CSS.
 ### 5. Link additional JS and CSS to a component
 
 Your components may depend on third-party packages or styling, or other shared logic.
-To load these additional dependencies, you can use a nested [`Media` class](../../../reference/api#django_components.Component.Media).
+To load these additional dependencies, you can use a nested [`Media` class](../../reference/api#django_components.Component.Media).
 
 This `Media` class behaves similarly to [Django's Media class](https://docs.djangoproject.com/en/5.1/topics/forms/media/#assets-as-a-static-definition),
 with a few differences:
@@ -264,8 +264,8 @@ class Calendar(Component):
 
     1. Relative to the Python component file (as seen above),
     2. Relative to any of the component directories as defined by
-    [`COMPONENTS.dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
-    and/or [`COMPONENTS.app_dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.dirs`](../../reference/settings#django_components.app_settings.ComponentsSettings.dirs)
+    and/or [`COMPONENTS.app_dirs`](../../reference/settings#django_components.app_settings.ComponentsSettings.app_dirs)
     (e.g. `[your apps]/components` dir and `[project root]/components`)
 
 !!! info
