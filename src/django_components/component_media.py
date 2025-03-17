@@ -5,6 +5,7 @@ from copy import copy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional, Protocol, Tuple, Type, Union, cast
+from weakref import WeakKeyDictionary
 
 from django.contrib.staticfiles import finders
 from django.core.exceptions import ImproperlyConfigured
