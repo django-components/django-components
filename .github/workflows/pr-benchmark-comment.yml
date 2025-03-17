@@ -86,6 +86,7 @@ jobs:
           script: |
             const fs = require('fs');
             const results = fs.readFileSync('./benchmark_results.md', 'utf8');
+            const issue_number = Number.parseInt(fs.readFileSync('./pr_number.txt', 'utf8'));
             const body = `## Performance Benchmark Results\n\nComparing PR changes against master branch:\n\n${results}`;
 
             // See https://octokit.github.io/rest.js/v21/#issues-create-comment
@@ -94,5 +95,5 @@ jobs:
               // See https://github.com/actions/toolkit/blob/662b9d91f584bf29efbc41b86723e0e376010e41/packages/github/src/context.ts#L66
               owner: context.repo.owner,
               repo: context.repo.repo,
-              issue_number: context.payload.workflow_run.pull_requests[0].number,
+              issue_number: issue_number,
             });

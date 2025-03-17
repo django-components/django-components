@@ -93,6 +93,10 @@ jobs:
         echo "Comparing benchmarks..."
         mkdir -p pr
         asv compare upstream/master HEAD --factor 1.1 --split > ./pr/benchmark_results.md
+
+        # Save the PR number to a file, so that it can be used by the next step.
+        echo "${{ github.event.pull_request.number }}" > ./pr/pr_number.txt
+
         echo "Benchmarks comparison DONE."
 
     - name: Save benchmark results
