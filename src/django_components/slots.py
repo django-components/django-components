@@ -56,9 +56,6 @@ class SlotFunc(Protocol, Generic[TSlotData]):
     def __call__(self, ctx: Context, slot_data: TSlotData, slot_ref: "SlotRef") -> SlotResult: ...  # noqa E704
 
 
-SlotContent = Union[SlotResult, SlotFunc[TSlotData], "Slot[TSlotData]"]
-
-
 @dataclass
 class Slot(Generic[TSlotData]):
     """This class holds the slot content function along with related metadata."""
@@ -98,6 +95,11 @@ class Slot(Generic[TSlotData]):
         comp_name = f"'{self.component_name}'" if self.component_name else None
         slot_name = f"'{self.slot_name}'" if self.slot_name else None
         return f"<{self.__class__.__name__} component_name={comp_name} slot_name={slot_name}>"
+
+
+# NOTE: This must be defined here, so we don't have any forward references
+# otherwise Pydantic has problem resolving the types.
+SlotContent = Union[SlotResult, SlotFunc[TSlotData], Slot[TSlotData]]
 
 
 # Internal type aliases

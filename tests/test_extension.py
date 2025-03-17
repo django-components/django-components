@@ -106,7 +106,7 @@ class DummyNestedExtension(ComponentExtension):
 
 
 def with_component_cls(on_created: Callable):
-    class TestComponent(Component):
+    class TempComponent(Component):
         template = "Hello {{ name }}!"
 
         def get_context_data(self, name="World"):
@@ -124,10 +124,26 @@ def with_registry(on_created: Callable):
 @djc_test
 class TestExtension:
     @djc_test(components_settings={"extensions": [DummyExtension]})
-    def test_extensios_setting(self):
+    def test_extensions_setting(self):
         assert len(app_settings.EXTENSIONS) == 2
         assert isinstance(app_settings.EXTENSIONS[0], ViewExtension)
         assert isinstance(app_settings.EXTENSIONS[1], DummyExtension)
+
+    @djc_test(components_settings={"extensions": [DummyExtension]})
+    def test_access_component_from_extension(self):
+        class TestAccessComp(Component):
+            template = "Hello {{ name }}!"
+
+            def get_context_data(self, arg1, arg2, name="World"):
+                return {"name": name}
+
+        ext_class = TestAccessComp.TestExtension  # type: ignore[attr-defined]
+        assert issubclass(ext_class, ComponentExtension.ExtensionClass)
+        assert ext_class.component_class is TestAccessComp
+
+        # NOTE: Required for test_component_class_lifecycle_hooks to work
+        del TestAccessComp
+        gc.collect()
 
 
 @djc_test
@@ -147,7 +163,7 @@ class TestExtensionHooks:
 
             # Verify on_component_class_created was called
             assert len(extension.calls["on_component_class_created"]) == 1
-            assert extension.calls["on_component_class_created"][0] == "TestComponent"
+            assert extension.calls["on_component_class_created"][0] == "TempComponent"
 
         # Create a component class in a separate scope, to avoid any references from within
         # this test function, so we can garbage collect it after the function returns
@@ -158,8 +174,11 @@ class TestExtensionHooks:
         gc.collect()
 
         # Verify on_component_class_deleted was called
-        assert len(extension.calls["on_component_class_deleted"]) == 1
-        assert extension.calls["on_component_class_deleted"][0] == "TestComponent"
+        # NOTE: The previous test, `test_access_component_from_extension`, is sometimes
+        # garbage-collected too late, in which case it's included in `on_component_class_deleted`.
+        # So in the test we check only for the last call.
+        assert len(extension.calls["on_component_class_deleted"]) >= 1
+        assert extension.calls["on_component_class_deleted"][-1] == "TempComponent"
 
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_registry_lifecycle_hooks(self):

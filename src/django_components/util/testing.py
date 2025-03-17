@@ -265,7 +265,7 @@ def djc_test(
     """  # noqa: E501
 
     def decorator(func: Callable) -> Callable:
-        if isinstance(func, type):
+        if isinstance(func, type) and func.__name__.lower().startswith("test"):
             # If `djc_test` is applied to a class, we need to apply it to each test method
             # individually.
             # The rest of this function addresses `func` being a function

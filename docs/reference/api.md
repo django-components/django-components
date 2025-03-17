@@ -155,6 +155,14 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.all_components
+    options:
+      show_if_no_docstring: true
+
+::: django_components.all_registries
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.autodiscover
     options:
       show_if_no_docstring: true

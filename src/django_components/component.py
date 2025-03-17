@@ -111,13 +111,23 @@ CssDataType = TypeVar("CssDataType", bound=Mapping[str, Any])
 
 # NOTE: `ReferenceType` is NOT a generic pre-3.9
 if sys.version_info >= (3, 9):
-    AllComponents = List[ReferenceType["Component"]]
+    AllComponents = List[ReferenceType[Type["Component"]]]
 else:
     AllComponents = List[ReferenceType]
 
 
 # Keep track of all the Component classes created, so we can clean up after tests
 ALL_COMPONENTS: AllComponents = []
+
+
+def all_components() -> List[Type["Component"]]:
+    """Get a list of all created [`Component`](../api#django_components.Component) classes."""
+    components: List[Type["Component"]] = []
+    for comp_ref in ALL_COMPONENTS:
+        comp = comp_ref()
+        if comp is not None:
+            components.append(comp)
+    return components
 
 
 @dataclass(frozen=True)

@@ -9,6 +9,7 @@ from django_components import (
     NotRegistered,
     RegistrySettings,
     TagProtectedError,
+    all_registries,
     component_formatter,
     component_shorthand_formatter,
     register,
@@ -39,14 +40,18 @@ class MockComponentView(Component):
 @djc_test
 class TestComponentRegistry:
     def test_register_class_decorator(self):
+        assert not registry.has("decorated_component")
+
         @register("decorated_component")
         class TestComponent(Component):
             pass
 
+        assert registry.has("decorated_component")
         assert registry.get("decorated_component") == TestComponent
 
         # Cleanup
         registry.unregister("decorated_component")
+        assert not registry.has("decorated_component")
 
     def test_register_class_decorator_custom_registry(self):
         my_lib = Library()
@@ -245,3 +250,18 @@ class TestProtectedTags:
 
         # Cleanup
         registry.unregister("sth_else")
+
+
+@djc_test
+class TestRegistryHelpers:
+    def test_all_registries(self):
+        # Default registry
+        assert len(all_registries()) == 1
+
+        reg = ComponentRegistry()
+
+        assert len(all_registries()) == 2
+
+        del reg
+
+        assert len(all_registries()) == 1

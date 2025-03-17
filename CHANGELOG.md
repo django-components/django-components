@@ -28,6 +28,13 @@
 
     See the API reference for [`@djc_test`](https://django-components.github.io/django-components/0.131/reference/testing_api/#djc_test) for more details.
 
+- `ComponentRegistry` now has a `has()` method to check if a component is registered
+   without raising an error.
+
+- Get all created `Component` classes with `all_components()`.
+
+- Get all created `ComponentRegistry` instances with `all_registries()`.
+
 #### Refactor
 
 - The `startcomponent` and `upgradecomponent` commands are deprecated, and will be removed in v1.

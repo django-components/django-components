@@ -103,6 +103,11 @@ class OnComponentDataContext(NamedTuple):
 
 
 class BaseExtensionClass:
+    """Base class for all extension classes."""
+
+    component_class: Type["Component"]
+    """The Component class that this extension is defined on."""
+
     def __init__(self, component: "Component") -> None:
         self.component = component
 
@@ -115,6 +120,10 @@ class ComponentExtension:
 
     Read more on [Extensions](../../concepts/advanced/extensions).
     """
+
+    ###########################
+    # USER INPUT
+    ###########################
 
     name: str
     """
@@ -254,6 +263,10 @@ class ComponentExtension:
     """
 
     urls: List[URLRoute] = []
+
+    ###########################
+    # Misc
+    ###########################
 
     def __init_subclass__(cls) -> None:
         if not cls.name.isidentifier():
@@ -532,7 +545,10 @@ class ExtensionManager:
                 bases: tuple[Type, ...] = (component_ext_subclass, ext_base_class)
             else:
                 bases = (ext_base_class,)
-            component_ext_subclass = type(ext_class_name, bases, {})
+
+            # Allow to extension class to access the owner `Component` class that via
+            # `ExtensionClass.component_class`.
+            component_ext_subclass = type(ext_class_name, bases, {"component_class": component_cls})
 
             # Finally, reassign the new class extension class on the component class.
             setattr(component_cls, ext_class_name, component_ext_subclass)

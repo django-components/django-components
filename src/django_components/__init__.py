@@ -15,7 +15,7 @@ from django_components.util.command import (
     CommandSubcommand,
     ComponentCommand,
 )
-from django_components.component import Component, ComponentVars
+from django_components.component import Component, ComponentVars, all_components
 from django_components.component_media import ComponentMediaInput, ComponentMediaInputPath
 from django_components.component_registry import (
     AlreadyRegistered,
@@ -24,6 +24,7 @@ from django_components.component_registry import (
     RegistrySettings,
     register,
     registry,
+    all_registries,
 )
 from django_components.components import DynamicComponent
 from django_components.dependencies import render_dependencies
@@ -60,6 +61,8 @@ from django_components.util.types import EmptyTuple, EmptyDict
 
 
 __all__ = [
+    "all_components",
+    "all_registries",
     "AlreadyRegistered",
     "autodiscover",
     "BaseNode",

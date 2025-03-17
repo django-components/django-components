@@ -80,6 +80,9 @@ registry.register("card", CardComponent)
 registry.all()  # {"button": ButtonComponent, "card": CardComponent}
 registry.get("card")  # CardComponent
 
+# Check if component is registered
+registry.has("button")  # True
+
 # Unregister single component
 registry.unregister("card")
 

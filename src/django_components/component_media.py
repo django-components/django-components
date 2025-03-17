@@ -398,7 +398,11 @@ def _get_comp_cls_attr(comp_cls: Type["Component"], attr: str) -> Any:
     return None
 
 
-media_cache: Dict[Type["Component"], MediaCls] = {}
+# NOTE: We use weakref to avoid issues with lingering references.
+if sys.version_info >= (3, 9):
+    media_cache: WeakKeyDictionary[Type["Component"], MediaCls] = WeakKeyDictionary()
+else:
+    media_cache: WeakKeyDictionary = WeakKeyDictionary()
 
 
 def _get_comp_cls_media(comp_cls: Type["Component"]) -> Any:

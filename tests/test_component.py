@@ -26,7 +26,7 @@ from django.urls import path
 from django.utils.safestring import SafeString
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
-from django_components import Component, ComponentView, Slot, SlotFunc, register, types
+from django_components import Component, ComponentView, Slot, SlotFunc, all_components, register, types
 from django_components.slots import SlotRef
 from django_components.urls import urlpatterns as dc_urlpatterns
 
@@ -1497,3 +1497,28 @@ class TestComponentHook:
         assert context_in_before == context_in_after
         assert "from_on_before" in context_in_before  # type: ignore[operator]
         assert "from_on_after" in context_in_after  # type: ignore[operator]
+
+
+@djc_test
+class TestComponentHelpers:
+    def test_all_components(self):
+        # NOTE: When running all tests, this list may already have some components
+        # as some components in test files are defined on module level, outside of
+        # `djc_test` decorator.
+        all_comps_before = len(all_components())
+
+        # Components don't have to be registered to be included in the list
+        class TestComponent(Component):
+            template: types.django_html = """
+                Hello from test
+            """
+
+        assert len(all_components()) == all_comps_before + 1
+
+        @register("test2")
+        class Test2Component(Component):
+            template: types.django_html = """
+                Hello from test2
+            """
+
+        assert len(all_components()) == all_comps_before + 2

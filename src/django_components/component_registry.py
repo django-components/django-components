@@ -150,6 +150,18 @@ class InternalRegistrySettings(NamedTuple):
 ALL_REGISTRIES: AllRegistries = []
 
 
+def all_registries() -> List["ComponentRegistry"]:
+    """
+    Get a list of all created [`ComponentRegistry`](../api#django_components.ComponentRegistry) instances.
+    """
+    registries: List["ComponentRegistry"] = []
+    for reg_ref in ALL_REGISTRIES:
+        reg = reg_ref()
+        if reg is not None:
+            registries.append(reg)
+    return registries
+
+
 class ComponentRegistry:
     """
     Manages [components](../api#django_components.Component) and makes them available
@@ -201,7 +213,8 @@ class ComponentRegistry:
     registry.register("card", CardComponent)
     registry.all()
     registry.clear()
-    registry.get()
+    registry.get("button")
+    registry.has("button")
     ```
 
     # Using registry to share components
@@ -455,6 +468,29 @@ class ComponentRegistry:
 
         return self._registry[name].cls
 
+    def has(self, name: str) -> bool:
+        """
+        Check if a [`Component`](../api#django_components.Component)
+        class is registered under the given name.
+
+        Args:
+            name (str): The name under which the component was registered. Required.
+
+        Returns:
+            bool: `True` if the component is registered, `False` otherwise.
+
+        **Example:**
+
+        ```python
+        # First register component
+        registry.register("button", ButtonComponent)
+        # Then check
+        registry.has("button")
+        # > True
+        ```
+        """
+        return name in self._registry
+
     def all(self) -> Dict[str, Type["Component"]]:
         """
         Retrieve all registered [`Component`](../api#django_components.Component) classes.
@@ -562,6 +598,9 @@ registry.get("button")
 
 # Get all
 registry.all()
+
+# Check if component is registered
+registry.has("button")
 
 # Unregister single
 registry.unregister("button")

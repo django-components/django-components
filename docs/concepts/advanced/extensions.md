@@ -330,6 +330,51 @@ class MyComponent(Component):
 
 This will log the component name and color when the component is created, deleted, or rendered.
 
+### Utility functions
+
+django-components provides a few utility functions to help with writing extensions:
+
+- [`all_components()`](../../../reference/api#django_components.all_components) - returns a list of all created component classes.
+- [`all_registries()`](../../../reference/api#django_components.all_registries) - returns a list of all created registry instances.
+
+### Accessing the component class from within an extension
+
+When you are writing the extension class that will be nested inside a Component class, e.g.
+
+```py
+class MyTable(Component):
+    class MyExtension:
+        def some_method(self):
+            ...
+```
+
+You can access the owner Component class (`MyTable`) from within methods of the extension class (`MyExtension`) by using the `component_class` attribute:
+
+```py
+class MyTable(Component):
+    class MyExtension:
+        def some_method(self):
+            print(self.component_class)
+```
+
+Here is how the `component_class` attribute may be used with our `ColorLogger`
+extension shown above:
+
+```python
+class ColorLoggerExtensionClass(ComponentExtension.ExtensionClass):
+    color: str
+
+    def log(self, msg: str) -> None:
+        print(f"{self.component_class.name}: {msg}")
+
+
+class ColorLoggerExtension(ComponentExtension):
+    name = "color_logger"
+
+    # All `Component.ColorLogger` classes will inherit from this class.
+    ExtensionClass = ColorLoggerExtensionClass
+```
+
 ## Extension Commands
 
 Extensions in django-components can define custom commands that can be executed via the Django management command interface. This allows for powerful automation and customization capabilities.
