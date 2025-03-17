@@ -5,3 +5,4 @@ nav:
   - Components in templates: components_in_templates.md
   - Parametrising components: parametrising_components.md
   - Adding slots: adding_slots.md
+  - Rendering components: rendering_components.md
