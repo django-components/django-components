@@ -12,7 +12,7 @@ setup_test_config({"autodiscover": False})
 
 
 # Either back or forward slash
-SLASH = r"[\/]"
+SLASH = r"[\\/]"
 
 
 @djc_test
@@ -52,7 +52,7 @@ class TestComponentListCommand:
             # django_components.components.dynamic.DynamicComponent   src/django_components/components/dynamic.py
             # or
             # django_components.components.dynamic.DynamicComponent   .tox/py311/lib/python3.11/site-packages/django_components/components/dynamic.py
-            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components{SLASH}components{SLASH}dynamic\.py".format(
+            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w/\\.-]+django_components{SLASH}components{SLASH}dynamic\.py".format(
                 SLASH=SLASH
             )
         ).search(output)
@@ -100,7 +100,7 @@ class TestComponentListCommand:
             # DynamicComponent  django_components.components.dynamic.DynamicComponent   src/django_components/components/dynamic.py
             # or
             # DynamicComponent  django_components.components.dynamic.DynamicComponent   .tox/py311/lib/python3.11/site-packages/django_components/components/dynamic.py
-            r"DynamicComponent\s+django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components{SLASH}components{SLASH}dynamic\.py".format(
+            r"DynamicComponent\s+django_components\.components\.dynamic\.DynamicComponent\s+[\w/\\.-]+django_components{SLASH}components{SLASH}dynamic\.py".format(
                 SLASH=SLASH
             )
         ).search(output)
@@ -188,7 +188,7 @@ class TestComponentListCommand:
             # django_components.components.dynamic.DynamicComponent   src/django_components/components/dynamic.py
             # or
             # django_components.components.dynamic.DynamicComponent   .tox/py311/lib/python3.11/site-packages/django_components/components/dynamic.py
-            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components{SLASH}components{SLASH}dynamic\.py".format(
+            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w/\\.-]+django_components{SLASH}components{SLASH}dynamic\.py".format(
                 SLASH=SLASH
             )
         ).search(output)
