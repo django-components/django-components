@@ -126,11 +126,11 @@ requests==2.32.3
     # via -r requirements-dev.in
 sqlparse==0.5.3
     # via django
-syrupy==4.8.2
+syrupy==4.9.0
     # via -r requirements-dev.in
 tabulate==0.9.0
     # via asv
-tox==4.24.1
+tox==4.24.2
     # via -r requirements-dev.in
 types-requests==2.32.0.20241016
     # via -r requirements-dev.in
