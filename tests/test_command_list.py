@@ -12,7 +12,7 @@ setup_test_config({"autodiscover": False})
 
 
 # Either back or forward slash
-SLASH = r"[\\/]"
+SLASH = r"[\/]"
 
 
 @djc_test
@@ -25,6 +25,9 @@ class TestComponentListCommand:
         with patch("sys.stdout", new=out):
             call_command("components", "list")
         output = out.getvalue()
+
+        # TODO
+        print("OUTPUT:\n", output)
 
         # NOTE: When we run all tests, the output is different, as other test files define components
         # outside of the `@djc_test` decorator, and thus they leak into the output. Since this affects also
@@ -71,6 +74,9 @@ class TestComponentListCommand:
             call_command("components", "list", "--all")
         output = out.getvalue()
 
+        # TODO
+        print("OUTPUT:\n", output)
+
         # NOTE: When we run all tests, the output is different, as other test files define components
         # outside of the `@djc_test` decorator, and thus they leak into the output. Since this affects also
         # the formatting (how much whitespace there is), regex is used to check for the headers and the expected
@@ -116,6 +122,9 @@ class TestComponentListCommand:
             call_command("components", "list", "--columns", "name,full_name")
         output = out.getvalue()
 
+        # TODO
+        print("OUTPUT:\n", output)
+
         # NOTE: When we run all tests, the output is different, as other test files define components
         # outside of the `@djc_test` decorator, and thus they leak into the output. Since this affects also
         # the formatting (how much whitespace there is), regex is used to check for the headers and the expected
@@ -154,6 +163,9 @@ class TestComponentListCommand:
         with patch("sys.stdout", new=out):
             call_command("components", "list", "--simple")
         output = out.getvalue()
+
+        # TODO
+        print("OUTPUT:\n", output)
 
         # NOTE: When we run all tests, the output is different, as other test files define components
         # outside of the `@djc_test` decorator, and thus they leak into the output. Since this affects also
