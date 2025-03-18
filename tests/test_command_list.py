@@ -43,7 +43,9 @@ class TestComponentListCommand:
         # Check that the output contains the built-in component
         assert re.compile(
             # django_components.components.dynamic.DynamicComponent   src/django_components/components/dynamic.py
-            r"django_components\.components\.dynamic\.DynamicComponent\s+src\/django_components\/components\/dynamic\.py"
+            # or
+            # django_components.components.dynamic.DynamicComponent   .tox/py311/lib/python3.11/site-packages/django_components/components/dynamic.py
+            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components\/components\/dynamic\.py"
         ).search(output)
 
         # Check that the output contains the test component
@@ -82,7 +84,9 @@ class TestComponentListCommand:
         # Check that the output contains the built-in component
         assert re.compile(
             # DynamicComponent  django_components.components.dynamic.DynamicComponent   src/django_components/components/dynamic.py
-            r"DynamicComponent\s+django_components\.components\.dynamic\.DynamicComponent\s+src\/django_components\/components\/dynamic\.py"
+            # or
+            # DynamicComponent  django_components.components.dynamic.DynamicComponent   .tox/py311/lib/python3.11/site-packages/django_components/components/dynamic.py
+            r"DynamicComponent\s+django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components\/components\/dynamic\.py"
         ).search(output)
 
         # Check that the output contains the test component
@@ -158,7 +162,9 @@ class TestComponentListCommand:
         # Check that the output contains the built-in component
         assert re.compile(
             # django_components.components.dynamic.DynamicComponent   src/django_components/components/dynamic.py
-            r"django_components\.components\.dynamic\.DynamicComponent\s+src\/django_components\/components\/dynamic\.py"
+            # or
+            # django_components.components.dynamic.DynamicComponent   .tox/py311/lib/python3.11/site-packages/django_components/components/dynamic.py
+            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components\/components\/dynamic\.py"
         ).search(output)
 
         # Check that the output contains the test component
