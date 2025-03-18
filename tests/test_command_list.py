@@ -11,6 +11,10 @@ from .testutils import setup_test_config
 setup_test_config({"autodiscover": False})
 
 
+# Either back or forward slash
+SLASH = r"[\\/]"
+
+
 @djc_test
 class TestComponentListCommand:
     def test_list_default(self):
@@ -21,9 +25,6 @@ class TestComponentListCommand:
         with patch("sys.stdout", new=out):
             call_command("components", "list")
         output = out.getvalue()
-
-        # TODO
-        print("OUTPUT:\n", output)
 
         # NOTE: When we run all tests, the output is different, as other test files define components
         # outside of the `@djc_test` decorator, and thus they leak into the output. Since this affects also
@@ -48,13 +49,17 @@ class TestComponentListCommand:
             # django_components.components.dynamic.DynamicComponent   src/django_components/components/dynamic.py
             # or
             # django_components.components.dynamic.DynamicComponent   .tox/py311/lib/python3.11/site-packages/django_components/components/dynamic.py
-            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components\/components\/dynamic\.py"
+            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components{SLASH}components{SLASH}dynamic\.py".format(
+                SLASH=SLASH
+            )
         ).search(output)
 
         # Check that the output contains the test component
         assert re.compile(
             # tests.test_command_list.TestComponentListCommand.test_list_default.<locals>.TestComponent   tests/test_command_list.py
-            r"tests\.test_command_list\.TestComponentListCommand\.test_list_default\.<locals>\.TestComponent\s+tests\/test_command_list\.py"
+            r"tests\.test_command_list\.TestComponentListCommand\.test_list_default\.<locals>\.TestComponent\s+tests{SLASH}test_command_list\.py".format(
+                SLASH=SLASH
+            )
         ).search(output)
 
     def test_list_all(self):
@@ -65,9 +70,6 @@ class TestComponentListCommand:
         with patch("sys.stdout", new=out):
             call_command("components", "list", "--all")
         output = out.getvalue()
-
-        # TODO
-        print("OUTPUT:\n", output)
 
         # NOTE: When we run all tests, the output is different, as other test files define components
         # outside of the `@djc_test` decorator, and thus they leak into the output. Since this affects also
@@ -92,13 +94,17 @@ class TestComponentListCommand:
             # DynamicComponent  django_components.components.dynamic.DynamicComponent   src/django_components/components/dynamic.py
             # or
             # DynamicComponent  django_components.components.dynamic.DynamicComponent   .tox/py311/lib/python3.11/site-packages/django_components/components/dynamic.py
-            r"DynamicComponent\s+django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components\/components\/dynamic\.py"
+            r"DynamicComponent\s+django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components{SLASH}components{SLASH}dynamic\.py".format(
+                SLASH=SLASH
+            )
         ).search(output)
 
         # Check that the output contains the test component
         assert re.compile(
             # TestComponent   tests.test_command_list.TestComponentListCommand.test_list_all.<locals>.TestComponent   tests/test_command_list.py
-            r"TestComponent\s+tests\.test_command_list\.TestComponentListCommand\.test_list_all\.<locals>\.TestComponent\s+tests\/test_command_list\.py"
+            r"TestComponent\s+tests\.test_command_list\.TestComponentListCommand\.test_list_all\.<locals>\.TestComponent\s+tests{SLASH}test_command_list\.py".format(
+                SLASH=SLASH
+            )
         ).search(output)
 
     def test_list_specific_columns(self):
@@ -109,9 +115,6 @@ class TestComponentListCommand:
         with patch("sys.stdout", new=out):
             call_command("components", "list", "--columns", "name,full_name")
         output = out.getvalue()
-
-        # TODO
-        print("OUTPUT:\n", output)
 
         # NOTE: When we run all tests, the output is different, as other test files define components
         # outside of the `@djc_test` decorator, and thus they leak into the output. Since this affects also
@@ -152,9 +155,6 @@ class TestComponentListCommand:
             call_command("components", "list", "--simple")
         output = out.getvalue()
 
-        # TODO
-        print("OUTPUT:\n", output)
-
         # NOTE: When we run all tests, the output is different, as other test files define components
         # outside of the `@djc_test` decorator, and thus they leak into the output. Since this affects also
         # the formatting (how much whitespace there is), regex is used to check for the headers and the expected
@@ -176,11 +176,15 @@ class TestComponentListCommand:
             # django_components.components.dynamic.DynamicComponent   src/django_components/components/dynamic.py
             # or
             # django_components.components.dynamic.DynamicComponent   .tox/py311/lib/python3.11/site-packages/django_components/components/dynamic.py
-            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components\/components\/dynamic\.py"
+            r"django_components\.components\.dynamic\.DynamicComponent\s+[\w\/\.-]+django_components{SLASH}components{SLASH}dynamic\.py".format(
+                SLASH=SLASH
+            )
         ).search(output)
 
         # Check that the output contains the test component
         assert re.compile(
             # tests.test_command_list.TestComponentListCommand.test_list_simple.<locals>.TestComponent  tests/test_command_list.py
-            r"tests\.test_command_list\.TestComponentListCommand\.test_list_simple\.<locals>\.TestComponent\s+tests\/test_command_list\.py"
+            r"tests\.test_command_list\.TestComponentListCommand\.test_list_simple\.<locals>\.TestComponent\s+tests{SLASH}test_command_list\.py".format(
+                SLASH=SLASH
+            )
         ).search(output)
