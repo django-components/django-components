@@ -1,10 +1,10 @@
-from typing import Any
+from typing import Any, Dict, List
 
 from django_components.extension import extensions
-from django_components.util.command import CommandArg, ComponentCommand
+from django_components.commands.list import ListCommand
 
 
-class ExtListCommand(ComponentCommand):
+class ExtListCommand(ListCommand):
     """
     List all extensions.
 
@@ -15,16 +15,38 @@ class ExtListCommand(ComponentCommand):
     Prints the list of installed extensions:
 
     ```txt
-    Installed extensions:
+    name
+    ==============
     view
     my_extension
     ```
 
-    If you need to omit the title in order to programmatically post-process the output,
-    you can use the `--verbosity` (or `-v`) flag:
+    To specify which columns to show, use the `--columns` flag:
 
     ```bash
-    python manage.py components ext list -v 0
+    python manage.py components ext list --columns name
+    ```
+
+    Which prints:
+
+    ```txt
+    name
+    ==============
+    view
+    my_extension
+    ```
+
+    To print out all columns, use the `--all` flag:
+
+    ```bash
+    python manage.py components ext list --all
+    ```
+    
+    If you need to omit the title in order to programmatically post-process the output,
+    you can use the `--simple` (or `-s`) flag:
+
+    ```bash
+    python manage.py components ext list --simple
     ```
 
     Which prints just:
@@ -38,18 +60,13 @@ class ExtListCommand(ComponentCommand):
     name = "list"
     help = "List all extensions."
 
-    arguments = [
-        CommandArg(
-            ["-v", "--verbosity"],
-            default=1,
-            type=int,
-            choices=[0, 1],
-            help=("Verbosity level; 0=minimal output, 1=normal output"),
-        ),
-    ]
+    columns = ["name"]
+    default_columns = ["name"]
 
-    def handle(self, *args: Any, **kwargs: Any) -> None:
-        if kwargs["verbosity"] > 0:
-            print("Installed extensions:")
+    def get_data(self) -> List[Dict[str, Any]]:
+        data: List[Dict[str, Any]] = []
         for extension in extensions.extensions:
-            print(extension.name)
+            data.append({
+                "name": extension.name,
+            })
+        return data

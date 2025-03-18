@@ -1,6 +1,8 @@
 import re
+import sys
 from hashlib import md5
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Type, TypeVar
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
 
 from django_components.util.nanoid import generate
 
@@ -57,6 +59,25 @@ def get_import_path(cls_or_fn: Type[Any]) -> str:
     if module == "builtins":
         return cls_or_fn.__qualname__  # avoid outputs like 'builtins.str'
     return module + "." + cls_or_fn.__qualname__
+
+
+def get_module_info(
+    cls_or_fn: Union[Type[Any], Callable[..., Any]]
+) -> Tuple[Optional[ModuleType], Optional[str], Optional[str]]:
+    """Get the module, module name and module file path where the class or function is defined."""
+    module_name: Optional[str] = getattr(cls_or_fn, "__module__", None)
+
+    if module_name:
+        module = sys.modules.get(module_name, None)
+    else:
+        module = None
+
+    if module:
+        module_file_path: Optional[str] = getattr(module, "__file__", None)
+    else:
+        module_file_path = None
+
+    return module, module_name, module_file_path
 
 
 def default(val: Optional[T], default: T) -> T:

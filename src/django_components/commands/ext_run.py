@@ -40,7 +40,7 @@ def _gen_subcommands() -> List[Type[ComponentCommand]]:
 #
 # NOTE: This is possible, because Django sets up the project and settings BEFORE the commands are loaded.
 class SubcommandsDescriptor:
-    def __get__(self, obj: Any, objtype: Optional[Type] = None) -> List[Type[ComponentCommand]]:
+    def __get__(self, obj: Optional[Any], objtype: Type) -> List[Type[ComponentCommand]]:
         # This will be called when accessing ExtRunCommand.subcommands
         # or instance.subcommands
         return _gen_subcommands()

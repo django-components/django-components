@@ -1,5 +1,6 @@
 from django_components.commands.create import CreateCommand
 from django_components.commands.ext import ExtCommand
+from django_components.commands.list import ComponentListCommand
 from django_components.commands.upgrade import UpgradeCommand
 from django_components.util.command import ComponentCommand
 
@@ -12,6 +13,7 @@ class ComponentsRootCommand(ComponentCommand):
     The entrypoint for the "components" commands.
 
     ```bash
+    python manage.py components list
     python manage.py components start <name>
     python manage.py components upgrade <name>
     python manage.py components ext list
@@ -26,4 +28,5 @@ class ComponentsRootCommand(ComponentCommand):
         CreateCommand,
         UpgradeCommand,
         ExtCommand,
+        ComponentListCommand,
     ]

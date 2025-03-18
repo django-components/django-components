@@ -91,40 +91,57 @@ class TestExtensionsCommand:
 
 @djc_test
 class TestExtensionsListCommand:
-    def test_list_command_default(self):
+    def test_list_default_extensions(self):
         out = StringIO()
         with patch("sys.stdout", new=out):
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert "Installed extensions:\nview\n" == output
-
-        # Check that it omits the title when verbose is 0
-        out = StringIO()
-        with patch("sys.stdout", new=out):
-            call_command("components", "ext", "list", "-v", "0")
-        output = out.getvalue()
-
-        assert "view\n" == output
+        assert output.strip() == "name\n====\nview"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
     )
-    def test_list_command_extra(self):
+    def test_list_extra_extensions(self):
         out = StringIO()
         with patch("sys.stdout", new=out):
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert "Installed extensions:\nview\nempty\ndummy\n" == output
+        assert output.strip() == "name \n=====\nview \nempty\ndummy"
 
-        # Check that it omits the title when verbose is 0
+    @djc_test(
+        components_settings={"extensions": [EmptyExtension, DummyExtension]},
+    )
+    def test_list_all(self):
         out = StringIO()
         with patch("sys.stdout", new=out):
-            call_command("components", "ext", "list", "-v", "0")
+            call_command("components", "ext", "list", "--all")
         output = out.getvalue()
 
-        assert "view\nempty\ndummy\n" == output
+        assert output.strip() == "name \n=====\nview \nempty\ndummy"
+
+    @djc_test(
+        components_settings={"extensions": [EmptyExtension, DummyExtension]},
+    )
+    def test_list_specific_columns(self):
+        out = StringIO()
+        with patch("sys.stdout", new=out):
+            call_command("components", "ext", "list", "--columns", "name")
+        output = out.getvalue()
+
+        assert output.strip() == "name \n=====\nview \nempty\ndummy"
+
+    @djc_test(
+        components_settings={"extensions": [EmptyExtension, DummyExtension]},
+    )
+    def test_list_simple(self):
+        out = StringIO()
+        with patch("sys.stdout", new=out):
+            call_command("components", "ext", "list", "--simple")
+        output = out.getvalue()
+
+        assert output.strip() == "view \nempty\ndummy"
 
 
 @djc_test

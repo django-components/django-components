@@ -387,7 +387,8 @@ python manage.py components ext run my_ext hello
 
 Where:
 
-- `python manage.py components ext run` - is the Django command run
+- `python manage.py components` - is the Django entrypoint
+- `ext run` - is the subcommand to run extension commands
 - `my_ext` - is the extension name
 - `hello` - is the command name
 
