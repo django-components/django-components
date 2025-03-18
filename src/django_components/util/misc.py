@@ -1,6 +1,7 @@
 import re
 import sys
 from hashlib import md5
+from importlib import import_module
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
 
@@ -68,7 +69,13 @@ def get_module_info(
     module_name: Optional[str] = getattr(cls_or_fn, "__module__", None)
 
     if module_name:
-        module = sys.modules.get(module_name, None)
+        if module_name in sys.modules:
+            module = sys.modules[module_name]
+        else:
+            try:
+                module = import_module(module_name)
+            except Exception:
+                module = None
     else:
         module = None
 
