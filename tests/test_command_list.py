@@ -29,7 +29,7 @@ class TestComponentListCommand:
         #
         # The output should look like this:
         #
-        # full_name                                                                                  path                                       
+        # full_name                                                                                  path
         # ======================================================================================================================================
         # django_components.components.dynamic.DynamicComponent                                      src/django_components/components/dynamic.py
         # tests.test_command_list.TestComponentListCommand.test_list_default.<locals>.TestComponent  tests/test_command_list.py
@@ -68,14 +68,14 @@ class TestComponentListCommand:
         #
         # The output should look like this:
         #
-        # name              full_name                                                                              path                                       
+        # name              full_name                                                                              path
         # ====================================================================================================================================================
         # DynamicComponent  django_components.components.dynamic.DynamicComponent                                  src/django_components/components/dynamic.py
         # TestComponent     tests.test_command_list.TestComponentListCommand.test_list_all.<locals>.TestComponent  tests/test_command_list.py
 
         # Check first line of output
         assert re.compile(
-            # name   full_name   path                                       
+            # name   full_name   path
             r"name\s+full_name\s+path\s+"
         ).search(output.strip().split("\n")[0])
 
@@ -107,14 +107,14 @@ class TestComponentListCommand:
         #
         # The output should look like this:
         #
-        # name              full_name                                                                            
+        # name              full_name
         # ====================================================================================================================
-        # DynamicComponent  django_components.components.dynamic.DynamicComponent                                
+        # DynamicComponent  django_components.components.dynamic.DynamicComponent
         # TestComponent     tests.test_command_list.TestComponentListCommand.test_list_specific_columns.<locals>.TestComponent
 
         # Check first line of output
         assert re.compile(
-            # name   full_name                                       
+            # name   full_name
             r"name\s+full_name"
         ).search(output.strip().split("\n")[0])
 

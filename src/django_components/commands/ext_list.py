@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
-from django_components.extension import extensions
 from django_components.commands.list import ListCommand
+from django_components.extension import extensions
 
 
 class ExtListCommand(ListCommand):
@@ -41,7 +41,7 @@ class ExtListCommand(ListCommand):
     ```bash
     python manage.py components ext list --all
     ```
-    
+
     If you need to omit the title in order to programmatically post-process the output,
     you can use the `--simple` (or `-s`) flag:
 
@@ -66,7 +66,9 @@ class ExtListCommand(ListCommand):
     def get_data(self) -> List[Dict[str, Any]]:
         data: List[Dict[str, Any]] = []
         for extension in extensions.extensions:
-            data.append({
-                "name": extension.name,
-            })
+            data.append(
+                {
+                    "name": extension.name,
+                }
+            )
         return data

@@ -178,7 +178,7 @@ class ComponentListCommand(ListCommand):
     ```bash
     python manage.py components list --all
     ```
-    
+
     If you need to omit the title in order to programmatically post-process the output,
     you can use the `--simple` (or `-s`) flag:
 
@@ -194,6 +194,7 @@ class ComponentListCommand(ListCommand):
     ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAction    ./project/components/dashboard_action
     ```
     """  # noqa: E501
+
     name = "list"
     help = "List all components created in this project."
 

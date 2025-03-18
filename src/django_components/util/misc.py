@@ -63,7 +63,7 @@ def get_import_path(cls_or_fn: Type[Any]) -> str:
 
 
 def get_module_info(
-    cls_or_fn: Union[Type[Any], Callable[..., Any]]
+    cls_or_fn: Union[Type[Any], Callable[..., Any]],
 ) -> Tuple[Optional[ModuleType], Optional[str], Optional[str]]:
     """Get the module, module name and module file path where the class or function is defined."""
     module_name: Optional[str] = getattr(cls_or_fn, "__module__", None)
