@@ -9,13 +9,13 @@ that will be added by installing `django_components`:
 ## ` components`
 
 ```txt
-usage: python manage.py  components [-h] {create,upgrade,ext} ...
+usage: python manage.py  components [-h] {create,upgrade,ext,list} ...
 
 ```
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/components.py#L9" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/components.py#L10" target="_blank">See source code</a>
 
 
 
@@ -34,6 +34,8 @@ The entrypoint for the 'components' commands.
     - Upgrade django components syntax from '{% component_block ... %}' to '{% component ... %}'.
 - [`ext`](../commands#components-`ext`)
     - Run extension commands.
+- [`list`](../commands#components-`list`)
+    - List all components created in this project.
 
 
 
@@ -41,6 +43,7 @@ The entrypoint for the 'components' commands.
 The entrypoint for the "components" commands.
 
 ```bash
+python manage.py components list
 python manage.py components start <name>
 python manage.py components upgrade <name>
 python manage.py components ext list
@@ -51,9 +54,7 @@ python manage.py components ext run <extension> <command>
 ## `components create`
 
 ```txt
-usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose]
-              [--dry-run]
-              name
+usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run] name
 
 ```
 
@@ -214,7 +215,7 @@ python manage.py components ext run <extension> <command>
 ## `components ext list`
 
 ```txt
-usage: python manage.py components ext list [-h] [-v {0,1}]
+usage: python manage.py components ext list [-h] [--all] [--columns COLUMNS] [-s]
 
 ```
 
@@ -230,8 +231,12 @@ List all extensions.
 
 - `-h`, `--help`
     - show this help message and exit
-- `-v {0,1}`, `--verbosity {0,1}`
-    -  Verbosity level; 0=minimal output, 1=normal output
+- `--all`
+    - Show all columns. Same as `--columns name`.
+- `--columns COLUMNS`
+    - Comma-separated list of columns to show. Available columns: name. Defaults to `--columns name`.
+- `-s`, `--simple`
+    - Only show table data, without headers. Use this option for generating machine-readable output.
 
 
 
@@ -245,16 +250,38 @@ python manage.py components ext list
 Prints the list of installed extensions:
 
 ```txt
-Installed extensions:
+name
+==============
 view
 my_extension
 ```
 
-If you need to omit the title in order to programmatically post-process the output,
-you can use the `--verbosity` (or `-v`) flag:
+To specify which columns to show, use the `--columns` flag:
 
 ```bash
-python manage.py components ext list -v 0
+python manage.py components ext list --columns name
+```
+
+Which prints:
+
+```txt
+name
+==============
+view
+my_extension
+```
+
+To print out all columns, use the `--all` flag:
+
+```bash
+python manage.py components ext list --all
+```
+
+If you need to omit the title in order to programmatically post-process the output,
+you can use the `--simple` (or `-s`) flag:
+
+```bash
+python manage.py components ext list --simple
 ```
 
 Which prints just:
@@ -348,12 +375,94 @@ python manage.py components ext run my_ext hello --name John --shout
     For more information, see the [argparse documentation](https://docs.python.org/3/library/argparse.html).
 
 
+## `components list`
+
+```txt
+usage: python manage.py components list [-h] [--all] [--columns COLUMNS] [-s]
+
+```
+
+
+
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/list.py#L136" target="_blank">See source code</a>
+
+
+
+List all components created in this project.
+
+**Options:**
+
+- `-h`, `--help`
+    - show this help message and exit
+- `--all`
+    - Show all columns. Same as `--columns name,full_name,path`.
+- `--columns COLUMNS`
+    - Comma-separated list of columns to show. Available columns: name, full_name, path. Defaults to `--columns full_name,path`.
+- `-s`, `--simple`
+    - Only show table data, without headers. Use this option for generating machine-readable output.
+
+
+
+
+List all components.
+
+```bash
+python manage.py components list
+```
+
+Prints the list of available components:
+
+```txt
+full_name                                                     path
+==================================================================================================
+project.pages.project.ProjectPage                             ./project/pages/project
+project.components.dashboard.ProjectDashboard                 ./project/components/dashboard
+project.components.dashboard_action.ProjectDashboardAction    ./project/components/dashboard_action
+```
+
+To specify which columns to show, use the `--columns` flag:
+
+```bash
+python manage.py components list --columns name,full_name,path
+```
+
+Which prints:
+
+```txt
+name                      full_name                                                     path
+==================================================================================================
+ProjectPage               project.pages.project.ProjectPage                             ./project/pages/project
+ProjectDashboard          project.components.dashboard.ProjectDashboard                 ./project/components/dashboard
+ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAction    ./project/components/dashboard_action
+```
+
+To print out all columns, use the `--all` flag:
+
+```bash
+python manage.py components list --all
+```
+
+If you need to omit the title in order to programmatically post-process the output,
+you can use the `--simple` (or `-s`) flag:
+
+```bash
+python manage.py components list --simple
+```
+
+Which prints just:
+
+```txt
+ProjectPage               project.pages.project.ProjectPage                             ./project/pages/project
+ProjectDashboard          project.components.dashboard.ProjectDashboard                 ./project/components/dashboard
+ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAction    ./project/components/dashboard_action
+```
+
+
 ## `upgradecomponent`
 
 ```txt
 usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
-                        [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
-                        [--skip-checks]
+                        [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color] [--skip-checks]
 
 ```
 
@@ -397,10 +506,9 @@ Deprecated. Use `components upgrade` instead.
 ## `startcomponent`
 
 ```txt
-usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force]
-                      [--verbose] [--dry-run] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
-                      [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
-                      [--skip-checks]
+usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose]
+                      [--dry-run] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH]
+                      [--traceback] [--no-color] [--force-color] [--skip-checks]
                       name
 
 ```
