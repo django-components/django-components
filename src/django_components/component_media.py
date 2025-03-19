@@ -699,9 +699,7 @@ def _is_media_filepath(filepath: Any) -> bool:
     return False
 
 
-def _normalize_media_filepath(
-    filepaths: Sequence[ComponentMediaInputPath]
-) -> List[Union[str, SafeData]]:
+def _normalize_media_filepath(filepaths: Sequence[ComponentMediaInputPath]) -> List[Union[str, SafeData]]:
     normalized: List[Union[str, SafeData]] = []
     for filepath in filepaths:
         if callable(filepath):
@@ -723,7 +721,8 @@ def _normalize_media_filepath(
             continue
 
         raise ValueError(
-            f"Unknown filepath {filepath} of type {type(filepath)}. Must be str, bytes, PathLike, SafeString, or a function that returns one of the former"
+            f"Unknown filepath {filepath} of type {type(filepath)}. Must be str, bytes, PathLike, SafeString,"
+            " or a function that returns one of the former"
         )
 
     return normalized
@@ -798,8 +797,7 @@ def _resolve_component_relative_files(
         # NOTE: It's important to use `repr`, so we don't trigger __str__ on SafeStrings
         if has_matched:
             logger.debug(
-                f"Interpreting file '{repr(filepath)}' of component '{module_name}'"
-                " relatively to component file"
+                f"Interpreting file '{repr(filepath)}' of component '{module_name}'" " relatively to component file"
             )
         else:
             logger.debug(
@@ -884,9 +882,7 @@ def resolve_media_file(
         # NOTE: The paths to resources need to use POSIX (forward slashes) for Django to work
         #       See https://github.com/django-components/django-components/issues/796
         # NOTE: Since these paths matched the glob, we know that these files exist.
-        filepath_rel_to_comp_dir = Path(
-            os.path.relpath(matched_filepath_abs, static_files_dir)
-        ).as_posix()
+        filepath_rel_to_comp_dir = Path(os.path.relpath(matched_filepath_abs, static_files_dir)).as_posix()
         resolved_filepaths.append(filepath_rel_to_comp_dir)
 
     return resolved_filepaths, True
@@ -906,7 +902,7 @@ def _find_component_dir_containing_file(
         component_dir_abs = os.path.abspath(component_dir)
         if abs_target_file_path.startswith(component_dir_abs):
             return component_dir
-    
+
     return None
 
 

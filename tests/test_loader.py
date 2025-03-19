@@ -247,6 +247,7 @@ class TestComponentFiles:
 
         assert dot_paths == [
             "components",
+            "components.glob.glob",
             "components.multi_file.multi_file",
             "components.relative_file.relative_file",
             "components.relative_file_pathobj.relative_file_pathobj",
@@ -260,15 +261,16 @@ class TestComponentFiles:
 
         # NOTE: Compare parts so that the test works on Windows too
         assert file_paths[0].parts[-3:] == ("tests", "components", "__init__.py")
-        assert file_paths[1].parts[-4:] == ("tests", "components", "multi_file", "multi_file.py")
-        assert file_paths[2].parts[-4:] == ("tests", "components", "relative_file", "relative_file.py")
-        assert file_paths[3].parts[-4:] == ("tests", "components", "relative_file_pathobj", "relative_file_pathobj.py")
-        assert file_paths[4].parts[-3:] == ("tests", "components", "single_file.py")
-        assert file_paths[5].parts[-4:] == ("tests", "components", "staticfiles", "staticfiles.py")
-        assert file_paths[6].parts[-3:] == ("tests", "components", "urls.py")
-        assert file_paths[7].parts[-3:] == ("django_components", "components", "__init__.py")
-        assert file_paths[8].parts[-3:] == ("django_components", "components", "dynamic.py")
-        assert file_paths[9].parts[-5:] == ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.py")
+        assert file_paths[1].parts[-4:] == ("tests", "components", "glob", "glob.py")
+        assert file_paths[2].parts[-4:] == ("tests", "components", "multi_file", "multi_file.py")
+        assert file_paths[3].parts[-4:] == ("tests", "components", "relative_file", "relative_file.py")
+        assert file_paths[4].parts[-4:] == ("tests", "components", "relative_file_pathobj", "relative_file_pathobj.py")
+        assert file_paths[5].parts[-3:] == ("tests", "components", "single_file.py")
+        assert file_paths[6].parts[-4:] == ("tests", "components", "staticfiles", "staticfiles.py")
+        assert file_paths[7].parts[-3:] == ("tests", "components", "urls.py")
+        assert file_paths[8].parts[-3:] == ("django_components", "components", "__init__.py")
+        assert file_paths[9].parts[-3:] == ("django_components", "components", "dynamic.py")
+        assert file_paths[10].parts[-5:] == ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.py")
 
     @djc_test(
         django_settings={
@@ -282,6 +284,8 @@ class TestComponentFiles:
         file_paths = [f.filepath for f in files]
 
         assert dot_paths == [
+            "components.glob.glob_1",
+            "components.glob.glob_2",
             "components.relative_file.relative_file",
             "components.relative_file_pathobj.relative_file_pathobj",
             "components.staticfiles.staticfiles",
@@ -289,10 +293,12 @@ class TestComponentFiles:
         ]
 
         # NOTE: Compare parts so that the test works on Windows too
-        assert file_paths[0].parts[-4:] == ("tests", "components", "relative_file", "relative_file.js")
-        assert file_paths[1].parts[-4:] == ("tests", "components", "relative_file_pathobj", "relative_file_pathobj.js")
-        assert file_paths[2].parts[-4:] == ("tests", "components", "staticfiles", "staticfiles.js")
-        assert file_paths[3].parts[-5:] == ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.js")
+        assert file_paths[0].parts[-4:] == ("tests", "components", "glob", "glob_1.js")
+        assert file_paths[1].parts[-4:] == ("tests", "components", "glob", "glob_2.js")
+        assert file_paths[2].parts[-4:] == ("tests", "components", "relative_file", "relative_file.js")
+        assert file_paths[3].parts[-4:] == ("tests", "components", "relative_file_pathobj", "relative_file_pathobj.js")
+        assert file_paths[4].parts[-4:] == ("tests", "components", "staticfiles", "staticfiles.js")
+        assert file_paths[5].parts[-5:] == ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.js")
 
 
 @djc_test
