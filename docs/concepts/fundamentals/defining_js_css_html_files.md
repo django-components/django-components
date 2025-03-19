@@ -143,17 +143,22 @@ However, there's a few differences from Django's Media class:
 2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`,
    [`SafeString`](https://docs.djangoproject.com/en/5.1/ref/utils/#django.utils.safestring.SafeString), or a function
    (See [`ComponentMediaInputPath`](../../../reference/api#django_components.ComponentMediaInputPath)).
+3. Individual JS / CSS files can be glob patterns, e.g. `*.js` or `styles/**/*.css`.
+4. If you set [`Media.extend`](../../../reference/api/#django_components.ComponentMediaInput.extend) to a list,
+   it should be a list of [`Component`](../../../reference/api/#django_components.Component) classes.
 
 ```py
 class MyTable(Component):
     class Media:
         js = [
             "path/to/script.js",
+            "path/to/*.js",  # Or as a glob
             "https://unpkg.com/alpinejs@3.14.7/dist/cdn.min.js",  # AlpineJS
         ]
         css = {
             "all": [
                 "path/to/style.css",
+                "path/to/*.css",  # Or as a glob
                 "https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css",  # TailwindCSS
             ],
             "print": ["path/to/style2.css"],

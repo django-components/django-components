@@ -2,8 +2,9 @@ import re
 import sys
 from hashlib import md5
 from importlib import import_module
+from itertools import chain
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
 from django_components.util.nanoid import generate
 
@@ -115,3 +116,15 @@ def hash_comp_cls(comp_cls: Type["Component"]) -> str:
     full_name = get_import_path(comp_cls)
     comp_cls_hash = md5(full_name.encode()).hexdigest()[0:6]
     return comp_cls.__name__ + "_" + comp_cls_hash
+
+
+# String is a glob if it contains at least one of `?`, `*`, or `[`
+is_glob_re = re.compile(r"[?*[]")
+
+
+def is_glob(filepath: str) -> bool:
+    return is_glob_re.search(filepath) is not None
+
+
+def flatten(lst: Iterable[Iterable[T]]) -> List[T]:
+    return list(chain.from_iterable(lst))

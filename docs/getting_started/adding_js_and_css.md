@@ -230,7 +230,9 @@ with a few differences:
 
 1. Our Media class accepts various formats for the JS and CSS files: either a single file, a list, or (CSS-only) a dictonary (see below).
 2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`, [`SafeString`](https://dev.to/doridoro/django-safestring-afj), or a function.
-3. If you set `Media.extend` to a list, it should be a list of `Component` classes.
+3. Individual JS / CSS files can be glob patterns, e.g. `*.js` or `styles/**/*.css`.
+4. If you set [`Media.extend`](../../reference/api/#django_components.ComponentMediaInput.extend) to a list,
+   it should be a list of [`Component`](../../reference/api/#django_components.Component) classes.
 
 [Learn more](../../concepts/fundamentals/defining_js_css_html_files) about using Media.
 
@@ -245,10 +247,12 @@ class Calendar(Component):
     class Media:   # <--- new
         js = [
             "path/to/shared.js",
+            "path/to/*.js",  # Or as a glob
             "https://unpkg.com/alpinejs@3.14.7/dist/cdn.min.js",  # AlpineJS
         ]
         css = [
             "path/to/shared.css",
+            "path/to/*.css",  # Or as a glob
             "https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css",  # Tailwind
         ]
 
