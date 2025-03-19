@@ -15,8 +15,9 @@
     Read more on [Extensions](https://django-components.github.io/django-components/0.131/concepts/advanced/extensions/).
 
 - New CLI commands:
+    - `components list` - List all components
     - `components create <name>` - Create a new component (supersedes `startcomponent`)
-    - `components upgrade <name>` - Upgrade a component (supersedes `upgradecomponent`)
+    - `components upgrade` - Upgrade a component (supersedes `upgradecomponent`)
     - `components ext list` - List all extensions
     - `components ext run <extension> <command>` - Run a command added by an extension
 
@@ -39,7 +40,7 @@
 
 - The `startcomponent` and `upgradecomponent` commands are deprecated, and will be removed in v1.
 
-    Instead, use `components start <name>` and `components upgrade`.
+    Instead, use `components create <name>` and `components upgrade`.
 
 #### Internal
 

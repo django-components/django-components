@@ -44,8 +44,8 @@ The entrypoint for the "components" commands.
 
 ```bash
 python manage.py components list
-python manage.py components start <name>
-python manage.py components upgrade <name>
+python manage.py components create <name>
+python manage.py components upgrade
 python manage.py components ext list
 python manage.py components ext run <extension> <command>
 ```
