@@ -141,11 +141,14 @@ jobs:
           PR_URL="$(gh pr create --title "chore: Add benchmark results for ${TAG}" --body "Add benchmark results for ${TAG}" --base master)"
           echo "PR URL: ${PR_URL}"
 
-          # 4. Merge the PR and delete the branch
-          gh pr merge "${PR_URL}" --admin --disable-auto --squash --delete-branch
+          # 4. Wait for the PR status checks to pass
+          gh pr checks "${PR_URL}" --watch
+
+          # 5. Merge the PR and delete the branch
+          gh pr merge "${PR_URL}" --admin --squash --delete-branch
           echo "Benchmark results pushed to master."
 
-          # 5. Go back to the original branch
+          # 6. Go back to the original branch
           git checkout master
           git pull origin master
 
