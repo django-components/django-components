@@ -166,11 +166,23 @@ jobs:
       - name: Build & deploy "dev" docs for a new commit to master
         if: github.event_name == 'push' && github.ref_type != 'tag'
         run: |
+          # Fetch and checkout gh-pages to ensure we have the latest version
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+          git checkout master
+
           export SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
           hatch run docs:mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
 
       - name: Build & deploy docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
         run: |
+          # Fetch and checkout gh-pages to ensure we have the latest version
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+          git checkout master
+
           hatch run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
           hatch run docs:mike set-default latest --push
