@@ -57,6 +57,10 @@ jobs:
 
       - name: Run benchmarks for tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
+        env:
+          # See https://github.com/github/docs/issues/21930
+          # And https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get the master branch so we can run benchmarks on it
           git remote add upstream https://github.com/${{ github.repository }}.git
@@ -120,7 +124,10 @@ jobs:
           # Stage and commit benchmark results
           # 1. Create a new branch and commit benchmark results
           echo "Staging and committing benchmark results..."
-          git checkout -b "benchmark-${TAG}"
+          # Add timestamp to make branch name unique
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          BRANCH_NAME="benchmark-${TAG}-${TIMESTAMP}"
+          git checkout -b "${BRANCH_NAME}"
           git add .asv/results/
           git add docs/benchmarks/
           git commit -m "Add benchmark results for ${TAG}"
@@ -128,19 +135,19 @@ jobs:
 
           # 2. Push to the new branch
           echo "Pushing benchmark results to new branch..."
-          git push -u origin "benchmark-${TAG}"
+          git push -u origin "${BRANCH_NAME}"
 
           # 3. Create a PR
           PR_URL="$(gh pr create --title "chore: Add benchmark results for ${TAG}" --body "Add benchmark results for ${TAG}" --base master)"
           echo "PR URL: ${PR_URL}"
 
-          # 4. Merge the PR
+          # 4. Merge the PR and delete the branch
           gh pr merge "${PR_URL}" --admin --squash --delete-branch
           echo "Benchmark results pushed to master."
 
           # 5. Go back to the original branch
           git checkout master
-          git pull
+          git pull origin master
 
       ##############################
       # BUILD & DEPLOY DOCS
@@ -162,11 +169,23 @@ jobs:
       - name: Build & deploy "dev" docs for a new commit to master
         if: github.event_name == 'push' && github.ref_type != 'tag'
         run: |
+          # Fetch and checkout gh-pages to ensure we have the latest version
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+          git checkout master
+
           export SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
           hatch run docs:mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
 
       - name: Build & deploy docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
         run: |
+          # Fetch and checkout gh-pages to ensure we have the latest version
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+          git checkout master
+
           hatch run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
           hatch run docs:mike set-default latest --push
