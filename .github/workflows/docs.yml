@@ -18,6 +18,7 @@ jobs:
       contents: write  # to let mkdocs write the new docs
       pages: write     # to deploy to Pages
       id-token: write  # to verify the deployment originates from an appropriate source
+      pull-requests: write  # to merge to master via PR
     runs-on: ubuntu-latest
     # Only run in original repo (not in forks)
     if: github.repository == 'django-components/django-components'
