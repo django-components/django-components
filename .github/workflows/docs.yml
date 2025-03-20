@@ -57,6 +57,8 @@ jobs:
 
       - name: Run benchmarks for tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
         run: |
           # Get the master branch so we can run benchmarks on it
           git remote add upstream https://github.com/${{ github.repository }}.git
