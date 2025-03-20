@@ -27,10 +27,25 @@ jobs:
       # SETUP
       ##############################
 
+      # Authenticate with git with the Github App that has permission
+      # to push to master, in order to push benchmark results.
+      # See https://stackoverflow.com/a/79142962/9788634
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_APP_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          token: ${{ steps.app-token.outputs.token }}
           fetch-depth: 0
+
+      - name: Configure git account
+        run: |
+          git config user.name components-release-bot
+          git config user.email "components-release-bot@users.noreply.github.com"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -38,17 +53,11 @@ jobs:
           python-version: "3.13"
           cache: 'pip'
 
-      - name: Install Hatch
+      - name: Install dependencies
         run: |
             python -m pip install --upgrade pip wheel
             python -m pip install -q hatch pre-commit asv
             hatch --version
-
-      - name: Configure git
-        run: |
-          # required for "mike deploy" command below which pushes to gh-pages
-          git config user.name github-actions
-          git config user.email github-actions@github.com
 
       ###########################################
       # RECORD BENCHMARK - ONLY ON PUSH TO MASTER
@@ -56,6 +65,10 @@ jobs:
 
       - name: Run benchmarks for tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
+        env:
+          # See https://github.com/github/docs/issues/21930
+          # And https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get the master branch so we can run benchmarks on it
           git remote add upstream https://github.com/${{ github.repository }}.git
@@ -116,37 +129,34 @@ jobs:
           asv publish
           echo "Benchmarks site DONE."
 
-          # Stage and commit benchmark results
-          # 1. Create a new branch and commit benchmark results
+          # Commit benchmark results
           echo "Staging and committing benchmark results..."
-          git checkout -b "benchmark-${TAG}"
           git add .asv/results/
           git add docs/benchmarks/
           git commit -m "Add benchmark results for ${TAG}"
           echo "Benchmark results committed."
 
-          # 2. Push to the new branch
-          echo "Pushing benchmark results to new branch..."
-          git push -u origin "benchmark-${TAG}"
-
-          # 3. Create a PR
-          PR_URL="$(gh pr create --title "chore: Add benchmark results for ${TAG}" --body "Add benchmark results for ${TAG}" --base master)"
-          echo "PR URL: ${PR_URL}"
-
-          # 4. Merge the PR
-          gh pr merge "${PR_URL}" --admin --squash --delete-branch
+          # Push to the new branch
+          echo "Pushing benchmark results..."
+          git push origin master
           echo "Benchmark results pushed to master."
 
-          # 5. Go back to the original branch
-          git checkout master
-          git pull
+      ###########################################
+      # BUILD & RELEASE DOCS
+      ###########################################
 
-      ##############################
-      # BUILD & DEPLOY DOCS
-      ##############################
+      # Change git authentication to Github Actions, so the rest of the
+      # workflow will have lower privileges.
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Create Virtual Environment
-        run: hatch env create docs
+      - name: Configure git
+        run: |
+          # required for "mike deploy" command below which pushes to gh-pages
+          git config user.name github-actions
+          git config user.email github-actions@github.com
 
       # Conditions make sure to select the right step, depending on the job trigger.
       # Only one of the steps below will run at a time. The others will be skipped.
@@ -161,11 +171,23 @@ jobs:
       - name: Build & deploy "dev" docs for a new commit to master
         if: github.event_name == 'push' && github.ref_type != 'tag'
         run: |
+          # Fetch and checkout gh-pages to ensure we have the latest version
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+          git checkout master
+
           export SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
           hatch run docs:mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
 
       - name: Build & deploy docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
         run: |
+          # Fetch and checkout gh-pages to ensure we have the latest version
+          git fetch origin gh-pages
+          git checkout gh-pages
+          git pull origin gh-pages
+          git checkout master
+
           hatch run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
           hatch run docs:mike set-default latest --push
