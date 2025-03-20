@@ -144,7 +144,7 @@ jobs:
 
           # 5. Go back to the original branch
           git checkout master
-          git pull
+          git pull origin master
 
       ##############################
       # BUILD & DEPLOY DOCS
