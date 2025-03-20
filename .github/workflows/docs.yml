@@ -142,7 +142,7 @@ jobs:
           echo "PR URL: ${PR_URL}"
 
           # 4. Merge the PR and delete the branch
-          gh pr merge "${PR_URL}" --admin --squash --delete-branch
+          gh pr merge "${PR_URL}" --admin --disable-auto --squash --delete-branch
           echo "Benchmark results pushed to master."
 
           # 5. Go back to the original branch
