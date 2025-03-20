@@ -138,15 +138,11 @@ jobs:
           PR_URL="$(gh pr create --title "chore: Add benchmark results for ${TAG}" --body "Add benchmark results for ${TAG}" --base master)"
           echo "PR URL: ${PR_URL}"
 
-          # 4. Merge the PR
+          # 4. Merge the PR and delete the branch
           gh pr merge "${PR_URL}" --admin --squash --delete-branch
           echo "Benchmark results pushed to master."
 
-          # 5. Delete the remote branch
-          git push origin --delete "${BRANCH_NAME}"
-          echo "Cleaned up remote branch ${BRANCH_NAME}"
-
-          # 6. Go back to the original branch
+          # 5. Go back to the original branch
           git checkout master
           git pull
 
