@@ -18,7 +18,7 @@ jobs:
       contents: write  # to let mkdocs write the new docs
       pages: write     # to deploy to Pages
       id-token: write  # to verify the deployment originates from an appropriate source
-      pull-requests: write  # to merge to master via PR
+      pull-requests: write  # to create and merge a PR against master
     runs-on: ubuntu-latest
     # Only run in original repo (not in forks)
     # if: github.repository == 'django-components/django-components'
@@ -58,7 +58,9 @@ jobs:
       - name: Run benchmarks for tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
         env:
-          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          # See https://github.com/github/docs/issues/21930
+          # And https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get the master branch so we can run benchmarks on it
           git remote add upstream https://github.com/${{ github.repository }}.git
@@ -121,6 +123,7 @@ jobs:
 
           # Stage and commit benchmark results
           # 1. Create a new branch and commit benchmark results
+          echo "Staging and committing benchmark results..."
           # Add timestamp to make branch name unique
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           BRANCH_NAME="benchmark-${TAG}-${TIMESTAMP}"
