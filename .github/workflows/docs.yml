@@ -119,8 +119,10 @@ jobs:
 
           # Stage and commit benchmark results
           # 1. Create a new branch and commit benchmark results
-          echo "Staging and committing benchmark results..."
-          git checkout -b "benchmark-${TAG}"
+          # Add timestamp to make branch name unique
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          BRANCH_NAME="benchmark-${TAG}-${TIMESTAMP}"
+          git checkout -b "${BRANCH_NAME}"
           git add .asv/results/
           git add docs/benchmarks/
           git commit -m "Add benchmark results for ${TAG}"
@@ -128,7 +130,7 @@ jobs:
 
           # 2. Push to the new branch
           echo "Pushing benchmark results to new branch..."
-          git push -u origin "benchmark-${TAG}"
+          git push -u origin "${BRANCH_NAME}"
 
           # 3. Create a PR
           PR_URL="$(gh pr create --title "chore: Add benchmark results for ${TAG}" --body "Add benchmark results for ${TAG}" --base master)"
@@ -138,7 +140,11 @@ jobs:
           gh pr merge "${PR_URL}" --admin --squash --delete-branch
           echo "Benchmark results pushed to master."
 
-          # 5. Go back to the original branch
+          # 5. Delete the remote branch
+          git push origin --delete "${BRANCH_NAME}"
+          echo "Cleaned up remote branch ${BRANCH_NAME}"
+
+          # 6. Go back to the original branch
           git checkout master
           git pull
 
