@@ -1,5 +1,19 @@
 # Release notes
 
+## v0.132
+
+#### Feat
+
+- Allow to use glob patterns as paths for additional JS / CSS in
+  `Component.Media.js` and `Component.Media.css`
+
+    ```py
+    class MyComponent(Component):
+        class Media:
+            js = ["*.js"]
+            css = ["*.css"]
+    ```
+
 ## v0.131
 
 #### Feat

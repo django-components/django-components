@@ -386,6 +386,34 @@ class TestComponentMedia:
         assertInHTML('<link abc href="path/to/style2.css" media="print" rel="stylesheet">', rendered)
         assertInHTML('<link abc href="path/to/style3.css" media="screen" rel="stylesheet">', rendered)
 
+    @djc_test(
+        django_settings={
+            "INSTALLED_APPS": ("django_components", "tests"),
+        }
+    )
+    def test_glob_pattern_relative_to_component(self):
+        from tests.components.glob.glob import GlobComponent
+        rendered = GlobComponent.render()
+
+        assertInHTML('<link href="glob/glob_1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="glob/glob_2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<script src="glob/glob_1.js"></script>', rendered)
+        assertInHTML('<script src="glob/glob_2.js"></script>', rendered)
+
+    @djc_test(
+        django_settings={
+            "INSTALLED_APPS": ("django_components", "tests"),
+        }
+    )
+    def test_glob_pattern_relative_to_root_dir(self):
+        from tests.components.glob.glob import GlobComponentRootDir
+        rendered = GlobComponentRootDir.render()
+
+        assertInHTML('<link href="glob/glob_1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="glob/glob_2.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<script src="glob/glob_1.js"></script>', rendered)
+        assertInHTML('<script src="glob/glob_2.js"></script>', rendered)
+
 
 @djc_test
 class TestMediaPathAsObject:

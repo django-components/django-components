@@ -1,10 +1,26 @@
+import glob
 import os
 import sys
 from collections import deque
 from copy import copy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional, Protocol, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 from weakref import WeakKeyDictionary
 
 from django.contrib.staticfiles import finders
@@ -16,7 +32,7 @@ from django.utils.safestring import SafeData
 
 from django_components.util.loader import get_component_dirs, resolve_file
 from django_components.util.logger import logger
-from django_components.util.misc import get_import_path
+from django_components.util.misc import flatten, get_import_path, get_module_info, is_glob
 
 if TYPE_CHECKING:
     from django_components.component import Component
@@ -649,19 +665,19 @@ def _normalize_media(media: Type[ComponentMediaInput]) -> None:
     _map_media_filepaths(media, _normalize_media_filepath)
 
 
-def _map_media_filepaths(media: Type[ComponentMediaInput], map_fn: Callable[[Any], Any]) -> None:
+def _map_media_filepaths(media: Type[ComponentMediaInput], map_fn: Callable[[Sequence[Any]], Iterable[Any]]) -> None:
     if hasattr(media, "css") and media.css:
         if not isinstance(media.css, dict):
             raise ValueError(f"Media.css must be a dict, got {type(media.css)}")
 
         for media_type, path_list in media.css.items():
-            media.css[media_type] = list(map(map_fn, path_list))  # type: ignore[assignment]
+            media.css[media_type] = list(map_fn(path_list))  # type: ignore[assignment]
 
     if hasattr(media, "js") and media.js:
         if not isinstance(media.js, (list, tuple)):
             raise ValueError(f"Media.css must be a list, got {type(media.css)}")
 
-        media.js = list(map(map_fn, media.js))
+        media.js = list(map_fn(media.js))
 
 
 def _is_media_filepath(filepath: Any) -> bool:
@@ -683,26 +699,33 @@ def _is_media_filepath(filepath: Any) -> bool:
     return False
 
 
-def _normalize_media_filepath(filepath: ComponentMediaInputPath) -> Union[str, SafeData]:
-    if callable(filepath):
-        filepath = filepath()
+def _normalize_media_filepath(filepaths: Sequence[ComponentMediaInputPath]) -> List[Union[str, SafeData]]:
+    normalized: List[Union[str, SafeData]] = []
+    for filepath in filepaths:
+        if callable(filepath):
+            filepath = filepath()
 
-    if isinstance(filepath, SafeData) or hasattr(filepath, "__html__"):
-        return filepath
+        if isinstance(filepath, SafeData) or hasattr(filepath, "__html__"):
+            normalized.append(filepath)
+            continue
 
-    if isinstance(filepath, (Path, os.PathLike)) or hasattr(filepath, "__fspath__"):
-        # In case of Windows OS, convert to forward slashes
-        filepath = Path(filepath.__fspath__()).as_posix()
+        if isinstance(filepath, (Path, os.PathLike)) or hasattr(filepath, "__fspath__"):
+            # In case of Windows OS, convert to forward slashes
+            filepath = Path(filepath.__fspath__()).as_posix()
 
-    if isinstance(filepath, bytes):
-        filepath = filepath.decode("utf-8")
+        if isinstance(filepath, bytes):
+            filepath = filepath.decode("utf-8")
 
-    if isinstance(filepath, str):
-        return filepath
+        if isinstance(filepath, str):
+            normalized.append(filepath)
+            continue
 
-    raise ValueError(
-        "Unknown filepath. Must be str, bytes, PathLike, SafeString, or a function that returns one of the former"
-    )
+        raise ValueError(
+            f"Unknown filepath {filepath} of type {type(filepath)}. Must be str, bytes, PathLike, SafeString,"
+            " or a function that returns one of the former"
+        )
+
+    return normalized
 
 
 def _resolve_component_relative_files(
@@ -730,12 +753,9 @@ def _resolve_component_relative_files(
         return
 
     component_name = comp_cls.__qualname__
-    # Derive the full path of the file where the component was defined
-    module_name = comp_cls.__module__
-    module_obj = sys.modules[module_name]
-    file_path = module_obj.__file__
-
-    if not file_path:
+    # Get the full path of the file where the component was defined
+    module, module_name, module_file_path = get_module_info(comp_cls)
+    if not module_file_path:
         logger.debug(
             f"Could not resolve the path to the file for component '{component_name}'."
             " Paths for HTML, JS or CSS templates will NOT be resolved relative to the component file."
@@ -743,83 +763,147 @@ def _resolve_component_relative_files(
         return
 
     # Get the directory where the component class is defined
-    try:
-        comp_dir_abs, comp_dir_rel = _get_dir_path_from_component_path(file_path, comp_dirs)
-    except RuntimeError:
-        # If no dir was found, we assume that the path is NOT relative to the component dir
+    matched_component_dir = _find_component_dir_containing_file(comp_dirs, module_file_path)
+
+    # If no dir was found (e.g. the component was defined at runtime), we assume that the media paths
+    # are NOT relative.
+    if matched_component_dir is None:
         logger.debug(
-            f"No component directory found for component '{component_name}' in {file_path}"
+            f"No component directory found for component '{component_name}' in {module_file_path}"
             " If this component defines HTML, JS or CSS templates relatively to the component file,"
             " then check that the component's directory is accessible from one of the paths"
             " specified in the Django's 'COMPONENTS.dirs' settings."
         )
         return
 
+    matched_component_dir_abs = os.path.abspath(matched_component_dir)
+    # Derive the path from matched `COMPONENTS.dirs` to the dir where the current component file is.
+    component_module_dir_path_abs = os.path.dirname(module_file_path)
+
     # Check if filepath refers to a file that's in the same directory as the component class.
     # If yes, modify the path to refer to the relative file.
     # If not, don't modify anything.
-    def resolve_media_file(filepath: Union[str, SafeData]) -> Union[str, SafeData]:
-        if isinstance(filepath, str):
-            filepath_abs = os.path.join(comp_dir_abs, filepath)
-            # NOTE: The paths to resources need to use POSIX (forward slashes) for Django to wor
-            #       See https://github.com/django-components/django-components/issues/796
-            filepath_rel_to_comp_dir = Path(os.path.join(comp_dir_rel, filepath)).as_posix()
-
-            if os.path.isfile(filepath_abs):
-                # NOTE: It's important to use `repr`, so we don't trigger __str__ on SafeStrings
-                logger.debug(
-                    f"Interpreting template '{repr(filepath)}' of component '{module_name}'"
-                    " relatively to component file"
-                )
-
-                return filepath_rel_to_comp_dir
-
-        # If resolved absolute path does NOT exist or filepath is NOT a string, then return as is
-        logger.debug(
-            f"Interpreting template '{repr(filepath)}' of component '{module_name}'"
-            " relatively to components directory"
+    def resolve_relative_media_file(
+        filepath: Union[str, SafeData],
+        allow_glob: bool,
+    ) -> List[Union[str, SafeData]]:
+        resolved_filepaths, has_matched = resolve_media_file(
+            filepath,
+            allow_glob,
+            static_files_dir=matched_component_dir_abs,
+            media_root_dir=component_module_dir_path_abs,
         )
-        return filepath
+
+        # NOTE: It's important to use `repr`, so we don't trigger __str__ on SafeStrings
+        if has_matched:
+            logger.debug(
+                f"Interpreting file '{repr(filepath)}' of component '{module_name}'" " relatively to component file"
+            )
+        else:
+            logger.debug(
+                f"Interpreting file '{repr(filepath)}' of component '{module_name}'"
+                " relatively to components directory"
+            )
+
+        return resolved_filepaths
+
+    # Check if filepath is a glob pattern that points to files relative to the components directory
+    # (as defined by `COMPONENTS.dirs` and `COMPONENTS.app_dirs` settings) in which the component is defined.
+    # If yes, modify the path to refer to the globbed files.
+    # If not, don't modify anything.
+    def resolve_static_media_file(
+        filepath: Union[str, SafeData],
+        allow_glob: bool,
+    ) -> List[Union[str, SafeData]]:
+        resolved_filepaths, _ = resolve_media_file(
+            filepath,
+            allow_glob,
+            static_files_dir=matched_component_dir_abs,
+            media_root_dir=matched_component_dir_abs,
+        )
+        return resolved_filepaths
 
     # Check if template name is a local file or not
     if getattr(comp_media, "template_file", None):
-        comp_media.template_file = resolve_media_file(comp_media.template_file)
+        comp_media.template_file = resolve_relative_media_file(comp_media.template_file, False)[0]
     if getattr(comp_media, "js_file", None):
-        comp_media.js_file = resolve_media_file(comp_media.js_file)
+        comp_media.js_file = resolve_relative_media_file(comp_media.js_file, False)[0]
     if getattr(comp_media, "css_file", None):
-        comp_media.css_file = resolve_media_file(comp_media.css_file)
+        comp_media.css_file = resolve_relative_media_file(comp_media.css_file, False)[0]
 
     if hasattr(comp_media, "Media") and comp_media.Media:
-        _map_media_filepaths(comp_media.Media, resolve_media_file)
-
-
-def _get_dir_path_from_component_path(
-    abs_component_file_path: str,
-    candidate_dirs: Union[List[str], List[Path]],
-) -> Tuple[str, str]:
-    comp_dir_path_abs = os.path.dirname(abs_component_file_path)
-
-    # From all dirs defined in settings.COMPONENTS.dirs, find one that's the parent
-    # to the component file.
-    root_dir_abs = None
-    for candidate_dir in candidate_dirs:
-        candidate_dir_abs = os.path.abspath(candidate_dir)
-        if comp_dir_path_abs.startswith(candidate_dir_abs):
-            root_dir_abs = candidate_dir_abs
-            break
-
-    if root_dir_abs is None:
-        raise RuntimeError(
-            f"Failed to resolve template directory for component file '{abs_component_file_path}'",
+        _map_media_filepaths(
+            comp_media.Media,
+            # Media files can be defined as a glob patterns that match multiple files.
+            # Thus, flatten the list of lists returned by `resolve_relative_media_file`.
+            lambda filepaths: flatten(resolve_relative_media_file(f, True) for f in filepaths),
         )
 
-    # Derive the path from matched COMPONENTS.dirs to the dir where the current component file is.
-    comp_dir_path_rel = os.path.relpath(comp_dir_path_abs, candidate_dir_abs)
+        # Go over the JS / CSS media files again, but this time, if there are still any globs,
+        # try to resolve them relative to the root directory (as defined by `COMPONENTS.dirs
+        # and `COMPONENTS.app_dirs` settings).
+        _map_media_filepaths(
+            comp_media.Media,
+            # Media files can be defined as a glob patterns that match multiple files.
+            # Thus, flatten the list of lists returned by `resolve_static_media_file`.
+            lambda filepaths: flatten(resolve_static_media_file(f, True) for f in filepaths),
+        )
 
-    # Return both absolute and relative paths:
-    # - Absolute path is used to check if the file exists
-    # - Relative path is used for defining the import on the component class
-    return comp_dir_path_abs, comp_dir_path_rel
+
+# Check if filepath refers to a file that's in the same directory as the component class.
+# If yes, modify the path to refer to the relative file.
+# If not, don't modify anything.
+def resolve_media_file(
+    filepath: Union[str, SafeData],
+    allow_glob: bool,
+    static_files_dir: str,
+    media_root_dir: str,
+) -> Tuple[List[Union[str, SafeData]], bool]:
+    # If filepath is NOT a string, then return as is
+    if not isinstance(filepath, str):
+        return [filepath], False
+
+    filepath_abs_or_glob = os.path.join(media_root_dir, filepath)
+
+    # The path may be a glob. So before we check if the file exists,
+    # we need to resolve the glob.
+    if allow_glob and is_glob(filepath_abs_or_glob):
+        matched_abs_filepaths = glob.glob(filepath_abs_or_glob)
+    else:
+        matched_abs_filepaths = [filepath_abs_or_glob]
+
+    # If there are no matches, return the original filepath
+    if not matched_abs_filepaths:
+        return [filepath], False
+
+    resolved_filepaths: List[str] = []
+    for matched_filepath_abs in matched_abs_filepaths:
+        # Derive the path from matched `COMPONENTS.dirs` to the media file.
+        # NOTE: The paths to resources need to use POSIX (forward slashes) for Django to work
+        #       See https://github.com/django-components/django-components/issues/796
+        # NOTE: Since these paths matched the glob, we know that these files exist.
+        filepath_rel_to_comp_dir = Path(os.path.relpath(matched_filepath_abs, static_files_dir)).as_posix()
+        resolved_filepaths.append(filepath_rel_to_comp_dir)
+
+    return resolved_filepaths, True
+
+
+def _find_component_dir_containing_file(
+    component_dirs: Sequence[Union[str, Path]],
+    target_file_path: str,
+) -> Optional[Union[str, Path]]:
+    """
+    From all directories that may contain components (such as those defined in `COMPONENTS.dirs`),
+    find the one that's the parent to the given file.
+    """
+    abs_target_file_path = os.path.abspath(target_file_path)
+
+    for component_dir in component_dirs:
+        component_dir_abs = os.path.abspath(component_dir)
+        if abs_target_file_path.startswith(component_dir_abs):
+            return component_dir
+
+    return None
 
 
 def _get_asset(
