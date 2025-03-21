@@ -71,7 +71,8 @@ jobs:
         # We assume that the CI machine has a name that is unique and stable.
         # See https://github.com/airspeed-velocity/asv/issues/796#issuecomment-1188431794
         echo "Preparing benchmarks profile..."
-        asv machine --yes
+        MACHINE="ci_benchmark_${{ github.event.pull_request.number }}"
+        asv machine --yes -v --machine ${MACHINE}
         echo "Benchmarks profile DONE."
 
         # Generate benchmark data
@@ -83,10 +84,10 @@ jobs:
         #       TO the start of the branch history.
         #       With it, we run benchmarks ONLY FOR the latest commit.
         echo "Running benchmarks for upstream/master..."
-        DJC_BENCHMARK_QUICK=1 asv run upstream/master^! -v
+        DJC_BENCHMARK_QUICK=1 asv run upstream/master^! -v --machine ${MACHINE}
         echo "Benchmarks for upstream/master DONE."
         echo "Running benchmarks for HEAD..."
-        DJC_BENCHMARK_QUICK=1 asv run HEAD^! -v
+        DJC_BENCHMARK_QUICK=1 asv run HEAD^! -v --machine ${MACHINE}
         echo "Benchmarks for HEAD DONE."
 
         echo "Creating pr directory..."
@@ -97,9 +98,9 @@ jobs:
         # Compare against master
         # NOTE: The command is run twice, once so we can see the debug output, and once to save the results.
         echo "Comparing benchmarks... (debug)"
-        asv compare upstream/master HEAD --factor 1.1 --split --verbose
+        asv compare upstream/master HEAD --factor 1.1 --split --machine ${MACHINE} --verbose
         echo "Comparing benchmarks... (saving results)"
-        asv compare upstream/master HEAD --factor 1.1 --split > ./pr/benchmark_results.md
+        asv compare upstream/master HEAD --factor 1.1 --split --machine ${MACHINE} > ./pr/benchmark_results.md
         echo "Benchmarks comparison DONE."
 
     - name: Save benchmark results
