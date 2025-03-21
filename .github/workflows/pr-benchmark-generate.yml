@@ -89,14 +89,17 @@ jobs:
         DJC_BENCHMARK_QUICK=1 asv run HEAD^! -v
         echo "Benchmarks for HEAD DONE."
 
-        # Compare against master
-        echo "Comparing benchmarks..."
+        echo "Creating pr directory..."
         mkdir -p pr
-        asv compare upstream/master HEAD --factor 1.1 --split > ./pr/benchmark_results.md
-
         # Save the PR number to a file, so that it can be used by the next step.
         echo "${{ github.event.pull_request.number }}" > ./pr/pr_number.txt
 
+        # Compare against master
+        # NOTE: The command is run twice, once so we can see the debug output, and once to save the results.
+        echo "Comparing benchmarks... (debug)"
+        asv compare upstream/master HEAD --factor 1.1 --split --verbose
+        echo "Comparing benchmarks... (saving results)"
+        asv compare upstream/master HEAD --factor 1.1 --split > ./pr/benchmark_results.md
         echo "Benchmarks comparison DONE."
 
     - name: Save benchmark results
