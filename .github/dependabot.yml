@@ -9,3 +9,9 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+  - package-ecosystem: github-actions
+    # This actually targets ./.github/workflows/
+    # See https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#directories-or-directory--
+    directory: "/"
+    schedule:
+      interval: monthly

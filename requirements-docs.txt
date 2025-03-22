@@ -60,7 +60,7 @@ defusedxml==0.7.1
     # via cairosvg
 django==5.1.7
     # via hatch.envs.docs
-djc-core-html-parser==1.0.1
+djc-core-html-parser==1.0.2
     # via hatch.envs.docs
 ghp-import==2.1.0
     # via mkdocs

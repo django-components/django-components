@@ -14,6 +14,10 @@
             css = ["*.css"]
     ```
 
+#### Fix
+
+- Fix installation for Python 3.13 on Windows.
+
 ## v0.131
 
 #### Feat

@@ -29,7 +29,7 @@ classifiers = [
 ]
 dependencies = [
     'Django>=4.2',
-    'djc-core-html-parser>=1.0',
+    'djc-core-html-parser>=1.0.2',
 ]
 license = {text = "MIT"}
 
