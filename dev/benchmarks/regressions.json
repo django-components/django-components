@@ -1,1 +1,1 @@
-{"regressions": []}
+{"regressions": [["isolated vs django modes.timeraw_render_sm_subsequent('django')", "graphs/branch-master/django-5.1/djc-core-html-parser/machine-ci-linux/python-3.13/isolated vs django modes.timeraw_render_sm_subsequent.json", {}, 1, 0.0005677989999810507, 0.0005395769999836375, [[1662, 1676, 0.0005395769999836375, 0.0005677989999810507]]]]}
