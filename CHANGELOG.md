@@ -1,8 +1,8 @@
 # Release notes
 
-## v0.134
+## v0.135
 
-### Feat
+#### Feat
 
 - `{% html_attrs %}` now offers a Vue-like granular control over `class` and `style` HTML attributes,
 where each class name or style property can be managed separately.
@@ -29,13 +29,23 @@ where each class name or style property can be managed separately.
     %}
     ```
 
+## v0.134
+
+#### Fix
+
+- HOTFIX: Fix the use of URLs in `Component.Media.js` and `Component.Media.css`
+
 ## v0.133
+
+⚠️ Attention ⚠️ - Please update to v0.134 to fix bugs introduced in v0.132.
 
 #### Fix
 
 - HOTFIX: Fix the use of URLs in `Component.Media.js` and `Component.Media.css`
 
 ## v0.132
+
+⚠️ Attention ⚠️ - Please update to v0.134 to fix bugs introduced in v0.132.
 
 #### Feat
 

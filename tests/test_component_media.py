@@ -415,40 +415,18 @@ class TestComponentMedia:
         assertInHTML('<script src="glob/glob_2.js"></script>', rendered)
 
     def test_glob_pattern_does_not_break_urls(self):
-        class MyComponent(Component):
-            template = """
-                {% load component_tags %}
-                {% component_js_dependencies %}
-                {% component_css_dependencies %}
-            """
-
-            class Media:
-                css = [
-                    "https://cdnjs.cloudflare.com/example/style.min.css",
-                    "http://cdnjs.cloudflare.com/example/style.min.css",
-                    # :// is not a valid URL - will be resolved as static path
-                    "://cdnjs.cloudflare.com/example/style.min.css",
-                    "/path/to/style.css",
-                ]
-                js = [
-                    "https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js",
-                    "http://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js",
-                    # :// is not a valid URL - will be resolved as static path
-                    "://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js",
-                    "/path/to/script.js",
-                ]
-
-        rendered = MyComponent.render()
+        from tests.components.glob.glob import UrlComponent
+        rendered = UrlComponent.render()
 
         assertInHTML('<link href="https://cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
         assertInHTML('<link href="http://cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
-        # `://` is escaped because the path was resolved with Django's `static()`
+        # `://` is escaped because Django's `Media.absolute_path()` doesn't consider `://` a valid URL
         assertInHTML('<link href="%3A//cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
         assertInHTML('<link href="/path/to/style.css" media="all" rel="stylesheet">', rendered)
 
         assertInHTML('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
         assertInHTML('<script src="http://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
-        # `://` is escaped because the path was resolved with Django's `static()`
+        # `://` is escaped because Django's `Media.absolute_path()` doesn't consider `://` a valid URL
         assertInHTML('<script src="%3A//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
         assertInHTML('<script src="/path/to/script.js"></script>', rendered)
 
