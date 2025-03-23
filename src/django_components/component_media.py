@@ -833,23 +833,25 @@ def _resolve_component_relative_files(
 
     if hasattr(comp_media, "Media") and comp_media.Media:
         def _resolve_media_file(
-            filepaths: Sequence[Union[str, SafeData]],
+            resolve: Callable
         ) -> List[Union[str, SafeData]]:
-            def res(f: Union[str, SafeData]) -> List[Union[str, SafeData]]:
-                # If the path is a URL, don't resolve it
-                # (e.g. https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js)
-                # This is defined based on Django's `Media.absolute_path()` method.
-                is_url_path = isinstance(f, str) and f.startswith(("http://", "https://", "/"))
-                if is_url_path:
-                    return [f]
-                return resolve_static_media_file(f, True)
-            return flatten(res(f) for f in filepaths)
+            def wrapper(filepaths: Union[str, SafeData]) -> List[Union[str, SafeData]]:
+                def res(f: Union[str, SafeData]) -> List[Union[str, SafeData]]:
+                    # If the path is a URL, don't resolve it
+                    # (e.g. https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js)
+                    # This is defined based on Django's `Media.absolute_path()` method.
+                    is_url_path = isinstance(f, str) and f.startswith(("http://", "https://", "/"))
+                    if is_url_path:
+                        return [f]
+                    return resolve(f, True)
+                return flatten(res(f) for f in filepaths)
+            return wrapper
 
         _map_media_filepaths(
             comp_media.Media,
             # Media files can be defined as a glob patterns that match multiple files.
             # Thus, flatten the list of lists returned by `resolve_relative_media_file`.
-            _resolve_media_file
+            _resolve_media_file(resolve_relative_media_file)
         )
 
         # Go over the JS / CSS media files again, but this time, if there are still any globs,
@@ -859,7 +861,7 @@ def _resolve_component_relative_files(
             comp_media.Media,
             # Media files can be defined as a glob patterns that match multiple files.
             # Thus, flatten the list of lists returned by `resolve_static_media_file`.
-            _resolve_media_file
+            _resolve_media_file(resolve_static_media_file)
         )
 
 
