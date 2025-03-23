@@ -1,5 +1,11 @@
 # Release notes
 
+## v0.133
+
+#### Fix
+
+- HOTFIX: Fix the use of URLs in `Component.Media.js` and `Component.Media.css`
+
 ## v0.132
 
 #### Feat
