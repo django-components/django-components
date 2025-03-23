@@ -171,6 +171,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.format_attributes
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.get_component_dirs
     options:
       show_if_no_docstring: true
@@ -180,6 +184,10 @@
       show_if_no_docstring: true
 
 ::: django_components.import_libraries
+    options:
+      show_if_no_docstring: true
+
+::: django_components.merge_attributes
     options:
       show_if_no_docstring: true
 
@@ -198,3 +206,4 @@
 ::: django_components.template_tag
     options:
       show_if_no_docstring: true
+

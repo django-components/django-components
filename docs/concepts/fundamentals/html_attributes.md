@@ -1,37 +1,183 @@
 _New in version 0.74_:
 
-You can use the `html_attrs` tag to render HTML attributes, given a dictionary
-of values.
+You can use the [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag to render various data
+as `key="value"` HTML attributes.
 
-So if you have a template:
+[`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag is versatile, allowing you to define HTML attributes however you need:
+
+- Define attributes within the HTML template
+- Define attributes in Python code
+- Merge attributes from multiple sources
+- Boolean attributes
+- Append attributes
+- Remove attributes
+- Define default attributes
+
+From v0.131 onwards, [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag also supports merging [`style`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) and [`class`](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/class) attributes
+the same way [how Vue does](https://vuejs.org/guide/essentials/class-and-style).
+
+To get started, let's consider a simple example. If you have a template:
 
 ```django
 <div class="{{ classes }}" data-id="{{ my_id }}">
 </div>
 ```
 
-You can simplify it with `html_attrs` tag:
+You can rewrite it with the [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag:
+
+```django
+<div {% html_attrs class=classes data-id=my_id %}>
+</div>
+```
+
+The [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag accepts any number of keyword arguments, which will be merged and rendered as HTML attributes:
+
+```django
+<div class="text-red" data-id="123">
+</div>
+```
+
+Moreover, the [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag accepts two positional arguments:
+
+- `attrs` - a dictionary of attributes to be rendered
+- `defaults` - a dictionary of default attributes
+
+You can use this for example to allow users of your component to add extra attributes. We achieve this by capturing the extra attributes and passing them to the [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag as a dictionary:
+
+```djc_py
+@register("my_comp")
+class MyComp(Component):
+    # Capture extra kwargs in `attrs`
+    def get_context_data(self, **attrs):
+        return {
+            "attrs": attrs,
+            "classes": "text-red",
+            "my_id": 123,
+        }
+
+    template: t.django_html = """
+        {# Pass the extra attributes to `html_attrs` #}
+        <div {% html_attrs attrs class=classes data-id=my_id %}>
+        </div>
+    """
+```
+
+This way you can render `MyComp` with extra attributes:
+
+Either via Django template:
+
+```django
+{% component "my_comp"
+  id="example"
+  class="pa-4"
+  style="color: red;"
+%}
+```
+
+Or via Python:
+
+```py
+MyComp.render(
+    kwargs={
+        "id": "example",
+        "class": "pa-4",
+        "style": "color: red;",
+    }
+)
+```
+
+In both cases, the attributes will be merged and rendered as:
+
+```html
+<div id="example" class="text-red pa-4" style="color: red;" data-id="123"></div>
+```
+
+### Summary
+
+1. The two arguments, `attrs` and `defaults`, can be passed as positional args:
+
+    ```django
+    {% html_attrs attrs defaults key=val %}
+    ```
+
+    or as kwargs:
+
+    ```django
+    {% html_attrs key=val defaults=defaults attrs=attrs %}
+    ```
+
+2. Both `attrs` and `defaults` are optional and can be omitted.
+
+3. Both `attrs` and `defaults` are dictionaries. As such, there's multiple ways to define them:
+
+    - By referencing a variable:
+
+        ```django
+        {% html_attrs attrs=attrs %}
+        ```
+
+    - By defining a literal dictionary:
+
+        ```django
+        {% html_attrs attrs={"key": value} %}
+        ```
+
+    - Or by defining the [dictionary keys](../template_tag_syntax/#pass-dictonary-by-its-key-value-pairs):
+
+        ```django
+        {% html_attrs attrs:key=value %}
+        ```
+
+4. All other kwargs are merged and can be repeated.
+
+    ```django
+    {% html_attrs class="text-red" class="pa-4" %}
+    ```
+
+    Will render:
+
+    ```html
+    <div class="text-red pa-4"></div>
+    ```
+
+## Usage
+
+### Boolean attributes
+
+In HTML, boolean attributes are usually rendered with no value. Consider the example below where the first button is disabled and the second is not:
+
+```html
+<button disabled>Click me!</button>
+<button>Click me!</button>
+```
+
+HTML rendering with [`html_attrs`](../../../reference/template_tags#html_attrs) tag or [`format_attributes`](../../../reference/api#django_components.format_attributes) works the same way - an attribute set to `True` is rendered without the value, and an attribute set to `False` is not rendered at all.
+
+So given this input:
+
+```py
+attrs = {
+    "disabled": True,
+    "autofocus": False,
+}
+```
+
+And template:
 
 ```django
 <div {% html_attrs attrs %}>
 </div>
 ```
 
-where `attrs` is:
+Then this renders:
 
-```py
-attrs = {
-    "class": classes,
-    "data-id": my_id,
-}
+```html
+<div disabled></div>
 ```
 
-This feature is inspired by [`merge_attrs` tag of django-web-components](https://github.com/Xzya/django-web-components/tree/master?tab=readme-ov-file#default--merged-attributes) and
-["fallthrough attributes" feature of Vue](https://vuejs.org/guide/components/attrs).
+### Removing attributes
 
-## Removing atttributes
-
-Attributes that are set to `None` or `False` are NOT rendered.
+Given how the boolean attributes work, you can "remove" or prevent an attribute from being rendered by setting it to `False` or `None`.
 
 So given this input:
 
@@ -56,41 +202,9 @@ Then this renders:
 <div class="text-green"></div>
 ```
 
-## Boolean attributes
+### Default attributes
 
-In HTML, boolean attributes are usually rendered with no value. Consider the example below where the first button is disabled and the second is not:
-
-```html
-<button disabled>Click me!</button> <button>Click me!</button>
-```
-
-HTML rendering with `html_attrs` tag or `attributes_to_string` works the same way, where `key=True` is rendered simply as `key`, and `key=False` is not render at all.
-
-So given this input:
-
-```py
-attrs = {
-    "disabled": True,
-    "autofocus": False,
-}
-```
-
-And template:
-
-```django
-<div {% html_attrs attrs %}>
-</div>
-```
-
-Then this renders:
-
-```html
-<div disabled></div>
-```
-
-## Default attributes
-
-Sometimes you may want to specify default values for attributes. You can pass a second argument (or kwarg `defaults`) to set the defaults.
+Sometimes you may want to specify default values for attributes. You can pass a second positional argument to set the defaults.
 
 ```django
 <div {% html_attrs attrs defaults %}>
@@ -98,20 +212,30 @@ Sometimes you may want to specify default values for attributes. You can pass a 
 </div>
 ```
 
-In the example above, if `attrs` contains e.g. the `class` key, `html_attrs` will render:
+In the example above, if `attrs` contains a certain key, e.g. the `class` key, [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) will render:
 
-`class="{{ attrs.class }}"`
+```html
+<div class="{{ attrs.class }}">
+    ...
+</div>
+```
 
-Otherwise, `html_attrs` will render:
+Otherwise, [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) will render:
 
-`class="{{ defaults.class }}"`
+```html
+<div class="{{ defaults.class }}">
+    ...
+</div>
+```
 
-## Appending attributes
+### Appending attributes
 
 For the `class` HTML attribute, it's common that we want to _join_ multiple values,
-instead of overriding them. For example, if you're authoring a component, you may
+instead of overriding them.
+
+For example, if you're authoring a component, you may
 want to ensure that the component will ALWAYS have a specific class. Yet, you may
-want to allow users of your component to supply their own classes.
+want to allow users of your component to supply their own `class` attribute.
 
 We can achieve this by adding extra kwargs. These values
 will be appended, instead of overwriting the previous value.
@@ -124,7 +248,7 @@ attrs = {
 }
 ```
 
-And on `html_attrs` tag, we set the key `class`:
+And on [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag, we set the key `class`:
 
 ```django
 <div {% html_attrs attrs class="some-class" %}>
@@ -153,23 +277,202 @@ Renders:
 ></div>
 ```
 
-## Rules for `html_attrs`
+### Merging `class` attributes
 
-1. Both `attrs` and `defaults` can be passed as positional args
+The `class` attribute can be specified the same way as [seen in Vue](https://vuejs.org/guide/essentials/class-and-style) - as a string, a list, or a dictionary:
 
-   `{% html_attrs attrs defaults key=val %}`
+- **String**: Used as is.
 
-   or as kwargs
+    ```django
+    {% html_attrs class="my-class other-class" %}
+    ```
 
-   `{% html_attrs key=val defaults=defaults attrs=attrs %}`
+    Renders:
 
-2. Both `attrs` and `defaults` are optional (can be omitted)
+    ```html
+    <div class="my-class other-class"></div>
+    ```
 
-3. Both `attrs` and `defaults` are dictionaries, and we can define them the same way [we define dictionaries for the `component` tag](#pass-dictonary-by-its-key-value-pairs). So either as `attrs=attrs` or `attrs:key=value`.
+- **Dictionary**: Keys are the class names, and values are booleans. Only keys with truthy values are rendered.
 
-4. All other kwargs are appended and can be repeated.
+    ```django
+    {% html_attrs class={
+        "extra-class": True,
+        "other-class": False,
+    } %}
+    ```
 
-## Examples for `html_attrs`
+    Renders:
+
+    ```html
+    <div class="extra-class"></div>
+    ```
+
+- **List**: Used for merging - lists may contain strings, dictionaries, or other lists.
+
+    ```django
+    {% html_attrs class=[
+        "my-class",
+        {"extra-class": True},
+        ["other-class"],
+    ] %}
+    ```
+
+    Renders:
+
+    ```html
+    <div class="my-class extra-class other-class"></div>
+    ```
+
+If a certain class is specified multiple times, it's the last instance that decides whether the class is rendered or not.
+
+**Example:**
+
+In this example, the `other-class` is specified twice. The last instance is `{"other-class": False}`, so the class is not rendered.
+
+```django
+{% html_attrs
+    class="my-class other-class"
+    class={"extra-class": True, "other-class": False}
+%}
+```
+
+Renders:
+
+```html
+<div class="my-class extra-class"></div>
+```
+
+### Merging `style` Attributes
+
+The `style` attribute can be specified the same way as [seen in Vue](https://vuejs.org/guide/essentials/class-and-style) - as a string, a list, or a dictionary:
+
+- **String**: Used as is.
+
+    ```django
+    {% html_attrs style="color: red; background-color: blue;" %}
+    ```
+
+    Renders:
+
+    ```html
+    <div style="color: red; background-color: blue;"></div>
+    ```
+
+- **Dictionary**: Keys are the style properties, and values are their values.
+
+    ```django
+    {% html_attrs style={
+        "color": "red",
+        "background-color": "blue",
+    } %}
+    ```
+
+    Renders:
+
+    ```html
+    <div style="color: red; background-color: blue;"></div>
+    ```
+
+- **List**: Used for merging - lists may contain strings, dictionaries, or other lists.
+
+    ```django
+    {% html_attrs style=[
+        "color: red; background-color: blue;",
+        {"color": "green", "background-color": None, "width": False},
+    ] %}
+    ```
+
+    Renders:
+
+    ```html
+    <div style="color: green; background-color: blue;"></div>
+    ```
+
+If a style property is specified multiple times, the last value is used.
+
+- If the last time the property is set is `False`, the property is removed.
+- Properties set to `None` are ignored.
+
+**Example:**
+
+In this example, the `width` property is specified twice. The last instance is `{"width": False}`, so the property is removed.
+
+Secondly, the `background-color` property is also set twice. But the second time it's set to `None`, so that instance is ignored, leaving us only with `background-color: blue`.
+
+The `color` property is set to a valid value in both cases, so the latter (`green`) is used.
+
+```django
+{% html_attrs style=[
+    "color: red; background-color: blue; width: 100px;",
+    {"color": "green", "background-color": None, "width": False},
+] %}
+```
+
+Renders:
+
+```html
+<div style="color: green; background-color: blue;"></div>
+```
+
+## Usage outside of templates
+
+In some cases, you want to prepare HTML attributes outside of templates.
+
+To achieve the same behavior as [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag, you can use the [`merge_attributes()`](../../../reference/api#django_components.merge_attributes) and [`format_attributes()`](../../../reference/api#django_components.format_attributes) helper functions.
+
+### Merging attributes
+
+[`merge_attributes()`](../../../reference/api#django_components.merge_attributes) accepts any number of dictionaries and merges them together, using the same merge strategy as [`{% html_attrs %}`](../../../reference/template_tags#html_attrs).
+
+```python
+from django_components import merge_attributes
+
+merge_attributes(
+    {"class": "my-class", "data-id": 123},
+    {"class": [
+        "extra-class",
+        {"cool-class": True, "uncool-class": False}
+    ]},
+)
+```
+
+Which will output:
+
+```python
+{
+    "class": "my-class extra-class cool-class",
+    "data-id": 123,
+}
+```
+
+!!! warning
+
+    Unlike [`{% html_attrs %}`](../../../reference/template_tags#html_attrs), where you can pass extra kwargs, [`merge_attributes()`](../../../reference/api#django_components.merge_attributes) requires each argument to be a dictionary.
+
+### Formatting attributes
+
+[`format_attributes()`](../../../reference/api#django_components.format_attributes) serializes attributes the same way as [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag does.
+
+```py
+from django_components import format_attributes
+
+format_attributes({
+    "class": "my-class text-red pa-4",
+    "data-id": 123,
+    "required": True,
+    "disabled": False,
+    "ignored-attr": None,
+})
+```
+
+Which will output:
+
+```python
+'class="my-class text-red pa-4" data-id="123" required'
+```
+
+## Cheat sheet
 
 Assuming that:
 
@@ -189,67 +492,127 @@ defaults = {
 
 Then:
 
-- Empty tag <br/>
-  `{% html_attr %}`
+- **Empty tag**
+  
+    ```django
+    <div {% html_attr %}></div>
+    ```
 
-  renders (empty string): <br/>
-  ` `
+    renders nothing:
 
-- Only kwargs <br/>
-  `{% html_attr class="some-class" class=class_from_var data-id="123" %}`
+    ```html
+    <div></div>
+    ```
 
-  renders: <br/>
-  `class="some-class from-var" data-id="123"`
+- **Only kwargs**
+  
+    ```django
+    <div {% html_attr class="some-class" class=class_from_var data-id="123" %}></div>
+    ```
 
-- Only attrs <br/>
-  `{% html_attr attrs %}`
+    renders:
 
-  renders: <br/>
-  `class="from-attrs" type="submit"`
+    ```html
+    <div class="some-class from-var" data-id="123"></div>
+    ```
 
-- Attrs as kwarg <br/>
-  `{% html_attr attrs=attrs %}`
+- **Only attrs**
 
-  renders: <br/>
-  `class="from-attrs" type="submit"`
+    ```django
+    <div {% html_attr attrs %}></div>
+    ```
 
-- Only defaults (as kwarg) <br/>
-  `{% html_attr defaults=defaults %}`
+    renders:
 
-  renders: <br/>
-  `class="from-defaults" role="button"`
+    ```html
+    <div class="from-attrs" type="submit"></div>
+    ```
 
-- Attrs using the `prefix:key=value` construct <br/>
-  `{% html_attr attrs:class="from-attrs" attrs:type="submit" %}`
+- **Attrs as kwarg**
 
-  renders: <br/>
-  `class="from-attrs" type="submit"`
+    ```django
+    <div {% html_attr attrs=attrs %}></div>
+    ```
 
-- Defaults using the `prefix:key=value` construct <br/>
-  `{% html_attr defaults:class="from-defaults" %}`
+    renders:
 
-  renders: <br/>
-  `class="from-defaults" role="button"`
+    ```html
+    <div class="from-attrs" type="submit"></div>
+    ```
 
-- All together (1) - attrs and defaults as positional args: <br/>
-  `{% html_attrs attrs defaults class="added_class" class=class_from_var data-id=123 %}`
+- **Only defaults (as kwarg)**
 
-  renders: <br/>
-  `class="from-attrs added_class from-var" type="submit" role="button" data-id=123`
+    ```django
+    <div {% html_attr defaults=defaults %}></div>
+    ```
 
-- All together (2) - attrs and defaults as kwargs args: <br/>
-  `{% html_attrs class="added_class" class=class_from_var data-id=123 attrs=attrs defaults=defaults %}`
+    renders:
 
-  renders: <br/>
-  `class="from-attrs added_class from-var" type="submit" role="button" data-id=123`
+    ```html
+    <div class="from-defaults" role="button"></div>
+    ```
 
-- All together (3) - mixed: <br/>
-  `{% html_attrs attrs defaults:class="default-class" class="added_class" class=class_from_var data-id=123 %}`
+- **Attrs using the `prefix:key=value` construct**
 
-  renders: <br/>
-  `class="from-attrs added_class from-var" type="submit" data-id=123`
+    ```django
+    <div {% html_attr attrs:class="from-attrs" attrs:type="submit" %}></div>
+    ```
 
-## Full example for `html_attrs`
+    renders:
+
+    ```html
+    <div class="from-attrs" type="submit"></div>
+    ```
+
+- **Defaults using the `prefix:key=value` construct**
+
+    ```django
+    <div {% html_attr defaults:class="from-defaults" %}></div>
+    ```
+
+    renders:
+
+    ```html
+    <div class="from-defaults" role="button"></div>
+    ```
+
+- **All together (1) - attrs and defaults as positional args:**
+
+    ```django
+    <div {% html_attrs attrs defaults class="added_class" class=class_from_var data-id=123 %}></div>
+    ```
+
+    renders:
+
+    ```html
+    <div class="from-attrs added_class from-var" type="submit" role="button" data-id=123></div>
+    ```
+
+- **All together (2) - attrs and defaults as kwargs args:**
+
+    ```django
+    <div {% html_attrs class="added_class" class=class_from_var data-id=123 attrs=attrs defaults=defaults %}></div>
+    ```
+
+    renders:
+
+    ```html
+    <div class="from-attrs added_class from-var" type="submit" role="button" data-id=123></div>
+    ```
+
+- **All together (3) - mixed:**
+
+    ```django
+    <div {% html_attrs attrs defaults:class="default-class" class="added_class" class=class_from_var data-id=123 %}></div>
+    ```
+
+    renders:
+
+    ```html
+    <div class="from-attrs added_class from-var" type="submit" data-id=123></div>
+    ```
+
+## Full example
 
 ```djc_py
 @register("my_comp")
@@ -296,7 +659,9 @@ Note: For readability, we've split the tags across multiple lines.
 
 Inside `MyComp`, we defined a default attribute
 
-`defaults:class="pa-4 text-red"`
+```
+defaults:class="pa-4 text-red"
+```
 
 So if `attrs` includes key `class`, the default above will be ignored.
 
@@ -351,23 +716,4 @@ So in the end `MyComp` will render:
 >
   ...
 </div>
-```
-
-## Rendering HTML attributes outside of templates
-
-If you need to use serialize HTML attributes outside of Django template and the `html_attrs` tag, you can use `attributes_to_string`:
-
-```py
-from django_components.attributes import attributes_to_string
-
-attrs = {
-    "class": "my-class text-red pa-4",
-    "data-id": 123,
-    "required": True,
-    "disabled": False,
-    "ignored-attr": None,
-}
-
-attributes_to_string(attrs)
-# 'class="my-class text-red pa-4" data-id="123" required'
 ```

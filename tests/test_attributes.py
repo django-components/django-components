@@ -6,7 +6,7 @@ from django.utils.safestring import SafeString, mark_safe
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
-from django_components.attributes import append_attributes, attributes_to_string
+from django_components.attributes import format_attributes, merge_attributes, parse_string_style
 from django_components.testing import djc_test
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
@@ -15,40 +15,114 @@ setup_test_config({"autodiscover": False})
 
 
 @djc_test
-class TestAttributesToString:
+class TestFormatAttributes:
     def test_simple_attribute(self):
-        assert attributes_to_string({"foo": "bar"}) == 'foo="bar"'
+        assert format_attributes({"foo": "bar"}) == 'foo="bar"'
 
     def test_multiple_attributes(self):
-        assert attributes_to_string({"class": "foo", "style": "color: red;"}) == 'class="foo" style="color: red;"'
+        assert format_attributes({"class": "foo", "style": "color: red;"}) == 'class="foo" style="color: red;"'
 
     def test_escapes_special_characters(self):
-        assert attributes_to_string({"x-on:click": "bar", "@click": "'baz'"}) == 'x-on:click="bar" @click="&#x27;baz&#x27;"'  # noqa: E501
+        assert format_attributes({"x-on:click": "bar", "@click": "'baz'"}) == 'x-on:click="bar" @click="&#x27;baz&#x27;"'  # noqa: E501
 
     def test_does_not_escape_special_characters_if_safe_string(self):
-        assert attributes_to_string({"foo": mark_safe("'bar'")}) == "foo=\"'bar'\""
+        assert format_attributes({"foo": mark_safe("'bar'")}) == "foo=\"'bar'\""
 
     def test_result_is_safe_string(self):
-        result = attributes_to_string({"foo": mark_safe("'bar'")})
+        result = format_attributes({"foo": mark_safe("'bar'")})
         assert isinstance(result, SafeString)
 
     def test_attribute_with_no_value(self):
-        assert attributes_to_string({"required": None}) == ""
+        assert format_attributes({"required": None}) == ""
 
     def test_attribute_with_false_value(self):
-        assert attributes_to_string({"required": False}) == ""
+        assert format_attributes({"required": False}) == ""
 
     def test_attribute_with_true_value(self):
-        assert attributes_to_string({"required": True}) == "required"
+        assert format_attributes({"required": True}) == "required"
 
 
 @djc_test
-class TestAppendAttributes:
+class TestMergeAttributes:
     def test_single_dict(self):
-        assert append_attributes(("foo", "bar")) == {"foo": "bar"}
+        assert merge_attributes({"foo": "bar"}) == {"foo": "bar"}
 
     def test_appends_dicts(self):
-        assert append_attributes(("class", "foo"), ("id", "bar"), ("class", "baz")) == {"class": "foo baz", "id": "bar"}  # noqa: E501
+        assert merge_attributes({"class": "foo", "id": "bar"}, {"class": "baz"}) == {
+            "class": "foo baz",
+            "id": "bar",
+        }  # noqa: E501
+
+    def test_merge_with_empty_dict(self):
+        assert merge_attributes({}, {"foo": "bar"}) == {"foo": "bar"}
+
+    def test_merge_with_overlapping_keys(self):
+        assert merge_attributes({"foo": "bar"}, {"foo": "baz"}) == {"foo": "bar baz"}
+
+    def test_merge_classes(self):
+        assert merge_attributes(
+            {"class": "foo"},
+            {
+                "class": [
+                    "bar",
+                    "tuna",
+                    "tuna2",
+                    "tuna3",
+                    {"baz": True, "baz2": False, "tuna": False, "tuna2": True, "tuna3": None},
+                    ["extra", {"extra2": False, "baz2": True, "tuna": True, "tuna2": False}],
+                ]
+            },
+        ) == {"class": "foo bar tuna baz baz2 extra"}
+
+    def test_merge_styles(self):
+        assert merge_attributes(
+            {"style": "color: red; width: 100px; height: 100px;"},
+            {
+                "style": [
+                    "background-color: blue;",
+                    {"background-color": "green", "color": None, "width": False},
+                    ["position: absolute", {"height": "12px"}],
+                ]
+            },
+        ) == {"style": "color: red; height: 12px; background-color: green; position: absolute;"}
+
+    def test_merge_with_none_values(self):
+        # Normal attributes merge even `None` values
+        assert merge_attributes({"foo": None}, {"foo": "bar"}) == {"foo": "None bar"}
+        assert merge_attributes({"foo": "bar"}, {"foo": None}) == {"foo": "bar None"}
+
+        # Classes append the class only if the last value is truthy
+        assert merge_attributes({"class": {"bar": None}}, {"class": {"bar": True}}) == {"class": "bar"}
+        assert merge_attributes({"class": {"bar": True}}, {"class": {"bar": None}}) == {"class": ""}
+
+        # Styles remove values that are `False` and ignore `None`
+        assert merge_attributes(
+            {"style": {"color": None}},
+            {"style": {"color": "blue"}},
+        ) == {"style": "color: blue;"}
+        assert merge_attributes(
+            {"style": {"color": "blue"}},
+            {"style": {"color": None}},
+        ) == {"style": "color: blue;"}
+
+    def test_merge_with_false_values(self):
+        # Normal attributes merge even `False` values
+        assert merge_attributes({"foo": False}, {"foo": "bar"}) == {"foo": "False bar"}
+        assert merge_attributes({"foo": "bar"}, {"foo": False}) == {"foo": "bar False"}
+
+        # Classes append the class only if the last value is truthy
+        assert merge_attributes({"class": {"bar": False}}, {"class": {"bar": True}}) == {"class": "bar"}
+        assert merge_attributes({"class": {"bar": True}}, {"class": {"bar": False}}) == {"class": ""}
+
+        # Styles remove values that are `False` and ignore `None`
+        assert merge_attributes(
+            {"style": {"color": False}},
+            {"style": {"color": "blue"}},
+        ) == {"style": "color: blue;"}
+        assert merge_attributes(
+            {"style": {"color": "blue"}},
+            {"style": {"color": False}},
+        ) == {"style": ""}
 
 
 @djc_test
@@ -417,3 +491,36 @@ class TestHtmlAttrs:
             """,
         )
         assert "override-me" not in rendered
+
+
+@djc_test
+class TestParseStringStyle:
+    def test_single_style(self):
+        assert parse_string_style("color: red;") == {"color": "red"}
+
+    def test_multiple_styles(self):
+        assert parse_string_style("color: red; background-color: blue;") == {
+            "color": "red",
+            "background-color": "blue",
+        }
+
+    def test_with_comments(self):
+        assert parse_string_style("color: red /* comment */; background-color: blue;") == {
+            "color": "red",
+            "background-color": "blue",
+        }
+
+    def test_with_whitespace(self):
+        assert parse_string_style("  color: red;  background-color: blue;  ") == {
+            "color": "red",
+            "background-color": "blue",
+        }
+
+    def test_empty_string(self):
+        assert parse_string_style("") == {}
+
+    def test_no_delimiters(self):
+        assert parse_string_style("color: red background-color: blue") == {"color": "red background-color: blue"}
+
+    def test_incomplete_style(self):
+        assert parse_string_style("color: red; background-color") == {"color": "red"}

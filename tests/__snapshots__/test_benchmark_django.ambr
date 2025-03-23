@@ -46,12 +46,12 @@
       <div >
           
           <span
-              class="py-2 text-sm  group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="py-2 text-sm group flex gap-x-3 rounded-md leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -85,7 +85,7 @@
               </a>
   
               
-      <div class="self-center cursor-pointer" x-ref="bookmark_menu" @click="onMenuToggle">
+      <div x-ref="bookmark_menu" @click="onMenuToggle" class="self-center cursor-pointer">
           
           <span
               class="p-0 hover:bg-neutral-700 hover:text-white transition group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -93,7 +93,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="inline hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="inline hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -151,7 +151,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 18px; height: 18px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="mt-0.5 ml-1 hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="mt-0.5 ml-1 hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 18px; height: 18px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -209,7 +209,7 @@
       <div
           role="menu"
           aria-orientation="vertical"
-          class="w-24 ml-8 z-40 mt-2 divide-y divide-gray-300 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none" x-anchor.bottom="contextMenuRef.value" x-show="contextMenuItem.value" x-cloak=""
+          x-anchor.bottom="contextMenuRef.value" x-show="contextMenuItem.value" x-cloak="" class="w-24 ml-8 z-40 mt-2 divide-y divide-gray-300 rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
       >
           
               <div class="py-1" role="group">
@@ -219,7 +219,7 @@
                               role="menuitem"
                               tabindex="0"
                               href="#"
-                              class="px-4 py-1 text-sm text-gray-900 hover:bg-gray-100 cursor-pointer block" :href="contextMenuItem.value.edit_url"
+                              :href="contextMenuItem.value.edit_url" class="px-4 py-1 text-sm text-gray-900 hover:bg-gray-100 cursor-pointer block"
                           >
                               Edit
                           </a>
@@ -325,7 +325,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -353,7 +353,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -400,7 +400,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -428,7 +428,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -456,7 +456,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -484,7 +484,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -514,7 +514,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -537,7 +537,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="hover:bg-neutral-700 hover:text-white transition h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -575,12 +575,12 @@
       <div >
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -648,7 +648,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 20px; height: 20px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class=" text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0" style="width: 20px; height: 20px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -723,7 +723,7 @@
           <ul class="flex border-b mb-5 bg-white">
               
                   
-                      <li class="border-b-2 ">
+                      <li class="border-b-2">
                           <a
                               href="/projects/1/tab-2"
                               class="bg-white inline-block py-2 px-4 font-semibold transition text-gray-500 hover:text-blue-700"
@@ -734,7 +734,7 @@
                   
               
                   
-                      <li class="border-b-2 border-b-2 border-blue-700">
+                      <li class="border-b-2 border-blue-700">
                           <a
                               href="/projects/1/tab-1"
                               class="bg-white inline-block py-2 px-4 font-semibold transition text-blue-700"
@@ -1105,7 +1105,7 @@
                               
                                   <th
                                       scope="col"
-                                      class="text-left text-sm font-semibold text-gray-900 py-3.5  pl-4 pr-3 sm:pl-0 "
+                                      class="text-left text-sm font-semibold text-gray-900 py-3.5 pl-4 pr-3 sm:pl-0"
                                   >
   
                                   
@@ -1116,7 +1116,7 @@
                               
                                   <th
                                       scope="col"
-                                      class="text-left text-sm font-semibold text-gray-900 py-3.5  px-3 "
+                                      class="text-left text-sm font-semibold text-gray-900 py-3.5 px-3"
                                   >
   
                                   
@@ -1127,7 +1127,7 @@
                               
                                   <th
                                       scope="col"
-                                      class="text-left text-sm font-semibold text-gray-900 py-3.5  px-3 "
+                                      class="text-left text-sm font-semibold text-gray-900 py-3.5 px-3"
                                   >
   
                                   
@@ -1326,7 +1326,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -1391,7 +1391,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -1489,7 +1489,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -1587,7 +1587,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class=" text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="text-gray-400 hover:text-gray-500 h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -1678,15 +1678,15 @@
           >
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -1731,7 +1731,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 20px; height: 20px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class=" text-white h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class="text-white h-6 w-6 shrink-0" style="width: 20px; height: 20px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -1756,7 +1756,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="18"
+          data-panelid="18" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -1772,15 +1772,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -1962,7 +1962,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -1982,7 +1982,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -2046,7 +2046,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -2071,7 +2071,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -2516,15 +2516,15 @@
           >
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -2568,7 +2568,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 32px; height: 32px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class=" text-black h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class="text-black h-6 w-6 shrink-0" style="width: 32px; height: 32px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -2592,7 +2592,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="14"
+          data-panelid="14" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -2608,15 +2608,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -2656,7 +2656,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class=" text-gray-500 h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500 h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -3170,7 +3170,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -3190,7 +3190,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -3254,7 +3254,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -3279,7 +3279,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -3694,7 +3694,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="21"
+          data-panelid="21" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -3710,15 +3710,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -3901,7 +3901,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -3921,7 +3921,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -3985,7 +3985,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -4010,7 +4010,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -4425,7 +4425,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="22"
+          data-panelid="22" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -4441,15 +4441,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -4632,7 +4632,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -4652,7 +4652,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -4716,7 +4716,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -4741,7 +4741,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -5156,7 +5156,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="23"
+          data-panelid="23" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -5172,15 +5172,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -5363,7 +5363,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -5383,7 +5383,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -5447,7 +5447,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -5472,7 +5472,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -5887,7 +5887,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="24"
+          data-panelid="24" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -5903,15 +5903,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -6094,7 +6094,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -6114,7 +6114,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -6178,7 +6178,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -6203,7 +6203,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -6614,7 +6614,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 32px; height: 32px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class=" text-black h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class="text-black h-6 w-6 shrink-0" style="width: 32px; height: 32px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -6638,7 +6638,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="14"
+          data-panelid="14" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -6654,15 +6654,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -6702,7 +6702,7 @@
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class=" text-gray-500 h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-500 h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -7216,7 +7216,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -7236,7 +7236,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -7300,7 +7300,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -7325,7 +7325,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -7770,15 +7770,15 @@
           >
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -7826,7 +7826,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="14"
+          data-panelid="14" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -7842,15 +7842,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -8033,7 +8033,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -8053,7 +8053,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -8117,7 +8117,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -8142,7 +8142,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -8557,7 +8557,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="15"
+          data-panelid="15" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -8573,15 +8573,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -8764,7 +8764,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -8784,7 +8784,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -8848,7 +8848,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -8873,7 +8873,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -9288,7 +9288,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="16"
+          data-panelid="16" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -9304,15 +9304,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -9495,7 +9495,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -9515,7 +9515,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -9579,7 +9579,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -9604,7 +9604,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -10019,7 +10019,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="17"
+          data-panelid="17" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -10035,15 +10035,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -10226,7 +10226,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -10246,7 +10246,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -10310,7 +10310,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -10335,7 +10335,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -10780,15 +10780,15 @@
           >
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -10836,7 +10836,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="25"
+          data-panelid="25" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -10852,15 +10852,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -11043,7 +11043,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -11063,7 +11063,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -11127,7 +11127,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -11152,7 +11152,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -11567,7 +11567,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="26"
+          data-panelid="26" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -11583,15 +11583,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -11774,7 +11774,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -11794,7 +11794,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -11858,7 +11858,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -11883,7 +11883,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -12328,15 +12328,15 @@
           >
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -12384,7 +12384,7 @@
       <div
           x-data="expansion_panel"
           data-init="{&quot;open&quot;: false}"
-          class="border-b border-solid border-gray-300 pb-2 mb-3" data-panelid="27"
+          data-panelid="27" class="border-b border-solid border-gray-300 pb-2 mb-3"
       >
           <div
               @click="togglePanel"
@@ -12400,15 +12400,15 @@
   
               
                   
-      <div style="width: fit-content;" class="{ &#x27;rotate-180&#x27;: isOpen }">
+      <div class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;">
           
           <span
-              class=" group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
+              class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
           >
           
               
       
-      <svg viewBox="0 0 24 24" style="width: 24px; height: 24px" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="  h-6 w-6 shrink-0">
+      <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.5" class="h-6 w-6 shrink-0" style="width: 24px; height: 24px;">
           
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
           
@@ -12591,7 +12591,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)"
+          x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -12611,7 +12611,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)"
+          @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -12675,7 +12675,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="removeTag(index)"
+          @click="removeTag(index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   
@@ -12700,7 +12700,7 @@
       <button
           type="button"
           
-          class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm" @click="addTag"
+          @click="addTag" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
       >
       
   

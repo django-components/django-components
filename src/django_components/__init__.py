@@ -5,6 +5,7 @@
 # NOTE: Some of the documentation is generated based on these exports
 # isort: off
 from django_components.app_settings import ContextBehavior, ComponentsSettings
+from django_components.attributes import format_attributes, merge_attributes
 from django_components.autodiscovery import autodiscover, import_libraries
 from django_components.util.command import (
     CommandArg,
@@ -90,9 +91,11 @@ __all__ = [
     "DynamicComponent",
     "EmptyTuple",
     "EmptyDict",
+    "format_attributes",
     "get_component_dirs",
     "get_component_files",
     "import_libraries",
+    "merge_attributes",
     "NotRegistered",
     "OnComponentClassCreatedContext",
     "OnComponentClassDeletedContext",

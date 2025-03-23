@@ -684,7 +684,7 @@ class TestSpreadOperator:
         assertHTMLEqual(
             rendered,
             """
-            <div test="hi" class="my-class button" style="height: 20px" lol="123">
+            <div test="hi" class="my-class button" style="height: 20px;" lol="123">
             """,
         )
 
