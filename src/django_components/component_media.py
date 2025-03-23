@@ -839,7 +839,7 @@ def _resolve_component_relative_files(
                 # If the path is a URL, don't resolve it
                 # (e.g. https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js)
                 # This is defined based on Django's `Media.absolute_path()` method.
-                is_url_path = isinstance(f, str) and f.startswith(("http://", "https", "/"))
+                is_url_path = isinstance(f, str) and f.startswith(("http://", "https://", "/"))
                 if is_url_path:
                     return [f]
                 return resolve_static_media_file(f, True)
