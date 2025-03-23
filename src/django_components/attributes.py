@@ -11,7 +11,6 @@ from django.utils.safestring import SafeString, mark_safe
 
 from django_components.node import BaseNode
 
-
 ClassValue = Union[Sequence["ClassValue"], str, Dict[str, bool]]
 StyleDict = Dict[str, Union[str, int, Literal[False], None]]
 StyleValue = Union[Sequence["StyleValue"], str, StyleDict]
@@ -149,7 +148,7 @@ def merge_attributes(*attrs: Dict) -> Dict:
     ```
 
     will result in
-    
+
     ```python
     {
         "my-attr": "my-value extra-value",
@@ -304,6 +303,7 @@ def normalize_class(value: ClassValue) -> str:
 
 
 whitespace_re = re.compile(r"\s+")
+
 
 # Similar to `normalize_class`, but returns a dict instead of a string.
 def _normalize_class(value: ClassValue) -> Dict[str, bool]:
