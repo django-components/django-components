@@ -243,7 +243,7 @@ Read more about [HTML attributes](../../concepts/fundamentals/html_attributes/).
 
 ### HTML fragment support
 
-`django-components` makes intergration with HTMX, AlpineJS or jQuery easy by allowing components to be rendered as HTML fragments:
+`django-components` makes integration with HTMX, AlpineJS or jQuery easy by allowing components to be rendered as HTML fragments:
 
 - Components's JS and CSS is loaded automatically when the fragment is inserted into the DOM.
 

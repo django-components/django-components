@@ -123,6 +123,9 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
 
 # TODO_V1 - Remove in v1, keep only `format_attributes` going forward
 attributes_to_string = format_attributes
+"""
+Deprecated. Use [`format_attributes`](../api#django_components.format_attributes) instead.
+"""
 
 
 def merge_attributes(*attrs: Dict) -> Dict:
@@ -157,7 +160,7 @@ def merge_attributes(*attrs: Dict) -> Dict:
     }
     ```
 
-    ### `class` attribute
+    **The `class` attribute**
 
     The `class` attribute can be given as a string, a list, or a dictionary.
 
@@ -185,7 +188,7 @@ def merge_attributes(*attrs: Dict) -> Dict:
     }
     ```
 
-    ### `style` attribute
+    **The `style` attribute**
 
     The `style` attribute can be given as a string, a list, or a dictionary.
 

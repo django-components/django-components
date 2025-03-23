@@ -13,7 +13,7 @@ as `key="value"` HTML attributes.
 - Remove attributes
 - Define default attributes
 
-From v0.131 onwards, [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag also supports merging [`style`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) and [`class`](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/class) attributes
+From v0.135 onwards, [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag also supports merging [`style`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) and [`class`](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/class) attributes
 the same way [how Vue does](https://vuejs.org/guide/essentials/class-and-style).
 
 To get started, let's consider a simple example. If you have a template:
@@ -471,6 +471,12 @@ Which will output:
 ```python
 'class="my-class text-red pa-4" data-id="123" required'
 ```
+
+!!! note
+
+    Prior to v0.135, the `format_attributes()` function was named `attributes_to_string()`.
+
+    This function is now deprecated and will be removed in v1.0.
 
 ## Cheat sheet
 
