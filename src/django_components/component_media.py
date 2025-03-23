@@ -832,11 +832,19 @@ def _resolve_component_relative_files(
         comp_media.css_file = resolve_relative_media_file(comp_media.css_file, False)[0]
 
     if hasattr(comp_media, "Media") and comp_media.Media:
+        def _resolve_media_file(
+            filepaths: Sequence[Union[str, SafeData]],
+        ) -> List[Union[str, SafeData]]:
+            return flatten(
+                [f] if isinstance(f, str) and f.startswith("http") else resolve_relative_media_file(f, True)
+                for f in filepaths
+            )
+
         _map_media_filepaths(
             comp_media.Media,
             # Media files can be defined as a glob patterns that match multiple files.
             # Thus, flatten the list of lists returned by `resolve_relative_media_file`.
-            lambda filepaths: flatten(resolve_relative_media_file(f, True) for f in filepaths),
+            _resolve_media_file
         )
 
         # Go over the JS / CSS media files again, but this time, if there are still any globs,
@@ -846,7 +854,7 @@ def _resolve_component_relative_files(
             comp_media.Media,
             # Media files can be defined as a glob patterns that match multiple files.
             # Thus, flatten the list of lists returned by `resolve_static_media_file`.
-            lambda filepaths: flatten(resolve_static_media_file(f, True) for f in filepaths),
+            _resolve_media_file
         )
 
 
