@@ -420,14 +420,14 @@ class TestComponentMedia:
 
         assertInHTML('<link href="https://cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
         assertInHTML('<link href="http://cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
-        # `://` is escaped because the path was resolved with Django's `static()`
-        assertInHTML('<link href="://cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
+        # `://` is escaped because Django's `Media.absolute_path()` doesn't consider `://` a valid URL
+        assertInHTML('<link href="%3A//cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
         assertInHTML('<link href="/path/to/style.css" media="all" rel="stylesheet">', rendered)
 
         assertInHTML('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
         assertInHTML('<script src="http://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
-        # `://` is escaped because the path was resolved with Django's `static()`
-        assertInHTML('<script src="://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
+        # `://` is escaped because Django's `Media.absolute_path()` doesn't consider `://` a valid URL
+        assertInHTML('<script src="%3A//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
         assertInHTML('<script src="/path/to/script.js"></script>', rendered)
 
 
