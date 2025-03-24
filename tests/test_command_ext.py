@@ -97,7 +97,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert output.strip() == "name\n====\nview"
+        assert output.strip() == "name    \n========\ndefaults\nview"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -108,7 +108,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert output.strip() == "name \n=====\nview \nempty\ndummy"
+        assert output.strip() == "name    \n========\ndefaults\nview    \nempty   \ndummy"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -119,7 +119,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--all")
         output = out.getvalue()
 
-        assert output.strip() == "name \n=====\nview \nempty\ndummy"
+        assert output.strip() == "name    \n========\ndefaults\nview    \nempty   \ndummy"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -130,7 +130,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--columns", "name")
         output = out.getvalue()
 
-        assert output.strip() == "name \n=====\nview \nempty\ndummy"
+        assert output.strip() == "name    \n========\ndefaults\nview    \nempty   \ndummy"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -141,7 +141,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--simple")
         output = out.getvalue()
 
-        assert output.strip() == "view \nempty\ndummy"
+        assert output.strip() == "defaults\nview    \nempty   \ndummy"
 
 
 @djc_test
@@ -159,18 +159,19 @@ class TestExtensionsRunCommand:
             output
             == dedent(
                 f"""
-                usage: components ext run [-h] {{view,empty,dummy}} ...
+                usage: components ext run [-h] {{defaults,view,empty,dummy}} ...
 
                 Run a command added by an extension.
 
                 {OPTIONS_TITLE}:
-                  -h, --help          show this help message and exit
+                  -h, --help            show this help message and exit
 
                 subcommands:
-                  {{view,empty,dummy}}
-                    view              Run commands added by the 'view' extension.
-                    empty             Run commands added by the 'empty' extension.
-                    dummy             Run commands added by the 'dummy' extension.
+                  {{defaults,view,empty,dummy}}
+                    defaults            Run commands added by the 'defaults' extension.
+                    view                Run commands added by the 'view' extension.
+                    empty               Run commands added by the 'empty' extension.
+                    dummy               Run commands added by the 'dummy' extension.
                 """
             ).lstrip()
         )

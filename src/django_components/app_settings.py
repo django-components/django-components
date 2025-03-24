@@ -750,9 +750,10 @@ class InternalSettings:
         )
 
         # Prepend built-in extensions
+        from django_components.extensions.defaults import DefaultsExtension
         from django_components.extensions.view import ViewExtension
 
-        extensions = [ViewExtension] + list(extensions)
+        extensions = [DefaultsExtension, ViewExtension] + list(extensions)
 
         # Extensions may be passed in either as classes or import strings.
         extension_instances: List["ComponentExtension"] = []

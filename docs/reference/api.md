@@ -75,6 +75,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.Default
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.EmptyDict
     options:
       show_if_no_docstring: true

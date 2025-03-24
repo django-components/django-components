@@ -40,6 +40,7 @@ from django_components.extension import (
     OnComponentInputContext,
     OnComponentDataContext,
 )
+from django_components.extensions.defaults import Default
 from django_components.extensions.view import ComponentView
 from django_components.library import TagProtectedError
 from django_components.node import BaseNode, template_tag
@@ -88,6 +89,7 @@ __all__ = [
     "component_formatter",
     "component_shorthand_formatter",
     "ContextBehavior",
+    "Default",
     "DynamicComponent",
     "EmptyTuple",
     "EmptyDict",
