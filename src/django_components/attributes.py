@@ -162,21 +162,17 @@ def merge_attributes(*attrs: Dict) -> Dict:
 
     **The `class` attribute**
 
-    The `class` attribute can be given as a string, a list, or a dictionary.
+    The `class` attribute can be given as a string, or a dictionary.
 
     - If given as a string, it is used as is.
     - If given as a dictionary, only the keys with a truthy value are used.
-    - If given as a list, each item is converted to a dict, the dicts are merged, and resolved as above.
 
     **Example:**
 
     ```python
     merge_attributes(
-        {"class": "my-class"},
-        {"class": [
-            "extra-class",
-            {"truthy": True, "falsy": False}
-        ]},
+        {"class": "my-class extra-class"},
+        {"class": {"truthy": True, "falsy": False}},
     )
     ```
 
@@ -194,17 +190,13 @@ def merge_attributes(*attrs: Dict) -> Dict:
 
     - If given as a string, it is used as is.
     - If given as a dictionary, it is converted to a style attribute string.
-    - If given as a list, each item is converted to a dict, the dicts are merged, and resolved as above.
 
     **Example:**
 
     ```python
     merge_attributes(
-        {"style": "color: red;"},
-        {"style": [
-            "background-color: blue;",
-            {"background-color": "green", "color": False}
-        ]},
+        {"style": "color: red; background-color: blue;"},
+        {"style": {"background-color": "green", "color": False}},
     )
     ```
 

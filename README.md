@@ -225,27 +225,21 @@ It supports:
 ```
 
 `{% html_attrs %}` offers a Vue-like granular control over `class` and `style` HTML attributes,
-where each class name or style property can be managed separately.
+where you can use a dictionary to manage each class name or style property separately.
 
 ```django
 {% html_attrs
-    class="foo"
-    class=[
-        "bar",
-        {"baz": True, "foo": False},
-        ["extra"],
-    ]
+    class="foo bar"
+    class={"baz": True, "foo": False}
+    class="extra"
 %}
 ```
 
 ```django
 {% html_attrs
-    style="text-align: center;",
-    style=[
-        "background-color: blue;",
-        {"background-color": "green", "color": None, "width": False},
-        ["position: absolute", {"height": "12px"}],
-    ]
+    style="text-align: center; background-color: blue;"
+    style={"background-color": "green", "color": None, "width": False}
+    style="position: absolute; height: 12px;"
 %}
 ```
 

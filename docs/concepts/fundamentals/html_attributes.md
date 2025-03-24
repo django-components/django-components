@@ -279,7 +279,9 @@ Renders:
 
 ### Merging `class` attributes
 
-The `class` attribute can be specified the same way as [seen in Vue](https://vuejs.org/guide/essentials/class-and-style) - as a string, a list, or a dictionary:
+The `class` attribute can be specified as a string of class names as usual.
+
+If you want granular control over individual class names, you can use a dictionary.
 
 - **String**: Used as is.
 
@@ -308,22 +310,6 @@ The `class` attribute can be specified the same way as [seen in Vue](https://vue
     <div class="extra-class"></div>
     ```
 
-- **List**: Used for merging - lists may contain strings, dictionaries, or other lists.
-
-    ```django
-    {% html_attrs class=[
-        "my-class",
-        {"extra-class": True},
-        ["other-class"],
-    ] %}
-    ```
-
-    Renders:
-
-    ```html
-    <div class="my-class extra-class other-class"></div>
-    ```
-
 If a certain class is specified multiple times, it's the last instance that decides whether the class is rendered or not.
 
 **Example:**
@@ -345,7 +331,9 @@ Renders:
 
 ### Merging `style` Attributes
 
-The `style` attribute can be specified the same way as [seen in Vue](https://vuejs.org/guide/essentials/class-and-style) - as a string, a list, or a dictionary:
+The `style` attribute can be specified as a string of style properties as usual.
+
+If you want granular control over individual style properties, you can use a dictionary.
 
 - **String**: Used as is.
 
@@ -374,21 +362,6 @@ The `style` attribute can be specified the same way as [seen in Vue](https://vue
     <div style="color: red; background-color: blue;"></div>
     ```
 
-- **List**: Used for merging - lists may contain strings, dictionaries, or other lists.
-
-    ```django
-    {% html_attrs style=[
-        "color: red; background-color: blue;",
-        {"color": "green", "background-color": None, "width": False},
-    ] %}
-    ```
-
-    Renders:
-
-    ```html
-    <div style="color: green; background-color: blue;"></div>
-    ```
-
 If a style property is specified multiple times, the last value is used.
 
 - If the last time the property is set is `False`, the property is removed.
@@ -403,10 +376,10 @@ Secondly, the `background-color` property is also set twice. But the second time
 The `color` property is set to a valid value in both cases, so the latter (`green`) is used.
 
 ```django
-{% html_attrs style=[
-    "color: red; background-color: blue; width: 100px;",
-    {"color": "green", "background-color": None, "width": False},
-] %}
+{% html_attrs
+    style="color: red; background-color: blue; width: 100px;"
+    style={"color": "green", "background-color": None, "width": False}
+%}
 ```
 
 Renders:
@@ -430,10 +403,8 @@ from django_components import merge_attributes
 
 merge_attributes(
     {"class": "my-class", "data-id": 123},
-    {"class": [
-        "extra-class",
-        {"cool-class": True, "uncool-class": False}
-    ]},
+    {"class": "extra-class"},
+    {"class": {"cool-class": True, "uncool-class": False} },
 )
 ```
 
