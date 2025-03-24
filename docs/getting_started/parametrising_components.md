@@ -68,7 +68,7 @@ from django_components import Component, register
 class Calendar(Component):
     template_file = "calendar.html"
     ...
-    def get_context_data(self, date: date, extra_class: str | None = None):
+    def get_context_data(self, date: date, extra_class: str = "text-blue"):
         return {
             "date": date,
             "extra_class": extra_class,
@@ -197,7 +197,7 @@ def to_workweek_date(d: date):
 class Calendar(Component):
     template_file = "calendar.html"
     ...
-    def get_context_data(self, date: date, extra_class: str | None = None):
+    def get_context_data(self, date: date, extra_class: str = "text-blue"):
         workweek_date = to_workweek_date(date)  # <--- new
         return {
             "date": workweek_date,  # <--- changed
@@ -220,3 +220,38 @@ the parametrized version of the component:
 ---
 
 Next, you will learn [how to use slots give your components even more flexibility ➡️](./adding_slots.md)
+
+### 5. Add defaults
+
+In our example, we've set the `extra_class` to default to `"text-blue"` by setting it in the
+[`get_context_data()`](../../reference/api#django_components.Component.get_context_data)
+method.
+
+However, you may want to use the same default value in multiple methods, like
+[`get_js_data()`](../../reference/api#django_components.Component.get_js_data)
+or [`get_css_data()`](../../reference/api#django_components.Component.get_css_data).
+
+To make things easier, Components can specify their defaults. Defaults are used when
+no value is provided, or when the value is set to `None` for a particular input.
+
+To define defaults for a component, you create a nested `Defaults` class within your
+[`Component`](../../reference/api#django_components.Component) class.
+Each attribute in the `Defaults` class represents a default value for a corresponding input.
+
+```py
+from django_components import Component, Default, register
+
+@register("calendar")
+class Calendar(Component):
+    template_file = "calendar.html"
+
+    class Defaults:  # <--- new
+        extra_class = "text-blue"
+
+    def get_context_data(self, date: date, extra_class: str):  # <--- changed
+        workweek_date = to_workweek_date(date)
+        return {
+            "date": workweek_date,
+            "extra_class": extra_class,
+        }
+```

@@ -293,7 +293,7 @@ class TestComponent:
         class TestComponent(Component):
             @no_type_check
             def get_context_data(self, var1, var2, variable, another, **attrs):
-                assert self.input.args == (123, "str")
+                assert self.input.args == [123, "str"]
                 assert self.input.kwargs == {"variable": "test", "another": 1}
                 assert isinstance(self.input.context, Context)
                 assert list(self.input.slots.keys()) == ["my_slot"]
@@ -305,7 +305,7 @@ class TestComponent:
 
             @no_type_check
             def get_template(self, context):
-                assert self.input.args == (123, "str")
+                assert self.input.args == [123, "str"]
                 assert self.input.kwargs == {"variable": "test", "another": 1}
                 assert isinstance(self.input.context, Context)
                 assert list(self.input.slots.keys()) == ["my_slot"]

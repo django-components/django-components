@@ -962,6 +962,8 @@ class Component(
             - `"document"` (default) - JS dependencies are inserted into `{% component_js_dependencies %}`,
               or to the end of the `<body>` tag. CSS dependencies are inserted into
               `{% component_css_dependencies %}`, or the end of the `<head>` tag.
+            - `"fragment"` - `{% component_js_dependencies %}` and `{% component_css_dependencies %}`,
+              are ignored, and a script that loads the JS and CSS dependencies is appended to the HTML.
         - `request` - The request object. This is only required when needing to use RequestContext,
                       e.g. to enable template `context_processors`.
 
@@ -1030,6 +1032,8 @@ class Component(
             - `"document"` (default) - JS dependencies are inserted into `{% component_js_dependencies %}`,
               or to the end of the `<body>` tag. CSS dependencies are inserted into
               `{% component_css_dependencies %}`, or the end of the `<head>` tag.
+            - `"fragment"` - `{% component_js_dependencies %}` and `{% component_css_dependencies %}`,
+              are ignored, and a script that loads the JS and CSS dependencies is appended to the HTML.
         - `render_dependencies` - Set this to `False` if you want to insert the resulting HTML into another component.
         - `request` - The request object. This is only required when needing to use RequestContext,
                       e.g. to enable template `context_processors`.
@@ -1107,9 +1111,14 @@ class Component(
                     request = parent_comp_ctx.request
 
         # Allow to provide no args/kwargs/slots/context
-        args = cast(ArgsType, args or ())
-        kwargs = cast(KwargsType, kwargs or {})
-        slots_untyped = self._normalize_slot_fills(slots or {}, escape_slots_content)
+        # NOTE: We make copies of args / kwargs / slots, so that plugins can modify them
+        # without affecting the original values.
+        args = cast(ArgsType, list(args) if args is not None else ())
+        kwargs = cast(KwargsType, dict(kwargs) if kwargs is not None else {})
+        slots_untyped = self._normalize_slot_fills(
+            dict(slots) if slots is not None else {},
+            escape_slots_content,
+        )
         slots = cast(SlotsType, slots_untyped)
         # Use RequestContext if request is provided, so that child non-component template tags
         # can access the request object too.
