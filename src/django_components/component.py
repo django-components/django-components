@@ -85,7 +85,6 @@ from django_components.util.exception import component_error_message
 from django_components.util.logger import trace_component_msg
 from django_components.util.misc import gen_id, get_import_path, hash_comp_cls
 from django_components.util.template_tag import TagAttr
-from django_components.util.validation import validate_typed_dict, validate_typed_tuple
 from django_components.util.weakref import cached_ref
 
 # TODO_REMOVE_IN_V1 - Users should use top-level import instead
@@ -1093,10 +1092,6 @@ class Component(
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
     ) -> str:
-        # NOTE: We must run validation before we normalize the slots, because the normalization
-        #       wraps them in functions.
-        self._validate_inputs(args or (), kwargs or {}, slots or {})
-
         # Allow to pass down Request object via context.
         # `context` may be passed explicitly via `Component.render()` and `Component.render_to_response()`,
         # or implicitly via `{% component %}` tag.
@@ -1230,7 +1225,6 @@ class Component(
             # TODO - enable JS and CSS vars - EXPOSE AND DOCUMENT AND MAKE NON-NULL
             js_data = self.get_js_data(*args, **kwargs) if hasattr(self, "get_js_data") else {}  # type: ignore
             css_data = self.get_css_data(*args, **kwargs) if hasattr(self, "get_css_data") else {}  # type: ignore
-        self._validate_outputs(data=context_data)
 
         extensions.on_component_data(
             OnComponentDataContext(
@@ -1488,99 +1482,6 @@ class Component(
             norm_fills[slot_name] = slot
 
         return norm_fills
-
-    # #####################################
-    # VALIDATION
-    # #####################################
-
-    def _get_types(self) -> Optional[Tuple[Any, Any, Any, Any, Any, Any]]:
-        """
-        Extract the types passed to the Component class.
-
-        So if a component subclasses Component class like so
-
-        ```py
-        class MyComp(Component[MyArgs, MyKwargs, MySlots, MyData, MyJsData, MyCssData]):
-            ...
-        ```
-
-        Then we want to extract the tuple (MyArgs, MyKwargs, MySlots, MyData, MyJsData, MyCssData).
-
-        Returns `None` if types were not provided. That is, the class was subclassed
-        as:
-
-        ```py
-        class MyComp(Component):
-            ...
-        ```
-        """
-        # For efficiency, the type extraction is done only once.
-        # If `self._types` is `False`, that means that the types were not specified.
-        # If `self._types` is `None`, then this is the first time running this method.
-        # Otherwise, `self._types` should be a tuple of (Args, Kwargs, Data, Slots)
-        if self._types == False:  # noqa: E712
-            return None
-        elif self._types:
-            return self._types
-
-        # Since a class can extend multiple classes, e.g.
-        #
-        # ```py
-        # class MyClass(BaseOne, BaseTwo, ...):
-        #     ...
-        # ```
-        #
-        # Then we need to find the base class that is our `Component` class.
-        #
-        # NOTE: __orig_bases__ is a tuple of _GenericAlias
-        # See https://github.com/python/cpython/blob/709ef004dffe9cee2a023a3c8032d4ce80513582/Lib/typing.py#L1244
-        # And https://github.com/python/cpython/issues/101688
-        generics_bases: Tuple[Any, ...] = self.__orig_bases__  # type: ignore[attr-defined]
-        component_generics_base = None
-        for base in generics_bases:
-            origin_cls = base.__origin__
-            if origin_cls == Component or issubclass(origin_cls, Component):
-                component_generics_base = base
-                break
-
-        if not component_generics_base:
-            # If we get here, it means that the Component class wasn't supplied any generics
-            self._types = False
-            return None
-
-        # If we got here, then we've found ourselves the typed Component class, e.g.
-        #
-        # `Component(Tuple[int], MyKwargs, MySlots, Any, Any, Any)`
-        #
-        # By accessing the __args__, we access individual types between the brackets, so
-        #
-        # (Tuple[int], MyKwargs, MySlots, Any, Any, Any)
-        args_type, kwargs_type, slots_type, data_type, js_data_type, css_data_type = component_generics_base.__args__
-
-        self._types = args_type, kwargs_type, slots_type, data_type, js_data_type, css_data_type
-        return self._types
-
-    def _validate_inputs(self, args: Tuple, kwargs: Any, slots: Any) -> None:
-        maybe_inputs = self._get_types()
-        if maybe_inputs is None:
-            return
-        args_type, kwargs_type, slots_type, data_type, js_data_type, css_data_type = maybe_inputs
-
-        # Validate args
-        validate_typed_tuple(args, args_type, f"Component '{self.name}'", "positional argument")
-        # Validate kwargs
-        validate_typed_dict(kwargs, kwargs_type, f"Component '{self.name}'", "keyword argument")
-        # Validate slots
-        validate_typed_dict(slots, slots_type, f"Component '{self.name}'", "slot")
-
-    def _validate_outputs(self, data: Any) -> None:
-        maybe_inputs = self._get_types()
-        if maybe_inputs is None:
-            return
-        args_type, kwargs_type, slots_type, data_type, js_data_type, css_data_type = maybe_inputs
-
-        # Validate data
-        validate_typed_dict(data, data_type, f"Component '{self.name}'", "data")
 
 
 # Perf

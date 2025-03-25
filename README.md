@@ -327,13 +327,20 @@ Django-components functionality can be extended with "extensions". Extensions al
 
 - Tap into lifecycle events, such as when a component is created, deleted, or registered.
 - Add new attributes and methods to the components under an extension-specific nested class.
+- Add custom CLI commands.
+- Add custom URLs.
+
+Some of the extensions include:
+
+- [Django View integration](https://github.com/django-components/django-components/blob/master/src/django_components/extensions/view.py)
+- [Component defaults](https://github.com/django-components/django-components/blob/master/src/django_components/extensions/defaults.py)
+- [Pydantic integration (input validation)](https://github.com/django-components/djc-ext-pydantic)
 
 Some of the planned extensions include:
 
 - Caching
 - AlpineJS integration
 - Storybook integration
-- Pydantic validation
 - Component-level benchmarking with asv
 
 ### Simple testing
