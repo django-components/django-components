@@ -23,6 +23,55 @@ where each class name or style property can be managed separately.
     %}
     ```
 
+    Read more on [HTML attributes](https://django-components.github.io/django-components/0.135/concepts/fundamentals/html_attributes/).
+
+- It's now easier to create URLs for component views.
+
+    Before, you had to call `Component.as_view()` and pass that to `urlpatterns`.
+    
+    Now this can be done for you if you set `Component.Url.public` to `True`:
+
+    ```py
+    class MyComponent(Component):
+        class Url:
+            public = True
+        ...
+    ```
+
+    Then, to get the URL for the component, use `get_component_url()`:
+
+    ```py
+    from django_components import get_component_url
+
+    url = get_component_url(MyComponent)
+    ```
+
+    This way you don't have to mix your app URLs with component URLs.
+
+    Read more on [Component views and URLs](https://django-components.github.io/django-components/0.135/concepts/fundamentals/component_views_urls/).
+
+#### Deprecation
+
+- Currently, view request handlers such as `get()` and `post()` methods can be defined
+  directly on the `Component` class:
+
+    ```py
+    class MyComponent(Component):
+        def get(self, request):
+            return self.render_to_response()
+    ```
+
+    Or, nested within the `Component.View` class:
+
+    ```py
+    class MyComponent(Component):
+        class View:
+            def get(self, request):
+                return self.render_to_response()
+    ```
+
+    In v1, these methods should be defined only on the `Component.View` class instead.
+
 ## v0.134
 
 #### Fix

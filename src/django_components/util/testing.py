@@ -533,6 +533,9 @@ def _clear_djc_global_state(
         sys.modules.pop(mod, None)
     LOADED_MODULES.clear()
 
+    # Clear extensions caches
+    extensions._route_to_url.clear()
+
     # Force garbage collection, so that any finalizers are run.
     # If garbage collection is skipped, then in some cases the finalizers
     # are run too late, in the context of the next test, causing flaky tests.

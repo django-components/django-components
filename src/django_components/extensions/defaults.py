@@ -119,6 +119,24 @@ def _apply_defaults(kwargs: Dict, defaults: List[ComponentDefaultField]) -> None
         kwargs[default_field.key] = default_value
 
 
+class ComponentDefaults(ComponentExtension.ExtensionClass):
+    """
+    The interface for `Component.Defaults`.
+
+    The fields of this class are used to set default values for the component's kwargs.
+
+    **Example:**
+    ```python
+    from django_components import Component, Default
+
+    class MyComponent(Component):
+        class Defaults:
+            position = "left"
+            selected_items = Default(lambda: [1, 2, 3])
+    """
+    pass
+
+
 class DefaultsExtension(ComponentExtension):
     """
     This extension adds a nested `Defaults` class to each `Component`.
@@ -141,6 +159,7 @@ class DefaultsExtension(ComponentExtension):
     """
 
     name = "defaults"
+    ExtensionClass = ComponentDefaults
 
     # Preprocess the `Component.Defaults` class, if given, so we don't have to do it
     # each time a component is rendered.

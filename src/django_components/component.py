@@ -60,7 +60,9 @@ from django_components.extension import (
     OnComponentInputContext,
     extensions,
 )
-from django_components.extensions.view import ViewFn
+from django_components.extensions.defaults import ComponentDefaults
+from django_components.extensions.view import ViewFn, ComponentView
+from django_components.extensions.url import ComponentUrl
 from django_components.node import BaseNode
 from django_components.perfutil.component import ComponentRenderer, component_context_cache, component_post_render
 from django_components.perfutil.provide import register_provide_reference, unregister_provide_reference
@@ -571,6 +573,19 @@ class Component(
         pass
 
     # #####################################
+    # EXTENSIONS
+    # #####################################
+
+    # NOTE: These are the classes and instances added by defaults extensions. These fields
+    # are actually set at runtime, and so here they are only marked for typing.
+    Defaults: Type[ComponentDefaults]
+    defaults: ComponentDefaults
+    View: Type[ComponentView]
+    view: ComponentView
+    Url: Type[ComponentUrl]
+    url: ComponentUrl
+
+    # #####################################
     # MISC
     # #####################################
 
@@ -899,6 +914,8 @@ class Component(
     def as_view(cls, **initkwargs: Any) -> ViewFn:
         """
         Shortcut for calling `Component.View.as_view` and passing component instance to it.
+
+        Read more on [Component views and URLs](../../concepts/fundamentals/component_views_urls).
         """
 
         # NOTE: `Component.View` may not be available at the time that URLs are being

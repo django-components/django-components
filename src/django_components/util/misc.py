@@ -5,6 +5,7 @@ from importlib import import_module
 from itertools import chain
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from weakref import WeakKeyDictionary
 
 from django_components.util.nanoid import generate
 
@@ -112,9 +113,20 @@ def is_nonempty_str(txt: Optional[str]) -> bool:
     return txt is not None and bool(txt.strip())
 
 
-def hash_comp_cls(comp_cls: Type["Component"]) -> str:
-    full_name = get_import_path(comp_cls)
-    comp_cls_hash = md5(full_name.encode()).hexdigest()[0:6]
+_component_hash_cache: WeakKeyDictionary = WeakKeyDictionary()
+
+
+# Convert Component class to something like `TableComp_a91d03`
+def hash_comp_cls(comp_cls: Type["Component"], include_name: bool = True) -> str:
+    if comp_cls not in _component_hash_cache:
+        full_name = get_import_path(comp_cls)
+        comp_cls_hash = md5(full_name.encode()).hexdigest()[0:6]
+        _component_hash_cache[comp_cls] = comp_cls_hash
+
+    comp_cls_hash = _component_hash_cache[comp_cls]
+
+    if not include_name:
+        return comp_cls_hash
     return comp_cls.__name__ + "_" + comp_cls_hash
 
 

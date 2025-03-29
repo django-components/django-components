@@ -1,9 +1,9 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, TypeVar, Union
 
 import django.urls
 from django.template import Context
-from django.urls import URLResolver
+from django.urls import URLPattern, URLResolver, get_resolver, get_urlconf
 
 from django_components.app_settings import app_settings
 from django_components.compat.django import routes_to_django
@@ -488,8 +488,12 @@ class ExtensionManager:
     # Internal
     ###########################
 
-    _initialized = False
-    _events: List[Tuple[str, Any]] = []
+    def __init__(self) -> None:
+        self._initialized = False
+        self._events: List[Tuple[str, Any]] = []
+        self._url_resolvers: Dict[str, URLResolver] = {}
+        # Keep track of which URLRoute (framework-agnostic) maps to which URLPattern (Django-specific)
+        self._route_to_url: Dict[URLRoute, Union[URLPattern, URLResolver]] = {}
 
     @property
     def extensions(self) -> List[ComponentExtension]:
@@ -620,9 +624,14 @@ class ExtensionManager:
         # TODO_V3 - Django-specific logic - replace with hook
         urls: List[URLResolver] = []
         for extension in self.extensions:
-            ext_urls = routes_to_django(extension.urls)
-            ext_url_path = django.urls.path(f"{extension.name}/", django.urls.include(ext_urls))
-            urls.append(ext_url_path)
+            # NOTE: The empty list is a placeholder for the URLs that will be added later
+            curr_ext_url_resolver = django.urls.path(f"{extension.name}/", django.urls.include([]))
+            urls.append(curr_ext_url_resolver)
+
+            # Remember which extension the URLResolver belongs to
+            self._url_resolvers[extension.name] = curr_ext_url_resolver
+
+            self.add_extension_urls(extension.name, extension.urls)
 
         # NOTE: `urlconf_name` is the actual source of truth that holds either a list of URLPatterns
         # or an import string thereof.
@@ -631,8 +640,8 @@ class ExtensionManager:
         # So we set both:
         # - `urlconf_name` to update the source of truth
         # - `url_patterns` to override the caching
-        ext_url_resolver.urlconf_name = urls
-        ext_url_resolver.url_patterns = urls
+        extensions_url_resolver.urlconf_name = urls
+        extensions_url_resolver.url_patterns = urls
 
     def get_extension(self, name: str) -> ComponentExtension:
         for extension in self.extensions:
@@ -646,6 +655,56 @@ class ExtensionManager:
             if command.name == command_name:
                 return command
         raise ValueError(f"Command {command_name} not found in extension {name}")
+
+    def add_extension_urls(self, name: str, urls: List[URLRoute]) -> None:
+        if not self._initialized:
+            raise RuntimeError("Cannot add extension URLs before initialization")
+
+        url_resolver = self._url_resolvers[name]
+        all_urls = url_resolver.url_patterns
+        new_urls = routes_to_django(urls)
+
+        did_add_urls = False
+
+        # Allow to add only those routes that are not yet added
+        for route, urlpattern in zip(urls, new_urls):
+            if route in self._route_to_url:
+                raise ValueError(f"URLRoute {route} already exists")
+            self._route_to_url[route] = urlpattern
+            all_urls.append(urlpattern)
+            did_add_urls = True
+
+        # Force Django's URLResolver to update its lookups, so things like `reverse()` work
+        if did_add_urls:
+            # Django's root URLResolver
+            urlconf = get_urlconf()
+            root_resolver = get_resolver(urlconf)
+            root_resolver._populate()
+    
+    def remove_extension_urls(self, name: str, urls: List[URLRoute]) -> None:
+        if not self._initialized:
+            raise RuntimeError("Cannot remove extension URLs before initialization")
+
+        url_resolver = self._url_resolvers[name]
+        urls_to_remove = routes_to_django(urls)
+        all_urls = url_resolver.url_patterns
+
+        # Remove the URLs in reverse order, so that we don't have to deal with index shifting
+        for index in reversed(range(len(all_urls))):
+            if not urls_to_remove:
+                break
+
+            # Instead of simply checking if the URL is in the `urls_to_remove` list, we search for
+            # the index of the URL within the `urls_to_remove` list, so we can remove it from there.
+            # That way, in theory, the iteration should be faster as the list gets smaller.
+            try:
+                found_index = urls_to_remove.index(all_urls[index])
+            except ValueError:
+                found_index = -1
+
+            if found_index != -1:
+                all_urls.pop(index)
+                urls_to_remove.pop(found_index)
 
     #############################
     # Component lifecycle hooks
@@ -717,4 +776,4 @@ urlpatterns = [
 #
 #       As such, we lazily set the extensions' routes to the `URLResolver` object. And we use the `include()
 #       and `path()` funtions above to ensure that the `URLResolver` object is created correctly.
-ext_url_resolver: URLResolver = urlpatterns[0]
+extensions_url_resolver: URLResolver = urlpatterns[0]

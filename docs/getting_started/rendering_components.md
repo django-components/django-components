@@ -25,7 +25,7 @@ class Calendar(Component):
         }
 ```
 
-### 1. Render the template that contains the `{% component %}` tag
+### 1. Render the template
 
 If you have embedded the component in a Django template using the
 [`{% component %}`](../../reference/template_tags#component) tag:
@@ -74,7 +74,7 @@ template = Template("""
 rendered_template = template.render()
 ```
 
-### 2. Render the component directly with [`Component.render()`](../../reference/api#django_components.Component.render)
+### 2. Render the component
 
 You can also render the component directly with [`Component.render()`](../../reference/api#django_components.Component.render), without wrapping the component in a template.
 
@@ -115,7 +115,7 @@ rendered_component = calendar.render(
 
     The `request` object is required for some of the component's features, like using [Django's context processors](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.RequestContext).
 
-### 3. Render the component directly with [`Component.render_to_response()`](../../reference/api#django_components.Component.render_to_response)
+### 3. Render the component to HttpResponse
 
 A common pattern in Django is to render the component and then return the resulting HTML as a response to an HTTP request.
 
@@ -159,3 +159,132 @@ def my_view(request):
     class SimpleComponent(Component):
         response_class = MyCustomResponse
     ```
+
+### Rendering slots
+
+Slots content are automatically escaped by default to prevent XSS attacks.
+
+In other words, it's as if you would be using Django's [`mark_safe()`](https://docs.djangoproject.com/en/5.0/ref/utils/#django.utils.safestring.mark_safe) function on the slot content:
+
+```python
+from django.utils.safestring import mark_safe
+
+class Calendar(Component):
+    template = """
+        <div>
+            {% slot "date" default date=date / %}
+        </div>
+    """
+
+Calendar.render(
+    slots={
+        "date": mark_safe("<b>Hello</b>"),
+    }
+)
+```
+
+To disable escaping, you can pass `escape_slots_content=False` to
+[`Component.render()`](../../reference/api#django_components.Component.render)
+or [`Component.render_to_response()`](../../reference/api#django_components.Component.render_to_response)
+methods.
+
+!!! warning
+
+    If you disable escaping, you should make sure that any content you pass to the slots is safe,
+    especially if it comes from user input!
+
+!!! info
+
+    If you're planning on passing an HTML string, check Django's use of
+    [`format_html`](https://docs.djangoproject.com/en/5.0/ref/utils/#django.utils.html.format_html)
+    and [`mark_safe`](https://docs.djangoproject.com/en/5.0/ref/utils/#django.utils.safestring.mark_safe).
+
+### Component views and URLs
+
+For web applications, it's common to define endpoints that serve HTML content (AKA views).
+
+If this is your case, you can define the view request handlers directly on your component by using the nested[`Component.View`](../../reference/api#django_components.Component.View) class.
+
+This is a great place for:
+
+- Endpoints that render whole pages, if your component
+  is a page component.
+
+- Endpoints that render the component as HTML fragments, to be used with HTMX or similar libraries.
+
+Read more on [Component views and URLs](../../concepts/fundamentals/component_views_urls).
+
+```djc_py title="[project root]/components/calendar.py"
+from django_components import Component, ComponentView, register
+
+@register("calendar")
+class Calendar(Component):
+    template = """
+        <div class="calendar-component">
+            <div class="header">
+                {% slot "header" / %}
+            </div>
+            <div class="body">
+                Today's date is <span>{{ date }}</span>
+            </div>
+        </div>
+    """
+
+    class View:
+        # Handle GET requests
+        def get(self, request, *args, **kwargs):
+            # Return HttpResponse with the rendered content
+            return Calendar.render_to_response(
+                kwargs={
+                    "date": request.GET.get("date", "2020-06-06"),
+                },
+                slots={
+                    "header": "Calendar header",
+                },
+            )
+```
+
+!!! info
+
+    The View class supports all the same HTTP methods as Django's [`View`](https://docs.djangoproject.com/en/5.1/ref/class-based-views/base/#django.views.generic.base.View) class. These are:
+
+    `get()`, `post()`, `put()`, `patch()`, `delete()`, `head()`, `options()`, `trace()`
+
+    Each of these receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.1/ref/request-response/#django.http.HttpRequest) object as the first argument.
+
+Next, you need to set the URL for the component.
+
+You can either:
+
+1. Automatically assign the URL by setting the [`Component.Url.public`](../../reference/api#django_components.ComponentUrl.public) attribute to `True`.
+
+    In this case, use [`get_component_url()`](../../reference/api#django_components.get_component_url) to get the URL for the component view.
+
+    ```djc_py
+    from django_components import Component, get_component_url
+
+    class Calendar(Component):
+        class Url:
+            public = True
+
+    url = get_component_url(Calendar)
+    ```
+
+2. Manually assign the URL by setting [`Component.as_view()`](../../reference/api#django_components.Component.as_view) to your `urlpatterns`:
+
+    ```djc_py
+    from django.urls import path
+    from components.calendar import Calendar
+
+    urlpatterns = [
+        path("calendar/", Calendar.as_view()),
+    ]
+    ```
+
+And with that, you're all set! When you visit the URL, the component will be rendered and the content will be returned.
+
+The `get()`, `post()`, etc methods will receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.1/ref/request-response/#django.http.HttpRequest) object as the first argument. So you can parametrize how the component is rendered for example by passing extra query parameters to the URL:
+
+```
+http://localhost:8000/calendar/?date=2024-12-13
+```

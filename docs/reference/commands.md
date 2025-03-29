@@ -461,8 +461,8 @@ ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAc
 ## `upgradecomponent`
 
 ```txt
-usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
-                        [--skip-checks]
+usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH]
+                        [--traceback] [--no-color] [--force-color] [--skip-checks]
 
 ```
 
@@ -506,8 +506,9 @@ Deprecated. Use `components upgrade` instead.
 ## `startcomponent`
 
 ```txt
-usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run] [--version] [-v {0,1,2,3}]
-                      [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color] [--skip-checks]
+usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run]
+                      [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback]
+                      [--no-color] [--force-color] [--skip-checks]
                       name
 
 ```

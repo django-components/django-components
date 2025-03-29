@@ -100,6 +100,25 @@ name | type | description
 `name` | `str` | The name the component was registered under
 `registry` | [`ComponentRegistry`](../api#django_components.ComponentRegistry) | The registry the component was registered to
 
+::: django_components.extension.ComponentExtension.on_component_rendered
+    options:
+      show_root_heading: true
+      show_signature: true
+      separate_signature: true
+      show_symbol_type_heading: false
+      show_symbol_type_toc: false
+      show_if_no_docstring: true
+      show_labels: false
+
+**Available data:**
+
+name | type | description
+--|--|--
+`component` | [`Component`](../api#django_components.Component) | The Component instance that is being rendered
+`component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class
+`component_id` | `str` | The unique identifier for this component instance
+`template` | `str` | The rendered template
+
 ::: django_components.extension.ComponentExtension.on_component_unregistered
     options:
       show_root_heading: true

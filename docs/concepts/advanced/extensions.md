@@ -65,10 +65,10 @@ to configure the extensions on a per-component basis.
 
 ### Example: Component as View
 
-The [Components as Views](../../fundamentals/components_as_views) feature is actually implemented as an extension
+The [Components as Views](../../fundamentals/component_views_urls) feature is actually implemented as an extension
 that is configured by a `View` nested class.
 
-You can override the `get`, `post`, etc methods to customize the behavior of the component as a view:
+You can override the `get()`, `post()`, etc methods to customize the behavior of the component as a view:
 
 ```python
 class MyTable(Component):

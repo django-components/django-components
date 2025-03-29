@@ -10,6 +10,6 @@ nav:
   - HTML attributes: html_attributes.md
   - Defining HTML / JS / CSS files: defining_js_css_html_files.md
   - Autodiscovery: autodiscovery.md
-  - Components as views: components_as_views.md
+  - Component views and URLs: component_views_urls.md
   - HTTP Request: http_request.md
   - Subclassing components: subclassing_components.md

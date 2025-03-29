@@ -1,10 +1,10 @@
 from argparse import ArgumentParser
-from typing import Any, List, Optional, Type
+from typing import Any, Iterable, List, Optional, Type, Union
 
 import django
 import django.urls as django_urls
 from django.core.management.base import BaseCommand as DjangoCommand
-from django.urls import URLPattern
+from django.urls import URLPattern, URLResolver
 
 from django_components.util.command import (
     CommandArg,
@@ -128,7 +128,7 @@ def load_as_django_command(command: Type[ComponentCommand]) -> Type[DjangoComman
 ################################################
 
 
-def routes_to_django(routes: List[URLRoute]) -> List[URLPattern]:
+def routes_to_django(routes: Iterable[URLRoute]) -> List[Union[URLPattern, URLResolver]]:
     """
     Convert a list of `URLRoute` objects to a list of `URLPattern` objects.
 
@@ -149,7 +149,7 @@ def routes_to_django(routes: List[URLRoute]) -> List[URLPattern]:
     ])
     ```
     """
-    django_routes: List[URLPattern] = []
+    django_routes: List[Union[URLPattern, URLResolver]] = []
     for route in routes:
         # The handler is equivalent to `view` function in Django
         if route.handler is not None:
