@@ -1,5 +1,22 @@
 # Release notes
 
+## 🚨📢 v0.136
+
+#### 🚨📢 BREAKING CHANGES
+
+- Component input validation was moved to a separate extension [`djc-ext-pydantic`](https://github.com/django-components/djc-ext-pydantic).
+
+    If you relied on components raising errors when inputs were invalid, you need to install `djc-ext-pydantic` and add it to extensions:
+
+    ```python
+    # settings.py
+    COMPONENTS = {
+        "extensions": [
+            "djc_ext_pydantic.PydanticExtension",
+        ],
+    }
+    ```
+
 ## v0.135
 
 #### Feat
