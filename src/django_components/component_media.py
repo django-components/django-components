@@ -974,6 +974,6 @@ def _get_asset(
             raise ValueError(f"Could not find {inlined_attr} file {asset_file}")
 
         # NOTE: Use explicit encoding for compat with Windows, see #1074
-        asset_content = Path(full_path).read_text(encoding='utf8')
+        asset_content = Path(full_path).read_text(encoding="utf8")
 
     return asset_content
