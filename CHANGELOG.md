@@ -4,6 +4,39 @@
 
 #### Feat
 
+- Add defaults for the component inputs with the `Component.Defaults` nested class. Defaults
+  are applied if the argument is not given, or if it set to `None`.
+  
+  For lists, dictionaries, or other objects, wrap the value in `Default()` class to mark it as a factory
+  function:
+
+    ```python
+    from django_components import Default
+
+    class Table(Component):
+        class Defaults:
+            position = "left"
+            width = "200px"
+            options = Default(lambda: ["left", "right", "center"])
+
+        def get_context_data(self, position, width, options):
+            return {
+                "position": position,
+                "width": width,
+                "options": options,
+            }
+
+    # `position` is used as given, `"right"`
+    # `width` uses default because it's `None`
+    # `options` uses default because it's missing
+    Table.render(
+        kwargs={
+            "position": "right",
+            "width": None,
+        }
+    )
+    ```
+
 - `{% html_attrs %}` now offers a Vue-like granular control over `class` and `style` HTML attributes,
 where each class name or style property can be managed separately.
 
