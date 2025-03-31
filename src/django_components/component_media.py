@@ -874,12 +874,16 @@ def resolve_media_file(
     if is_url_path:
         return [filepath], False
 
-    # The path may be a glob. So before we check if the file exists,
-    # we need to resolve the glob.
+    # The path may be a glob, which we need to resolve
     if allow_glob and is_glob(filepath_abs_or_glob):
+        # Since globs are matched against the files, then we know that these files exist.
         matched_abs_filepaths = glob.glob(filepath_abs_or_glob)
     else:
-        matched_abs_filepaths = [filepath_abs_or_glob]
+        # But if we were given non-glob file path, then we need to check if it exists.
+        if Path(filepath_abs_or_glob).exists():
+            matched_abs_filepaths = [filepath_abs_or_glob]
+        else:
+            matched_abs_filepaths = []
 
     # If there are no matches, return the original filepath
     if not matched_abs_filepaths:
