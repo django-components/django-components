@@ -972,6 +972,8 @@ def _get_asset(
         if full_path is None:
             # NOTE: The short name, e.g. `js` or `css` is used in the error message for convenience
             raise ValueError(f"Could not find {inlined_attr} file {asset_file}")
-        asset_content = Path(full_path).read_text()
+
+        # NOTE: Use explicit encoding for compat with Windows, see #1074
+        asset_content = Path(full_path).read_text(encoding='utf8')
 
     return asset_content
