@@ -140,7 +140,6 @@ def prepare_templating_benchmark(
     context_mode: DjcContextMode,
     imports_only: bool = False,
 ):
-    global do_render
     setup_script = _get_templating_script(renderer, size, context_mode, imports_only)
 
     # If we're testing the startup time, then the setup is actually the tested code

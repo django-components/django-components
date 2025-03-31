@@ -447,7 +447,6 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
         return False
 
     def taken_n(n: int) -> str:
-        nonlocal index
         result = text[index : index + n]  # noqa: E203
         add_token(result)
         return result
@@ -457,9 +456,6 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
         tokens: Union[List[str], Tuple[str, ...]],
         ignore: Optional[Sequence[str]] = None,
     ) -> str:
-        nonlocal index
-        nonlocal text
-
         result = ""
         while not is_at_end():
             char = text[index]
@@ -483,9 +479,6 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
 
     # tag_name = take_while([" ", "\t", "\n", "\r", "\f"])
     def take_while(tokens: Union[List[str], Tuple[str, ...]]) -> str:
-        nonlocal index
-        nonlocal text
-
         result = ""
         while not is_at_end():
             char = text[index]
