@@ -56,6 +56,11 @@ where each class name or style property can be managed separately.
     %}
     ```
 
+#### Fix
+
+- Fix compat with Windows when reading component files ([#1074](https://github.com/django-components/django-components/issues/1074))
+- Fix resolution of component media files edge case ([#1073](https://github.com/django-components/django-components/issues/1073))
+
 ## v0.134
 
 #### Fix
