@@ -178,9 +178,9 @@ class Button(Component[EmptyTuple, EmptyDict, EmptyDict, EmptyDict, EmptyDict, E
 
 !!! warning
 
-    Input validation was part of Django Components from version 0.96 to 0.134.
+    Input validation was part of Django Components from version 0.96 to 0.135.
 
-    Since v0.135, input validation is available as a separate extension.
+    Since v0.136, input validation is available as a separate extension.
 
 To enable input validation, you need to install the [`djc-ext-pydantic`](https://github.com/django-components/djc-ext-pydantic) extension:
 
