@@ -40,7 +40,8 @@ from django_components.extension import (
     OnComponentInputContext,
     OnComponentDataContext,
 )
-from django_components.extensions.defaults import Default
+from django_components.extensions.cache import ComponentCache
+from django_components.extensions.defaults import ComponentDefaults, Default
 from django_components.extensions.view import ComponentView
 from django_components.extensions.url import ComponentUrl, get_component_url
 from django_components.library import TagProtectedError
@@ -76,9 +77,10 @@ __all__ = [
     "CommandLiteralAction",
     "CommandParserInput",
     "CommandSubcommand",
-    "ComponentCommand",
-    "ComponentsSettings",
     "Component",
+    "ComponentCache",
+    "ComponentCommand",
+    "ComponentDefaults",
     "ComponentExtension",
     "ComponentFileEntry",
     "ComponentFormatter",
@@ -88,6 +90,7 @@ __all__ = [
     "ComponentVars",
     "ComponentView",
     "ComponentUrl",
+    "ComponentsSettings",
     "component_formatter",
     "component_shorthand_formatter",
     "ContextBehavior",

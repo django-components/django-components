@@ -77,16 +77,17 @@ class ComponentUrl(ComponentExtension.ExtensionClass):  # type: ignore
     url = get_component_url(MyComponent)
     ```
     """
+
     public: bool = False
     """
     Whether this [`Component`](../api#django_components.Component) should be available
     via a URL. Defaults to `False`.
 
     If `True`, the Component will have its own unique URL path.
-    
+
     You can use this to write components that will correspond to HTML fragments
     for HTMX or similar libraries.
-    
+
     To obtain the component URL, either access the url from
     [`Component.Url.url`](../api#django_components.ComponentUrl.url) or
     use the [`get_component_url()`](../api#django_components.get_component_url) function.

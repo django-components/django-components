@@ -35,7 +35,15 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.ComponentCache
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.ComponentCommand
+    options:
+      show_if_no_docstring: true
+
+::: django_components.ComponentDefaults
     options:
       show_if_no_docstring: true
 

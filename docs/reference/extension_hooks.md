@@ -117,7 +117,7 @@ name | type | description
 `component` | [`Component`](../api#django_components.Component) | The Component instance that is being rendered
 `component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class
 `component_id` | `str` | The unique identifier for this component instance
-`template` | `str` | The rendered template
+`result` | `str` | The rendered component
 
 ::: django_components.extension.ComponentExtension.on_component_unregistered
     options:

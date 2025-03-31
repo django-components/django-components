@@ -58,11 +58,13 @@ from django_components.extension import (
     OnComponentClassDeletedContext,
     OnComponentDataContext,
     OnComponentInputContext,
+    OnComponentRenderedContext,
     extensions,
 )
+from django_components.extensions.cache import ComponentCache
 from django_components.extensions.defaults import ComponentDefaults
-from django_components.extensions.view import ViewFn, ComponentView
 from django_components.extensions.url import ComponentUrl
+from django_components.extensions.view import ComponentView, ViewFn
 from django_components.node import BaseNode
 from django_components.perfutil.component import ComponentRenderer, component_context_cache, component_post_render
 from django_components.perfutil.provide import register_provide_reference, unregister_provide_reference
@@ -578,6 +580,8 @@ class Component(
 
     # NOTE: These are the classes and instances added by defaults extensions. These fields
     # are actually set at runtime, and so here they are only marked for typing.
+    Cache: Type[ComponentCache]
+    cache: ComponentCache
     Defaults: Type[ComponentDefaults]
     defaults: ComponentDefaults
     View: Type[ComponentView]
@@ -1169,7 +1173,7 @@ class Component(
         )
 
         # Allow plugins to modify or validate the inputs
-        extensions.on_component_input(
+        result_override = extensions.on_component_input(
             OnComponentInputContext(
                 component=self,
                 component_cls=self.__class__,
@@ -1180,6 +1184,11 @@ class Component(
                 context=context,
             )
         )
+
+        # The component rendering was short-circuited by an extension, skipping
+        # the rest of the rendering process. This may be for example a cached content.
+        if result_override is not None:
+            return result_override
 
         # We pass down the components the info about the component's parent.
         # This is used for correctly resolving slot fills, correct rendering order,
@@ -1312,24 +1321,35 @@ class Component(
             css_scope_id=None,  # TODO - Implement CSS scoping
         )
 
-        # Remove component from caches
+        # This is triggered when a component is rendered, but the component's parents
+        # may not have been rendered yet.
         def on_component_rendered(html: str) -> str:
             with self._with_metadata(metadata):
                 # Allow to optionally override/modify the rendered content
                 new_output = self.on_render_after(context_snapshot, template, html)
                 html = new_output if new_output is not None else html
 
+            # Remove component from caches
             del component_context_cache[render_id]  # type: ignore[arg-type]
             unregister_provide_reference(render_id)  # type: ignore[arg-type]
 
             if app_settings.DEBUG_HIGHLIGHT_COMPONENTS:
                 html = apply_component_highlight("component", html, f"{self.name} ({render_id})")
 
+            html = extensions.on_component_rendered(
+                OnComponentRenderedContext(
+                    component=self,
+                    component_cls=self.__class__,
+                    component_id=render_id,
+                    result=html,
+                )
+            )
+
             return html
 
         post_render_callbacks[render_id] = on_component_rendered
 
-        # After the component and all its children are rendered, we resolve
+        # This is triggered after a full component tree was rendered, we resolve
         # all inserted HTML comments into <script> and <link> tags (if render_dependencies=True)
         def on_html_rendered(html: str) -> str:
             if render_dependencies:

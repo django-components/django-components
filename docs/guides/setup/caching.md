@@ -1,8 +1,20 @@
 This page describes the kinds of assets that django-components caches and how to configure the cache backends.
 
+## Component caching
+
+You can cache the output of your components by setting the [`Component.Cache`](../../reference/api.md#django_components.Component.Cache) options.
+
+Read more about [Component caching](../../concepts/advanced/component_caching.md).
+
 ## Component's JS and CSS files
 
-django-components caches the JS and CSS files associated with your components. This enables components to be rendered as HTML fragments and still having the associated JS and CSS files loaded with them.
+django-components simultaneously supports:
+
+- Rendering and fetching components as HTML fragments
+- Allowing components (even fragments) to have JS and CSS files associated with them
+- Features like JS/CSS variables or CSS scoping
+
+To achieve all this, django-components defines additional temporary JS and CSS files. These temporary files need to be stored somewhere, so that they can be fetched by the browser when the component is rendered as a fragment. And for that, django-components uses Django's cache framework.
 
 This includes:
 

@@ -119,7 +119,7 @@ def _apply_defaults(kwargs: Dict, defaults: List[ComponentDefaultField]) -> None
         kwargs[default_field.key] = default_value
 
 
-class ComponentDefaults(ComponentExtension.ExtensionClass):
+class ComponentDefaults(ComponentExtension.ExtensionClass):  # type: ignore[valid-type,misc]
     """
     The interface for `Component.Defaults`.
 
@@ -134,6 +134,7 @@ class ComponentDefaults(ComponentExtension.ExtensionClass):
             position = "left"
             selected_items = Default(lambda: [1, 2, 3])
     """
+
     pass
 
 

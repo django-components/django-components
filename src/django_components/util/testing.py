@@ -7,6 +7,7 @@ from unittest.mock import patch
 from weakref import ReferenceType
 
 from django.conf import settings as _django_settings
+from django.core.cache import BaseCache, caches
 from django.template import engines
 from django.test import override_settings
 
@@ -535,6 +536,11 @@ def _clear_djc_global_state(
 
     # Clear extensions caches
     extensions._route_to_url.clear()
+
+    # Clear Django caches
+    all_caches: List[BaseCache] = list(caches.all())
+    for cache in all_caches:
+        cache.clear()
 
     # Force garbage collection, so that any finalizers are run.
     # If garbage collection is skipped, then in some cases the finalizers

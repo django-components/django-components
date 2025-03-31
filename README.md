@@ -332,13 +332,13 @@ Django-components functionality can be extended with "extensions". Extensions al
 
 Some of the extensions include:
 
+- [Component caching](https://github.com/django-components/django-components/blob/master/src/django_components/extensions/cache.py)
 - [Django View integration](https://github.com/django-components/django-components/blob/master/src/django_components/extensions/view.py)
 - [Component defaults](https://github.com/django-components/django-components/blob/master/src/django_components/extensions/defaults.py)
 - [Pydantic integration (input validation)](https://github.com/django-components/djc-ext-pydantic)
 
 Some of the planned extensions include:
 
-- Caching
 - AlpineJS integration
 - Storybook integration
 - Component-level benchmarking with asv
@@ -365,10 +365,20 @@ def test_my_table():
     assert rendered == "<table>My table</table>"
 ```
 
-### Handle large projects with ease
+### Caching
 
-- Components can be infinitely nested.
-- (Soon) Optimize performance with component-level caching
+- Components can be cached using Django's cache framework.
+- Components are cached based on their input. Or you can write custom caching logic.
+- Caching rules can be configured on a per-component basis.
+
+```py
+from django_components import Component
+
+class MyComponent(Component):
+    class Cache:
+        enabled = True
+        ttl = 60 * 60 * 24  # 1 day
+```
 
 ### Debugging features
 

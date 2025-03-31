@@ -5,6 +5,7 @@ nav:
   - Prop drilling and provide / inject: provide_inject.md
   - Lifecycle hooks: hooks.md
   - Registering components: component_registry.md
+  - Component caching: component_caching.md
   - Typing and validation: typing_and_validation.md
   - Custom template tags: template_tags.md
   - Tag formatters: tag_formatter.md

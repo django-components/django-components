@@ -97,7 +97,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ndefaults\nview    \nurl"
+        assert output.strip() == "name    \n========\ncache   \ndefaults\nview    \nurl"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -108,7 +108,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ndefaults\nview    \nurl     \nempty   \ndummy"
+        assert output.strip() == "name    \n========\ncache   \ndefaults\nview    \nurl     \nempty   \ndummy"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -119,7 +119,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--all")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ndefaults\nview    \nurl     \nempty   \ndummy"
+        assert output.strip() == "name    \n========\ncache   \ndefaults\nview    \nurl     \nempty   \ndummy"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -130,7 +130,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--columns", "name")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ndefaults\nview    \nurl     \nempty   \ndummy"
+        assert output.strip() == "name    \n========\ncache   \ndefaults\nview    \nurl     \nempty   \ndummy"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -141,7 +141,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--simple")
         output = out.getvalue()
 
-        assert output.strip() == "defaults\nview    \nurl     \nempty   \ndummy"
+        assert output.strip() == "cache   \ndefaults\nview    \nurl     \nempty   \ndummy"
 
 
 @djc_test
@@ -159,7 +159,7 @@ class TestExtensionsRunCommand:
             output
             == dedent(
                 f"""
-                usage: components ext run [-h] {{defaults,view,url,empty,dummy}} ...
+                usage: components ext run [-h] {{cache,defaults,view,url,empty,dummy}} ...
 
                 Run a command added by an extension.
 
@@ -167,7 +167,8 @@ class TestExtensionsRunCommand:
                   -h, --help            show this help message and exit
 
                 subcommands:
-                  {{defaults,view,url,empty,dummy}}
+                  {{cache,defaults,view,url,empty,dummy}}
+                    cache               Run commands added by the 'cache' extension.
                     defaults            Run commands added by the 'defaults' extension.
                     view                Run commands added by the 'view' extension.
                     url                 Run commands added by the 'url' extension.
