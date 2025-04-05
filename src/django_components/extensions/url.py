@@ -159,8 +159,9 @@ class UrlExtension(ComponentExtension):
         if url_cls is None or not url_cls.public:
             return
 
-        # Create a URL route like `components/a1b2c3/`
-        # The full URL path will then be `/components/ext/url/components/MyTable_a1b2c3/`
+        # Create a URL route like `components/MyTable_a1b2c3/`
+        # And since this is within the `url` extension, the full URL path will then be:
+        # `/components/ext/url/components/MyTable_a1b2c3/`
         route_path = f"components/{ctx.component_cls._class_hash}/"
         route_name = _get_component_route_name(ctx.component_cls)
         route = URLRoute(
