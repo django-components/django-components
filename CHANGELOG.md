@@ -19,7 +19,6 @@
 
 #### Fix
 
-- Fix the default value for `COMPONENTS.dirs`
 - Make it possible to resolve URLs added by extensions by their names
 
 ## v0.135
