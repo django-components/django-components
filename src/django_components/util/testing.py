@@ -376,16 +376,6 @@ def djc_test(
                 param_names, values = parametrize
                 ids = None
 
-            for value in values:
-                # Validate that the first user-provided element in each value tuple is a dictionary,
-                # since it's meant to be used for overriding django-components settings
-                value_overrides = value[0]
-                if not isinstance(value_overrides, dict):
-                    raise ValueError(
-                        "The first element in each value tuple in `parametrize`"
-                        f"must be a dictionary, but got {value_overrides}"
-                    )
-
             # NOTE: Lazily import pytest, so user can still run tests with plain `unittest`
             #       if they choose not to use parametrization.
             import pytest

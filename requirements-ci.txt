@@ -22,6 +22,8 @@ colorama==0.4.6
     # via tox
 distlib==0.3.9
     # via virtualenv
+exceptiongroup==1.2.2
+    # via pytest
 filelock==3.16.1
     # via
     #   tox
@@ -31,7 +33,9 @@ greenlet==3.1.1
 idna==3.10
     # via requests
 importlib-metadata==8.5.0
-    # via asv-runner
+    # via
+    #   asv-runner
+    #   build
 iniconfig==2.0.0
     # via pytest
 json5==0.10.0
@@ -74,7 +78,14 @@ requests==2.32.3
     # via -r requirements-ci.in
 tabulate==0.9.0
     # via asv
-tox==4.24.2
+tomli==2.2.1
+    # via
+    #   asv
+    #   build
+    #   pyproject-api
+    #   pytest
+    #   tox
+tox==4.25.0
     # via
     #   -r requirements-ci.in
     #   tox-gh-actions
@@ -83,7 +94,9 @@ tox-gh-actions==3.3.0
 types-requests==2.32.0.20241016
     # via -r requirements-ci.in
 typing-extensions==4.12.2
-    # via pyee
+    # via
+    #   pyee
+    #   tox
 urllib3==2.2.3
     # via
     #   requests

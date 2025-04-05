@@ -643,6 +643,11 @@ class ExtensionManager:
         extensions_url_resolver.urlconf_name = urls
         extensions_url_resolver.url_patterns = urls
 
+        # Rebuild URL resolver cache to be able to resolve the new routes by their names.
+        urlconf = get_urlconf()
+        resolver = get_resolver(urlconf)
+        resolver._populate()
+
     def get_extension(self, name: str) -> ComponentExtension:
         for extension in self.extensions:
             if extension.name == name:
