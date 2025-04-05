@@ -106,8 +106,9 @@ from django_components import Component, types
 
 # HTML into which a fragment will be loaded using HTMX
 class MyPage(Component):
-    def get(self, request):
-        return self.render_to_response()
+    Class View:
+        def get(self, request):
+            return self.component.render_to_response(request=request)
 
     template = """
         {% load component_tags %}
@@ -138,11 +139,13 @@ class MyPage(Component):
 
 ```djc_py title="[root]/components/demo.py"
 class Frag(Component):
-    def get(self, request):
-        return self.render_to_response(
-            # IMPORTANT: Don't forget `type="fragment"`
-            type="fragment",
-        )
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(
+                request=request,
+                # IMPORTANT: Don't forget `type="fragment"`
+                type="fragment",
+            )
 
     template = """
         <div class="frag">
@@ -184,8 +187,9 @@ from django_components import Component, types
 
 # HTML into which a fragment will be loaded using AlpineJS
 class MyPage(Component):
-    def get(self, request):
-        return self.render_to_response()
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(request=request)
 
     template = """
         {% load component_tags %}
@@ -222,11 +226,13 @@ class MyPage(Component):
 
 ```djc_py title="[root]/components/demo.py"
 class Frag(Component):
-    def get(self, request):
-        # IMPORTANT: Don't forget `type="fragment"`
-        return self.render_to_response(
-            type="fragment",
-        )
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(
+                request=request,
+                # IMPORTANT: Don't forget `type="fragment"`
+                type="fragment",
+            )
 
     # NOTE: We wrap the actual fragment in a template tag with x-if="false" to prevent it
     #       from being rendered until we have registered the component with AlpineJS.
@@ -281,8 +287,9 @@ from django_components import Component, types
 
 # HTML into which a fragment will be loaded using JS
 class MyPage(Component):
-    def get(self, request):
-        return self.render_to_response()
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(request=request)
 
     template = """
         {% load component_tags %}
@@ -318,11 +325,13 @@ class MyPage(Component):
 
 ```djc_py title="[root]/components/demo.py"
 class Frag(Component):
-    def get(self, request):
-        return self.render_to_response(
-            # IMPORTANT: Don't forget `type="fragment"`
-            type="fragment",
-        )
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(
+                request=request,
+                # IMPORTANT: Don't forget `type="fragment"`
+                type="fragment",
+            )
 
     template = """
         <div class="frag">

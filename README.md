@@ -259,13 +259,15 @@ Read more about [HTML attributes](https://django-components.github.io/django-com
 class Calendar(Component):
     template_file = "calendar.html"
 
-    def get(self, request, *args, **kwargs):
-        page = request.GET.get("page", 1)
-        return self.render_to_response(
-            kwargs={
-                "page": page,
-            }
-        )
+    class View:
+        def get(self, request, *args, **kwargs):
+            page = request.GET.get("page", 1)
+            return Calendar.render_to_response(
+                request=request,
+                kwargs={
+                    "page": page,
+                },
+            )
 
     def get_context_data(self, page):
         return {

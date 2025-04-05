@@ -3,8 +3,9 @@ from django_components import Component, types
 
 # HTML into which a fragment will be loaded using vanilla JS
 class FragmentBaseJs(Component):
-    def get(self, request):
-        return self.render_to_response()
+    class View:
+        def get(self, request):
+            return FragmentBaseJs.render_to_response(request=request)
 
     template: types.django_html = """
         {% load component_tags %}
@@ -39,8 +40,9 @@ class FragmentBaseJs(Component):
 
 # HTML into which a fragment will be loaded using AlpineJs
 class FragmentBaseAlpine(Component):
-    def get(self, request):
-        return self.render_to_response()
+    class View:
+        def get(self, request):
+            return FragmentBaseAlpine.render_to_response(request=request)
 
     template: types.django_html = """
         {% load component_tags %}
@@ -76,8 +78,9 @@ class FragmentBaseAlpine(Component):
 
 # HTML into which a fragment will be loaded using HTMX
 class FragmentBaseHtmx(Component):
-    def get(self, request):
-        return self.render_to_response()
+    class View:
+        def get(self, request):
+            return FragmentBaseHtmx.render_to_response(request=request)
 
     template: types.django_html = """
         {% load component_tags %}
@@ -102,8 +105,9 @@ class FragmentBaseHtmx(Component):
 
 # Fragment where the JS and CSS are defined on the Component
 class FragJs(Component):
-    def get(self, request):
-        return self.render_to_response(type="fragment")
+    class View:
+        def get(self, request):
+            return FragJs.render_to_response(request=request, type="fragment")
 
     template: types.django_html = """
         <div class="frag">
@@ -125,8 +129,9 @@ class FragJs(Component):
 
 # Fragment that defines an AlpineJS component
 class FragAlpine(Component):
-    def get(self, request):
-        return self.render_to_response(type="fragment")
+    class View:
+        def get(self, request):
+            return FragAlpine.render_to_response(request=request, type="fragment")
 
     # NOTE: We wrap the actual fragment in a template tag with x-if="false" to prevent it
     #       from being rendered until we have registered the component with AlpineJS.

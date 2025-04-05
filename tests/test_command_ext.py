@@ -97,7 +97,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ndefaults\nview"
+        assert output.strip() == "name    \n========\ndefaults\nview    \nurl"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -108,7 +108,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ndefaults\nview    \nempty   \ndummy"
+        assert output.strip() == "name    \n========\ndefaults\nview    \nurl     \nempty   \ndummy"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -119,7 +119,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--all")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ndefaults\nview    \nempty   \ndummy"
+        assert output.strip() == "name    \n========\ndefaults\nview    \nurl     \nempty   \ndummy"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -130,7 +130,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--columns", "name")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ndefaults\nview    \nempty   \ndummy"
+        assert output.strip() == "name    \n========\ndefaults\nview    \nurl     \nempty   \ndummy"
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -141,7 +141,7 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--simple")
         output = out.getvalue()
 
-        assert output.strip() == "defaults\nview    \nempty   \ndummy"
+        assert output.strip() == "defaults\nview    \nurl     \nempty   \ndummy"
 
 
 @djc_test
@@ -159,7 +159,7 @@ class TestExtensionsRunCommand:
             output
             == dedent(
                 f"""
-                usage: components ext run [-h] {{defaults,view,empty,dummy}} ...
+                usage: components ext run [-h] {{defaults,view,url,empty,dummy}} ...
 
                 Run a command added by an extension.
 
@@ -167,9 +167,10 @@ class TestExtensionsRunCommand:
                   -h, --help            show this help message and exit
 
                 subcommands:
-                  {{defaults,view,empty,dummy}}
+                  {{defaults,view,url,empty,dummy}}
                     defaults            Run commands added by the 'defaults' extension.
                     view                Run commands added by the 'view' extension.
+                    url                 Run commands added by the 'url' extension.
                     empty               Run commands added by the 'empty' extension.
                     dummy               Run commands added by the 'dummy' extension.
                 """

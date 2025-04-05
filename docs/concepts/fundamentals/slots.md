@@ -663,3 +663,42 @@ class MyTable(Component):
     </div>
     """
 ```
+
+### Escaping slots content
+
+Slots content are automatically escaped by default to prevent XSS attacks.
+
+In other words, it's as if you would be using Django's [`mark_safe()`](https://docs.djangoproject.com/en/5.0/ref/utils/#django.utils.safestring.mark_safe) function on the slot content:
+
+```python
+from django.utils.safestring import mark_safe
+
+class Calendar(Component):
+    template = """
+        <div>
+            {% slot "date" default date=date / %}
+        </div>
+    """
+
+Calendar.render(
+    slots={
+        "date": mark_safe("<b>Hello</b>"),
+    }
+)
+```
+
+To disable escaping, you can pass `escape_slots_content=False` to
+[`Component.render()`](../../reference/api#django_components.Component.render)
+or [`Component.render_to_response()`](../../reference/api#django_components.Component.render_to_response)
+methods.
+
+!!! warning
+
+    If you disable escaping, you should make sure that any content you pass to the slots is safe,
+    especially if it comes from user input!
+
+!!! info
+
+    If you're planning on passing an HTML string, check Django's use of
+    [`format_html`](https://docs.djangoproject.com/en/5.0/ref/utils/#django.utils.html.format_html)
+    and [`mark_safe`](https://docs.djangoproject.com/en/5.0/ref/utils/#django.utils.safestring.mark_safe).

@@ -739,8 +739,9 @@ class TestComponentRender:
                 CSRF token: {{ csrf_token|default:"<em>No CSRF token</em>" }}
             """
 
-            def get(self, request):
-                return self.render_to_response(request=request)
+            class View:
+                def get(self, request):
+                    return Thing.render_to_response(request=request)
 
         client = CustomClient(urlpatterns=[path("test_thing/", Thing.as_view())])
         response = client.get("/test_thing/")
@@ -760,8 +761,9 @@ class TestComponentRender:
                 <p>Existing context: {{ existing_context|default:"<em>No existing context</em>" }}</p>
             """
 
-            def get(self, request):
-                return self.render_to_response(request=request, context={"existing_context": "foo"})
+            class View:
+                def get(self, request):
+                    return Thing.render_to_response(request=request, context={"existing_context": "foo"})
 
         client = CustomClient(urlpatterns=[path("test_thing/", Thing.as_view())])
         response = client.get("/test_thing/")
@@ -782,8 +784,12 @@ class TestComponentRender:
                 <p>Existing context: {{ existing_context|default:"<em>No existing context</em>" }}</p>
             """
 
-            def get(self, request):
-                return self.render_to_response(request=request, context=Context({"existing_context": "foo"}))
+            class View:
+                def get(self, request):
+                    return Thing.render_to_response(
+                        request=request,
+                        context=Context({"existing_context": "foo"}),
+                    )
 
         client = CustomClient(urlpatterns=[path("test_thing/", Thing.as_view())])
         response = client.get("/test_thing/")

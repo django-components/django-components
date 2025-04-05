@@ -3,10 +3,11 @@ import typing
 from typing import Any, Tuple
 
 # See https://peps.python.org/pep-0655/#usage-in-python-3-11
-if sys.version_info >= (3, 11):
+# NOTE: Pydantic requires typing_extensions.TypedDict until (not incl) 3.12
+if sys.version_info >= (3, 12):
     from typing import TypedDict
 else:
-    from typing_extensions import TypedDict as TypedDict  # for Python <3.11 with (Not)Required
+    from typing_extensions import TypedDict as TypedDict
 
 try:
     from typing import Annotated  # type: ignore

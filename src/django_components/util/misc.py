@@ -112,10 +112,11 @@ def is_nonempty_str(txt: Optional[str]) -> bool:
     return txt is not None and bool(txt.strip())
 
 
+# Convert Component class to something like `TableComp_a91d03`
 def hash_comp_cls(comp_cls: Type["Component"]) -> str:
     full_name = get_import_path(comp_cls)
-    comp_cls_hash = md5(full_name.encode()).hexdigest()[0:6]
-    return comp_cls.__name__ + "_" + comp_cls_hash
+    name_hash = md5(full_name.encode()).hexdigest()[0:6]
+    return comp_cls.__name__ + "_" + name_hash
 
 
 # String is a glob if it contains at least one of `?`, `*`, or `[`

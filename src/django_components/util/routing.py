@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Dict, Iterable, Optional, Protocol
 
 
 class URLRouteHandler(Protocol):
@@ -53,10 +53,14 @@ class URLRoute:
 
     path: str
     handler: Optional[URLRouteHandler] = None
-    children: List["URLRoute"] = field(default_factory=list)
+    children: Iterable["URLRoute"] = field(default_factory=list)
     name: Optional[str] = None
     extra: Dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.handler is not None and self.children:
             raise ValueError("Cannot have both handler and children")
+
+    # Allow to use `URLRoute` objects in sets and dictionaries
+    def __hash__(self) -> int:
+        return hash(self.path)
