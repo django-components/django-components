@@ -81,7 +81,7 @@ class Calendar(Component):
             )
     ```
 
-    This is deprecated from v0.135 onwards, and will be removed in v1.0.
+    This is deprecated from v0.137 onwards, and will be removed in v1.0.
 
 ### Register the URLs manually
 
