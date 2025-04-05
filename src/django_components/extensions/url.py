@@ -77,6 +77,7 @@ class ComponentUrl(ComponentExtension.ExtensionClass):  # type: ignore
     url = get_component_url(MyComponent)
     ```
     """
+
     public: bool = False
     """
     Whether this [`Component`](../api#django_components.Component) should be available

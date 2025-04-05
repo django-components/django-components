@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Tuple, Type, TypeVar, Union
 
 import django.urls
 from django.template import Context
@@ -680,7 +680,7 @@ class ExtensionManager:
             urlconf = get_urlconf()
             root_resolver = get_resolver(urlconf)
             root_resolver._populate()
-    
+
     def remove_extension_urls(self, name: str, urls: List[URLRoute]) -> None:
         if not self._initialized:
             raise RuntimeError("Cannot remove extension URLs before initialization")

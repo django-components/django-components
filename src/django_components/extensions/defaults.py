@@ -134,6 +134,7 @@ class ComponentDefaults(ComponentExtension.ExtensionClass):
             position = "left"
             selected_items = Default(lambda: [1, 2, 3])
     """
+
     pass
 
 
