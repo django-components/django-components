@@ -11,7 +11,6 @@ from django_components.extension import (
     URLRoute,
     extensions,
 )
-from django_components.util.misc import hash_comp_cls
 
 if TYPE_CHECKING:
     from django_components.component import Component
@@ -161,9 +160,8 @@ class UrlExtension(ComponentExtension):
             return
 
         # Create a URL route like `components/a1b2c3/`
-        # The full URL path will then be `/components/ext/url/components/a1b2c3/`
-        cls_hash = hash_comp_cls(ctx.component_cls, include_name=False)
-        route_path = f"components/{cls_hash}/"
+        # The full URL path will then be `/components/ext/url/components/MyTable_a1b2c3/`
+        route_path = f"components/{ctx.component_cls._class_hash}/"
         route_name = _get_component_route_name(ctx.component_cls)
         route = URLRoute(
             path=route_path,
