@@ -2,254 +2,254 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://django-components.github.io/django-components/latest/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/migrating_from_safer_staticfiles/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/release_notes/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/authoring_component_libraries/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/component_registry/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/extensions/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/hooks/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/html_fragments/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/provide_inject/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/tag_formatter/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/template_tags/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/testing/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/access_component_input/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/autodiscovery/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/component_context_scope/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/component_defaults/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/components_as_views/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/components_in_python/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/defining_js_css_html_files/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/http_request/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/single_file_components/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/slots/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/subclassing_components/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/getting_started/adding_js_and_css/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/getting_started/adding_slots/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/getting_started/components_in_templates/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/getting_started/parametrising_components/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/getting_started/rendering_components/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/getting_started/your_first_component/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/guides/devguides/dependency_mgmt/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/guides/devguides/slot_rendering/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/guides/devguides/slots_and_blocks/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/guides/other/troubleshooting/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/guides/setup/caching/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/guides/setup/development_server/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/guides/setup/syntax_highlight/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/code_of_conduct/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/community/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/compatibility/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/contributing/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/development/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/installation/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/license/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/performance/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/security_notes/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/overview/welcome/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/api/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/commands/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/components/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/exceptions/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/extension_hooks/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/middlewares/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/settings/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/signals/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/tag_formatters/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/template_tags/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/template_vars/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/testing_api/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
     <url>
          <loc>https://django-components.github.io/django-components/latest/reference/urls/</loc>
-         <lastmod>2025-03-31</lastmod>
+         <lastmod>2025-04-05</lastmod>
     </url>
 </urlset>
