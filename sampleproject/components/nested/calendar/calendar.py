@@ -18,9 +18,11 @@ class CalendarNested(Component):
             "date": date,
         }
 
-    def get(self, request, *args, **kwargs):
-        return self.render_to_response(
-            kwargs={
-                "date": request.GET.get("date", ""),
-            },
-        )
+    class View:
+        def get(self, request, *args, **kwargs):
+            return CalendarNested.render_to_response(
+                request=request,
+                kwargs={
+                    "date": request.GET.get("date", ""),
+                },
+            )

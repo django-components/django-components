@@ -235,6 +235,7 @@ class Calendar(Component):
         def get(self, request, *args, **kwargs):
             # Return HttpResponse with the rendered content
             return Calendar.render_to_response(
+                request=request,
                 kwargs={
                     "date": request.GET.get("date", "2020-06-06"),
                 },

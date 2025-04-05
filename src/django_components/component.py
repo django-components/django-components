@@ -61,8 +61,8 @@ from django_components.extension import (
     extensions,
 )
 from django_components.extensions.defaults import ComponentDefaults
-from django_components.extensions.view import ViewFn, ComponentView
 from django_components.extensions.url import ComponentUrl
+from django_components.extensions.view import ComponentView, ViewFn
 from django_components.node import BaseNode
 from django_components.perfutil.component import ComponentRenderer, component_context_cache, component_post_render
 from django_components.perfutil.provide import register_provide_reference, unregister_provide_reference

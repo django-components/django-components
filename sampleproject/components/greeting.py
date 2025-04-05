@@ -5,14 +5,16 @@ from django_components import Component, register, types
 
 @register("greeting")
 class Greeting(Component):
-    def get(self, request, *args, **kwargs):
-        slots = {"message": "Hello, world!"}
-        return self.render_to_response(
-            slots=slots,
-            kwargs={
-                "name": request.GET.get("name", ""),
-            },
-        )
+    class View:
+        def get(self, request, *args, **kwargs):
+            slots = {"message": "Hello, world!"}
+            return Greeting.render_to_response(
+                request=request,
+                slots=slots,
+                kwargs={
+                    "name": request.GET.get("name", ""),
+                },
+            )
 
     def get_context_data(self, name, *args, **kwargs) -> Dict[str, Any]:
         return {"name": name}

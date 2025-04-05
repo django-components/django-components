@@ -751,8 +751,8 @@ class InternalSettings:
 
         # Prepend built-in extensions
         from django_components.extensions.defaults import DefaultsExtension
-        from django_components.extensions.view import ViewExtension
         from django_components.extensions.url import UrlExtension
+        from django_components.extensions.view import ViewExtension
 
         extensions = [DefaultsExtension, ViewExtension, UrlExtension] + list(extensions)
 

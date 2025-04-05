@@ -44,6 +44,7 @@ class Calendar(Component):
         def get(self, request, *args, **kwargs):
             # Return HttpResponse with the rendered content
             return Calendar.render_to_response(
+                request=request,
                 kwargs={
                     "date": request.GET.get("date", "2020-06-06"),
                 },
@@ -77,6 +78,7 @@ class Calendar(Component):
                 kwargs={
                     "date": request.GET.get("date", "2020-06-06"),
                 }
+            )
     ```
 
     This is deprecated from v0.135 onwards, and will be removed in v1.0.
@@ -111,7 +113,7 @@ class MyComponent(Component):
 
     class View:
         def get(self, request):
-            return self.render_to_response()
+            return self.component.render_to_response(request=request)
     ...
 ```
 

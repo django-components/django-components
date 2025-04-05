@@ -18,12 +18,14 @@ class Calendar(Component):
             "date": date,
         }
 
-    def get(self, request, *args, **kwargs):
-        return self.render_to_response(
-            kwargs={
-                "date": request.GET.get("date", ""),
-            },
-        )
+    class View:
+        def get(self, request, *args, **kwargs):
+            return Calendar.render_to_response(
+                request=request,
+                kwargs={
+                    "date": request.GET.get("date", ""),
+                },
+            )
 
 
 @register("calendar_relative")
@@ -43,9 +45,11 @@ class CalendarRelative(Component):
             "date": date,
         }
 
-    def get(self, request, *args, **kwargs):
-        return self.render_to_response(
-            kwargs={
-                "date": request.GET.get("date", ""),
-            },
-        )
+    class View:
+        def get(self, request, *args, **kwargs):
+            return CalendarRelative.render_to_response(
+                request=request,
+                kwargs={
+                    "date": request.GET.get("date", ""),
+                },
+            )
