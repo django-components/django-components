@@ -722,7 +722,7 @@ class InternalSettings:
         self._settings = ComponentsSettings(
             autodiscover=default(components_settings.autodiscover, defaults.autodiscover),
             cache=default(components_settings.cache, defaults.cache),
-            dirs=default(components_settings.dirs, dirs_default),
+            dirs=dirs_default,
             app_dirs=default(components_settings.app_dirs, defaults.app_dirs),
             debug_highlight_components=default(
                 components_settings.debug_highlight_components, defaults.debug_highlight_components

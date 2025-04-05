@@ -193,7 +193,7 @@ And add the extension to your project:
 ```py
 COMPONENTS = {
     "extensions": [
-        "djc_ext_pydantic.PydanticExtension",
+        "djc_pydantic.PydanticExtension",
     ],
 }
 ```

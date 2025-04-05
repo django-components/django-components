@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Tuple, 
 
 import django.urls
 from django.template import Context
-from django.urls import URLResolver
+from django.urls import URLResolver, get_urlconf, get_resolver
 
 from django_components.app_settings import app_settings
 from django_components.compat.django import routes_to_django
@@ -633,6 +633,11 @@ class ExtensionManager:
         # - `url_patterns` to override the caching
         ext_url_resolver.urlconf_name = urls
         ext_url_resolver.url_patterns = urls
+
+        # Rebuild URL resolver cache to be able to resolve the new routes by their names.
+        urlconf = get_urlconf()
+        resolver = get_resolver(urlconf)
+        resolver._populate()
 
     def get_extension(self, name: str) -> ComponentExtension:
         for extension in self.extensions:

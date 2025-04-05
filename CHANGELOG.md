@@ -12,10 +12,15 @@
     # settings.py
     COMPONENTS = {
         "extensions": [
-            "djc_ext_pydantic.PydanticExtension",
+            "djc_pydantic.PydanticExtension",
         ],
     }
     ```
+
+#### Fix
+
+- Fix the default value for `COMPONENTS.dirs`
+- Make it possible to resolve URLs added by extensions by their names
 
 ## v0.135
 
