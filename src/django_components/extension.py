@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Tuple, 
 
 import django.urls
 from django.template import Context
-from django.urls import URLResolver, get_urlconf, get_resolver
+from django.urls import URLResolver, get_resolver, get_urlconf
 
 from django_components.app_settings import app_settings
 from django_components.compat.django import routes_to_django
