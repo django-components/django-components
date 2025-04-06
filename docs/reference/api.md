@@ -7,35 +7,11 @@
     options:
       show_if_no_docstring: true
 
-::: django_components.CommandArg
-    options:
-      show_if_no_docstring: true
-
-::: django_components.CommandArgGroup
-    options:
-      show_if_no_docstring: true
-
-::: django_components.CommandHandler
-    options:
-      show_if_no_docstring: true
-
 ::: django_components.CommandLiteralAction
     options:
       show_if_no_docstring: true
 
-::: django_components.CommandParserInput
-    options:
-      show_if_no_docstring: true
-
-::: django_components.CommandSubcommand
-    options:
-      show_if_no_docstring: true
-
 ::: django_components.Component
-    options:
-      show_if_no_docstring: true
-
-::: django_components.ComponentCommand
     options:
       show_if_no_docstring: true
 
@@ -87,38 +63,6 @@
     options:
       show_if_no_docstring: true
 
-::: django_components.OnComponentClassCreatedContext
-    options:
-      show_if_no_docstring: true
-
-::: django_components.OnComponentClassDeletedContext
-    options:
-      show_if_no_docstring: true
-
-::: django_components.OnComponentDataContext
-    options:
-      show_if_no_docstring: true
-
-::: django_components.OnComponentInputContext
-    options:
-      show_if_no_docstring: true
-
-::: django_components.OnComponentRegisteredContext
-    options:
-      show_if_no_docstring: true
-
-::: django_components.OnComponentUnregisteredContext
-    options:
-      show_if_no_docstring: true
-
-::: django_components.OnRegistryCreatedContext
-    options:
-      show_if_no_docstring: true
-
-::: django_components.OnRegistryDeletedContext
-    options:
-      show_if_no_docstring: true
-
 ::: django_components.RegistrySettings
     options:
       show_if_no_docstring: true
@@ -148,14 +92,6 @@
       show_if_no_docstring: true
 
 ::: django_components.TagResult
-    options:
-      show_if_no_docstring: true
-
-::: django_components.URLRoute
-    options:
-      show_if_no_docstring: true
-
-::: django_components.URLRouteHandler
     options:
       show_if_no_docstring: true
 

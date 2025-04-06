@@ -6,13 +6,21 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional, 
 if TYPE_CHECKING:
     from argparse import _ArgumentGroup, _FormatterClass
 
+
+# Mark object as related to extension commands so we can place these in
+# a separate documentation section
+def mark_extension_command_api(obj: Any) -> Any:
+    obj._extension_command_api = True
+    return obj
+
+
 #############################
 # Argparse typing
 #############################
 
-CommandLiteralAction = Literal[
+CommandLiteralAction = mark_extension_command_api(Literal[
     "append", "append_const", "count", "extend", "store", "store_const", "store_true", "store_false", "version"
-]
+])
 """
 The basic type of action to be taken when this argument is encountered at the command line.
 
@@ -21,6 +29,7 @@ This is a subset of the values for `action` in
 """
 
 
+@mark_extension_command_api
 @dataclass
 class CommandArg:
     """
@@ -77,6 +86,7 @@ class CommandArg:
         return _remove_none_values(asdict(self))
 
 
+@mark_extension_command_api
 @dataclass
 class CommandArgGroup:
     """
@@ -102,6 +112,7 @@ class CommandArgGroup:
         return _remove_none_values(asdict(self))
 
 
+@mark_extension_command_api
 @dataclass
 class CommandSubcommand:
     """
@@ -158,6 +169,7 @@ class CommandSubcommand:
         return _remove_none_values(asdict(self))
 
 
+@mark_extension_command_api
 @dataclass
 class CommandParserInput:
     """
@@ -203,10 +215,12 @@ class CommandParserInput:
 #############################
 
 
+@mark_extension_command_api
 class CommandHandler(Protocol):
     def __call__(self, *args: Any, **kwargs: Any) -> None: ...  # noqa: E704
 
 
+@mark_extension_command_api
 class ComponentCommand:
     """
     Definition of a CLI command.

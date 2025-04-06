@@ -2,12 +2,21 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol
 
 
+# Mark object as related to extension URLs so we can place these in
+# a separate documentation section
+def mark_extension_url_api(obj: Any) -> Any:
+    obj._extension_url_api = True
+    return obj
+
+
+@mark_extension_url_api
 class URLRouteHandler(Protocol):
     """Framework-agnostic 'view' function for routes"""
 
     def __call__(self, request: Any, *args: Any, **kwargs: Any) -> Any: ...  # noqa: E704
 
 
+@mark_extension_url_api
 @dataclass
 class URLRoute:
     """
