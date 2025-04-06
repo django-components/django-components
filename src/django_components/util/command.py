@@ -18,15 +18,16 @@ def mark_extension_command_api(obj: Any) -> Any:
 # Argparse typing
 #############################
 
-CommandLiteralAction = mark_extension_command_api(Literal[
+CommandLiteralAction = Literal[
     "append", "append_const", "count", "extend", "store", "store_const", "store_true", "store_false", "version"
-])
+]
 """
 The basic type of action to be taken when this argument is encountered at the command line.
 
 This is a subset of the values for `action` in
 [`ArgumentParser.add_argument()`](https://docs.python.org/3/library/argparse.html#the-add-argument-method).
 """
+mark_extension_command_api(CommandLiteralAction)
 
 
 @mark_extension_command_api

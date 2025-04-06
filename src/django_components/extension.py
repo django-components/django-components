@@ -224,7 +224,8 @@ class ComponentExtension:
 
     These commands will be available to the user as `components ext run <extension> <command>`.
 
-    Commands are defined as subclasses of [`ComponentCommand`](../extension_commands#django_components.ComponentCommand).
+    Commands are defined as subclasses of
+    [`ComponentCommand`](../extension_commands#django_components.ComponentCommand).
 
     **Example:**
 
