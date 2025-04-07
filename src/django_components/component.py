@@ -22,7 +22,7 @@ from typing import (
     Union,
     cast,
 )
-from weakref import ReferenceType, finalize
+from weakref import ReferenceType, WeakValueDictionary, finalize
 
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.widgets import Media as MediaCls
@@ -46,7 +46,6 @@ from django_components.dependencies import (
     cache_component_css_vars,
     cache_component_js,
     cache_component_js_vars,
-    comp_hash_mapping,
     insert_component_dependencies_comment,
 )
 from django_components.dependencies import render_dependencies as _render_dependencies
@@ -115,8 +114,10 @@ CssDataType = TypeVar("CssDataType", bound=Mapping[str, Any])
 # NOTE: `ReferenceType` is NOT a generic pre-3.9
 if sys.version_info >= (3, 9):
     AllComponents = List[ReferenceType[Type["Component"]]]
+    CompHashMapping = WeakValueDictionary[str, Type["Component"]]
 else:
     AllComponents = List[ReferenceType]
+    CompHashMapping = WeakValueDictionary
 
 
 # Keep track of all the Component classes created, so we can clean up after tests
@@ -131,6 +132,47 @@ def all_components() -> List[Type["Component"]]:
         if comp is not None:
             components.append(comp)
     return components
+
+
+# NOTE: Initially, we fetched components by their registered name, but that didn't work
+# for multiple registries and unregistered components.
+#
+# To have unique identifiers that works across registries, we rely
+# on component class' module import path (e.g. `path.to.my.MyComponent`).
+#
+# But we also don't want to expose the module import paths to the outside world, as
+# that information could be potentially exploited. So, instead, each component is
+# associated with a hash that's derived from its module import path, ensuring uniqueness,
+# consistency and privacy.
+#
+# E.g. `path.to.my.secret.MyComponent` -> `ab01f32`
+#
+# For easier debugging, we then prepend the hash with the component class name, so that
+# we can easily identify the component class by its hash.
+#
+# E.g. `path.to.my.secret.MyComponent` -> `MyComponent_ab01f32`
+#
+# The associations are defined as WeakValue map, so deleted components can be garbage
+# collected and automatically deleted from the dict.
+comp_cls_id_mapping: CompHashMapping = WeakValueDictionary()
+
+
+def get_component_by_class_id(comp_cls_id: str) -> Type["Component"]:
+    """
+    Get a component class by its unique ID.
+
+    Each component class is associated with a unique hash that's derived from its module import path.
+
+    E.g. `path.to.my.secret.MyComponent` -> `MyComponent_ab01f32`
+
+    This hash is available under [`class_id`](../api#django_components.Component.class_id)
+    on the component class.
+
+    Raises `KeyError` if the component class is not found.
+
+    NOTE: This is mainly intended for extensions.
+    """
+    return comp_cls_id_mapping[comp_cls_id]
 
 
 @dataclass(frozen=True)
@@ -593,7 +635,18 @@ class Component(
     # MISC
     # #####################################
 
-    _class_hash: ClassVar[str]
+    class_id: ClassVar[str]
+    """
+    Unique ID of the component class, e.g. `MyComponent_ab01f2`.
+
+    This is derived from the component class' module import path, e.g. `path.to.my.MyComponent`.
+    """
+
+    # TODO_V1 - Remove this in v1
+    @property
+    def _class_hash(self) -> str:
+        """Deprecated. Use `Component.class_id` instead."""
+        return self.class_id
 
     def __init__(
         self,
@@ -626,8 +679,8 @@ class Component(
         extensions._init_component_instance(self)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        cls._class_hash = hash_comp_cls(cls)
-        comp_hash_mapping[cls._class_hash] = cls
+        cls.class_id = hash_comp_cls(cls)
+        comp_cls_id_mapping[cls.class_id] = cls
 
         ALL_COMPONENTS.append(cached_ref(cls))  # type: ignore[arg-type]
         extensions._init_component_class(cls)

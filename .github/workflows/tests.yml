@@ -67,3 +67,35 @@ jobs:
         python -m pip install -e .
     - name: Build documentation
       run: mkdocs build --verbose
+
+  # Verify that the sample project works
+  test_sampleproject:
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ['3.13']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: "pip"
+
+    - name: Install dependencies
+      run: |
+        cd sampleproject
+        python -m pip install --upgrade pip
+        python -m pip install -r requirements.txt
+        # Install django-components locally
+        python -m pip install -e ..
+    - name: Check Django project
+      run: |
+        cd sampleproject
+        python manage.py check
+        python manage.py migrate --noinput
+        # Start the server, make request, and exit with error if it fails
+        python manage.py runserver & sleep 5
+        curl http://127.0.0.1:8000/ || exit 1

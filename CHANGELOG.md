@@ -1,29 +1,14 @@
 # Release notes
 
-## v0.135
+## v0.137
 
 #### Feat
 
-- `{% html_attrs %}` now offers a Vue-like granular control over `class` and `style` HTML attributes,
-where each class name or style property can be managed separately.
+- Each Component class now has a `class_id` attribute, which is unique to the component subclass.
 
-    ```django
-    {% html_attrs
-        class="foo bar"
-        class={"baz": True, "foo": False}
-        class="extra"
-    %}
-    ```
+    NOTE: This is different from `Component.id`, which is unique to each rendered instance.
 
-    ```django
-    {% html_attrs
-        style="text-align: center; background-color: blue;"
-        style={"background-color": "green", "color": None, "width": False}
-        style="position: absolute; height: 12px;"
-    %}
-    ```
-
-    Read more on [HTML attributes](https://django-components.github.io/django-components/0.135/concepts/fundamentals/html_attributes/).
+    To look up a component class by its `class_id`, use `get_component_by_class_id()`.
 
 - It's now easier to create URLs for component views.
 
@@ -71,6 +56,90 @@ where each class name or style property can be managed separately.
     ```
 
     In v1, these methods should be defined only on the `Component.View` class instead.
+
+## 🚨📢 v0.136
+
+#### 🚨📢 BREAKING CHANGES
+
+- Component input validation was moved to a separate extension [`djc-ext-pydantic`](https://github.com/django-components/djc-ext-pydantic).
+
+    If you relied on components raising errors when inputs were invalid, you need to install `djc-ext-pydantic` and add it to extensions:
+
+    ```python
+    # settings.py
+    COMPONENTS = {
+        "extensions": [
+            "djc_pydantic.PydanticExtension",
+        ],
+    }
+    ```
+
+#### Fix
+
+- Make it possible to resolve URLs added by extensions by their names
+
+## v0.135
+
+#### Feat
+
+- Add defaults for the component inputs with the `Component.Defaults` nested class. Defaults
+  are applied if the argument is not given, or if it set to `None`.
+  
+  For lists, dictionaries, or other objects, wrap the value in `Default()` class to mark it as a factory
+  function:
+
+    ```python
+    from django_components import Default
+
+    class Table(Component):
+        class Defaults:
+            position = "left"
+            width = "200px"
+            options = Default(lambda: ["left", "right", "center"])
+
+        def get_context_data(self, position, width, options):
+            return {
+                "position": position,
+                "width": width,
+                "options": options,
+            }
+
+    # `position` is used as given, `"right"`
+    # `width` uses default because it's `None`
+    # `options` uses default because it's missing
+    Table.render(
+        kwargs={
+            "position": "right",
+            "width": None,
+        }
+    )
+    ```
+
+- `{% html_attrs %}` now offers a Vue-like granular control over `class` and `style` HTML attributes,
+where each class name or style property can be managed separately.
+
+    ```django
+    {% html_attrs
+        class="foo bar"
+        class={"baz": True, "foo": False}
+        class="extra"
+    %}
+    ```
+
+    ```django
+    {% html_attrs
+        style="text-align: center; background-color: blue;"
+        style={"background-color": "green", "color": None, "width": False}
+        style="position: absolute; height: 12px;"
+    %}
+    ```
+
+    Read more on [HTML attributes](https://django-components.github.io/django-components/0.135/concepts/fundamentals/html_attributes/).
+
+#### Fix
+
+- Fix compat with Windows when reading component files ([#1074](https://github.com/django-components/django-components/issues/1074))
+- Fix resolution of component media files edge case ([#1073](https://github.com/django-components/django-components/issues/1073))
 
 ## v0.134
 

@@ -75,6 +75,8 @@ COMPONENTS = {
     "dirs": [Path(__file__).resolve().parent / "components"],
 }
 
+urlpatterns: list = []
+
 
 class StaticFilesFinderTests(SimpleTestCase):
     @djc_test(

@@ -5,7 +5,7 @@ _New in version 0.92_
 The [`Component`](../../../reference/api#django_components.Component) class optionally accepts type parameters
 that allow you to specify the types of args, kwargs, slots, and data.
 
-Use this to add type hints to your components, or to validate component inputs and outputs.
+Use this to add type hints to your components, or to validate component inputs.
 
 ```py
 from django_components import Component
@@ -48,7 +48,7 @@ class ButtonKwargs(TypedDict):
     age: int
     maybe_var: NotRequired[int] # May be ommited
 
-# The data available to the `my_slot` scoped slot
+# The data available to the `footer` scoped slot
 class ButtonFooterSlotData(TypedDict):
     value: int
 
@@ -178,9 +178,9 @@ class Button(Component[EmptyTuple, EmptyDict, EmptyDict, EmptyDict, EmptyDict, E
 
 !!! warning
 
-    Input validation was part of Django Components from version 0.96 to 0.134.
+    Input validation was part of Django Components from version 0.96 to 0.135.
 
-    Since v0.135, input validation is available as a separate extension.
+    Since v0.136, input validation is available as a separate extension.
 
 To enable input validation, you need to install the [`djc-ext-pydantic`](https://github.com/django-components/djc-ext-pydantic) extension:
 
@@ -193,12 +193,12 @@ And add the extension to your project:
 ```py
 COMPONENTS = {
     "extensions": [
-        "djc_ext_pydantic.PydanticExtension",
+        "djc_pydantic.PydanticExtension",
     ],
 }
 ```
 
-`djc-ext-pydantic` integrates [Pydantic](https://pydantic.dev/) for input and data validation. It uses the types defined on the component's class to validate both inputs and outputs of Django components.
+`djc-ext-pydantic` integrates [Pydantic](https://pydantic.dev/) for input and data validation. It uses the types defined on the component's class to validate inputs of Django components.
 
 ## Usage for Python <3.11
 

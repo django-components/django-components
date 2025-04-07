@@ -27,26 +27,38 @@ TCallable = TypeVar("TCallable", bound=Callable)
 ################################################
 
 
+# Mark a class as an extension hook context so we can place these in
+# a separate documentation section
+def mark_extension_hook_api(cls: Type[Any]) -> Type[Any]:
+    cls._extension_hook_api = True
+    return cls
+
+
+@mark_extension_hook_api
 class OnComponentClassCreatedContext(NamedTuple):
     component_cls: Type["Component"]
     """The created Component class"""
 
 
+@mark_extension_hook_api
 class OnComponentClassDeletedContext(NamedTuple):
     component_cls: Type["Component"]
     """The to-be-deleted Component class"""
 
 
+@mark_extension_hook_api
 class OnRegistryCreatedContext(NamedTuple):
     registry: "ComponentRegistry"
     """The created ComponentRegistry instance"""
 
 
+@mark_extension_hook_api
 class OnRegistryDeletedContext(NamedTuple):
     registry: "ComponentRegistry"
     """The to-be-deleted ComponentRegistry instance"""
 
 
+@mark_extension_hook_api
 class OnComponentRegisteredContext(NamedTuple):
     registry: "ComponentRegistry"
     """The registry the component was registered to"""
@@ -56,6 +68,7 @@ class OnComponentRegisteredContext(NamedTuple):
     """The registered Component class"""
 
 
+@mark_extension_hook_api
 class OnComponentUnregisteredContext(NamedTuple):
     registry: "ComponentRegistry"
     """The registry the component was unregistered from"""
@@ -65,6 +78,7 @@ class OnComponentUnregisteredContext(NamedTuple):
     """The unregistered Component class"""
 
 
+@mark_extension_hook_api
 class OnComponentInputContext(NamedTuple):
     component: "Component"
     """The Component instance that received the input and is being rendered"""
@@ -82,6 +96,7 @@ class OnComponentInputContext(NamedTuple):
     """The Django template Context object"""
 
 
+@mark_extension_hook_api
 class OnComponentDataContext(NamedTuple):
     component: "Component"
     """The Component instance that is being rendered"""
@@ -220,7 +235,8 @@ class ComponentExtension:
 
     These commands will be available to the user as `components ext run <extension> <command>`.
 
-    Commands are defined as subclasses of [`ComponentCommand`](../api#django_components.ComponentCommand).
+    Commands are defined as subclasses of
+    [`ComponentCommand`](../extension_commands#django_components.ComponentCommand).
 
     **Example:**
 
@@ -684,6 +700,11 @@ class ExtensionManager:
         # - `url_patterns` to override the caching
         extensions_url_resolver.urlconf_name = urls
         extensions_url_resolver.url_patterns = urls
+
+        # Rebuild URL resolver cache to be able to resolve the new routes by their names.
+        urlconf = get_urlconf()
+        resolver = get_resolver(urlconf)
+        resolver._populate()
 
     def get_extension(self, name: str) -> ComponentExtension:
         for extension in self.extensions:

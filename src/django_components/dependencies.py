@@ -3,7 +3,6 @@
 import base64
 import json
 import re
-import sys
 from hashlib import md5
 from typing import (
     TYPE_CHECKING,
@@ -20,7 +19,6 @@ from typing import (
     Union,
     cast,
 )
-from weakref import WeakValueDictionary
 
 from asgiref.sync import iscoroutinefunction, markcoroutinefunction
 from django.forms import Media
@@ -57,39 +55,18 @@ RenderType = Literal["document", "fragment"]
 #########################################################
 
 
-# NOTE: Initially, we fetched components by their registered name, but that didn't work
-# for multiple registries and unregistered components.
-#
-# To have unique identifiers that works across registries, we rely
-# on component class' module import path (e.g. `path.to.my.MyComponent`).
-#
-# But we also don't want to expose the module import paths to the outside world, as
-# that information could be potentially exploited. So, instead, each component is
-# associated with a hash that's derived from its module import path, ensuring uniqueness,
-# consistency and privacy.
-#
-# E.g. `path.to.my.secret.MyComponent` -> `MyComponent_ab01f32`
-#
-# The associations are defined as WeakValue map, so deleted components can be garbage
-# collected and automatically deleted from the dict.
-if sys.version_info < (3, 9):
-    comp_hash_mapping: WeakValueDictionary = WeakValueDictionary()
-else:
-    comp_hash_mapping: WeakValueDictionary[str, Type["Component"]] = WeakValueDictionary()
-
-
 # Generate keys like
 # `__components:MyButton_a78y37:js:df7c6d10`
 # `__components:MyButton_a78y37:css`
 def _gen_cache_key(
-    comp_cls_hash: str,
+    comp_cls_id: str,
     script_type: ScriptType,
     input_hash: Optional[str],
 ) -> str:
     if input_hash:
-        return f"__components:{comp_cls_hash}:{script_type}:{input_hash}"
+        return f"__components:{comp_cls_id}:{script_type}:{input_hash}"
     else:
-        return f"__components:{comp_cls_hash}:{script_type}"
+        return f"__components:{comp_cls_id}:{script_type}"
 
 
 def _is_script_in_cache(
@@ -97,7 +74,7 @@ def _is_script_in_cache(
     script_type: ScriptType,
     input_hash: Optional[str],
 ) -> bool:
-    cache_key = _gen_cache_key(comp_cls._class_hash, script_type, input_hash)
+    cache_key = _gen_cache_key(comp_cls.class_id, script_type, input_hash)
     cache = get_component_media_cache()
     return cache.has_key(cache_key)
 
@@ -115,7 +92,7 @@ def _cache_script(
 
     # E.g. `__components:MyButton:js:df7c6d10`
     if script_type in ("js", "css"):
-        cache_key = _gen_cache_key(comp_cls._class_hash, script_type, input_hash)
+        cache_key = _gen_cache_key(comp_cls.class_id, script_type, input_hash)
     else:
         raise ValueError(f"Unexpected script_type '{script_type}'")
 
@@ -333,7 +310,7 @@ def insert_component_dependencies_comment(
     will be used by the ComponentDependencyMiddleware to collect all
     declared JS / CSS scripts.
     """
-    data = f"{component_cls._class_hash},{component_id},{js_input_hash or ''},{css_input_hash or ''}"
+    data = f"{component_cls.class_id},{component_id},{js_input_hash or ''},{css_input_hash or ''}"
 
     # NOTE: It's important that we put the comment BEFORE the content, so we can
     # use the order of comments to evaluate components' instance JS code in the correct order.
@@ -366,12 +343,12 @@ COMPONENT_DEPS_COMMENT = "<!-- _RENDERED {data} -->"
 # E.g. `<!-- _RENDERED table,123,a92ef298,bd002c3 -->`
 COMPONENT_COMMENT_REGEX = re.compile(rb"<!--\s+_RENDERED\s+(?P<data>[\w\-,/]+?)\s+-->")
 # E.g. `table,123,a92ef298,bd002c3`
-# - comp_cls_hash - Cache key of the component class that was rendered
+# - comp_cls_id - Cache key of the component class that was rendered
 # - id - Component render ID
 # - js - Cache key for the JS data from `get_js_data()`
 # - css - Cache key for the CSS data from `get_css_data()`
 SCRIPT_NAME_REGEX = re.compile(
-    rb"^(?P<comp_cls_hash>[\w\-\./]+?),(?P<id>[\w]+?),(?P<js>[0-9a-f]*?),(?P<css>[0-9a-f]*?)$"
+    rb"^(?P<comp_cls_id>[\w\-\./]+?),(?P<id>[\w]+?),(?P<js>[0-9a-f]*?),(?P<css>[0-9a-f]*?)$"
 )
 # E.g. `data-djc-id-a1b2c3`
 MAYBE_COMP_ID = r'(?: data-djc-id-\w{6}="")?'
@@ -550,26 +527,26 @@ def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, 
         if not part_match:
             raise RuntimeError("Malformed dependencies data")
 
-        comp_cls_hash: str = part_match.group("comp_cls_hash").decode("utf-8")
+        comp_cls_id: str = part_match.group("comp_cls_id").decode("utf-8")
         js_input_hash: Optional[str] = part_match.group("js").decode("utf-8") or None
         css_input_hash: Optional[str] = part_match.group("css").decode("utf-8") or None
 
-        if comp_cls_hash in seen_comp_hashes:
+        if comp_cls_id in seen_comp_hashes:
             continue
 
-        comp_hashes.append(comp_cls_hash)
-        seen_comp_hashes.add(comp_cls_hash)
+        comp_hashes.append(comp_cls_id)
+        seen_comp_hashes.add(comp_cls_id)
 
         # Schedule to load the `<script>` / `<link>` tags for the JS / CSS from `Component.js/css`.
-        comp_data.append((comp_cls_hash, "js", None))
-        comp_data.append((comp_cls_hash, "css", None))
+        comp_data.append((comp_cls_id, "js", None))
+        comp_data.append((comp_cls_id, "css", None))
 
         # Schedule to load the `<script>` / `<link>` tags for the JS / CSS variables.
         # Skip if no variables are defined.
         if js_input_hash is not None:
-            inputs_data.append((comp_cls_hash, "js", js_input_hash))
+            inputs_data.append((comp_cls_id, "js", js_input_hash))
         if css_input_hash is not None:
-            inputs_data.append((comp_cls_hash, "css", css_input_hash))
+            inputs_data.append((comp_cls_id, "css", css_input_hash))
 
     (
         to_load_input_js_urls,
@@ -589,15 +566,17 @@ def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, 
         loaded_component_css_urls,
     ) = _prepare_tags_and_urls(comp_data, type)
 
-    def get_component_media(comp_cls_hash: str) -> Media:
-        comp_cls = comp_hash_mapping[comp_cls_hash]
+    def get_component_media(comp_cls_id: str) -> Media:
+        from django_components.component import get_component_by_class_id
+
+        comp_cls = get_component_by_class_id(comp_cls_id)
         # NOTE: We instantiate the component classes so the `Media` are processed into `media`
         comp = comp_cls()
         return comp.media
 
     all_medias = [
         # JS / CSS files from Component.Media.js/css.
-        *[get_component_media(comp_cls_hash) for comp_cls_hash in comp_hashes],
+        *[get_component_media(comp_cls_id) for comp_cls_id in comp_hashes],
         # All the inlined scripts that we plan to fetch / load
         Media(
             js=[*to_load_component_js_urls, *to_load_input_js_urls],
@@ -747,6 +726,8 @@ def _prepare_tags_and_urls(
     data: List[Tuple[str, ScriptType, Optional[str]]],
     type: RenderType,
 ) -> Tuple[List[str], List[str], List[str], List[str], List[str], List[str]]:
+    from django_components.component import get_component_by_class_id
+
     to_load_js_urls: List[str] = []
     to_load_css_urls: List[str] = []
     inlined_js_tags: List[str] = []
@@ -758,12 +739,12 @@ def _prepare_tags_and_urls(
     # But even in that case we still need to call `Components.manager.markScriptLoaded`,
     # so the client knows NOT to fetch them again.
     # So in that case we populate both `inlined` and `loaded` lists
-    for comp_cls_hash, script_type, input_hash in data:
+    for comp_cls_id, script_type, input_hash in data:
         # NOTE: When CSS is scoped, then EVERY component instance will have different
         # copy of the style, because each copy will have component's ID embedded.
         # So, in that case we inline the style into the HTML (See `_link_dependencies_with_component_html`),
         # which means that we are NOT going to load / inline it again.
-        comp_cls = comp_hash_mapping[comp_cls_hash]
+        comp_cls = get_component_by_class_id(comp_cls_id)
 
         if type == "document":
             # NOTE: Skip fetching of inlined JS/CSS if it's not defined or empty for given component
@@ -805,7 +786,7 @@ def get_script_content(
     input_hash: Optional[str],
 ) -> Optional[str]:
     cache = get_component_media_cache()
-    cache_key = _gen_cache_key(comp_cls._class_hash, script_type, input_hash)
+    cache_key = _gen_cache_key(comp_cls.class_id, script_type, input_hash)
     script = cache.get(cache_key)
 
     return script
@@ -819,8 +800,7 @@ def get_script_tag(
     content = get_script_content(script_type, comp_cls, input_hash)
     if content is None:
         raise RuntimeError(
-            f"Could not find {script_type.upper()} for component '{comp_cls.__name__}' "
-            f"(hash: {comp_cls._class_hash})"
+            f"Could not find {script_type.upper()} for component '{comp_cls.__name__}' (id: {comp_cls.class_id})"
         )
 
     if script_type == "js":
@@ -841,7 +821,7 @@ def get_script_url(
     return reverse(
         CACHE_ENDPOINT_NAME,
         kwargs={
-            "comp_cls_hash": comp_cls._class_hash,
+            "comp_cls_id": comp_cls.class_id,
             "script_type": script_type,
             **({"input_hash": input_hash} if input_hash is not None else {}),
         },
@@ -963,15 +943,18 @@ def _get_content_types(script_type: ScriptType) -> str:
 
 def cached_script_view(
     req: HttpRequest,
-    comp_cls_hash: str,
+    comp_cls_id: str,
     script_type: ScriptType,
     input_hash: Optional[str] = None,
 ) -> HttpResponse:
+    from django_components.component import get_component_by_class_id
+
     if req.method != "GET":
         return HttpResponseNotAllowed(["GET"])
 
-    comp_cls = comp_hash_mapping.get(comp_cls_hash)
-    if comp_cls is None:
+    try:
+        comp_cls = get_component_by_class_id(comp_cls_id)
+    except KeyError:
         return HttpResponseNotFound()
 
     script = get_script_content(script_type, comp_cls, input_hash)
@@ -983,9 +966,9 @@ def cached_script_view(
 
 
 urlpatterns = [
-    # E.g. `/components/cache/table.js` or `/components/cache/table.0ab2c3.js`
-    path("cache/<str:comp_cls_hash>.<str:input_hash>.<str:script_type>", cached_script_view, name=CACHE_ENDPOINT_NAME),
-    path("cache/<str:comp_cls_hash>.<str:script_type>", cached_script_view, name=CACHE_ENDPOINT_NAME),
+    # E.g. `/components/cache/MyTable_a1b2c3.js` or `/components/cache/MyTable_a1b2c3.0ab2c3.js`
+    path("cache/<str:comp_cls_id>.<str:input_hash>.<str:script_type>", cached_script_view, name=CACHE_ENDPOINT_NAME),
+    path("cache/<str:comp_cls_id>.<str:script_type>", cached_script_view, name=CACHE_ENDPOINT_NAME),
 ]
 
 

@@ -119,7 +119,7 @@ def _apply_defaults(kwargs: Dict, defaults: List[ComponentDefaultField]) -> None
         kwargs[default_field.key] = default_value
 
 
-class ComponentDefaults(ComponentExtension.ExtensionClass):  # type: ignore[valid-type,misc]
+class ComponentDefaults(ComponentExtension.ExtensionClass):  # type: ignore[misc,valid-type]
     """
     The interface for `Component.Defaults`.
 

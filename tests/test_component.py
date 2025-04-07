@@ -16,7 +16,7 @@ from django.test import Client
 from django.urls import path
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
-from django_components import Component, ComponentView, all_components, register, types
+from django_components import Component, ComponentView, all_components, get_component_by_class_id, register, types
 from django_components.slots import SlotRef
 from django_components.urls import urlpatterns as dc_urlpatterns
 
@@ -355,6 +355,12 @@ class TestComponent:
             ),
         ):
             Root.render()
+
+    def test_get_component_by_id(self):
+        class SimpleComponent(Component):
+            pass
+
+        assert get_component_by_class_id(SimpleComponent.class_id) == SimpleComponent
 
 
 @djc_test
@@ -739,8 +745,9 @@ class TestComponentRender:
                 CSRF token: {{ csrf_token|default:"<em>No CSRF token</em>" }}
             """
 
-            def get(self, request):
-                return self.render_to_response(request=request)
+            class View:
+                def get(self, request):
+                    return Thing.render_to_response(request=request)
 
         client = CustomClient(urlpatterns=[path("test_thing/", Thing.as_view())])
         response = client.get("/test_thing/")
@@ -760,8 +767,9 @@ class TestComponentRender:
                 <p>Existing context: {{ existing_context|default:"<em>No existing context</em>" }}</p>
             """
 
-            def get(self, request):
-                return self.render_to_response(request=request, context={"existing_context": "foo"})
+            class View:
+                def get(self, request):
+                    return Thing.render_to_response(request=request, context={"existing_context": "foo"})
 
         client = CustomClient(urlpatterns=[path("test_thing/", Thing.as_view())])
         response = client.get("/test_thing/")
@@ -782,8 +790,12 @@ class TestComponentRender:
                 <p>Existing context: {{ existing_context|default:"<em>No existing context</em>" }}</p>
             """
 
-            def get(self, request):
-                return self.render_to_response(request=request, context=Context({"existing_context": "foo"}))
+            class View:
+                def get(self, request):
+                    return Thing.render_to_response(
+                        request=request,
+                        context=Context({"existing_context": "foo"}),
+                    )
 
         client = CustomClient(urlpatterns=[path("test_thing/", Thing.as_view())])
         response = client.get("/test_thing/")

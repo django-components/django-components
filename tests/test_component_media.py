@@ -414,6 +414,30 @@ class TestComponentMedia:
         assertInHTML('<script src="glob/glob_1.js"></script>', rendered)
         assertInHTML('<script src="glob/glob_2.js"></script>', rendered)
 
+    @djc_test(
+        django_settings={
+            "INSTALLED_APPS": ("django_components", "tests"),
+        }
+    )
+    def test_non_globs_not_modified(self):
+        from tests.components.glob.glob import NonGlobComponentRootDir
+        rendered = NonGlobComponentRootDir.render()
+
+        assertInHTML('<link href="glob/glob_1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<script src="glob/glob_1.js"></script>', rendered)
+
+    @djc_test(
+        django_settings={
+            "INSTALLED_APPS": ("django_components", "tests"),
+        }
+    )
+    def test_non_globs_not_modified_nonexist(self):
+        from tests.components.glob.glob import NonGlobNonexistComponentRootDir
+        rendered = NonGlobNonexistComponentRootDir.render()
+
+        assertInHTML('<link href="glob/glob_nonexist.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<script src="glob/glob_nonexist.js"></script>', rendered)
+
     def test_glob_pattern_does_not_break_urls(self):
         from tests.components.glob.glob import UrlComponent
         rendered = UrlComponent.render()

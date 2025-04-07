@@ -23,6 +23,35 @@ class GlobComponentRootDir(GlobComponent):
         js = "glob/glob_*.js"
 
 
+# The Media JS / CSS are NOT globs and are relative to the directory given in
+# `COMPONENTS.dirs` and `COMPONENTS.app_dirs`. These should NOT be modified.
+class NonGlobComponentRootDir(Component):
+    template = """
+        {% load component_tags %}
+        {% component_js_dependencies %}
+        {% component_css_dependencies %}
+    """
+
+    class Media:
+        css = "glob/glob_1.css"
+        js = "glob/glob_1.js"
+
+
+# The Media JS / CSS are NOT globs. While relative to the directory given in
+# `COMPONENTS.dirs` and `COMPONENTS.app_dirs`, these files do not exist.
+# These paths should NOT be modified.
+class NonGlobNonexistComponentRootDir(Component):
+    template = """
+        {% load component_tags %}
+        {% component_js_dependencies %}
+        {% component_css_dependencies %}
+    """
+
+    class Media:
+        css = "glob/glob_nonexist.css"
+        js = "glob/glob_nonexist.js"
+
+
 # The Media JS / CSS are NOT globs, but URLs.
 class UrlComponent(Component):
     template = """

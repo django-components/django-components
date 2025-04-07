@@ -394,7 +394,7 @@ Where:
 
 ### Defining Commands
 
-To define a command, subclass from [`ComponentCommand`](../../../reference/api#django_components.ComponentCommand).
+To define a command, subclass from [`ComponentCommand`](../../../reference/extension_commands#django_components.ComponentCommand).
 This subclass should define:
 
 - `name` - the command's name
@@ -419,12 +419,12 @@ class MyExt(ComponentExtension):
 ### Defining Command Arguments and Options
 
 Commands can accept positional arguments and options (e.g. `--foo`), which are defined using the
-[`arguments`](../../../reference/api#django_components.ComponentCommand.arguments)
-attribute of the [`ComponentCommand`](../../../reference/api#django_components.ComponentCommand) class.
+[`arguments`](../../../reference/extension_commands#django_components.ComponentCommand.arguments)
+attribute of the [`ComponentCommand`](../../../reference/extension_commands#django_components.ComponentCommand) class.
 
 The arguments are parsed with [`argparse`](https://docs.python.org/3/library/argparse.html)
 into a dictionary of arguments and options. These are then available
-as keyword arguments to the [`handle`](../../../reference/api#django_components.ComponentCommand.handle)
+as keyword arguments to the [`handle`](../../../reference/extension_commands#django_components.ComponentCommand.handle)
 method of the command.
 
 ```python
@@ -470,20 +470,20 @@ python manage.py components ext run my_ext hello John --shout
     See the [argparse documentation](https://docs.python.org/3/library/argparse.html) for more information.
 
     django-components defines types as
-    [`CommandArg`](../../../reference/api#django_components.CommandArg),
-    [`CommandArgGroup`](../../../reference/api#django_components.CommandArgGroup),
-    [`CommandSubcommand`](../../../reference/api#django_components.CommandSubcommand),
-    and [`CommandParserInput`](../../../reference/api#django_components.CommandParserInput)
+    [`CommandArg`](../../../reference/extension_commands#django_components.CommandArg),
+    [`CommandArgGroup`](../../../reference/extension_commands#django_components.CommandArgGroup),
+    [`CommandSubcommand`](../../../reference/extension_commands#django_components.CommandSubcommand),
+    and [`CommandParserInput`](../../../reference/extension_commands#django_components.CommandParserInput)
     to help with type checking.
 
 !!! note
 
-    If a command doesn't have the [`handle`](../../../reference/api#django_components.ComponentCommand.handle)
+    If a command doesn't have the [`handle`](../../../reference/extension_commands#django_components.ComponentCommand.handle)
     method defined, the command will print a help message and exit.
 
 ### Grouping Arguments
 
-Arguments can be grouped using [`CommandArgGroup`](../../../reference/api#django_components.CommandArgGroup)
+Arguments can be grouped using [`CommandArgGroup`](../../../reference/extension_commands#django_components.CommandArgGroup)
 to provide better organization and help messages.
 
 Read more on [argparse argument groups](https://docs.python.org/3/library/argparse.html#argument-groups).
@@ -539,12 +539,12 @@ class HelloCommand(ComponentCommand):
 Extensions can define subcommands, allowing for more complex command structures.
 
 Subcommands are defined similarly to root commands, as subclasses of
-[`ComponentCommand`](../../../reference/api#django_components.ComponentCommand) class.
+[`ComponentCommand`](../../../reference/extension_commands#django_components.ComponentCommand) class.
 
 However, instead of defining the subcommands in the
-[`commands`](../../../reference/api#django_components.ComponentExtension.commands)
+[`commands`](../../../reference/extension_commands#django_components.ComponentExtension.commands)
 attribute of the extension, you define them in the
-[`subcommands`](../../../reference/api#django_components.ComponentCommand.subcommands)
+[`subcommands`](../../../reference/extension_commands#django_components.ComponentCommand.subcommands)
 attribute of the parent command:
 
 ```python
@@ -663,7 +663,7 @@ def test_hello_command(self):
 
 Extensions can define custom views and endpoints that can be accessed through the Django application.
 
-To define URLs for an extension, set them in the [`urls`](../../../reference/api#django_components.ComponentExtension.urls) attribute of your [`ComponentExtension`](../../../reference/api#django_components.ComponentExtension) class. Each URL is defined using the [`URLRoute`](../../../reference/api#django_components.URLRoute) class, which specifies the path, handler, and optional name for the route.
+To define URLs for an extension, set them in the [`urls`](../../../reference/api#django_components.ComponentExtension.urls) attribute of your [`ComponentExtension`](../../../reference/api#django_components.ComponentExtension) class. Each URL is defined using the [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) class, which specifies the path, handler, and optional name for the route.
 
 Here's an example of how to define URLs within an extension:
 
@@ -685,13 +685,13 @@ class MyExtension(ComponentExtension):
 
 !!! warning
 
-    The [`URLRoute`](../../../reference/api#django_components.URLRoute) objects
+    The [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) objects
     are different from objects created with Django's
     [`django.urls.path()`](https://docs.djangoproject.com/en/5.1/ref/urls/#path).
     Do NOT use `URLRoute` objects in Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.1/topics/http/urls/#example)
     and vice versa!
 
-    django-components uses a custom [`URLRoute`](../../../reference/api#django_components.URLRoute) class to define framework-agnostic routing rules.
+    django-components uses a custom [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) class to define framework-agnostic routing rules.
 
     As of v0.131, `URLRoute` objects are directly converted to Django's `URLPattern` and `URLResolver` objects.
 
@@ -713,9 +713,9 @@ For example, if you have defined a URL with the path `my-view/<str:name>/` in an
 
 Extensions can also define nested URLs to allow for more complex routing structures.
 
-To define nested URLs, set the [`children`](../../../reference/api#django_components.URLRoute.children)
-attribute of the [`URLRoute`](../../../reference/api#django_components.URLRoute) object to
-a list of child [`URLRoute`](../../../reference/api#django_components.URLRoute) objects:
+To define nested URLs, set the [`children`](../../../reference/extension_urls#django_components.URLRoute.children)
+attribute of the [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) object to
+a list of child [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) objects:
 
 ```python
 class MyExtension(ComponentExtension):
@@ -742,15 +742,15 @@ would call the `my_view` handler with the parameter `name` set to `"John"`.
 
 ### Passing kwargs and other extra fields to URL routes
 
-The [`URLRoute`](../../../reference/api#django_components.URLRoute) class is framework-agnostic,
+The [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) class is framework-agnostic,
 so that extensions could be used with non-Django frameworks in the future.
 
 However, that means that there may be some extra fields that Django's
 [`django.urls.path()`](https://docs.djangoproject.com/en/5.1/ref/urls/#path)
 accepts, but which are not defined on the `URLRoute` object.
 
-To address this, the [`URLRoute`](../../../reference/api#django_components.URLRoute) object has
-an [`extra`](../../../reference/api#django_components.URLRoute.extra) attribute,
+To address this, the [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) object has
+an [`extra`](../../../reference/extension_urls#django_components.URLRoute.extra) attribute,
 which is a dictionary that can be used to pass any extra kwargs to `django.urls.path()`:
 
 ```python
