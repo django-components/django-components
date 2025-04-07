@@ -68,7 +68,7 @@ pytest==8.3.5
     # via
     #   pytest-asyncio
     #   pytest-django
-pytest-asyncio==0.24.0
+pytest-asyncio==0.26.0
     # via -r requirements-ci.in
 pytest-django==4.10.0
     # via -r requirements-ci.in
@@ -96,6 +96,7 @@ types-requests==2.32.0.20241016
 typing-extensions==4.12.2
     # via
     #   pyee
+    #   pytest-asyncio
     #   tox
 urllib3==2.2.3
     # via
