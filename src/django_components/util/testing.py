@@ -6,6 +6,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set,
 from unittest.mock import patch
 from weakref import ReferenceType
 
+import django
 from django.conf import settings as _django_settings
 from django.template import engines
 from django.test import override_settings
@@ -296,6 +297,11 @@ def djc_test(
 
         # Contents of this function will run as the test
         def _wrapper_impl(*args: Any, **kwargs: Any) -> Any:
+            # If Django is not yet configured, do so now, because we'll need to access
+            # Django's settings when merging the given settings.
+            if not _django_settings.configured:
+                django.setup()
+
             # Merge the settings
             current_django_settings = django_settings if not callable(django_settings) else None
             current_django_settings = current_django_settings.copy() if current_django_settings else {}

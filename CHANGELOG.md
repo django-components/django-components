@@ -35,6 +35,8 @@
 
     Read more on [Component views and URLs](https://django-components.github.io/django-components/0.135/concepts/fundamentals/component_views_urls/).
 
+- `@djc_test` can now be called without first calling `django.setup()`, in which case it does it for you.
+
 #### Deprecation
 
 - Currently, view request handlers such as `get()` and `post()` methods can be defined
