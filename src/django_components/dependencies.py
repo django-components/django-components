@@ -800,8 +800,7 @@ def get_script_tag(
     content = get_script_content(script_type, comp_cls, input_hash)
     if content is None:
         raise RuntimeError(
-            f"Could not find {script_type.upper()} for component '{comp_cls.__name__}' "
-            f"(id: {comp_cls.class_id})"
+            f"Could not find {script_type.upper()} for component '{comp_cls.__name__}' (id: {comp_cls.class_id})"
         )
 
     if script_type == "js":

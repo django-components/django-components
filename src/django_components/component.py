@@ -158,7 +158,7 @@ comp_cls_id_mapping: CompHashMapping = WeakValueDictionary()
 def get_component_by_class_id(comp_cls_id: str) -> Type["Component"]:
     """
     Get a component class by its unique ID.
-    
+
     Each component class is associated with a unique hash that's derived from its module import path.
 
     E.g. `path.to.my.secret.MyComponent` -> `MyComponent_ab01f32`
