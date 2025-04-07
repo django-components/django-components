@@ -41,7 +41,7 @@ class TestComponentUrl:
 
         # Check if the URL is correctly generated
         component_url = get_component_url(TestComponent)
-        assert component_url == f"/components/ext/url/components/{TestComponent._class_hash}/"
+        assert component_url == f"/components/ext/url/components/{TestComponent.class_id}/"
 
         client = Client()
         response = client.get(component_url)
@@ -79,7 +79,7 @@ class TestComponentUrl:
             get_component_url(TestComponent)
 
         # Even calling the URL directly should raise an error
-        component_url = f"/components/ext/url/components/{TestComponent._class_hash}/"
+        component_url = f"/components/ext/url/components/{TestComponent.class_id}/"
 
         client = Client()
         response = client.get(component_url)

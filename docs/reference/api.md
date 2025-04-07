@@ -119,6 +119,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.get_component_by_class_id
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.get_component_dirs
     options:
       show_if_no_docstring: true

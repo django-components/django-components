@@ -351,7 +351,7 @@ class ComponentRegistry:
         ```
         """
         existing_component = self._registry.get(name)
-        if existing_component and existing_component.cls._class_hash != component._class_hash:
+        if existing_component and existing_component.cls.class_id != component.class_id:
             raise AlreadyRegistered('The component "%s" has already been registered' % name)
 
         entry = self._register_to_library(name, component)

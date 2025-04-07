@@ -16,7 +16,7 @@ from django.test import Client
 from django.urls import path
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
-from django_components import Component, ComponentView, all_components, register, types
+from django_components import Component, ComponentView, all_components, get_component_by_class_id, register, types
 from django_components.slots import SlotRef
 from django_components.urls import urlpatterns as dc_urlpatterns
 
@@ -355,6 +355,12 @@ class TestComponent:
             ),
         ):
             Root.render()
+
+    def test_get_component_by_id(self):
+        class SimpleComponent(Component):
+            pass
+
+        assert get_component_by_class_id(SimpleComponent.class_id) == SimpleComponent
 
 
 @djc_test

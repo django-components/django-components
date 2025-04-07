@@ -207,11 +207,11 @@ This is how we achieve that:
 
 5. To be able to fetch component's inlined JS and CSS, django-components adds a URL path under:
 
-    `/components/cache/<str:comp_cls_hash>.<str:script_type>/`
+    `/components/cache/<str:comp_cls_id>.<str:script_type>/`
 
-    E.g. `/components/cache/my_table_10bc2c.js/`
+    E.g. `/components/cache/MyTable_10bc2c.js/`
 
-    This endpoint takes the component's unique hash, e.g. `my_table_10bc2c`, and looks up the component's inlined JS or CSS.
+    This endpoint takes the component's unique ID, e.g. `MyTable_10bc2c`, and looks up the component's inlined JS or CSS.
 
 ---
 

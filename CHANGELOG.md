@@ -4,6 +4,12 @@
 
 #### Feat
 
+- Each Component class now has a `class_id` attribute, which is unique to the component subclass.
+
+    NOTE: This is different from `Component.id`, which is unique to each rendered instance.
+
+    To look up a component class by its `class_id`, use `get_component_by_class_id()`.
+
 - It's now easier to create URLs for component views.
 
     Before, you had to call `Component.as_view()` and pass that to `urlpatterns`.

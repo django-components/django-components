@@ -24,7 +24,7 @@ else:
 
 
 def _get_component_route_name(component: Union[Type["Component"], "Component"]) -> str:
-    return f"__component_url__{component._class_hash}"
+    return f"__component_url__{component.class_id}"
 
 
 def get_component_url(component: Union[Type["Component"], "Component"]) -> str:
@@ -162,7 +162,7 @@ class UrlExtension(ComponentExtension):
         # Create a URL route like `components/MyTable_a1b2c3/`
         # And since this is within the `url` extension, the full URL path will then be:
         # `/components/ext/url/components/MyTable_a1b2c3/`
-        route_path = f"components/{ctx.component_cls._class_hash}/"
+        route_path = f"components/{ctx.component_cls.class_id}/"
         route_name = _get_component_route_name(ctx.component_cls)
         route = URLRoute(
             path=route_path,

@@ -201,6 +201,12 @@ def gen_reference_components():
             # If the component classes define any extra methods, we want to show them.
             # BUT, we don't to show the methods that belong to the base Component class.
             unique_methods = _get_unique_methods(Component, obj)
+
+            # NOTE: `class_id` is declared on the `Component` class, only as a type,
+            #       so it's not picked up by `_get_unique_methods`.
+            if "class_id" in unique_methods:
+                unique_methods.remove("class_id")
+
             if unique_methods:
                 members = ", ".join(unique_methods)
                 members = f"[{unique_methods}]"
@@ -456,7 +462,7 @@ def gen_reference_urls():
         f.write(preface + "\n\n")
 
         # Simply list all URLs, e.g.
-        # `- components/cache/<str:comp_cls_hash>.<str:script_type>/`
+        # `- components/cache/<str:comp_cls_id>.<str:script_type>/`
         f.write("\n".join([f"- `{url_path}`\n" for url_path in all_urls]))
 
 

@@ -129,16 +129,16 @@ class TestComponentMediaCache:
         TestMediaAndVarsComponent.render()
 
         # Check that JS/CSS is cached for components that have them
-        assert test_cache.has_key(f"__components:{TestMediaAndVarsComponent._class_hash}:js")
-        assert test_cache.has_key(f"__components:{TestMediaAndVarsComponent._class_hash}:css")
-        assert test_cache.has_key(f"__components:{TestMediaNoVarsComponent._class_hash}:js")
-        assert test_cache.has_key(f"__components:{TestMediaNoVarsComponent._class_hash}:css")
-        assert not test_cache.has_key(f"__components:{TestSimpleComponent._class_hash}:js")
-        assert not test_cache.has_key(f"__components:{TestSimpleComponent._class_hash}:css")
+        assert test_cache.has_key(f"__components:{TestMediaAndVarsComponent.class_id}:js")
+        assert test_cache.has_key(f"__components:{TestMediaAndVarsComponent.class_id}:css")
+        assert test_cache.has_key(f"__components:{TestMediaNoVarsComponent.class_id}:js")
+        assert test_cache.has_key(f"__components:{TestMediaNoVarsComponent.class_id}:css")
+        assert not test_cache.has_key(f"__components:{TestSimpleComponent.class_id}:js")
+        assert not test_cache.has_key(f"__components:{TestSimpleComponent.class_id}:css")
 
         # Check that we cache `Component.js` / `Component.css`
-        assert test_cache.get(f"__components:{TestMediaNoVarsComponent._class_hash}:js").strip() == "console.log('Hello from JS');"  # noqa: E501
-        assert test_cache.get(f"__components:{TestMediaNoVarsComponent._class_hash}:css").strip() == ".novars-component { color: blue; }"  # noqa: E501
+        assert test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:js").strip() == "console.log('Hello from JS');"  # noqa: E501
+        assert test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:css").strip() == ".novars-component { color: blue; }"  # noqa: E501
 
         # Check that we cache JS / CSS scripts generated from `get_js_data` / `get_css_data`
         # NOTE: The hashes is generated from the data.
@@ -146,5 +146,5 @@ class TestComponentMediaCache:
         css_vars_hash = "d039a3"
 
         # TODO - Update once JS and CSS vars are enabled
-        assert test_cache.get(f"__components:{TestMediaAndVarsComponent._class_hash}:js:{js_vars_hash}").strip() == ""
-        assert test_cache.get(f"__components:{TestMediaAndVarsComponent._class_hash}:css:{css_vars_hash}").strip() == ""  # noqa: E501
+        assert test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:js:{js_vars_hash}").strip() == ""
+        assert test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:css:{css_vars_hash}").strip() == ""  # noqa: E501
