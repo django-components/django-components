@@ -112,6 +112,7 @@ class OnComponentDataContext(NamedTuple):
     """Dictionary of CSS data from `Component.get_css_data()`"""
 
 
+@mark_extension_hook_api
 class OnComponentRenderedContext(NamedTuple):
     component: "Component"
     """The Component instance that is being rendered"""
