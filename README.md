@@ -253,11 +253,16 @@ Read more about [HTML attributes](https://django-components.github.io/django-com
 
 - Expose components as views with `get`, `post`, `put`, `patch`, `delete` methods
 
+- Automatically create an endpoint for the component with `Component.Url.public`
+
 ```py
 # components/calendar/calendar.py
 @register("calendar")
 class Calendar(Component):
     template_file = "calendar.html"
+
+    class Url:
+        public = True
 
     class View:
         def get(self, request, *args, **kwargs):
@@ -274,8 +279,11 @@ class Calendar(Component):
             "page": page,
         }
 
-# urls.py
-path("calendar/", Calendar.as_view()),
+# Get auto-generated URL for the component
+url = get_component_url(Calendar)
+
+# Or define explicit URL in urls.py
+path("calendar/", Calendar.as_view())
 ```
 
 ### Type hints
