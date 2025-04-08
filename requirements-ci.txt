@@ -70,7 +70,7 @@ pytest==8.3.5
     #   pytest-django
 pytest-asyncio==0.24.0
     # via -r requirements-ci.in
-pytest-django==4.10.0
+pytest-django==4.11.1
     # via -r requirements-ci.in
 pyyaml==6.0.2
     # via asv
