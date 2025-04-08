@@ -72,7 +72,7 @@ class Calendar(Component):
 !!! note
 
     If you "inline" the HTML, JS and CSS code into the Python class, you can set up
-    [syntax highlighting](../../guides/setup/syntax_highlight) for better experience.
+    [syntax highlighting](../../concepts/fundamentals/single_file_components#syntax-highlighting) for better experience.
     However, autocompletion / intellisense does not work with syntax highlighting.
 
 We'll start by creating a component that defines only a Django template:

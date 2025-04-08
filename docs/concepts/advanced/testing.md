@@ -4,7 +4,10 @@ The [`@djc_test`](../../../reference/testing_api#djc_test) decorator is a powerf
 
 ## Usage
 
-The [`@djc_test`](../../../reference/testing_api#djc_test) decorator can be applied to functions, methods, or classes. When applied to a class, it recursively decorates all methods starting with `test_`, including those in nested classes. This allows for comprehensive testing of component behavior.
+The [`@djc_test`](../../../reference/testing_api#djc_test) decorator can be applied to functions, methods, or classes.
+
+When applied to a class, it decorates all methods starting with `test_`, and all nested classes starting with `Test`,
+recursively.
 
 ### Applying to a Function
 
@@ -14,8 +17,6 @@ simply decorate the function as shown below:
 ```python
 import django
 from django_components.testing import djc_test
-
-django.setup()
 
 @djc_test
 def test_my_component():
@@ -27,38 +28,34 @@ def test_my_component():
 
 ### Applying to a Class
 
-When applied to a class, `djc_test` decorates each `test_` method individually:
+When applied to a class, `djc_test` decorates each `test_` method, as well as all nested classes starting with `Test`.
 
 ```python
 import django
 from django_components.testing import djc_test
-
-django.setup()
 
 @djc_test
 class TestMyComponent:
     def test_something(self):
         ...
 
-    class Nested:
+    class TestNested:
         def test_something_else(self):
             ...
 ```
 
-This is equivalent to applying the decorator to each method individually:
+This is equivalent to applying the decorator to both of the methods individually:
 
 ```python
 import django
 from django_components.testing import djc_test
-
-django.setup()
 
 class TestMyComponent:
     @djc_test
     def test_something(self):
         ...
 
-    class Nested:
+    class TestNested:
         @djc_test
         def test_something_else(self):
             ...
@@ -70,18 +67,25 @@ See the API reference for [`@djc_test`](../../../reference/testing_api#djc_test)
 
 ### Setting Up Django
 
-Before using [`djc_test`](../../../reference/testing_api#djc_test), ensure Django is set up:
+If you want to define a common Django settings that would be the baseline for all tests,
+you can call [`django.setup()`](https://docs.djangoproject.com/en/5.2/ref/applications/#django.setup)
+before the `@djc_test` decorator:
 
 ```python
 import django
 from django_components.testing import djc_test
 
-django.setup()
+django.setup(...)
 
 @djc_test
 def test_my_component():
     ...
 ```
+
+!!! info
+
+    If you omit [`django.setup()`](https://docs.djangoproject.com/en/5.2/ref/applications/#django.setup)
+    in the example above, `@djc_test` will call it for you, so you don't need to do it manually.
 
 ## Example: Parametrizing Context Behavior
 
