@@ -49,13 +49,12 @@
             ttl = 0.1  # .1 seconds TTL
             cache_name = "custom_cache"
 
-            def hash_args(self, args):
-                # Custom hash method for args
-                return json.dumps(args)
+            # Custom hash method for args and kwargs
+            # NOTE: The default implementation simply serializes the input into a string.
+            #       As such, it might not be suitable for complex objects like Models.
+            def hash(self, *args, **kwargs):
+                return f"{json.dumps(args)}:{json.dumps(kwargs)}"
 
-            def hash_kwargs(self, kwargs):
-                # Custom hash method for kwargs
-                return json.dumps(kwargs)
     ```
 
     Read more on [Component caching](https://django-components.github.io/django-components/0.137/concepts/advanced/component_caching/).

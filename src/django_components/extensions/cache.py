@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence
+from typing import Any, Optional
 
 from django.core.cache import BaseCache, caches
 
@@ -68,33 +68,24 @@ class ComponentCache(ComponentExtension.ExtensionClass):  # type: ignore
         return cache
 
     def get_cache_key(self, *args: Any, **kwargs: Any) -> str:
-        # Allow user to override how the input is hashed into a cache key with `hash_input()`,
+        # Allow user to override how the input is hashed into a cache key with `hash()`,
         # but then still prefix it wih our own prefix, so it's clear where it comes from.
-        cache_key = self.hash_input(*args, **kwargs)
-        cache_key = CACHE_KEY_PREFIX + cache_key
+        cache_key = self.hash(*args, **kwargs)
+        cache_key = CACHE_KEY_PREFIX + self.component._class_hash + ":" + cache_key
         return cache_key
 
-    def hash_input(self, *args: Any, **kwargs: Any) -> str:
+    def hash(self, *args: Any, **kwargs: Any) -> str:
         """
-        Defines how the input (both args and kwargs) iss hashed into a cache key.
+        Defines how the input (both args and kwargs) is hashed into a cache key.
 
-        By default, `hash_input()` calls
-        [`hash_args()`](../api#django_components.ComponentCache.hash_args)
-        and [`hash_kwargs()`](../api#django_components.ComponentCache.hash_kwargs).
+        By default, `hash()` serializes the input into a string. As such, the default
+        implementation might NOT be suitable if you need to hash complex objects.
         """
-        args_hash = self.hash_args(args)
-        kwargs_hash = self.hash_kwargs(kwargs)
-        return f"{self.component._class_hash}:{args_hash}:{kwargs_hash}"
-
-    def hash_args(self, args: Sequence[Any]) -> str:
-        """Defines how positional arguments are hashed into a cache key segment."""
-        return "-".join(str(arg) for arg in args)
-
-    def hash_kwargs(self, kwargs: dict) -> str:
-        """Defines how keyword arguments are hashed into a cache key segment."""
+        args_hash = ",".join(str(arg) for arg in args)
         # Sort keys to ensure consistent ordering
         sorted_items = sorted(kwargs.items())
-        return "-".join(f"{k}:{v}" for k, v in sorted_items)
+        kwargs_hash = ",".join(f"{k}-{v}" for k, v in sorted_items)
+        return f"{args_hash}:{kwargs_hash}"
 
 
 class CacheExtension(ComponentExtension):

@@ -165,11 +165,11 @@ class TestComponentCache:
         cache = caches["default"]
         assert len(cache._cache) == 2
         assert (
-            component.cache.get_entry("components:cache:TestComponent_648b95::input:world")
+            component.cache.get_entry("components:cache:TestComponent_648b95::input-world")
             == "<!-- _RENDERED TestComponent_648b95,a1bc3e,, -->Hello world"
         )  # noqa: E501
         assert (
-            component.cache.get_entry("components:cache:TestComponent_648b95::input:cake")
+            component.cache.get_entry("components:cache:TestComponent_648b95::input-cake")
             == "<!-- _RENDERED TestComponent_648b95,a1bc3f,, -->Hello cake"
         )  # noqa: E501
 
@@ -184,8 +184,8 @@ class TestComponentCache:
         component.render(args=(1, 2), kwargs={"key": "value"})
 
         # The key consists of `component._class_hash`, hashed args, and hashed kwargs
-        expected_key = "TestComponent_52dd91:1-2:key:value"
-        assert component.cache.hash_input(1, 2, key="value") == expected_key
+        expected_key = "1,2:key-value"
+        assert component.cache.hash(1, 2, key="value") == expected_key
 
     def test_override_hash_methods(self):
         class TestComponent(Component):
@@ -194,13 +194,9 @@ class TestComponentCache:
             class Cache:
                 enabled = True
 
-                def hash_args(self, args):
-                    # Custom hash method for args
-                    return "custom-args"
-
-                def hash_kwargs(self, kwargs):
-                    # Custom hash method for kwargs
-                    return "custom-kwargs"
+                def hash(self, *args, **kwargs):
+                    # Custom hash method for args and kwargs
+                    return "custom-args-and-kwargs"
 
             def get_context_data(self, *args, **kwargs: Any):
                 return {}
@@ -209,5 +205,5 @@ class TestComponentCache:
         component.render(args=(1, 2), kwargs={"key": "value"})
 
         # The key should use the custom hash methods
-        expected_key = "components:cache:TestComponent_28880f:custom-args:custom-kwargs"
+        expected_key = "components:cache:TestComponent_28880f:custom-args-and-kwargs"
         assert component.cache.get_cache_key(1, 2, key="value") == expected_key

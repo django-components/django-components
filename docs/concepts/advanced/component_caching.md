@@ -64,23 +64,24 @@ However, you have full control over the cache key generation. As such, you can:
 - Cache the component irrespective of the inputs
 
 To achieve that, you can override
-the [`Component.Cache.hash_args()`](../../reference/api.md#django_components.ComponentCache.hash_args)
-and [`Component.Cache.hash_kwargs()`](../../reference/api.md#django_components.ComponentCache.hash_kwargs)
-methods to customize how arguments are hashed into the cache key.
+the [`Component.Cache.hash()`](../../reference/api.md#django_components.ComponentCache.hash)
+method to customize how arguments are hashed into the cache key.
 
 ```python
 class MyComponent(Component):
     class Cache:
         enabled = True
 
-        def hash_args(self, args):
-            return "custom-args"
-
-        def hash_kwargs(self, kwargs):
-            return "custom-kwargs"
+        def hash(self, *args, **kwargs):
+            return f"{json.dumps(args)}:{json.dumps(kwargs)}"
 ```
 
-For even more control, you can override the [`Component.Cache.hash_input()`](../../reference/api.md#django_components.ComponentCache.hash_input) method, or other methods available on the [`ComponentCache`](../../reference/api.md#django_components.ComponentCache) class.
+For even more control, you can override other methods available on the [`ComponentCache`](../../reference/api.md#django_components.ComponentCache) class.
+
+!!! warning
+
+    The default implementation of `Cache.hash()` simply serializes the input into a string.
+    As such, it might not be suitable if you need to hash complex objects like Models.
 
 ### Example
 
