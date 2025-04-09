@@ -191,6 +191,7 @@ class ComponentInput(Generic[ArgsType, KwargsType, SlotsType]):
     input: ComponentInput[ArgsType, KwargsType, SlotsType]
     ```
     """
+
     context: Context
     args: ArgsType
     kwargs: KwargsType
@@ -834,7 +835,7 @@ class Component(
         [`get_context_data()`](../api#django_components.Component.get_context_data).
 
         In regular Django templates, you need to use `RequestContext` to apply context processors.
-        
+
         In Components, the context processors are applied to components either when:
 
         - The component is rendered with `RequestContext` (Regular Django behavior)
@@ -1319,9 +1320,15 @@ class Component(
         with self._with_metadata(metadata):
             context_processors_data = self.context_processors_data
             context_data = default(self.get_context_data(*args, **kwargs), {})
-            # TODO - enable JS and CSS vars - EXPOSE AND DOCUMENT AND MAKE NON-NULL
-            js_data = default(self.get_js_data(*args, **kwargs), {}) if hasattr(self, "get_js_data") else {}  # type: ignore
-            css_data = default(self.get_css_data(*args, **kwargs), {}) if hasattr(self, "get_css_data") else {}  # type: ignore
+            # TODO - enable JS and CSS vars - Remove `hasattr()` checks, expose, and document
+            if hasattr(self, "get_js_data"):
+                js_data = default(self.get_js_data(*args, **kwargs), {})  # type: ignore
+            else:
+                js_data = {}
+            if hasattr(self, "get_css_data"):
+                css_data = default(self.get_css_data(*args, **kwargs), {})  # type: ignore
+            else:
+                css_data = {}
 
         extensions.on_component_data(
             OnComponentDataContext(

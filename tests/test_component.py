@@ -373,7 +373,7 @@ class TestComponent:
             def get_context_data(self):
                 return None
 
-        assert SimpleComponent.render() == ""
+        assert SimpleComponent.render() == "Hello"
 
 @djc_test
 class TestComponentRender:
