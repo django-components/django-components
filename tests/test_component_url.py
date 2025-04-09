@@ -9,6 +9,23 @@ from django_components.testing import djc_test
 
 from .testutils import setup_test_config
 
+# DO NOT REMOVE!
+#
+# This is intentionally defined before `setup_test_config()` in order to test that
+# the URL extension works even before the Django has been set up.
+#
+# Because if we define the component before `django.setup()`, then we store it in
+# event queue, and will register it when `AppConfig.ready()` is finally called.
+#
+# This test relies on the "url" extension calling `add_extension_urls()` from within
+# the `on_component_class_created()` hook.
+class ComponentBeforeReady(Component):
+    class Url:
+        public = True
+
+    template = "Hello"
+
+
 setup_test_config({"autodiscover": False})
 
 

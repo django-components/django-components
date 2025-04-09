@@ -658,27 +658,6 @@ class ExtensionManager:
 
         self._initialized = True
 
-        # The triggers for following hooks may occur before the `apps.py` `ready()` hook is called.
-        # - on_component_class_created
-        # - on_component_class_deleted
-        # - on_registry_created
-        # - on_registry_deleted
-        # - on_component_registered
-        # - on_component_unregistered
-        #
-        # The problem is that the extensions are set up only at the initialization (`ready()` hook in `apps.py`).
-        #
-        # So in the case that these hooks are triggered before initialization,
-        # we store these "events" in a list, and then "flush" them all when `ready()` is called.
-        #
-        # This way, we can ensure that all extensions are present before any hooks are called.
-        for hook, data in self._events:
-            if hook == "on_component_class_created":
-                on_component_created_data: OnComponentClassCreatedContext = data
-                self._init_component_class(on_component_created_data.component_cls)
-            getattr(self, hook)(data)
-        self._events = []
-
         # Populate the `urlpatterns` with URLs specified by the extensions
         # TODO_V3 - Django-specific logic - replace with hook
         urls: List[URLResolver] = []
@@ -706,6 +685,29 @@ class ExtensionManager:
         urlconf = get_urlconf()
         resolver = get_resolver(urlconf)
         resolver._populate()
+
+        # Flush stored events
+        #
+        # The triggers for following hooks may occur before the `apps.py` `ready()` hook is called.
+        # - on_component_class_created
+        # - on_component_class_deleted
+        # - on_registry_created
+        # - on_registry_deleted
+        # - on_component_registered
+        # - on_component_unregistered
+        #
+        # The problem is that the extensions are set up only at the initialization (`ready()` hook in `apps.py`).
+        #
+        # So in the case that these hooks are triggered before initialization,
+        # we store these "events" in a list, and then "flush" them all when `ready()` is called.
+        #
+        # This way, we can ensure that all extensions are present before any hooks are called.
+        for hook, data in self._events:
+            if hook == "on_component_class_created":
+                on_component_created_data: OnComponentClassCreatedContext = data
+                self._init_component_class(on_component_created_data.component_cls)
+            getattr(self, hook)(data)
+        self._events = []
 
     def get_extension(self, name: str) -> ComponentExtension:
         for extension in self.extensions:

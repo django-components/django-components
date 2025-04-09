@@ -1,5 +1,11 @@
 # Release notes
 
+## v0.138
+
+#### Fix
+
+- Fix bug: Allow components with `Url.public = True` to be defined before `django.setup()`
+
 ## v0.137
 
 #### Feat
