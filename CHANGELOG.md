@@ -61,6 +61,8 @@
 
 - `@djc_test` can now be called without first calling `django.setup()`, in which case it does it for you.
 
+- Expose `ComponentInput` class, which is a typing for `Component.input`.
+
 #### Deprecation
 
 - Currently, view request handlers such as `get()` and `post()` methods can be defined
@@ -82,6 +84,10 @@
     ```
 
     In v1, these methods should be defined only on the `Component.View` class instead.
+
+#### Refactor
+
+- `Component.get_context_data()` can now omit a return statement or return `None`.
 
 ## 🚨📢 v0.136
 

@@ -86,7 +86,7 @@ from django_components.util.context import gen_context_processors_data, snapshot
 from django_components.util.django_monkeypatch import is_template_cls_patched
 from django_components.util.exception import component_error_message
 from django_components.util.logger import trace_component_msg
-from django_components.util.misc import gen_id, get_import_path, hash_comp_cls
+from django_components.util.misc import default, gen_id, get_import_path, hash_comp_cls
 from django_components.util.template_tag import TagAttr
 from django_components.util.weakref import cached_ref
 
@@ -176,7 +176,21 @@ def get_component_by_class_id(comp_cls_id: str) -> Type["Component"]:
 
 
 @dataclass(frozen=True)
-class RenderInput(Generic[ArgsType, KwargsType, SlotsType]):
+class ComponentInput(Generic[ArgsType, KwargsType, SlotsType]):
+    """
+    Object holding the inputs that were passed to [`Component.render()`](../api#django_components.Component.render)
+    or the [`{% component %}`](../template_tags#component) template tag.
+
+    This object is available only during render under [`Component.input`](../api#django_components.Component.input).
+
+    Read more about the [Render API](../../concepts/fundamentals/render_api).
+
+    This class can be typed as:
+
+    ```py
+    input: ComponentInput[ArgsType, KwargsType, SlotsType]
+    ```
+    """
     context: Context
     args: ArgsType
     kwargs: KwargsType
@@ -188,7 +202,7 @@ class RenderInput(Generic[ArgsType, KwargsType, SlotsType]):
 @dataclass()
 class MetadataItem(Generic[ArgsType, KwargsType, SlotsType]):
     render_id: str
-    input: RenderInput[ArgsType, KwargsType, SlotsType]
+    input: ComponentInput[ArgsType, KwargsType, SlotsType]
     is_filled: Optional[SlotIsFilled]
     request: Optional[HttpRequest]
 
@@ -380,8 +394,8 @@ class Component(
         """
         return None
 
-    def get_context_data(self, *args: Any, **kwargs: Any) -> DataType:
-        return cast(DataType, {})
+    def get_context_data(self, *args: Any, **kwargs: Any) -> Optional[DataType]:
+        return None
 
     js: Optional[str] = None
     """
@@ -706,12 +720,12 @@ class Component(
 
         Raises `RuntimeError` if accessed outside of rendering execution.
 
-        A single render ID has a chance of collision 1 in 3.3M. However, due to birthday paradox, the chance of
-        collision increases when approaching ~1,000 render IDs.
+        A single render ID has a chance of collision 1 in 57 billion. However, due to birthday paradox,
+        the chance of collision increases to 1% when approaching ~33K render IDs.
 
-        **Thus, there is a soft-cap of 1,000 components rendered on a single page.**
+        Thus, there is currently a soft-cap of ~30K components rendered on a single page.
 
-        If you need to more than that, please open an issue on GitHub.
+        If you need to expand this limit, please open an issue on GitHub.
 
         **Example:**
 
@@ -734,7 +748,7 @@ class Component(
         return ctx.render_id
 
     @property
-    def input(self) -> RenderInput[ArgsType, KwargsType, SlotsType]:
+    def input(self) -> ComponentInput[ArgsType, KwargsType, SlotsType]:
         """
         Input holds the data (like arg, kwargs, slots) that were passed to
         the current execution of the `render` method.
@@ -819,12 +833,14 @@ class Component(
         return this data from
         [`get_context_data()`](../api#django_components.Component.get_context_data).
 
-        Unlike regular Django templates, the context processors are applied to components either when:
+        In regular Django templates, you need to use `RequestContext` to apply context processors.
+        
+        In Components, the context processors are applied to components either when:
 
         - The component is rendered with `RequestContext` (Regular Django behavior)
         - The component is rendered with a regular `Context` (or none), but the `request` kwarg
           of [`Component.render()`](../api#django_components.Component.render) is set.
-        - The component is nested in another component that matches one of the two conditions above.
+        - The component is nested in another component that matches any of these conditions.
 
         See
         [`Component.request`](../api#django_components.Component.request)
@@ -833,6 +849,8 @@ class Component(
         object is passed to and within the components.
 
         Raises `RuntimeError` if accessed outside of rendering execution.
+
+        NOTE: This object is generated dynamically, so changes to it are not persisted.
 
         **Example:**
 
@@ -1213,7 +1231,7 @@ class Component(
         render_id = gen_id()
         metadata = MetadataItem(
             render_id=render_id,
-            input=RenderInput(
+            input=ComponentInput(
                 context=context,
                 slots=slots,
                 args=args,
@@ -1300,10 +1318,10 @@ class Component(
         # Allow to access component input and metadata like component ID from within these hook
         with self._with_metadata(metadata):
             context_processors_data = self.context_processors_data
-            context_data = self.get_context_data(*args, **kwargs)
+            context_data = default(self.get_context_data(*args, **kwargs), {})
             # TODO - enable JS and CSS vars - EXPOSE AND DOCUMENT AND MAKE NON-NULL
-            js_data = self.get_js_data(*args, **kwargs) if hasattr(self, "get_js_data") else {}  # type: ignore
-            css_data = self.get_css_data(*args, **kwargs) if hasattr(self, "get_css_data") else {}  # type: ignore
+            js_data = default(self.get_js_data(*args, **kwargs), {}) if hasattr(self, "get_js_data") else {}  # type: ignore
+            css_data = default(self.get_css_data(*args, **kwargs), {}) if hasattr(self, "get_css_data") else {}  # type: ignore
 
         extensions.on_component_data(
             OnComponentDataContext(

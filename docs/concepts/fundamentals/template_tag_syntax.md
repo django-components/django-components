@@ -85,7 +85,7 @@ Other than that, you can use spread operators multiple times, and even put keywo
 
 In a case of conflicts, the values added later (right-most) overwrite previous values.
 
-## Use template tags inside component inputs
+## Template tags inside literal strings
 
 _New in version 0.93_
 
@@ -119,26 +119,22 @@ Instead, template tags in django_components (`{% component %}`, `{% slot %}`, `{
 / %}
 ```
 
-In the example above:
+In the example above, the component receives:
 
-- Component `test` receives a positional argument with value `"As positional arg "`. The comment is omitted.
-- Kwarg `title` is passed as a string, e.g. `John Doe`
-- Kwarg `id` is passed as `int`, e.g. `15`
-- Kwarg `readonly` is passed as `bool`, e.g. `False`
-- Kwarg `author` is passed as a string, e.g. `John Wick ` (Comment omitted)
+-  Positional argument `"As positional arg "` (Comment omitted)
+- `title` - passed as `str`, e.g. `John Doe`
+- `id` - passed as `int`, e.g. `15`
+- `readonly` - passed as `bool`, e.g. `False`
+- `author` - passed as `str`, e.g. `John Wick ` (Comment omitted)
 
 This is inspired by [django-cotton](https://github.com/wrabit/django-cotton#template-expressions-in-attributes).
 
 ### Passing data as string vs original values
 
-Sometimes you may want to use the template tags to transform
-or generate the data that is then passed to the component.
+In the example above, the kwarg `id` was passed as an integer, NOT a string.
 
-The data doesn't necessarily have to be strings. In the example above, the kwarg `id` was passed as an integer, NOT a string.
-
-Although the string literals for components inputs are treated as regular Django templates, there is one special case:
-
-When the string literal contains only a single template tag, with no extra text, then the value is passed as the original type instead of a string.
+When the string literal contains only a single template tag, with no extra text (and no extra whitespace),
+then the value is passed as the original type instead of a string.
 
 Here, `page` is an integer:
 

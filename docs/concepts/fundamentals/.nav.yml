@@ -2,7 +2,7 @@
 nav:
   - Single-file components: single_file_components.md
   - Components in Python: components_in_python.md
-  - Accessing component inputs: access_component_input.md
+  - Render API: render_api.md
   - Component defaults: component_defaults.md
   - Component context and scope: component_context_scope.md
   - Template tag syntax: template_tag_syntax.md

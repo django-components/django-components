@@ -329,7 +329,7 @@ Renders:
 <div class="my-class extra-class"></div>
 ```
 
-### Merging `style` Attributes
+### Merging `style` attributes
 
 The `style` attribute can be specified as a string of style properties as usual.
 
@@ -364,8 +364,8 @@ If you want granular control over individual style properties, you can use a dic
 
 If a style property is specified multiple times, the last value is used.
 
-- If the last time the property is set is `False`, the property is removed.
 - Properties set to `None` are ignored.
+- If the last non-`None` instance of the property is set to `False`, the property is removed.
 
 **Example:**
 

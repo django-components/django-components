@@ -362,6 +362,18 @@ class TestComponent:
 
         assert get_component_by_class_id(SimpleComponent.class_id) == SimpleComponent
 
+    def test_get_component_by_id_raises_on_missing_component(self):
+        with pytest.raises(KeyError):
+            get_component_by_class_id("nonexistent")
+
+    def test_get_context_data_returns_none(self):
+        class SimpleComponent(Component):
+            template = "Hello"
+
+            def get_context_data(self):
+                return None
+
+        assert SimpleComponent.render() == ""
 
 @djc_test
 class TestComponentRender:

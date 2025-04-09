@@ -17,9 +17,7 @@ django-components has a suite of features that help you write and manage views a
 
 - In addition, [`Component`](../../../reference/api#django_components.Component) has a [`render_to_response()`](../../../reference/api#django_components.Component.render_to_response) method that renders the component template based on the provided input and returns an `HttpResponse` object.
 
-## Component as view example
-
-### Define handlers
+## Define handlers
 
 Here's an example of a calendar component defined as a view. Simply define a `View` class with your custom `get()` method to handle GET requests:
 
@@ -83,7 +81,7 @@ class Calendar(Component):
 
     This is deprecated from v0.137 onwards, and will be removed in v1.0.
 
-### Register the URLs manually
+## Register URLs manually
 
 To register the component as a route / endpoint in Django, add an entry to your
 [`urlpatterns`](https://docs.djangoproject.com/en/5.1/topics/http/urls/).
@@ -102,7 +100,7 @@ urlpatterns = [
 internally calls [`View.as_view()`](https://docs.djangoproject.com/en/5.1/ref/class-based-views/base/#django.views.generic.base.View.as_view), passing the component
 instance as one of the arguments.
 
-### Register the URLs automatically
+## Register URLs automatically
 
 If you don't care about the exact URL of the component, you can let django-components manage the URLs for you by setting the [`Component.Url.public`](../../../reference/api#django_components.ComponentUrl.public) attribute to `True`:
 

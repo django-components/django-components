@@ -6,6 +6,10 @@ Django-components functionality can be extended with "extensions". Extensions al
 - Add new attributes and methods to the components under an extension-specific nested class.
 - Define custom commands that can be executed via the Django management command interface.
 
+## Live examples
+
+- [djc-ext-pydantic](https://github.com/django-components/djc-ext-pydantic)
+
 ## Setting up extensions
 
 Extensions are configured in the Django settings under [`COMPONENTS.extensions`](../../../reference/settings#django_components.app_settings.ComponentsSettings.extensions).

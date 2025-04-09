@@ -16,7 +16,13 @@ from django_components.util.command import (
     CommandSubcommand,
     ComponentCommand,
 )
-from django_components.component import Component, ComponentVars, all_components, get_component_by_class_id
+from django_components.component import (
+    Component,
+    ComponentInput,
+    ComponentVars,
+    all_components,
+    get_component_by_class_id,
+)
 from django_components.component_media import ComponentMediaInput, ComponentMediaInputPath
 from django_components.component_registry import (
     AlreadyRegistered,
@@ -84,6 +90,7 @@ __all__ = [
     "ComponentExtension",
     "ComponentFileEntry",
     "ComponentFormatter",
+    "ComponentInput",
     "ComponentMediaInput",
     "ComponentMediaInputPath",
     "ComponentRegistry",
