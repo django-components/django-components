@@ -81,6 +81,30 @@ class Calendar(Component):
 
     This is deprecated from v0.137 onwards, and will be removed in v1.0.
 
+### Acccessing component instance
+
+You can access the component instance from within the View methods by using the [`View.component`](../../../reference/api#django_components.ComponentView.component) attribute:
+
+```py
+class Calendar(Component):
+    ...
+
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(request=request)
+```
+
+!!! note
+
+    The [`View.component`](../../../reference/api#django_components.ComponentView.component) instance is a dummy instance created solely for the View methods.
+
+    It is the same as if you instantiated the component class directly:
+
+    ```py
+    component = Calendar()
+    component.render_to_response(request=request)
+    ```
+
 ## Register URLs manually
 
 To register the component as a route / endpoint in Django, add an entry to your

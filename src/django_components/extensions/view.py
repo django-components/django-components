@@ -33,6 +33,18 @@ class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
     # NOTE: This attribute must be declared on the class for `View.as_view()` to allow
     # us to pass `component` kwarg.
     component = cast("Component", None)
+    """
+    The component instance.
+
+    This is a dummy instance created solely for the View methods.
+
+    It is the same as if you instantiated the component class directly:
+
+    ```py
+    component = Calendar()
+    component.render_to_response(request=request)
+    ```
+    """
 
     def __init__(self, component: "Component", **kwargs: Any) -> None:
         ComponentExtension.ExtensionClass.__init__(self, component)
