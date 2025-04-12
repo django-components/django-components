@@ -1,6 +1,7 @@
 import re
 from pathlib import Path
 
+from django.contrib.staticfiles import finders
 from django.contrib.staticfiles.management.commands.collectstatic import Command
 from django.test import SimpleTestCase
 
@@ -224,3 +225,30 @@ class StaticFilesFinderTests(SimpleTestCase):
 
         self.assertListEqual(collected["unmodified"], [])
         self.assertListEqual(collected["post_processed"], [])
+
+    # Handle deprecated `all` parameter:
+    # - In Django 5.2, the `all` parameter was deprecated in favour of `find_all`.
+    # - Between Django 5.2 (inclusive) and 6.1 (exclusive), the `all` parameter was still
+    #   supported, but an error was raised if both were provided.
+    # - In Django 6.1, the `all` parameter was removed.
+    #
+    # See https://github.com/django/django/blob/21f8be76d43aa1ee5ae41c1e0a428cfea1f231c1/django/contrib/staticfiles/finders.py#L58C9-L58C37
+    # And https://github.com/django-components/django-components/issues/1119
+    @djc_test(
+        django_settings={
+            **common_settings,
+            "STATICFILES_FINDERS": [
+                # Default finders
+                "django.contrib.staticfiles.finders.FileSystemFinder",
+                "django.contrib.staticfiles.finders.AppDirectoriesFinder",
+                # Django components
+                "django_components.finders.ComponentsFileSystemFinder",
+            ],
+        },
+        components_settings=COMPONENTS,
+    )
+    def test_find_compat(self):
+        # NOTE: This would raise an error in Django 5.2 without a fix
+        result = finders.find("staticfiles/staticfiles.css")
+
+        assert result.endswith("django-components/tests/components/staticfiles/staticfiles.css")

@@ -1,5 +1,11 @@
 # Release notes
 
+## v0.139
+
+#### Fix
+
+- Fix bug: Fix compatibility with `Finder.find()` in Django 5.2 ([#1119](https://github.com/django-components/django-components/issues/1119))
+
 ## v0.138
 
 #### Fix

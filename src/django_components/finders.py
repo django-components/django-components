@@ -2,6 +2,7 @@ import os
 import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
+from django import VERSION as DJANGO_VERSION
 from django.contrib.staticfiles.finders import BaseFinder
 from django.contrib.staticfiles.utils import get_files
 from django.core.checks import CheckMessage, Error, Warning
@@ -90,17 +91,32 @@ class ComponentsFileSystemFinder(BaseFinder):
         return errors
 
     # NOTE: Same as `FileSystemFinder.find`
-    def find(self, path: str, all: bool = False) -> Union[List[str], str]:
+    def find(self, path: str, **kwargs: Any) -> Union[List[str], str]:
         """
         Look for files in the extra locations as defined in COMPONENTS.dirs.
         """
+        # Handle deprecated `all` parameter:
+        # - In Django 5.2, the `all` parameter was deprecated in favour of `find_all`.
+        # - Between Django 5.2 (inclusive) and 6.1 (exclusive), the `all` parameter was still
+        #   supported, but an error was raised if both were provided.
+        # - In Django 6.1, the `all` parameter was removed.
+        #
+        # See https://github.com/django/django/blob/21f8be76d43aa1ee5ae41c1e0a428cfea1f231c1/django/contrib/staticfiles/finders.py#L58C9-L58C37
+        # And https://github.com/django-components/django-components/issues/1119
+        if DJANGO_VERSION >= (5, 2) and DJANGO_VERSION < (6, 1):
+            find_all = self._check_deprecated_find_param(**kwargs)  # type: ignore
+        elif DJANGO_VERSION >= (6, 1):
+            find_all = kwargs.get("find_all", False)
+        else:
+            find_all = kwargs.get("all", False)
+
         matches: List[str] = []
         for prefix, root in self.locations:
             if root not in searched_locations:
                 searched_locations.append(root)
             matched_path = self.find_location(root, path, prefix)
             if matched_path:
-                if not all:
+                if not find_all:
                     return matched_path
                 matches.append(matched_path)
         return matches
