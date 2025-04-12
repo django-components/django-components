@@ -101,7 +101,7 @@ class ComponentsFileSystemFinder(BaseFinder):
         #   supported, but an error was raised if both were provided.
         # - In Django 6.1, the `all` parameter was removed.
         #
-        # See https://github.com/django/django/blob/21f8be76d43aa1ee5ae41c1e0a428cfea1f231c1/django/contrib/staticfiles/finders.py#L58C9-L58C37
+        # See https://github.com/django/django/blob/5.2/django/contrib/staticfiles/finders.py#L58C9-L58C37
         # And https://github.com/django-components/django-components/issues/1119
         if DJANGO_VERSION >= (5, 2) and DJANGO_VERSION < (6, 1):
             find_all = self._check_deprecated_find_param(**kwargs)  # type: ignore
