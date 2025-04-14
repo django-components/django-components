@@ -4,7 +4,8 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 """
 
 import re
-from typing import Any, Dict, no_type_check
+from typing import Any, Dict, Tuple, no_type_check
+from typing_extensions import NotRequired, TypedDict
 
 import pytest
 from django.conf import settings
@@ -16,7 +17,16 @@ from django.test import Client
 from django.urls import path
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
-from django_components import Component, ComponentView, all_components, get_component_by_class_id, register, types
+from django_components import (
+    Component,
+    ComponentView,
+    SlotContent,
+    Slot,
+    all_components,
+    get_component_by_class_id,
+    register,
+    types,
+)
 from django_components.slots import SlotRef
 from django_components.urls import urlpatterns as dc_urlpatterns
 
@@ -374,6 +384,101 @@ class TestComponent:
                 return None
 
         assert SimpleComponent.render() == "Hello"
+
+    def test_typing(self):
+        # Types
+        ButtonArgs = Tuple[str, ...]
+
+        class ButtonKwargs(TypedDict):
+            name: str
+            age: int
+            maybe_var: NotRequired[int]
+
+        class ButtonFooterSlotData(TypedDict):
+            value: int
+
+        class ButtonSlots(TypedDict):
+            # Use `SlotContent` when you want to allow either function (`Slot` instance)
+            # or plain string.
+            header: SlotContent
+            # Use `Slot` for slot functions. The generic specifies the data available to the slot function.
+            footer: NotRequired[Slot[ButtonFooterSlotData]]
+
+        # Data returned from `get_context_data`
+        class ButtonData(TypedDict):
+            data1: str
+            data2: int
+
+        # Data returned from `get_js_data`
+        class ButtonJsData(TypedDict):
+            js_data1: str
+            js_data2: int
+
+        # Data returned from `get_css_data`
+        class ButtonCssData(TypedDict):
+            css_data1: str
+            css_data2: int
+
+        # Tests - We simply check that these don't raise any errors
+        #         nor any type errors.
+        ButtonType1 = Component[ButtonArgs, ButtonKwargs, ButtonSlots, ButtonData, ButtonJsData, ButtonCssData]
+        ButtonType2 = Component[ButtonArgs, ButtonKwargs, ButtonSlots, ButtonData, ButtonJsData]
+        ButtonType3 = Component[ButtonArgs, ButtonKwargs, ButtonSlots, ButtonData]
+        ButtonType4 = Component[ButtonArgs, ButtonKwargs, ButtonSlots]
+        ButtonType5 = Component[ButtonArgs, ButtonKwargs]
+        ButtonType6 = Component[ButtonArgs]
+
+        class Button1(ButtonType1):
+            template = "<button>Click me!</button>"
+
+        class Button2(ButtonType2):
+            template = "<button>Click me!</button>"
+
+        class Button3(ButtonType3):
+            template = "<button>Click me!</button>"
+
+        class Button4(ButtonType4):
+            template = "<button>Click me!</button>"
+
+        class Button5(ButtonType5):
+            template = "<button>Click me!</button>"
+
+        class Button6(ButtonType6):
+            template = "<button>Click me!</button>"
+
+        Button1.render(
+            args=("arg1", "arg2"),
+            kwargs={"name": "name", "age": 123},
+            slots={"header": "HEADER", "footer": Slot(lambda ctx, slot_data, slot_ref: "FOOTER")},
+        )
+
+        Button2.render(
+            args=("arg1", "arg2"),
+            kwargs={"name": "name", "age": 123},
+            slots={"header": "HEADER", "footer": Slot(lambda ctx, slot_data, slot_ref: "FOOTER")},
+        )
+
+        Button3.render(
+            args=("arg1", "arg2"),
+            kwargs={"name": "name", "age": 123},
+            slots={"header": "HEADER", "footer": Slot(lambda ctx, slot_data, slot_ref: "FOOTER")},
+        )
+
+        Button4.render(
+            args=("arg1", "arg2"),
+            kwargs={"name": "name", "age": 123},
+            slots={"header": "HEADER", "footer": Slot(lambda ctx, slot_data, slot_ref: "FOOTER")},
+        )
+
+        Button5.render(
+            args=("arg1", "arg2"),
+            kwargs={"name": "name", "age": 123},
+        )
+
+        Button6.render(
+            args=("arg1", "arg2"),
+        )
+
 
 @djc_test
 class TestComponentRender:

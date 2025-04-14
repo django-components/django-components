@@ -19,10 +19,6 @@
     options:
       show_if_no_docstring: true
 
-::: django_components.ComponentCommand
-    options:
-      show_if_no_docstring: true
-
 ::: django_components.ComponentDefaults
     options:
       show_if_no_docstring: true
@@ -32,6 +28,10 @@
       show_if_no_docstring: true
 
 ::: django_components.ComponentFileEntry
+    options:
+      show_if_no_docstring: true
+
+::: django_components.ComponentInput
     options:
       show_if_no_docstring: true
 

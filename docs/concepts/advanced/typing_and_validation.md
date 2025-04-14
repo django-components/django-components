@@ -10,7 +10,7 @@ Use this to add type hints to your components, or to validate component inputs.
 ```py
 from django_components import Component
 
-ButtonType = Component[Args, Kwargs, Slots, Data, JsData, CssData]
+ButtonType = Component[Args, Kwargs, Slots, TemplateData, JsData, CssData]
 
 class Button(ButtonType):
     template_file = "button.html"
@@ -24,16 +24,34 @@ The generic parameters are:
 - `Args` - Positional arguments, must be a `Tuple` or `Any`
 - `Kwargs` - Keyword arguments, must be a `TypedDict` or `Any`
 - `Slots` - Slots, must be a `TypedDict` or `Any`
-- `Data` - Data returned from [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data), must be a `TypedDict` or `Any`
+- `TemplateData` - Data returned from [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data), must be a `TypedDict` or `Any`
 - `JsData` - Data returned from [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data), must be a `TypedDict` or `Any`
 - `CssData` - Data returned from [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data), must be a `TypedDict` or `Any`
 
-## Example
+You can specify as many or as few of the parameters as you want. The rest will default to `Any`.
+
+All of these are valid:
+
+```py
+ButtonType = Component[Args, Kwargs, Slots, TemplateData, JsData, CssData]
+ButtonType = Component[Args, Kwargs, Slots, TemplateData, JsData]
+ButtonType = Component[Args, Kwargs, Slots, TemplateData]
+ButtonType = Component[Args, Kwargs, Slots]
+ButtonType = Component[Args, Kwargs]
+ButtonType = Component[Args]
+```
+
+!!! info
+
+    Setting a type parameter to `Any` will disable typing and validation for that part.
+
+## Typing inputs
+
+You can use the first 3 parameters to type inputs.
 
 ```python
-from typing import NotRequired, Tuple, TypedDict
-from pydantic import BaseModel
-from django_components import Component, SlotContent, SlotFunc
+from typing_extensions import NotRequired, Tuple, TypedDict
+from django_components import Component, Slot, SlotContent
 
 ###########################################
 # 1. Define the types
@@ -54,39 +72,17 @@ class ButtonFooterSlotData(TypedDict):
 
 # Slots
 class ButtonSlots(TypedDict):
-    # SlotContent == str or slot func
+    # Use `SlotContent` when you want to allow either `Slot` instance or plain string
     header: SlotContent
-    # Use SlotFunc for slot functions.
+    # Use `Slot` for slot functions.
     # The generic specifies the data available to the slot function
-    footer: NotRequired[SlotFunc[ButtonFooterSlotData]]
-
-# Data returned from `get_context_data`
-class ButtonData(BaseModel):
-    data1: str
-    data2: int
-
-# Data returned from `get_js_data`
-class ButtonJsData(BaseModel):
-    js_data1: str
-    js_data2: int
-
-# Data returned from `get_css_data`
-class ButtonCssData(BaseModel):
-    css_data1: str
-    css_data2: int
+    footer: NotRequired[Slot[ButtonFooterSlotData]]
 
 ###########################################
 # 2. Define the component with those types
 ###########################################
 
-ButtonType = Component[
-    ButtonArgs,
-    ButtonKwargs,
-    ButtonSlots,
-    ButtonData,
-    ButtonJsData,
-    ButtonCssData,
-]
+ButtonType = Component[ButtonArgs, ButtonKwargs, ButtonSlots]
 
 class Button(ButtonType):
     def get_context_data(self, *args, **kwargs):
@@ -109,23 +105,81 @@ Button.render(
     },
     slots={
         "header": "...",
-        # ERROR: Expects key "footer"
+        "footer": lambda ctx, slot_data, slot_ref: slot_data.value + 1,
+        # ERROR: Unexpected key "foo"
         "foo": "invalid",
     },
 )
 ```
 
-If you don't want to validate some parts, set them to [`Any`](https://docs.python.org/3/library/typing.html#typing.Any).
+If you don't want to validate some parts, set them to [`Any`](https://docs.python.org/3/library/typing.html#typing.Any) or omit them.
+
+The following will validate only the keyword inputs:
 
 ```python
-ButtonType = Component[
-    ButtonArgs,
-    ButtonKwargs,
-    ButtonSlots,
-    Any,
-    Any,
-    Any,
-]
+ButtonType = Component[Any, ButtonKwargs]
+
+class Button(ButtonType):
+    ...
+```
+
+## Typing data
+
+You can use the last 3 parameters to type the data returned from [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data), [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data), and [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data).
+
+Use this together with the [Pydantic integration](#runtime-input-validation-with-types) to have runtime validation of the data.
+
+```python
+from typing_extensions import NotRequired, Tuple, TypedDict
+from django_components import Component, Slot, SlotContent
+
+###########################################
+# 1. Define the types
+###########################################
+
+# Data returned from `get_context_data`
+class ButtonData(TypedDict):
+    data1: str
+    data2: int
+
+# Data returned from `get_js_data`
+class ButtonJsData(TypedDict):
+    js_data1: str
+    js_data2: int
+
+# Data returned from `get_css_data`
+class ButtonCssData(TypedDict):
+    css_data1: str
+    css_data2: int
+
+###########################################
+# 2. Define the component with those types
+###########################################
+
+ButtonType = Component[Any, Any, Any, ButtonData, ButtonJsData, ButtonCssData]
+
+class Button(ButtonType):
+    def get_context_data(self, *args, **kwargs):
+        ...
+
+    def get_js_data(self, *args, **kwargs):
+        ...
+
+    def get_css_data(self, *args, **kwargs):
+        ...
+```
+
+When you then call
+[`Component.render`](../../../reference/api#django_components.Component.render)
+or [`Component.render_to_response`](../../../reference/api#django_components.Component.render_to_response),
+the component will raise an error if the data is not valid.
+
+If you don't want to validate some parts, set them to [`Any`](https://docs.python.org/3/library/typing.html#typing.Any).
+
+The following will validate only the data returned from `get_js_data`:
+
+```python
+ButtonType = Component[Any, Any, Any, Any, ButtonJsData]
 
 class Button(ButtonType):
     ...
@@ -181,6 +235,9 @@ class Button(Component[EmptyTuple, EmptyDict, EmptyDict, EmptyDict, EmptyDict, E
     Input validation was part of Django Components from version 0.96 to 0.135.
 
     Since v0.136, input validation is available as a separate extension.
+
+By defualt, when you add types to your component, this will only set up static type hints,
+but it will not validate the inputs.
 
 To enable input validation, you need to install the [`djc-ext-pydantic`](https://github.com/django-components/djc-ext-pydantic) extension:
 

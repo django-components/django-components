@@ -1,6 +1,32 @@
 # Release notes
 
-## v0.139
+## v0.139.1
+
+#### Refactor
+
+- When typing a Component, you can now specify as few or as many parameters as you want.
+
+    ```py
+    Component[Args]
+    Component[Args, Kwargs]
+    Component[Args, Kwargs, Slots]
+    Component[Args, Kwargs, Slots, Data]
+    Component[Args, Kwargs, Slots, Data, JsData]
+    Component[Args, Kwargs, Slots, Data, JsData, CssData]
+    ```
+
+    All omitted parameters will default to `Any`.
+
+- Added `typing_extensions` to the project as a dependency
+
+- Multiple extensions with the same name (case-insensitive) now raise an error
+
+- Extension names (case-insensitive) also MUST NOT conflict with existing Component class API.
+  
+    So if you name an extension `render`, it will conflict with the `render()` method of the `Component` class,
+    and thus raise an error.
+
+## v0.139.0
 
 #### Fix
 

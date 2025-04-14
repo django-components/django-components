@@ -386,7 +386,7 @@ Components API is fully typed, and supports [static type hints](https://django-c
 To opt-in to static type hints, define types for component's args, kwargs, slots, and more:
 
 ```py
-from typing import NotRequired, Tuple, TypedDict, SlotContent, SlotFunc
+from typing import NotRequired, Tuple, TypedDict, SlotContent, Slot
 
 from django_components import Component
 
@@ -397,22 +397,19 @@ class ButtonKwargs(TypedDict):
     another: int
     maybe_var: NotRequired[int] # May be omitted
 
-class ButtonData(TypedDict):
-    variable: str
-
 class ButtonSlots(TypedDict):
-    my_slot: NotRequired[SlotFunc]
+    # Use `Slot` for slot functions.
+    my_slot: NotRequired[Slot]
+    # Use `SlotContent` when you want to allow either `Slot` instance or plain string
     another_slot: SlotContent
 
-ButtonType = Component[ButtonArgs, ButtonKwargs, ButtonSlots, ButtonData, JsData, CssData]
+ButtonType = Component[ButtonArgs, ButtonKwargs, ButtonSlots]
 
 class Button(ButtonType):
     def get_context_data(self, *args, **kwargs):
         self.input.args[0]  # int
         self.input.kwargs["variable"]  # str
-        self.input.slots["my_slot"]  # SlotFunc[MySlotData]
-
-        return {}  # Error: Key "variable" is missing
+        self.input.slots["my_slot"]  # Slot
 ```
 
 When you then call

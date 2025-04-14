@@ -1,6 +1,7 @@
 import gc
 from typing import Any, Callable, Dict, List, cast
 
+import pytest
 from django.http import HttpRequest, HttpResponse
 from django.template import Context
 from django.test import Client
@@ -108,6 +109,10 @@ class DummyNestedExtension(ComponentExtension):
     ]
 
 
+class RenderExtension(ComponentExtension):
+    name = "render"
+
+
 def with_component_cls(on_created: Callable):
     class TempComponent(Component):
         template = "Hello {{ name }}!"
@@ -150,6 +155,22 @@ class TestExtension:
         # NOTE: Required for test_component_class_lifecycle_hooks to work
         del TestAccessComp
         gc.collect()
+
+    def test_raises_on_extension_name_conflict(self):
+        @djc_test(components_settings={"extensions": [RenderExtension]})
+        def inner():
+            pass
+
+        with pytest.raises(ValueError, match="Extension name 'render' conflicts with existing Component class API"):
+            inner()
+
+    def test_raises_on_multiple_extensions_with_same_name(self):
+        @djc_test(components_settings={"extensions": [DummyExtension, DummyExtension]})
+        def inner():
+            pass
+
+        with pytest.raises(ValueError, match="Multiple extensions cannot have the same name 'test_extension'"):
+            inner()
 
 
 @djc_test

@@ -18,3 +18,4 @@ whitenoise
 pygments
 pygments-djc
 asv
+typing-extensions>=4.12.2

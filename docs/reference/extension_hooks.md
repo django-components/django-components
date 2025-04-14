@@ -109,6 +109,7 @@ name | type | description
 
 ::: django_components.extension.ComponentExtension.on_component_rendered
     options:
+      heading_level: 3
       show_root_heading: true
       show_signature: true
       separate_signature: true

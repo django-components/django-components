@@ -95,6 +95,7 @@ types-requests==2.32.0.20241016
     # via -r requirements-ci.in
 typing-extensions==4.12.2
     # via
+    #   -r requirements-ci.in
     #   pyee
     #   tox
 urllib3==2.2.3

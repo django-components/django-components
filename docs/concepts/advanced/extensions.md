@@ -169,6 +169,14 @@ class MyExtension(ComponentExtension):
         ctx.component_cls.my_attr = "my_value"
 ```
 
+!!! warning
+
+    The `name` attribute MUST be unique across all extensions.
+
+    Moreover, the `name` attribute MUST NOT conflict with existing Component class API.
+
+    So if you name an extension `render`, it will conflict with the [`render()`](../../../reference/api/#django_components.Component.render) method of the `Component` class.
+
 ### Defining the extension class
 
 In previous sections we've seen the `View` and `Storybook` extensions classes that were nested within the `Component` class:

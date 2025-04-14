@@ -103,7 +103,7 @@ For live examples, see the [Community examples](../../overview/community.md#comm
     ```djc_py
     from typing import Dict, NotRequired, Optional, Tuple, TypedDict
 
-    from django_components import Component, SlotFunc, register, types
+    from django_components import Component, SlotContent, register, types
 
     from myapp.templatetags.mytags import comp_registry
 
@@ -114,7 +114,7 @@ For live examples, see the [Community examples](../../overview/community.md#comm
     type MyMenuArgs = Tuple[int, str]
 
     class MyMenuSlots(TypedDict):
-        default: NotRequired[Optional[SlotFunc[EmptyDict]]]
+        default: NotRequired[Optional[SlotContent[EmptyDict]]]
 
     class MyMenuProps(TypedDict):
         vertical: NotRequired[bool]
@@ -124,7 +124,7 @@ For live examples, see the [Community examples](../../overview/community.md#comm
     # Define the component
     # NOTE: Don't forget to set the `registry`!
     @register("my_menu", registry=comp_registry)
-    class MyMenu(Component[MyMenuArgs, MyMenuProps, MyMenuSlots, Any, Any, Any]):
+    class MyMenu(Component[MyMenuArgs, MyMenuProps, MyMenuSlots]):
         def get_context_data(
             self,
             *args,

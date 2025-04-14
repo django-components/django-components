@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Set, Tuple, Type, TypeVar, Union
 
 import django.urls
 from django.template import Context
@@ -661,7 +661,19 @@ class ExtensionManager:
         # Populate the `urlpatterns` with URLs specified by the extensions
         # TODO_V3 - Django-specific logic - replace with hook
         urls: List[URLResolver] = []
+        seen_names: Set[str] = set()
         for extension in self.extensions:
+            # Ensure that the extension name won't conflict with existing Component class API
+            from django_components import Component
+
+            if hasattr(Component, extension.name) or hasattr(Component, extension.class_name):
+                raise ValueError(f"Extension name '{extension.name}' conflicts with existing Component class API")
+
+            if extension.name.lower() in seen_names:
+                raise ValueError(f"Multiple extensions cannot have the same name '{extension.name}'")
+
+            seen_names.add(extension.name.lower())
+
             # NOTE: The empty list is a placeholder for the URLs that will be added later
             curr_ext_url_resolver = django.urls.path(f"{extension.name}/", django.urls.include([]))
             urls.append(curr_ext_url_resolver)

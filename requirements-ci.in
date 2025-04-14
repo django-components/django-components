@@ -7,3 +7,4 @@ whitenoise
 asv
 pytest-asyncio
 pytest-django
+typing-extensions>=4.12.2

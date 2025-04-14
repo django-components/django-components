@@ -1,12 +1,9 @@
-from typing import Any, Optional, Type, TypeVar
+from typing import Any, Optional, Type
 
 from django.template import Origin, Template
 
 from django_components.cache import get_template_cache
 from django_components.util.misc import get_import_path
-
-TTemplate = TypeVar("TTemplate", bound=Template)
-
 
 # Central logic for creating Templates from string, so we can cache the results
 def cached_template(

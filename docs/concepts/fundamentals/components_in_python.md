@@ -47,7 +47,7 @@ Component.render(
     context: Mapping | django.template.Context | None = None,
     args: List[Any] | None = None,
     kwargs: Dict[str, Any] | None = None,
-    slots: Dict[str, str | SafeString | SlotFunc] | None = None,
+    slots: Dict[str, str | SafeString | SlotContent] | None = None,
     escape_slots_content: bool = True
 ) -> str:
 ```
@@ -60,7 +60,7 @@ Component.render(
 
 - _`slots`_ - Component slot fills. This is the same as pasing `{% fill %}` tags to the component.
   Accepts a dictionary of `{ slot_name: slot_content }` where `slot_content` can be a string
-  or [`SlotFunc`](#slotfunc).
+  or `Slot`.
 
 - _`escape_slots_content`_ - Whether the content from `slots` should be escaped. `True` by default to prevent XSS attacks. If you disable escaping, you should make sure that any content you pass to the slots is safe, especially if it comes from user input.
 
