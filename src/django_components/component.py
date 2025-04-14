@@ -39,6 +39,7 @@ from django_components.app_settings import ContextBehavior, app_settings
 from django_components.component_media import ComponentMediaInput, ComponentMediaMeta
 from django_components.component_registry import ComponentRegistry
 from django_components.component_registry import registry as registry_
+from django_components.constants import COMP_ID_PREFIX
 from django_components.context import _COMPONENT_CONTEXT_KEY, make_isolated_context_copy
 from django_components.dependencies import (
     RenderType,
@@ -721,6 +722,11 @@ class Component(
 
         Raises `RuntimeError` if accessed outside of rendering execution.
 
+        The ID is a 7-letter alphanumeric string in the format `cXXXXXX`,
+        where `XXXXXX` is a random string of 6 alphanumeric characters (case-sensitive).
+
+        E.g. `c1A2b3c`.
+
         A single render ID has a chance of collision 1 in 57 billion. However, due to birthday paradox,
         the chance of collision increases to 1% when approaching ~33K render IDs.
 
@@ -1076,6 +1082,7 @@ class Component(
         use components as Django views with `component.as_view()`.
 
         Inputs:
+
         - `args` - Positional args for the component. This is the same as calling the component
           as `{% component "my_comp" arg1 arg2 ... %}`
         - `kwargs` - Kwargs for the component. This is the same as calling the component
@@ -1146,6 +1153,7 @@ class Component(
         Render the component into a string.
 
         Inputs:
+
         - `args` - Positional args for the component. This is the same as calling the component
           as `{% component "my_comp" arg1 arg2 ... %}`
         - `kwargs` - Kwargs for the component. This is the same as calling the component
@@ -1267,7 +1275,7 @@ class Component(
         # This is handled as a stack, as users can potentially call `component.render()`
         # from within component hooks. Thus, then they do so, `component.id` will be the ID
         # of the deepest-most call to `component.render()`.
-        render_id = gen_id()
+        render_id = COMP_ID_PREFIX + gen_id()
         metadata = MetadataItem(
             render_id=render_id,
             input=ComponentInput(
@@ -1500,7 +1508,7 @@ class Component(
     # Thus, the returned renderer function accepts the extra HTML attributes that were passed from parent,
     # and returns the updated HTML content.
     #
-    # Because the HTML attributes are all boolean (e.g. `data-djc-id-a1b3c4`), they are passed as a list.
+    # Because the HTML attributes are all boolean (e.g. `data-djc-id-ca1b3c4`), they are passed as a list.
     #
     # This whole setup makes it possible for multiple components to resolve to the same HTML element.
     # E.g. if CompA renders CompB, and CompB renders a <div>, then the <div> element will have

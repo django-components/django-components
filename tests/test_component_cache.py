@@ -46,8 +46,8 @@ class TestComponentCache:
         # Check if the cache entry is set
         cache_key = component.cache.get_cache_key()
         assert cache_key == "components:cache:TestComponent_c9770f::"
-        assert component.cache.get_entry(cache_key) == "<!-- _RENDERED TestComponent_c9770f,a1bc3e,, -->Hello"
-        assert caches["default"].get(cache_key) == "<!-- _RENDERED TestComponent_c9770f,a1bc3e,, -->Hello"
+        assert component.cache.get_entry(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3e,, -->Hello"
+        assert caches["default"].get(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3e,, -->Hello"
 
         # Second render
         did_call_get = False
@@ -104,7 +104,7 @@ class TestComponentCache:
 
         cache_instance = component.cache
         cache_key = cache_instance.get_cache_key()
-        assert cache_instance.get_entry(cache_key) == "<!-- _RENDERED TestComponent_42aca9,a1bc3e,, -->Hello"
+        assert cache_instance.get_entry(cache_key) == "<!-- _RENDERED TestComponent_42aca9,ca1bc3e,, -->Hello"
 
         # Wait for TTL to expire
         time.sleep(0.2)
@@ -139,7 +139,7 @@ class TestComponentCache:
         assert component.cache.get_cache() is caches["custom"]
         assert (
             component.cache.get_entry("components:cache:TestComponent_90ef7a::")
-            == "<!-- _RENDERED TestComponent_90ef7a,a1bc3e,, -->Hello"
+            == "<!-- _RENDERED TestComponent_90ef7a,ca1bc3e,, -->Hello"
         )  # noqa: E501
 
     def test_cache_by_input(self):
@@ -166,11 +166,11 @@ class TestComponentCache:
         assert len(cache._cache) == 2
         assert (
             component.cache.get_entry("components:cache:TestComponent_648b95::input-world")
-            == "<!-- _RENDERED TestComponent_648b95,a1bc3e,, -->Hello world"
+            == "<!-- _RENDERED TestComponent_648b95,ca1bc3e,, -->Hello world"
         )  # noqa: E501
         assert (
             component.cache.get_entry("components:cache:TestComponent_648b95::input-cake")
-            == "<!-- _RENDERED TestComponent_648b95,a1bc3f,, -->Hello cake"
+            == "<!-- _RENDERED TestComponent_648b95,ca1bc3f,, -->Hello cake"
         )  # noqa: E501
 
     def test_cache_input_hashing(self):

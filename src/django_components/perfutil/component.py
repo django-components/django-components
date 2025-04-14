@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Callable, Deque, Dict, List, NamedTuple, Optio
 
 from django.utils.safestring import mark_safe
 
+from django_components.constants import COMP_ID_LENGTH
 from django_components.util.exception import component_error_message
 
 if TYPE_CHECKING:
@@ -56,11 +57,15 @@ ComponentRenderer = Callable[[Optional[List[str]]], Tuple[str, Dict[str, List[st
 component_renderer_cache: Dict[str, Tuple[ComponentRenderer, str]] = {}
 child_component_attrs: Dict[str, List[str]] = {}
 
-nested_comp_pattern = re.compile(r'<template [^>]*?djc-render-id="\w{6}"[^>]*?></template>')
-render_id_pattern = re.compile(r'djc-render-id="(?P<render_id>\w{6})"')
+nested_comp_pattern = re.compile(
+    r'<template [^>]*?djc-render-id="\w{{{COMP_ID_LENGTH}}}"[^>]*?></template>'.format(COMP_ID_LENGTH=COMP_ID_LENGTH)
+)
+render_id_pattern = re.compile(
+    r'djc-render-id="(?P<render_id>\w{{{COMP_ID_LENGTH}}})"'.format(COMP_ID_LENGTH=COMP_ID_LENGTH)
+)
 
 
-# When a component is rendered, we want to apply HTML attributes like `data-djc-id-a1b3cf`
+# When a component is rendered, we want to apply HTML attributes like `data-djc-id-ca1b3cf`
 # to all root elements. However, we have to approach it smartly, to minimize the HTML parsing.
 #
 # If we naively first rendered the child components, and then the parent component, then we would
@@ -90,8 +95,8 @@ render_id_pattern = re.compile(r'djc-render-id="(?P<render_id>\w{6})"')
 #    The actual HTML output is stored in `component_renderer_cache`.
 # 2. The parent of the child component is rendered normally.
 # 3. If the placeholder for the child component is at root of the parent component,
-#    then the placeholder may be tagged with extra attributes, e.g. `data-djc-id-a1b3cf`.
-#    `<template djc-render-id="a1b3cf" data-djc-id-a1b3cf></template>`.
+#    then the placeholder may be tagged with extra attributes, e.g. `data-djc-id-ca1b3cf`.
+#    `<template djc-render-id="a1b3cf" data-djc-id-ca1b3cf></template>`.
 # 4. When the parent is done rendering, we go back to step 1., the parent component
 #    either returns the actual HTML, or a placeholder.
 # 5. Only once we get to the root component, that has no further parents, is when we finally

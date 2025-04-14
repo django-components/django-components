@@ -46,7 +46,7 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc41> injected: DepInject(key='hi', another=1) </div>
+            <div data-djc-id-ca1bc41> injected: DepInject(key='hi', another=1) </div>
             """,
         )
         self._assert_clear_cache()
@@ -99,8 +99,8 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc41> key: hi </div>
-            <div data-djc-id-a1bc41> another: 3 </div>
+            <div data-djc-id-ca1bc41> key: hi </div>
+            <div data-djc-id-ca1bc41> another: 3 </div>
             """,
         )
         self._assert_clear_cache()
@@ -133,8 +133,8 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc41> key: hi </div>
-            <div data-djc-id-a1bc41> another: 4 </div>
+            <div data-djc-id-ca1bc41> key: hi </div>
+            <div data-djc-id-ca1bc41> another: 4 </div>
             """,
         )
         self._assert_clear_cache()
@@ -164,7 +164,7 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc41> injected: default </div>
+            <div data-djc-id-ca1bc41> injected: default </div>
             """,
         )
         self._assert_clear_cache()
@@ -198,8 +198,8 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc42> injected: DepInject() </div>
-            <div data-djc-id-a1bc43> injected: default </div>
+            <div data-djc-id-ca1bc42> injected: DepInject() </div>
+            <div data-djc-id-ca1bc43> injected: default </div>
         """,
         )
         self._assert_clear_cache()
@@ -232,8 +232,8 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc42></div>
-            <div data-djc-id-a1bc43></div>
+            <div data-djc-id-ca1bc42></div>
+            <div data-djc-id-ca1bc43></div>
         """,
         )
         self._assert_clear_cache()
@@ -265,8 +265,8 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc42> injected: DepInject(key='hi', another=7) </div>
-            <div data-djc-id-a1bc43> injected: default </div>
+            <div data-djc-id-ca1bc42> injected: DepInject(key='hi', another=7) </div>
+            <div data-djc-id-ca1bc43> injected: default </div>
         """,
         )
         self._assert_clear_cache()
@@ -304,8 +304,8 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc42> injected: DepInject(key='hi', another=8) </div>
-            <div data-djc-id-a1bc43> injected: default </div>
+            <div data-djc-id-ca1bc42> injected: DepInject(key='hi', another=8) </div>
+            <div data-djc-id-ca1bc43> injected: default </div>
         """,
         )
         self._assert_clear_cache()
@@ -347,8 +347,8 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc42> injected: DepInject(key='hi', another=9) </div>
-            <div data-djc-id-a1bc43> injected: default </div>
+            <div data-djc-id-ca1bc42> injected: DepInject(key='hi', another=9) </div>
+            <div data-djc-id-ca1bc43> injected: default </div>
         """,
         )
         self._assert_clear_cache()
@@ -463,7 +463,7 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc41> injected: DepInject(var1={'key': 'hi', 'another': 13}, var2={'x': 'y'}) </div>
+            <div data-djc-id-ca1bc41> injected: DepInject(var1={'key': 'hi', 'another': 13}, var2={'x': 'y'}) </div>
             """,
         )
         self._assert_clear_cache()
@@ -539,9 +539,9 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc45> injected: DepInject(key='hi1', another=16, new=3) </div>
-            <div data-djc-id-a1bc46> injected: DepInject(key='hi', another=15, lost=0) </div>
-            <div data-djc-id-a1bc47> injected: default </div>
+            <div data-djc-id-ca1bc45> injected: DepInject(key='hi1', another=16, new=3) </div>
+            <div data-djc-id-ca1bc46> injected: DepInject(key='hi', another=15, lost=0) </div>
+            <div data-djc-id-ca1bc47> injected: default </div>
             """,
         )
 
@@ -581,8 +581,8 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc43> first_provide: DepInject(key='hi', another=17, lost=0) </div>
-            <div data-djc-id-a1bc43> second_provide: DepInject(key='hi1', another=18, new=3) </div>
+            <div data-djc-id-ca1bc43> first_provide: DepInject(key='hi', another=17, lost=0) </div>
+            <div data-djc-id-ca1bc43> second_provide: DepInject(key='hi1', another=18, new=3) </div>
             """,
         )
         self._assert_clear_cache()
@@ -612,7 +612,7 @@ class TestProvideTemplateTag:
             rendered,
             """
             <div>
-                <div data-djc-id-a1bc41> injected: DepInject(key='hi', another=19) </div>
+                <div data-djc-id-ca1bc41> injected: DepInject(key='hi', another=19) </div>
             </div>
             """,
         )
@@ -651,7 +651,7 @@ class TestProvideTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc40 data-djc-id-a1bc44>
+            <div data-djc-id-ca1bc40 data-djc-id-ca1bc44>
                 injected: DepInject(key='hi', another=20)
             </div>
             """,
@@ -691,7 +691,7 @@ class TestInject:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc41> injected: DepInject(key='hi', another=21) </div>
+            <div data-djc-id-ca1bc41> injected: DepInject(key='hi', another=21) </div>
             """,
         )
         self._assert_clear_cache()
@@ -742,7 +742,7 @@ class TestInject:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc3f> injected: default </div>
+            <div data-djc-id-ca1bc3f> injected: default </div>
             """,
         )
         self._assert_clear_cache()
@@ -852,10 +852,10 @@ class TestInject:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc3e data-djc-id-a1bc41 data-djc-id-a1bc45 data-djc-id-a1bc49>
+            <div data-djc-id-ca1bc3e data-djc-id-ca1bc41 data-djc-id-ca1bc45 data-djc-id-ca1bc49>
                 injected: DepInject(key='hi', data=123)
             </div>
-            <main data-djc-id-a1bc3e data-djc-id-a1bc41 data-djc-id-a1bc45 data-djc-id-a1bc49>
+            <main data-djc-id-ca1bc3e data-djc-id-ca1bc41 data-djc-id-ca1bc45 data-djc-id-ca1bc49>
                 456
             </main>
             """,
@@ -917,10 +917,10 @@ class TestInject:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc3e data-djc-id-a1bc41 data-djc-id-a1bc44 data-djc-id-a1bc48>
+            <div data-djc-id-ca1bc3e data-djc-id-ca1bc41 data-djc-id-ca1bc44 data-djc-id-ca1bc48>
                 injected: DepInject(key='hi', data=123)
             </div>
-            <main data-djc-id-a1bc3e data-djc-id-a1bc41 data-djc-id-a1bc44 data-djc-id-a1bc48>
+            <main data-djc-id-ca1bc3e data-djc-id-ca1bc41 data-djc-id-ca1bc44 data-djc-id-ca1bc48>
             </main>
             """,
         )
@@ -972,10 +972,10 @@ class TestProvideCache:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc41>
+            <div data-djc-id-ca1bc41>
                 injected: DepInject(key='hi', another=23)
             </div>
-            <div data-djc-id-a1bc41>
+            <div data-djc-id-ca1bc41>
                 Ran: True
             </div>
             """,
@@ -1044,10 +1044,10 @@ class TestProvideCache:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc3e data-djc-id-a1bc42>
+            <div data-djc-id-ca1bc3e data-djc-id-ca1bc42>
                 injected: DepInject(key='hi', another=25)
             </div>
-            <div data-djc-id-a1bc3e data-djc-id-a1bc42>
+            <div data-djc-id-ca1bc3e data-djc-id-ca1bc42>
                 Ran: True
             </div>
             """,

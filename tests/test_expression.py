@@ -121,10 +121,10 @@ class TestDynamicExpr:
         assertHTMLEqual(
             rendered,
             """
-            <!-- _RENDERED SimpleComponent_5b8d97,a1bc3f,, -->
-            <div data-djc-id-a1bc3f>lorem</div>
-            <div data-djc-id-a1bc3f>True</div>
-            <div data-djc-id-a1bc3f>[{'a': 1}, {'a': 2}]</div>
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>lorem</div>
+            <div data-djc-id-ca1bc3f>True</div>
+            <div data-djc-id-ca1bc3f>[{'a': 1}, {'a': 2}]</div>
             """,
         )
 
@@ -194,11 +194,11 @@ class TestDynamicExpr:
         assertHTMLEqual(
             rendered,
             """
-            <!-- _RENDERED SimpleComponent_743413,a1bc3f,, -->
-            <div data-djc-id-a1bc3f>lorem ipsum dolor</div>
-            <div data-djc-id-a1bc3f>True</div>
-            <div data-djc-id-a1bc3f>[{'a': 1}, {'a': 2}]</div>
-            <div data-djc-id-a1bc3f>{'a': 3}</div>
+            <!-- _RENDERED SimpleComponent_743413,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>lorem ipsum dolor</div>
+            <div data-djc-id-ca1bc3f>True</div>
+            <div data-djc-id-ca1bc3f>[{'a': 1}, {'a': 2}]</div>
+            <div data-djc-id-ca1bc3f>{'a': 3}</div>
             """,
         )
 
@@ -267,11 +267,11 @@ class TestDynamicExpr:
 
         # NOTE: This is whitespace-sensitive test, so we check exact output
         assert rendered.strip() == (
-            "<!-- _RENDERED SimpleComponent_6f07b3,a1bc3f,, -->\n"
-            '                <div data-djc-id-a1bc3f=""></div>\n'
-            '                <div data-djc-id-a1bc3f="">  abc</div>\n'
-            '                <div data-djc-id-a1bc3f=""></div>\n'
-            '                <div data-djc-id-a1bc3f="">  </div>'
+            "<!-- _RENDERED SimpleComponent_6f07b3,ca1bc3f,, -->\n"
+            '                <div data-djc-id-ca1bc3f=""></div>\n'
+            '                <div data-djc-id-ca1bc3f="">  abc</div>\n'
+            '                <div data-djc-id-ca1bc3f=""></div>\n'
+            '                <div data-djc-id-ca1bc3f="">  </div>'
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -343,12 +343,12 @@ class TestDynamicExpr:
 
         # NOTE: This is whitespace-sensitive test, so we check exact output
         assert rendered.strip() == (
-            "<!-- _RENDERED SimpleComponent_85c7eb,a1bc3f,, -->\n"
-            '                <div data-djc-id-a1bc3f=""> lorem ipsum dolor </div>\n'
-            '                <div data-djc-id-a1bc3f=""> lorem ipsum dolor [{\'a\': 1}] </div>\n'
-            '                <div data-djc-id-a1bc3f=""> True </div>\n'
-            '                <div data-djc-id-a1bc3f=""> [{\'a\': 1}, {\'a\': 2}] </div>\n'
-            '                <div data-djc-id-a1bc3f=""> {\'a\': 3} </div>'
+            "<!-- _RENDERED SimpleComponent_85c7eb,ca1bc3f,, -->\n"
+            '                <div data-djc-id-ca1bc3f=""> lorem ipsum dolor </div>\n'
+            '                <div data-djc-id-ca1bc3f=""> lorem ipsum dolor [{\'a\': 1}] </div>\n'
+            '                <div data-djc-id-ca1bc3f=""> True </div>\n'
+            '                <div data-djc-id-ca1bc3f=""> [{\'a\': 1}, {\'a\': 2}] </div>\n'
+            '                <div data-djc-id-ca1bc3f=""> {\'a\': 3} </div>'
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -391,10 +391,10 @@ class TestDynamicExpr:
         assertHTMLEqual(
             rendered,
             """
-            <!-- _RENDERED SimpleComponent_c7a5c3,a1bc3f,, -->
-            <div data-djc-id-a1bc3f>"</div>
-            <div data-djc-id-a1bc3f>{%}</div>
-            <div data-djc-id-a1bc3f>True</div>
+            <!-- _RENDERED SimpleComponent_c7a5c3,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>"</div>
+            <div data-djc-id-ca1bc3f>{%}</div>
+            <div data-djc-id-ca1bc3f>True</div>
             """,
         )
 
@@ -443,14 +443,14 @@ class TestDynamicExpr:
         assertHTMLEqual(
             rendered,
             """
-                <!-- _RENDERED SimpleComponent_5c8766,a1bc41,, -->
-                <div data-djc-id-a1bc41>
-                    <!-- _RENDERED SimpleComponent_5c8766,a1bc40,, -->
-                    <div data-djc-id-a1bc40>3</div>
-                    <div data-djc-id-a1bc40>True</div>
+                <!-- _RENDERED SimpleComponent_5c8766,ca1bc41,, -->
+                <div data-djc-id-ca1bc41>
+                    <!-- _RENDERED SimpleComponent_5c8766,ca1bc40,, -->
+                    <div data-djc-id-ca1bc40>3</div>
+                    <div data-djc-id-ca1bc40>True</div>
                 </div>
-                <div data-djc-id-a1bc41>True</div>
-            """
+                <div data-djc-id-ca1bc41>True</div>
+            """,
         )
 
 
@@ -519,11 +519,11 @@ class TestSpreadOperator:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc3f>LoREM</div>
-            <div data-djc-id-a1bc3f>{'@click': '() =&gt; {}', 'style': 'height: 20px'}</div>
-            <div data-djc-id-a1bc3f>[1, 2, 3]</div>
-            <div data-djc-id-a1bc3f>1</div>
-            <div data-djc-id-a1bc3f>123</div>
+            <div data-djc-id-ca1bc3f>LoREM</div>
+            <div data-djc-id-ca1bc3f>{'@click': '() =&gt; {}', 'style': 'height: 20px'}</div>
+            <div data-djc-id-ca1bc3f>[1, 2, 3]</div>
+            <div data-djc-id-ca1bc3f>1</div>
+            <div data-djc-id-ca1bc3f>123</div>
             """,
         )
 
@@ -656,9 +656,9 @@ class TestSpreadOperator:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc41>{'@click': '() =&gt; {}', 'style': 'height: 20px'}</div>
-            <div data-djc-id-a1bc41>[1, 2, 3]</div>
-            <div data-djc-id-a1bc41>1</div>
+            <div data-djc-id-ca1bc41>{'@click': '() =&gt; {}', 'style': 'height: 20px'}</div>
+            <div data-djc-id-ca1bc41>[1, 2, 3]</div>
+            <div data-djc-id-ca1bc41>1</div>
             """,
         )
 
@@ -760,10 +760,10 @@ class TestSpreadOperator:
         assertHTMLEqual(
             rendered2,
             """
-            <div data-djc-id-a1bc40>{'@click': '() =&gt; {}', 'style': 'OVERWRITTEN'}</div>
-            <div data-djc-id-a1bc40>[1, 2, 3]</div>
-            <div data-djc-id-a1bc40>1</div>
-            <div data-djc-id-a1bc40>OVERWRITTEN_X</div>
+            <div data-djc-id-ca1bc40>{'@click': '() =&gt; {}', 'style': 'OVERWRITTEN'}</div>
+            <div data-djc-id-ca1bc40>[1, 2, 3]</div>
+            <div data-djc-id-ca1bc40>1</div>
+            <div data-djc-id-ca1bc40>OVERWRITTEN_X</div>
             """,
         )
 

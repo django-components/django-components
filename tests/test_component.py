@@ -76,7 +76,7 @@ class TestComponentOldTemplateApi:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3e>test</strong>
+            Variable: <strong data-djc-id-ca1bc3e>test</strong>
             """,
         )
 
@@ -111,7 +111,7 @@ class TestComponent:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3e>test</strong>
+            Variable: <strong data-djc-id-ca1bc3e>test</strong>
             """,
         )
 
@@ -137,7 +137,7 @@ class TestComponent:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3e>test</strong>
+            Variable: <strong data-djc-id-ca1bc3e>test</strong>
             """,
         )
 
@@ -159,7 +159,7 @@ class TestComponent:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3e>test</strong>
+            Variable: <strong data-djc-id-ca1bc3e>test</strong>
             """,
         )
 
@@ -189,7 +189,7 @@ class TestComponent:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3e>test</strong>
+            Variable: <strong data-djc-id-ca1bc3e>test</strong>
             """,
         )
 
@@ -210,7 +210,7 @@ class TestComponent:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3f>test</strong>
+            Variable: <strong data-djc-id-ca1bc3f>test</strong>
             """,
         )
 
@@ -231,13 +231,13 @@ class TestComponent:
         assertHTMLEqual(
             SvgComponent.render(kwargs={"name": "svg1"}),
             """
-            <svg data-djc-id-a1bc3e>Dynamic1</svg>
+            <svg data-djc-id-ca1bc3e>Dynamic1</svg>
             """,
         )
         assertHTMLEqual(
             SvgComponent.render(kwargs={"name": "svg2"}),
             """
-            <svg data-djc-id-a1bc3f>Dynamic2</svg>
+            <svg data-djc-id-ca1bc3f>Dynamic2</svg>
             """,
         )
 
@@ -257,7 +257,7 @@ class TestComponent:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3e>test</strong>
+            Variable: <strong data-djc-id-ca1bc3e>test</strong>
             """,
         )
 
@@ -299,7 +299,7 @@ class TestComponent:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3e>test</strong> MY_SLOT
+            Variable: <strong data-djc-id-ca1bc3e>test</strong> MY_SLOT
             """,
         )
 
@@ -746,7 +746,7 @@ class TestComponentRender:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc3e>
+            <custom-template data-djc-id-ca1bc3e>
                 <header>Default header</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
@@ -768,7 +768,7 @@ class TestComponentRender:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc3e>
+            <custom-template data-djc-id-ca1bc3e>
                 <header>Default header</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
@@ -791,7 +791,7 @@ class TestComponentRender:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc3e>
+            <custom-template data-djc-id-ca1bc3e>
                 <header>Default header</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
@@ -843,7 +843,7 @@ class TestComponentRender:
         # """
         assertInHTML(
             """
-            <kbd data-djc-id-a1bc3e>
+            <kbd data-djc-id-ca1bc3e>
                 Rendered via GET request
             </kbd>
             """,
@@ -939,7 +939,7 @@ class TestComponentRender:
             rendered,
             """
             <!DOCTYPE html>
-            <html data-djc-id-a1bc3e lang="en">
+            <html data-djc-id-ca1bc3e lang="en">
             <body>
                 <main role="main">
                 <div class='container main-container'>
@@ -964,7 +964,7 @@ class TestComponentRender:
         rendered = TestComponent.render()
         assertHTMLEqual(
             rendered,
-            "Variable: <strong data-djc-id-a1bc3e>a1bc3e</strong>",
+            "Variable: <strong data-djc-id-ca1bc3e>ca1bc3e</strong>",
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -980,7 +980,7 @@ class TestComponentRender:
         rendered_resp = TestComponent.render_to_response()
         assertHTMLEqual(
             rendered_resp.content.decode("utf-8"),
-            "Variable: <strong data-djc-id-a1bc3e>a1bc3e</strong>",
+            "Variable: <strong data-djc-id-ca1bc3e>ca1bc3e</strong>",
         )
 
 
@@ -1036,7 +1036,7 @@ class TestComponentHook:
             from_on_before: :)
             ---
             Hello from nested
-            <div data-djc-id-a1bc3e data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
                 Hello from simple
             </div>
             ---
@@ -1099,7 +1099,7 @@ class TestComponentHook:
             from_on_after:
             ---
             Hello from nested
-            <div data-djc-id-a1bc3e data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
                 Hello from simple
             </div>
             """,
@@ -1113,7 +1113,7 @@ class TestComponentHook:
             from_on_after:
             ---
             Hello from nested
-            <div data-djc-id-a1bc3e data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
                 Hello from simple
             </div>
             """,
@@ -1170,7 +1170,7 @@ class TestComponentHook:
             from_on_before:
             ---
             Hello from nested
-            <div data-djc-id-a1bc3e data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
                 Hello from simple
             </div>
             """,
@@ -1185,7 +1185,7 @@ class TestComponentHook:
             from_on_before:
             ---
             Hello from nested
-            <div data-djc-id-a1bc3e data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
                 Hello from simple
             </div>
             """,

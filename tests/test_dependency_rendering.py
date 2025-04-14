@@ -512,7 +512,7 @@ class TestDependencyRendering:
         template = Template(template_str)
         rendered = create_and_process_template_response(template)
 
-        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>foo</strong>")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-ca1bc3f>foo</strong>")
 
     def test_adds_component_id_html_attr_single_multiroot(self):
         class SimpleMultiroot(SimpleComponent):
@@ -534,9 +534,9 @@ class TestDependencyRendering:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3f>foo</strong>
-            Variable2: <div data-djc-id-a1bc3f>foo</div>
-            Variable3: <span data-djc-id-a1bc3f>foo</span>
+            Variable: <strong data-djc-id-ca1bc3f>foo</strong>
+            Variable2: <div data-djc-id-ca1bc3f>foo</div>
+            Variable3: <span data-djc-id-ca1bc3f>foo</span>
             """,
         )
 
@@ -570,10 +570,10 @@ class TestDependencyRendering:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc41>foo</strong>
-            Variable2: <div data-djc-id-a1bc3f data-djc-id-a1bc41>foo</div>
-            Variable3: <span data-djc-id-a1bc3f data-djc-id-a1bc41>foo</span>
-            <div data-djc-id-a1bc3f>Another</div>
+            Variable: <strong data-djc-id-ca1bc3f data-djc-id-ca1bc41>foo</strong>
+            Variable2: <div data-djc-id-ca1bc3f data-djc-id-ca1bc41>foo</div>
+            Variable3: <span data-djc-id-ca1bc3f data-djc-id-ca1bc41>foo</span>
+            <div data-djc-id-ca1bc3f>Another</div>
             """,
         )
 
@@ -613,19 +613,19 @@ class TestDependencyRendering:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc41>foo</strong>
-            Variable2: <div data-djc-id-a1bc3f data-djc-id-a1bc41>foo</div>
-            Variable3: <span data-djc-id-a1bc3f data-djc-id-a1bc41>foo</span>
-            <div data-djc-id-a1bc3f>Another</div>
+            Variable: <strong data-djc-id-ca1bc3f data-djc-id-ca1bc41>foo</strong>
+            Variable2: <div data-djc-id-ca1bc3f data-djc-id-ca1bc41>foo</div>
+            Variable3: <span data-djc-id-ca1bc3f data-djc-id-ca1bc41>foo</span>
+            <div data-djc-id-ca1bc3f>Another</div>
 
-            Variable: <strong data-djc-id-a1bc42 data-djc-id-a1bc43>foo</strong>
-            Variable2: <div data-djc-id-a1bc42 data-djc-id-a1bc43>foo</div>
-            Variable3: <span data-djc-id-a1bc42 data-djc-id-a1bc43>foo</span>
-            <div data-djc-id-a1bc42>Another</div>
+            Variable: <strong data-djc-id-ca1bc42 data-djc-id-ca1bc43>foo</strong>
+            Variable2: <div data-djc-id-ca1bc42 data-djc-id-ca1bc43>foo</div>
+            Variable3: <span data-djc-id-ca1bc42 data-djc-id-ca1bc43>foo</span>
+            <div data-djc-id-ca1bc42>Another</div>
 
-            Variable: <strong data-djc-id-a1bc44 data-djc-id-a1bc45>foo</strong>
-            Variable2: <div data-djc-id-a1bc44 data-djc-id-a1bc45>foo</div>
-            Variable3: <span data-djc-id-a1bc44 data-djc-id-a1bc45>foo</span>
-            <div data-djc-id-a1bc44>Another</div>
+            Variable: <strong data-djc-id-ca1bc44 data-djc-id-ca1bc45>foo</strong>
+            Variable2: <div data-djc-id-ca1bc44 data-djc-id-ca1bc45>foo</div>
+            Variable3: <span data-djc-id-ca1bc44 data-djc-id-ca1bc45>foo</span>
+            <div data-djc-id-ca1bc44>Another</div>
             """,
         )

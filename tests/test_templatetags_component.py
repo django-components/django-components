@@ -62,7 +62,7 @@ class TestComponentTemplateTag:
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-ca1bc3f>variable</strong>\n")
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_single_component_self_closing(self, components_settings):
@@ -75,7 +75,7 @@ class TestComponentTemplateTag:
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-ca1bc3f>variable</strong>\n")
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_call_with_invalid_name(self, components_settings):
@@ -101,7 +101,7 @@ class TestComponentTemplateTag:
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-ca1bc3f>variable</strong>\n")
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_call_component_with_two_variables(self, components_settings):
@@ -134,8 +134,8 @@ class TestComponentTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3f>variable</strong>
-            Variable2: <strong data-djc-id-a1bc3f>hej</strong>
+            Variable: <strong data-djc-id-ca1bc3f>variable</strong>
+            Variable2: <strong data-djc-id-ca1bc3f>hej</strong>
             """,
         )
 
@@ -150,7 +150,7 @@ class TestComponentTemplateTag:
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-ca1bc3f>variable</strong>\n")
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_raises_on_component_called_with_variable_as_name(self, components_settings):
@@ -191,8 +191,8 @@ class TestComponentTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            Provided variable: <strong data-djc-id-a1bc3f>provided value</strong>
-            Default: <p data-djc-id-a1bc3f>default text</p>
+            Provided variable: <strong data-djc-id-ca1bc3f>provided value</strong>
+            Default: <p data-djc-id-ca1bc3f>default text</p>
             """,
         )
 
@@ -227,7 +227,7 @@ class TestDynamicComponentTemplateTag:
         rendered = template.render(Context({}))
         assertHTMLEqual(
             rendered,
-            "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
+            "Variable: <strong data-djc-id-ca1bc3f data-djc-id-ca1bc40>variable</strong>",
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -258,7 +258,7 @@ class TestDynamicComponentTemplateTag:
         rendered = template.render(Context({}))
         assertHTMLEqual(
             rendered,
-            "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
+            "Variable: <strong data-djc-id-ca1bc3f data-djc-id-ca1bc40>variable</strong>",
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -283,7 +283,7 @@ class TestDynamicComponentTemplateTag:
         )
         assertHTMLEqual(
             rendered,
-            "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
+            "Variable: <strong data-djc-id-ca1bc3f data-djc-id-ca1bc40>variable</strong>",
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -305,7 +305,7 @@ class TestDynamicComponentTemplateTag:
         )
         assertHTMLEqual(
             rendered,
-            "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
+            "Variable: <strong data-djc-id-ca1bc3f data-djc-id-ca1bc40>variable</strong>",
         )
 
     @djc_test(
@@ -329,7 +329,7 @@ class TestDynamicComponentTemplateTag:
 
         template = Template(simple_tag_template)
         rendered = template.render(Context({}))
-        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>\n")
+        assertHTMLEqual(rendered, "Variable: <strong data-djc-id-ca1bc3f data-djc-id-ca1bc40>variable</strong>\n")
 
     @djc_test(
         parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
@@ -355,7 +355,7 @@ class TestDynamicComponentTemplateTag:
         rendered = template.render(Context({}))
         assertHTMLEqual(
             rendered,
-            "Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>",
+            "Variable: <strong data-djc-id-ca1bc3f data-djc-id-ca1bc40>variable</strong>",
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -397,7 +397,7 @@ class TestDynamicComponentTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc3f data-djc-id-a1bc40>variable</strong>
+            Variable: <strong data-djc-id-ca1bc3f data-djc-id-ca1bc40>variable</strong>
             Slot: HELLO_FROM_SLOT
             """,
         )
@@ -439,7 +439,7 @@ class TestDynamicComponentTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc41 data-djc-id-a1bc42>variable</strong>
+            Variable: <strong data-djc-id-ca1bc41 data-djc-id-ca1bc42>variable</strong>
             Slot 1: HELLO_FROM_SLOT_1
             Slot 2: HELLO_FROM_SLOT_2
             """,
@@ -482,7 +482,7 @@ class TestDynamicComponentTemplateTag:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc41 data-djc-id-a1bc42>variable</strong>
+            Variable: <strong data-djc-id-ca1bc41 data-djc-id-ca1bc42>variable</strong>
             Slot 1: HELLO_FROM_SLOT_1
             Slot 2:
             """,
@@ -527,14 +527,14 @@ class TestMultiComponent:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc40>
+            <custom-template data-djc-id-ca1bc40>
                 <header>
                     Default header
                 </header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-a1bc47>
+            <custom-template data-djc-id-ca1bc47>
                 <header>
                     Default header
                 </header>
@@ -564,14 +564,14 @@ class TestMultiComponent:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc42>
+            <custom-template data-djc-id-ca1bc42>
                 <header>
                     <p>Slot #1</p>
                 </header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-a1bc49>
+            <custom-template data-djc-id-ca1bc49>
                 <header>
                     <div>Slot #2</div>
                 </header>
@@ -600,14 +600,14 @@ class TestMultiComponent:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc41>
+            <custom-template data-djc-id-ca1bc41>
                 <header>
                     <p>Slot #1</p>
                 </header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-a1bc48>
+            <custom-template data-djc-id-ca1bc48>
                 <header>
                     Default header
                 </header>
@@ -636,14 +636,14 @@ class TestMultiComponent:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc41>
+            <custom-template data-djc-id-ca1bc41>
                 <header>
                     Default header
                 </header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-a1bc48>
+            <custom-template data-djc-id-ca1bc48>
                 <header>
                     <div>Slot #2</div>
                 </header>
@@ -689,17 +689,17 @@ class TestComponentIsolation:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc4a>
+            <custom-template data-djc-id-ca1bc4a>
                 <header>Override header</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-a1bc4b>
+            <custom-template data-djc-id-ca1bc4b>
                 <header>Default header</header>
                 <main>Override main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-a1bc4c>
+            <custom-template data-djc-id-ca1bc4c>
                 <header>Default header</header>
                 <main>Default main</main>
                 <footer>Override footer</footer>
@@ -735,7 +735,7 @@ class TestAggregateInput:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 attrs: {'@click.stop': "dispatch('click_event')", 'x-data': "{hello: 'world'}", 'class': 'padding-top-8'}
                 my_dict: {'one': 2}
             </div>

@@ -49,7 +49,7 @@ class TestE2eDependencyRendering:
 
         # Check that the actual HTML content was loaded
         assert re.compile(
-            r'Variable: <strong class="inner" data-djc-id-\w{6}="">foo</strong>'
+            r'Variable: <strong class="inner" data-djc-id-\w{7}="">foo</strong>'
         ).search(data["bodyHTML"]) is not None
         assertInHTML('<div class="my-style"> 123 </div>', data["bodyHTML"], count=1)
         assertInHTML('<div class="my-style2"> xyz </div>', data["bodyHTML"], count=1)
@@ -113,25 +113,25 @@ class TestE2eDependencyRendering:
 
         # Check that the actual HTML content was loaded
         assert re.compile(
-            # <div class="outer" data-djc-id-10uLMD>
+            # <div class="outer" data-djc-id-c10uLMD>
             #     Variable:
-            #     <strong class="inner" data-djc-id-DZEnUC>
+            #     <strong class="inner" data-djc-id-cDZEnUC>
             #         variable
             #     </strong>
             #     XYZ:
-            #     <strong class="other" data-djc-id-IYirHK>
+            #     <strong class="other" data-djc-id-cIYirHK>
             #         variable_inner
             #     </strong>
             # </div>
             # <div class="my-style">123</div>
             # <div class="my-style2">xyz</div>
-            r'<div class="outer" data-djc-id-\w{6}="">\s*'
+            r'<div class="outer" data-djc-id-\w{7}="">\s*'
             r"Variable:\s*"
-            r'<strong class="inner" data-djc-id-\w{6}="">\s*'
+            r'<strong class="inner" data-djc-id-\w{7}="">\s*'
             r"variable\s*"
             r"<\/strong>\s*"
             r"XYZ:\s*"
-            r'<strong class="other" data-djc-id-\w{6}="">\s*'
+            r'<strong class="other" data-djc-id-\w{7}="">\s*'
             r"variable_inner\s*"
             r"<\/strong>\s*"
             r"<\/div>\s*"
@@ -204,26 +204,26 @@ class TestE2eDependencyRendering:
 
         # Check that the actual HTML content was loaded
         #
-        # <div class="outer" data-djc-id-10uLMD>
+        # <div class="outer" data-djc-id-c10uLMD>
         #     Variable:
-        #     <strong class="inner" data-djc-id-DZEnUC>
+        #     <strong class="inner" data-djc-id-cDZEnUC>
         #         variable
         #     </strong>
         #     XYZ:
-        #     <strong data-djc-id-IYirHK class="other">
+        #     <strong data-djc-id-cIYirHK class="other">
         #         variable_inner
         #     </strong>
         # </div>
         # <div class="my-style">123</div>
         # <div class="my-style2">xyz</div>
         assert re.compile(
-            r'<div class="outer" data-djc-id-\w{6}="">\s*'
+            r'<div class="outer" data-djc-id-\w{7}="">\s*'
             r"Variable:\s*"
-            r'<strong class="inner" data-djc-id-\w{6}="">\s*'
+            r'<strong class="inner" data-djc-id-\w{7}="">\s*'
             r"variable\s*"
             r"<\/strong>\s*"
             r"XYZ:\s*"
-            r'<strong class="other" data-djc-id-\w{6}="">\s*'
+            r'<strong class="other" data-djc-id-\w{7}="">\s*'
             r"variable_inner\s*"
             r"<\/strong>\s*"
             r"<\/div>\s*"
@@ -378,7 +378,7 @@ class TestE2eDependencyRendering:
 
         assert data["targetHtml"] is None
         assert re.compile(
-            r'<div class="frag" data-djc-id-\w{6}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
+            r'<div class="frag" data-djc-id-\w{7}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
         ).search(data["fragHtml"]) is not None
         assert "rgb(0, 0, 255)" in data["fragBg"]  # AKA 'background: blue'
 
@@ -428,7 +428,7 @@ class TestE2eDependencyRendering:
 
         assert data["targetHtml"] is None
         assert re.compile(
-            r'<div class="frag" data-djc-id-\w{6}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
+            r'<div class="frag" data-djc-id-\w{7}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
         ).search(data["fragHtml"]) is not None
         assert "rgb(0, 0, 255)" in data["fragBg"]  # AKA 'background: blue'
 
@@ -481,7 +481,7 @@ class TestE2eDependencyRendering:
         # NOTE: Unlike the vanilla JS tests, for the Alpine test we don't remove the targetHtml,
         # but only change its contents.
         assert re.compile(
-            r'<div class="frag" data-djc-id-\w{6}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
+            r'<div class="frag" data-djc-id-\w{7}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
         ).search(data["targetHtml"]) is not None
         assert "rgb(0, 0, 255)" in data["fragBg"]  # AKA 'background: blue'
 

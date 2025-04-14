@@ -51,6 +51,26 @@ multiple times, the ID will be different for each call.
 
 It is available as [`self.id`](../../../reference/api#django_components.Component.id).
 
+The ID is a 7-letter alphanumeric string in the format `cXXXXXX`,
+where `XXXXXX` is a random string of 6 alphanumeric characters (case-sensitive).
+
+E.g. `c1a2b3c`.
+
+A single render ID has a chance of collision 1 in 57 billion. However, due to birthday paradox, the chance of collision increases to 1% when approaching ~33K render IDs.
+
+Thus, there is currently a soft-cap of ~30K components rendered on a single page.
+
+If you need to expand this limit, please open an issue on GitHub.
+
+```python
+class Table(Component):
+    def get_context_data(self, *args, **attrs):
+        # Access component's ID
+        assert self.id == "djc1A2b3c"
+
+        return {}
+```
+
 ## Component inputs
 
 All the component inputs are captured and available as [`self.input`](../../../reference/api/#django_components.Component.input).

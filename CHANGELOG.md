@@ -4,6 +4,8 @@
 
 #### Refactor
 
+- Component ID is now prefixed with `c`, e.g. `c123456`.
+
 - When typing a Component, you can now specify as few or as many parameters as you want.
 
     ```py

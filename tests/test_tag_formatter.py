@@ -73,7 +73,7 @@ class TestComponentTag:
             rendered,
             """
             hello1
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 SLOT_DEFAULT
             </div>
             hello2
@@ -106,7 +106,7 @@ class TestComponentTag:
             rendered,
             """
             hello1
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 OVERRIDEN!
             </div>
             hello2
@@ -142,7 +142,7 @@ class TestComponentTag:
             rendered,
             """
             hello1
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 SLOT_DEFAULT
             </div>
             hello2
@@ -180,7 +180,7 @@ class TestComponentTag:
             rendered,
             """
             hello1
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 OVERRIDEN!
             </div>
             hello2
@@ -216,7 +216,7 @@ class TestComponentTag:
             rendered,
             """
             hello1
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 SLOT_DEFAULT
             </div>
             hello2
@@ -254,7 +254,7 @@ class TestComponentTag:
             rendered,
             """
             hello1
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 OVERRIDEN!
             </div>
             hello2
@@ -292,7 +292,7 @@ class TestComponentTag:
             rendered,
             """
             hello1
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 OVERRIDEN!
             </div>
             hello2
@@ -327,7 +327,7 @@ class TestComponentTag:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 OVERRIDEN!
             </div>
             """,
@@ -408,7 +408,7 @@ class TestComponentTag:
             rendered,
             """
             hello1
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 SLOT_DEFAULT
             </div>
             hello2
@@ -428,7 +428,7 @@ class TestComponentTag:
             rendered,
             """
             hello1
-            <div data-djc-id-a1bc42>
+            <div data-djc-id-ca1bc42>
                 OVERRIDEN!
             </div>
             hello2

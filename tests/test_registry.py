@@ -205,11 +205,11 @@ class TestMultipleComponentRegistries:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-a1bc40>123</strong>
+            Variable: <strong data-djc-id-ca1bc40>123</strong>
             Slot:
             SLOT 123
 
-            Variable: <strong data-djc-id-a1bc42>123</strong>
+            Variable: <strong data-djc-id-ca1bc42>123</strong>
             Slot:
             SLOT ABC
             """,

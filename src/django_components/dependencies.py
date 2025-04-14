@@ -32,6 +32,7 @@ from django.utils.safestring import SafeString, mark_safe
 from djc_core_html_parser import set_html_attributes
 
 from django_components.cache import get_component_media_cache
+from django_components.constants import COMP_ID_LENGTH
 from django_components.node import BaseNode
 from django_components.util.misc import is_nonempty_str
 
@@ -230,9 +231,9 @@ def set_component_attrs_for_js_and_css(
     # These are the attributes that we want to set on the root element.
     all_root_attributes = [*root_attributes] if root_attributes else []
 
-    # Component ID is used for executing JS script, e.g. `data-djc-id-a1b2c3`
+    # Component ID is used for executing JS script, e.g. `data-djc-id-ca1b2c3`
     #
-    # NOTE: We use `data-djc-css-a1b2c3` and `data-djc-id-a1b2c3` instead of
+    # NOTE: We use `data-djc-css-a1b2c3` and `data-djc-id-ca1b2c3` instead of
     # `data-djc-css="a1b2c3"` and `data-djc-id="a1b2c3"`, to allow
     # multiple values to be associated with the same element, which may happen if
     # one component renders another.
@@ -350,8 +351,8 @@ COMPONENT_COMMENT_REGEX = re.compile(rb"<!--\s+_RENDERED\s+(?P<data>[\w\-,/]+?)\
 SCRIPT_NAME_REGEX = re.compile(
     rb"^(?P<comp_cls_id>[\w\-\./]+?),(?P<id>[\w]+?),(?P<js>[0-9a-f]*?),(?P<css>[0-9a-f]*?)$"
 )
-# E.g. `data-djc-id-a1b2c3`
-MAYBE_COMP_ID = r'(?: data-djc-id-\w{6}="")?'
+# E.g. `data-djc-id-ca1b2c3`
+MAYBE_COMP_ID = r'(?: data-djc-id-\w{{{COMP_ID_LENGTH}}}="")?'.format(COMP_ID_LENGTH=COMP_ID_LENGTH)
 # E.g. `data-djc-css-99914b`
 MAYBE_COMP_CSS_ID = r'(?: data-djc-css-\w{6}="")?'
 

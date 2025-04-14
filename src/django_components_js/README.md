@@ -25,8 +25,8 @@ Components.registerComponentData(
 // we can run component's init function
 Components.callComponent(
   "table",  // Component name
-  12345,    // Component ID - An HTML element with corresponding
-            //                attribute (`data-djc-id-12345`) MUST
+  "c123456",    // Component ID - An HTML element with corresponding
+            //                attribute (`data-djc-id-c123456`) MUST
             //                be present in the DOM.
   "3d09cf", // Input ID
 );

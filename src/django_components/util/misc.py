@@ -6,6 +6,7 @@ from itertools import chain
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union
 
+from django_components.constants import UID_LENGTH
 from django_components.util.nanoid import generate
 
 if TYPE_CHECKING:
@@ -24,7 +25,7 @@ def gen_id() -> str:
     # See https://zelark.github.io/nano-id-cc/
     return generate(
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
-        size=6,
+        size=UID_LENGTH,
     )
 
 

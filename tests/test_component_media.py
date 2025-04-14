@@ -39,7 +39,7 @@ class TestMainMedia:
         rendered = TestComponent.render()
 
         assertInHTML(
-            '<div class="html-css-only" data-djc-id-a1bc3e>Content</div>',
+            '<div class="html-css-only" data-djc-id-ca1bc3e>Content</div>',
             rendered,
         )
         assertInHTML(
@@ -91,7 +91,7 @@ class TestMainMedia:
 
         assertInHTML(
             """
-            <form data-djc-id-a1bc41 method="post">
+            <form data-djc-id-ca1bc41 method="post">
                 <input name="variable" type="text" value="test"/>
                 <input type="submit"/>
             </form>
@@ -153,7 +153,7 @@ class TestMainMedia:
         ).render(Context())
         rendered = render_dependencies(rendered_raw)
 
-        assert 'Variable: <strong data-djc-id-a1bc41="">test</strong>' in rendered
+        assert 'Variable: <strong data-djc-id-ca1bc41="">test</strong>' in rendered
         assertInHTML(
             "<style>/* Used in `MainMediaTest` tests in `test_component_media.py` */\n.html-css-only {\n    color: blue;\n}</style>",
             rendered,
@@ -221,7 +221,7 @@ class TestMainMedia:
         context = Context({"variable": "Dynamic Content"})
         assertHTMLEqual(
             comp.render(context),
-            '<div class="variable-html" data-djc-id-a1bc3e>Dynamic Content</div>',
+            '<div class="variable-html" data-djc-id-ca1bc3e>Dynamic Content</div>',
         )
 
     def test_html_variable_filtered(self):
@@ -241,8 +241,8 @@ class TestMainMedia:
         assertHTMLEqual(
             rendered,
             """
-            Var1: <strong data-djc-id-a1bc3e>test1</strong>
-            Var2 (uppercased): <strong data-djc-id-a1bc3e>TEST2</strong>
+            Var1: <strong data-djc-id-ca1bc3e>test1</strong>
+            Var2 (uppercased): <strong data-djc-id-ca1bc3e>TEST2</strong>
             """,
         )
 
@@ -931,7 +931,7 @@ class TestMediaRelativePath:
 
         assertInHTML(
             """
-            <form data-djc-id-a1bc41 method="post">
+            <form data-djc-id-ca1bc41 method="post">
                 <input type="text" name="variable" value="test">
                 <input type="submit">
             </form>

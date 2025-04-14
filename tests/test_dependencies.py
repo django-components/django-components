@@ -267,7 +267,7 @@ class TestRenderDependencies:
         assertInHTML(
             """
             <body>
-                Variable: <strong data-djc-id-a1bc41>foo</strong>
+                Variable: <strong data-djc-id-ca1bc41>foo</strong>
 
                 <style>.xyz { color: red; }</style>
                 <link href="style.css" media="all" rel="stylesheet">
@@ -423,7 +423,7 @@ class TestRenderDependencies:
                         <td class="whitespace-nowrap w-fit text-center px-4 w-px"
                             aria-colindex="1">
                             1
-                            Variable: <strong data-djc-id-a1bc3f>hi</strong>
+                            Variable: <strong data-djc-id-ca1bc3f>hi</strong>
                         </td>
                     </tr>
                 </tbody>
@@ -511,7 +511,7 @@ class TestMiddleware:
         )
 
         assert_dependencies(rendered1)
-        assert rendered1.count('Variable: <strong data-djc-id-a1bc42="" data-djc-id-a1bc41="">value</strong>') == 1
+        assert rendered1.count('Variable: <strong data-djc-id-ca1bc42="" data-djc-id-ca1bc41="">value</strong>') == 1
 
         rendered2 = create_and_process_template_response(
             template,
@@ -519,7 +519,7 @@ class TestMiddleware:
         )
 
         assert_dependencies(rendered2)
-        assert rendered2.count('Variable: <strong data-djc-id-a1bc44="" data-djc-id-a1bc43="">value</strong>') == 1
+        assert rendered2.count('Variable: <strong data-djc-id-ca1bc44="" data-djc-id-ca1bc43="">value</strong>') == 1
 
         rendered3 = create_and_process_template_response(
             template,
@@ -527,4 +527,4 @@ class TestMiddleware:
         )
 
         assert_dependencies(rendered3)
-        assert rendered3.count('Variable: <strong data-djc-id-a1bc46="" data-djc-id-a1bc45="">value</strong>') == 1
+        assert rendered3.count('Variable: <strong data-djc-id-ca1bc46="" data-djc-id-ca1bc45="">value</strong>') == 1

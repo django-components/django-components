@@ -67,10 +67,10 @@ class TestComponentSlot:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc42>
+            <custom-template data-djc-id-ca1bc42>
                 <header>Custom header</header>
                 <main>
-                    Variable: <strong data-djc-id-a1bc46>variable</strong>
+                    Variable: <strong data-djc-id-ca1bc46>variable</strong>
                 </main>
                 <footer>Default footer</footer>
             </custom-template>
@@ -119,9 +119,9 @@ class TestComponentSlot:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc43>
+            <custom-template data-djc-id-ca1bc43>
                 <header>
-                    Variable: <strong data-djc-id-a1bc47>variable</strong>
+                    Variable: <strong data-djc-id-ca1bc47>variable</strong>
                 </header>
                 <main></main>
                 <footer></footer>
@@ -174,7 +174,7 @@ class TestComponentSlot:
         assertHTMLEqual(
             rendered,
             f"""
-            <custom-template data-djc-id-a1bc41>
+            <custom-template data-djc-id-ca1bc41>
                 <header>Default header</header>
                 <main>test123 - {expected} </main>
                 <footer>test321</footer>
@@ -196,7 +196,7 @@ class TestComponentSlot:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc3f>
+            <custom-template data-djc-id-ca1bc3f>
                 <header>Default header</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
@@ -219,7 +219,7 @@ class TestComponentSlot:
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        assertHTMLEqual(rendered, "<custom-template data-djc-id-a1bc3f></custom-template>")
+        assertHTMLEqual(rendered, "<custom-template data-djc-id-ca1bc3f></custom-template>")
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_slotted_template_without_slots_and_single_quotes(self, components_settings):
@@ -236,7 +236,7 @@ class TestComponentSlot:
         template = Template(template_str)
         rendered = template.render(Context({}))
 
-        assertHTMLEqual(rendered, "<custom-template data-djc-id-a1bc3f></custom-template>")
+        assertHTMLEqual(rendered, "<custom-template data-djc-id-ca1bc3f></custom-template>")
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_variable_fill_name(self, components_settings):
@@ -252,7 +252,7 @@ class TestComponentSlot:
         template = Template(template_str)
         rendered = template.render(Context({}))
         expected = """
-        <custom-template data-djc-id-a1bc40>
+        <custom-template data-djc-id-ca1bc40>
             <header>Hi there!</header>
             <main>Default main</main>
             <footer>Default footer</footer>
@@ -321,7 +321,7 @@ class TestComponentSlot:
             rendered,
             """
             <body>
-                <div data-djc-id-a1bc3f>
+                <div data-djc-id-ca1bc3f>
                     <main> ABC: carl var </main>
                 </div>
             </body>
@@ -352,7 +352,7 @@ class TestComponentSlot:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 <h1> Custom title </h1>
                 <h2> Default subtitle </h2>
             </div>
@@ -482,8 +482,8 @@ class TestComponentSlot:
             render_dependencies=False,
         )
 
-        assertHTMLEqual(rendered1, "<div data-djc-id-a1bc3e><div>MAIN</div></div>")
-        assertHTMLEqual(rendered2, "<div data-djc-id-a1bc41><div>MAIN</div></div>")
+        assertHTMLEqual(rendered1, "<div data-djc-id-ca1bc3e><div>MAIN</div></div>")
+        assertHTMLEqual(rendered2, "<div data-djc-id-ca1bc41><div>MAIN</div></div>")
 
         # 3. Specify the required slot by its name
         rendered3 = TestComp.render(
@@ -493,7 +493,7 @@ class TestComponentSlot:
             },
             render_dependencies=False,
         )
-        assertHTMLEqual(rendered3, "<div data-djc-id-a1bc42><main>MAIN</main><div>MAIN</div></div>")
+        assertHTMLEqual(rendered3, "<div data-djc-id-ca1bc42><main>MAIN</main><div>MAIN</div></div>")
 
         # 4. RAISES: Specify the required slot by the "default" name
         #    This raises because the slot that is marked as 'required' is NOT marked as 'default'.
@@ -530,7 +530,7 @@ class TestComponentSlot:
         rendered = Template(template_str).render(Context({}))
 
         expected = """
-            <custom-template data-djc-id-a1bc42>
+            <custom-template data-djc-id-ca1bc42>
                 <header>Custom header</header>
                 <main>Custom main</main>
                 <footer>Custom footer</footer>
@@ -585,7 +585,7 @@ class TestComponentSlotDefault:
         template = Template(template_str)
 
         expected = """
-        <div data-djc-id-a1bc3f>
+        <div data-djc-id-ca1bc3f>
           <main>
             <p>This fills the 'main' slot.</p>
           </main>
@@ -613,7 +613,7 @@ class TestComponentSlotDefault:
         """
         template = Template(template_str)
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 <main>
                     <p>This fills the 'main' slot.</p>
                 </main>
@@ -642,7 +642,7 @@ class TestComponentSlotDefault:
         """
         template = Template(template_str)
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 <main><p>This fills the 'main' slot.</p></main>
                 <div><p>This fills the 'main' slot.</p></div>
             </div>
@@ -728,9 +728,9 @@ class TestComponentSlotDefault:
         """
         template = Template(template_str)
         expected = """
-            <div data-djc-id-a1bc43>
+            <div data-djc-id-ca1bc43>
                 <main>
-                    <custom-template data-djc-id-a1bc45>
+                    <custom-template data-djc-id-ca1bc45>
                         <header>This Is Allowed</header>
                         <main></main>
                         <footer></footer>
@@ -792,7 +792,7 @@ class TestComponentSlotDefault:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 <main><p>Main Content</p></main>
             </div>
             """,
@@ -812,7 +812,7 @@ class TestComponentSlotDefault:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc3f>
+            <custom-template data-djc-id-ca1bc3f>
                 <header>Default header</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
@@ -850,7 +850,7 @@ class TestComponentSlotDefault:
         assertHTMLEqual(
             rendered_truthy,
             """
-            <custom-template data-djc-id-a1bc3f>
+            <custom-template data-djc-id-ca1bc3f>
                 <header>123</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
@@ -862,7 +862,7 @@ class TestComponentSlotDefault:
         assertHTMLEqual(
             rendered_falsy,
             """
-            <custom-template data-djc-id-a1bc43>
+            <custom-template data-djc-id-ca1bc43>
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
@@ -914,7 +914,7 @@ class TestPassthroughSlots:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc41>
+            <custom-template data-djc-id-ca1bc41>
                 <header>
                     OVERRIDEN_SLOT "header" - INDEX 0 - ORIGINAL "Default header"
                 </header>
@@ -962,7 +962,7 @@ class TestPassthroughSlots:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc40>
+            <custom-template data-djc-id-ca1bc40>
                 <header>
                     OVERRIDEN_SLOT "header" - ORIGINAL "Default header"
                 </header>
@@ -1052,9 +1052,9 @@ class TestPassthroughSlots:
         rendered = template.render(Context())
 
         expected = """
-            <div data-djc-id-a1bc41>CUSTOM HEADER</div>
-            <div data-djc-id-a1bc41>CUSTOM MAIN</div>
-            <div data-djc-id-a1bc41>footer</div>
+            <div data-djc-id-ca1bc41>CUSTOM HEADER</div>
+            <div data-djc-id-ca1bc41>CUSTOM MAIN</div>
+            <div data-djc-id-ca1bc41>footer</div>
         """
         assertHTMLEqual(rendered, expected)
 
@@ -1097,8 +1097,8 @@ class TestPassthroughSlots:
         rendered = template.render(Context())
 
         expected = """
-            <div data-djc-id-a1bc41>
-                <custom-template data-djc-id-a1bc45>
+            <div data-djc-id-ca1bc41>
+                <custom-template data-djc-id-ca1bc45>
                     <header>CUSTOM HEADER</header>
                     <main>CUSTOM MAIN</main>
                     <footer>Default footer</footer>
@@ -1148,8 +1148,8 @@ class TestPassthroughSlots:
         rendered = template.render(Context())
 
         expected = """
-            <div data-djc-id-a1bc41>
-                <custom-template data-djc-id-a1bc45>
+            <div data-djc-id-ca1bc41>
+                <custom-template data-djc-id-ca1bc45>
                     <header>Default header</header>
                     <main>CUSTOM MAIN</main>
                     <footer>Default footer</footer>
@@ -1200,7 +1200,7 @@ class TestNestedSlots:
 
         rendered = Template(template_str).render(Context())
         expected = """
-            <div data-djc-id-a1bc3f>
+            <div data-djc-id-ca1bc3f>
                 Wrapper Default
                 <div>
                     Parent1 Default
@@ -1231,7 +1231,7 @@ class TestNestedSlots:
 
         rendered = Template(template_str).render(Context())
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 Entire Wrapper Replaced
             </div>
         """
@@ -1253,7 +1253,7 @@ class TestNestedSlots:
 
         rendered = Template(template_str).render(Context())
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 Wrapper Default
                 <div>
                     Parent1 Replaced
@@ -1281,7 +1281,7 @@ class TestNestedSlots:
 
         rendered = Template(template_str).render(Context())
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 Wrapper Default
                 <div>
                     Parent1 Default
@@ -1322,7 +1322,7 @@ class TestNestedSlots:
 
         rendered = Template(template_str).render(Context())
         expected = """
-            <div data-djc-id-a1bc42>
+            <div data-djc-id-ca1bc42>
                 Entire Wrapper Replaced
             </div>
         """
@@ -1355,7 +1355,7 @@ class TestSlottedTemplateRegression:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc3f>
+            <custom-template data-djc-id-ca1bc3f>
                 <header>Default header</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
@@ -1383,7 +1383,7 @@ class TestSlotDefault:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc42>
+            <custom-template data-djc-id-ca1bc42>
                 <header>Before: Default header</header>
                 <main>Default main</main>
                 <footer>Default footer, after</footer>
@@ -1409,7 +1409,7 @@ class TestSlotDefault:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc40>
+            <custom-template data-djc-id-ca1bc40>
                 <header>First: Default header; Second: Default header</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
@@ -1440,7 +1440,7 @@ class TestSlotDefault:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc40>
+            <custom-template data-djc-id-ca1bc40>
                 <header>First Default header Later Default header Later Default header</header>
                 <main>Default main</main>
                 <footer>Default footer</footer>
@@ -1475,10 +1475,10 @@ class TestSlotDefault:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc43>
+            <custom-template data-djc-id-ca1bc43>
                 <header>
                     header1_in_header1: Default header
-                    <custom-template data-djc-id-a1bc47>
+                    <custom-template data-djc-id-ca1bc47>
                         <header>
                             header1_in_header2: Default header
                             header2_in_header2: Default header
@@ -1527,7 +1527,7 @@ class TestScopedSlot:
         """
         rendered = Template(template).render(Context())
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 def
                 456
             </div>
@@ -1562,7 +1562,7 @@ class TestScopedSlot:
         """
         rendered = Template(template).render(Context())
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 def
                 456
             </div>
@@ -1598,7 +1598,7 @@ class TestScopedSlot:
         """
         rendered = Template(template).render(Context())
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 Default text
                 def
                 456
@@ -1635,7 +1635,7 @@ class TestScopedSlot:
         """
         rendered = Template(template).render(Context())
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 def
                 456
             </div>
@@ -1673,7 +1673,7 @@ class TestScopedSlot:
         """
         rendered = Template(template).render(Context())
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 def
                 456
             </div>
@@ -1710,7 +1710,7 @@ class TestScopedSlot:
         """
         rendered = Template(template).render(Context())
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 <b>Default text A</b>
                 <b>xyz Default text B 456</b>
             </div>
@@ -1774,7 +1774,7 @@ class TestScopedSlot:
             {% endcomponent %}
         """
         rendered = Template(template).render(Context())
-        expected = "<div data-djc-id-a1bc40> overriden </div>"
+        expected = "<div data-djc-id-ca1bc40> overriden </div>"
         assertHTMLEqual(rendered, expected)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -1797,7 +1797,7 @@ class TestScopedSlot:
             {% endcomponent %}
         """
         rendered = Template(template).render(Context())
-        expected = "<div data-djc-id-a1bc40> {} </div>"
+        expected = "<div data-djc-id-ca1bc40> {} </div>"
         assertHTMLEqual(rendered, expected)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -1823,7 +1823,7 @@ class TestScopedSlot:
             {% endcomponent %}
         """
         rendered = Template(template).render(Context())
-        expected = "<div data-djc-id-a1bc3f> Default text </div>"
+        expected = "<div data-djc-id-ca1bc3f> Default text </div>"
         assertHTMLEqual(rendered, expected)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -1862,7 +1862,7 @@ class TestScopedSlot:
         )
 
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 def
                 456
             </div>
@@ -1907,7 +1907,7 @@ class TestScopedSlot:
         )
 
         expected = """
-            <div data-djc-id-a1bc40>
+            <div data-djc-id-ca1bc40>
                 def
                 456
             </div>
@@ -1951,9 +1951,9 @@ class TestScopedSlot:
         assertHTMLEqual(
             rendered,
             """
-            <div data-djc-id-a1bc42>
+            <div data-djc-id-ca1bc42>
                 data1_in_slot1: {'abc': 'def', 'input': 1}
-                <div data-djc-id-a1bc44>
+                <div data-djc-id-ca1bc44>
                     data1_in_slot2: {'abc': 'def', 'input': 1}
                     data2_in_slot2: {'abc': 'def', 'input': 2}
                 </div>
@@ -2060,9 +2060,9 @@ class TestDuplicateSlot:
         assertHTMLEqual(
             rendered,
             """
-            <header data-djc-id-a1bc41>Name: Jannete</header>
-            <main data-djc-id-a1bc41>Name: Jannete</main>
-            <footer data-djc-id-a1bc41>Hello</footer>
+            <header data-djc-id-ca1bc41>Name: Jannete</header>
+            <main data-djc-id-ca1bc41>Name: Jannete</main>
+            <footer data-djc-id-ca1bc41>Hello</footer>
             """,
         )
 
@@ -2083,9 +2083,9 @@ class TestDuplicateSlot:
         assertHTMLEqual(
             rendered,
             """
-            <header data-djc-id-a1bc3f>Default header</header>
-            <main data-djc-id-a1bc3f>Default main header</main>
-            <footer data-djc-id-a1bc3f>Default footer</footer>
+            <header data-djc-id-ca1bc3f>Default header</header>
+            <main data-djc-id-ca1bc3f>Default main header</main>
+            <footer data-djc-id-ca1bc3f>Default footer</footer>
             """,
         )
 
@@ -2110,8 +2110,8 @@ class TestDuplicateSlot:
             rendered,
             """
             OVERRIDDEN!
-            <div class="dashboard-component" data-djc-id-a1bc40>
-                <div class="calendar-component" data-djc-id-a1bc47>
+            <div class="dashboard-component" data-djc-id-ca1bc40>
+                <div class="calendar-component" data-djc-id-ca1bc47>
                     <h1>
                         OVERRIDDEN!
                     </h1>
@@ -2150,8 +2150,8 @@ class TestDuplicateSlot:
             rendered,
             """
             START
-            <div class="dashboard-component" data-djc-id-a1bc3f>
-                <div class="calendar-component" data-djc-id-a1bc46>
+            <div class="dashboard-component" data-djc-id-ca1bc3f>
+                <div class="calendar-component" data-djc-id-ca1bc46>
                     <h1>
                         NESTED
                     </h1>
@@ -2281,11 +2281,11 @@ class TestSlotBehavior:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc45>
+            <custom-template data-djc-id-ca1bc45>
                 <header>Name: Igor</header>
                 <main>Day: Monday</main>
                 <footer>
-                    <custom-template data-djc-id-a1bc49>
+                    <custom-template data-djc-id-ca1bc49>
                         <header>Name2: Joe2</header>
                         <main>Day2: Monday</main>
                         <footer>Default footer</footer>
@@ -2300,11 +2300,11 @@ class TestSlotBehavior:
         assertHTMLEqual(
             rendered2,
             """
-            <custom-template data-djc-id-a1bc4a>
+            <custom-template data-djc-id-ca1bc4a>
                 <header>Name: Igor</header>
                 <main>Day: Monday</main>
                 <footer>
-                    <custom-template data-djc-id-a1bc4b>
+                    <custom-template data-djc-id-ca1bc4b>
                         <header>Name2: Joe2</header>
                         <main>Day2: Monday</main>
                         <footer>Default footer</footer>
@@ -2322,11 +2322,11 @@ class TestSlotBehavior:
         assertHTMLEqual(
             rendered,
             """
-            <custom-template data-djc-id-a1bc45>
+            <custom-template data-djc-id-ca1bc45>
                 <header>Name: Jannete</header>
                 <main>Day: Monday</main>
                 <footer>
-                    <custom-template data-djc-id-a1bc49>
+                    <custom-template data-djc-id-ca1bc49>
                         <header>Name2: Jannete</header>
                         <main>Day2: Monday</main>
                         <footer>Default footer</footer>
@@ -2341,11 +2341,11 @@ class TestSlotBehavior:
         assertHTMLEqual(
             rendered2,
             """
-            <custom-template data-djc-id-a1bc4a>
+            <custom-template data-djc-id-ca1bc4a>
                 <header>Name: </header>
                 <main>Day: Monday</main>
                 <footer>
-                    <custom-template data-djc-id-a1bc4b>
+                    <custom-template data-djc-id-ca1bc4b>
                         <header>Name2: </header>
                         <main>Day2: Monday</main>
                         <footer>Default footer</footer>

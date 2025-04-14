@@ -36,7 +36,7 @@ class TestNestedSlot:
         """
         template = Template(template_str)
         rendered = template.render(Context({}))
-        assertHTMLEqual(rendered, '<div id="outer" data-djc-id-a1bc3f>Default</div>')
+        assertHTMLEqual(rendered, '<div id="outer" data-djc-id-ca1bc3f>Default</div>')
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_inner_slot_overriden(self, components_settings):
@@ -50,7 +50,7 @@ class TestNestedSlot:
         """
         template = Template(template_str)
         rendered = template.render(Context({}))
-        assertHTMLEqual(rendered, '<div id="outer" data-djc-id-a1bc40>Override</div>')
+        assertHTMLEqual(rendered, '<div id="outer" data-djc-id-ca1bc40>Override</div>')
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_outer_slot_overriden(self, components_settings):
@@ -62,7 +62,7 @@ class TestNestedSlot:
         """
         template = Template(template_str)
         rendered = template.render(Context({}))
-        assertHTMLEqual(rendered, "<p data-djc-id-a1bc40>Override</p>")
+        assertHTMLEqual(rendered, "<p data-djc-id-ca1bc40>Override</p>")
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_both_overriden_and_inner_removed(self, components_settings):
@@ -77,7 +77,7 @@ class TestNestedSlot:
         """
         template = Template(template_str)
         rendered = template.render(Context({}))
-        assertHTMLEqual(rendered, "<p data-djc-id-a1bc41>Override</p>")
+        assertHTMLEqual(rendered, "<p data-djc-id-ca1bc41>Override</p>")
 
     # NOTE: Second arg in tuple is expected name in nested fill. In "django" mode,
     # the value should be overridden by the component, while in "isolated" it should
@@ -138,9 +138,9 @@ class TestNestedSlot:
         assertHTMLEqual(
             rendered,
             f"""
-            <custom-template data-djc-id-a1bc45>
+            <custom-template data-djc-id-ca1bc45>
                 <header>
-                    <custom-template data-djc-id-a1bc49>
+                    <custom-template data-djc-id-ca1bc49>
                         <header>Name2: {expected}</header>
                         <main>Day2: Monday</main>
                         <footer>XYZ</footer>
@@ -200,8 +200,8 @@ class TestConditionalSlot:
         assertHTMLEqual(
             rendered,
             """
-            <p id="a" data-djc-id-a1bc40>Default A</p>
-            <p id="b" data-djc-id-a1bc43>Default B</p>
+            <p id="a" data-djc-id-ca1bc40>Default A</p>
+            <p id="b" data-djc-id-ca1bc43>Default B</p>
             """,
         )
 
@@ -222,8 +222,8 @@ class TestConditionalSlot:
         assertHTMLEqual(
             rendered,
             """
-            <p id="a" data-djc-id-a1bc42>Default A</p>
-            <p id="b" data-djc-id-a1bc45>Override B</p>
+            <p id="a" data-djc-id-ca1bc42>Default A</p>
+            <p id="b" data-djc-id-ca1bc45>Override B</p>
             """,
         )
 
@@ -246,8 +246,8 @@ class TestConditionalSlot:
         assertHTMLEqual(
             rendered,
             """
-            <p id="a" data-djc-id-a1bc44>Override A</p>
-            <p id="b" data-djc-id-a1bc47>Override B</p>
+            <p id="a" data-djc-id-ca1bc44>Override A</p>
+            <p id="b" data-djc-id-ca1bc47>Override B</p>
             """,
         )
 
@@ -696,11 +696,11 @@ class TestComponentNesting:
         assertHTMLEqual(
             rendered,
             f"""
-            <custom-template data-djc-id-a1bc45>
+            <custom-template data-djc-id-ca1bc45>
                 <header>Name: {first_name}</header>
                 <main>Day: Monday</main>
                 <footer>
-                    <custom-template data-djc-id-a1bc49>
+                    <custom-template data-djc-id-ca1bc49>
                         <header>Name2: {second_name}</header>
                         <main>Day2: Monday</main>
                         <footer>Default footer</footer>
@@ -732,8 +732,8 @@ class TestComponentNesting:
         template = Template(template_str)
         rendered = template.render(Context({"items": [1, 2, 3]}))
         expected = f"""
-            <div class="dashboard-component" data-djc-id-a1bc3f>
-            <div class="calendar-component" data-djc-id-a1bc44>
+            <div class="dashboard-component" data-djc-id-ca1bc3f>
+            <div class="calendar-component" data-djc-id-ca1bc44>
                 <h1>
                 Welcome to your dashboard!
                 </h1>
@@ -774,8 +774,8 @@ class TestComponentNesting:
         template = Template(template_str)
         rendered = template.render(Context({"items": [1, 2, 3]}))
         expected = f"""
-            <div class="dashboard-component" data-djc-id-a1bc40>
-            <div class="calendar-component" data-djc-id-a1bc45>
+            <div class="dashboard-component" data-djc-id-ca1bc40>
+            <div class="calendar-component" data-djc-id-ca1bc45>
                 <h1>
                 Whoa!
                 </h1>
@@ -830,14 +830,14 @@ class TestComponentNesting:
 
         expected = """
             ITEMS: [{'value': 1}, {'value': 2}, {'value': 3}]
-            <li data-djc-id-a1bc3f>
-                <div data-djc-id-a1bc41> 1 </div>
+            <li data-djc-id-ca1bc3f>
+                <div data-djc-id-ca1bc41> 1 </div>
             </li>
-            <li data-djc-id-a1bc3f>
-                <div data-djc-id-a1bc43> 2 </div>
+            <li data-djc-id-ca1bc3f>
+                <div data-djc-id-ca1bc43> 2 </div>
             </li>
-            <li data-djc-id-a1bc3f>
-                <div data-djc-id-a1bc44> 3 </div>
+            <li data-djc-id-ca1bc3f>
+                <div data-djc-id-ca1bc44> 3 </div>
             </li>
         """
         assertHTMLEqual(rendered, expected)
@@ -917,7 +917,7 @@ class TestComponentNesting:
 
         expected = """
             <!DOCTYPE html>
-            <html lang="en" data-djc-id-a1bc3e data-djc-id-a1bc43 data-djc-id-a1bc47><head>
+            <html lang="en" data-djc-id-ca1bc3e data-djc-id-ca1bc43 data-djc-id-ca1bc47><head>
                 <meta charset="UTF-8">
                 <meta http-equiv="X-UA-Compatible" content="IE=edge">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -974,8 +974,8 @@ class TestComponentNesting:
         template = Template(template_str)
         rendered = template.render(Context({"items": [1, 2]}))
         expected = f"""
-            <div class="dashboard-component" data-djc-id-a1bc40>
-            <div class="calendar-component" data-djc-id-a1bc45>
+            <div class="dashboard-component" data-djc-id-ca1bc40>
+            <div class="calendar-component" data-djc-id-ca1bc45>
                 <h1>
                 Hello! Welcome to your dashboard!
                 </h1>

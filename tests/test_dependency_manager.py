@@ -218,11 +218,11 @@ class TestCallComponent:
             const manager = Components.createComponentsManager();
 
             const compName = 'my_comp';
-            const compId = '12345';
+            const compId = 'c12345';
             const inputHash = 'input-abc';
 
             // Pretend that this HTML belongs to our component
-            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-12345> abc </div>');
+            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-c12345> abc </div>');
 
             let captured = null;
             manager.registerComponent(compName, (data, ctx) => {
@@ -253,8 +253,8 @@ class TestCallComponent:
                 "hello": "world",
             },
             "ctx": {
-                "els": ['<div data-djc-id-12345=""> abc </div>'],
-                "id": "12345",
+                "els": ['<div data-djc-id-c12345=""> abc </div>'],
+                "id": "c12345",
                 "name": "my_comp",
             },
         }
@@ -269,11 +269,11 @@ class TestCallComponent:
             const manager = Components.createComponentsManager();
 
             const compName = 'my_comp';
-            const compId = '12345';
+            const compId = 'c12345';
             const inputHash = 'input-abc';
 
             // Pretend that this HTML belongs to our component
-            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-12345> abc </div>');
+            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-c12345> abc </div>');
 
             manager.registerComponent(compName, (data, ctx) => {
                 return Promise.resolve(123);
@@ -309,11 +309,11 @@ class TestCallComponent:
             const manager = Components.createComponentsManager();
 
             const compName = 'my_comp';
-            const compId = '12345';
+            const compId = 'c12345';
             const inputHash = 'input-abc';
 
             // Pretend that this HTML belongs to our component
-            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-12345> abc </div>');
+            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-c12345> abc </div>');
 
             manager.registerComponent(compName, (data, ctx) => {
                 throw Error('Oops!');
@@ -343,11 +343,11 @@ class TestCallComponent:
             const manager = Components.createComponentsManager();
 
             const compName = 'my_comp';
-            const compId = '12345';
+            const compId = 'c12345';
             const inputHash = 'input-abc';
 
             // Pretend that this HTML belongs to our component
-            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-12345> abc </div>');
+            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-c12345> abc </div>');
 
             manager.registerComponent(compName, async (data, ctx) => {
                 throw Error('Oops!');
@@ -410,10 +410,10 @@ class TestCallComponent:
             const manager = Components.createComponentsManager();
 
             const compName = 'my_comp';
-            const compId = '12345';
+            const compId = 'c12345';
             const inputHash = 'input-abc';
 
-            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-12345> abc </div>');
+            document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-c12345> abc </div>');
 
             manager.registerComponent(compName, (data, ctx) => {
                 return Promise.resolve(123);
