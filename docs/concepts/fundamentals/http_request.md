@@ -1,25 +1,22 @@
-The most common use of django-components is to render HTML for a given request. As such,
+The most common use of django-components is to render HTML when the server receives a request. As such,
 there are a few features that are dependent on the request object.
 
-## Passing and accessing HttpRequest
+## Passing the HttpRequest object
 
-In regular Django templates, the request object is available only within the `RequestContext`.
+In regular Django templates, the request object is available only within the [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext).
 
-In Components, you can either use `RequestContext`, or pass the `request` object
+In Components, you can either use [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext), or pass the `request` object
 explicitly to [`Component.render()`](../../../reference/api#django_components.Component.render) and
 [`Component.render_to_response()`](../../../reference/api#django_components.Component.render_to_response).
 
-When a component is nested in another, the child component uses parent's `request` object.
+So the request object is available to components either when:
 
-You can access the request object under [`Component.request`](../../../reference/api#django_components.Component.request):
+- The component is rendered with [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext) (Regular Django behavior)
+- The component is rendered with a regular [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) (or none), but you set the `request` kwarg
+    of [`Component.render()`](../../../reference/api#django_components.Component.render).
+- The component is nested and the parent has access to the request object.
 
 ```python
-class MyComponent(Component):
-    def get_context_data(self):
-        return {
-            'user_id': self.request.GET['user_id'],
-        }
-
 # ✅ With request
 MyComponent.render(request=request)
 MyComponent.render(context=RequestContext(request, {}))
@@ -29,31 +26,7 @@ MyComponent.render()
 MyComponent.render(context=Context({}))
 ```
 
-## Context Processors
-
-Components support Django's [context processors](https://docs.djangoproject.com/en/5.1/ref/templates/api/#using-requestcontext).
-
-In regular Django templates, the context processors are applied only when the template is rendered with `RequestContext`.
-
-Components allow you to pass the `request` object explicitly. Thus, the context processors are applied to components either when:
-
-- The component is rendered with `RequestContext` (Regular Django behavior)
-- The component is rendered with a regular `Context` (or none), but you set the `request` kwarg
-    of [`Component.render()`](../../../reference/api#django_components.Component.render).
-- The component is nested in another component that matches one of the two conditions above.
-
-```python
-# ❌ No context processors
-rendered = MyComponent.render()
-rendered = MyComponent.render(Context({}))
-
-# ✅ With context processors
-rendered = MyComponent.render(request=request)
-rendered = MyComponent.render(Context({}), request=request)
-rendered = MyComponent.render(RequestContext(request, {}))
-```
-
-When a component is rendered within a template with [`{% component %}`](../../../reference/template_tags#component) tag, context processors are available depending on whether the template is rendered with `RequestContext` or not.
+When a component is rendered within a template with [`{% component %}`](../../../reference/template_tags#component) tag, the request object is available depending on whether the template is rendered with [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext) or not.
 
 ```python
 template = Template("""
@@ -62,12 +35,32 @@ template = Template("""
 </div>
 """)
 
-# ❌ No context processors
+# ❌ No request
 rendered = template.render(Context({}))
 
-# ✅ With context processors
+# ✅ With request
 rendered = template.render(RequestContext(request, {}))
 ```
+
+## Accessing the HttpRequest object
+
+When the component has access to the `request` object, the request object will be available in [`Component.request`](../../../reference/api/#django_components.Component.request).
+
+```python
+class MyComponent(Component):
+    def get_context_data(self):
+        return {
+            'user_id': self.request.GET['user_id'],
+        }
+```
+
+## Context Processors
+
+Components support Django's [context processors](https://docs.djangoproject.com/en/5.1/ref/templates/api/#using-requestcontext).
+
+In regular Django templates, the context processors are applied only when the template is rendered with [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext).
+
+In Components, the context processors are applied when the component has access to the `request` object.
 
 ### Accessing context processors data
 
@@ -94,3 +87,11 @@ class MyComponent(Component):
             'csrf_token': csrf_token,
         }
 ```
+
+This is a dictionary with the context processors data.
+
+If the request object is not available, then [`self.context_processors_data`](../../../reference/api/#django_components.Component.context_processors_data) will be an empty dictionary.
+
+!!! warning
+
+    The [`self.context_processors_data`](../../../reference/api/#django_components.Component.context_processors_data) object is generated dynamically, so changes to it are not persisted.

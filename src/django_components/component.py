@@ -751,10 +751,43 @@ class Component(
     @property
     def input(self) -> ComponentInput[ArgsType, KwargsType, SlotsType]:
         """
-        Input holds the data (like arg, kwargs, slots) that were passed to
-        the current execution of the `render` method.
+        Input holds the data that were passed to the current component at render time.
 
         Raises `RuntimeError` if accessed outside of rendering execution.
+
+        This includes:
+
+        - [`args`](../api/#django_components.ComponentInput.args) - List of positional arguments
+        - [`kwargs`](../api/#django_components.ComponentInput.kwargs) - Dictionary of keyword arguments
+        - [`slots`](../api/#django_components.ComponentInput.slots) - Dictionary of slots. Values are normalized to [`Slot`](../api/#django_components.Slot) instances
+        - [`context`](../api/#django_components.ComponentInput.context) - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
+        - And other kwargs passed to [`Component.render()`](../api/#django_components.Component.render) like `type` and `render_dependencies`
+
+        Read more on [Component inputs](../../concepts/fundamentals/render_api/#component-inputs).
+
+        **Example:**
+
+        Use can use [`self.input.args`](../api/#django_components.ComponentInput.args)
+        and [`self.input.kwargs`](../api/#django_components.ComponentInput.kwargs)
+        to access the positional and keyword arguments passed to [`Component.render()`](../api/#django_components.Component.render).
+
+        ```python
+        class Table(Component):
+            def get_context_data(self, *args, **kwargs):
+                # Access component's inputs, slots and context
+                assert self.input.args == [123, "str"]
+                assert self.input.kwargs == {"variable": "test", "another": 1}
+                footer_slot = self.input.slots["footer"]
+                some_var = self.input.context["some_var"]
+
+                return {}
+
+        rendered = TestComponent.render(
+            kwargs={"variable": "test", "another": 1},
+            args=(123, "str"),
+            slots={"footer": "MY_SLOT"},
+        )
+        ```
         """
         if not len(self._metadata_stack):
             raise RuntimeError(f"{self.name}: Tried to access Component input while outside of rendering execution")

@@ -68,6 +68,7 @@ and [`self.input.kwargs`](../../../reference/api/#django_components.ComponentInp
 to access the positional and keyword arguments passed to [`Component.render()`](../../../reference/api/#django_components.Component.render).
 
 ```python
+class Table(Component):
     def get_context_data(self, *args, **kwargs):
         # Access component's inputs, slots and context
         assert self.input.args == [123, "str"]
@@ -100,6 +101,8 @@ This is a dictionary with the context processors data.
 
 If the request object is not available, then [`self.context_processors_data`](../../../reference/api/#django_components.Component.context_processors_data) will be an empty dictionary.
 
+Read more about the request object and context processors in the [HTTP Request](./http_request.md) section.
+
 ```python
 from django.http import HttpRequest
 
@@ -115,7 +118,3 @@ rendered = Table.render(
     request=HttpRequest(),
 )
 ```
-
-!!! warning
-
-    The [`self.context_processors_data`](../../../reference/api/#django_components.Component.context_processors_data) object is generated dynamically, so changes to it are not persisted.
