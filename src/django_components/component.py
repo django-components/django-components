@@ -759,9 +759,13 @@ class Component(
 
         - [`args`](../api/#django_components.ComponentInput.args) - List of positional arguments
         - [`kwargs`](../api/#django_components.ComponentInput.kwargs) - Dictionary of keyword arguments
-        - [`slots`](../api/#django_components.ComponentInput.slots) - Dictionary of slots. Values are normalized to [`Slot`](../api/#django_components.Slot) instances
-        - [`context`](../api/#django_components.ComponentInput.context) - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
-        - And other kwargs passed to [`Component.render()`](../api/#django_components.Component.render) like `type` and `render_dependencies`
+        - [`slots`](../api/#django_components.ComponentInput.slots) - Dictionary of slots. Values are normalized to
+          [`Slot`](../api/#django_components.Slot) instances
+        - [`context`](../api/#django_components.ComponentInput.context) -
+          [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
+          object that should be used to render the component
+        - And other kwargs passed to [`Component.render()`](../api/#django_components.Component.render)
+          like `type` and `render_dependencies`
 
         Read more on [Component inputs](../../concepts/fundamentals/render_api/#component-inputs).
 
@@ -769,7 +773,8 @@ class Component(
 
         Use can use [`self.input.args`](../api/#django_components.ComponentInput.args)
         and [`self.input.kwargs`](../api/#django_components.ComponentInput.kwargs)
-        to access the positional and keyword arguments passed to [`Component.render()`](../api/#django_components.Component.render).
+        to access the positional and keyword arguments passed to
+        [`Component.render()`](../api/#django_components.Component.render).
 
         ```python
         class Table(Component):
