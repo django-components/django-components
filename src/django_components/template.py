@@ -5,6 +5,7 @@ from django.template import Origin, Template
 from django_components.cache import get_template_cache
 from django_components.util.misc import get_import_path
 
+
 # Central logic for creating Templates from string, so we can cache the results
 def cached_template(
     template_string: str,

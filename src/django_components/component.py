@@ -21,7 +21,6 @@ from typing import (
     Union,
     cast,
 )
-from typing_extensions import TypeVar
 from weakref import ReferenceType, WeakValueDictionary, finalize
 
 from django.core.exceptions import ImproperlyConfigured
@@ -34,6 +33,7 @@ from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext
 from django.test.signals import template_rendered
 from django.utils.html import conditional_escape
 from django.views import View
+from typing_extensions import TypeVar
 
 from django_components.app_settings import ContextBehavior, app_settings
 from django_components.component_media import ComponentMediaInput, ComponentMediaMeta

@@ -662,10 +662,11 @@ class ExtensionManager:
         # TODO_V3 - Django-specific logic - replace with hook
         urls: List[URLResolver] = []
         seen_names: Set[str] = set()
+
+        from django_components import Component
+
         for extension in self.extensions:
             # Ensure that the extension name won't conflict with existing Component class API
-            from django_components import Component
-
             if hasattr(Component, extension.name) or hasattr(Component, extension.class_name):
                 raise ValueError(f"Extension name '{extension.name}' conflicts with existing Component class API")
 
