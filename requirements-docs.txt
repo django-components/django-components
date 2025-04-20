@@ -86,7 +86,7 @@ jinja2==3.1.6
     #   mkdocstrings
 jsmin==3.0.1
     # via mkdocs-minify-plugin
-markdown==3.7
+markdown==3.8
     # via
     #   mkdocs
     #   mkdocs-autorefs
@@ -166,7 +166,7 @@ pathspec==0.12.1
     # via
     #   black
     #   mkdocs
-pillow==11.1.0
+pillow==11.2.1
     # via
     #   cairosvg
     #   mkdocs-material
@@ -193,7 +193,7 @@ pyparsing==3.2.3
     # via mike
 python-dateutil==2.9.0.post0
     # via ghp-import
-pytz==2025.1
+pytz==2025.2
     # via mkdocs-git-revision-date-localized-plugin
 pyyaml==6.0.2
     # via
@@ -220,7 +220,7 @@ tinycss2==1.4.0
     # via
     #   cairosvg
     #   cssselect2
-urllib3==2.3.0
+urllib3==2.4.0
     # via requests
 verspec==0.1.0
     # via mike
