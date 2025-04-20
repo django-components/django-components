@@ -10,7 +10,6 @@ from typing import (
     Deque,
     Dict,
     Generator,
-    Generic,
     List,
     Literal,
     Mapping,
@@ -33,7 +32,6 @@ from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext
 from django.test.signals import template_rendered
 from django.utils.html import conditional_escape
 from django.views import View
-from typing_extensions import TypeVar
 
 from django_components.app_settings import ContextBehavior, app_settings
 from django_components.component_media import ComponentMediaInput, ComponentMediaMeta
@@ -71,8 +69,8 @@ from django_components.perfutil.provide import register_provide_reference, unreg
 from django_components.provide import get_injected_context_var
 from django_components.slots import (
     Slot,
-    SlotContent,
     SlotFunc,
+    SlotInput,
     SlotIsFilled,
     SlotName,
     SlotRef,
@@ -87,7 +85,7 @@ from django_components.util.context import gen_context_processors_data, snapshot
 from django_components.util.django_monkeypatch import is_template_cls_patched
 from django_components.util.exception import component_error_message
 from django_components.util.logger import trace_component_msg
-from django_components.util.misc import default, gen_id, get_import_path, hash_comp_cls
+from django_components.util.misc import default, gen_id, get_import_path, hash_comp_cls, to_dict
 from django_components.util.template_tag import TagAttr
 from django_components.util.weakref import cached_ref
 
@@ -102,14 +100,6 @@ from django_components.component_registry import registry as registry  # NOQA
 # isort: on
 
 COMP_ONLY_FLAG = "only"
-
-# Define TypeVars for args and kwargs
-ArgsType = TypeVar("ArgsType", bound=tuple, contravariant=True, default=Any)
-KwargsType = TypeVar("KwargsType", bound=Mapping[str, Any], contravariant=True, default=Any)
-SlotsType = TypeVar("SlotsType", bound=Mapping[SlotName, SlotContent], default=Any)
-DataType = TypeVar("DataType", bound=Mapping[str, Any], covariant=True, default=Any)
-JsDataType = TypeVar("JsDataType", bound=Mapping[str, Any], default=Any)
-CssDataType = TypeVar("CssDataType", bound=Mapping[str, Any], default=Any)
 
 
 # NOTE: `ReferenceType` is NOT a generic pre-3.9
@@ -177,7 +167,7 @@ def get_component_by_class_id(comp_cls_id: str) -> Type["Component"]:
 
 
 @dataclass(frozen=True)
-class ComponentInput(Generic[ArgsType, KwargsType, SlotsType]):
+class ComponentInput:
     """
     Object holding the inputs that were passed to [`Component.render()`](../api#django_components.Component.render)
     or the [`{% component %}`](../template_tags#component) template tag.
@@ -187,24 +177,20 @@ class ComponentInput(Generic[ArgsType, KwargsType, SlotsType]):
     Read more about the [Render API](../../concepts/fundamentals/render_api).
 
     This class can be typed as:
-
-    ```py
-    input: ComponentInput[ArgsType, KwargsType, SlotsType]
-    ```
     """
 
     context: Context
-    args: ArgsType
-    kwargs: KwargsType
-    slots: SlotsType
+    args: List
+    kwargs: Dict
+    slots: Dict[SlotName, Slot]
     type: RenderType
     render_dependencies: bool
 
 
 @dataclass()
-class MetadataItem(Generic[ArgsType, KwargsType, SlotsType]):
+class MetadataItem:
     render_id: str
-    input: ComponentInput[ArgsType, KwargsType, SlotsType]
+    input: ComponentInput
     is_filled: Optional[SlotIsFilled]
     request: Optional[HttpRequest]
 
@@ -275,6 +261,10 @@ class ComponentMeta(ComponentMediaMeta):
 
     # This runs when a Component class is being deleted
     def __del__(cls) -> None:
+        # Skip if `extensions` was deleted before this registry
+        if not extensions:
+            return
+
         comp_cls = cast(Type["Component"], cls)
         extensions.on_component_class_deleted(OnComponentClassDeletedContext(comp_cls))
 
@@ -299,13 +289,198 @@ class ComponentContext:
     post_render_callbacks: Dict[str, Callable[[str], str]]
 
 
-class Component(
-    Generic[ArgsType, KwargsType, SlotsType, DataType, JsDataType, CssDataType],
-    metaclass=ComponentMeta,
-):
+class Component(metaclass=ComponentMeta):
     # #####################################
     # PUBLIC API (Configurable by users)
     # #####################################
+
+    Args: Type = cast(Type, None)
+    """
+    Optional typing for positional arguments passed to the component.
+
+    If set and not `None`, then the `args` parameter of the data methods
+    ([`get_template_data()`](../api#django_components.Component.get_template_data),
+    [`get_js_data()`](../api#django_components.Component.get_js_data),
+    [`get_css_data()`](../api#django_components.Component.get_css_data))
+    will be the instance of this class:
+
+    ```py
+    from typing import NamedTuple
+    from django_components import Component
+
+    class Table(Component):
+        class Args(NamedTuple):
+            color: str
+            size: int
+
+        def get_template_data(self, args: Args, kwargs, slots, context):
+            assert isinstance(args, Table.Args)
+
+            return {
+                "color": args.color,
+                "size": args.size,
+            }
+    ```
+
+    The constructor of this class MUST accept positional arguments:
+
+    ```py
+    Args(*args)
+    ```
+
+    As such, a good starting point is to set this field to a subclass of
+    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple).
+
+    Use `Args` to:
+
+    - Validate the input at runtime.
+    - Set type hints for the positional arguments for data methods like
+      [`get_template_data()`](../api#django_components.Component.get_template_data).
+    - Document the component inputs.
+
+    You can also use `Args` to validate the positional arguments for
+    [`Component.render()`](../api#django_components.Component.render):
+
+    ```py
+    Table.render(
+        args=Table.Args(color="red", size=10),
+    )
+    ```
+
+    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+    """
+
+    Kwargs: Type = cast(Type, None)
+    """
+    Optional typing for keyword arguments passed to the component.
+
+    If set and not `None`, then the `kwargs` parameter of the data methods
+    ([`get_template_data()`](../api#django_components.Component.get_template_data),
+    [`get_js_data()`](../api#django_components.Component.get_js_data),
+    [`get_css_data()`](../api#django_components.Component.get_css_data))
+    will be the instance of this class:
+
+    ```py
+    from typing import NamedTuple
+    from django_components import Component
+
+    class Table(Component):
+        class Kwargs(NamedTuple):
+            color: str
+            size: int
+
+        def get_template_data(self, args, kwargs: Kwargs, slots, context):
+            assert isinstance(kwargs, Table.Kwargs)
+
+            return {
+                "color": kwargs.color,
+                "size": kwargs.size,
+            }
+    ```
+
+    The constructor of this class MUST accept keyword arguments:
+
+    ```py
+    Kwargs(**kwargs)
+    ```
+
+    As such, a good starting point is to set this field to a subclass of
+    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+    or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
+
+    Use `Kwargs` to:
+
+    - Validate the input at runtime.
+    - Set type hints for the keyword arguments for data methods like
+      [`get_template_data()`](../api#django_components.Component.get_template_data).
+    - Document the component inputs.
+
+    You can also use `Kwargs` to validate the keyword arguments for
+    [`Component.render()`](../api#django_components.Component.render):
+
+    ```py
+    Table.render(
+        kwargs=Table.Kwargs(color="red", size=10),
+    )
+    ```
+
+    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+    """
+
+    Slots: Type = cast(Type, None)
+    """
+    Optional typing for slots passed to the component.
+
+    If set and not `None`, then the `slots` parameter of the data methods
+    ([`get_template_data()`](../api#django_components.Component.get_template_data),
+    [`get_js_data()`](../api#django_components.Component.get_js_data),
+    [`get_css_data()`](../api#django_components.Component.get_css_data))
+    will be the instance of this class:
+
+    ```py
+    from typing import NamedTuple
+    from django_components import Component, Slot, SlotInput
+
+    class Table(Component):
+        class Slots(NamedTuple):
+            header: SlotInput
+            footer: Slot
+
+        def get_template_data(self, args, kwargs, slots: Slots, context):
+            assert isinstance(slots, Table.Slots)
+
+            return {
+                "header": slots.header,
+                "footer": slots.footer,
+            }
+    ```
+
+    The constructor of this class MUST accept keyword arguments:
+
+    ```py
+    Slots(**slots)
+    ```
+
+    As such, a good starting point is to set this field to a subclass of
+    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+    or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
+
+    Use `Slots` to:
+
+    - Validate the input at runtime.
+    - Set type hints for the slots for data methods like
+      [`get_template_data()`](../api#django_components.Component.get_template_data).
+    - Document the component inputs.
+
+    You can also use `Slots` to validate the slots for
+    [`Component.render()`](../api#django_components.Component.render):
+
+    ```py
+    Table.render(
+        slots=Table.Slots(
+            header="HELLO IM HEADER",
+            footer=Slot(lambda: ...),
+        ),
+    )
+    ```
+
+    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+
+    !!! info
+
+        Components can receive slots as strings, functions, or instances of [`Slot`](../api#django_components.Slot).
+
+        Internally these are all normalized to instances of [`Slot`](../api#django_components.Slot).
+
+        Therefore, the `slots` dictionary available in data methods (like
+        [`get_template_data()`](../api#django_components.Component.get_template_data))
+        will always be a dictionary of [`Slot`](../api#django_components.Slot) instances.
+
+        To correctly type this dictionary, you should set the fields of `Slots` to
+        [`Slot`](../api#django_components.Slot) or [`SlotInput`](../api#django_components.SlotInput):
+
+        [`SlotInput`](../api#django_components.SlotInput) is a union of `Slot`, string, and function types.
+    """
 
     template_file: Optional[str] = None
     """
@@ -396,8 +571,247 @@ class Component(
         """
         return None
 
-    def get_context_data(self, *args: Any, **kwargs: Any) -> Optional[DataType]:
+    # TODO_V2 - Remove this in v2
+    def get_context_data(self, *args: Any, **kwargs: Any) -> Optional[Mapping]:
+        """
+        DEPRECATED: Use [`get_template_data()`](../api#django_components.Component.get_template_data) instead.
+        Will be removed in v2.
+
+        Use this method to define variables that will be available in the template.
+
+        Receives the args and kwargs as they were passed to the Component.
+
+        This method has access to the [Render API](../../concepts/fundamentals/render_api).
+
+        **Example:**
+
+        ```py
+        class MyComponent(Component):
+            def get_context_data(self, name, *args, **kwargs):
+                return {
+                    "name": name,
+                    "id": self.id,
+                }
+
+            template = "Hello, {{ name }}!"
+
+        MyComponent.render(name="World")
+        ```
+
+        !!! warning
+
+            `get_context_data()` and [`get_template_data()`](../api#django_components.Component.get_template_data)
+            are mutually exclusive.
+        """
         return None
+
+    def get_template_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Optional[Mapping]:
+        """
+        Use this method to define variables that will be available in the template.
+
+        This method has access to the [Render API](../../concepts/fundamentals/render_api).
+
+        **Example:**
+
+        ```py
+        class MyComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "name": kwargs["name"],
+                    "id": self.id,
+                }
+
+            template = "Hello, {{ name }}!"
+
+        MyComponent.render(name="World")
+        ```
+
+        **Args:**
+
+        - `args`: Positional arguments passed to the component.
+        - `kwargs`: Keyword arguments passed to the component.
+        - `slots`: Slots passed to the component.
+        - `context`: [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
+           used for rendering the component template.
+
+        **Pass-through kwargs:**
+
+        It's best practice to explicitly define what args and kwargs a component accepts.
+
+        However, if you want a looser setup, you can easily write components that accept any number
+        of kwargs, and pass them all to the template
+        (similar to [django-cotton](https://github.com/wrabit/django-cotton)).
+
+        To do that, simply return the `kwargs` dictionary itself from `get_template_data()`:
+
+        ```py
+        class MyComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return kwargs
+        ```
+
+        **Type hints:**
+
+        To get type hints for the `args`, `kwargs`, and `slots` parameters,
+        you can define the [`Args`](../api#django_components.Component.Args),
+        [`Kwargs`](../api#django_components.Component.Kwargs), and
+        [`Slots`](../api#django_components.Component.Slots) classes on the component class,
+        and then directly reference them in the function signature of `get_template_data()`.
+
+        When you set these classes, the `args`, `kwargs`, and `slots` parameters will be
+        given as instances of these (`args` instance of `Args`, etc).
+
+        When you omit these classes, or set them to `None`, then the `args`, `kwargs`, and `slots`
+        parameters will be given as plain lists / dictionaries, unmodified.
+
+        Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+
+        **Example:**
+
+        ```py
+        from typing import NamedTuple
+        from django.template import Context
+        from django_components import Component, SlotInput
+
+        class MyComponent(Component):
+            class Args(NamedTuple):
+                color: str
+
+            class Kwargs(NamedTuple):
+                size: int
+
+            class Slots(NamedTuple):
+                footer: SlotInput
+
+            def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+                assert isinstance(args, MyComponent.Args)
+                assert isinstance(kwargs, MyComponent.Kwargs)
+                assert isinstance(slots, MyComponent.Slots)
+
+                return {
+                    "color": args.color,
+                    "size": kwargs.size,
+                    "id": self.id,
+                }
+        ```
+
+        You can also add typing to the data returned from
+        [`get_template_data()`](../api#django_components.Component.get_template_data)
+        by defining the [`TemplateData`](../api#django_components.Component.TemplateData)
+        class on the component class.
+
+        When you set this class, you can return either the data as a plain dictionary,
+        or an instance of [`TemplateData`](../api#django_components.Component.TemplateData).
+
+        If you return plain dictionary, the data will be validated against the
+        [`TemplateData`](../api#django_components.Component.TemplateData) class
+        by instantiating it with the dictionary.
+
+        **Example:**
+
+        ```py
+        class MyComponent(Component):
+            class TemplateData(NamedTuple):
+                color: str
+                size: int
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "color": kwargs["color"],
+                    "size": kwargs["size"],
+                }
+                # or
+                return MyComponent.TemplateData(
+                    color=kwargs["color"],
+                    size=kwargs["size"],
+                )
+        ```
+
+        !!! warning
+
+            `get_template_data()` and [`get_context_data()`](../api#django_components.Component.get_context_data)
+            are mutually exclusive.
+        """
+        return None
+
+    TemplateData: Type = cast(Type, None)
+    """
+    Optional typing for the data to be returned from
+    [`get_template_data()`](../api#django_components.Component.get_template_data).
+
+    If set and not `None`, then this class will be instantiated with the dictionary returned from
+    [`get_template_data()`](../api#django_components.Component.get_template_data) to validate the data.
+
+    The constructor of this class MUST accept keyword arguments:
+
+    ```py
+    TemplateData(**template_data)
+    ```
+
+    You can also return an instance of `TemplateData` directly from
+    [`get_template_data()`](../api#django_components.Component.get_template_data)
+    to get type hints:
+
+    ```py
+    from typing import NamedTuple
+    from django_components import Component
+
+    class Table(Component):
+        class TemplateData(NamedTuple):
+            color: str
+            size: int
+
+        def get_template_data(self, args, kwargs, slots, context):
+            return Table.TemplateData(
+                color=kwargs["color"],
+                size=kwargs["size"],
+            )
+    ```
+
+    A good starting point is to set this field to a subclass of
+    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+    or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
+
+    Use `TemplateData` to:
+
+    - Validate the data returned from
+      [`get_template_data()`](../api#django_components.Component.get_template_data) at runtime.
+    - Set type hints for this data.
+    - Document the component data.
+
+    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+
+    !!! info
+
+        If you use a custom class for `TemplateData`, this class needs to be convertable to a dictionary.
+
+        You can implement either:
+
+        1. `_asdict()` method
+            ```py
+            class MyClass:
+                def __init__(self):
+                    self.x = 1
+                    self.y = 2
+
+                def _asdict(self):
+                    return {'x': self.x, 'y': self.y}
+            ```
+
+        2. Or make the class dict-like with `__iter__()` and `__getitem__()`
+            ```py
+            class MyClass:
+                def __init__(self):
+                    self.x = 1
+                    self.y = 2
+
+                def __iter__(self):
+                    return iter([('x', self.x), ('y', self.y)])
+
+                def __getitem__(self, key):
+                    return getattr(self, key)
+            ```
+    """
 
     js: Optional[str] = None
     """
@@ -450,6 +864,214 @@ class Component(
     print(MyComponent.js)
     # Output: console.log('Hello, World!');
     ```
+    """
+
+    def get_js_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Optional[Mapping]:
+        """
+        Use this method to define variables that will be available from within the component's JavaScript code.
+
+        This method has access to the [Render API](../../concepts/fundamentals/render_api).
+
+        The data returned from this method will be serialized to JSON.
+
+        **Example:**
+
+        ```py
+        class MyComponent(Component):
+            def get_js_data(self, args, kwargs, slots, context):
+                return {
+                    "name": kwargs["name"],
+                    "id": self.id,
+                }
+
+            js = '''
+                $onLoad(({ name, id }) => {
+                    console.log(name, id);
+                });
+            '''
+
+        MyComponent.render(name="World")
+        ```
+
+        **Args:**
+
+        - `args`: Positional arguments passed to the component.
+        - `kwargs`: Keyword arguments passed to the component.
+        - `slots`: Slots passed to the component.
+        - `context`: [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
+           used for rendering the component template.
+
+        **Pass-through kwargs:**
+
+        It's best practice to explicitly define what args and kwargs a component accepts.
+
+        However, if you want a looser setup, you can easily write components that accept any number
+        of kwargs, and pass them all to the JavaScript code.
+
+        To do that, simply return the `kwargs` dictionary itself from `get_js_data()`:
+
+        ```py
+        class MyComponent(Component):
+            def get_js_data(self, args, kwargs, slots, context):
+                return kwargs
+        ```
+
+        **Type hints:**
+
+        To get type hints for the `args`, `kwargs`, and `slots` parameters,
+        you can define the [`Args`](../api#django_components.Component.Args),
+        [`Kwargs`](../api#django_components.Component.Kwargs), and
+        [`Slots`](../api#django_components.Component.Slots) classes on the component class,
+        and then directly reference them in the function signature of `get_js_data()`.
+
+        When you set these classes, the `args`, `kwargs`, and `slots` parameters will be
+        given as instances of these (`args` instance of `Args`, etc).
+
+        When you omit these classes, or set them to `None`, then the `args`, `kwargs`, and `slots`
+        parameters will be given as plain lists / dictionaries, unmodified.
+
+        Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+
+        **Example:**
+
+        ```py
+        from typing import NamedTuple
+        from django.template import Context
+        from django_components import Component, SlotInput
+
+        class MyComponent(Component):
+            class Args(NamedTuple):
+                color: str
+
+            class Kwargs(NamedTuple):
+                size: int
+
+            class Slots(NamedTuple):
+                footer: SlotInput
+
+            def get_js_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+                assert isinstance(args, MyComponent.Args)
+                assert isinstance(kwargs, MyComponent.Kwargs)
+                assert isinstance(slots, MyComponent.Slots)
+
+                return {
+                    "color": args.color,
+                    "size": kwargs.size,
+                    "id": self.id,
+                }
+        ```
+
+        You can also add typing to the data returned from
+        [`get_js_data()`](../api#django_components.Component.get_js_data)
+        by defining the [`JsData`](../api#django_components.Component.JsData)
+        class on the component class.
+
+        When you set this class, you can return either the data as a plain dictionary,
+        or an instance of [`JsData`](../api#django_components.Component.JsData).
+
+        If you return plain dictionary, the data will be validated against the
+        [`JsData`](../api#django_components.Component.JsData) class
+        by instantiating it with the dictionary.
+
+        **Example:**
+
+        ```py
+        class MyComponent(Component):
+            class JsData(NamedTuple):
+                color: str
+                size: int
+
+            def get_js_data(self, args, kwargs, slots, context):
+                return {
+                    "color": kwargs["color"],
+                    "size": kwargs["size"],
+                }
+                # or
+                return MyComponent.JsData(
+                    color=kwargs["color"],
+                    size=kwargs["size"],
+                )
+        ```
+        """
+        return None
+
+    JsData: Type = cast(Type, None)
+    """
+    Optional typing for the data to be returned from
+    [`get_js_data()`](../api#django_components.Component.get_js_data).
+
+    If set and not `None`, then this class will be instantiated with the dictionary returned from
+    [`get_js_data()`](../api#django_components.Component.get_js_data) to validate the data.
+
+    The constructor of this class MUST accept keyword arguments:
+
+    ```py
+    JsData(**js_data)
+    ```
+
+    You can also return an instance of `JsData` directly from
+    [`get_js_data()`](../api#django_components.Component.get_js_data)
+    to get type hints:
+
+    ```py
+    from typing import NamedTuple
+    from django_components import Component
+
+    class Table(Component):
+        class JsData(NamedTuple):
+            color: str
+            size: int
+
+        def get_js_data(self, args, kwargs, slots, context):
+            return Table.JsData(
+                color=kwargs["color"],
+                size=kwargs["size"],
+            )
+    ```
+
+    A good starting point is to set this field to a subclass of
+    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+    or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
+
+    Use `JsData` to:
+
+    - Validate the data returned from
+      [`get_js_data()`](../api#django_components.Component.get_js_data) at runtime.
+    - Set type hints for this data.
+    - Document the component data.
+
+    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+
+    !!! info
+
+        If you use a custom class for `JsData`, this class needs to be convertable to a dictionary.
+
+        You can implement either:
+
+        1. `_asdict()` method
+            ```py
+            class MyClass:
+                def __init__(self):
+                    self.x = 1
+                    self.y = 2
+
+                def _asdict(self):
+                    return {'x': self.x, 'y': self.y}
+            ```
+
+        2. Or make the class dict-like with `__iter__()` and `__getitem__()`
+            ```py
+            class MyClass:
+                def __init__(self):
+                    self.x = 1
+                    self.y = 2
+
+                def __iter__(self):
+                    return iter([('x', self.x), ('y', self.y)])
+
+                def __getitem__(self, key):
+                    return getattr(self, key)
+            ```
     """
 
     css: Optional[str] = None
@@ -514,6 +1136,214 @@ class Component(
     ```
     """
 
+    def get_css_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Optional[Mapping]:
+        """
+        Use this method to define variables that will be available from within the component's CSS code.
+
+        This method has access to the [Render API](../../concepts/fundamentals/render_api).
+
+        The data returned from this method will be serialized to string.
+
+        **Example:**
+
+        ```py
+        class MyComponent(Component):
+            def get_css_data(self, args, kwargs, slots, context):
+                return {
+                    "color": kwargs["color"],
+                    "id": self.id,
+                }
+
+            css = '''
+                .my-class {
+                    color: var(--color);
+                }
+            '''
+
+        MyComponent.render(color="red")
+        ```
+
+        **Args:**
+
+        - `args`: Positional arguments passed to the component.
+        - `kwargs`: Keyword arguments passed to the component.
+        - `slots`: Slots passed to the component.
+        - `context`: [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
+           used for rendering the component template.
+
+        **Pass-through kwargs:**
+
+        It's best practice to explicitly define what args and kwargs a component accepts.
+
+        However, if you want a looser setup, you can easily write components that accept any number
+        of kwargs, and pass them all to the CSS code.
+
+        To do that, simply return the `kwargs` dictionary itself from `get_css_data()`:
+
+        ```py
+        class MyComponent(Component):
+            def get_css_data(self, args, kwargs, slots, context):
+                return kwargs
+        ```
+
+        **Type hints:**
+
+        To get type hints for the `args`, `kwargs`, and `slots` parameters,
+        you can define the [`Args`](../api#django_components.Component.Args),
+        [`Kwargs`](../api#django_components.Component.Kwargs), and
+        [`Slots`](../api#django_components.Component.Slots) classes on the component class,
+        and then directly reference them in the function signature of `get_css_data()`.
+
+        When you set these classes, the `args`, `kwargs`, and `slots` parameters will be
+        given as instances of these (`args` instance of `Args`, etc).
+
+        When you omit these classes, or set them to `None`, then the `args`, `kwargs`, and `slots`
+        parameters will be given as plain lists / dictionaries, unmodified.
+
+        Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+
+        **Example:**
+
+        ```py
+        from typing import NamedTuple
+        from django.template import Context
+        from django_components import Component, SlotInput
+
+        class MyComponent(Component):
+            class Args(NamedTuple):
+                color: str
+
+            class Kwargs(NamedTuple):
+                size: int
+
+            class Slots(NamedTuple):
+                footer: SlotInput
+
+            def get_css_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+                assert isinstance(args, MyComponent.Args)
+                assert isinstance(kwargs, MyComponent.Kwargs)
+                assert isinstance(slots, MyComponent.Slots)
+
+                return {
+                    "color": args.color,
+                    "size": kwargs.size,
+                    "id": self.id,
+                }
+        ```
+
+        You can also add typing to the data returned from
+        [`get_css_data()`](../api#django_components.Component.get_css_data)
+        by defining the [`CssData`](../api#django_components.Component.CssData)
+        class on the component class.
+
+        When you set this class, you can return either the data as a plain dictionary,
+        or an instance of [`CssData`](../api#django_components.Component.CssData).
+
+        If you return plain dictionary, the data will be validated against the
+        [`CssData`](../api#django_components.Component.CssData) class
+        by instantiating it with the dictionary.
+
+        **Example:**
+
+        ```py
+        class MyComponent(Component):
+            class CssData(NamedTuple):
+                color: str
+                size: int
+
+            def get_css_data(self, args, kwargs, slots, context):
+                return {
+                    "color": kwargs["color"],
+                    "size": kwargs["size"],
+                }
+                # or
+                return MyComponent.CssData(
+                    color=kwargs["color"],
+                    size=kwargs["size"],
+                )
+        ```
+        """
+        return None
+
+    CssData: Type = cast(Type, None)
+    """
+    Optional typing for the data to be returned from
+    [`get_css_data()`](../api#django_components.Component.get_css_data).
+
+    If set and not `None`, then this class will be instantiated with the dictionary returned from
+    [`get_css_data()`](../api#django_components.Component.get_css_data) to validate the data.
+
+    The constructor of this class MUST accept keyword arguments:
+
+    ```py
+    CssData(**css_data)
+    ```
+
+    You can also return an instance of `CssData` directly from
+    [`get_css_data()`](../api#django_components.Component.get_css_data)
+    to get type hints:
+
+    ```py
+    from typing import NamedTuple
+    from django_components import Component
+
+    class Table(Component):
+        class CssData(NamedTuple):
+            color: str
+            size: int
+
+        def get_css_data(self, args, kwargs, slots, context):
+            return Table.CssData(
+                color=kwargs["color"],
+                size=kwargs["size"],
+            )
+    ```
+
+    A good starting point is to set this field to a subclass of
+    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+    or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
+
+    Use `CssData` to:
+
+    - Validate the data returned from
+      [`get_css_data()`](../api#django_components.Component.get_css_data) at runtime.
+    - Set type hints for this data.
+    - Document the component data.
+
+    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+
+    !!! info
+
+        If you use a custom class for `CssData`, this class needs to be convertable to a dictionary.
+
+        You can implement either:
+
+        1. `_asdict()` method
+            ```py
+            class MyClass:
+                def __init__(self):
+                    self.x = 1
+                    self.y = 2
+
+                def _asdict(self):
+                    return {'x': self.x, 'y': self.y}
+            ```
+
+        2. Or make the class dict-like with `__iter__()` and `__getitem__()`
+            ```py
+            class MyClass:
+                def __init__(self):
+                    self.x = 1
+                    self.y = 2
+
+                def __iter__(self):
+                    return iter([('x', self.x), ('y', self.y)])
+
+                def __getitem__(self, key):
+                    return getattr(self, key)
+            ```
+    """
+
     media: Optional[MediaCls] = None
     """
     Normalized definition of JS and CSS media files associated with this component.
@@ -546,6 +1376,7 @@ class Component(
 
     This is useful when you want to customize the behavior of the media files, like
     customizing how the JS or CSS files are rendered into `<script>` or `<link>` HTML tags.
+
     Read more in [Defining HTML / JS / CSS files](../../concepts/fundamentals/defining_js_css_html_files/#customize-how-paths-are-rendered-into-html-tags-with-media_class).
 
     **Example:**
@@ -608,7 +1439,7 @@ class Component(
     """This allows to configure what class is used to generate response from `render_to_response`"""
 
     # #####################################
-    # PUBLIC API - HOOKS
+    # PUBLIC API - HOOKS (Configurable by users)
     # #####################################
 
     def on_render_before(self, context: Context, template: Template) -> None:
@@ -633,17 +1464,80 @@ class Component(
         pass
 
     # #####################################
-    # EXTENSIONS
+    # BUILT-IN EXTENSIONS
     # #####################################
 
     # NOTE: These are the classes and instances added by defaults extensions. These fields
     # are actually set at runtime, and so here they are only marked for typing.
     Cache: Type[ComponentCache]
+    """
+    The fields of this class are used to configure the component caching.
+
+    Read more about [Component caching](../../concepts/advanced/component_caching).
+
+    **Example:**
+
+    ```python
+    from django_components import Component
+
+    class MyComponent(Component):
+        class Cache:
+            enabled = True
+            ttl = 60 * 60 * 24  # 1 day
+            cache_name = "my_cache"
+    ```
+    """
     cache: ComponentCache
+    """
+    Instance of [`ComponentCache`](../api#django_components.ComponentCache) available at component render time.
+    """
     Defaults: Type[ComponentDefaults]
+    """
+    The fields of this class are used to set default values for the component's kwargs.
+
+    Read more about [Component defaults](../../concepts/fundamentals/component_defaults).
+
+    **Example:**
+
+    ```python
+    from django_components import Component, Default
+
+    class MyComponent(Component):
+        class Defaults:
+            position = "left"
+            selected_items = Default(lambda: [1, 2, 3])
+    ```
+    """
     defaults: ComponentDefaults
+    """
+    Instance of [`ComponentDefaults`](../api#django_components.ComponentDefaults) available at component render time.
+    """
     View: Type[ComponentView]
+    """
+    The fields of this class are used to configure the component views and URLs.
+
+    This class is a subclass of
+    [`django.views.View`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#view).
+    The [`Component`](../api#django_components.Component) instance is available
+    via `self.component`.
+
+    Override the methods of this class to define the behavior of the component.
+
+    Read more about [Component views and URLs](../../concepts/fundamentals/component_views_urls).
+
+    **Example:**
+
+    ```python
+    class MyComponent(Component):
+        class View:
+            def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+                return HttpResponse("Hello, world!")
+    ```
+    """
     view: ComponentView
+    """
+    Instance of [`ComponentView`](../api#django_components.ComponentView) available at component render time.
+    """
     Url: Type[ComponentUrl]
     url: ComponentUrl
 
@@ -688,7 +1582,7 @@ class Component(
         self.registered_name: Optional[str] = registered_name
         self.outer_context: Optional[Context] = outer_context
         self.registry = registry or registry_
-        self._metadata_stack: Deque[MetadataItem[ArgsType, KwargsType, SlotsType]] = deque()
+        self._metadata_stack: Deque[MetadataItem] = deque()
         # None == uninitialized, False == No types, Tuple == types
         self._types: Optional[Union[Tuple[Any, Any, Any, Any, Any, Any], Literal[False]]] = None
 
@@ -755,7 +1649,7 @@ class Component(
         return ctx.render_id
 
     @property
-    def input(self) -> ComponentInput[ArgsType, KwargsType, SlotsType]:
+    def input(self) -> ComponentInput:
         """
         Input holds the data that were passed to the current component at render time.
 
@@ -1023,9 +1917,9 @@ class Component(
 
         As the `{{ data.hello }}` is taken from the "provider".
         """
-        if self.input is None:
+        if not len(self._metadata_stack):
             raise RuntimeError(
-                f"Method 'inject()' of component '{self.name}' was called outside of 'get_context_data()'"
+                f"{self.name}: Tried to access Component's `inject()` method " "while outside of rendering execution"
             )
 
         return get_injected_context_var(self.name, self.input.context, key, default)
@@ -1064,10 +1958,10 @@ class Component(
     def render_to_response(
         cls,
         context: Optional[Union[Dict[str, Any], Context]] = None,
-        slots: Optional[SlotsType] = None,
+        args: Optional[Any] = None,
+        kwargs: Optional[Any] = None,
+        slots: Optional[Any] = None,
         escape_slots_content: bool = True,
-        args: Optional[ArgsType] = None,
-        kwargs: Optional[KwargsType] = None,
         type: RenderType = "document",
         request: Optional[HttpRequest] = None,
         *response_args: Any,
@@ -1141,9 +2035,9 @@ class Component(
     def render(
         cls,
         context: Optional[Union[Dict[str, Any], Context]] = None,
-        args: Optional[ArgsType] = None,
-        kwargs: Optional[KwargsType] = None,
-        slots: Optional[SlotsType] = None,
+        args: Optional[Any] = None,
+        kwargs: Optional[Any] = None,
+        slots: Optional[Any] = None,
         escape_slots_content: bool = True,
         type: RenderType = "document",
         render_dependencies: bool = True,
@@ -1197,15 +2091,17 @@ class Component(
         else:
             comp = cls()
 
-        return comp._render(context, args, kwargs, slots, escape_slots_content, type, render_dependencies, request)
+        return comp._render_with_error_trace(
+            context, args, kwargs, slots, escape_slots_content, type, render_dependencies, request
+        )
 
     # This is the internal entrypoint for the render function
-    def _render(
+    def _render_with_error_trace(
         self,
         context: Optional[Union[Dict[str, Any], Context]] = None,
-        args: Optional[ArgsType] = None,
-        kwargs: Optional[KwargsType] = None,
-        slots: Optional[SlotsType] = None,
+        args: Optional[Any] = None,
+        kwargs: Optional[Any] = None,
+        slots: Optional[Any] = None,
         escape_slots_content: bool = True,
         type: RenderType = "document",
         render_dependencies: bool = True,
@@ -1223,9 +2119,9 @@ class Component(
     def _render_impl(
         self,
         context: Optional[Union[Dict[str, Any], Context]] = None,
-        args: Optional[ArgsType] = None,
-        kwargs: Optional[KwargsType] = None,
-        slots: Optional[SlotsType] = None,
+        args: Optional[Any] = None,
+        kwargs: Optional[Any] = None,
+        slots: Optional[Any] = None,
         escape_slots_content: bool = True,
         type: RenderType = "document",
         render_dependencies: bool = True,
@@ -1247,13 +2143,12 @@ class Component(
         # Allow to provide no args/kwargs/slots/context
         # NOTE: We make copies of args / kwargs / slots, so that plugins can modify them
         # without affecting the original values.
-        args = cast(ArgsType, list(args) if args is not None else ())
-        kwargs = cast(KwargsType, dict(kwargs) if kwargs is not None else {})
-        slots_untyped = self._normalize_slot_fills(
-            dict(slots) if slots is not None else {},
+        args_list = list(args) if args is not None else []
+        kwargs_dict = to_dict(kwargs) if kwargs is not None else {}
+        slots_dict = self._normalize_slot_fills(
+            to_dict(slots) if slots is not None else {},
             escape_slots_content,
         )
-        slots = cast(SlotsType, slots_untyped)
         # Use RequestContext if request is provided, so that child non-component template tags
         # can access the request object too.
         context = context or (RequestContext(request) if request else Context())
@@ -1280,9 +2175,9 @@ class Component(
             render_id=render_id,
             input=ComponentInput(
                 context=context,
-                slots=slots,
-                args=args,
-                kwargs=kwargs,
+                args=args_list,
+                kwargs=kwargs_dict,
+                slots=slots_dict,
                 type=type,
                 render_dependencies=render_dependencies,
             ),
@@ -1296,9 +2191,9 @@ class Component(
                 component=self,
                 component_cls=self.__class__,
                 component_id=render_id,
-                args=args,  # type: ignore[arg-type]
-                kwargs=kwargs,  # type: ignore[arg-type]
-                slots=slots,  # type: ignore[arg-type]
+                args=args_list,
+                kwargs=kwargs_dict,
+                slots=slots_dict,
                 context=context,
             )
         )
@@ -1327,7 +2222,10 @@ class Component(
             component_id=render_id,
             slot_name=None,
             component_path=component_path,
-            extra=f"Received {len(args)} args, {len(kwargs)} kwargs, {len(slots)} slots, Available slots: {slots}",
+            extra=(
+                f"Received {len(args_list)} args, {len(kwargs_dict)} kwargs, {len(slots_dict)} slots,"
+                f" Available slots: {slots_dict}"
+            ),
         )
 
         # Register the component to provide
@@ -1341,7 +2239,7 @@ class Component(
             component_path=component_path,
             # Template name is set only once we've resolved the component's Template instance.
             template_name=None,
-            fills=slots_untyped,
+            fills=slots_dict,
             is_dynamic_component=getattr(self, "_is_dynamic_component", False),
             # This field will be modified from within `SlotNodes.render()`:
             # - The `default_slot` will be set to the first slot that has the `default` attribute set.
@@ -1362,28 +2260,20 @@ class Component(
         # or inspect the Context object, your screen is filled with the deeply nested ComponentContext objects.
         component_context_cache[render_id] = component_ctx
 
-        # Allow to access component input and metadata like component ID from within these hook
+        # Allow to access component input and metadata like component ID from within data methods
         with self._with_metadata(metadata):
+            template_data, js_data, css_data = self._call_data_methods(args_list, kwargs_dict, slots_dict, context)
+            # Prepare context processors data, so we don't have to call `_with_metadata() later again
             context_processors_data = self.context_processors_data
-            context_data = default(self.get_context_data(*args, **kwargs), {})
-            # TODO - enable JS and CSS vars - Remove `hasattr()` checks, expose, and document
-            if hasattr(self, "get_js_data"):
-                js_data = default(self.get_js_data(*args, **kwargs), {})  # type: ignore
-            else:
-                js_data = {}
-            if hasattr(self, "get_css_data"):
-                css_data = default(self.get_css_data(*args, **kwargs), {})  # type: ignore
-            else:
-                css_data = {}
 
         extensions.on_component_data(
             OnComponentDataContext(
                 component=self,
                 component_cls=self.__class__,
                 component_id=render_id,
-                context_data=cast(Dict, context_data),
-                js_data=cast(Dict, js_data),
-                css_data=cast(Dict, css_data),
+                context_data=template_data,
+                js_data=js_data,
+                css_data=css_data,
             )
         )
 
@@ -1394,13 +2284,13 @@ class Component(
         cache_component_css(self.__class__)
         css_input_hash = cache_component_css_vars(self.__class__, css_data) if css_data else None
 
-        with _prepare_template(self, context, context_data, metadata) as template:
+        with _prepare_template(self, context, template_data, metadata) as template:
             component_ctx.template_name = template.name
 
             # For users, we expose boolean variables that they may check
             # to see if given slot was filled, e.g.:
             # `{% if variable > 8 and component_vars.is_filled.header %}`
-            is_filled = SlotIsFilled(slots_untyped)
+            is_filled = SlotIsFilled(slots_dict)
             metadata.is_filled = is_filled
 
             with context.update(
@@ -1579,9 +2469,48 @@ class Component(
 
         return renderer
 
+    def _call_data_methods(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Tuple[Dict, Dict, Dict]:
+        # If user doesn't specify `Args`, `Kwargs`, `Slots` types, then we pass them in as plain
+        # dicts / lists.
+        args_inst = self.Args(*args) if self.Args is not None else args
+        kwargs_inst = self.Kwargs(**kwargs) if self.Kwargs is not None else kwargs
+        slots_inst = self.Slots(**slots) if self.Slots is not None else slots
+
+        # Template data
+        maybe_template_data = self.get_template_data(args_inst, kwargs_inst, slots_inst, context)
+        new_template_data = to_dict(default(maybe_template_data, {}))
+
+        # TODO_V2 - Remove this in v2
+        legacy_template_data = to_dict(default(self.get_context_data(*args, **kwargs), {}))
+        if legacy_template_data and new_template_data:
+            raise RuntimeError(
+                f"Component {self.name} has both `get_context_data()` and `get_template_data()` methods. "
+                "Please remove one of them."
+            )
+        template_data = new_template_data or legacy_template_data
+
+        # TODO - Enable JS and CSS vars - expose, and document
+        # JS data
+        maybe_js_data = self.get_js_data(args_inst, kwargs_inst, slots_inst, context)
+        js_data = to_dict(default(maybe_js_data, {}))
+
+        # CSS data
+        maybe_css_data = self.get_css_data(args_inst, kwargs_inst, slots_inst, context)
+        css_data = to_dict(default(maybe_css_data, {}))
+
+        # Validate outputs
+        if self.TemplateData is not None and not isinstance(template_data, self.TemplateData):
+            self.TemplateData(**template_data)
+        if self.JsData is not None and not isinstance(js_data, self.JsData):
+            self.JsData(**js_data)
+        if self.CssData is not None and not isinstance(css_data, self.CssData):
+            self.CssData(**css_data)
+
+        return template_data, js_data, css_data
+
     def _normalize_slot_fills(
         self,
-        fills: Mapping[SlotName, SlotContent],
+        fills: Mapping[SlotName, SlotInput],
         escape_content: bool = True,
     ) -> Dict[SlotName, Slot]:
         # Preprocess slots to escape content if `escape_content=True`
@@ -1834,7 +2763,7 @@ class ComponentNode(BaseNode):
         if self.flags[COMP_ONLY_FLAG] or self.registry.settings.context_behavior == ContextBehavior.ISOLATED:
             context = make_isolated_context_copy(context)
 
-        output = component._render(
+        output = component._render_with_error_trace(
             context=context,
             args=args,
             kwargs=kwargs,
@@ -1860,10 +2789,10 @@ def _maybe_bind_template(context: Context, template: Template) -> Generator[None
 def _prepare_template(
     component: Component,
     context: Context,
-    context_data: Any,
+    template_data: Any,
     metadata: MetadataItem,
 ) -> Generator[Template, Any, None]:
-    with context.update(context_data):
+    with context.update(template_data):
         # Associate the newly-created Context with a Template, otherwise we get
         # an error when we try to use `{% include %}` tag inside the template?
         # See https://github.com/django-components/django-components/issues/580

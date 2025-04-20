@@ -99,7 +99,41 @@ class Slot(Generic[TSlotData]):
 
 # NOTE: This must be defined here, so we don't have any forward references
 # otherwise Pydantic has problem resolving the types.
-SlotContent = Union[SlotResult, SlotFunc[TSlotData], Slot[TSlotData]]
+SlotInput = Union[SlotResult, SlotFunc[TSlotData], Slot[TSlotData]]
+"""
+When rendering a component with [`Component.render()`](../api#django_components.Component.render)
+or [`Component.render_to_response()`](../api#django_components.Component.render_to_response),
+the slots may be given a strings, functions, or [`Slot`](../api#django_components.Slot) instances.
+This type describes that union.
+
+Use this type when typing the slots in your component.
+
+`SlotInput` accepts an optional type parameter to specify the data dictionary that will be passed to the
+slot content function.
+
+**Example:**
+
+```python
+from typing import NamedTuple
+from typing_extensions import TypedDict
+from django_components import Component, SlotInput
+
+class TableFooterSlotData(TypedDict):
+    page_number: int
+
+class Table(Component):
+    class Slots(NamedTuple):
+        header: SlotInput
+        footer: SlotInput[TableFooterSlotData]
+
+    template = "<div>{% slot 'footer' %}</div>"
+```
+"""
+# TODO_V1 - REMOVE, superseded by SlotInput
+SlotContent = SlotInput[TSlotData]
+"""
+DEPRECATED: Use [`SlotInput`](../api#django_components.SlotInput) instead. Will be removed in v1.
+"""
 
 
 # Internal type aliases

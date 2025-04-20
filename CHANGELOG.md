@@ -1,5 +1,123 @@
 # Release notes
 
+## 🚨📢 v0.140.0
+
+#### 🚨📢 BREAKING CHANGES
+
+- Component typing no longer uses generics. Instead, the types are now defined as class attributes of the component class.
+
+    Before:
+
+    ```py
+    Args = Tuple[float, str]
+
+    class Button(Component[Args]):
+        pass
+    ```
+
+    After:
+
+    ```py
+    class Button(Component):
+        class Args(NamedTuple):
+            size: float
+            text: str
+    ```
+
+    See [Migrating from generics to class attributes](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/#migrating-from-generics-to-class-attributes) for more info.
+
+- The interface of the not-yet-released `get_js_data()` and `get_css_data()` methods has changed to
+  match `get_template_data()`.
+
+    ```py
+    def get_js_data(self, *args, **kwargs):
+    def get_css_data(self, *args, **kwargs):
+    ```
+
+    to:
+
+    ```py
+    def get_js_data(self, args, kwargs, slots, context):
+    def get_css_data(self, args, kwargs, slots, context):
+    ```
+
+- Removed `EmptyTuple` and `EmptyDict` types. Instead, there is now a single `Empty` type.
+
+    ```py
+    from django_components import Component, Empty
+
+    class Button(Component):
+        template = "Hello"
+
+        Args = Empty
+        Kwargs = Empty
+    ```
+
+- The order of arguments in `Component.render_to_response()` has changed
+  to match that of `Component.render()`.
+
+    Please ensure that you pass the parameters as kwargs, not as positional arguments,
+    to avoid breaking changes.
+
+    The signature changed, moving the `args` and `kwargs` parameters to 2nd and 3rd position.
+
+    Before:
+
+    ```py
+      def render_to_response(
+          cls,
+          context: Optional[Union[Dict[str, Any], Context]] = None,
+          slots: Optional[SlotsType] = None,
+          escape_slots_content: bool = True,
+          args: Optional[ArgsType] = None,
+          kwargs: Optional[KwargsType] = None,
+          type: RenderType = "document",
+          request: Optional[HttpRequest] = None,
+          *response_args: Any,
+          **response_kwargs: Any,
+      ) -> HttpResponse:
+    ```
+
+    After:
+
+    ```py
+    def render_to_response(
+        context: Optional[Union[Dict[str, Any], Context]] = None,
+        args: Optional[Tuple[Any, ...]] = None,
+        kwargs: Optional[Mapping] = None,
+        slots: Optional[Mapping] = None,
+        escape_slots_content: bool = True,
+        type: RenderType = "document",
+        render_dependencies: bool = True,
+        request: Optional[HttpRequest] = None,
+        *response_args: Any,
+        **response_kwargs: Any,
+    ) -> HttpResponse:
+    ```
+
+#### 🚨📢 Deprecation
+
+- `get_context_data()` is now deprecated. Use `get_template_data()` instead.
+
+    `get_template_data()` behaves the same way, but has a different function signature
+    to accept also slots and context.
+
+    Since `get_context_data()` is widely used, it will remain available until v2.
+
+- `SlotContent` was renamed to `SlotInput`. The old name is deprecated and will be removed in v1.
+
+#### Feat
+
+- Input validation is now part of the render process.
+
+    When you specify the input types (such as `Component.Args`, `Component.Kwargs`, etc),
+    the actual inputs to data methods (`Component.get_template_data()`, etc) will be instances of the types you specified.
+
+    This practically brings back input validation, because the instantiation of the types
+    will raise an error if the inputs are not valid.
+
+    Read more on [Typing and validation](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/)
+
 ## v0.139.1
 
 #### Refactor

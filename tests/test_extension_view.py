@@ -198,7 +198,10 @@ class TestComponentAsView(SimpleTestCase):
                 """
 
             def get(self, request, *args, **kwargs) -> HttpResponse:
-                return self.render_to_response({"name": "Bob"}, {"second_slot": "Nice to meet you, Bob"})
+                return self.render_to_response(
+                    context={"name": "Bob"},
+                    slots={"second_slot": "Nice to meet you, Bob"},
+                )
 
         client = CustomClient(urlpatterns=[path("test_slot/", MockComponentSlot.as_view())])
         response = client.get("/test_slot/")
@@ -223,7 +226,10 @@ class TestComponentAsView(SimpleTestCase):
                 """
 
             def get(self, request, *args, **kwargs) -> HttpResponse:
-                return self.render_to_response({}, {"test_slot": "<script>alert(1);</script>"})
+                return self.render_to_response(
+                    context={},
+                    slots={"test_slot": "<script>alert(1);</script>"},
+                )
 
         client = CustomClient(urlpatterns=[path("test_slot_insecure/", MockInsecureComponentSlot.as_view())])
         response = client.get("/test_slot_insecure/")

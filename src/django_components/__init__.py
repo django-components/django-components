@@ -52,7 +52,7 @@ from django_components.extensions.view import ComponentView
 from django_components.extensions.url import ComponentUrl, get_component_url
 from django_components.library import TagProtectedError
 from django_components.node import BaseNode, template_tag
-from django_components.slots import SlotContent, Slot, SlotFunc, SlotRef, SlotResult
+from django_components.slots import Slot, SlotContent, SlotFunc, SlotInput, SlotRef, SlotResult
 from django_components.tag_formatter import (
     ComponentFormatter,
     ShorthandComponentFormatter,
@@ -65,7 +65,7 @@ from django_components.template import cached_template
 import django_components.types as types
 from django_components.util.loader import ComponentFileEntry, get_component_dirs, get_component_files
 from django_components.util.routing import URLRoute, URLRouteHandler
-from django_components.util.types import EmptyTuple, EmptyDict
+from django_components.util.types import Empty
 
 # isort: on
 
@@ -103,8 +103,7 @@ __all__ = [
     "ContextBehavior",
     "Default",
     "DynamicComponent",
-    "EmptyTuple",
-    "EmptyDict",
+    "Empty",
     "format_attributes",
     "get_component_by_class_id",
     "get_component_dirs",
@@ -126,9 +125,10 @@ __all__ = [
     "RegistrySettings",
     "render_dependencies",
     "ShorthandComponentFormatter",
-    "SlotContent",
     "Slot",
+    "SlotContent",
     "SlotFunc",
+    "SlotInput",
     "SlotRef",
     "SlotResult",
     "TagFormatterABC",

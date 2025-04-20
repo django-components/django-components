@@ -71,11 +71,7 @@
     options:
       show_if_no_docstring: true
 
-::: django_components.EmptyDict
-    options:
-      show_if_no_docstring: true
-
-::: django_components.EmptyTuple
+::: django_components.Empty
     options:
       show_if_no_docstring: true
 
@@ -92,6 +88,10 @@
       show_if_no_docstring: true
 
 ::: django_components.SlotFunc
+    options:
+      show_if_no_docstring: true
+
+::: django_components.SlotInput
     options:
       show_if_no_docstring: true
 

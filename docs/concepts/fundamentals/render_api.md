@@ -15,7 +15,7 @@ Example:
 class Table(Component):
     def get_context_data(self, *args, **attrs):
         # Access component's ID
-        assert self.id == "djc1A2b3c"
+        assert self.id == "c1A2b3c"
 
         # Access component's inputs, slots and context
         assert self.input.args == (123, "str")
@@ -66,7 +66,7 @@ If you need to expand this limit, please open an issue on GitHub.
 class Table(Component):
     def get_context_data(self, *args, **attrs):
         # Access component's ID
-        assert self.id == "djc1A2b3c"
+        assert self.id == "c1A2b3c"
 
         return {}
 ```

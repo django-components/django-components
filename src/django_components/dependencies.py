@@ -10,6 +10,7 @@ from typing import (
     Dict,
     List,
     Literal,
+    Mapping,
     Optional,
     Sequence,
     Set,
@@ -134,7 +135,7 @@ def cache_component_js(comp_cls: Type["Component"]) -> None:
 #    with `Components.manager.registerComponentData`.
 # 3. Actually run a component's JS instance with `Components.manager.callComponent`,
 #    specifying the components HTML elements with `component_id`, and JS vars with `input_hash`.
-def cache_component_js_vars(comp_cls: Type["Component"], js_vars: Dict) -> Optional[str]:
+def cache_component_js_vars(comp_cls: Type["Component"], js_vars: Mapping) -> Optional[str]:
     if not is_nonempty_str(comp_cls.js):
         return None
 
@@ -184,7 +185,7 @@ def cache_component_css(comp_cls: Type["Component"]) -> None:
 # the CSS vars under the CSS selector `[data-djc-css-a1b2c3]`. We define the stylesheet
 # with variables separately from `Component.css`, because different instances may return different
 # data from `get_css_data()`, which will live in different stylesheets.
-def cache_component_css_vars(comp_cls: Type["Component"], css_vars: Dict) -> Optional[str]:
+def cache_component_css_vars(comp_cls: Type["Component"], css_vars: Mapping) -> Optional[str]:
     if not is_nonempty_str(comp_cls.css):
         return None
 

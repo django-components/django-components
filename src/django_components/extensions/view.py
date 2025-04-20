@@ -17,17 +17,25 @@ class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
     """
     The interface for `Component.View`.
 
-    Override the methods of this class to define the behavior of the component.
+    The fields of this class are used to configure the component views and URLs.
 
-    This class is a subclass of `django.views.View`. The `Component` instance is available
+    This class is a subclass of
+    [`django.views.View`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#view).
+    The [`Component`](../api#django_components.Component) instance is available
     via `self.component`.
 
+    Override the methods of this class to define the behavior of the component.
+
+    Read more about [Component views and URLs](../../concepts/fundamentals/component_views_urls).
+
     **Example:**
+
     ```python
     class MyComponent(Component):
         class View:
             def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
                 return HttpResponse("Hello, world!")
+    ```
     """
 
     # NOTE: This attribute must be declared on the class for `View.as_view()` to allow

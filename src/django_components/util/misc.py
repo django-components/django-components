@@ -1,5 +1,6 @@
 import re
 import sys
+from dataclasses import asdict, is_dataclass
 from hashlib import md5
 from importlib import import_module
 from itertools import chain
@@ -130,3 +131,19 @@ def is_glob(filepath: str) -> bool:
 
 def flatten(lst: Iterable[Iterable[T]]) -> List[T]:
     return list(chain.from_iterable(lst))
+
+
+def to_dict(data: Any) -> dict:
+    """
+    Convert object to a dict.
+
+    Handles `dict`, `NamedTuple`, and `dataclass`.
+    """
+    if isinstance(data, dict):
+        return data
+    elif hasattr(data, "_asdict"):  # Case: NamedTuple
+        return data._asdict()
+    elif is_dataclass(data):  # Case: dataclass
+        return asdict(data)  # type: ignore[arg-type]
+
+    return dict(data)

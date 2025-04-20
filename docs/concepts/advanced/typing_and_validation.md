@@ -1,251 +1,470 @@
-## Adding type hints with Generics
+## Typing overview
 
-_New in version 0.92_
+<!-- TODO_V1 - REMOVE IN v1 -->
 
-The [`Component`](../../../reference/api#django_components.Component) class optionally accepts type parameters
-that allow you to specify the types of args, kwargs, slots, and data.
+!!! warning
 
-Use this to add type hints to your components, or to validate component inputs.
+    In versions 0.92 to 0.139 (inclusive), the component typing was specified through generics.
+
+    Since v0.140, the types must be specified as class attributes of the Component class - `Args`, `Kwargs`, `Slots`, `TemplateData`, `JsData`, and `CssData`.
+
+    See [Migrating from generics to class attributes](#migrating-from-generics-to-class-attributes) for more info.
+
+!!! warning
+
+    Input validation was NOT part of Django Components between versions 0.136 and 0.139 (inclusive).
+
+The [`Component`](../../../reference/api#django_components.Component) class optionally accepts class attributes
+that allow you to define the types of args, kwargs, slots, as well as the data returned from the data methods.
+
+Use this to add type hints to your components, to validate the inputs at runtime, and to document them.
 
 ```py
-from django_components import Component
+from typing import NamedTuple, Optional
+from django.template import Context
+from django_components import Component, SlotInput
 
-ButtonType = Component[Args, Kwargs, Slots, TemplateData, JsData, CssData]
+class Button(Component):
+    class Args(NamedTuple):
+        size: int
+        text: str
 
-class Button(ButtonType):
-    template_file = "button.html"
+    class Kwargs(NamedTuple):
+        variable: str
+        maybe_var: Optional[int] = None  # May be omitted
 
-    def get_context_data(self, *args, **kwargs):
+    class Slots(NamedTuple):
+        my_slot: Optional[SlotInput] = None
+
+    def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
         ...
+
+    template_file = "button.html"
 ```
 
-The generic parameters are:
+The class attributes are:
 
-- `Args` - Positional arguments, must be a `Tuple` or `Any`
-- `Kwargs` - Keyword arguments, must be a `TypedDict` or `Any`
-- `Slots` - Slots, must be a `TypedDict` or `Any`
-- `TemplateData` - Data returned from [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data), must be a `TypedDict` or `Any`
-- `JsData` - Data returned from [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data), must be a `TypedDict` or `Any`
-- `CssData` - Data returned from [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data), must be a `TypedDict` or `Any`
+- [`Args`](../../../reference/api#django_components.Component.Args) - Type for positional arguments.
+- [`Kwargs`](../../../reference/api#django_components.Component.Kwargs) - Type for keyword arguments.
+- [`Slots`](../../../reference/api#django_components.Component.Slots) - Type for slots.
+- [`TemplateData`](../../../reference/api#django_components.Component.TemplateData) - Type for data returned from [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data).
+- [`JsData`](../../../reference/api#django_components.Component.JsData) - Type for data returned from [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data).
+- [`CssData`](../../../reference/api#django_components.Component.CssData) - Type for data returned from [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data).
 
-You can specify as many or as few of the parameters as you want. The rest will default to `Any`.
-
-All of these are valid:
-
-```py
-ButtonType = Component[Args, Kwargs, Slots, TemplateData, JsData, CssData]
-ButtonType = Component[Args, Kwargs, Slots, TemplateData, JsData]
-ButtonType = Component[Args, Kwargs, Slots, TemplateData]
-ButtonType = Component[Args, Kwargs, Slots]
-ButtonType = Component[Args, Kwargs]
-ButtonType = Component[Args]
-```
-
-!!! info
-
-    Setting a type parameter to `Any` will disable typing and validation for that part.
+You can specify as many or as few of these as you want, the rest will default to `None`.
 
 ## Typing inputs
 
-You can use the first 3 parameters to type inputs.
+You can use [`Component.Args`](../../../reference/api#django_components.Component.Args),
+[`Component.Kwargs`](../../../reference/api#django_components.Component.Kwargs),
+and [`Component.Slots`](../../../reference/api#django_components.Component.Slots) to type the component inputs.
+
+When you set these classes, at render time the `args`, `kwargs`, and `slots` parameters of the data methods
+([`get_template_data()`](../../../reference/api#django_components.Component.get_template_data),
+[`get_js_data()`](../../../reference/api#django_components.Component.get_js_data),
+[`get_css_data()`](../../../reference/api#django_components.Component.get_css_data))
+will be instances of these classes.
+
+This way, each component can have runtime validation of the inputs:
+
+- When you use [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+  or [`@dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass),
+  instantiating these classes will check ONLY for the presence of the attributes.
+- When you use [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/),
+  instantiating these classes will check for the presence AND type of the attributes.
+
+If you omit the [`Args`](../../../reference/api#django_components.Component.Args),
+[`Kwargs`](../../../reference/api#django_components.Component.Kwargs), or
+[`Slots`](../../../reference/api#django_components.Component.Slots) classes,
+or set them to `None`, the inputs will be passed as plain lists or dictionaries,
+and will not be validated.
 
 ```python
-from typing_extensions import NotRequired, Tuple, TypedDict
-from django_components import Component, Slot, SlotContent
-
-###########################################
-# 1. Define the types
-###########################################
-
-# Positional inputs
-ButtonArgs = Tuple[str, ...]
-
-# Keyword inputs
-class ButtonKwargs(TypedDict):
-    name: str
-    age: int
-    maybe_var: NotRequired[int] # May be ommited
+from typing_extensions import NamedTuple, TypedDict
+from django.template import Context
+from django_components import Component, Slot, SlotInput
 
 # The data available to the `footer` scoped slot
 class ButtonFooterSlotData(TypedDict):
     value: int
 
-# Slots
-class ButtonSlots(TypedDict):
-    # Use `SlotContent` when you want to allow either `Slot` instance or plain string
-    header: SlotContent
-    # Use `Slot` for slot functions.
-    # The generic specifies the data available to the slot function
-    footer: NotRequired[Slot[ButtonFooterSlotData]]
+# Define the component with the types
+class Button(Component):
+    class Args(NamedTuple):
+        name: str
 
-###########################################
-# 2. Define the component with those types
-###########################################
+    class Kwargs(NamedTuple):
+        surname: str
+        age: int
+        maybe_var: Optional[int] = None  # May be ommited
 
-ButtonType = Component[ButtonArgs, ButtonKwargs, ButtonSlots]
+    class Slots(NamedTuple):
+        # Use `SlotInput` to allow slots to be given as `Slot` instance,
+        # plain string, or a function that returns a string.
+        my_slot: Optional[SlotInput] = None
+        # Use `Slot` to allow ONLY `Slot` instances.
+        # The generic is optional, and it specifies the data available
+        # to the slot function.
+        footer: Slot[ButtonFooterSlotData]
 
-class Button(ButtonType):
-    def get_context_data(self, *args, **kwargs):
-        ...
-```
+    # Add type hints to the data method
+    def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+        # The parameters are instances of the classes we defined
+        assert isinstance(args, Button.Args)
+        assert isinstance(kwargs, Button.Kwargs)
+        assert isinstance(slots, Button.Slots)
 
-When you then call
-[`Component.render`](../../../reference/api#django_components.Component.render)
-or [`Component.render_to_response`](../../../reference/api#django_components.Component.render_to_response),
-you will get type hints:
+        args.name  # str
+        kwargs.age  # int
+        slots.footer  # Slot[ButtonFooterSlotData]
 
-```python
+# Add type hints to the render call
 Button.render(
-    # ERROR: Expects a string
-    args=(123,),
-    kwargs={
-        "name": "John",
-        # ERROR: Expects an integer
-        "age": "invalid",
-    },
-    slots={
-        "header": "...",
-        "footer": lambda ctx, slot_data, slot_ref: slot_data.value + 1,
-        # ERROR: Unexpected key "foo"
-        "foo": "invalid",
-    },
+    args=Button.Args(
+        name="John",
+    ),
+    kwargs=Button.Kwargs(
+        surname="Doe",
+        age=30,
+    ),
+    slots=Button.Slots(
+        footer=Button.Slot(lambda ctx, slot_data, slot_ref: slot_data.value + 1),
+    ),
 )
 ```
 
-If you don't want to validate some parts, set them to [`Any`](https://docs.python.org/3/library/typing.html#typing.Any) or omit them.
+If you don't want to validate some parts, set them to `None` or omit them.
 
 The following will validate only the keyword inputs:
 
 ```python
-ButtonType = Component[Any, ButtonKwargs]
+class Button(Component):
+    # We could also omit these
+    Args = None
+    Slots = None
 
-class Button(ButtonType):
-    ...
+    class Kwargs(NamedTuple):
+        name: str
+        age: int
+
+    # Only `kwargs` is instantiated. `args` and `slots` are not.
+    def get_template_data(self, args, kwargs: Kwargs, slots, context: Context):
+        assert isinstance(args, list)
+        assert isinstance(slots, dict)
+        assert isinstance(kwargs, Button.Kwargs)
+
+        args[0]  # str
+        slots["footer"]  # Slot[ButtonFooterSlotData]
+        kwargs.age  # int
 ```
+
+!!! info
+
+    Components can receive slots as strings, functions, or instances of [`Slot`](../../../reference/api#django_components.Slot).
+
+    Internally these are all normalized to instances of [`Slot`](../../../reference/api#django_components.Slot).
+
+    Therefore, the `slots` dictionary available in data methods (like
+    [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data))
+    will always be a dictionary of [`Slot`](../../../reference/api#django_components.Slot) instances.
+
+    To correctly type this dictionary, you should set the fields of `Slots` to
+    [`Slot`](../../../reference/api#django_components.Slot) or [`SlotInput`](../../../reference/api#django_components.SlotInput):
+
+    [`SlotInput`](../../../reference/api#django_components.SlotInput) is a union of `Slot`, string, and function types.
 
 ## Typing data
 
-You can use the last 3 parameters to type the data returned from [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data), [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data), and [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data).
+You can use [`Component.TemplateData`](../../../reference/api#django_components.Component.TemplateData),
+[`Component.JsData`](../../../reference/api#django_components.Component.JsData),
+and [`Component.CssData`](../../../reference/api#django_components.Component.CssData) to type the data returned from [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data), [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data), and [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data).
 
-Use this together with the [Pydantic integration](#runtime-input-validation-with-types) to have runtime validation of the data.
+When you set these classes, at render time they will be instantiated with the data returned from these methods.
 
-```python
-from typing_extensions import NotRequired, Tuple, TypedDict
-from django_components import Component, Slot, SlotContent
+This way, each component can have runtime validation of the returned data:
 
-###########################################
-# 1. Define the types
-###########################################
+- When you use [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+  or [`@dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass),
+  instantiating these classes will check ONLY for the presence of the attributes.
+- When you use [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/),
+  instantiating these classes will check for the presence AND type of the attributes.
 
-# Data returned from `get_context_data`
-class ButtonData(TypedDict):
-    data1: str
-    data2: int
-
-# Data returned from `get_js_data`
-class ButtonJsData(TypedDict):
-    js_data1: str
-    js_data2: int
-
-# Data returned from `get_css_data`
-class ButtonCssData(TypedDict):
-    css_data1: str
-    css_data2: int
-
-###########################################
-# 2. Define the component with those types
-###########################################
-
-ButtonType = Component[Any, Any, Any, ButtonData, ButtonJsData, ButtonCssData]
-
-class Button(ButtonType):
-    def get_context_data(self, *args, **kwargs):
-        ...
-
-    def get_js_data(self, *args, **kwargs):
-        ...
-
-    def get_css_data(self, *args, **kwargs):
-        ...
-```
-
-When you then call
-[`Component.render`](../../../reference/api#django_components.Component.render)
-or [`Component.render_to_response`](../../../reference/api#django_components.Component.render_to_response),
-the component will raise an error if the data is not valid.
-
-If you don't want to validate some parts, set them to [`Any`](https://docs.python.org/3/library/typing.html#typing.Any).
-
-The following will validate only the data returned from `get_js_data`:
+If you omit the [`TemplateData`](../../../reference/api#django_components.Component.TemplateData),
+[`JsData`](../../../reference/api#django_components.Component.JsData), or
+[`CssData`](../../../reference/api#django_components.Component.CssData) classes,
+or set them to `None`, the validation and instantiation will be skipped.
 
 ```python
-ButtonType = Component[Any, Any, Any, Any, ButtonJsData]
+from typing import NamedTuple
+from django_components import Component
 
-class Button(ButtonType):
-    ...
+class Button(Component):
+    class TemplateData(NamedTuple):
+        data1: str
+        data2: int
+
+    class JsData(NamedTuple):
+        js_data1: str
+        js_data2: int
+
+    class CssData(NamedTuple):
+        css_data1: str
+        css_data2: int
+
+    def get_template_data(self, args, kwargs, slots, context):
+        return {
+            "data1": "...",
+            "data2": 123,
+        }
+
+    def get_js_data(self, args, kwargs, slots, context):
+        return {
+            "js_data1": "...",
+            "js_data2": 123,
+        }
+
+    def get_css_data(self, args, kwargs, slots, context):
+        return {
+            "css_data1": "...",
+            "css_data2": 123,
+        }
 ```
+
+For each data method, you can either return a plain dictionary with the data, or an instance of the respective data class directly.
+
+```python
+from typing import NamedTuple
+from django_components import Component
+
+class Button(Component):
+    class TemplateData(NamedTuple):
+        data1: str
+        data2: int
+
+    class JsData(NamedTuple):
+        js_data1: str
+        js_data2: int
+
+    class CssData(NamedTuple):
+        css_data1: str
+        css_data2: int
+
+    def get_template_data(self, args, kwargs, slots, context):
+        return Button.TemplateData(
+            data1="...",
+            data2=123,
+        )
+
+    def get_js_data(self, args, kwargs, slots, context):
+        return Button.JsData(
+            js_data1="...",
+            js_data2=123,
+        )
+
+    def get_css_data(self, args, kwargs, slots, context):
+        return Button.CssData(
+            css_data1="...",
+            css_data2=123,
+        )
+```
+
+## Custom types
+
+We recommend to use [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+for the `Args` class, and [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple),
+[dataclasses](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass),
+or [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/)
+for `Kwargs`, `Slots`, `TemplateData`, `JsData`, and `CssData` classes.
+
+However, you can use any class, as long as they meet the conditions below.
+
+For example, here is how you can use [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/)
+to validate the inputs at runtime.
+
+```py
+from django_components import Component
+from pydantic import BaseModel
+
+class Table(Component):
+    class Kwargs(BaseModel):
+        name: str
+        age: int
+
+    def get_template_data(self, args, kwargs, slots, context):
+        assert isinstance(kwargs, Table.Kwargs)
+
+Table.render(
+    kwargs=Table.Kwargs(name="John", age=30),
+)
+```
+
+### `Args` class
+
+The [`Args`](../../../reference/api#django_components.Component.Args) class
+represents a list of positional arguments. It must meet two conditions:
+
+1. The constructor for the `Args` class must accept positional arguments.
+
+    ```py
+    Args(*args)
+    ```
+
+2. The `Args` instance must be convertable to a list.
+
+    ```py
+    list(Args(1, 2, 3))
+    ```
+
+To implement the conversion to a list, you can implement the `__iter__()` method:
+
+```py
+class MyClass:
+    def __init__(self):
+        self.x = 1
+        self.y = 2
+    
+    def __iter__(self):
+        return iter([('x', self.x), ('y', self.y)])
+```
+
+### Dictionary classes
+
+On the other hand, other types
+([`Kwargs`](../../../reference/api#django_components.Component.Kwargs),
+[`Slots`](../../../reference/api#django_components.Component.Slots),
+[`TemplateData`](../../../reference/api#django_components.Component.TemplateData),
+[`JsData`](../../../reference/api#django_components.Component.JsData),
+and [`CssData`](../../../reference/api#django_components.Component.CssData))
+represent dictionaries. They must meet these two conditions:
+
+1. The constructor must accept keyword arguments.
+
+    ```py
+    Kwargs(**kwargs)
+    Slots(**slots)
+    ```
+
+2. The instance must be convertable to a dictionary.
+
+    ```py
+    dict(Kwargs(a=1, b=2))
+    dict(Slots(a=1, b=2))
+    ```
+
+To implement the conversion to a dictionary, you can implement either:
+
+1. `_asdict()` method
+    ```py
+    class MyClass:
+        def __init__(self):
+            self.x = 1
+            self.y = 2
+        
+        def _asdict(self):
+            return {'x': self.x, 'y': self.y}
+    ```
+
+2. Or make the class dict-like with `__iter__()` and `__getitem__()`
+    ```py
+    class MyClass:
+        def __init__(self):
+            self.x = 1
+            self.y = 2
+        
+        def __iter__(self):
+            return iter([('x', self.x), ('y', self.y)])
+
+        def __getitem__(self, key):
+            return getattr(self, key)
+    ```
 
 ## Passing variadic args and kwargs
 
-You may have a function that accepts a variable number of args or kwargs:
+You may have a component that accepts any number of args or kwargs.
 
-```py
-def get_context_data(self, *args, **kwargs):
-    ...
-```
-
-This is not supported with the typed components.
+However, this cannot be described with the current Python's typing system (as of v0.140).
 
 As a workaround:
 
 - For a variable number of positional arguments (`*args`), set a positional argument that accepts a list of values:
 
     ```py
-    # Tuple of one member of list of strings
-    Args = Tuple[List[str]]
+    class Table(Component):
+        class Args(NamedTuple):
+            args: List[str]
+
+    Table.render(
+        args=Table.Args(args=["a", "b", "c"]),
+    )
     ```
 
 - For a variable number of keyword arguments (`**kwargs`), set a keyword argument that accepts a dictionary of values:
 
     ```py
-    class Kwargs(TypedDict):
-        variable: str
-        another: int
-        # Pass any extra keys under `extra`
-        extra: Dict[str, any]
+    class Table(Component):
+        class Kwargs(NamedTuple):
+            variable: str
+            another: int
+            # Pass any extra keys under `extra`
+            extra: Dict[str, any]
+
+    Table.render(
+        kwargs=Table.Kwargs(
+            variable="a",
+            another=1,
+            extra={"foo": "bar"},
+        ),
+    )
     ```
 
 ## Handling no args or no kwargs
 
-To declare that a component accepts no args, kwargs, etc, you can use the
-[`EmptyTuple`](../../../reference/api#django_components.EmptyTuple) and
-[`EmptyDict`](../../../reference/api#django_components.EmptyDict) types:
+To declare that a component accepts no args, kwargs, etc, define the types with no attributes using the `pass` keyword:
 
 ```py
-from django_components import Component, EmptyDict, EmptyTuple
+from typing import NamedTuple
+from django_components import Component
 
-class Button(Component[EmptyTuple, EmptyDict, EmptyDict, EmptyDict, EmptyDict, EmptyDict]):
-    ...
+class Button(Component):
+    class Args(NamedTuple):
+        pass
+
+    class Kwargs(NamedTuple):
+        pass
+
+    class Slots(NamedTuple):
+        pass
 ```
 
-## Runtime input validation with types
+This can get repetitive, so we added a [`Empty`](../../../reference/api#django_components.Empty) type to make it easier:
 
-!!! warning
+```py
+from django_components import Component, Empty
 
-    Input validation was part of Django Components from version 0.96 to 0.135.
+class Button(Component):
+    Args = Empty
+    Kwargs = Empty
+    Slots = Empty
+```
 
-    Since v0.136, input validation is available as a separate extension.
+## Runtime type validation
 
-By defualt, when you add types to your component, this will only set up static type hints,
-but it will not validate the inputs.
+When you add types to your component, and implement
+them as [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple) or [`dataclass`](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass), the validation will check only for the presence of the attributes.
 
-To enable input validation, you need to install the [`djc-ext-pydantic`](https://github.com/django-components/djc-ext-pydantic) extension:
+So this will not catch if you pass a string to an `int` attribute.
+
+To enable runtime type validation, you need to use [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/), and install the [`djc-ext-pydantic`](https://github.com/django-components/djc-ext-pydantic) extension.
+
+The `djc-ext-pydantic` extension ensures compatibility between django-components' classes such as `Component`, or `Slot` and Pydantic models.
+
+First install the extension:
 
 ```bash
 pip install djc-ext-pydantic
 ```
 
-And add the extension to your project:
+And then add the extension to your project:
 
 ```py
 COMPONENTS = {
@@ -255,22 +474,126 @@ COMPONENTS = {
 }
 ```
 
-`djc-ext-pydantic` integrates [Pydantic](https://pydantic.dev/) for input and data validation. It uses the types defined on the component's class to validate inputs of Django components.
+<!-- TODO_V1 - REMOVE IN v1 -->
 
-## Usage for Python <3.11
+## Migrating from generics to class attributes
 
-On Python 3.8-3.10, use `typing_extensions`
+In versions 0.92 to 0.139 (inclusive), the component typing was specified through generics.
+
+Since v0.140, the types must be specified as class attributes of the [Component](../../../reference/api#django_components.Component) class -
+[`Args`](../../../reference/api#django_components.Component.Args),
+[`Kwargs`](../../../reference/api#django_components.Component.Kwargs),
+[`Slots`](../../../reference/api#django_components.Component.Slots),
+[`TemplateData`](../../../reference/api#django_components.Component.TemplateData),
+[`JsData`](../../../reference/api#django_components.Component.JsData),
+and [`CssData`](../../../reference/api#django_components.Component.CssData).
+
+This change was necessary to make it possible to subclass components. Subclassing with generics was otherwise too complicated. Read the discussion [here](https://github.com/django-components/django-components/issues/1122).
+
+Because of this change, the [`Component.render()`](../../../reference/api#django_components.Component.render)
+method is no longer typed.
+To type-check the inputs, you should wrap the inputs in [`Component.Args`](../../../reference/api#django_components.Component.Args),
+[`Component.Kwargs`](../../../reference/api#django_components.Component.Kwargs),
+[`Component.Slots`](../../../reference/api#django_components.Component.Slots), etc.
+
+For example, if you had a component like this:
 
 ```py
-from typing_extensions import TypedDict, NotRequired
+from typing import NotRequired, Tuple, TypedDict
+from django_components import Component, Slot, SlotInput
+
+ButtonArgs = Tuple[int, str]
+
+class ButtonKwargs(TypedDict):
+    variable: str
+    another: int
+    maybe_var: NotRequired[int] # May be omitted
+
+class ButtonSlots(TypedDict):
+    # Use `SlotInput` to allow slots to be given as `Slot` instance,
+    # plain string, or a function that returns a string.
+    my_slot: NotRequired[SlotInput]
+    # Use `Slot` to allow ONLY `Slot` instances.
+    another_slot: Slot
+
+ButtonType = Component[ButtonArgs, ButtonKwargs, ButtonSlots]
+
+class Button(ButtonType):
+    def get_context_data(self, *args, **kwargs):
+        self.input.args[0]  # int
+        self.input.kwargs["variable"]  # str
+        self.input.slots["my_slot"]  # Slot[MySlotData]
+
+Button.render(
+    args=(1, "hello"),
+    kwargs={
+        "variable": "world",
+        "another": 123,
+    },
+    slots={
+        "my_slot": "...",
+        "another_slot": Slot(lambda: ...),
+    },
+)
 ```
 
-Additionally on Python 3.8-3.9, also import `annotations`:
+The steps to migrate are:
+
+1. Convert all the types (`ButtonArgs`, `ButtonKwargs`, `ButtonSlots`) to subclasses
+    of [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple).
+2. Move these types inside the Component class (`Button`), and rename them to `Args`, `Kwargs`, and `Slots`.
+3. If you defined typing for the data methods (like [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)), move them inside the Component class, and rename them to `TemplateData`, `JsData`, and `CssData`.
+4. Remove the `Component` generic.
+5. If you accessed the `args`, `kwargs`, or `slots` attributes via
+    [`self.input`](../../../reference/api#django_components.Component.input), you will need to add the type hints yourself, because [`self.input`](../../../reference/api#django_components.Component.input) is no longer typed.
+
+    Otherwise, you may use [`Component.get_template_data()`](../../../reference/api#django_components.Component.get_template_data) instead of [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data), as `get_template_data()` receives `args`, `kwargs`, `slots` and `context` as arguments. You will still need to add the type hints yourself.
+
+6. Lastly, you will need to update the [`Component.render()`](../../../reference/api#django_components.Component.render)
+    calls to wrap the inputs in [`Component.Args`](../../../reference/api#django_components.Component.Args), [`Component.Kwargs`](../../../reference/api#django_components.Component.Kwargs), and [`Component.Slots`](../../../reference/api#django_components.Component.Slots), to manually add type hints.
+
+Thus, the code above will become:
 
 ```py
-from __future__ import annotations
+from typing import NamedTuple, Optional
+from django.template import Context
+from django_components import Component, Slot, SlotInput
+
+# The Component class does not take any generics
+class Button(Component):
+    # Types are now defined inside the component class
+    class Args(NamedTuple):
+        size: int
+        text: str
+
+    class Kwargs(NamedTuple):
+        variable: str
+        another: int
+        maybe_var: Optional[int] = None  # May be omitted
+
+    class Slots(NamedTuple):
+        # Use `SlotInput` to allow slots to be given as `Slot` instance,
+        # plain string, or a function that returns a string.
+        my_slot: Optional[SlotInput] = None
+        # Use `Slot` to allow ONLY `Slot` instances.
+        another_slot: Slot
+
+    # The args, kwargs, slots are instances of the component's Args, Kwargs, and Slots classes
+    def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+        args.size  # int
+        kwargs.variable  # str
+        slots.my_slot  # Slot[MySlotData]
+
+Button.render(
+    # Wrap the inputs in the component's Args, Kwargs, and Slots classes
+    args=Button.Args(1, "hello"),
+    kwargs=Button.Kwargs(
+        variable="world",
+        another=123,
+    ),
+    slots=Button.Slots(
+        my_slot="...",
+        another_slot=Slot(lambda: ...),
+    ),
+)
 ```
-
-Moreover, on 3.10 and less, you may not be able to use `NotRequired`, and instead you will need to mark either all keys are required, or all keys as optional, using TypeDict's `total` kwarg.
-
-[See PEP-655](https://peps.python.org/pep-0655) for more info.

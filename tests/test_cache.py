@@ -85,10 +85,10 @@ class TestComponentMediaCache:
                 <div>Template only component</div>
             """
 
-            def get_js_data(self):
+            def get_js_data(self, args, kwargs, slots, context):
                 return {}
 
-            def get_css_data(self):
+            def get_css_data(self, args, kwargs, slots, context):
                 return {}
 
         @register("test_media_no_vars")
@@ -100,10 +100,10 @@ class TestComponentMediaCache:
             js = "console.log('Hello from JS');"
             css = ".novars-component { color: blue; }"
 
-            def get_js_data(self):
+            def get_js_data(self, args, kwargs, slots, context):
                 return {}
 
-            def get_css_data(self):
+            def get_css_data(self, args, kwargs, slots, context):
                 return {}
 
         class TestMediaAndVarsComponent(Component):
@@ -114,10 +114,10 @@ class TestComponentMediaCache:
             js = "console.log('Hello from full component');"
             css = ".full-component { color: blue; }"
 
-            def get_js_data(self):
+            def get_js_data(self, args, kwargs, slots, context):
                 return {"message": "Hello"}
 
-            def get_css_data(self):
+            def get_css_data(self, args, kwargs, slots, context):
                 return {"color": "blue"}
 
         # Register our test cache

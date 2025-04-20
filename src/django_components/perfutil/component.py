@@ -248,7 +248,7 @@ def component_post_render(
         # This is where we actually render the component
         #
         # NOTE: [1:] because the root component will be yet again added to the error's
-        # `components` list in `_render` so we remove the first element from the path.
+        # `components` list in `_render_with_error_trace` so we remove the first element from the path.
         with component_error_message(full_path[1:]):
             curr_comp_content, grandchild_component_attrs = curr_comp_renderer(curr_comp_attrs)
 

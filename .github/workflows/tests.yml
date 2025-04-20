@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
-        os: [ubuntu-20.04, windows-latest]
+        os: [ubuntu-latest, windows-latest]
 
     steps:
     # Configure git to handle long paths
@@ -45,7 +45,7 @@ jobs:
 
   # Verify that docs build
   test_docs:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.13']
@@ -70,7 +70,7 @@ jobs:
 
   # Verify that the sample project works
   test_sampleproject:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.13']

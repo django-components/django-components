@@ -379,52 +379,53 @@ class Header(Component):
         }
 ```
 
-### Static type hints
+### Input validation and static type hints
 
-Components API is fully typed, and supports [static type hints](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/).
+Avoid needless errors with [type hints and runtime input validation](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/).
 
-To opt-in to static type hints, define types for component's args, kwargs, slots, and more:
+To opt-in to input validation, define types for component's args, kwargs, slots, and more:
 
 ```py
-from typing import NotRequired, Tuple, TypedDict, SlotContent, Slot
+from typing import NamedTuple, Optional
+from django.template import Context
+from django_components import Component, Slot, SlotInput
 
-from django_components import Component
+class Button(Component):
+    class Args(NamedTuple):
+        size: int
+        text: str
 
-ButtonArgs = Tuple[int, str]
+    class Kwargs(NamedTuple):
+        variable: str
+        another: int
+        maybe_var: Optional[int] = None  # May be omitted
 
-class ButtonKwargs(TypedDict):
-    variable: str
-    another: int
-    maybe_var: NotRequired[int] # May be omitted
+    class Slots(NamedTuple):
+        my_slot: Optional[SlotInput] = None
+        another_slot: SlotInput
 
-class ButtonSlots(TypedDict):
-    # Use `Slot` for slot functions.
-    my_slot: NotRequired[Slot]
-    # Use `SlotContent` when you want to allow either `Slot` instance or plain string
-    another_slot: SlotContent
-
-ButtonType = Component[ButtonArgs, ButtonKwargs, ButtonSlots]
-
-class Button(ButtonType):
-    def get_context_data(self, *args, **kwargs):
-        self.input.args[0]  # int
-        self.input.kwargs["variable"]  # str
-        self.input.slots["my_slot"]  # Slot
+    def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+        args.size  # int
+        kwargs.variable  # str
+        slots.my_slot  # Slot[MySlotData]
 ```
 
-When you then call
+To have type hints when calling
 [`Button.render()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.Component.render) or
 [`Button.render_to_response()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.Component.render_to_response),
-you will get type hints:
+wrap the inputs in their respective `Args`, `Kwargs`, and `Slots` classes:
 
 ```py
 Button.render(
     # Error: First arg must be `int`, got `float`
-    args=(1.25, "abc"),
+    args=Button.Args(
+        size=1.25,
+        text="abc",
+    ),
     # Error: Key "another" is missing
-    kwargs={
-        "variable": "text",
-    },
+    kwargs=Button.Kwargs(
+        variable="text",
+    ),
 )
 ```
 

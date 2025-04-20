@@ -101,35 +101,30 @@ For live examples, see the [Community examples](../../overview/community.md#comm
     It's also a good idea to have a common prefix for your components, so they can be easily distinguished from users' components. In the example below, we use the prefix `my_` / `My`.
 
     ```djc_py
-    from typing import Dict, NotRequired, Optional, Tuple, TypedDict
-
-    from django_components import Component, SlotContent, register, types
+    from typing import NamedTuple, Optional
+    from django_components import Component, SlotInput, register, types
 
     from myapp.templatetags.mytags import comp_registry
-
-    # Define the types
-    class EmptyDict(TypedDict):
-        pass
-
-    type MyMenuArgs = Tuple[int, str]
-
-    class MyMenuSlots(TypedDict):
-        default: NotRequired[Optional[SlotContent[EmptyDict]]]
-
-    class MyMenuProps(TypedDict):
-        vertical: NotRequired[bool]
-        klass: NotRequired[str]
-        style: NotRequired[str]
 
     # Define the component
     # NOTE: Don't forget to set the `registry`!
     @register("my_menu", registry=comp_registry)
-    class MyMenu(Component[MyMenuArgs, MyMenuProps, MyMenuSlots]):
-        def get_context_data(
-            self,
-            *args,
-            attrs: Optional[Dict] = None,
-        ):
+    class MyMenu(Component):
+        # Define the types
+        class Args(NamedTuple):
+            size: int
+            text: str
+
+        class Kwargs(NamedTuple):
+            vertical: Optional[bool] = None
+            klass: Optional[str] = None
+            style: Optional[str] = None
+
+        class Slots(NamedTuple):
+            default: Optional[SlotInput] = None
+
+        def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+            attrs = ...
             return {
                 "attrs": attrs,
             }

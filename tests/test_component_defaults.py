@@ -32,7 +32,7 @@ class TestComponentDefaults:
                 # Check that args and slots are NOT affected by the defaults
                 assert self.input.args == [123]
                 assert [*self.input.slots.keys()] == ["my_slot"]
-                assert self.input.slots["my_slot"](Context(), None, None) == "MY_SLOT"
+                assert self.input.slots["my_slot"](Context(), None, None) == "MY_SLOT"  # type: ignore[arg-type]
 
                 assert self.input.kwargs == {
                     "variable": "test",  # User-given

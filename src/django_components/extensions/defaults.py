@@ -125,7 +125,10 @@ class ComponentDefaults(ComponentExtension.ExtensionClass):  # type: ignore[misc
 
     The fields of this class are used to set default values for the component's kwargs.
 
+    Read more about [Component defaults](../../concepts/fundamentals/component_defaults).
+
     **Example:**
+
     ```python
     from django_components import Component, Default
 
@@ -133,6 +136,7 @@ class ComponentDefaults(ComponentExtension.ExtensionClass):  # type: ignore[misc
         class Defaults:
             position = "left"
             selected_items = Default(lambda: [1, 2, 3])
+    ```
     """
 
     pass
