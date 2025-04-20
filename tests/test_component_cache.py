@@ -2,8 +2,10 @@ import time
 from typing import Any
 
 from django.core.cache import caches
+from django.template import Template
+from django.template.context import Context
 
-from django_components import Component
+from django_components import Component, register
 from django_components.testing import djc_test
 
 from .testutils import setup_test_config
@@ -207,3 +209,27 @@ class TestComponentCache:
         # The key should use the custom hash methods
         expected_key = "components:cache:TestComponent_28880f:custom-args-and-kwargs"
         assert component.cache.get_cache_key(1, 2, key="value") == expected_key
+
+    def test_cached_component_inside_include(self):
+
+        @register("test_component")
+        class TestComponent(Component):
+            template = "Hello"
+
+            class Cache:
+                enabled = True
+
+        template = Template("""
+            {% extends "test_cached_component_inside_include_base.html" %}
+            {% block content %}
+                THIS_IS_IN_ACTUAL_TEMPLATE_SO_SHOULD_NOT_BE_OVERRIDDEN
+            {% endblock %}
+        """)
+
+        result = template.render(Context({}))
+        assert "THIS_IS_IN_BASE_TEMPLATE_SO_SHOULD_BE_OVERRIDDEN" not in result
+        assert "THIS_IS_IN_ACTUAL_TEMPLATE_SO_SHOULD_NOT_BE_OVERRIDDEN" in result
+
+        result_cached = template.render(Context({}))
+        assert "THIS_IS_IN_BASE_TEMPLATE_SO_SHOULD_BE_OVERRIDDEN" not in result_cached
+        assert "THIS_IS_IN_ACTUAL_TEMPLATE_SO_SHOULD_NOT_BE_OVERRIDDEN" in result_cached

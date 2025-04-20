@@ -2201,6 +2201,8 @@ class Component(metaclass=ComponentMeta):
         # The component rendering was short-circuited by an extension, skipping
         # the rest of the rendering process. This may be for example a cached content.
         if result_override is not None:
+            # Cleanup needs to be done even if short-circuited
+            context.render_context.pop()
             return result_override
 
         # We pass down the components the info about the component's parent.

@@ -120,6 +120,10 @@
 
 ## v0.139.1
 
+#### Fix
+
+- Fix compatibility of component caching with `{% extend %}` block ([#1135](https://github.com/django-components/django-components/issues/1135))
+
 #### Refactor
 
 - Component ID is now prefixed with `c`, e.g. `c123456`.
