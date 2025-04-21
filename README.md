@@ -325,7 +325,7 @@ Read more about [HTML attributes](https://django-components.github.io/django-com
 
 - Components can be [exposed as Django Views](https://django-components.github.io/django-components/latest/concepts/fundamentals/component_views_urls/) with `get()`, `post()`, `put()`, `patch()`, `delete()` methods
 
-- Automatically create an endpoint for a component with [`Component.Url.public`](https://django-components.github.io/django-components/latest/concepts/fundamentals/component_views_urls/#register-urls-automatically)
+- Automatically create an endpoint for a component with [`Component.View.public`](https://django-components.github.io/django-components/latest/concepts/fundamentals/component_views_urls/#register-urls-automatically)
 
 ```py
 # components/calendar/calendar.py
@@ -333,12 +333,11 @@ Read more about [HTML attributes](https://django-components.github.io/django-com
 class Calendar(Component):
     template_file = "calendar.html"
 
-    # Register Component with `urlpatterns`
-    class Url:
+    class View:
+        # Register Component with `urlpatterns`
         public = True
 
-    # Define handlers
-    class View:
+        # Define handlers
         def get(self, request, *args, **kwargs):
             page = request.GET.get("page", 1)
             return self.component.render_to_response(

@@ -257,7 +257,7 @@ Next, you need to set the URL for the component.
 
 You can either:
 
-1. Automatically assign the URL by setting the [`Component.Url.public`](../../reference/api#django_components.ComponentUrl.public) attribute to `True`.
+1. Automatically assign the URL by setting the [`Component.View.public`](../../reference/api#django_components.ComponentView.public) attribute to `True`.
 
     In this case, use [`get_component_url()`](../../reference/api#django_components.get_component_url) to get the URL for the component view.
 
@@ -265,7 +265,7 @@ You can either:
     from django_components import Component, get_component_url
 
     class Calendar(Component):
-        class Url:
+        class View:
             public = True
 
     url = get_component_url(Calendar)

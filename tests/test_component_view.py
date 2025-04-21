@@ -1,16 +1,34 @@
 from typing import Any, Dict
 
+import pytest
 from django.conf import settings
-from django.http import HttpResponse
+from django.http import HttpRequest, HttpResponse
 from django.template import Context, Template
 from django.test import Client, SimpleTestCase
 from django.urls import path
 
-from django_components import Component, ComponentView, register, types
+from django_components import Component, ComponentView, get_component_url, register, types
 from django_components.urls import urlpatterns as dc_urlpatterns
 
 from django_components.testing import djc_test
 from .testutils import setup_test_config
+
+# DO NOT REMOVE!
+#
+# This is intentionally defined before `setup_test_config()` in order to test that
+# the URL extension works even before the Django has been set up.
+#
+# Because if we define the component before `django.setup()`, then we store it in
+# event queue, and will register it when `AppConfig.ready()` is finally called.
+#
+# This test relies on the "url" extension calling `add_extension_urls()` from within
+# the `on_component_class_created()` hook.
+class ComponentBeforeReady(Component):
+    class View:
+        public = True
+
+    template = "Hello"
+
 
 setup_test_config({"autodiscover": False})
 
@@ -278,3 +296,73 @@ class TestComponentAsView(SimpleTestCase):
             b"<script>",
             response.content,
         )
+
+    def test_public_url(self):
+        did_call_get = False
+        did_call_post = False
+
+        class TestComponent(Component):
+            template = "Hello"
+
+            class View:
+                public = True
+
+                def get(self, request: HttpRequest, **kwargs: Any):
+                    nonlocal did_call_get
+                    did_call_get = True
+
+                    component: Component = self.component  # type: ignore[attr-defined]
+                    return component.render_to_response()
+
+                def post(self, request: HttpRequest, **kwargs: Any):
+                    nonlocal did_call_post
+                    did_call_post = True
+
+                    component: Component = self.component  # type: ignore[attr-defined]
+                    return component.render_to_response()
+
+        # Check if the URL is correctly generated
+        component_url = get_component_url(TestComponent)
+        assert component_url == f"/components/ext/view/components/{TestComponent.class_id}/"
+
+        client = Client()
+        response = client.get(component_url)
+        assert response.status_code == 200
+        assert response.content == b"Hello"
+        assert did_call_get
+
+        response = client.post(component_url)
+        assert response.status_code == 200
+        assert response.content == b"Hello"
+        assert did_call_get
+
+    def test_non_public_url(self):
+        did_call_get = False
+
+        class TestComponent(Component):
+            template = "Hi"
+
+            class View:
+                public = False
+
+                def get(self, request: HttpRequest, **attrs: Any):
+                    nonlocal did_call_get
+                    did_call_get = True
+
+                    component: Component = self.component  # type: ignore[attr-defined]
+                    return component.render_to_response()
+
+        # Attempt to get the URL should raise RuntimeError
+        with pytest.raises(
+            RuntimeError,
+            match="Component URL is not available - Component is not public",
+        ):
+            get_component_url(TestComponent)
+
+        # Even calling the URL directly should raise an error
+        component_url = f"/components/ext/view/components/{TestComponent.class_id}/"
+
+        client = Client()
+        response = client.get(component_url)
+        assert response.status_code == 404
+        assert not did_call_get

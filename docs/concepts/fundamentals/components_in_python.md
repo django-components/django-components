@@ -47,7 +47,7 @@ Component.render(
     context: Mapping | django.template.Context | None = None,
     args: List[Any] | None = None,
     kwargs: Dict[str, Any] | None = None,
-    slots: Dict[str, str | SafeString | SlotContent] | None = None,
+    slots: Dict[str, str | SafeString | SlotInput] | None = None,
     escape_slots_content: bool = True
 ) -> str:
 ```

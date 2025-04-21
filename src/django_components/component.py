@@ -61,7 +61,6 @@ from django_components.extension import (
 )
 from django_components.extensions.cache import ComponentCache
 from django_components.extensions.defaults import ComponentDefaults
-from django_components.extensions.url import ComponentUrl
 from django_components.extensions.view import ComponentView, ViewFn
 from django_components.node import BaseNode
 from django_components.perfutil.component import ComponentRenderer, component_context_cache, component_post_render
@@ -1538,8 +1537,6 @@ class Component(metaclass=ComponentMeta):
     """
     Instance of [`ComponentView`](../api#django_components.ComponentView) available at component render time.
     """
-    Url: Type[ComponentUrl]
-    url: ComponentUrl
 
     # #####################################
     # MISC

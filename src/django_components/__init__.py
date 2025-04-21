@@ -48,8 +48,7 @@ from django_components.extension import (
 )
 from django_components.extensions.cache import ComponentCache
 from django_components.extensions.defaults import ComponentDefaults, Default
-from django_components.extensions.view import ComponentView
-from django_components.extensions.url import ComponentUrl, get_component_url
+from django_components.extensions.view import ComponentView, get_component_url
 from django_components.library import TagProtectedError
 from django_components.node import BaseNode, template_tag
 from django_components.slots import Slot, SlotContent, SlotFunc, SlotInput, SlotRef, SlotResult
@@ -96,7 +95,6 @@ __all__ = [
     "ComponentRegistry",
     "ComponentVars",
     "ComponentView",
-    "ComponentUrl",
     "ComponentsSettings",
     "component_formatter",
     "component_shorthand_formatter",

@@ -13,7 +13,7 @@ django-components has a suite of features that help you write and manage views a
   
 - Use [`Component.as_view()`](../../../reference/api#django_components.Component.as_view) to be able to use your Components  with Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.1/topics/http/urls/). This works the same way as [`View.as_view()`](https://docs.djangoproject.com/en/5.1/ref/class-based-views/base/#django.views.generic.base.View.as_view).
 
-- To avoid having to manually define the endpoints for each component, you can set the component to be "public" with [`Component.Url.public = True`](../../../reference/api#django_components.ComponentUrl.public). This will automatically create a URL for the component. To retrieve the component URL, use [`get_component_url()`](../../../reference/api#django_components.get_component_url).
+- To avoid having to manually define the endpoints for each component, you can set the component to be "public" with [`Component.View.public = True`](../../../reference/api#django_components.ComponentView.public). This will automatically create a URL for the component. To retrieve the component URL, use [`get_component_url()`](../../../reference/api#django_components.get_component_url).
 
 - In addition, [`Component`](../../../reference/api#django_components.Component) has a [`render_to_response()`](../../../reference/api#django_components.Component.render_to_response) method that renders the component template based on the provided input and returns an `HttpResponse` object.
 
@@ -126,14 +126,13 @@ instance as one of the arguments.
 
 ## Register URLs automatically
 
-If you don't care about the exact URL of the component, you can let django-components manage the URLs for you by setting the [`Component.Url.public`](../../../reference/api#django_components.ComponentUrl.public) attribute to `True`:
+If you don't care about the exact URL of the component, you can let django-components manage the URLs for you by setting the [`Component.View.public`](../../../reference/api#django_components.ComponentView.public) attribute to `True`:
 
 ```py
 class MyComponent(Component):
-    class Url:
+    class View:
         public = True
 
-    class View:
         def get(self, request):
             return self.component.render_to_response(request=request)
     ...

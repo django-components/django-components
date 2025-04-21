@@ -95,6 +95,35 @@
     ) -> HttpResponse:
     ```
 
+- The `Component.Url` class was merged with `Component.View`.
+
+    Instead of `Component.Url.public`, use `Component.View.public`.
+
+    If you imported `ComponentUrl` from `django_components`, you need to update your import to `ComponentView`.
+
+    Before:
+
+    ```py
+    class MyComponent(Component):
+        class Url:
+            public = True
+
+        class View:
+            def get(self, request):
+                return self.render_to_response()
+    ```
+
+    After:
+
+    ```py
+    class MyComponent(Component):
+        class View:
+            public = True
+
+            def get(self, request):
+                return self.render_to_response()
+    ```
+
 #### 🚨📢 Deprecation
 
 - `get_context_data()` is now deprecated. Use `get_template_data()` instead.

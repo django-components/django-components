@@ -47,10 +47,6 @@
     options:
       show_if_no_docstring: true
 
-::: django_components.ComponentUrl
-    options:
-      show_if_no_docstring: true
-
 ::: django_components.ComponentVars
     options:
       show_if_no_docstring: true
