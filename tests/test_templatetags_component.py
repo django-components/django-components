@@ -57,7 +57,7 @@ class TestComponentTemplateTag:
 
         simple_tag_template: types.django_html = """
             {% load component_tags %}
-            {% component name="test" variable="variable" %}{% endcomponent %}
+            {% component "test" variable="variable" %}{% endcomponent %}
         """
 
         template = Template(simple_tag_template)
@@ -70,7 +70,7 @@ class TestComponentTemplateTag:
 
         simple_tag_template: types.django_html = """
             {% load component_tags %}
-            {% component name="test" variable="variable" /%}
+            {% component "test" variable="variable" /%}
         """
 
         template = Template(simple_tag_template)
@@ -83,7 +83,7 @@ class TestComponentTemplateTag:
 
         simple_tag_template: types.django_html = """
             {% load component_tags %}
-            {% component name="test" variable="variable" %}{% endcomponent %}
+            {% component "test" variable="variable" %}{% endcomponent %}
         """
 
         template = Template(simple_tag_template)
@@ -126,7 +126,7 @@ class TestComponentTemplateTag:
 
         simple_tag_template: types.django_html = """
             {% load component_tags %}
-            {% component name="test" variable="variable" variable2="hej" %}{% endcomponent %}
+            {% component "test" variable="variable" variable2="hej" %}{% endcomponent %}
         """
 
         template = Template(simple_tag_template)

@@ -76,13 +76,13 @@ class TestContext:
             {% load component_tags %}
             <div>
                 <h1>Parent content</h1>
-                {% component name="variable_display" shadowing_variable='override' new_variable='unique_val' %}
+                {% component "variable_display" shadowing_variable='override' new_variable='unique_val' %}
                 {% endcomponent %}
             </div>
             <div>
                 {% slot 'content' %}
                     <h2>Slot content</h2>
-                    {% component name="variable_display" shadowing_variable='slot_default_override' new_variable='slot_default_unique' %}
+                    {% component "variable_display" shadowing_variable='slot_default_override' new_variable='slot_default_unique' %}
                     {% endcomponent %}
                 {% endslot %}
             </div>
@@ -118,7 +118,7 @@ class TestContext:
 
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component name='parent_component' %}{% endcomponent %}
+            {% component 'parent_component' %}{% endcomponent %}
         """
         template = Template(template_str)
         rendered = template.render(Context())
@@ -138,7 +138,7 @@ class TestContext:
             {% load component_tags %}
             {% component 'parent_component' %}
                 {% fill 'content' %}
-                    {% component name='variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
+                    {% component 'variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
                     {% endcomponent %}
                 {% endfill %}
             {% endcomponent %}
@@ -159,7 +159,7 @@ class TestContext:
             {% load component_tags %}
             {% component 'parent_component' %}
                 {% fill 'content' %}
-                    {% component name='variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
+                    {% component 'variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
                     {% endcomponent %}
                 {% endfill %}
             {% endcomponent %}
@@ -179,7 +179,7 @@ class TestContext:
 
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component name='parent_component' %}{% endcomponent %}
+            {% component 'parent_component' %}{% endcomponent %}
         """
         template = Template(template_str)
         rendered = template.render(Context({"shadowing_variable": "NOT SHADOWED"}))
@@ -199,7 +199,7 @@ class TestContext:
             {% load component_tags %}
             {% component 'parent_component' %}
                 {% fill 'content' %}
-                    {% component name='variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
+                    {% component 'variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
                     {% endcomponent %}
                 {% endfill %}
             {% endcomponent %}
@@ -219,13 +219,13 @@ class TestParentArgs:
             {% load component_tags %}
             <div>
                 <h1>Parent content</h1>
-                {% component name="variable_display" shadowing_variable=inner_parent_value new_variable='unique_val' %}
+                {% component "variable_display" shadowing_variable=inner_parent_value new_variable='unique_val' %}
                 {% endcomponent %}
             </div>
             <div>
                 {% slot 'content' %}
                     <h2>Slot content</h2>
-                    {% component name="variable_display" shadowing_variable='slot_default_override' new_variable=inner_parent_value %}
+                    {% component "variable_display" shadowing_variable='slot_default_override' new_variable=inner_parent_value %}
                     {% endcomponent %}
                 {% endslot %}
             </div>
@@ -300,7 +300,7 @@ class TestParentArgs:
             {% load component_tags %}
             {% component 'parent_with_args' parent_value='passed_in' %}
                 {% fill 'content' %}
-                    {% component name='variable_display' shadowing_variable='value_from_slot' new_variable=inner_parent_value %}
+                    {% component 'variable_display' shadowing_variable='value_from_slot' new_variable=inner_parent_value %}
                     {% endcomponent %}
                 {% endfill %}
             {% endcomponent %}
@@ -331,7 +331,7 @@ class TestContextCalledOnce:
         registry.register(name="incrementer", component=IncrementerComponent)
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component name='incrementer' %}{% endcomponent %}
+            {% component 'incrementer' %}{% endcomponent %}
         """
         template = Template(template_str)
         rendered = template.render(Context()).strip().replace("\n", "")
@@ -345,7 +345,7 @@ class TestContextCalledOnce:
         registry.register(name="incrementer", component=IncrementerComponent)
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component name='incrementer' value='2' %}{% endcomponent %}
+            {% component 'incrementer' value='2' %}{% endcomponent %}
         """
         template = Template(template_str)
         rendered = template.render(Context()).strip()

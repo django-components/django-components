@@ -2104,8 +2104,8 @@ class Component(metaclass=ComponentMeta):
             {% component "button" arg1 arg2 ... %}
             ```
 
-        - `kwargs` - Optional. A dictionary of keyword arguments for the component. This is the same as calling the component
-          as:
+        - `kwargs` - Optional. A dictionary of keyword arguments for the component. This is the same as calling
+          the component as:
 
             ```django
             {% component "button" key1=val1 key2=val2 ... %}
@@ -2123,7 +2123,7 @@ class Component(metaclass=ComponentMeta):
             ```
 
             Dictionary keys are the slot names. Dictionary values are the slot fills.
-             
+
             Slot fills can be strings, render functions, or [`Slot`](../api/#django_components.Slot) instances:
 
             ```python
@@ -2193,7 +2193,7 @@ class Component(metaclass=ComponentMeta):
             Options:
 
             - `"document"` (default) - Use this if you are rendering a whole page, or if no other option suits better.
-                
+
                 If it is possible to insert JS and/or CSS into the rendered HTML, then:
 
                 - JS and CSS from [`Component.js`](../api/#django_components.Component.js)
@@ -2284,7 +2284,7 @@ class Component(metaclass=ComponentMeta):
             ),
         )
         ```
-        """
+        """  # noqa: 501
         # This method may be called as class method or as instance method.
         # If called as class method, create a new instance.
         if isinstance(cls, Component):

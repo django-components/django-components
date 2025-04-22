@@ -242,7 +242,6 @@ class ComponentFormatter(TagFormatterABC):
             comp_name = None
         else:
             comp_name = args.pop(0)
-            final_args = args
 
         if not comp_name:
             raise TemplateSyntaxError("Component name must be a non-empty quoted string, e.g. 'my_comp'")
@@ -253,7 +252,7 @@ class ComponentFormatter(TagFormatterABC):
         # Remove the quotes
         comp_name = comp_name[1:-1]
 
-        return TagResult(comp_name, final_args)
+        return TagResult(comp_name, args)
 
 
 class ShorthandComponentFormatter(TagFormatterABC):

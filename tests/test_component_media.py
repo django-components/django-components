@@ -859,13 +859,13 @@ class TestMediaRelativePath:
             {% load component_tags %}
             <div>
                 <h1>Parent content</h1>
-                {% component name="variable_display" shadowing_variable='override' new_variable='unique_val' %}
+                {% component "variable_display" shadowing_variable='override' new_variable='unique_val' %}
                 {% endcomponent %}
             </div>
             <div>
                 {% slot 'content' %}
                     <h2>Slot content</h2>
-                    {% component name="variable_display" shadowing_variable='slot_default_override' new_variable='slot_default_unique' %}
+                    {% component "variable_display" shadowing_variable='slot_default_override' new_variable='slot_default_unique' %}
                     {% endcomponent %}
                 {% endslot %}
             </div>
@@ -922,7 +922,7 @@ class TestMediaRelativePath:
             {% load component_tags %}
             {% component_js_dependencies %}
             {% component_css_dependencies %}
-            {% component name='relative_file_component' variable=variable / %}
+            {% component 'relative_file_component' variable=variable / %}
         """
         template = Template(template_str)
         rendered = render_dependencies(template.render(Context({"variable": "test"})))
@@ -969,7 +969,7 @@ class TestMediaRelativePath:
             {% component_css_dependencies %}
             {% component 'parent_component' %}
                 {% fill 'content' %}
-                    {% component name='relative_file_component' variable='hello' %}
+                    {% component 'relative_file_component' variable='hello' %}
                     {% endcomponent %}
                 {% endfill %}
             {% endcomponent %}
