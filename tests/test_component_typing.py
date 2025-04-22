@@ -613,3 +613,28 @@ class TestComponentTyping:
         Button.render(
             kwargs=Button.Kwargs(arg1="arg1", arg2="arg2"),
         )
+
+    def test_subclass_overrides_parent_type(self):
+        class Button(Component):
+            template = "Hello"
+
+            class Args(NamedTuple):
+                size: int
+
+            class Kwargs(NamedTuple):
+                color: str
+
+        class ButtonExtra(Button):
+            class Args(NamedTuple):
+                name: str
+                size: int
+
+            def get_template_data(self, args: Args, kwargs: "ButtonExtra.Kwargs", slots, context):
+                assert isinstance(args, ButtonExtra.Args)
+                assert isinstance(kwargs, ButtonExtra.Kwargs)
+                assert ButtonExtra.Kwargs is Button.Kwargs
+
+        ButtonExtra.render(
+            args=ButtonExtra.Args(name="John", size=30),
+            kwargs=ButtonExtra.Kwargs(color="red"),
+        )

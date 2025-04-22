@@ -197,7 +197,7 @@ class ComponentMediaInput(Protocol):
     - If `False`, the component does not inherit the media files from the parent component.
     - If a list of components classes, the component inherits the media files ONLY from these specified components.
 
-    Read more in [Controlling Media Inheritance](../concepts/fundamentals/defining_js_css_html_files.md#controlling-media-inheritance) section.
+    Read more in [Media inheritance](../../concepts/fundamentals/secondary_js_css_files/#media-inheritance) section.
 
     **Example:**
 

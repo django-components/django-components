@@ -96,7 +96,7 @@ class Button(Component):
     class Kwargs(NamedTuple):
         surname: str
         age: int
-        maybe_var: Optional[int] = None  # May be ommited
+        maybe_var: Optional[int] = None  # May be omitted
 
     class Slots(NamedTuple):
         # Use `SlotInput` to allow slots to be given as `Slot` instance,
@@ -128,7 +128,7 @@ Button.render(
         age=30,
     ),
     slots=Button.Slots(
-        footer=Button.Slot(lambda ctx, slot_data, slot_ref: slot_data.value + 1),
+        footer=Slot(lambda *a, **kwa: "Click me!"),
     ),
 )
 ```
@@ -445,6 +445,75 @@ class Button(Component):
     Args = Empty
     Kwargs = Empty
     Slots = Empty
+```
+
+## Subclassing
+
+Subclassing components with types is simple.
+
+Since each type class is a separate class attribute, you can just override them in the Component subclass.
+
+In the example below, `ButtonExtra` inherits `Kwargs` from `Button`, but overrides the `Args` class.
+
+```py
+from django_components import Component, Empty
+
+class Button(Component):
+    class Args(NamedTuple):
+        size: int
+
+    class Kwargs(NamedTuple):
+        color: str
+
+class ButtonExtra(Button):
+    class Args(NamedTuple):
+        name: str
+        size: int
+
+# Stil works the same way!
+ButtonExtra.render(
+    args=ButtonExtra.Args(name="John", size=30),
+    kwargs=ButtonExtra.Kwargs(color="red"),
+)
+```
+
+The only difference is when it comes to type hints to the data methods like
+[`get_template_data()`](../../../reference/api#django_components.Component.get_template_data).
+
+When you define the nested classes like `Args` and `Kwargs` directly on the class, you
+can reference them just by their class name (`Args` and `Kwargs`).
+
+But when you have a Component subclass, and it uses `Args` or `Kwargs` from the parent,
+you will have to reference the type as a [forward reference](https://peps.python.org/pep-0563/#forward-references), including the full name of the component
+(`Button.Args` and `Button.Kwargs`).
+
+Compare the following:
+
+```py
+class Button(Component):
+    class Args(NamedTuple):
+        size: int
+
+    class Kwargs(NamedTuple):
+        color: str
+
+    # Both `Args` and `Kwargs` are defined on the class
+    def get_template_data(self, args: Args, kwargs: Kwargs, slots, context):
+        pass
+
+class ButtonExtra(Button):
+    class Args(NamedTuple):
+        name: str
+        size: int
+
+    # `Args` is defined on the subclass, `Kwargs` is defined on the parent
+    def get_template_data(self, args: Args, kwargs: "ButtonExtra.Kwargs", slots, context):
+        pass
+
+class ButtonSame(Button):
+    # Both `Args` and `Kwargs` are defined on the parent
+    def get_template_data(self, args: "ButtonSame.Args", kwargs: "ButtonSame.Kwargs", slots, context):
+        pass
 ```
 
 ## Runtime type validation

@@ -6,9 +6,9 @@ nav:
   - Lifecycle hooks: hooks.md
   - Registering components: component_registry.md
   - Component caching: component_caching.md
-  - Typing and validation: typing_and_validation.md
+  - Component context and scope: component_context_scope.md
   - Custom template tags: template_tags.md
-  - Tag formatters: tag_formatter.md
+  - Tag formatters: tag_formatters.md
   - Extensions: extensions.md
   - Testing: testing.md
-  - Authoring component libraries: authoring_component_libraries.md
+  - Component libraries: component_libraries.md

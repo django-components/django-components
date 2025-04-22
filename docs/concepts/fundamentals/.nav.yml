@@ -1,15 +1,17 @@
 # `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
 nav:
   - Single-file components: single_file_components.md
-  - Components in Python: components_in_python.md
-  - Render API: render_api.md
+  - HTML / JS / CSS files: html_js_css_files.md
+  - HTML / JS / CSS variables: html_js_css_variables.md
+  - Secondary JS / CSS files: secondary_js_css_files.md
   - Component defaults: component_defaults.md
-  - Component context and scope: component_context_scope.md
+  - Render API: render_api.md
+  - Rendering components: rendering_components.md
   - Template tag syntax: template_tag_syntax.md
   - Slots: slots.md
   - HTML attributes: html_attributes.md
-  - Defining HTML / JS / CSS files: defining_js_css_html_files.md
-  - Autodiscovery: autodiscovery.md
   - Component views and URLs: component_views_urls.md
   - HTTP Request: http_request.md
+  - Typing and validation: typing_and_validation.md
   - Subclassing components: subclassing_components.md
+  - Autodiscovery: autodiscovery.md

@@ -53,13 +53,20 @@
         Kwargs = Empty
     ```
 
-- The order of arguments in `Component.render_to_response()` has changed
+- Arguments in `Component.render_to_response()` have changed
   to match that of `Component.render()`.
 
     Please ensure that you pass the parameters as kwargs, not as positional arguments,
     to avoid breaking changes.
 
     The signature changed, moving the `args` and `kwargs` parameters to 2nd and 3rd position.
+
+    Next, the `render_dependencies` parameter was added to match `Component.render()`.
+
+    Lastly:
+    
+    - Previously, any extra ARGS and KWARGS were passed to the `response_class`.
+    - Now, only extra KWARGS will be passed to the `response_class`.
 
     Before:
 
@@ -90,7 +97,6 @@
         type: RenderType = "document",
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
-        *response_args: Any,
         **response_kwargs: Any,
     ) -> HttpResponse:
     ```
@@ -122,6 +128,29 @@
 
             def get(self, request):
                 return self.render_to_response()
+    ```
+
+- Component name in the `{% component %}` tag can no longer be set as a kwarg.
+
+    Instead, the component name MUST be the first POSITIONAL argument only.
+
+    Before, it was possible to set the component name as a kwarg
+    and put it anywhere in the `{% component %}` tag:
+
+    ```django
+    {% component rows=rows headers=headers name="my_table" ... / %}
+    ```
+
+    Now, the component name MUST be the first POSITIONAL argument:
+
+    ```django
+    {% component "my_table" rows=rows headers=headers ... / %}
+    ```
+
+    Thus, the `name` kwarg can now be used as a regular input.
+
+    ```django
+    {% component "profile" name="John" job="Developer" / %}
     ```
 
 #### 🚨📢 Deprecation

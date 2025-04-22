@@ -237,24 +237,9 @@ class ComponentFormatter(TagFormatterABC):
         if not args:
             raise TemplateSyntaxError(f"{self.__class__.__name__}: Component tag did not receive tag name")
 
-        # If the first arg is a kwarg, not a positional arg, then look for the "name" kwarg
-        # for component name.
+        # If the first arg is a kwarg, then clearly the component name is not set.
         if "=" in args[0]:
             comp_name = None
-            final_args = []
-            for kwarg in args:
-                if not kwarg.startswith("name="):
-                    final_args.append(kwarg)
-                    continue
-
-                if comp_name:
-                    raise TemplateSyntaxError(
-                        f"ComponentFormatter: 'name' kwarg for component '{comp_name}'" " was defined more than once."
-                    )
-
-                # NOTE: We intentionally do NOT add to `final_args` here
-                # because we want to remove the the `name=` kwarg from args list
-                comp_name = kwarg[5:]
         else:
             comp_name = args.pop(0)
             final_args = args

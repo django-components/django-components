@@ -11,7 +11,6 @@ from typing import (
     Dict,
     Generator,
     List,
-    Literal,
     Mapping,
     NamedTuple,
     Optional,
@@ -582,6 +581,8 @@ class Component(metaclass=ComponentMeta):
 
         This method has access to the [Render API](../../concepts/fundamentals/render_api).
 
+        Read more about [Template variables](../../concepts/fundamentals/html_js_css_variables).
+
         **Example:**
 
         ```py
@@ -601,6 +602,8 @@ class Component(metaclass=ComponentMeta):
 
             `get_context_data()` and [`get_template_data()`](../api#django_components.Component.get_template_data)
             are mutually exclusive.
+
+            If both methods return non-empty dictionaries, an error will be raised.
         """
         return None
 
@@ -609,6 +612,8 @@ class Component(metaclass=ComponentMeta):
         Use this method to define variables that will be available in the template.
 
         This method has access to the [Render API](../../concepts/fundamentals/render_api).
+
+        Read more about [Template variables](../../concepts/fundamentals/html_js_css_variables).
 
         **Example:**
 
@@ -730,6 +735,8 @@ class Component(metaclass=ComponentMeta):
 
             `get_template_data()` and [`get_context_data()`](../api#django_components.Component.get_context_data)
             are mutually exclusive.
+
+            If both methods return non-empty dictionaries, an error will be raised.
         """
         return None
 
@@ -872,6 +879,8 @@ class Component(metaclass=ComponentMeta):
         This method has access to the [Render API](../../concepts/fundamentals/render_api).
 
         The data returned from this method will be serialized to JSON.
+
+        Read more about [JavaScript variables](../../concepts/fundamentals/html_js_css_variables).
 
         **Example:**
 
@@ -1143,6 +1152,8 @@ class Component(metaclass=ComponentMeta):
 
         The data returned from this method will be serialized to string.
 
+        Read more about [CSS variables](../../concepts/fundamentals/html_js_css_variables).
+
         **Example:**
 
         ```py
@@ -1150,7 +1161,6 @@ class Component(metaclass=ComponentMeta):
             def get_css_data(self, args, kwargs, slots, context):
                 return {
                     "color": kwargs["color"],
-                    "id": self.id,
                 }
 
             css = '''
@@ -1226,7 +1236,6 @@ class Component(metaclass=ComponentMeta):
                 return {
                     "color": args.color,
                     "size": kwargs.size,
-                    "id": self.id,
                 }
         ```
 
@@ -1405,7 +1414,7 @@ class Component(metaclass=ComponentMeta):
         resolution and rendering with `media_class.render_js()` or `media_class.render_css()`.
     - You can set [`extend`](../api#django_components.ComponentMediaInput.extend) to configure
       whether to inherit JS / CSS from parent components. See
-      [Controlling Media Inheritance](../../concepts/fundamentals/defining_js_css_html_files/#controlling-media-inheritance).
+      [Media inheritance](../../concepts/fundamentals/secondary_js_css_files/#media-inheritance).
 
     However, there's a few differences from Django's Media class:
 
@@ -1435,7 +1444,31 @@ class Component(metaclass=ComponentMeta):
     """  # noqa: E501
 
     response_class = HttpResponse
-    """This allows to configure what class is used to generate response from `render_to_response`"""
+    """
+    This attribute configures what class is used to generate response from
+    [`Component.render_to_response()`](../api/#django_components.Component.render_to_response).
+
+    The response class should accept a string as the first argument.
+
+    Defaults to
+    [`django.http.HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#httpresponse-objects).
+
+    **Example:**
+
+    ```py
+    from django.http import HttpResponse
+    from django_components import Component
+
+    class MyHttpResponse(HttpResponse):
+        ...
+
+    class MyComponent(Component):
+        response_class = MyHttpResponse
+
+    response = MyComponent.render_to_response()
+    assert isinstance(response, MyHttpResponse)
+    ```
+    """
 
     # #####################################
     # PUBLIC API - HOOKS (Configurable by users)
@@ -1580,8 +1613,6 @@ class Component(metaclass=ComponentMeta):
         self.outer_context: Optional[Context] = outer_context
         self.registry = registry or registry_
         self._metadata_stack: Deque[MetadataItem] = deque()
-        # None == uninitialized, False == No types, Tuple == types
-        self._types: Optional[Union[Tuple[Any, Any, Any, Any, Any, Any], Literal[False]]] = None
 
         extensions._init_component_instance(self)
 
@@ -1769,13 +1800,18 @@ class Component(metaclass=ComponentMeta):
         return this data from
         [`get_context_data()`](../api#django_components.Component.get_context_data).
 
-        In regular Django templates, you need to use `RequestContext` to apply context processors.
+        In regular Django templates, you need to use
+        [`RequestContext`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.RequestContext)
+        to apply context processors.
 
         In Components, the context processors are applied to components either when:
 
-        - The component is rendered with `RequestContext` (Regular Django behavior)
-        - The component is rendered with a regular `Context` (or none), but the `request` kwarg
-          of [`Component.render()`](../api#django_components.Component.render) is set.
+        - The component is rendered with
+            [`RequestContext`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.RequestContext)
+            (Regular Django behavior)
+        - The component is rendered with a regular
+            [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context) (or none),
+            but the `request` kwarg of [`Component.render()`](../api#django_components.Component.render) is set.
         - The component is nested in another component that matches any of these conditions.
 
         See
@@ -1786,7 +1822,7 @@ class Component(metaclass=ComponentMeta):
 
         Raises `RuntimeError` if accessed outside of rendering execution.
 
-        NOTE: This object is generated dynamically, so changes to it are not persisted.
+        NOTE: This dictionary is generated dynamically, so any changes to it will not be persisted.
 
         **Example:**
 
@@ -1873,25 +1909,26 @@ class Component(metaclass=ComponentMeta):
 
     def inject(self, key: str, default: Optional[Any] = None) -> Any:
         """
-        Use this method to retrieve the data that was passed to a `{% provide %}` tag
+        Use this method to retrieve the data that was passed to a [`{% provide %}`](../template_tags#provide) tag
         with the corresponding key.
 
         To retrieve the data, `inject()` must be called inside a component that's
-        inside the `{% provide %}` tag.
+        inside the [`{% provide %}`](../template_tags#provide) tag.
 
-        You may also pass a default that will be used if the `provide` tag with given
-        key was NOT found.
+        You may also pass a default that will be used if the [`{% provide %}`](../template_tags#provide) tag
+        with given key was NOT found.
 
-        This method mut be used inside the `get_context_data()` method and raises
-        an error if called elsewhere.
+        This method is part of the [Render API](../../concepts/fundamentals/render_api), and
+        raises an error if called from outside the rendering execution.
 
-        Example:
+        Read more about [Provide / Inject](../../concepts/advanced/provide_inject).
+
+        **Example:**
 
         Given this template:
         ```django
-        {% provide "provider" hello="world" %}
-            {% component "my_comp" %}
-            {% endcomponent %}
+        {% provide "my_provide" message="hello" %}
+            {% component "my_comp" / %}
         {% endprovide %}
         ```
 
@@ -1901,18 +1938,20 @@ class Component(metaclass=ComponentMeta):
 
         @register("my_comp")
         class MyComp(Component):
-            template = "hi {{ data.hello }}!"
-            def get_context_data(self):
-                data = self.inject("provider")
-                return {"data": data}
+            template = "hi {{ message }}!"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                data = self.inject("my_provide")
+                message = data.message
+                return {"message": message}
         ```
 
         This renders into:
         ```
-        hi world!
+        hi hello!
         ```
 
-        As the `{{ data.hello }}` is taken from the "provider".
+        As the `{{ message }}` is taken from the "my_provide" provider.
         """
         if not len(self._metadata_stack):
             raise RuntimeError(
@@ -1960,60 +1999,59 @@ class Component(metaclass=ComponentMeta):
         slots: Optional[Any] = None,
         escape_slots_content: bool = True,
         type: RenderType = "document",
+        render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
-        *response_args: Any,
         **response_kwargs: Any,
     ) -> HttpResponse:
         """
-        Render the component and wrap the content in the response class.
+        Render the component and wrap the content in an HTTP response class.
 
-        The response class is taken from `Component.response_class`. Defaults to `django.http.HttpResponse`.
+        `render_to_response()` takes the same inputs as
+        [`Component.render()`](../api/#django_components.Component.render).
+        See that method for more information.
 
-        This is the interface for the `django.views.View` class which allows us to
-        use components as Django views with `component.as_view()`.
+        After the component is rendered, the HTTP response class is instantiated with the rendered content.
 
-        Inputs:
+        Any additional kwargs are passed to the response class.
 
-        - `args` - Positional args for the component. This is the same as calling the component
-          as `{% component "my_comp" arg1 arg2 ... %}`
-        - `kwargs` - Kwargs for the component. This is the same as calling the component
-          as `{% component "my_comp" key1=val1 key2=val2 ... %}`
-        - `slots` - Component slot fills. This is the same as pasing `{% fill %}` tags to the component.
-            Accepts a dictionary of `{ slot_name: slot_content }` where `slot_content` can be a string
-            or render function.
-        - `escape_slots_content` - Whether the content from `slots` should be escaped.
-        - `context` - A context (dictionary or Django's Context) within which the component
-          is rendered. The keys on the context can be accessed from within the template.
-            - NOTE: In "isolated" mode, context is NOT accessible, and data MUST be passed via
-              component's args and kwargs.
-        - `type` - Configure how to handle JS and CSS dependencies.
-            - `"document"` (default) - JS dependencies are inserted into `{% component_js_dependencies %}`,
-              or to the end of the `<body>` tag. CSS dependencies are inserted into
-              `{% component_css_dependencies %}`, or the end of the `<head>` tag.
-            - `"fragment"` - `{% component_js_dependencies %}` and `{% component_css_dependencies %}`,
-              are ignored, and a script that loads the JS and CSS dependencies is appended to the HTML.
-        - `request` - The request object. This is only required when needing to use RequestContext,
-                      e.g. to enable template `context_processors`.
+        **Example:**
 
-        Any additional args and kwargs are passed to the `response_class`.
-
-        Example:
-        ```py
-        MyComponent.render_to_response(
-            args=[1, "two", {}],
+        ```python
+        Button.render_to_response(
+            args=["John"],
             kwargs={
-                "key": 123,
+                "surname": "Doe",
+                "age": 30,
             },
             slots={
-                "header": 'STATIC TEXT HERE',
-                "footer": lambda ctx, slot_kwargs, slot_ref: f'CTX: {ctx['hello']} SLOT_DATA: {slot_kwargs['abc']}',
+                "footer": "i AM A SLOT",
             },
-            escape_slots_content=False,
-            # HttpResponse input
+            # HttpResponse kwargs
             status=201,
             headers={...},
         )
         # HttpResponse(content=..., status=201, headers=...)
+        ```
+
+        **Custom response class:**
+
+        You can set a custom response class on the component via
+        [`Component.response_class`](../api/#django_components.Component.response_class).
+        Defaults to
+        [`django.http.HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#httpresponse-objects).
+
+        ```python
+        from django.http import HttpResponse
+        from django_components import Component
+
+        class MyHttpResponse(HttpResponse):
+            ...
+
+        class MyComponent(Component):
+            response_class = MyHttpResponse
+
+        response = MyComponent.render_to_response()
+        assert isinstance(response, MyHttpResponse)
         ```
         """
         content = cls.render(
@@ -2023,10 +2061,10 @@ class Component(metaclass=ComponentMeta):
             slots=slots,
             escape_slots_content=escape_slots_content,
             type=type,
-            render_dependencies=True,
+            render_dependencies=render_dependencies,
             request=request,
         )
-        return cls.response_class(content, *response_args, **response_kwargs)
+        return cls.response_class(content, **response_kwargs)
 
     @classmethod
     def render(
@@ -2041,43 +2079,209 @@ class Component(metaclass=ComponentMeta):
         request: Optional[HttpRequest] = None,
     ) -> str:
         """
-        Render the component into a string.
+        Render the component into a string. This is the equivalent of calling
+        the [`{% component %}`](../template_tags#component) tag.
 
-        Inputs:
-
-        - `args` - Positional args for the component. This is the same as calling the component
-          as `{% component "my_comp" arg1 arg2 ... %}`
-        - `kwargs` - Kwargs for the component. This is the same as calling the component
-          as `{% component "my_comp" key1=val1 key2=val2 ... %}`
-        - `slots` - Component slot fills. This is the same as pasing `{% fill %}` tags to the component.
-            Accepts a dictionary of `{ slot_name: slot_content }` where `slot_content` can be a string
-            or render function.
-        - `escape_slots_content` - Whether the content from `slots` should be escaped.
-        - `context` - A context (dictionary or Django's Context) within which the component
-          is rendered. The keys on the context can be accessed from within the template.
-            - NOTE: In "isolated" mode, context is NOT accessible, and data MUST be passed via
-              component's args and kwargs.
-        - `type` - Configure how to handle JS and CSS dependencies.
-            - `"document"` (default) - JS dependencies are inserted into `{% component_js_dependencies %}`,
-              or to the end of the `<body>` tag. CSS dependencies are inserted into
-              `{% component_css_dependencies %}`, or the end of the `<head>` tag.
-            - `"fragment"` - `{% component_js_dependencies %}` and `{% component_css_dependencies %}`,
-              are ignored, and a script that loads the JS and CSS dependencies is appended to the HTML.
-        - `render_dependencies` - Set this to `False` if you want to insert the resulting HTML into another component.
-        - `request` - The request object. This is only required when needing to use RequestContext,
-                      e.g. to enable template `context_processors`.
-        Example:
-        ```py
-        MyComponent.render(
-            args=[1, "two", {}],
+        ```python
+        Button.render(
+            args=["John"],
             kwargs={
-                "key": 123,
+                "surname": "Doe",
+                "age": 30,
             },
             slots={
-                "header": 'STATIC TEXT HERE',
-                "footer": lambda ctx, slot_kwargs, slot_ref: f'CTX: {ctx['hello']} SLOT_DATA: {slot_kwargs['abc']}',
+                "footer": "i AM A SLOT",
             },
-            escape_slots_content=False,
+        )
+        ```
+
+        **Inputs:**
+
+        - `args` - Optional. A list of positional args for the component. This is the same as calling the component
+          as:
+
+            ```django
+            {% component "button" arg1 arg2 ... %}
+            ```
+
+        - `kwargs` - Optional. A dictionary of keyword arguments for the component. This is the same as calling the component
+          as:
+
+            ```django
+            {% component "button" key1=val1 key2=val2 ... %}
+            ```
+
+        - `slots` - Optional. A dictionary of slot fills. This is the same as passing [`{% fill %}`](../template_tags#fill)
+            tags to the component.
+
+            ```django
+            {% component "button" %}
+                {% fill "content" %}
+                    Click me!
+                {% endfill %}
+            {% endcomponent %}
+            ```
+
+            Dictionary keys are the slot names. Dictionary values are the slot fills.
+             
+            Slot fills can be strings, render functions, or [`Slot`](../api/#django_components.Slot) instances:
+
+            ```python
+            Button.render(
+                slots={
+                    "content": "Click me!"
+                    "content2": lambda *a, **kwa: "Click me!",
+                    "content3": Slot(lambda *a, **kwa: "Click me!"),
+                },
+            )
+            ```
+
+        - `context` - Optional. Plain dictionary or Django's
+            [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context).
+            The context within which the component is rendered.
+
+            When a component is rendered within a template with the [`{% component %}`](../template_tags#component)
+            tag, this will be set to the
+            [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
+            instance that is used for rendering the template.
+
+            When you call `Component.render()` directly from Python, you can ignore this input most of the time.
+            Instead use `args`, `kwargs`, and `slots` to pass data to the component.
+
+            You can pass
+            [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
+            to the `context` argument, so that the component will gain access to the request object and will use
+            [context processors](https://docs.djangoproject.com/en/5.1/ref/templates/api/#using-requestcontext).
+            Read more on [Working with HTTP requests](../../concepts/fundamentals/http_request).
+
+            ```py
+            Button.render(
+                context=RequestContext(request),
+            )
+            ```
+
+            For advanced use cases, you can use `context` argument to "pre-render" the component in Python, and then
+            pass the rendered output as plain string to the template. With this, the inner component is rendered as if
+            it was within the template with [`{% component %}`](../template_tags#component).
+
+            ```py
+            class Button(Component):
+                def render(self, context, template):
+                    # Pass `context` to Icon component so it is rendered
+                    # as if nested within Button.
+                    icon = Icon.render(
+                        context=context,
+                        args=["icon-name"],
+                        render_dependencies=False,
+                    )
+                    # Update context with icon
+                    with context.update({"icon": icon}):
+                        return template.render(context)
+            ```
+
+            Whether the variables defined in `context` are available to the template depends on the
+            [context behavior mode](../settings#django_components.app_settings.ComponentsSettings.context_behavior):
+
+            - In `"django"` context behavior mode, the template will have access to the keys of this context.
+
+            - In `"isolated"` context behavior mode, the template will NOT have access to this context,
+                and data MUST be passed via component's args and kwargs.
+
+        - `type` - Optional. Configure how to handle JS and CSS dependencies. Read more about
+            [Render types](../../concepts/fundamentals/rendering_components#render-types).
+
+            Options:
+
+            - `"document"` (default) - Use this if you are rendering a whole page, or if no other option suits better.
+                
+                If it is possible to insert JS and/or CSS into the rendered HTML, then:
+
+                - JS and CSS from [`Component.js`](../api/#django_components.Component.js)
+                    and [`Component.css`](../api/#django_components.Component.css) are inlined into the rendered HTML.
+                - JS and CSS from [`Component.Media`](../api/#django_components.Component.Media) are inserted
+                    into the rendered HTML only as links.
+                - Extra JS script to manage component dependencies is inserted into the HTML.
+
+            - `"fragment"` - Use this if you plan to insert this HTML into a page that was rendered as `"document"`.
+
+                - No JS / CSS is inserted. Instead, a JSON `<script>` is inserted. This JSON
+                  tells the dependency manager to load the component's JS and CSS dependencies.
+                - No extra scripts are inserted.
+
+            - `"inline"` - Use this for non-browser use cases like emails, or when you don't want to use
+              django-component's dependency manager.
+
+                This is the same as `"document"`, except no extra scripts are inserted:
+
+                - JS and CSS from [`Component.js`](../api/#django_components.Component.js)
+                    and [`Component.css`](../api/#django_components.Component.css) are inlined into the rendered HTML.
+                - JS and CSS from [`Component.Media`](../api/#django_components.Component.Media) are inserted
+                    into the rendered HTML only as links.
+                - No extra scripts are inserted.
+
+        - `request` - Optional. HTTPRequest object. Pass a request object directly to the component to apply
+            [context processors](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context.update).
+
+            Read more about [Working with HTTP requests](../../concepts/fundamentals/http_request).
+
+        - `escape_slots_content` - Optional. Whether the content from `slots` should be escaped with Django's
+            [`escape`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#std-templatefilter-escape).
+            Defaults to `True`.
+
+        - `render_dependencies` - Optional. Whether the output should be processed to finalize JS and CSS dependencies.
+            Defaults to `True`.
+
+            Set this to `False` if you want to insert the resulting HTML into another component:
+
+            ```py
+            html = Button.render(
+                render_dependencies=False,
+            )
+
+            # Insert the resulting HTML into another component
+            MyOtherComponent.render(
+                content=html,
+            )
+            ```
+
+        **Type hints:**
+
+        `Component.render()` is NOT typed. To add type hints, you can wrap the inputs
+        in component's [`Args`](../api/#django_components.Component.Args),
+        [`Kwargs`](../api/#django_components.Component.Kwargs),
+        and [`Slots`](../api/#django_components.Component.Slots) classes.
+
+        Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+
+        ```python
+        from typing import NamedTuple, Optional
+        from django_components import Component, Slot, SlotInput
+
+        # Define the component with the types
+        class Button(Component):
+            class Args(NamedTuple):
+                name: str
+
+            class Kwargs(NamedTuple):
+                surname: str
+                age: int
+
+            class Slots(NamedTuple):
+                my_slot: Optional[SlotInput] = None
+                footer: SlotInput
+
+        # Add type hints to the render call
+        Button.render(
+            args=Button.Args(
+                name="John",
+            ),
+            kwargs=Button.Kwargs(
+                surname="Doe",
+                age=30,
+            ),
+            slots=Button.Slots(
+                footer=Slot(lambda *a, **kwa: "Click me!"),
+            ),
         )
         ```
         """
@@ -2587,81 +2791,45 @@ class ComponentNode(BaseNode):
     [`@register()`](./api.md#django_components.register)
     decorator.
 
-    **Args:**
+    The `{% component %}` tag takes:
 
-    - `name` (str, required): Registered name of the component to render
-    - All other args and kwargs are defined based on the component itself.
-
-    If you defined a component `"my_table"`
-
-    ```python
-    from django_component import Component, register
-
-    @register("my_table")
-    class MyTable(Component):
-        template = \"\"\"
-          <table>
-            <thead>
-              {% for header in headers %}
-                <th>{{ header }}</th>
-              {% endfor %}
-            </thead>
-            <tbody>
-              {% for row in rows %}
-                <tr>
-                  {% for cell in row %}
-                    <td>{{ cell }}</td>
-                  {% endfor %}
-                </tr>
-              {% endfor %}
-            <tbody>
-          </table>
-        \"\"\"
-
-        def get_context_data(self, rows: List, headers: List):
-            return {
-                "rows": rows,
-                "headers": headers,
-            }
-    ```
-
-    Then you can render this component by referring to `MyTable` via its
-    registered name `"my_table"`:
+    - Component's registered name as the first positional argument,
+    - Followed by any number of positional and keyword arguments.
 
     ```django
-    {% component "my_table" rows=rows headers=headers ... / %}
+    {% load component_tags %}
+    <div>
+        {% component "button" name="John" job="Developer" / %}
+    </div>
     ```
 
-    ### Component input
+    The component name must be a string literal.
 
-    Positional and keyword arguments can be literals or template variables.
-
-    The component name must be a single- or double-quotes string and must
-    be either:
-
-    - The first positional argument after `component`:
-
-        ```django
-        {% component "my_table" rows=rows headers=headers ... / %}
-        ```
-
-    - Passed as kwarg `name`:
-
-        ```django
-        {% component rows=rows headers=headers name="my_table" ... / %}
-        ```
-
-    ### Inserting into slots
+    ### Inserting slot fills
 
     If the component defined any [slots](../concepts/fundamentals/slots.md), you can
-    pass in the content to be placed inside those slots by inserting [`{% fill %}`](#fill) tags,
-    directly within the `{% component %}` tag:
+    "fill" these slots by placing the [`{% fill %}`](#fill) tags within the `{% component %}` tag:
 
     ```django
-    {% component "my_table" rows=rows headers=headers ... / %}
+    {% component "my_table" rows=rows headers=headers %}
       {% fill "pagination" %}
         < 1 | 2 | 3 >
       {% endfill %}
+    {% endcomponent %}
+    ```
+
+    You can even nest [`{% fill %}`](#fill) tags within
+    [`{% if %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#if),
+    [`{% for %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#for)
+    and other tags:
+
+    ```django
+    {% component "my_table" rows=rows headers=headers %}
+        {% if rows %}
+            {% fill "pagination" %}
+                < 1 | 2 | 3 >
+            {% endfill %}
+        {% endif %}
     {% endcomponent %}
     ```
 
@@ -2676,6 +2844,36 @@ class ComponentNode(BaseNode):
 
     ```django
     {% component "name" positional_arg keyword_arg=value ... only %}
+    ```
+
+    Alternatively, you can set all components to be isolated by default, by setting
+    [`context_behavior`](../settings#django_components.app_settings.ComponentsSettings.context_behavior)
+    to `"isolated"` in your settings:
+
+    ```python
+    # settings.py
+    COMPONENTS = {
+        "context_behavior": "isolated",
+    }
+    ```
+
+    ### Omitting the `component` keyword
+
+    If you would like to omit the `component` keyword, and simply refer to your
+    components by their registered names:
+
+    ```django
+    {% button name="John" job="Developer" / %}
+    ```
+
+    You can do so by setting the "shorthand" [Tag formatter](../../concepts/advanced/tag_formatters)
+    in the settings:
+
+    ```python
+    # settings.py
+    COMPONENTS = {
+        "tag_formatter": "django_components.component_shorthand_formatter",
+    }
     ```
     """
 

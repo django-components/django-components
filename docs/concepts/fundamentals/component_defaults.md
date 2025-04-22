@@ -10,8 +10,8 @@ no value is provided, or when the value is set to `None` for a particular input.
 
 ### Defining defaults
 
-To define defaults for a component, you create a nested `Defaults` class within your
-[`Component`](../../../reference/api#django_components.Component) class.
+To define defaults for a component, you create a nested [`Defaults`](../../../reference/api#django_components.Component.Defaults)
+class within your [`Component`](../../../reference/api#django_components.Component) class.
 Each attribute in the `Defaults` class represents a default value for a corresponding input.
 
 ```py
@@ -33,7 +33,7 @@ class MyTable(Component):
     ...
 ```
 
-In this example, `position` is a simple default value, while `selected_items` uses a factory function wrapped in `Default` to ensure a new list is created each time the default is used.
+In this example, `position` is a simple default value, while `selected_items` uses a factory function wrapped in [`Default`](../../../reference/api#django_components.Default) to ensure a new list is created each time the default is used.
 
 Now, when we render the component, the defaults will be applied:
 
@@ -65,6 +65,26 @@ and so `selected_items` will be set to `[1, 2, 3]`.
 
     The defaults are aplied only to keyword arguments. They are NOT applied to positional arguments!
 
+!!! warning
+
+    When [typing](../advanced/typing_and_validation.md) your components with [`Args`](../../../reference/api/#django_components.Component.Args),
+    [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
+    or [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
+    you may be inclined to define the defaults in the classes.
+
+    ```py
+    class ProfileCard(Component):
+        class Kwargs(NamedTuple):
+            show_details: bool = True
+    ```
+
+    This is **NOT recommended**, because:
+
+    - The defaults will NOT be applied to inputs when using [`self.input`](../../../reference/api/#django_components.Component.input) property.
+    - The defaults will NOT be applied when a field is given but set to `None`.
+
+    Instead, define the defaults in the [`Defaults`](../../../reference/api/#django_components.Component.Defaults) class.
+
 ### Default factories
 
 For objects such as lists, dictionaries or other instances, you have to be careful - if you simply set a default value, this instance will be shared across all instances of the component!
@@ -78,7 +98,7 @@ class MyTable(Component):
         selected_items = [1, 2, 3]
 ```
 
-To avoid this, you can use a factory function wrapped in `Default`.
+To avoid this, you can use a factory function wrapped in [`Default`](../../../reference/api#django_components.Default).
 
 ```py
 from django_components import Component, Default
@@ -104,7 +124,7 @@ class MyTable(Component):
 
 ### Accessing defaults
 
-Since the defaults are defined on the component class, you can access the defaults for a component with the `Component.Defaults` property.
+Since the defaults are defined on the component class, you can access the defaults for a component with the [`Component.Defaults`](../../../reference/api#django_components.Component.Defaults) property.
 
 So if we have a component like this:
 

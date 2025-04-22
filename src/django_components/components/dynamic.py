@@ -65,7 +65,7 @@ class DynamicComponent(Component):
     )
     ```
 
-    # Use cases
+    ## Use cases
 
     Dynamic components are suitable if you are writing something like a form component. You may design
     it such that users give you a list of input types, and you render components depending on the input types.
@@ -73,7 +73,7 @@ class DynamicComponent(Component):
     While you could handle this with a series of if / else statements, that's not an extensible approach.
     Instead, you can use the dynamic component in place of normal components.
 
-    # Component name
+    ## Component name
 
     By default, the dynamic component is registered under the name `"dynamic"`. In case of a conflict,
     you can set the

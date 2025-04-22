@@ -4,7 +4,7 @@ In such cases, you can extract shared behavior into a standalone component class
 
 When subclassing a component, there's a couple of things to keep in mind:
 
-### Template, JS, and CSS Inheritance
+### Template, JS, and CSS inheritance
 
 When it comes to the pairs:
 
@@ -52,13 +52,13 @@ class CustomCard(BaseCard):
     """
 ```
 
-### Media Class Inheritance
+### Media inheritance
 
 The [`Component.Media`](../../reference/api.md#django_components.Component.Media) nested class follows Django's media inheritance rules:
 
 - If both parent and child define a `Media` class, the child's media will automatically include both its own and the parent's JS and CSS files.
 - This behavior can be configured using the [`extend`](../../reference/api.md#django_components.Component.Media.extend) attribute in the Media class, similar to Django's forms.
-  Read more on this in [Controlling Media Inheritance](./defining_js_css_html_files.md#controlling-media-inheritance).
+  Read more on this in [Media inheritance](./secondary_js_css_files/#media-inheritance).
 
 For example:
 
@@ -83,7 +83,7 @@ class SimpleModal(BaseModal):
         js = ["simple_modal.js"]    # Only this JS will be included
 ```
 
-### Regular Python Inheritance
+### Regular Python inheritance
 
 All other attributes and methods (including the [`Component.View`](../../reference/api.md#django_components.ComponentView) class and its methods) follow standard Python inheritance rules.
 

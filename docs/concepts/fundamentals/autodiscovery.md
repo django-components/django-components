@@ -1,13 +1,15 @@
-django-components automatically register all components found in the
+django-components automatically searches for files containing components in the
 [`COMPONENTS.dirs`](../../../reference/settings#django_components.app_settings.ComponentsSettings.dirs) and 
 [`COMPONENTS.app_dirs`](../../../reference/settings#django_components.app_settings.ComponentsSettings.app_dirs)
-directories by loading all Python files in these directories.
+directories.
 
 ### Manually register components
+
 Every component that you want to use in the template with the
 [`{% component %}`](../../../reference/template_tags#component)
 tag needs to be registered with the [`ComponentRegistry`](../../../reference/api#django_components.ComponentRegistry).
-Normally, we use the [`@register`](../../../reference/api#django_components.register) decorator for that:
+
+We use the [`@register`](../../../reference/api#django_components.register) decorator for that:
 
 ```python
 from django_components import Component, register
@@ -44,7 +46,7 @@ However, there's a simpler way!
 By default, the Python files found in the
 [`COMPONENTS.dirs`](../../../reference/settings#django_components.app_settings.ComponentsSettings.dirs) and 
 [`COMPONENTS.app_dirs`](../../../reference/settings#django_components.app_settings.ComponentsSettings.app_dirs)
-are auto-imported in order to register the components.
+are auto-imported in order to execute the code that registers the components.
 
 Autodiscovery occurs when Django is loaded, during the [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.1/ref/applications/#django.apps.AppConfig.ready)
 hook of the `apps.py` file.

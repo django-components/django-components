@@ -1,13 +1,20 @@
 When a component is being rendered, whether with [`Component.render()`](../../../reference/api#django_components.Component.render)
-or [`{% component %}`](../../../reference/template_tags#component), a component instance is populated with the current inputs and context. This allows you to access things like component inputs - methods and attributes on the component instance which would otherwise not be available.
+or [`{% component %}`](../../../reference/template_tags#component), a component instance is populated with the current inputs and context. This allows you to access things like component inputs.
 
-We refer to these render-only methods and attributes as the "Render API".
+We refer to these render-time-only methods and attributes as the "Render API".
 
 Render API is available inside these [`Component`](../../../reference/api#django_components.Component) methods:
 
+- [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
+- [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data)
+- [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data)
 - [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
 - [`on_render_before()`](../../../reference/api#django_components.Component.on_render_before)
 - [`on_render_after()`](../../../reference/api#django_components.Component.on_render_after)
+
+!!! note
+
+    If you try to access the Render API outside of these methods, you will get a `RuntimeError`.
 
 Example:
 
@@ -38,9 +45,15 @@ rendered = Table.render(
 )
 ```
 
-## Accessing Render API
+## Overview
 
-If you try to access the Render API outside of a render call, you will get a `RuntimeError`.
+The Render API includes:
+
+- [`self.id`](../render_api/#component-id) - The unique ID for the current render call
+- [`self.input`](../render_api/#component-inputs) - All the component inputs
+- [`self.request`](../render_api/#request-object-and-context-processors) - The request object (if available)
+- [`self.context_processors_data`](../render_api/#request-object-and-context-processors) - Data from Django's context processors (if request is available)
+- [`self.inject()`](../render_api/#provide-inject) - Inject data into the component
 
 ## Component ID
 
@@ -137,4 +150,24 @@ class Table(Component):
 rendered = Table.render(
     request=HttpRequest(),
 )
+```
+
+## Provide / Inject
+
+Components support a provide / inject system as known from Vue or React.
+
+When rendering the component, you can call [`self.inject()`](../../../reference/api/#django_components.Component.inject) with the key of the data you want to inject.
+
+The object returned by [`self.inject()`](../../../reference/api/#django_components.Component.inject)
+
+To provide data to components, use the [`{% provide %}`](../../../reference/template_tags#provide) template tag.
+
+Read more about [Provide / Inject](../advanced/provide_inject.md).
+
+```python
+class Table(Component):
+    def get_context_data(self, *args, **attrs):
+        # Access provided data
+        data = self.inject("some_data")
+        assert data.some_data == "some_data"
 ```
