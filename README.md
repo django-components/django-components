@@ -23,7 +23,7 @@ A component in django-components can be as simple as a Django template and Pytho
 ```
 
 ```py
-# components/calendar/calendar.html
+# components/calendar/calendar.py
 from django_components import Component
 
 class Calendar(Component):
