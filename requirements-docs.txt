@@ -183,7 +183,7 @@ pygments==2.19.1
     #   pygments-djc
 pygments-djc==1.0.1
     # via hatch.envs.docs
-pymdown-extensions==10.14.3
+pymdown-extensions==10.15
     # via
     #   hatch.envs.docs
     #   markdown-exec
