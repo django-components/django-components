@@ -74,7 +74,7 @@ htmlmin2==0.1.13
     # via mkdocs-minify-plugin
 idna==3.10
     # via requests
-importlib-metadata==8.6.1
+importlib-metadata==8.7.0
     # via mike
 importlib-resources==6.5.2
     # via mike
