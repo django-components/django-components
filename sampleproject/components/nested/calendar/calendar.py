@@ -25,4 +25,5 @@ class CalendarNested(Component):
                 kwargs={
                     "date": request.GET.get("date", ""),
                 },
+                deps_strategy="append",
             )

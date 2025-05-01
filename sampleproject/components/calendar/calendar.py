@@ -25,6 +25,7 @@ class Calendar(Component):
                 kwargs={
                     "date": request.GET.get("date", ""),
                 },
+                deps_strategy="append",
             )
 
 
@@ -52,4 +53,5 @@ class CalendarRelative(Component):
                 kwargs={
                     "date": request.GET.get("date", ""),
                 },
+                deps_strategy="append",
             )

@@ -29,12 +29,14 @@
 - The interface of the not-yet-released `get_js_data()` and `get_css_data()` methods has changed to
   match `get_template_data()`.
 
+    Before:
+
     ```py
     def get_js_data(self, *args, **kwargs):
     def get_css_data(self, *args, **kwargs):
     ```
 
-    to:
+    After:
 
     ```py
     def get_js_data(self, args, kwargs, slots, context):
@@ -78,7 +80,7 @@
           escape_slots_content: bool = True,
           args: Optional[ArgsType] = None,
           kwargs: Optional[KwargsType] = None,
-          type: RenderType = "document",
+          deps_strategy: DependenciesStrategy = "document",
           request: Optional[HttpRequest] = None,
           *response_args: Any,
           **response_kwargs: Any,
@@ -94,7 +96,7 @@
         kwargs: Optional[Mapping] = None,
         slots: Optional[Mapping] = None,
         escape_slots_content: bool = True,
-        type: RenderType = "document",
+        deps_strategy: DependenciesStrategy = "document",
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
         **response_kwargs: Any,
@@ -153,6 +155,20 @@
     {% component "profile" name="John" job="Developer" / %}
     ```
 
+- The second argument to `render_dependencies()` is now `strategy` instead of `type`.
+
+    Before:
+
+    ```py
+    render_dependencies(content, type="document")
+    ```
+
+    After:
+
+    ```py
+    render_dependencies(content, strategy="document")
+    ```
+
 #### 🚨📢 Deprecation
 
 - `get_context_data()` is now deprecated. Use `get_template_data()` instead.
@@ -162,9 +178,55 @@
 
     Since `get_context_data()` is widely used, it will remain available until v2.
 
+- The `type` kwarg in `Component.render()` and `Component.render_to_response()` is now deprecated. Use `deps_strategy` instead. The `type` kwarg will be removed in v1.
+
+    Before:
+
+    ```py
+    Calendar.render_to_response(type="fragment")
+    ```
+
+    After:
+
+    ```py
+    Calendar.render_to_response(deps_strategy="fragment")
+    ```
+
 - `SlotContent` was renamed to `SlotInput`. The old name is deprecated and will be removed in v1.
 
 #### Feat
+
+- New method to render template variables - `get_template_data()`
+
+    `get_template_data()` behaves the same way as `get_context_data()`, but has
+    a different function signature to accept also slots and context.
+
+    ```py
+    class Button(Component):
+        def get_template_data(self, args, kwargs, slots, context):
+            return {
+                "val1": args[0],
+                "val2": kwargs["field"],
+            }
+    ```
+
+    If you define `Component.Args`, `Component.Kwargs`, `Component.Slots`, then
+    the `args`, `kwargs`, `slots` arguments will be instances of these classes:
+
+    ```py
+    class Button(Component):
+        class Args(NamedTuple):
+            field1: str
+
+        class Kwargs(NamedTuple):
+            field2: int
+
+        def get_template_data(self, args: Args, kwargs: Kwargs, slots, context):
+            return {
+                "val1": args.field1,
+                "val2": kwargs.field2,
+            }
+    ```
 
 - Input validation is now part of the render process.
 
@@ -175,6 +237,43 @@
     will raise an error if the inputs are not valid.
 
     Read more on [Typing and validation](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/)
+
+- Render emails or other non-browser HTML with new "dependencies render strategies"
+
+    When rendering a component with `Component.render()` or `Component.render_to_response()`,
+    the `deps_strategy` kwarg (previously `type`) now accepts a new options `"simple"`, `"prepend"`, or `"append"`.
+
+    ```py
+    Calendar.render_to_response(
+        request=request,
+        kwargs={
+            "date": request.GET.get("date", ""),
+        },
+        deps_strategy="append",
+    )
+    ```
+
+    Comparison of dependencies render strategies:
+
+    - `"document"`
+        - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
+        - Inserts extra script to allow `fragment` strategy to work.
+        - Assumes the HTML will be rendered in a JS-enabled browser.
+    - `"fragment"`
+        - A lightweight HTML fragment to be inserted into a document with AJAX.
+        - Ignores placeholders and any `<head>` / `<body>` tags.
+        - No JS / CSS included.
+    - `"simple"`
+        - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
+        - No extra script loaded.
+    - `"prepend"`
+        - Insert JS / CSS before the rendered HTML.
+        - Ignores placeholders and any `<head>` / `<body>` tags.
+        - No extra script loaded.
+    - `"append"`
+        - Insert JS / CSS after the rendered HTML.
+        - Ignores placeholders and any `<head>` / `<body>` tags.
+        - No extra script loaded.
 
 ## v0.139.1
 

@@ -107,7 +107,7 @@ class FragmentBaseHtmx(Component):
 class FragJs(Component):
     class View:
         def get(self, request):
-            return FragJs.render_to_response(request=request, type="fragment")
+            return FragJs.render_to_response(request=request, deps_strategy="fragment")
 
     template: types.django_html = """
         <div class="frag">
@@ -131,7 +131,7 @@ class FragJs(Component):
 class FragAlpine(Component):
     class View:
         def get(self, request):
-            return FragAlpine.render_to_response(request=request, type="fragment")
+            return FragAlpine.render_to_response(request=request, deps_strategy="fragment")
 
     # NOTE: We wrap the actual fragment in a template tag with x-if="false" to prevent it
     #       from being rendered until we have registered the component with AlpineJS.

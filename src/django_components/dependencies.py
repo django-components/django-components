@@ -42,7 +42,14 @@ if TYPE_CHECKING:
 
 
 ScriptType = Literal["css", "js"]
-RenderType = Literal["document", "fragment"]
+DependenciesStrategy = Literal["document", "fragment", "simple", "prepend", "append"]
+"""
+Type for the available strategies for rendering JS and CSS dependencies.
+
+Read more about the [dependencies strategies](../../concepts/advanced/rendering_js_css).
+"""
+
+DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append")
 
 
 #########################################################
@@ -365,7 +372,7 @@ PLACEHOLDER_REGEX = re.compile(
 )
 
 
-def render_dependencies(content: TContent, type: RenderType = "document") -> TContent:
+def render_dependencies(content: TContent, strategy: DependenciesStrategy = "document") -> TContent:
     """
     Given a string that contains parts that were rendered by components,
     this function inserts all used JS and CSS.
@@ -404,8 +411,8 @@ def render_dependencies(content: TContent, type: RenderType = "document") -> TCo
         return HttpResponse(processed_html)
     ```
     """
-    if type not in ("document", "fragment"):
-        raise ValueError(f"Invalid type '{type}'")
+    if strategy not in DEPS_STRATEGIES:
+        raise ValueError(f"Invalid strategy '{strategy}'")
 
     is_safestring = isinstance(content, SafeString)
 
@@ -414,17 +421,17 @@ def render_dependencies(content: TContent, type: RenderType = "document") -> TCo
     else:
         content_ = cast(bytes, content)
 
-    content_, js_dependencies, css_dependencies = _process_dep_declarations(content_, type)
+    content_, js_dependencies, css_dependencies = _process_dep_declarations(content_, strategy)
 
     # Replace the placeholders with the actual content
-    # If type == `document`, we insert the JS and CSS directly into the HTML,
+    # If strategy in (`document`, 'simple'), we insert the JS and CSS directly into the HTML,
     #                        where the placeholders were.
-    # If type == `fragment`, we let the client-side manager load the JS and CSS,
+    # If strategy == `fragment`, we let the client-side manager load the JS and CSS,
     #                        and remove the placeholders.
     did_find_js_placeholder = False
     did_find_css_placeholder = False
-    css_replacement = css_dependencies if type == "document" else b""
-    js_replacement = js_dependencies if type == "document" else b""
+    css_replacement = css_dependencies if strategy in ("document", "simple") else b""
+    js_replacement = js_dependencies if strategy in ("document", "simple") else b""
 
     def on_replace_match(match: "re.Match[bytes]") -> bytes:
         nonlocal did_find_css_placeholder
@@ -445,10 +452,10 @@ def render_dependencies(content: TContent, type: RenderType = "document") -> TCo
 
     content_ = PLACEHOLDER_REGEX.sub(on_replace_match, content_)
 
-    # By default, if user didn't specify any `{% component_dependencies %}`,
+    # By default ("document") and for "simple" strategy, if user didn't specify any `{% component_dependencies %}`,
     # then try to insert the JS scripts at the end of <body> and CSS sheets at the end
-    # of <head>
-    if type == "document" and (not did_find_js_placeholder or not did_find_css_placeholder):
+    # of <head>.
+    if strategy in ("document", "simple") and (not did_find_js_placeholder or not did_find_css_placeholder):
         maybe_transformed = _insert_js_css_to_default_locations(
             content_.decode(),
             css_content=None if did_find_css_placeholder else css_dependencies.decode(),
@@ -459,8 +466,13 @@ def render_dependencies(content: TContent, type: RenderType = "document") -> TCo
             content_ = maybe_transformed.encode()
 
     # In case of a fragment, we only append the JS (actually JSON) to trigger the call of dependency-manager
-    if type == "fragment":
+    elif strategy == "fragment":
         content_ += js_dependencies
+    # For prepend / append, we insert the JS and CSS before / after the content
+    elif strategy == "prepend":
+        content_ = js_dependencies + css_dependencies + content_
+    elif strategy == "append":
+        content_ = content_ + js_dependencies + css_dependencies
 
     # Return the same type as we were given
     output = content_.decode() if isinstance(content, str) else content_
@@ -493,7 +505,7 @@ _render_dependencies = render_dependencies
 #      will be fetched and executed only once.
 # 6. And lastly, we generate a JS script that will load / mark as loaded the JS and CSS
 #    as categorized in previous step.
-def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, bytes, bytes]:
+def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) -> Tuple[bytes, bytes, bytes]:
     """
     Process a textual content that may include metadata on rendered components.
     The metadata has format like this
@@ -513,11 +525,11 @@ def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, 
 
     content = COMPONENT_COMMENT_REGEX.sub(on_replace_match, content)
 
-    # NOTE: Python's set does NOT preserve order
+    # NOTE: Python's set does NOT preserve order, so both set and list are needed
     seen_comp_hashes: Set[str] = set()
     comp_hashes: List[str] = []
     # Used for passing Python vars to JS/CSS
-    inputs_data: List[Tuple[str, ScriptType, Optional[str]]] = []
+    variables_data: List[Tuple[str, ScriptType, Optional[str]]] = []
     comp_data: List[Tuple[str, ScriptType, Optional[str]]] = []
 
     # Process individual parts. Each part is like a CSV row of `name,id,js,css`.
@@ -530,8 +542,8 @@ def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, 
             raise RuntimeError("Malformed dependencies data")
 
         comp_cls_id: str = part_match.group("comp_cls_id").decode("utf-8")
-        js_input_hash: Optional[str] = part_match.group("js").decode("utf-8") or None
-        css_input_hash: Optional[str] = part_match.group("css").decode("utf-8") or None
+        js_variables_hash: Optional[str] = part_match.group("js").decode("utf-8") or None
+        css_variables_hash: Optional[str] = part_match.group("css").decode("utf-8") or None
 
         if comp_cls_id in seen_comp_hashes:
             continue
@@ -545,28 +557,28 @@ def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, 
 
         # Schedule to load the `<script>` / `<link>` tags for the JS / CSS variables.
         # Skip if no variables are defined.
-        if js_input_hash is not None:
-            inputs_data.append((comp_cls_id, "js", js_input_hash))
-        if css_input_hash is not None:
-            inputs_data.append((comp_cls_id, "css", css_input_hash))
+        if js_variables_hash is not None:
+            variables_data.append((comp_cls_id, "js", js_variables_hash))
+        if css_variables_hash is not None:
+            variables_data.append((comp_cls_id, "css", css_variables_hash))
 
     (
-        to_load_input_js_urls,
-        to_load_input_css_urls,
-        inlined_input_js_tags,
-        inlined_input_css_tags,
-        loaded_input_js_urls,
-        loaded_input_css_urls,
-    ) = _prepare_tags_and_urls(inputs_data, type)
+        js_variables_urls_to_load,
+        css_variables_urls_to_load,
+        js_variables_tags,
+        css_variables_tags,
+        js_variables_urls_loaded,
+        css_variables_urls_loaded,
+    ) = _prepare_tags_and_urls(variables_data, strategy)
 
     (
-        to_load_component_js_urls,
-        to_load_component_css_urls,
-        inlined_component_js_tags,
-        inlined_component_css_tags,
-        loaded_component_js_urls,
-        loaded_component_css_urls,
-    ) = _prepare_tags_and_urls(comp_data, type)
+        component_js_urls_to_load,
+        component_css_urls_to_load,
+        component_js_tags,
+        component_css_tags,
+        component_js_urls_loaded,
+        component_css_urls_loaded,
+    ) = _prepare_tags_and_urls(comp_data, strategy)
 
     def get_component_media(comp_cls_id: str) -> Media:
         from django_components.component import get_component_by_class_id
@@ -581,20 +593,20 @@ def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, 
         *[get_component_media(comp_cls_id) for comp_cls_id in comp_hashes],
         # All the inlined scripts that we plan to fetch / load
         Media(
-            js=[*to_load_component_js_urls, *to_load_input_js_urls],
-            css={"all": [*to_load_component_css_urls, *to_load_input_css_urls]},
+            js=[*component_js_urls_to_load, *js_variables_urls_to_load],
+            css={"all": [*component_css_urls_to_load, *css_variables_urls_to_load]},
         ),
     ]
 
     # Once we have ALL JS and CSS URLs that we want to fetch, we can convert them to
     # <script> and <link> tags. Note that this is done by the user-provided Media classes.
     # fmt: off
-    to_load_css_tags = [
+    media_css_tags = [
         tag
         for media in all_medias if media is not None
         for tag in media.render_css()
     ]
-    to_load_js_tags = [
+    media_js_tags = [
         tag
         for media in all_medias if media is not None
         for tag in media.render_js()
@@ -604,41 +616,45 @@ def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, 
     # Postprocess all <script> and <link> tags to 1) dedupe, and 2) extract URLs.
     # For the deduplication, if multiple components link to the same JS/CSS, but they
     # render the <script> or <link> tag differently, we go with the first tag that we come across.
-    to_load_css_tags, to_load_css_urls = _postprocess_media_tags("css", to_load_css_tags)
-    to_load_js_tags, to_load_js_urls = _postprocess_media_tags("js", to_load_js_tags)
+    media_css_tags, media_css_urls = _postprocess_media_tags("css", media_css_tags)
+    media_js_tags, media_js_urls = _postprocess_media_tags("js", media_js_tags)
 
     loaded_css_urls = sorted(
         [
-            *loaded_component_css_urls,
-            *loaded_input_css_urls,
-            # NOTE: When rendering a document, the initial CSS is inserted directly into the HTML
-            # to avoid a flash of unstyled content. In the dependency manager, we only mark those
-            # scripts as loaded.
-            *(to_load_css_urls if type == "document" else []),
+            *component_css_urls_loaded,
+            *css_variables_urls_loaded,
+            # NOTE: When rendering a "document", the initial CSS is inserted directly into the HTML
+            # to avoid a flash of unstyled content. In such case, the "CSS to load" is actually already
+            # loaded, so we have to mark those scripts as loaded in the dependency manager.
+            *(media_css_urls if strategy == "document" else []),
         ]
     )
     loaded_js_urls = sorted(
         [
-            *loaded_component_js_urls,
-            *loaded_input_js_urls,
-            # NOTE: When rendering a document, the initial JS is inserted directly into the HTML
-            # so the scripts are executed at proper order. In the dependency manager, we only mark those
-            # scripts as loaded.
-            *(to_load_js_urls if type == "document" else []),
+            *component_js_urls_loaded,
+            *js_variables_urls_loaded,
+            # NOTE: When rendering a "document", the initial JS is inserted directly into the HTML
+            # so the scripts are executed at proper order. In such case, the "JS to load" is actually already
+            # loaded, so we have to mark those scripts as loaded in the dependency manager.
+            *(media_js_urls if strategy == "document" else []),
         ]
     )
 
-    exec_script = _gen_exec_script(
-        to_load_js_tags=to_load_js_tags if type == "fragment" else [],
-        to_load_css_tags=to_load_css_tags if type == "fragment" else [],
-        loaded_js_urls=loaded_js_urls,
-        loaded_css_urls=loaded_css_urls,
-    )
+    # NOTE: No exec script for the "simple" mode, as that one is NOT using the dependency manager
+    if strategy in ("document", "fragment"):
+        exec_script = _gen_exec_script(
+            to_load_js_tags=media_js_tags if strategy == "fragment" else [],
+            to_load_css_tags=media_css_tags if strategy == "fragment" else [],
+            loaded_js_urls=loaded_js_urls,
+            loaded_css_urls=loaded_css_urls,
+        )
+    else:
+        exec_script = None
 
     # Core scripts without which the rest wouldn't work
     core_script_tags = Media(
         # NOTE: When rendering a document, the initial JS is inserted directly into the HTML
-        js=[static("django_components/django_components.min.js")] if type == "document" else [],
+        js=[static("django_components/django_components.min.js")] if strategy == "document" else [],
     ).render_js()
 
     final_script_tags = "".join(
@@ -649,14 +665,14 @@ def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, 
             # Loads JS from `Media.js` and `Component.js` if fragment
             *([exec_script] if exec_script else []),
             # JS from `Media.js`
-            # NOTE: When rendering a document, the initial JS is inserted directly into the HTML
-            # so the scripts are executed at proper order. In the dependency manager, we only mark those
-            # scripts as loaded.
-            *(to_load_js_tags if type == "document" else []),
+            # NOTE: When strategy in ("document", "simple", "prepend", "append"), the initial JS is inserted
+            # directly into the HTML so the scripts are executed at proper order. In the dependency manager,
+            # we only mark those scripts as loaded.
+            *(media_js_tags if strategy in ("document", "simple", "prepend", "append") else []),
             # JS variables
-            *[tag for tag in inlined_input_js_tags],
+            *[tag for tag in js_variables_tags],
             # JS from `Component.js` (if not fragment)
-            *[tag for tag in inlined_component_js_tags],
+            *[tag for tag in component_js_tags],
         ]
     )
 
@@ -665,13 +681,13 @@ def _process_dep_declarations(content: bytes, type: RenderType) -> Tuple[bytes, 
             # CSS by us
             # <NONE>
             # CSS from `Component.css` (if not fragment)
-            *[tag for tag in inlined_component_css_tags],
+            *[tag for tag in component_css_tags],
             # CSS variables
-            *[tag for tag in inlined_input_css_tags],
+            *[tag for tag in css_variables_tags],
             # CSS from `Media.css` (plus from `Component.css` if fragment)
             # NOTE: Similarly to JS, the initial CSS is loaded outside of the dependency
             #       manager, and only marked as loaded, to avoid a flash of unstyled content.
-            *[tag for tag in to_load_css_tags],
+            *[tag for tag in media_css_tags],
         ]
     )
 
@@ -726,18 +742,21 @@ def _postprocess_media_tags(
 
 def _prepare_tags_and_urls(
     data: List[Tuple[str, ScriptType, Optional[str]]],
-    type: RenderType,
+    strategy: DependenciesStrategy,
 ) -> Tuple[List[str], List[str], List[str], List[str], List[str], List[str]]:
     from django_components.component import get_component_by_class_id
 
-    to_load_js_urls: List[str] = []
-    to_load_css_urls: List[str] = []
+    # JS / CSS that we should insert into the HTML
     inlined_js_tags: List[str] = []
     inlined_css_tags: List[str] = []
+    # JS / CSS that the client-side dependency managers should load
+    to_load_js_urls: List[str] = []
+    to_load_css_urls: List[str] = []
+    # JS / CSS that we want to mark as loaded in the dependency manager
     loaded_js_urls: List[str] = []
     loaded_css_urls: List[str] = []
 
-    # When `type="document"`, we insert the actual <script> and <style> tags into the HTML.
+    # When `strategy="document"`, we insert the actual <script> and <style> tags into the HTML.
     # But even in that case we still need to call `Components.manager.markScriptLoaded`,
     # so the client knows NOT to fetch them again.
     # So in that case we populate both `inlined` and `loaded` lists
@@ -748,14 +767,19 @@ def _prepare_tags_and_urls(
         # which means that we are NOT going to load / inline it again.
         comp_cls = get_component_by_class_id(comp_cls_id)
 
-        if type == "document":
+        # When strategy is "document", "simple", "prepend", or "append", we insert the actual <script> and
+        # <style> tags into the HTML.
+        #
+        # But in case of strategy == "document" we still need to call `Components.manager.markScriptLoaded`,
+        # so the client knows NOT to fetch the scripts again.
+        # So in that case we populate both `inlined` and `loaded` lists
+        if strategy == "document":
             # NOTE: Skip fetching of inlined JS/CSS if it's not defined or empty for given component
-            #
-            # NOTE: If `input_hash` is `None`, then we get the component's JS/CSS
-            #       (e.g. `/components/cache/table.js`).
-            #       And if `input_hash` is given, we get the component's JS/CSS variables
-            #       (e.g. `/components/cache/table.0ab2c3.js`).
             if script_type == "js" and is_nonempty_str(comp_cls.js):
+                # NOTE: If `input_hash` is `None`, then we get the component's JS/CSS
+                #       (e.g. `/components/cache/table.js`).
+                #       And if `input_hash` is given, we get the component's JS/CSS variables
+                #       (e.g. `/components/cache/table.0ab2c3.js`).
                 inlined_js_tags.append(get_script_tag("js", comp_cls, input_hash))
                 loaded_js_urls.append(get_script_url("js", comp_cls, input_hash))
 
@@ -763,9 +787,16 @@ def _prepare_tags_and_urls(
                 inlined_css_tags.append(get_script_tag("css", comp_cls, input_hash))
                 loaded_css_urls.append(get_script_url("css", comp_cls, input_hash))
 
-        # When NOT a document (AKA is a fragment), then scripts are NOT inserted into
-        # the HTML, and instead we fetch and load them all via our JS dependency manager.
-        else:
+        elif strategy in ("simple", "prepend", "append"):
+            if script_type == "js" and is_nonempty_str(comp_cls.js):
+                inlined_js_tags.append(get_script_tag("js", comp_cls, input_hash))
+
+            if script_type == "css" and is_nonempty_str(comp_cls.css):
+                inlined_css_tags.append(get_script_tag("css", comp_cls, input_hash))
+
+        # When a fragment, then scripts are NOT inserted into the HTML,
+        # and instead we fetch and load them all via our JS dependency manager.
+        elif strategy == "fragment":
             if script_type == "js" and is_nonempty_str(comp_cls.js):
                 to_load_js_urls.append(get_script_url("js", comp_cls, input_hash))
 
@@ -1012,7 +1043,7 @@ class ComponentDependencyMiddleware:
         if not isinstance(response, StreamingHttpResponse) and response.get("Content-Type", "").startswith(
             "text/html"
         ):
-            response.content = render_dependencies(response.content, type="document")
+            response.content = render_dependencies(response.content, strategy="document")
 
         return response
 

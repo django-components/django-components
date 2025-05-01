@@ -1,4 +1,4 @@
-### JS and CSS output locations
+## JS and CSS output locations
 
 If:
 
@@ -220,3 +220,203 @@ with [`Component.render()`](#TODO) and inserting them into larger structures.
     - Directly passing rendered HTML to [`render_dependencies()`](#TODO)
 3. If you pre-render one component to pass it into another, the pre-rendered component must be rendered with
    [`render_dependencies=False`](#TODO).
+
+## Dependencies strategies
+
+The rendered HTML may be used in different contexts (browser, email, etc).
+If your components use JS and CSS scripts, you may need to handle them differently.
+
+[`render()`](../../../reference/api/#django_components.Component.render) and [`render_to_response()`](../../../reference/api/#django_components.Component.render_to_response)
+accept a `deps_strategy` parameter, which controls where and how the JS / CSS are inserted into the HTML.
+
+The `deps_strategy` parameter is set at the root of a component render tree, which is why it is not available for
+the [`{% component %}`](../../../reference/template_tags#component) tag.
+
+!!! info
+
+    The `deps_strategy` parameter is ultimately passed to [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
+
+There are five dependencies strategies:
+
+- [`document`](../../advanced/rendering_js_css#document) (default)
+    - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
+    - Inserts extra script to allow `fragment` strategy to work.
+    - Assumes the HTML will be rendered in a JS-enabled browser.
+- [`fragment`](../../advanced/rendering_js_css#fragment)
+    - A lightweight HTML fragment to be inserted into a document with AJAX.
+    - No JS / CSS included.
+- [`simple`](../../advanced/rendering_js_css#simple)
+    - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
+    - No extra script loaded.
+- [`prepend`](../../advanced/rendering_js_css#prepend)
+    - Insert JS / CSS before the rendered HTML.
+    - No extra script loaded.
+- [`append`](../../advanced/rendering_js_css#append)
+    - Insert JS / CSS after the rendered HTML.
+    - No extra script loaded.
+
+### `document`
+
+`deps_strategy="document"` is the default. Use this if you are rendering a whole page, or if no other option suits better.
+
+```python
+html = Button.render(deps_strategy="document")
+```
+
+When you render a component tree with the `"document"` strategy, it is expected that:
+
+- The HTML will be rendered at page load.
+- The HTML will be inserted into a page / browser where JS can be executed.
+
+**Location:**
+
+JS and CSS is inserted:
+
+- Preferentially into JS / CSS placeholders like [`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)
+- Otherwise, JS into `<body>` element, and CSS into `<head>` element
+- If neither found, JS / CSS are NOT inserted
+
+**Included scripts:**
+
+For the `"document"` strategy, the JS and CSS is set up to avoid any delays when the end user loads
+the page in the browser:
+
+- Components' primary JS and CSS scripts ([`Component.js`](../../../reference/api/#django_components.Component.js)
+  and [`Component.css`](../../../reference/api/#django_components.Component.css)) - fully inlined:
+
+    ```html
+    <script>
+        console.log("Hello from Button!");
+    </script>
+    <style>
+        .button {
+        background-color: blue;
+        }
+    </style>
+    ```
+
+- Components' secondary JS and CSS scripts
+  ([`Component.Media`](../../../reference/api/#django_components.Component.Media)) - inserted as links:
+
+    ```html
+    <link rel="stylesheet" href="https://example.com/styles.css" />
+    <script src="https://example.com/script.js"></script>
+    ```
+
+- A JS script is injected to manage component dependencies, enabling lazy loading of JS and CSS
+  for HTML fragments.
+
+!!! info
+
+    This strategy is required for fragments to work properly, as it sets up the dependency manager that fragments rely on.
+
+!!! note "How the dependency manager works"
+
+    The dependency manager is a JS script that keeps track of all the JS and CSS dependencies that have already been loaded.
+
+    When a fragment is inserted into the page, it will also insert a JSON `<script>` tag with fragment metadata.
+
+    The dependency manager will pick up on that, and check which scripts the fragment needs.
+
+    It will then fetch only the scripts that haven't been loaded yet.
+
+### `fragment`
+
+`deps_strategy="fragment"` is used when rendering a piece of HTML that will be inserted into a page
+that has already been rendered with the [`"document"`](#document) strategy:
+
+```python
+fragment = MyComponent.render(deps_strategy="fragment")
+```
+
+The HTML of fragments is very lightweight because it doesn't include the JS and CSS scripts
+of the rendered components.
+
+With fragments, even if a component has JS and CSS, you can insert the same component into a page
+hundreds of times, and the JS and CSS will only ever be loaded once.
+
+This is intended for dynamic content that's loaded with AJAX after the initial page load, such as with [jQuery](https://jquery.com/), [HTMX](https://htmx.org/), [AlpineJS](https://alpinejs.dev/) or similar libraries.
+
+**Location:**
+
+None. The fragment's JS and CSS files will be loaded dynamically into the page.
+
+**Included scripts:**
+
+- A special JSON `<script>` tag that tells the dependency manager what JS and CSS to load.
+
+### `simple`
+
+`deps_strategy="simple"` is used either for non-browser use cases, or when you don't want to use the dependency manager.
+
+Practically, this is the same as the [`"document"`](#document) strategy, except that the dependency manager is not used.
+
+```python
+html = MyComponent.render(deps_strategy="simple")
+```
+
+**Location:**
+
+JS and CSS is inserted:
+
+- Preferentially into JS / CSS placeholders like [`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)
+- Otherwise, JS into `<body>` element, and CSS into `<head>` element
+- If neither found, JS / CSS are NOT inserted
+
+**Included scripts:**
+
+- Components' primary JS and CSS scripts ([`Component.js`](../../../reference/api/#django_components.Component.js)
+  and [`Component.css`](../../../reference/api/#django_components.Component.css)) - fully inlined:
+
+    ```html
+    <script>
+        console.log("Hello from Button!");
+    </script>
+    <style>
+        .button {
+            background-color: blue;
+        }
+    </style>
+    ```
+
+- Components' secondary JS and CSS scripts
+  ([`Component.Media`](../../../reference/api/#django_components.Component.Media)) - inserted as links:
+
+    ```html
+    <link rel="stylesheet" href="https://example.com/styles.css" />
+    <script src="https://example.com/script.js"></script>
+    ```
+
+- No extra scripts are inserted.
+
+### `prepend`
+
+This is the same as [`"simple"`](#simple), but placeholders like [`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies) and HTML tags `<head>` and `<body>` are all ignored. The JS and CSS are **always** inserted **before** the rendered content.
+
+```python
+html = MyComponent.render(deps_strategy="prepend")
+```
+
+**Location:**
+
+JS and CSS is **always** inserted before the rendered content.
+
+**Included scripts:**
+
+Same as for the [`"simple"`](#simple) strategy.
+
+### `append`
+
+This is the same as [`"simple"`](#simple), but placeholders like [`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies) and HTML tags `<head>` and `<body>` are all ignored. The JS and CSS are **always** inserted **after** the rendered content.
+
+```python
+html = MyComponent.render(deps_strategy="append")
+```
+
+**Location:**
+
+JS and CSS is **always** inserted after the rendered content.
+
+**Included scripts:**
+
+Same as for the [`"simple"`](#simple) strategy.

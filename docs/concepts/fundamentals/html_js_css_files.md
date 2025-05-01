@@ -145,7 +145,7 @@ Here is how the HTML is post-processed:
     </div>
     ```
 
-3. **Insert JS and CSS**: After the HTML is rendered, Django Components handles inserting JS and CSS dependencies into the page based on the [render type](../rendering_components/#render-types) (document, fragment, or inline).
+3. **Insert JS and CSS**: After the HTML is rendered, Django Components handles inserting JS and CSS dependencies into the page based on the [dependencies rendering strategy](../rendering_components/#dependencies-rendering) (document, fragment, or inline).
 
     For example, if your component contains the
     [`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies)

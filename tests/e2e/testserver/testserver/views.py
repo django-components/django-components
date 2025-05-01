@@ -250,9 +250,9 @@ def fragment_base_htmx_view(request):
 def fragment_view(request):
     fragment_type = request.GET["frag"]
     if fragment_type == "comp":
-        return FragComp.render_to_response(type="fragment")
+        return FragComp.render_to_response(deps_strategy="fragment")
     elif fragment_type == "media":
-        return FragMedia.render_to_response(type="fragment")
+        return FragMedia.render_to_response(deps_strategy="fragment")
     else:
         raise ValueError("Invalid fragment type")
 

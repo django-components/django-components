@@ -20,7 +20,7 @@ Import as
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1066" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1069" target="_blank">See source code</a>
 
 
 
@@ -43,7 +43,7 @@ If you insert this tag multiple times, ALL CSS links will be duplicately inserte
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1088" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1091" target="_blank">See source code</a>
 
 
 
@@ -67,7 +67,7 @@ If you insert this tag multiple times, ALL JS scripts will be duplicately insert
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L2619" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L2794" target="_blank">See source code</a>
 
 
 
@@ -75,81 +75,45 @@ Renders one of the components that was previously registered with
 [`@register()`](./api.md#django_components.register)
 decorator.
 
-**Args:**
+The `{% component %}` tag takes:
 
-- `name` (str, required): Registered name of the component to render
-- All other args and kwargs are defined based on the component itself.
-
-If you defined a component `"my_table"`
-
-```python
-from django_component import Component, register
-
-@register("my_table")
-class MyTable(Component):
-    template = """
-      <table>
-        <thead>
-          {% for header in headers %}
-            <th>{{ header }}</th>
-          {% endfor %}
-        </thead>
-        <tbody>
-          {% for row in rows %}
-            <tr>
-              {% for cell in row %}
-                <td>{{ cell }}</td>
-              {% endfor %}
-            </tr>
-          {% endfor %}
-        <tbody>
-      </table>
-    """
-
-    def get_context_data(self, rows: List, headers: List):
-        return {
-            "rows": rows,
-            "headers": headers,
-        }
-```
-
-Then you can render this component by referring to `MyTable` via its
-registered name `"my_table"`:
+- Component's registered name as the first positional argument,
+- Followed by any number of positional and keyword arguments.
 
 ```django
-{% component "my_table" rows=rows headers=headers ... / %}
+{% load component_tags %}
+<div>
+    {% component "button" name="John" job="Developer" / %}
+</div>
 ```
 
-### Component input
+The component name must be a string literal.
 
-Positional and keyword arguments can be literals or template variables.
-
-The component name must be a single- or double-quotes string and must
-be either:
-
-- The first positional argument after `component`:
-
-    ```django
-    {% component "my_table" rows=rows headers=headers ... / %}
-    ```
-
-- Passed as kwarg `name`:
-
-    ```django
-    {% component rows=rows headers=headers name="my_table" ... / %}
-    ```
-
-### Inserting into slots
+### Inserting slot fills
 
 If the component defined any [slots](../concepts/fundamentals/slots.md), you can
-pass in the content to be placed inside those slots by inserting [`{% fill %}`](#fill) tags,
-directly within the `{% component %}` tag:
+"fill" these slots by placing the [`{% fill %}`](#fill) tags within the `{% component %}` tag:
 
 ```django
-{% component "my_table" rows=rows headers=headers ... / %}
+{% component "my_table" rows=rows headers=headers %}
   {% fill "pagination" %}
     < 1 | 2 | 3 >
   {% endfill %}
+{% endcomponent %}
+```
+
+You can even nest [`{% fill %}`](#fill) tags within
+[`{% if %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#if),
+[`{% for %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#for)
+and other tags:
+
+```django
+{% component "my_table" rows=rows headers=headers %}
+    {% if rows %}
+        {% fill "pagination" %}
+            < 1 | 2 | 3 >
+        {% endfill %}
+    {% endif %}
 {% endcomponent %}
 ```
 
@@ -164,6 +128,36 @@ can access only the data that was explicitly passed to it:
 
 ```django
 {% component "name" positional_arg keyword_arg=value ... only %}
+```
+
+Alternatively, you can set all components to be isolated by default, by setting
+[`context_behavior`](../settings#django_components.app_settings.ComponentsSettings.context_behavior)
+to `"isolated"` in your settings:
+
+```python
+# settings.py
+COMPONENTS = {
+    "context_behavior": "isolated",
+}
+```
+
+### Omitting the `component` keyword
+
+If you would like to omit the `component` keyword, and simply refer to your
+components by their registered names:
+
+```django
+{% button name="John" job="Developer" / %}
+```
+
+You can do so by setting the "shorthand" [Tag formatter](../../concepts/advanced/tag_formatters)
+in the settings:
+
+```python
+# settings.py
+COMPONENTS = {
+    "tag_formatter": "django_components.component_shorthand_formatter",
+}
 ```
 
 ## fill

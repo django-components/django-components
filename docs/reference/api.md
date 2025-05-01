@@ -67,6 +67,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.DependenciesStrategy
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.Empty
     options:
       show_if_no_docstring: true

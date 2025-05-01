@@ -118,12 +118,13 @@ class DynamicComponent(Component):
             "kwargs": kwargs,
         }
 
+    # TODO: Replace combination of `on_render_before()` + `template` with single `on_render()`
     # NOTE: The inner component is rendered in `on_render_before`, so that the `Context` object
     # is already configured as if the inner component was rendered inside the template.
     # E.g. the `_COMPONENT_CONTEXT_KEY` is set, which means that the child component
     # will know that it's a child of this component.
     def on_render_before(self, context: Context, template: Template) -> Context:
-        comp_class = context["comp_class"]
+        comp_class: type[Component] = context["comp_class"]
         args = context["args"]
         kwargs = context["kwargs"]
 
@@ -140,7 +141,7 @@ class DynamicComponent(Component):
             # NOTE: Since we're accessing slots as `self.input.slots`, the content of slot functions
             # was already escaped (if set so).
             escape_slots_content=False,
-            type=self.input.type,
+            deps_strategy=self.input.deps_strategy,
             render_dependencies=self.input.render_dependencies,
         )
 

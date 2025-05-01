@@ -39,7 +39,7 @@ from django_components.component_registry import registry as registry_
 from django_components.constants import COMP_ID_PREFIX
 from django_components.context import _COMPONENT_CONTEXT_KEY, make_isolated_context_copy
 from django_components.dependencies import (
-    RenderType,
+    DependenciesStrategy,
     cache_component_css,
     cache_component_css_vars,
     cache_component_js,
@@ -181,7 +181,10 @@ class ComponentInput:
     args: List
     kwargs: Dict
     slots: Dict[SlotName, Slot]
-    type: RenderType
+    deps_strategy: DependenciesStrategy
+    # TODO_v1 - Remove, superseded by `deps_strategy`
+    type: DependenciesStrategy
+    """Deprecated alias for `deps_strategy`."""
     render_dependencies: bool
 
 
@@ -1693,7 +1696,7 @@ class Component(metaclass=ComponentMeta):
           [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
           object that should be used to render the component
         - And other kwargs passed to [`Component.render()`](../api/#django_components.Component.render)
-          like `type` and `render_dependencies`
+          like `deps_strategy`
 
         Read more on [Component inputs](../../concepts/fundamentals/render_api/#component-inputs).
 
@@ -1998,7 +2001,9 @@ class Component(metaclass=ComponentMeta):
         kwargs: Optional[Any] = None,
         slots: Optional[Any] = None,
         escape_slots_content: bool = True,
-        type: RenderType = "document",
+        deps_strategy: DependenciesStrategy = "document",
+        # TODO_v1 - Remove, superseded by `deps_strategy`
+        type: Optional[DependenciesStrategy] = None,
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
         **response_kwargs: Any,
@@ -2060,6 +2065,8 @@ class Component(metaclass=ComponentMeta):
             context=context,
             slots=slots,
             escape_slots_content=escape_slots_content,
+            deps_strategy=deps_strategy,
+            # TODO_v1 - Remove, superseded by `deps_strategy`
             type=type,
             render_dependencies=render_dependencies,
             request=request,
@@ -2074,7 +2081,9 @@ class Component(metaclass=ComponentMeta):
         kwargs: Optional[Any] = None,
         slots: Optional[Any] = None,
         escape_slots_content: bool = True,
-        type: RenderType = "document",
+        deps_strategy: DependenciesStrategy = "document",
+        # TODO_v1 - Remove, superseded by `deps_strategy`
+        type: Optional[DependenciesStrategy] = None,
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
     ) -> str:
@@ -2187,37 +2196,27 @@ class Component(metaclass=ComponentMeta):
             - In `"isolated"` context behavior mode, the template will NOT have access to this context,
                 and data MUST be passed via component's args and kwargs.
 
-        - `type` - Optional. Configure how to handle JS and CSS dependencies. Read more about
-            [Render types](../../concepts/fundamentals/rendering_components#render-types).
+        - `deps_strategy` - Optional. Configure how to handle JS and CSS dependencies. Read more about
+            [Dependencies rendering](../../concepts/fundamentals/rendering_components#dependencies-rendering).
 
-            Options:
+            There are five strategies:
 
-            - `"document"` (default) - Use this if you are rendering a whole page, or if no other option suits better.
-
-                If it is possible to insert JS and/or CSS into the rendered HTML, then:
-
-                - JS and CSS from [`Component.js`](../api/#django_components.Component.js)
-                    and [`Component.css`](../api/#django_components.Component.css) are inlined into the rendered HTML.
-                - JS and CSS from [`Component.Media`](../api/#django_components.Component.Media) are inserted
-                    into the rendered HTML only as links.
-                - Extra JS script to manage component dependencies is inserted into the HTML.
-
-            - `"fragment"` - Use this if you plan to insert this HTML into a page that was rendered as `"document"`.
-
-                - No JS / CSS is inserted. Instead, a JSON `<script>` is inserted. This JSON
-                  tells the dependency manager to load the component's JS and CSS dependencies.
-                - No extra scripts are inserted.
-
-            - `"inline"` - Use this for non-browser use cases like emails, or when you don't want to use
-              django-component's dependency manager.
-
-                This is the same as `"document"`, except no extra scripts are inserted:
-
-                - JS and CSS from [`Component.js`](../api/#django_components.Component.js)
-                    and [`Component.css`](../api/#django_components.Component.css) are inlined into the rendered HTML.
-                - JS and CSS from [`Component.Media`](../api/#django_components.Component.Media) are inserted
-                    into the rendered HTML only as links.
-                - No extra scripts are inserted.
+            - [`"document"`](../../concepts/advanced/rendering_js_css#document) (default)
+                - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
+                - Inserts extra script to allow `fragment` types to work.
+                - Assumes the HTML will be rendered in a JS-enabled browser.
+            - [`"fragment"`](../../concepts/advanced/rendering_js_css#fragment)
+                - A lightweight HTML fragment to be inserted into a document with AJAX.
+                - No JS / CSS included.
+            - [`"simple"`](../../concepts/advanced/rendering_js_css#simple)
+                - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
+                - No extra script loaded.
+            - [`"prepend"`](../../concepts/advanced/rendering_js_css#prepend)
+                - Insert JS / CSS before the rendered HTML.
+                - No extra script loaded.
+            - [`"append"`](../../concepts/advanced/rendering_js_css#append)
+                - Insert JS / CSS after the rendered HTML.
+                - No extra script loaded.
 
         - `request` - Optional. HTTPRequest object. Pass a request object directly to the component to apply
             [context processors](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context.update).
@@ -2292,8 +2291,17 @@ class Component(metaclass=ComponentMeta):
         else:
             comp = cls()
 
+        # TODO_v1 - Remove, superseded by `deps_strategy`
+        if type is not None:
+            if deps_strategy != "document":
+                raise ValueError(
+                    "Component.render() received both `type` and `deps_strategy` arguments. "
+                    "Only one should be given. The `type` argument is deprecated. Use `deps_strategy` instead."
+                )
+            deps_strategy = type
+
         return comp._render_with_error_trace(
-            context, args, kwargs, slots, escape_slots_content, type, render_dependencies, request
+            context, args, kwargs, slots, escape_slots_content, deps_strategy, render_dependencies, request
         )
 
     # This is the internal entrypoint for the render function
@@ -2304,18 +2312,15 @@ class Component(metaclass=ComponentMeta):
         kwargs: Optional[Any] = None,
         slots: Optional[Any] = None,
         escape_slots_content: bool = True,
-        type: RenderType = "document",
+        deps_strategy: DependenciesStrategy = "document",
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
     ) -> str:
         # Modify the error to display full component path (incl. slots)
         with component_error_message([self.name]):
-            try:
-                return self._render_impl(
-                    context, args, kwargs, slots, escape_slots_content, type, render_dependencies, request
-                )
-            except Exception as err:
-                raise err from None
+            return self._render_impl(
+                context, args, kwargs, slots, escape_slots_content, deps_strategy, render_dependencies, request
+            )
 
     def _render_impl(
         self,
@@ -2324,7 +2329,7 @@ class Component(metaclass=ComponentMeta):
         kwargs: Optional[Any] = None,
         slots: Optional[Any] = None,
         escape_slots_content: bool = True,
-        type: RenderType = "document",
+        deps_strategy: DependenciesStrategy = "document",
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
     ) -> str:
@@ -2379,7 +2384,9 @@ class Component(metaclass=ComponentMeta):
                 args=args_list,
                 kwargs=kwargs_dict,
                 slots=slots_dict,
-                type=type,
+                deps_strategy=deps_strategy,
+                # TODO_v1 - Remove, superseded by `deps_strategy`
+                type=deps_strategy,
                 render_dependencies=render_dependencies,
             ),
             is_filled=None,
@@ -2570,7 +2577,7 @@ class Component(metaclass=ComponentMeta):
         # all inserted HTML comments into <script> and <link> tags (if render_dependencies=True)
         def on_html_rendered(html: str) -> str:
             if render_dependencies:
-                html = _render_dependencies(html, type)
+                html = _render_dependencies(html, deps_strategy)
             return html
 
         trace_component_msg(

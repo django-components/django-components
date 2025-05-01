@@ -1,5 +1,5 @@
-Django-components provides a seamless integration with HTML fragments ([HTML over the wire](https://hotwired.dev/)),
-whether you're using HTMX, AlpineJS, or vanilla JavaScript.
+Django-components provides a seamless integration with HTML fragments with AJAX ([HTML over the wire](https://hotwired.dev/)),
+whether you're using jQuery, HTMX, AlpineJS, or vanilla JavaScript.
 
 When you define a component that has extra JS or CSS, and you use django-components
 to render the fragment, django-components will:
@@ -22,15 +22,17 @@ to render the fragment, django-components will:
     4. A library like HTMX, AlpineJS, or custom function inserts the new HTML into
        the correct place.
 
-## Document and fragment types
+## Document and fragment strategies
 
-Components support two modes of rendering - As a "document" or as a "fragment".
+Components support different "strategies" for rendering JS and CSS.
+
+Two of them are used to enable HTML fragments - "document" and "fragment".
 
 What's the difference?
 
-### Document mode
+### Document strategy
 
-Document mode assumes that the rendered components will be embedded into the HTML
+Document strategy assumes that the rendered components will be embedded into the HTML
 of the initial page load. This means that:
 
 - The JS and CSS is embedded into the HTML as `<script>` and `<style>` tags
@@ -42,7 +44,7 @@ A component is rendered as a "document" when:
 - It is embedded inside a template as [`{% component %}`](../../reference/template_tags.md#component)
 - It is rendered with [`Component.render()`](../../../reference/api#django_components.Component.render)
 or [`Component.render_to_response()`](../../../reference/api#django_components.Component.render_to_response)
-  with the `type` kwarg set to `"document"` (default)
+  with the `deps_strategy` kwarg set to `"document"` (default)
 
 Example:
 
@@ -55,13 +57,13 @@ MyTable.render(
 
 MyTable.render(
     kwargs={...},
-    type="document",
+    deps_strategy="document",
 )
 ```
 
-### Fragment mode
+### Fragment strategy
 
-Fragment mode assumes that the main HTML has already been rendered and loaded on the page.
+Fragment strategy assumes that the main HTML has already been rendered and loaded on the page.
 The component renders HTML that will be inserted into the page as a fragment, at a LATER time:
 
 - JS and CSS is not directly embedded to avoid duplicately executing the same JS scripts.
@@ -75,14 +77,14 @@ A component is rendered as "fragment" when:
 
 - It is rendered with [`Component.render()`](../../../reference/api#django_components.Component.render)
   or [`Component.render_to_response()`](../../../reference/api#django_components.Component.render_to_response)
-  with the `type` kwarg set to `"fragment"`
+  with the `deps_strategy` kwarg set to `"fragment"`
 
 Example:
 
 ```py
 MyTable.render(
     kwargs={...},
-    type="fragment",
+    deps_strategy="fragment",
 )
 ```
 
@@ -143,8 +145,8 @@ class Frag(Component):
         def get(self, request):
             return self.component.render_to_response(
                 request=request,
-                # IMPORTANT: Don't forget `type="fragment"`
-                type="fragment",
+                # IMPORTANT: Don't forget `deps_strategy="fragment"`
+                deps_strategy="fragment",
             )
 
     template = """
@@ -230,8 +232,8 @@ class Frag(Component):
         def get(self, request):
             return self.component.render_to_response(
                 request=request,
-                # IMPORTANT: Don't forget `type="fragment"`
-                type="fragment",
+                # IMPORTANT: Don't forget `deps_strategy="fragment"`
+                deps_strategy="fragment",
             )
 
     # NOTE: We wrap the actual fragment in a template tag with x-if="false" to prevent it
@@ -329,8 +331,8 @@ class Frag(Component):
         def get(self, request):
             return self.component.render_to_response(
                 request=request,
-                # IMPORTANT: Don't forget `type="fragment"`
-                type="fragment",
+                # IMPORTANT: Don't forget `deps_strategy="fragment"`
+                deps_strategy="fragment",
             )
 
     template = """

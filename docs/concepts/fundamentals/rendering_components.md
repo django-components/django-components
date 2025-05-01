@@ -244,7 +244,7 @@ Button.render(
 - `kwargs` - Keyword arguments to pass to the component (as a dictionary)
 - `slots` - Slot content to pass to the component (as a dictionary)
 - `context` - Django context for rendering (can be a dictionary or a `Context` object)
-- `type` - Type of rendering (default: `"document"`)
+- `deps_strategy` - Dependencies rendering strategy (default: `"document"`)
 - `request` - HTTP request object, used for context processors (optional)
 - `escape_slots_content` - Whether to HTML-escape slot content (default: `True`)
 - `render_dependencies` - Whether to process JS and CSS dependencies (default: `True`)
@@ -336,101 +336,65 @@ response = MyComponent.render_to_response()
 assert isinstance(response, MyHttpResponse)
 ```
 
-## Render types
+## Dependencies rendering
 
-The rendered HTML may be used in different contexts (browser, email, etc).
-If your components use JS and CSS scripts, you need to handle them differently.
+The rendered HTML may be used in different contexts (browser, email, etc), and each may need different handling of JS and CSS scripts.
 
 [`render()`](../../../reference/api/#django_components.Component.render) and [`render_to_response()`](../../../reference/api/#django_components.Component.render_to_response)
-accept a `type` parameter, which controls this behavior.
+accept a `deps_strategy` parameter, which controls where and how the JS / CSS are inserted into the HTML.
 
-The `type` parameter is set at the root of a component render tree, which is why it is not available for
-the [`{% component %}`](../../../reference/template_tags#component) tag.
+The `deps_strategy` parameter is ultimately passed to [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
 
-!!! info
+Learn more about [Rendering JS / CSS](../../advanced/rendering_js_css).
 
-    The `type` parameter is ultimately passed to [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
-    Learn more about [Rendering JS / CSS](../../advanced/rendering_js_css).
+There are five dependencies rendering strategies:
 
-There are three render types:
-
-### `document`
-
-`type="document"` is the default. Use this if you are rendering a whole page, or if no other option suits better.
-
-```python
-html = Button.render(type="document")
-```
-
-When you render a component tree with the `"document"` type, it is expected that:
-
-- The HTML will be rendered at page load.
-- The HTML will be inserted into a page / browser where JS can be executed.
-
-With this setting, the JS and CSS is set up to avoid any delays for end users:
-
-- Components' primary JS and CSS scripts ([`Component.js`](../../../reference/api/#django_components.Component.js)
-  and [`Component.css`](../../../reference/api/#django_components.Component.css)) are inlined into the rendered HTML.
-
-    ```html
-    <script>
-        console.log("Hello from Button!");
-    </script>
-    <style>
-        .button {
-        background-color: blue;
-        }
-    </style>
-    ```
-
-- Components' secondary JS and CSS scripts ([`Component.Media`](../../../reference/api/#django_components.Component.Media))
-  are inserted into the rendered HTML as links.
-
-    ```html
-    <link rel="stylesheet" href="https://example.com/styles.css" />
-    <script src="https://example.com/script.js"></script>
-    ```
-
-- A JS script is injected to manage component dependencies, enabling lazy loading of JS and CSS
-  for HTML fragments.
+- [`document`](../../advanced/rendering_js_css#document) (default)
+    - Smartly inserts JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) or into `<head>` and `<body>` tags.
+    - Inserts extra script to allow `fragment` components to work.
+    - Assumes the HTML will be rendered in a JS-enabled browser.
+- [`fragment`](../../advanced/rendering_js_css#fragment)
+    - A lightweight HTML fragment to be inserted into a document with AJAX.
+    - Assumes the page was already rendered with `"document"` strategy.
+    - No JS / CSS included.
+- [`simple`](../../advanced/rendering_js_css#simple)
+    - Smartly insert JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) or into `<head>` and `<body>` tags.
+    - No extra script loaded.
+- [`prepend`](../../advanced/rendering_js_css#prepend)
+    - Insert JS / CSS before the rendered HTML.
+    - Ignores the placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) and any `<head>`/`<body>` HTML tags.
+    - No extra script loaded.
+- [`append`](../../advanced/rendering_js_css#append)
+    - Insert JS / CSS after the rendered HTML.
+    - Ignores the placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) and any `<head>`/`<body>` HTML tags.
+    - No extra script loaded.
 
 !!! info
 
-    This render type is required for fragments to work properly, as it sets up the dependency manager that fragments rely on.
+    You can use the `"prepend"` and `"append"` strategies to force to output JS / CSS for components
+    that don't have neither the placeholders like [`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies), nor any `<head>`/`<body>` HTML tags:
 
-!!! note "How the dependency manager works"
+    ```py
+    rendered = Calendar.render_to_response(
+        request=request,
+        kwargs={
+            "date": request.GET.get("date", ""),
+        },
+        deps_strategy="append",
+    )
+    ```
 
-    The dependency manager is a JS script that keeps track of all the JS and CSS dependencies that have already been loaded.
+    Renders something like this:
 
-    When a fragment is inserted into the page, it will also insert a JSON `<script>` tag with fragment metadata.
-
-    The dependency manager will pick up on that, and check which scripts the fragment needs.
-
-    It will then fetch only the scripts that haven't been loaded yet.
-
-### `fragment`
-
-`type="fragment"` is used when rendering a piece of HTML that will be inserted into a page
-that has already been rendered with the `"document"` type:
-
-```python
-fragment = MyComponent.render(type="fragment")
-```
-
-The HTML of fragments is very lightweight because it doesn't include the JS and CSS scripts
-of the rendered components.
-
-With fragments, even if a component has JS and CSS, you can insert the same component into a page
-hundreds of times, and the JS and CSS will only ever be loaded once.
-
-The fragment type:
-
-- Does not include the dependency manager script (assumes it's already loaded)
-- Does not inline JS or CSS directly in the HTML
-- Includes a special JSON `<script>` tag that tells the dependency manager what JS and CSS to load
-- The dependency manager will fetch only scripts that haven't been loaded yet
-
-This is intended for dynamic content that's loaded after the initial page load, such as with [HTMX](https://htmx.org/) or similar.
+    ```html
+    <!-- Calendar component -->
+    <div class="calendar">
+        ...
+    </div>
+    <!-- Appended JS / CSS -->
+    <script src="..."></script>
+    <link href="..."></link>
+    ```
 
 ## Passing context
 

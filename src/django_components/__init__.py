@@ -34,7 +34,7 @@ from django_components.component_registry import (
     all_registries,
 )
 from django_components.components import DynamicComponent
-from django_components.dependencies import render_dependencies
+from django_components.dependencies import DependenciesStrategy, render_dependencies
 from django_components.extension import (
     ComponentExtension,
     OnComponentRegisteredContext,
@@ -100,6 +100,7 @@ __all__ = [
     "component_shorthand_formatter",
     "ContextBehavior",
     "Default",
+    "DependenciesStrategy",
     "DynamicComponent",
     "Empty",
     "format_attributes",
