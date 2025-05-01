@@ -30,7 +30,7 @@ jobs:
       # Authenticate with git with the Github App that has permission
       # to push to master, in order to push benchmark results.
       # See https://stackoverflow.com/a/79142962/9788634
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v2
         id: app-token
         with:
           app-id: ${{ vars.RELEASE_BOT_APP_ID }}
