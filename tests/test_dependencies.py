@@ -409,7 +409,7 @@ class TestDependenciesStrategyDocument:
             </html>
         """
         rendered_raw = Template(template_str).render(Context({}))
-        rendered = render_dependencies(rendered_raw)
+        rendered = render_dependencies(rendered_raw, strategy="document")
 
         assert rendered.count("<script") == 4
         assert rendered.count("<style") == 1
@@ -458,7 +458,7 @@ class TestDependenciesStrategyDocument:
             </html>
         """
         rendered_raw = Template(template_str).render(Context({}))
-        rendered = render_dependencies(rendered_raw)
+        rendered = render_dependencies(rendered_raw, strategy="document")
 
         assert rendered.count("<script") == 4
         assert rendered.count("<style") == 1
