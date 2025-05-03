@@ -147,3 +147,16 @@ url = get_component_url(MyComponent)
 ```
 
 This way you don't have to mix your app URLs with component URLs.
+
+!!! info
+
+    If you need to pass query parameters or a fragment to the component URL, you can do so by passing the `query` and `fragment` arguments to [`get_component_url()`](../../../reference/api#django_components.get_component_url):
+
+    ```py
+    url = get_component_url(
+        MyComponent,
+        query={"foo": "bar"},
+        fragment="baz",
+    )
+    # /components/ext/view/components/c1ab2c3?foo=bar#baz
+    ```

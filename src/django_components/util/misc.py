@@ -5,7 +5,8 @@ from hashlib import md5
 from importlib import import_module
 from itertools import chain
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from urllib import parse
 
 from django_components.constants import UID_LENGTH
 from django_components.util.nanoid import generate
@@ -147,3 +148,32 @@ def to_dict(data: Any) -> dict:
         return asdict(data)  # type: ignore[arg-type]
 
     return dict(data)
+
+
+def format_url(url: str, query: Optional[Dict] = None, fragment: Optional[str] = None) -> str:
+    """
+    Given a URL, add to it query parameters and a fragment, returning an updated URL.
+
+    ```py
+    url = format_url(url="https://example.com", query={"foo": "bar"}, fragment="baz")
+    # https://example.com?foo=bar#baz
+    ```
+
+    `query` and `fragment` are optional, and not applied if `None`.
+    """
+    url_parts = parse.urlsplit(url)
+
+    escaped_fragment = parse.quote(str(fragment)) if fragment is not None else url_parts.fragment
+
+    # NOTE: parse_qsl returns a list of tuples. For simpicity we support only one
+    # value per key, so we need to unpack the first element.
+    query_from_url = {key: val[0] for key, val in parse.parse_qsl(url_parts.query)}
+    all_params = {**query_from_url, **(query or {})}
+
+    encoded_params = parse.urlencode(all_params)
+    updated_parts = url_parts._replace(
+        query=encoded_params,
+        fragment=escaped_fragment,
+    )
+    new_url = parse.urlunsplit(updated_parts)
+    return new_url

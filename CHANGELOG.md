@@ -275,6 +275,19 @@
         - Ignores placeholders and any `<head>` / `<body>` tags.
         - No extra script loaded.
 
+- `get_component_url()` now optionally accepts `query` and `fragment` arguments.
+
+    ```py
+    from django_components import get_component_url
+
+    url = get_component_url(
+        MyComponent,
+        query={"foo": "bar"},
+        fragment="baz",
+    )
+    # /components/ext/view/components/c1ab2c3?foo=bar#baz
+    ```
+
 ## v0.139.1
 
 #### Fix

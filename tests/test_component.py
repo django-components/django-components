@@ -373,6 +373,16 @@ class TestComponent:
         with pytest.raises(KeyError):
             get_component_by_class_id("nonexistent")
 
+    def test_component_render_id(self):
+        class SimpleComponent(Component):
+            template = "render_id: {{ render_id }}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"render_id": self.id}
+
+        rendered = SimpleComponent.render()
+        assert rendered == "render_id: ca1bc3e"
+
     def test_get_context_data_returns_none(self):
         class SimpleComponent(Component):
             template = "Hello"

@@ -1,5 +1,5 @@
 import sys
-from typing import TYPE_CHECKING, Any, Optional, Protocol, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Protocol, Type, Union, cast
 from weakref import WeakKeyDictionary
 
 import django.urls
@@ -13,6 +13,7 @@ from django_components.extension import (
     URLRoute,
     extensions,
 )
+from django_components.util.misc import format_url
 
 if TYPE_CHECKING:
     from django_components.component import Component
@@ -32,13 +33,19 @@ def _get_component_route_name(component: Union[Type["Component"], "Component"]) 
     return f"__component_url__{component.class_id}"
 
 
-def get_component_url(component: Union[Type["Component"], "Component"]) -> str:
+def get_component_url(
+    component: Union[Type["Component"], "Component"],
+    query: Optional[Dict] = None,
+    fragment: Optional[str] = None,
+) -> str:
     """
     Get the URL for a [`Component`](../api#django_components.Component).
 
     Raises `RuntimeError` if the component is not public.
 
     Read more about [Component views and URLs](../../concepts/fundamentals/component_views_urls).
+
+    `get_component_url()` optionally accepts `query` and `fragment` arguments.
 
     **Example:**
 
@@ -50,7 +57,12 @@ def get_component_url(component: Union[Type["Component"], "Component"]) -> str:
             public = True
 
     # Get the URL for the component
-    url = get_component_url(MyComponent)
+    url = get_component_url(
+        MyComponent,
+        query={"foo": "bar"},
+        fragment="baz",
+    )
+    # /components/ext/view/components/c1ab2c3?foo=bar#baz
     ```
     """
     view_cls: Optional[Type[ComponentView]] = getattr(component, "View", None)
@@ -58,7 +70,8 @@ def get_component_url(component: Union[Type["Component"], "Component"]) -> str:
         raise RuntimeError("Component URL is not available - Component is not public")
 
     route_name = _get_component_route_name(component)
-    return django.urls.reverse(route_name)
+    url = django.urls.reverse(route_name)
+    return format_url(url, query=query, fragment=fragment)
 
 
 class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore

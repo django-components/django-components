@@ -297,6 +297,24 @@ class TestComponentAsView(SimpleTestCase):
             response.content,
         )
 
+    def test_component_url(self):
+        class TestComponent(Component):
+            template = "Hello"
+
+            class View:
+                public = True
+
+        # Check if the URL is correctly generated
+        component_url = get_component_url(TestComponent)
+        assert component_url == f"/components/ext/view/components/{TestComponent.class_id}/"
+
+        component_url2 = get_component_url(TestComponent, query={"foo": "bar"}, fragment="baz")
+        assert component_url2 == f"/components/ext/view/components/{TestComponent.class_id}/?foo=bar#baz"
+
+        # Check that the query and fragment are correctly escaped
+        component_url3 = get_component_url(TestComponent, query={"f'oo": "b ar&ba'z"}, fragment='q u"x')
+        assert component_url3 == f"/components/ext/view/components/{TestComponent.class_id}/?f%27oo=b+ar%26ba%27z#q%20u%22x"  # noqa: E501
+
     def test_public_url(self):
         did_call_get = False
         did_call_post = False
