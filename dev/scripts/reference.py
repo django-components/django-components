@@ -873,6 +873,9 @@ def _extract_property_docstrings(cls: Type) -> Dict[str, str]:
             if line.endswith("):\n"):
                 ignore = False
             continue
+        # Ignore comments
+        elif line.strip().startswith("#"):
+            continue
         else:
             attrs_lines.append(line)
 
