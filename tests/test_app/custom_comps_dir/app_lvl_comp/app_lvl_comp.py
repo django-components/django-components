@@ -1,5 +1,3 @@
-from typing import Any, Dict
-
 from django_components import Component, register
 
 
@@ -12,5 +10,5 @@ class AppLvlCompComponent(Component):
         js = "app_lvl_comp.js"
         css = "app_lvl_comp.css"
 
-    def get_context_data(self, variable, *args, **kwargs) -> Dict[str, Any]:
-        return {"variable": variable}
+    def get_template_data(self, args, kwargs, slots, context):
+        return {"variable": kwargs["variable"]}

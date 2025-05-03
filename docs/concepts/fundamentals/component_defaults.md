@@ -1,5 +1,5 @@
 When a component is being rendered, the component inputs are passed to various methods like
-[`get_context_data()`](../../../reference/api#django_components.Component.get_context_data),
+[`get_template_data()`](../../../reference/api#django_components.Component.get_template_data),
 [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data),
 or [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data).
 
@@ -24,10 +24,10 @@ class MyTable(Component):
         position = "left"
         selected_items = Default(lambda: [1, 2, 3])
 
-    def get_context_data(self, position, selected_items):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "position": position,
-            "selected_items": selected_items,
+            "position": kwargs["position"],
+            "selected_items": kwargs["selected_items"],
         }
 
     ...
@@ -138,10 +138,10 @@ class MyTable(Component):
         position = "left"
         selected_items = Default(lambda: [1, 2, 3])
 
-    def get_context_data(self, position, selected_items):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "position": position,
-            "selected_items": selected_items,
+            "position": kwargs["position"],
+            "selected_items": kwargs["selected_items"],
         }
 ```
 

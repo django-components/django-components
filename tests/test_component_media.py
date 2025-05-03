@@ -132,9 +132,9 @@ class TestMainMedia:
             css_file = "style.css"
             js_file = "script.js"
 
-            def get_context_data(self, variable):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
+                    "variable": kwargs["variable"],
                 }
 
         registry.register("test", TestComponent)
@@ -231,10 +231,10 @@ class TestMainMedia:
                 Var2 (uppercased): <strong>{{ var2|upper }}</strong>
             """
 
-            def get_context_data(self, var1=None, var2=None):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "var1": var1,
-                    "var2": var2,
+                    "var1": kwargs["var1"],
+                    "var2": kwargs["var2"],
                 }
 
         rendered = FilteredComponent.render(kwargs={"var1": "test1", "var2": "test2"})
@@ -871,7 +871,7 @@ class TestMediaRelativePath:
             </div>
         """  # noqa
 
-        def get_context_data(self):
+        def get_template_data(self, args, kwargs, slots, context):
             return {"shadowing_variable": "NOT SHADOWED"}
 
     class VariableDisplay(Component):
@@ -881,12 +881,12 @@ class TestMediaRelativePath:
             <h1>Uniquely named variable = {{ unique_variable }}</h1>
         """
 
-        def get_context_data(self, shadowing_variable=None, new_variable=None):
+        def get_template_data(self, args, kwargs, slots, context):
             context = {}
-            if shadowing_variable is not None:
-                context["shadowing_variable"] = shadowing_variable
-            if new_variable is not None:
-                context["unique_variable"] = new_variable
+            if kwargs["shadowing_variable"] is not None:
+                context["shadowing_variable"] = kwargs["shadowing_variable"]
+            if kwargs["new_variable"] is not None:
+                context["unique_variable"] = kwargs["new_variable"]
             return context
 
     # Settings required for autodiscover to work

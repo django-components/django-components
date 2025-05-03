@@ -29,17 +29,17 @@ class TestMultilineTags:
                 Variable: <strong>{{ variable }}</strong>
             """
 
-            def get_context_data(self, variable, variable2="default"):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
-                    "variable2": variable2,
+                    "variable": kwargs["variable"],
+                    "variable2": kwargs.get("variable2", "default"),
                 }
 
         template: types.django_html = """
             {% load component_tags %}
             {% component
                 "test_component"
-                123
+                variable=123
                 variable2="abc"
             %}
             {% endcomponent %}
@@ -58,9 +58,9 @@ class TestNestedTags:
             Variable: <strong>{{ var }}</strong>
         """
 
-        def get_context_data(self, var):
+        def get_template_data(self, args, kwargs, slots, context):
             return {
-                "var": var,
+                "var": kwargs["var"],
             }
 
     # See https://github.com/django-components/django-components/discussions/671

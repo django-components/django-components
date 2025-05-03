@@ -41,9 +41,9 @@ class ProvideNode(BaseNode):
           </div>
         \"\"\"
 
-        def get_context_data(self, user: User):
+        def get_template_data(self, args, kwargs, slots, context):
             return {
-                "user": user,
+                "user": kwargs["user"],
             }
     ```
 
@@ -59,7 +59,7 @@ class ProvideNode(BaseNode):
           </div>
         \"\"\"
 
-        def get_context_data(self):
+        def get_template_data(self, args, kwargs, slots, context):
             user = self.inject("user_data").user
             return {
                 "user": user,
@@ -138,7 +138,7 @@ def set_provided_context_var(
 ) -> str:
     """
     'Provide' given data under given key. In other words, this data can be retrieved
-    using `self.inject(key)` inside of `get_context_data()` method of components that
+    using `self.inject(key)` inside of `get_template_data()` method of components that
     are nested inside the `{% provide %}` tag.
     """
     # NOTE: We raise TemplateSyntaxError since this func should be called only from

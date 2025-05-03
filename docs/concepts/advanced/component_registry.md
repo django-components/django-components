@@ -12,9 +12,9 @@ class Calendar(Component):
     template_file = "template.html"
 
     # This component takes one parameter, a date string to show in the template
-    def get_context_data(self, date):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "date": date,
+            "date": kwargs["date"],
         }
 ```
 

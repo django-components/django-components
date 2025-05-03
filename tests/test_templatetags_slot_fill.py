@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, List, Optional
+from typing import Dict
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
@@ -40,10 +40,10 @@ class TestComponentSlot:
         class SimpleComponent(Component):
             template = """Variable: <strong>{{ variable }}</strong>"""
 
-            def get_context_data(self, variable, variable2="default"):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
-                    "variable2": variable2,
+                    "variable": kwargs["variable"],
+                    "variable2": kwargs.get("variable2", "default"),
                 }
 
             class Media:
@@ -96,10 +96,10 @@ class TestComponentSlot:
         class SimpleComponent(Component):
             template = """Variable: <strong>{{ variable }}</strong>"""
 
-            def get_context_data(self, variable, variable2="default"):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
-                    "variable2": variable2,
+                    "variable": kwargs["variable"],
+                    "variable2": kwargs.get("variable2", "default"),
                 }
 
         template_str: types.django_html = """
@@ -152,8 +152,8 @@ class TestComponentSlot:
                 </custom-template>
             """
 
-            def get_context_data(self, variable):
-                return {"variable": variable}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"variable": kwargs["variable"]}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -294,9 +294,9 @@ class TestComponentSlot:
                 </div>
             """
 
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "name": name,
+                    "name": kwargs.get("name", None),
                 }
 
         registry.register("test", SlottedComponent)
@@ -451,8 +451,8 @@ class TestComponentSlot:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_multiple_slots_with_same_name_different_flags(self, components_settings):
         class TestComp(Component):
-            def get_context_data(self, required: bool) -> Any:
-                return {"required": required}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"required": kwargs["required"]}
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -824,8 +824,8 @@ class TestComponentSlotDefault:
     def test_implicit_fill_when_slot_marked_default_not_rendered(self, components_settings):
         @register("test_comp")
         class ConditionalSlotted(Component):
-            def get_context_data(self, var: bool) -> Any:
-                return {"var": var}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"var": kwargs["var"]}
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -885,9 +885,9 @@ class TestPassthroughSlots:
                 </custom-template>
             """
 
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "name": name,
+                    "name": kwargs.get("name", None),
                 }
 
         template_str: types.django_html = """
@@ -941,9 +941,9 @@ class TestPassthroughSlots:
                 </custom-template>
             """
 
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "name": name,
+                    "name": kwargs.get("name", None),
                 }
 
         template_str: types.django_html = """
@@ -985,9 +985,9 @@ class TestPassthroughSlots:
                 </custom-template>
             """
 
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "name": name,
+                    "name": kwargs.get("name", None),
                 }
 
         template_str: types.django_html = """
@@ -1021,7 +1021,7 @@ class TestPassthroughSlots:
     def test_slots_inside_loops(self, components_settings):
         @register("test_comp")
         class OuterComp(Component):
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "slots": ["header", "main", "footer"],
                 }
@@ -1064,7 +1064,7 @@ class TestPassthroughSlots:
 
         @register("test_comp")
         class OuterComp(Component):
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "slots": self.input.slots,
                 }
@@ -1115,7 +1115,7 @@ class TestPassthroughSlots:
 
         @register("test_comp")
         class OuterComp(Component):
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "slots": self.input.slots,
                 }
@@ -1510,7 +1510,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "def",
                     "var123": 456,
@@ -1545,7 +1545,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "def",
                     "var123": 456,
@@ -1580,7 +1580,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "def",
                     "var123": 456,
@@ -1617,7 +1617,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "slot_name": "my_slot",
                     "abc": "def",
@@ -1653,7 +1653,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "slot_props": {
                         "name": "my_slot",
@@ -1692,7 +1692,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "xyz",
                     "var123": 456,
@@ -1728,7 +1728,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "def",
                     "var123": 456,
@@ -1759,7 +1759,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "def",
                     "var123": 456,
@@ -1811,7 +1811,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "def",
                     "var123": 456,
@@ -1837,7 +1837,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "def",
                     "var123": 456,
@@ -1880,7 +1880,7 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "def",
                     "var123": 456,
@@ -1925,10 +1925,10 @@ class TestScopedSlot:
                 </div>
             """
 
-            def get_context_data(self, input):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "abc": "def",
-                    "input": input,
+                    "input": kwargs["input"],
                 }
 
         template_str: types.django_html = """
@@ -1974,9 +1974,9 @@ class TestDuplicateSlot:
                 <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
             """
 
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "name": name,
+                    "name": kwargs.get("name", None),
                 }
         return DuplicateSlotComponent
 
@@ -2001,9 +2001,9 @@ class TestDuplicateSlot:
                 </div>
             """
 
-            def get_context_data(self, items: List) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "items": items,
+                    "items": kwargs["items"],
                 }
         return DuplicateSlotNestedComponent
 
@@ -2243,9 +2243,9 @@ class TestSlotBehavior:
                 </custom-template>
             """
 
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "name": name,
+                    "name": kwargs.get("name", None),
                 }
 
         registry.register("test", SlottedComponent)
@@ -2360,7 +2360,7 @@ class TestSlotBehavior:
 class TestSlotInput:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_slots_accessible_when_python_render(self, components_settings):
-        slots: Dict = {}
+        seen_slots: Dict = {}
 
         @register("test")
         class SlottedComponent(Component):
@@ -2371,12 +2371,12 @@ class TestSlotInput:
                 <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
             """
 
-            def get_context_data(self, input: Optional[int] = None) -> Dict[str, Any]:
-                nonlocal slots
-                slots = self.input.slots
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal seen_slots
+                seen_slots = slots
                 return {}
 
-        assert slots == {}
+        assert seen_slots == {}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -2390,14 +2390,14 @@ class TestSlotInput:
         template = Template(template_str)
         template.render(Context())
 
-        assert list(slots.keys()) == ["header", "main"]
-        assert callable(slots["header"])
-        assert callable(slots["main"])
-        assert "footer" not in slots
+        assert list(seen_slots.keys()) == ["header", "main"]
+        assert callable(seen_slots["header"])
+        assert callable(seen_slots["main"])
+        assert "footer" not in seen_slots
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_slots_normalized_as_slot_instances(self, components_settings):
-        slots: Dict[str, Slot] = {}
+        seen_slots: Dict[str, Slot] = {}
 
         @register("test")
         class SlottedComponent(Component):
@@ -2408,12 +2408,12 @@ class TestSlotInput:
                 <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
             """
 
-            def get_context_data(self, input: Optional[int] = None) -> Dict[str, Any]:
-                nonlocal slots
-                slots = self.input.slots
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal seen_slots
+                seen_slots = slots
                 return {}
 
-        assert slots == {}
+        assert seen_slots == {}
 
         header_slot = Slot(lambda *a, **kw: "HEADER_SLOT")
         main_slot_str = "MAIN_SLOT"
@@ -2427,11 +2427,11 @@ class TestSlotInput:
             }
         )
 
-        assert isinstance(slots["header"], Slot)
-        assert slots["header"](Context(), None, None) == "HEADER_SLOT"  # type: ignore[arg-type]
+        assert isinstance(seen_slots["header"], Slot)
+        assert seen_slots["header"](Context(), None, None) == "HEADER_SLOT"  # type: ignore[arg-type]
 
-        assert isinstance(slots["main"], Slot)
-        assert slots["main"](Context(), None, None) == "MAIN_SLOT"  # type: ignore[arg-type]
+        assert isinstance(seen_slots["main"], Slot)
+        assert seen_slots["main"](Context(), None, None) == "MAIN_SLOT"  # type: ignore[arg-type]
 
-        assert isinstance(slots["footer"], Slot)
-        assert slots["footer"](Context(), None, None) == "FOOTER_SLOT"  # type: ignore[arg-type]
+        assert isinstance(seen_slots["footer"], Slot)
+        assert seen_slots["footer"](Context(), None, None) == "FOOTER_SLOT"  # type: ignore[arg-type]

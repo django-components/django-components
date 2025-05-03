@@ -820,7 +820,7 @@ class TestExtendsCompat:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("block_provide")
                 return {"var": var}
 

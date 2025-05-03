@@ -158,7 +158,7 @@ the to `2024-12-14`, which is Saturday, our template from previous step would re
 
 The first instance rendered `2024-12-16`, while the rest rendered `2024-12-14`!
 
-Why? Remember that in the [`get_context_data()`](../../reference/api#django_components.Component.get_context_data)
+Why? Remember that in the [`get_template_data()`](../../reference/api#django_components.Component.get_template_data)
 method of our Calendar component, we pre-process the date. If the date falls on Saturday or Sunday, we shift it to next Monday:
 
 ```python title="[project root]/components/calendar/calendar.py"
@@ -174,11 +174,11 @@ def to_workweek_date(d: date):
 class Calendar(Component):
     template_file = "calendar.html"
     ...
-    def get_context_data(self, date: date, extra_class: str | None = None):
-        workweek_date = to_workweek_date(date)
+    def get_template_data(self, args, kwargs, slots, context):
+        workweek_date = to_workweek_date(kwargs["date"])
         return {
             "date": workweek_date,
-            "extra_class": extra_class,
+            "extra_class": kwargs.get("extra_class", "text-blue"),
         }
 ```
 
@@ -284,7 +284,7 @@ each time:
     Generally, slots are more flexible - you can access the slot data, even the original slot content.
     Thus, slots behave more like functions that render content based on their context.
 
-    On the other hand, variables are static - the variable you pass to a component is what will be used.
+    On the other hand, variables are simpler - the variable you pass to a component is what will be used.
 
     Moreover, slots are treated as part of the template - for example the CSS scoping (work in progress)
     is applied to the slot content too.

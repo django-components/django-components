@@ -1083,8 +1083,8 @@ def _nodelist_to_slot_render_func(
         #
         # And so we want to put the `extra_context` into the same layer that contains `_COMPONENT_CONTEXT_KEY`.
         #
-        # HOWEVER, the layer with `_COMPONENT_CONTEXT_KEY` also contains user-defined data from `get_context_data()`.
-        # Data from `get_context_data()` should take precedence over `extra_context`. So we have to insert
+        # HOWEVER, the layer with `_COMPONENT_CONTEXT_KEY` also contains user-defined data from `get_template_data()`.
+        # Data from `get_template_data()` should take precedence over `extra_context`. So we have to insert
         # the forloop variables BEFORE that.
         index_of_last_component_layer = get_last_index(ctx.dicts, lambda d: _COMPONENT_CONTEXT_KEY in d)
         if index_of_last_component_layer is None:
@@ -1096,8 +1096,8 @@ def _nodelist_to_slot_render_func(
         #       the following line can be removed.
         index_of_last_component_layer -= 1
 
-        # Insert the `extra_context` layer BEFORE the layer that defines the variables from get_context_data.
-        # Thus, get_context_data will overshadow these on conflict.
+        # Insert the `extra_context` layer BEFORE the layer that defines the variables from get_template_data.
+        # Thus, get_template_data will overshadow these on conflict.
         ctx.dicts.insert(index_of_last_component_layer, extra_context or {})
 
         trace_component_msg("RENDER_NODELIST", component_name, component_id=None, slot_name=slot_name)

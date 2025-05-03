@@ -17,10 +17,13 @@ class SimpleComponent(Component):
         globalThis.testSimpleComponent = 'kapowww!'
     """
 
-    def get_context_data(self, variable, variable2="default"):
+    class Defaults:
+        variable2 = "default"
+
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "variable": variable,
-            "variable2": variable2,
+            "variable": kwargs["variable"],
+            "variable2": kwargs["variable2"],
         }
 
     class Media:
@@ -48,8 +51,8 @@ class SimpleComponentNested(Component):
         globalThis.testSimpleComponentNested = 'bongo!'
     """
 
-    def get_context_data(self, variable):
-        return {"variable": variable}
+    def get_template_data(self, args, kwargs, slots, context):
+        return {"variable": kwargs["variable"]}
 
     class Media:
         css = ["style.css", "style2.css"]
@@ -72,8 +75,8 @@ class OtherComponent(Component):
         globalThis.testOtherComponent = 'wowzee!'
     """
 
-    def get_context_data(self, variable):
-        return {"variable": variable}
+    def get_template_data(self, args, kwargs, slots, context):
+        return {"variable": kwargs["variable"]}
 
     class Media:
         css = "style.css"

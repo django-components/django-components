@@ -25,25 +25,36 @@ class TestComponentDefaults:
                 extra = "extra"
                 fn = lambda: "fn_as_val"  # noqa: E731
 
-            def get_context_data(self, arg1: Any, variable: Any, another: Any, **attrs: Any):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal did_call_context
                 did_call_context = True
 
-                # Check that args and slots are NOT affected by the defaults
-                assert self.input.args == [123]
-                assert [*self.input.slots.keys()] == ["my_slot"]
-                assert self.input.slots["my_slot"](Context(), None, None) == "MY_SLOT"  # type: ignore[arg-type]
-
+                assert kwargs == {
+                    "variable": "test",  # User-given
+                    "another": 1,  # Default because missing
+                    "extra": "extra",  # Default because `None` was given
+                    "fn": self.Defaults.fn,  # Default because missing
+                }
                 assert self.input.kwargs == {
                     "variable": "test",  # User-given
                     "another": 1,  # Default because missing
                     "extra": "extra",  # Default because `None` was given
                     "fn": self.Defaults.fn,  # Default because missing
                 }
+
+                # Check that args and slots are NOT affected by the defaults
+                assert args == [123]
+                assert [*slots.keys()] == ["my_slot"]
+                assert slots["my_slot"](Context(), None, None) == "MY_SLOT"  # type: ignore[arg-type]
+
+                assert self.input.args == [123]
+                assert [*self.input.slots.keys()] == ["my_slot"]
+                assert self.input.slots["my_slot"](Context(), None, None) == "MY_SLOT"  # type: ignore[arg-type]
+
                 assert isinstance(self.input.context, Context)
 
                 return {
-                    "variable": variable,
+                    "variable": kwargs["variable"],
                 }
 
         TestComponent.render(
@@ -64,10 +75,14 @@ class TestComponentDefaults:
                 variable = "test"
                 fn = Default(lambda: "fn_as_factory")
 
-            def get_context_data(self, variable: Any, **attrs: Any):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal did_call_context
                 did_call_context = True
 
+                assert kwargs == {
+                    "variable": "test",  # User-given
+                    "fn": "fn_as_factory",  # Default because missing
+                }
                 assert self.input.kwargs == {
                     "variable": "test",  # User-given
                     "fn": "fn_as_factory",  # Default because missing
@@ -75,7 +90,7 @@ class TestComponentDefaults:
                 assert isinstance(self.input.context, Context)
 
                 return {
-                    "variable": variable,
+                    "variable": kwargs["variable"],
                 }
 
         TestComponent.render(
@@ -94,10 +109,15 @@ class TestComponentDefaults:
                 variable = "test"
                 fn = field(default=lambda: "fn_as_factory")
 
-            def get_context_data(self, variable: Any, **attrs: Any):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal did_call_context
                 did_call_context = True
 
+                assert kwargs == {
+                    "variable": "test",  # User-given
+                    # NOTE: NOT a factory, because it was set as `field(default=...)`
+                    "fn": self.Defaults.fn.default,  # type: ignore[attr-defined]
+                }
                 assert self.input.kwargs == {
                     "variable": "test",  # User-given
                     # NOTE: NOT a factory, because it was set as `field(default=...)`
@@ -106,7 +126,7 @@ class TestComponentDefaults:
                 assert isinstance(self.input.context, Context)
 
                 return {
-                    "variable": variable,
+                    "variable": kwargs["variable"],
                 }
 
         TestComponent.render(
@@ -125,10 +145,15 @@ class TestComponentDefaults:
                 variable = "test"
                 fn = field(default_factory=lambda: "fn_as_factory")
 
-            def get_context_data(self, variable: Any, **attrs: Any):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal did_call_context
                 did_call_context = True
 
+                assert kwargs == {
+                    "variable": "test",  # User-given
+                    # NOTE: IS a factory, because it was set as `field(default_factory=...)`
+                    "fn": "fn_as_factory",  # Default because missing
+                }
                 assert self.input.kwargs == {
                     "variable": "test",  # User-given
                     # NOTE: IS a factory, because it was set as `field(default_factory=...)`
@@ -137,7 +162,7 @@ class TestComponentDefaults:
                 assert isinstance(self.input.context, Context)
 
                 return {
-                    "variable": variable,
+                    "variable": kwargs["variable"],
                 }
 
         TestComponent.render(

@@ -100,9 +100,9 @@ class NodeMeta(type):
             #
             # ```py
             # class MyComponent(Component):
-            #     def get_context_data(self, name: str, **kwargs: Any) -> str:
+            #     def get_template_data(self, args, kwargs, slots, context) -> str:
             #         return {
-            #             "name": name,
+            #             "name": kwargs.pop("name"),
             #             "attrs": kwargs,
             #         }
             #     template = """

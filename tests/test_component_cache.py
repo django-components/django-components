@@ -33,7 +33,7 @@ class TestComponentCache:
             class Cache:
                 enabled = True
 
-            def get_context_data(self, **kwargs: Any):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal did_call_get
                 did_call_get = True
                 return {}
@@ -55,7 +55,7 @@ class TestComponentCache:
         did_call_get = False
         component.render()
 
-        # get_context_data not called because the cache entry was returned
+        # get_template_data not called because the cache entry was returned
         assert not did_call_get
         assert result == "Hello"
 
@@ -68,7 +68,7 @@ class TestComponentCache:
             class Cache:
                 enabled = False
 
-            def get_context_data(self, **kwargs: Any):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal did_call_get
                 did_call_get = True
                 return {}
@@ -89,7 +89,7 @@ class TestComponentCache:
         did_call_get = False
         result = component.render()
 
-        # get_context_data IS called because the cache is NOT used
+        # get_template_data IS called because the cache is NOT used
         assert did_call_get
         assert result == "Hello"
 
@@ -151,8 +151,8 @@ class TestComponentCache:
             class Cache:
                 enabled = True
 
-            def get_context_data(self, input, **kwargs: Any):
-                return {"input": input}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"input": kwargs["input"]}
 
         component = TestComponent()
         component.render(
@@ -200,7 +200,7 @@ class TestComponentCache:
                     # Custom hash method for args and kwargs
                     return "custom-args-and-kwargs"
 
-            def get_context_data(self, *args, **kwargs: Any):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {}
 
         component = TestComponent()

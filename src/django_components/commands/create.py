@@ -199,16 +199,20 @@ class CreateCommand(ComponentCommand):
 
                     @register("{name}")
                     class {name.capitalize()}(Component):
-                        template_file = "{name}/{template_filename}"
+                        template_file = "{template_filename}"
+                        js_file = "{js_filename}"
+                        css_file = "{css_filename}"
 
-                        def get_context_data(self, value):
+                        class Kwargs(NamedTuple):
+                            param: str
+
+                        class Defaults:
+                            param = "sample value"
+
+                        def get_template_data(self, args, kwargs: Kwargs, slots, context):
                             return {{
-                                "param": "sample value",
+                                "param": kwargs.param,
                             }}
-
-                        class Media:
-                            css = "{name}/{css_filename}"
-                            js = "{name}/{js_filename}"
                 """
                 )
                 f.write(py_content.strip())

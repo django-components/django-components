@@ -32,5 +32,5 @@ class RelativeFileWithPathObjComponent(Component):
         js = PathObj("relative_file_pathobj.js")
         css = PathObj("relative_file_pathobj.css")
 
-    def get_context_data(self, variable, *args, **kwargs) -> Dict[str, Any]:
-        return {"variable": variable}
+    def get_template_data(self, args, kwargs, slots, context) -> Dict[str, Any]:
+        return {"variable": kwargs["variable"]}

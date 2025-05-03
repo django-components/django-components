@@ -30,7 +30,7 @@ class Calendar(Component):
     js_file = "calendar.js"
     css_file = "calendar.css"
 
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
             "date": "1970-01-01",
         }

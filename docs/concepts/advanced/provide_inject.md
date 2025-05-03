@@ -78,7 +78,7 @@ In the example from previous section, we've defined two kwargs: `hello="hi" anot
 
 ```py
 class ChildComponent(Component):
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         my_data = self.inject("my_data")
         print(my_data.hello)    # hi
         print(my_data.another)  # 123
@@ -94,7 +94,7 @@ To avoid the error, you can pass a second argument to [`inject()`](../../../refe
 
 ```py
 class ChildComponent(Component):
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         my_data = self.inject("invalid_key", DEFAULT_DATA)
         assert my_data == DEFAULT_DATA
         return {}
@@ -119,7 +119,7 @@ class ChildComponent(Component):
         <div> {{ my_data.another }} </div>
     """
 
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         my_data = self.inject("my_data", "default")
         return {"my_data": my_data}
 

@@ -47,10 +47,10 @@ You can use this for example to allow users of your component to add extra attri
 ```djc_py
 @register("my_comp")
 class MyComp(Component):
-    # Capture extra kwargs in `attrs`
-    def get_context_data(self, **attrs):
+    # Pass all kwargs as `attrs`
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "attrs": attrs,
+            "attrs": kwargs,
             "classes": "text-red",
             "my_id": 123,
         }
@@ -607,10 +607,11 @@ class MyComp(Component):
         </div>
     """
 
-    def get_context_data(self, date: Date, attrs: dict):
+    def get_template_data(self, args, kwargs, slots, context):
+        date = kwargs.pop("date")
         return {
             "date": date,
-            "attrs": attrs,
+            "attrs": kwargs,
             "class_from_var": "extra-class"
         }
 
@@ -625,7 +626,7 @@ class Parent(Component):
         / %}
     """
 
-    def get_context_data(self, date: Date):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
             "date": datetime.now(),
             "json_data": json.dumps({"value": 456})
@@ -669,7 +670,7 @@ So all kwargs that start with `attrs:` will be collected into an `attrs` dict.
     attrs:@click="(e) => onClick(e, 'from_parent')"
 ```
 
-And `get_context_data` of `MyComp` will receive `attrs` input with following keys:
+And `get_template_data` of `MyComp` will receive a kwarg named `attrs` with following keys:
 
 ```py
 attrs = {

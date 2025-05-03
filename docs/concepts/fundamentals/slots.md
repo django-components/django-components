@@ -165,8 +165,8 @@ like so:
 
 ```py
 class MyTable(Component):
-    def get_context_data(self, *args, **kwargs):
-        default_slot = self.input.slots["default"]
+    def get_template_data(self, args, kwargs, slots, context):
+        default_slot = slots["default"]
         return {
             "default_slot": default_slot,
         }
@@ -475,8 +475,8 @@ class MyComp(Component):
         </div>
     """
 
-    def get_context_data(self, input):
-        processed_input = do_something(input)
+    def get_template_data(self, args, kwargs, slots, context):
+        processed_input = do_something(kwargs["input"])
         return {"input": processed_input}
 ```
 
@@ -504,8 +504,8 @@ class MyComp(Component):
         </div>
     """
 
-    def get_context_data(self, input):
-        processed_input = do_something(input)
+    def get_template_data(self, args, kwargs, slots, context):
+        processed_input = do_something(kwargs["input"])
         return {
             "input": processed_input,
         }
@@ -646,9 +646,9 @@ You can dynamically pass all slots to a child component. This is similar to
 
 ```djc_py
 class MyTable(Component):
-    def get_context_data(self, *args, **kwargs):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "slots": self.input.slots,
+            "slots": slots,
         }
 
     template = """

@@ -184,7 +184,7 @@ class Calendar(Component):
     js_file = "calendar.js"   # <--- new
     css_file = "calendar.css"   # <--- new
 
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
             "date": "1970-01-01",
         }
@@ -256,7 +256,7 @@ class Calendar(Component):
             "https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css",  # Tailwind
         ]
 
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
             "date": "1970-01-01",
         }

@@ -63,8 +63,8 @@ class Calendar(Component):
     js_file = "calendar.js"
     css_file = "calendar.css"
 
-    def get_context_data(self, date):
-        return {"date": date}
+    def get_template_data(self, args, kwargs, slots, context):
+        return {"date": kwargs["date"]}
 ```
 
 Use the component like this:
@@ -125,9 +125,9 @@ class Calendar(Component):
         css = ["bootstrap/dist/css/bootstrap.min.css"]
 
     # Variables available in the template
-    def get_context_data(self, date):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "date": date
+            "date": kwargs["date"]
         }
 ```
 
@@ -232,7 +232,7 @@ class Table(Component):
         </div>
     """
 
-    def get_context_data(self, var1, var2, variable, another, **attrs):
+    def get_template_data(self, args, kwargs, slots, context):
         # Access component's ID
         assert self.id == "djc1A2b3c"
 
@@ -247,7 +247,7 @@ class Table(Component):
         assert self.context_processors_data['user'].username == "admin"
 
         return {
-            "variable": variable,
+            "variable": kwargs["variable"],
         }
 
 # Access component's HTML / JS / CSS
@@ -347,9 +347,9 @@ class Calendar(Component):
                 },
             )
 
-    def get_context_data(self, page):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "page": page,
+            "page": kwargs["page"],
         }
 
 # Get auto-generated URL for the component
@@ -381,7 +381,7 @@ Read more about [Provide / Inject](https://django-components.github.io/django-co
 class Header(Component):
     template = "..."
 
-    def get_context_data(self, *args, **kwargs):
+    def get_template_data(self, args, kwargs, slots, context):
         theme = self.inject("theme").variant
         return {
             "theme": theme,

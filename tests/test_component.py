@@ -4,7 +4,7 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 """
 
 import re
-from typing import Any, Dict, no_type_check
+from typing import Dict, no_type_check
 
 import pytest
 from django.conf import settings
@@ -48,9 +48,9 @@ class CustomClient(Client):
         super().__init__(*args, **kwargs)
 
 
-# TODO_REMOVE_IN_V1 - Superseded by `self.get_template` in v1
 @djc_test
-class TestComponentOldTemplateApi:
+class TestComponentLegacyApi:
+    # TODO_REMOVE_IN_V1 - Superseded by `self.get_template` in v1
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_get_template_string(self, components_settings):
         class SimpleComponent(Component):
@@ -59,6 +59,31 @@ class TestComponentOldTemplateApi:
                     Variable: <strong>{{ variable }}</strong>
                 """
                 return content
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "variable": kwargs.get("variable", None),
+                }
+
+            class Media:
+                css = "style.css"
+                js = "script.js"
+
+        rendered = SimpleComponent.render(kwargs={"variable": "test"})
+        assertHTMLEqual(
+            rendered,
+            """
+            Variable: <strong data-djc-id-ca1bc3e>test</strong>
+            """,
+        )
+
+    # TODO_REMOVE_IN_V2 - `get_context_data()` was superseded by `self.get_template_data`
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_get_context_data(self, components_settings):
+        class SimpleComponent(Component):
+            template = """
+                Variable: <strong>{{ variable }}</strong>
+            """
 
             def get_context_data(self, variable=None):
                 return {
@@ -95,9 +120,9 @@ class TestComponent:
                 Variable: <strong>{{ variable }}</strong>
             """
 
-            def get_context_data(self, variable=None):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
+                    "variable": kwargs.get("variable", None),
                 }
 
             class Media:
@@ -121,9 +146,9 @@ class TestComponent:
                 """
                 return content
 
-            def get_context_data(self, variable=None):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
+                    "variable": kwargs.get("variable", None),
                 }
 
             class Media:
@@ -143,9 +168,9 @@ class TestComponent:
         class SimpleComponent(Component):
             template_file = "simple_template.html"
 
-            def get_context_data(self, variable=None):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
+                    "variable": kwargs.get("variable", None),
                 }
 
             class Media:
@@ -165,9 +190,9 @@ class TestComponent:
         class SimpleComponent(Component):
             template_name = "simple_template.html"
 
-            def get_context_data(self, variable=None):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
+                    "variable": kwargs.get("variable", None),
                 }
 
             class Media:
@@ -214,12 +239,12 @@ class TestComponent:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_template_file_dynamic(self, components_settings):
         class SvgComponent(Component):
-            def get_context_data(self, name, css_class="", title="", **attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "name": name,
-                    "css_class": css_class,
-                    "title": title,
-                    **attrs,
+                    "name": kwargs.pop("name", None),
+                    "css_class": kwargs.pop("css_class", None),
+                    "title": kwargs.pop("title", None),
+                    **kwargs,
                 }
 
             def get_template_name(self, context):
@@ -241,9 +266,9 @@ class TestComponent:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_allows_to_return_template(self, components_settings):
         class TestComponent(Component):
-            def get_context_data(self, variable, **attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
+                    "variable": kwargs.pop("variable", None),
                 }
 
             def get_template(self, context):
@@ -261,7 +286,7 @@ class TestComponent:
     def test_input(self):
         class TestComponent(Component):
             @no_type_check
-            def get_context_data(self, var1, var2, variable, another, **attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 assert self.input.args == [123, "str"]
                 assert self.input.kwargs == {"variable": "test", "another": 1}
                 assert isinstance(self.input.context, Context)
@@ -269,7 +294,7 @@ class TestComponent:
                 assert self.input.slots["my_slot"](Context(), None, None) == "MY_SLOT"
 
                 return {
-                    "variable": variable,
+                    "variable": kwargs["variable"],
                 }
 
             @no_type_check
@@ -312,15 +337,15 @@ class TestComponent:
                 </main>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 data = self.inject("my_provide")
                 data["data1"]  # This should raise TypeError
                 return {"data": data}
 
         @register("provider")
         class Provider(Component):
-            def get_context_data(self, data: Any) -> Any:
-                return {"data": data}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -331,8 +356,8 @@ class TestComponent:
 
         @register("parent")
         class Parent(Component):
-            def get_context_data(self, data: Any) -> Any:
-                return {"data": data}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -387,7 +412,7 @@ class TestComponent:
         class SimpleComponent(Component):
             template = "Hello"
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return None
 
         assert SimpleComponent.render() == "Hello"
@@ -412,11 +437,11 @@ class TestComponentRender:
                 {% endslot %}
             """
 
-            def get_context_data(self, the_arg2=None, *args, the_kwarg=None, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "the_arg2": the_arg2,
-                    "the_kwarg": the_kwarg,
-                    "args": args,
+                    "the_arg2": args[0] if args else None,
+                    "the_kwarg": kwargs.pop("the_kwarg", None),
+                    "args": args[1:],
                     "kwargs": kwargs,
                 }
 
@@ -425,7 +450,7 @@ class TestComponentRender:
             rendered,
             """
             the_arg2: None
-            args: ()
+            args: []
             the_kwarg: None
             kwargs: {}
             ---
@@ -456,12 +481,12 @@ class TestComponentRender:
                 {% endslot %}
             """
 
-            def get_context_data(self, the_arg, the_arg2=None, *args, the_kwarg, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "the_arg": the_arg,
-                    "the_arg2": the_arg2,
-                    "the_kwarg": the_kwarg,
-                    "args": args,
+                    "the_arg": args[0],
+                    "the_arg2": args[1],
+                    "the_kwarg": kwargs.pop("the_kwarg", None),
+                    "args": args[2:],
                     "kwargs": kwargs,
                 }
 
@@ -476,7 +501,7 @@ class TestComponentRender:
             """
             the_arg: one
             the_arg2: two
-            args: ('three',)
+            args: ['three']
             the_kwarg: test
             kwargs: {'kw2': 'ooo'}
             ---
@@ -509,12 +534,12 @@ class TestComponentRender:
                 {% endslot %}
             """
 
-            def get_context_data(self, the_arg, the_arg2=None, *args, the_kwarg, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "the_arg": the_arg,
-                    "the_arg2": the_arg2,
-                    "the_kwarg": the_kwarg,
-                    "args": args,
+                    "the_arg": args[0],
+                    "the_arg2": args[1],
+                    "the_kwarg": kwargs.pop("the_kwarg"),
+                    "args": args[2:],
                     "kwargs": kwargs,
                 }
 
@@ -531,7 +556,7 @@ class TestComponentRender:
             """
             the_arg: one
             the_arg2: two
-            args: ('three',)
+            args: ['three']
             the_kwarg: test
             kwargs: {'kw2': 'ooo'}
             ---
@@ -580,10 +605,10 @@ class TestComponentRender:
                 {% endslot %}
             """
 
-            def get_context_data(self, the_arg, the_kwarg=None, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "the_arg": the_arg,
-                    "the_kwarg": the_kwarg,
+                    "the_arg": args[0],
+                    "the_kwarg": kwargs.pop("the_kwarg", None),
                     "kwargs": kwargs,
                 }
 
@@ -592,7 +617,7 @@ class TestComponentRender:
             # NOTE: Since the slot has access to the Context object, it should behave
             # the same way as it does in templates - when in "isolated" mode, then the
             # slot fill has access only to the "root" context, but not to the data of
-            # get_context_data() of SimpleComponent.
+            # get_template_data() of SimpleComponent.
             if is_isolated:
                 assert ctx.get("the_arg") is None
                 assert ctx.get("the_kwarg") is None
@@ -725,8 +750,8 @@ class TestComponentRender:
                 </div>
             """
 
-            def get_context_data(self, *args, how: str, **kwargs):
-                return {"how": how}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"how": kwargs.pop("how")}
 
             class View(ComponentView):
                 def get(self, request):
@@ -734,7 +759,7 @@ class TestComponentRender:
 
                     return self.component.render_to_response(
                         context=RequestContext(self.request),
-                        kwargs=self.component.get_context_data(how=how),
+                        kwargs={"how": how},
                     )
 
         client = CustomClient(urlpatterns=[path("test_thing/", Thing.as_view())])
@@ -869,7 +894,7 @@ class TestComponentRender:
         class TestComponent(Component):
             template = "Variable: <strong>{{ id }}</strong>"
 
-            def get_context_data(self, **attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "id": self.id,
                 }
@@ -885,7 +910,7 @@ class TestComponentRender:
         class TestComponent(Component):
             template = "Variable: <strong>{{ id }}</strong>"
 
-            def get_context_data(self, **attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "id": self.id,
                 }
@@ -923,7 +948,7 @@ class TestComponentHook:
                 {% endcomponent %}
             """
 
-            def get_context_data(self, *args, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "args": args,
                     "kwargs": kwargs,
@@ -943,7 +968,7 @@ class TestComponentHook:
         assertHTMLEqual(
             rendered,
             """
-            args: ()
+            args: []
             kwargs: {}
             ---
             from_on_before: :)
@@ -984,7 +1009,7 @@ class TestComponentHook:
                 {% endcomponent %}
             """
 
-            def get_context_data(self, *args, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "args": args,
                     "kwargs": kwargs,
@@ -1006,7 +1031,7 @@ class TestComponentHook:
         assertHTMLEqual(
             captured_content,
             """
-            args: ()
+            args: []
             kwargs: {}
             ---
             from_on_after:
@@ -1020,7 +1045,7 @@ class TestComponentHook:
         assertHTMLEqual(
             rendered,
             """
-            args: ()
+            args: []
             kwargs: {}
             ---
             from_on_after:
@@ -1060,7 +1085,7 @@ class TestComponentHook:
                 {% endcomponent %}
             """
 
-            def get_context_data(self, *args, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "args": args,
                     "kwargs": kwargs,
@@ -1077,7 +1102,7 @@ class TestComponentHook:
         assertHTMLEqual(
             captured_content,
             """
-            args: ()
+            args: []
             kwargs: {}
             ---
             from_on_before:
@@ -1092,7 +1117,7 @@ class TestComponentHook:
             rendered,
             """
             Chocolate cookie recipe:
-            args: ()
+            args: []
             kwargs: {}
             ---
             from_on_before:
@@ -1131,7 +1156,7 @@ class TestComponentHook:
                 {% endcomponent %}
             """
 
-            def get_context_data(self, *args, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "args": args,
                     "kwargs": kwargs,

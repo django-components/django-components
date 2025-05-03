@@ -246,6 +246,6 @@ Instead, our solution is closer to [how Vue handles slots](https://vuejs.org/gui
 
 While we do not wrap the logic in a function, we do PREPARE IN ADVANCE:
 1. The content that should be rendered for each slot
-2. The context variables from `get_context_data()`
+2. The context variables from `get_template_data()`
 
 Thus, once we reach the `{% slot %}` node, in it's `render()` method, we access the data above, and, depending on the `context_behavior` setting, include the current context or not. For more info, see `SlotNode.render()`.

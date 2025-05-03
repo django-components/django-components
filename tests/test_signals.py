@@ -51,10 +51,10 @@ class TestTemplateSignal:
     class InnerComponent(Component):
         template_file = "simple_template.html"
 
-        def get_context_data(self, variable, variable2="default"):
+        def get_template_data(self, args, kwargs, slots, context):
             return {
-                "variable": variable,
-                "variable2": variable2,
+                "variable": kwargs["variable"],
+                "variable2": kwargs.get("variable2", "default"),
             }
 
         class Media:

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 from django.conf import settings
@@ -60,8 +60,8 @@ class TestComponentAsView(SimpleTestCase):
                 </form>
                 """
 
-            def get_context_data(self, variable, *args, **kwargs) -> Dict[str, Any]:
-                return {"variable": variable}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"variable": kwargs["variable"]}
 
         def render_template_view(request):
             template = Template(
@@ -90,8 +90,8 @@ class TestComponentAsView(SimpleTestCase):
                 </form>
                 """
 
-            def get_context_data(self, variable):
-                return {"inner_var": variable}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"inner_var": kwargs["variable"]}
 
             class View(ComponentView):
                 def get(self, request, *args, **kwargs) -> HttpResponse:
@@ -115,8 +115,8 @@ class TestComponentAsView(SimpleTestCase):
                 </form>
                 """
 
-            def get_context_data(self, variable):
-                return {"inner_var": variable}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"inner_var": kwargs["variable"]}
 
             def get(self, request, *args, **kwargs) -> HttpResponse:
                 return self.render_to_response(kwargs={"variable": "GET"})
@@ -139,8 +139,8 @@ class TestComponentAsView(SimpleTestCase):
                 </form>
                 """
 
-            def get_context_data(self, variable):
-                return {"inner_var": variable}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"inner_var": kwargs["variable"]}
 
             class View(ComponentView):
                 def post(self, request, *args, **kwargs) -> HttpResponse:
@@ -165,8 +165,8 @@ class TestComponentAsView(SimpleTestCase):
                 </form>
                 """
 
-            def get_context_data(self, variable):
-                return {"inner_var": variable}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"inner_var": kwargs["variable"]}
 
             def post(self, request, *args, **kwargs) -> HttpResponse:
                 variable = request.POST.get("variable")
@@ -188,8 +188,8 @@ class TestComponentAsView(SimpleTestCase):
                 </form>
                 """
 
-            def get_context_data(self, variable):
-                return {"inner_var": variable}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"inner_var": kwargs["variable"]}
 
             def get(self, request, *args, **kwargs) -> HttpResponse:
                 return self.render_to_response(kwargs={"variable": self.name})

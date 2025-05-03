@@ -144,9 +144,9 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "attrs": attrs,
+                    "attrs": kwargs["attrs"],
                     "defaults": {"class": "override-me"},
                 }
 
@@ -172,9 +172,9 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "attrs": attrs,
+                    "attrs": kwargs["attrs"],
                     "defaults": {"class": "override-me"},
                     "class": "123 457",
                 }
@@ -197,9 +197,9 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "attrs": attrs,
+                    "attrs": kwargs["attrs"],
                     "defaults": {"class": "override-me"},
                 }
 
@@ -225,9 +225,9 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "attrs": attrs,
+                    "attrs": kwargs["attrs"],
                     "defaults": {"class": "override-me"},
                 }
 
@@ -253,10 +253,10 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "props": {
-                        "attrs": attrs,
+                        "attrs": kwargs["attrs"],
                         "defaults": {"class": "override-me"},
                         "class": "added_class",
                         "data-id": 123,
@@ -285,8 +285,8 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
-                return {"attrs": attrs}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs["attrs"]}
 
         template = Template(self.template_str)
         rendered = template.render(Context({"class_var": "padding-top-8"}))
@@ -318,8 +318,8 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
-                return {"attrs": attrs}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs["attrs"]}
 
         template = Template(self.template_str)
 
@@ -346,8 +346,8 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
-                return {"attrs": attrs}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs["attrs"]}
 
         template = Template(self.template_str)
 
@@ -367,8 +367,8 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
-                return {"attrs": attrs}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs["attrs"]}
 
         template = Template(self.template_str)
         rendered = template.render(Context({"class_var": "padding-top-8"}))
@@ -391,8 +391,8 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
-                return {"attrs": attrs}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs["attrs"]}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -421,8 +421,8 @@ class TestHtmlAttrs:
                 </div>
             """  # noqa: E501
 
-            def get_context_data(self, *args, attrs):
-                return {"attrs": attrs}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs["attrs"]}
 
         template = Template(self.template_str)
         rendered = template.render(Context({"class_var": "padding-top-8"}))
@@ -446,9 +446,9 @@ class TestHtmlAttrs:
                 </div>
             """
 
-            def get_context_data(self, *args, attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "attrs": attrs,
+                    "attrs": kwargs["attrs"],
                     "defaults": {"class": "override-me"},
                 }
 
@@ -474,7 +474,7 @@ class TestHtmlAttrs:
                 </div>
             """
 
-            def get_context_data(self, *args, attrs):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "attrs": None,
                     "defaults": None,

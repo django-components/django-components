@@ -1,4 +1,5 @@
 import re
+from typing import NamedTuple
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
@@ -25,8 +26,8 @@ class SlottedComponentWithContext(Component):
         </custom-template>
     """
 
-    def get_context_data(self, variable):
-        return {"variable": variable}
+    def get_template_data(self, args, kwargs, slots, context):
+        return {"variable": kwargs["variable"]}
 
 
 #######################
@@ -41,10 +42,10 @@ class TestComponentTemplateTag:
             Variable: <strong>{{ variable }}</strong>
         """
 
-        def get_context_data(self, variable, variable2="default"):
+        def get_template_data(self, args, kwargs, slots, context):
             return {
-                "variable": variable,
-                "variable2": variable2,
+                "variable": kwargs["variable"],
+                "variable2": kwargs.get("variable2", "default"),
             }
 
         class Media:
@@ -114,10 +115,10 @@ class TestComponentTemplateTag:
                 {% endif %}
             """
 
-            def get_context_data(self, variable, variable2="default"):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
-                    "variable2": variable2,
+                    "variable": kwargs["variable"],
+                    "variable2": kwargs.get("variable2", "default"),
                 }
 
             class Media:
@@ -178,8 +179,11 @@ class TestComponentTemplateTag:
                 Default: <p>{{ default_param }}</p>
             """
 
-            def get_context_data(self, variable, default_param="default text"):
-                return {"variable": variable, "default_param": default_param}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "variable": kwargs["variable"],
+                    "default_param": kwargs.get("default_param", "default text"),
+                }
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -204,10 +208,17 @@ class TestDynamicComponentTemplateTag:
             Variable: <strong>{{ variable }}</strong>
         """
 
-        def get_context_data(self, variable, variable2="default"):
+        class Kwargs(NamedTuple):
+            variable: str
+            variable2: str
+
+        class Defaults:
+            variable2 = "default"
+
+        def get_template_data(self, args, kwargs: Kwargs, slots, context):
             return {
-                "variable": variable,
-                "variable2": variable2,
+                "variable": kwargs.variable,
+                "variable2": kwargs.variable2,
             }
 
         class Media:
@@ -375,10 +386,10 @@ class TestDynamicComponentTemplateTag:
                 Slot: {% slot "default" default / %}
             """
 
-            def get_context_data(self, variable, variable2="default"):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
-                    "variable2": variable2,
+                    "variable": kwargs["variable"],
+                    "variable2": kwargs.get("variable2", "default"),
                 }
 
         registry.register(name="test", component=SimpleSlottedComponent)
@@ -412,10 +423,10 @@ class TestDynamicComponentTemplateTag:
                 Slot 2: {% slot "two" / %}
             """
 
-            def get_context_data(self, variable, variable2="default"):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
-                    "variable2": variable2,
+                    "variable": kwargs["variable"],
+                    "variable2": kwargs.get("variable2", "default"),
                 }
 
         registry.register(name="test", component=SimpleSlottedComponent)
@@ -455,10 +466,10 @@ class TestDynamicComponentTemplateTag:
                 Slot 2: {% slot "two" / %}
             """
 
-            def get_context_data(self, variable, variable2="default"):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
-                    "variable2": variable2,
+                    "variable": kwargs["variable"],
+                    "variable2": kwargs.get("variable2", "default"),
                 }
 
         registry.register(name="test", component=SimpleSlottedComponent)
@@ -722,8 +733,11 @@ class TestAggregateInput:
                 </div>
             """
 
-            def get_context_data(self, *args, attrs, my_dict):
-                return {"attrs": attrs, "my_dict": my_dict}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "attrs": kwargs["attrs"],
+                    "my_dict": kwargs["my_dict"],
+                }
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -751,9 +765,12 @@ class TestRecursiveComponent:
 
         @register("recursive")
         class Recursive(Component):
-            def get_context_data(self, depth: int = 0):
-                print("depth:", depth)
-                return {"depth": depth + 1, "DEPTH": DEPTH}
+            class Defaults:
+                depth = 0
+
+            def get_template_data(self, args, kwargs, slots, context):
+                print("depth:", kwargs["depth"])
+                return {"depth": kwargs["depth"] + 1, "DEPTH": DEPTH}
 
             template: types.django_html = """
                 <div>

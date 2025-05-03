@@ -98,8 +98,8 @@ class MyComponent(Component):
         ttl = 300  # Cache for 5 minutes
         cache_name = "my_cache"
 
-    def get_context_data(self, name, **kwargs):
-        return {"name": name}
+    def get_template_data(self, args, kwargs, slots, context):
+        return {"name": kwargs["name"]}
 ```
 
 In this example, the component's rendered output is cached for 5 minutes using the `my_cache` backend.

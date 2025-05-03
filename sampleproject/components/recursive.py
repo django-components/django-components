@@ -1,27 +1,11 @@
 import time
-from typing import Any, Dict
+from typing import NamedTuple
 
 from django_components import Component, register, types
 
 
 @register("recursive")
 class Recursive(Component):
-    class View:
-        def get(self, request):
-            time_before = time.time()
-            output = Recursive.render_to_response(
-                request=request,
-                kwargs={
-                    "depth": 0,
-                },
-            )
-            time_after = time.time()
-            print("TIME: ", time_after - time_before)
-            return output
-
-    def get_context_data(self, depth: int = 0) -> Dict[str, Any]:
-        return {"depth": depth + 1}
-
     template: types.django_html = """
         <div id="recursive">
             depth: {{ depth }}
@@ -31,3 +15,25 @@ class Recursive(Component):
             {% endif %}
         </div>
     """
+
+    class Kwargs(NamedTuple):
+        depth: int
+
+    class Defaults:
+        depth = 0
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        return {"depth": kwargs.depth + 1}
+
+    class View:
+        def get(self, request):
+            time_before = time.time()
+            output = Recursive.render_to_response(
+                request=request,
+                kwargs=Recursive.Kwargs(
+                    depth=0,
+                ),
+            )
+            time_after = time.time()
+            print("TIME: ", time_after - time_before)
+            return output

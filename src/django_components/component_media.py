@@ -539,7 +539,7 @@ def _resolve_media(comp_cls: Type["Component"], comp_media: ComponentMedia) -> N
 
     class MyComponent(Component):
         media_class = MyMedia
-        def get_context_data(self):
+        def get_template_data(self, args, kwargs, slots, context):
             assert isinstance(self.media, MyMedia)
     ```
     """

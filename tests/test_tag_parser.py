@@ -2706,7 +2706,7 @@ class TestResolver:
 
         @register("test")
         class Test(Component):
-            def get_context_data(self, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal captured
                 captured = kwargs
                 return {}
@@ -2771,7 +2771,7 @@ class TestResolver:
         class Test(Component):
             template = "var"
 
-            def get_context_data(self, *args, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal captured
                 captured = args, kwargs
                 return {}
@@ -2783,7 +2783,7 @@ class TestResolver:
         """
         Template(template_str).render(Context({"myvar": "myval", "val2": [1, 2, 3]}))
 
-        assert captured == ((42, "myval"), {"key": "val", "key2": [1, 2, 3]})
+        assert captured == ([42, "myval"], {"key": "val", "key2": [1, 2, 3]})
 
     def test_component_special_kwargs(self):
         captured = None
@@ -2792,7 +2792,7 @@ class TestResolver:
         class Test(Component):
             template = "var"
 
-            def get_context_data(self, *args, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal captured
                 captured = args, kwargs
                 return {}
@@ -2805,7 +2805,7 @@ class TestResolver:
         Template(template_str).render(Context({"date": 2024, "bzz": "fzz"}))
 
         assert captured == (
-            tuple([]),
+            [],
             {
                 "date": 2024,
                 "@lol": 2,

@@ -30,14 +30,12 @@ so are still valid:
 </body>
 ```
 
-These can then be accessed inside `get_context_data` so:
+These can then be accessed inside `get_template_data` so:
 
 ```py
 @register("calendar")
 class Calendar(Component):
-    # Since # . @ - are not valid identifiers, we have to
-    # use `**kwargs` so the method can accept these args.
-    def get_context_data(self, **kwargs):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
             "date": kwargs["my-date"],
             "id": kwargs["#some_id"],
@@ -92,17 +90,17 @@ _New in version 0.93_
 When passing data around, sometimes you may need to do light transformations, like negating booleans or filtering lists.
 
 Normally, what you would have to do is to define ALL the variables
-inside `get_context_data()`. But this can get messy if your components contain a lot of logic.
+inside `get_template_data()`. But this can get messy if your components contain a lot of logic.
 
 ```py
 @register("calendar")
 class Calendar(Component):
-    def get_context_data(self, id: str, editable: bool):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "editable": editable,
-            "readonly": not editable,
-            "input_id": f"input-{id}",
-            "icon_id": f"icon-{id}",
+            "editable": kwargs["editable"],
+            "readonly": not kwargs["editable"],
+            "input_id": f"input-{kwargs['id']}",
+            "icon_id": f"icon-{kwargs['id']}",
             ...
         }
 ```
@@ -200,10 +198,10 @@ class MyComp(Component):
         {% component "other" attrs=attrs / %}
     """
 
-    def get_context_data(self, some_id: str):
+    def get_template_data(self, args, kwargs, slots, context):
         attrs = {
             "class": "pa-4 flex",
-            "data-some-id": some_id,
+            "data-some-id": kwargs["some_id"],
             "@click.stop": "onClickHandler",
         }
         return {"attrs": attrs}
@@ -231,8 +229,8 @@ class MyComp(Component):
         / %}
     """
 
-    def get_context_data(self, some_id: str):
-        return {"some_id": some_id}
+    def get_template_data(self, args, kwargs, slots, context):
+        return {"some_id": kwargs["some_id"]}
 ```
 
 Sweet! Now all the relevant HTML is inside the template, and we can move it to a separate file with confidence:

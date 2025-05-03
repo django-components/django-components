@@ -24,8 +24,8 @@ class SimpleComponent(Component):
         Variable: <strong>{{ variable }}</strong>
     """
 
-    def get_context_data(self, variable=None):
-        return {"variable": variable} if variable is not None else {}
+    def get_template_data(self, args, kwargs, slots, context):
+        return {"variable": kwargs.get("variable", None)} if "variable" in kwargs else {}
 
 
 class VariableDisplay(Component):
@@ -35,12 +35,12 @@ class VariableDisplay(Component):
         <h1>Uniquely named variable = {{ unique_variable }}</h1>
     """
 
-    def get_context_data(self, shadowing_variable=None, new_variable=None):
+    def get_template_data(self, args, kwargs, slots, context):
         context = {}
-        if shadowing_variable is not None:
-            context["shadowing_variable"] = shadowing_variable
-        if new_variable is not None:
-            context["unique_variable"] = new_variable
+        if kwargs["shadowing_variable"] is not None:
+            context["shadowing_variable"] = kwargs["shadowing_variable"]
+        if kwargs["new_variable"] is not None:
+            context["unique_variable"] = kwargs["new_variable"]
         return context
 
 
@@ -55,8 +55,8 @@ class IncrementerComponent(Component):
         super().__init__(*args, **kwargs)
         self.call_count = 0
 
-    def get_context_data(self, value=0):
-        value = int(value)
+    def get_template_data(self, args, kwargs, slots, context):
+        value = int(kwargs.get("value", 0))
         if hasattr(self, "call_count"):
             self.call_count += 1
         else:
@@ -88,7 +88,7 @@ class TestContext:
             </div>
         """  # noqa
 
-        def get_context_data(self):
+        def get_template_data(self, args, kwargs, slots, context):
             return {"shadowing_variable": "NOT SHADOWED"}
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -231,8 +231,8 @@ class TestParentArgs:
             </div>
         """  # noqa
 
-        def get_context_data(self, parent_value):
-            return {"inner_parent_value": parent_value}
+        def get_template_data(self, args, kwargs, slots, context):
+            return {"inner_parent_value": kwargs["parent_value"]}
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_parent_args_can_be_drawn_from_context(self, components_settings):
@@ -463,7 +463,7 @@ class TestIsolatedContext:
         registry.register(name="simple_component", component=SimpleComponent)
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component 'simple_component' variable only %}{% endcomponent %}
+            {% component 'simple_component' variable=variable only %}{% endcomponent %}
         """
         template = Template(template_str)
         rendered = template.render(Context({"variable": "outer_value"})).strip()
@@ -490,7 +490,7 @@ class TestIsolatedContextSetting:
         registry.register(name="simple_component", component=SimpleComponent)
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component 'simple_component' variable %}{% endcomponent %}
+            {% component 'simple_component' variable=variable %}{% endcomponent %}
         """
         template = Template(template_str)
         rendered = template.render(Context({"variable": "outer_value"}))
@@ -516,7 +516,7 @@ class TestIsolatedContextSetting:
         registry.register(name="simple_component", component=SimpleComponent)
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component 'simple_component' variable %}
+            {% component 'simple_component' variable=variable %}
             {% endcomponent %}
         """
         template = Template(template_str)
@@ -549,7 +549,7 @@ class TestContextProcessors:
         class TestComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
@@ -585,7 +585,7 @@ class TestContextProcessors:
                 {% component "test_child" / %}
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal parent_request
                 context_processors_data = self.context_processors_data
@@ -596,7 +596,7 @@ class TestContextProcessors:
         class TestChildComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data_child
                 nonlocal child_request
                 context_processors_data_child = self.context_processors_data
@@ -635,7 +635,7 @@ class TestContextProcessors:
                 {% endcomponent %}
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal parent_request
                 context_processors_data = self.context_processors_data
@@ -646,7 +646,7 @@ class TestContextProcessors:
         class TestChildComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data_child
                 nonlocal child_request
                 context_processors_data_child = self.context_processors_data
@@ -680,7 +680,7 @@ class TestContextProcessors:
         class TestComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
@@ -709,7 +709,7 @@ class TestContextProcessors:
                 {% component "test_child" / %}
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal parent_request
                 context_processors_data = self.context_processors_data
@@ -720,7 +720,7 @@ class TestContextProcessors:
         class TestChildComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data_child
                 nonlocal child_request
                 context_processors_data_child = self.context_processors_data
@@ -746,7 +746,7 @@ class TestContextProcessors:
         class TestComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
@@ -774,7 +774,7 @@ class TestContextProcessors:
                 {% component "test_child" / %}
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal parent_request
                 context_processors_data = self.context_processors_data
@@ -785,7 +785,7 @@ class TestContextProcessors:
         class TestChildComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data_child
                 nonlocal child_request
                 context_processors_data_child = self.context_processors_data
@@ -811,7 +811,7 @@ class TestContextProcessors:
         class TestComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
@@ -834,7 +834,7 @@ class TestContextProcessors:
         class TestComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
@@ -857,7 +857,7 @@ class TestContextProcessors:
         class TestComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
@@ -902,7 +902,7 @@ class TestOuterContextProperty:
                 Variable: <strong>{{ variable }}</strong>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return self.outer_context.flatten()  # type: ignore[union-attr]
 
         template_str: types.django_html = """

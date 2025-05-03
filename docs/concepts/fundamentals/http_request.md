@@ -48,7 +48,7 @@ When the component has access to the `request` object, the request object will b
 
 ```python
 class MyComponent(Component):
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
             'user_id': self.request.GET['user_id'],
         }
@@ -77,11 +77,11 @@ class MyComponent(Component):
 MyComponent.render(request=request)
 ```
 
-You can also access the context processors data from within [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data) and other methods under [`Component.context_processors_data`](../../../reference/api#django_components.Component.context_processors_data).
+You can also access the context processors data from within [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data) and other methods under [`Component.context_processors_data`](../../../reference/api#django_components.Component.context_processors_data).
 
 ```python
 class MyComponent(Component):
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         csrf_token = self.context_processors_data['csrf_token']
         return {
             'csrf_token': csrf_token,

@@ -103,9 +103,9 @@ class TestNestedSlot:
                 </custom-template>
             """
 
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "name": name,
+                    "name": kwargs.get("name", None),
                 }
 
         registry.clear()
@@ -168,8 +168,8 @@ class TestConditionalSlot:
                 {% endif %}
             """
 
-            def get_context_data(self, branch=None):
-                return {"branch": branch}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"branch": kwargs.get("branch", None)}
 
         return ConditionalComponent
 
@@ -267,9 +267,9 @@ class TestSlotIteration:
                 {% endfor %}
             """
 
-            def get_context_data(self, objects, *args, **kwargs) -> dict:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "objects": objects,
+                    "objects": kwargs["objects"],
                 }
 
         return ComponentSimpleSlotInALoop
@@ -303,7 +303,7 @@ class TestSlotIteration:
         assertHTMLEqual(rendered, expected)
 
     # NOTE: Second arg in tuple is expected result. In isolated mode, while loops should NOT leak,
-    # we should still have access to root context (returned from get_context_data)
+    # we should still have access to root context (returned from get_template_data)
     @djc_test(
         parametrize=(
             ["components_settings", "expected"],
@@ -376,7 +376,7 @@ class TestSlotIteration:
         assertHTMLEqual(rendered, expected)
 
     # NOTE: Second arg in tuple is expected result. In isolated mode, while loops should NOT leak,
-    # we should still have access to root context (returned from get_context_data)
+    # we should still have access to root context (returned from get_template_data)
     @djc_test(
         parametrize=(
             ["components_settings", "expected"],
@@ -662,9 +662,9 @@ class TestComponentNesting:
                 </custom-template>
             """
 
-            def get_context_data(self, name: Optional[str] = None) -> Dict[str, Any]:
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "name": name,
+                    "name": kwargs.get("name", None),
                 }
 
         registry.register("test", SlottedComponent)
@@ -817,8 +817,8 @@ class TestComponentNesting:
                 {% endfor %}
             """
 
-            def get_context_data(self, items, *args, **kwargs) -> Dict[str, Any]:
-                return {"items": items}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"items": kwargs["items"]}
 
         template_str: types.django_html = """
             {% load component_tags %}

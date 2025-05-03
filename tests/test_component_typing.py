@@ -142,7 +142,7 @@ class TestComponentTyping:
         css_data_instance = None
 
         class Button(Component):
-            # Data returned from `get_context_data`
+            # Data returned from `get_template_data`
             @dataclass
             class TemplateData:
                 data1: str
@@ -232,7 +232,7 @@ class TestComponentTyping:
         css_data_instance = None
 
         class Button(Component):
-            # Data returned from `get_context_data`
+            # Data returned from `get_template_data`
             @dataclass
             class TemplateData:
                 data1: str
@@ -348,7 +348,7 @@ class TestComponentTyping:
                 # The generic specifies the data available to the slot function
                 footer: NotRequired[Slot[ButtonFooterSlotData]]
 
-            # Data returned from `get_context_data`
+            # Data returned from `get_template_data`
             class TemplateData(NamedTuple):
                 data1: str
                 data2: int

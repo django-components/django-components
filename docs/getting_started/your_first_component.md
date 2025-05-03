@@ -104,7 +104,7 @@ Inside `calendar.html`, write:
 ```
 
 In this example we've defined one template variable `date`. You can use any and as many variables as you like. These variables will be
-defined in the Python file in [`get_context_data()`](../../reference/api#django_components.Component.get_context_data)
+defined in the Python file in [`get_template_data()`](../../reference/api#django_components.Component.get_template_data)
 when creating an instance of this component.
 
 !!! note
@@ -142,7 +142,7 @@ class Calendar(Component):
 
 In `calendar.html`, we've used the variable `date`. So we need to define it for the template to work.
 
-This is done using [`Component.get_context_data()`](../../reference/api#django_components.Component.get_context_data).
+This is done using [`Component.get_template_data()`](../../reference/api#django_components.Component.get_template_data).
 It's a function that returns a dictionary. The entries in this dictionary
 will become available within the template as variables, e.g. as `{{ date }}`.
 
@@ -152,7 +152,7 @@ from django_components import Component
 class Calendar(Component):
     template_file = "calendar.html"
 
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
             "date": "1970-01-01",
         }

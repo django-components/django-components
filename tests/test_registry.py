@@ -182,9 +182,9 @@ class TestMultipleComponentRegistries:
                 Slot: {% slot "default" default / %}
             """
 
-            def get_context_data(self, variable=None):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
+                    "variable": kwargs.get("variable", None),
                 }
 
         registry_a.register("simple_a", SimpleComponent)

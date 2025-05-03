@@ -42,7 +42,7 @@ Extensions can define methods to hook into lifecycle events, such as:
 - Un/registering a component
 - Creating or deleting a registry
 - Pre-processing data passed to a component on render
-- Post-processing data returned from [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+- Post-processing data returned from [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
   and others.
 
 See the full list in [Extension Hooks Reference](../../../reference/extension_hooks).
@@ -122,7 +122,7 @@ For example, the View extension is available as `self.view`:
 
 ```python
 class MyTable(Component):
-    def get_context_data(self, request):
+    def get_template_data(self, args, kwargs, slots, context):
         # `self.view` points to the instance of `View` extension.
         return {
             "view": self.view,
@@ -133,7 +133,7 @@ And the Storybook extension is available as `self.storybook`:
 
 ```python
 class MyTable(Component):
-    def get_context_data(self, request):
+    def get_template_data(self, args, kwargs, slots, context):
         # `self.storybook` points to the instance of `Storybook` extension.
         return {
             "title": self.storybook.title(),

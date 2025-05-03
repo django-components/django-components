@@ -99,13 +99,14 @@ class DynamicComponent(Component):
 
     _is_dynamic_component = True
 
-    def get_context_data(
+    def get_template_data(
         self,
-        *args: Any,
-        registry: Optional[ComponentRegistry] = None,
-        **kwargs: Any,
+        args: Any,
+        kwargs: Any,
+        slots: Any,
+        context: Any,
     ) -> Dict:
-        # NOTE: We have to access `is` via kwargs, because it's a special keyword in Python
+        registry: Optional[ComponentRegistry] = kwargs.pop("registry", None)
         comp_name_or_class: Union[str, Type[Component]] = kwargs.pop("is", None)
         if not comp_name_or_class:
             raise TypeError(f"Component '{self.name}' is missing a required argument 'is'")

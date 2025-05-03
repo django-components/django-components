@@ -1,5 +1,4 @@
 import re
-from typing import Any
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
@@ -29,7 +28,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -79,7 +78,7 @@ class TestProvideTemplateTag:
                 <div> another: {{ another }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 my_provide = self.inject("my_provide")
                 return {
                     "key": my_provide.key,
@@ -114,7 +113,7 @@ class TestProvideTemplateTag:
                 <div> another: {{ my_provide.another }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 my_provide = self.inject("my_provide")
                 return {
                     "my_provide": my_provide,
@@ -147,7 +146,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -179,7 +178,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -214,7 +213,7 @@ class TestProvideTemplateTag:
                 <div></div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {}
 
         template_str: types.django_html = """
@@ -246,7 +245,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -279,7 +278,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -318,7 +317,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -361,7 +360,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -390,7 +389,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -419,7 +418,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -446,7 +445,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -478,7 +477,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -515,7 +514,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -558,7 +557,7 @@ class TestProvideTemplateTag:
                 <div> second_provide: {{ second_provide|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 first_provide = self.inject("first_provide", "default")
                 second_provide = self.inject("second_provide", "default")
                 return {
@@ -595,7 +594,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -626,7 +625,7 @@ class TestProvideTemplateTag:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide", "default")
                 return {"var": var}
 
@@ -674,7 +673,7 @@ class TestInject:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("my_provide")
                 return {"var": var}
 
@@ -704,7 +703,7 @@ class TestInject:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("abc")
                 return {"var": var}
 
@@ -728,7 +727,7 @@ class TestInject:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("abc", "default")
                 return {"var": var}
 
@@ -755,7 +754,7 @@ class TestInject:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("")
                 return {"var": var}
 
@@ -783,7 +782,7 @@ class TestInject:
                 <div> injected: {{ var|safe }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 var = self.inject("abc", "default")
                 return {"var": var}
 
@@ -806,14 +805,14 @@ class TestInject:
                 </main>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 data = self.inject("my_provide")
                 return {"data": data}
 
         @register("provider")
         class Provider(Component):
-            def get_context_data(self, data: Any) -> Any:
-                return {"data": data}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -824,8 +823,8 @@ class TestInject:
 
         @register("parent")
         class Parent(Component):
-            def get_context_data(self, data: Any) -> Any:
-                return {"data": data}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -875,14 +874,14 @@ class TestInject:
                 </main>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 data = self.inject("my_provide")
                 return {"data": data}
 
         @register("provider")
         class Provider(Component):
-            def get_context_data(self, data: Any) -> Any:
-                return {"data": data}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -893,8 +892,8 @@ class TestInject:
 
         @register("parent")
         class Parent(Component):
-            def get_context_data(self, data: Any) -> Any:
-                return {"data": data}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -949,7 +948,7 @@ class TestProvideCache:
                 <div> Ran: {{ ran }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 assert len(provide_cache) == 1
 
                 data = self.inject("my_provide")
@@ -989,7 +988,7 @@ class TestProvideCache:
         class Injectee(Component):
             template = ""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 assert len(provide_cache) == 1
                 data = self.inject("my_provide")
 
@@ -1022,7 +1021,7 @@ class TestProvideCache:
                 <div> Ran: {{ ran }} </div>
             """
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 assert len(provide_cache) == 1
 
                 data = self.inject("my_provide")
@@ -1059,7 +1058,7 @@ class TestProvideCache:
         class Injectee(Component):
             template = ""
 
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 assert len(provide_cache) == 1
 
                 data = self.inject("my_provide")

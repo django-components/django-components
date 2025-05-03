@@ -1,24 +1,8 @@
-from typing import Any, Dict
-
 from django_components import Component, register, types
 
 
 @register("greeting")
 class Greeting(Component):
-    class View:
-        def get(self, request, *args, **kwargs):
-            slots = {"message": "Hello, world!"}
-            return Greeting.render_to_response(
-                request=request,
-                slots=slots,
-                kwargs={
-                    "name": request.GET.get("name", ""),
-                },
-            )
-
-    def get_context_data(self, name, *args, **kwargs) -> Dict[str, Any]:
-        return {"name": name}
-
     template: types.django_html = """
         <div id="greeting">Hello, {{ name }}!</div>
         {% slot "message" %}{% endslot %}
@@ -37,3 +21,17 @@ class Greeting(Component):
             alert("Hello!");
         });
     """
+
+    def get_template_data(self, args, kwargs, slots, context):
+        return {"name": kwargs["name"]}
+
+    class View:
+        def get(self, request, *args, **kwargs):
+            slots = {"message": "Hello, world!"}
+            return Greeting.render_to_response(
+                request=request,
+                slots=slots,
+                kwargs={
+                    "name": request.GET.get("name", ""),
+                },
+            )

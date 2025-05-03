@@ -33,9 +33,9 @@ class TestTemplateCache:
                 """
                 return content
 
-            def get_context_data(self, variable=None):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "variable": variable,
+                    "variable": kwargs.get("variable", None),
                 }
 
         comp = SimpleComponent()

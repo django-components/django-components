@@ -116,8 +116,8 @@ def with_component_cls(on_created: Callable):
     class TempComponent(Component):
         template = "Hello {{ name }}!"
 
-        def get_context_data(self, name="World"):
-            return {"name": name}
+        def get_template_data(self, args, kwargs, slots, context):
+            return {"name": kwargs.get("name", "World")}
 
     on_created()
 
@@ -143,8 +143,8 @@ class TestExtension:
         class TestAccessComp(Component):
             template = "Hello {{ name }}!"
 
-            def get_context_data(self, arg1, arg2, name="World"):
-                return {"name": name}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "World")}
 
         ext_class = TestAccessComp.TestExtension  # type: ignore[attr-defined]
         assert issubclass(ext_class, ComponentExtension.ExtensionClass)
@@ -240,8 +240,8 @@ class TestExtensionHooks:
         class TestComponent(Component):
             template = "Hello {{ name }}!"
 
-            def get_context_data(self, name="World"):
-                return {"name": name}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "World")}
 
         registry.register("test_comp", TestComponent)
         extension = cast(DummyExtension, app_settings.EXTENSIONS[3])
@@ -268,13 +268,13 @@ class TestExtensionHooks:
         class TestComponent(Component):
             template = "Hello {{ name }}!"
 
-            def get_context_data(self, arg1, arg2, name="World"):
-                return {"name": name}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "World")}
 
-            def get_js_data(self, *args, **kwargs):
+            def get_js_data(self, args, kwargs, slots, context):
                 return {"script": "console.log('Hello!')"}
 
-            def get_css_data(self, *args, **kwargs):
+            def get_css_data(self, args, kwargs, slots, context):
                 return {"style": "body { color: blue; }"}
 
         # Render the component with some args and kwargs

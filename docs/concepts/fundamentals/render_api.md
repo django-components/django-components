@@ -20,7 +20,7 @@ Example:
 
 ```python
 class Table(Component):
-    def get_context_data(self, *args, **attrs):
+    def get_template_data(self, args, kwargs, slots, context):
         # Access component's ID
         assert self.id == "c1A2b3c"
 
@@ -77,7 +77,7 @@ If you need to expand this limit, please open an issue on GitHub.
 
 ```python
 class Table(Component):
-    def get_context_data(self, *args, **attrs):
+    def get_template_data(self, args, kwargs, slots, context):
         # Access component's ID
         assert self.id == "c1A2b3c"
 
@@ -102,7 +102,7 @@ to access the positional and keyword arguments passed to [`Component.render()`](
 
 ```python
 class Table(Component):
-    def get_context_data(self, *args, **kwargs):
+    def get_template_data(self, args, kwargs, slots, context):
         # Access component's inputs, slots and context
         assert self.input.args == [123, "str"]
         assert self.input.kwargs == {"variable": "test", "another": 1}
@@ -140,7 +140,7 @@ Read more about the request object and context processors in the [HTTP Request](
 from django.http import HttpRequest
 
 class Table(Component):
-    def get_context_data(self, *args, **attrs):
+    def get_template_data(self, args, kwargs, slots, context):
         # Access the request object and Django's context processors
         assert self.request.GET == {"query": "something"}
         assert self.context_processors_data['user'].username == "admin"
@@ -166,7 +166,7 @@ Read more about [Provide / Inject](../advanced/provide_inject.md).
 
 ```python
 class Table(Component):
-    def get_context_data(self, *args, **attrs):
+    def get_template_data(self, args, kwargs, slots, context):
         # Access provided data
         data = self.inject("some_data")
         assert data.some_data == "some_data"

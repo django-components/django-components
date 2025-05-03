@@ -56,7 +56,7 @@ class ContextBehavior(str, Enum):
     That is, they enrich the context, and pass it along.
 
     1. Component fills use the context of the component they are within.
-    2. Variables from [`Component.get_context_data()`](../api#django_components.Component.get_context_data)
+    2. Variables from [`Component.get_template_data()`](../api#django_components.Component.get_template_data)
     are available to the component fill.
 
     **Example:**
@@ -71,7 +71,7 @@ class ContextBehavior(str, Enum):
     {% endwith %}
     ```
 
-    and this context returned from the `Component.get_context_data()` method
+    and this context returned from the `Component.get_template_data()` method
     ```python
     { "my_var": 123 }
     ```
@@ -98,7 +98,7 @@ class ContextBehavior(str, Enum):
     """
     This setting makes the component fills behave similar to Vue or React, where
     the fills use EXCLUSIVELY the context variables defined in
-    [`Component.get_context_data()`](../api#django_components.Component.get_context_data).
+    [`Component.get_template_data()`](../api#django_components.Component.get_template_data).
 
     **Example:**
 
@@ -112,7 +112,7 @@ class ContextBehavior(str, Enum):
     {% endwith %}
     ```
 
-    and this context returned from the `get_context_data()` method
+    and this context returned from the `get_template_data()` method
     ```python
     { "my_var": 123 }
     ```

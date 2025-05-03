@@ -100,7 +100,7 @@ class BaseForm(Component):
         </form>
     """
 
-    def get_context_data(self, **kwargs):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
             "form_content": self.get_form_content(),
             "submit_text": "Submit"
@@ -112,8 +112,8 @@ class BaseForm(Component):
 class ContactForm(BaseForm):
     # Extend parent's "context"
     # but override "submit_text"
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+    def get_template_data(self, args, kwargs, slots, context):
+        context = super().get_template_data(args, kwargs, slots, context)
         context["submit_text"] = "Send Message"  
         return context
 

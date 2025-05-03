@@ -67,7 +67,7 @@ If you insert this tag multiple times, ALL JS scripts will be duplicately insert
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L2794" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L2772" target="_blank">See source code</a>
 
 
 
@@ -363,9 +363,9 @@ class Parent(Component):
       </div>
     """
 
-    def get_context_data(self, user: User):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "user": user,
+            "user": kwargs["user"],
         }
 ```
 
@@ -381,7 +381,7 @@ class Child(Component):
       </div>
     """
 
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         user = self.inject("user_data").user
         return {
             "user": user,

@@ -12,7 +12,7 @@ NOTE: `{% csrf_token %}` tags need access to the top-level context, and they wil
 
 If you find yourself using the `only` modifier often, you can set the [context_behavior](#context-behavior) option to `"isolated"`, which automatically applies the `only` modifier. This is useful if you want to make sure that components don't accidentally access the outer context.
 
-Components can also access the outer context in their context methods like `get_context_data` by accessing the property `self.outer_context`.
+Components can also access the outer context in their context methods like `get_template_data` by accessing the property `self.outer_context`.
 
 ## Example of Accessing Outer Context
 
@@ -22,14 +22,14 @@ Components can also access the outer context in their context methods like `get_
 </div>
 ```
 
-Assuming that the rendering context has variables such as `date`, you can use `self.outer_context` to access them from within `get_context_data`. Here's how you might implement it:
+Assuming that the rendering context has variables such as `date`, you can use `self.outer_context` to access them from within `get_template_data`. Here's how you might implement it:
 
 ```python
 class Calender(Component):
 
     ...
 
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         outer_field = self.outer_context["date"]
         return {
             "date": outer_fields,
@@ -56,7 +56,7 @@ This has two modes:
       [`{% with %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#with) tags.
     - Any loops ([`{% for ... %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#cycle))
       that the `{% fill %}` tag is part of.
-    - Data returned from [`Component.get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+    - Data returned from [`Component.get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
       of the component that owns the fill tag.
 
 - `"isolated"`
@@ -69,12 +69,12 @@ This has two modes:
 
     - Any loops ([`{% for ... %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#cycle))
       that the `{% fill %}` tag is part of.
-    - [`Component.get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+    - [`Component.get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
       of the component which defined the template (AKA the "root" component).
 
 !!! warning
 
-    Notice that the component whose `get_context_data()` we use inside
+    Notice that the component whose `get_template_data()` we use inside
     [`{% fill %}`](../../../reference/template_tags#fill)
     is NOT the same across the two modes!
 
@@ -93,10 +93,10 @@ This has two modes:
         """
     ```
 
-    - `"django"` - `my_var` has access to data from `get_context_data()` of both `Inner` and `Outer`.
+    - `"django"` - `my_var` has access to data from `get_template_data()` of both `Inner` and `Outer`.
       If there are variables defined in both, then `Inner` overshadows `Outer`.
 
-    - `"isolated"` - `my_var` has access to data from `get_context_data()` of ONLY `Outer`.
+    - `"isolated"` - `my_var` has access to data from `get_template_data()` of ONLY `Outer`.
 
 
 ### Example "django"
@@ -115,11 +115,11 @@ class RootComp(Component):
         {% endwith %}
     """
 
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         return { "my_var": 123 }
 ```
 
-Then if [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+Then if [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
 of the component `"my_comp"` returns following data:
 
 ```py
@@ -154,11 +154,11 @@ class RootComp(Component):
         {% endwith %}
     """
 
-    def get_context_data(self):
+    def get_template_data(self, args, kwargs, slots, context):
         return { "my_var": 123 }
 ```
 
-Then if [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
+Then if [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
 of the component `"my_comp"` returns following data:
 
 ```py
@@ -172,7 +172,7 @@ Then the template will be rendered as:
     # cheese
 ```
 
-Because variables `"my_var"` and `"cheese"` are searched only inside `RootComponent.get_context_data()`.
+Because variables `"my_var"` and `"cheese"` are searched only inside `RootComponent.get_template_data()`.
 But since `"cheese"` is not defined there, it's empty.
 
 !!! info

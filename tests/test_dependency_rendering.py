@@ -25,10 +25,10 @@ class SimpleComponent(Component):
         Variable: <strong>{{ variable }}</strong>
     """
 
-    def get_context_data(self, variable, variable2="default"):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "variable": variable,
-            "variable2": variable2,
+            "variable": kwargs["variable"],
+            "variable2": kwargs.get("variable2", "default"),
         }
 
     class Media:
@@ -55,7 +55,7 @@ class SimpleComponentNested(Component):
         console.log("Hello");
     """
 
-    def get_context_data(self, variable):
+    def get_template_data(self, args, kwargs, slots, context):
         return {}
 
     class Media:
@@ -78,7 +78,7 @@ class OtherComponent(Component):
         console.log("xyz");
     """
 
-    def get_context_data(self, variable):
+    def get_template_data(self, args, kwargs, slots, context):
         return {}
 
     class Media:
@@ -91,7 +91,7 @@ class SimpleComponentWithSharedDependency(Component):
         Variable: <strong>{{ variable }}</strong>
     """
 
-    def get_context_data(self, variable, variable2="default"):
+    def get_template_data(self, args, kwargs, slots, context):
         return {}
 
     class Media:

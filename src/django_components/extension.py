@@ -172,7 +172,7 @@ class ComponentExtension:
         class MyExtension:
             ...
 
-        def get_context_data(self):
+        def get_template_data(self, args, kwargs, slots, context):
             return {
                 "my_extension": self.my_extension.do_something(),
             }
@@ -212,7 +212,7 @@ class ComponentExtension:
         class MyExtension:
             ...
 
-        def get_context_data(self):
+        def get_template_data(self, args, kwargs, slots, context):
             return {
                 "my_extension": self.my_extension.do_something(),
             }
@@ -450,7 +450,7 @@ class ComponentExtension:
         Use this hook to modify or validate component inputs before they're processed.
 
         This is the first hook that is called when rendering a component. As such this hook is called before
-        [`Component.get_context_data()`](../api#django_components.Component.get_context_data),
+        [`Component.get_template_data()`](../api#django_components.Component.get_template_data),
         [`Component.get_js_data()`](../api#django_components.Component.get_js_data),
         and [`Component.get_css_data()`](../api#django_components.Component.get_css_data) methods,
         and the
@@ -482,7 +482,7 @@ class ComponentExtension:
         after a component's context and data methods have been processed.
 
         This hook is called after
-        [`Component.get_context_data()`](../api#django_components.Component.get_context_data),
+        [`Component.get_template_data()`](../api#django_components.Component.get_template_data),
         [`Component.get_js_data()`](../api#django_components.Component.get_js_data)
         and [`Component.get_css_data()`](../api#django_components.Component.get_css_data).
 
@@ -498,7 +498,7 @@ class ComponentExtension:
         class MyExtension(ComponentExtension):
             def on_component_data(self, ctx: OnComponentDataContext) -> None:
                 # Add extra template variable to all components when they are rendered
-                ctx.context_data["my_template_var"] = "my_value"
+                ctx.template_data["my_template_var"] = "my_value"
         ```
         """
         pass

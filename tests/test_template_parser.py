@@ -215,8 +215,8 @@ class TestTemplateParser:
                 Slot: {% slot "content" default / %}
             """
 
-            def get_context_data(self, var: str) -> dict:
-                return {"var": var}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"var": kwargs["var"]}
 
         template_str: types.django_html = """
             {% load component_tags %}

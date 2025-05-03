@@ -30,9 +30,9 @@ from django_components import Component, register, types
 
 @register("calendar")
 class Calendar(Component):
-    def get_context_data(self, date):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "date": date,
+            "date": kwargs["date"],
         }
 
     template: types.django_html = """
@@ -114,9 +114,9 @@ from django_components import Component, register, types
 
 @register("calendar")
 class Calendar(Component):
-    def get_context_data(self, date):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "date": date,
+            "date": kwargs["date"],
         }
 
     template: types.django_html = """
@@ -155,9 +155,9 @@ from django_components import Component, register
 
 @register("calendar")
 class Calendar(Component):
-    def get_context_data(self, date):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "date": date,
+            "date": kwargs["date"],
         }
 
     # language=HTML

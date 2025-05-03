@@ -231,9 +231,9 @@ class ComponentVars(NamedTuple):
 
     ```py
     class MyTable(Component):
-        def get_context_data(self, *args, **kwargs):
+        def get_template_data(self, args, kwargs, slots, context):
             return {
-                "my_slot_filled": "my_slot" in self.input.slots
+                "my_slot_filled": "my_slot" in slots
             }
     ```
     """
@@ -508,7 +508,7 @@ class Component(metaclass=ComponentMeta):
     class MyComponent(Component):
         template_file = "path/to/template.html"
 
-        def get_context_data(self):
+        def get_template_data(self, args, kwargs, slots, context):
             return {"name": "World"}
     ```
     """
@@ -556,7 +556,7 @@ class Component(metaclass=ComponentMeta):
     class MyComponent(Component):
         template = "Hello, {{ name }}!"
 
-        def get_context_data(self):
+        def get_template_data(self, args, kwargs, slots, context):
             return {"name": "World"}
     ```
     """
@@ -1663,7 +1663,7 @@ class Component(metaclass=ComponentMeta):
 
         ```py
         class MyComponent(Component):
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 print(f"Rendering '{self.id}'")
                 return {}
 
@@ -1702,14 +1702,9 @@ class Component(metaclass=ComponentMeta):
 
         **Example:**
 
-        Use can use [`self.input.args`](../api/#django_components.ComponentInput.args)
-        and [`self.input.kwargs`](../api/#django_components.ComponentInput.kwargs)
-        to access the positional and keyword arguments passed to
-        [`Component.render()`](../api/#django_components.Component.render).
-
         ```python
         class Table(Component):
-            def get_context_data(self, *args, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 # Access component's inputs, slots and context
                 assert self.input.args == [123, "str"]
                 assert self.input.kwargs == {"variable": "test", "another": 1}
@@ -1778,7 +1773,7 @@ class Component(metaclass=ComponentMeta):
 
         ```py
         class MyComponent(Component):
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 user_id = self.request.GET['user_id']
                 return {
                     'user_id': user_id,
@@ -1801,7 +1796,7 @@ class Component(metaclass=ComponentMeta):
 
         This data is also available from within the component's template, without having to
         return this data from
-        [`get_context_data()`](../api#django_components.Component.get_context_data).
+        [`get_template_data()`](../api#django_components.Component.get_template_data).
 
         In regular Django templates, you need to use
         [`RequestContext`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.RequestContext)
@@ -1831,7 +1826,7 @@ class Component(metaclass=ComponentMeta):
 
         ```py
         class MyComponent(Component):
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 user = self.context_processors_data['user']
                 return {
                     'is_logged_in': user.is_authenticated,
@@ -2371,7 +2366,7 @@ class Component(metaclass=ComponentMeta):
 
         # By adding the current input to the stack, we temporarily allow users
         # to access the provided context, slots, etc. Also required so users can
-        # call `self.inject()` from within `get_context_data()`.
+        # call `self.inject()` from within `get_template_data()`.
         #
         # This is handled as a stack, as users can potentially call `component.render()`
         # from within component hooks. Thus, then they do so, `component.id` will be the ID

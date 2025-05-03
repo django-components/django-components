@@ -1,7 +1,7 @@
 """Catch-all for tests that use template tags and don't fit other files"""
 
 import re
-from typing import Any, Dict
+from typing import Dict
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
@@ -68,21 +68,15 @@ class TestDynamicExpr:
 
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(
-                self,
-                pos_var1: Any,
-                *args: Any,
-                bool_var: bool,
-                list_var: Dict,
-            ):
-                captured["pos_var1"] = pos_var1
-                captured["bool_var"] = bool_var
-                captured["list_var"] = list_var
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["pos_var1"] = args[0]
+                captured["bool_var"] = kwargs["bool_var"]
+                captured["list_var"] = kwargs["list_var"]
 
                 return {
-                    "pos_var1": pos_var1,
-                    "bool_var": bool_var,
-                    "list_var": list_var,
+                    "pos_var1": args[0],
+                    "bool_var": kwargs["bool_var"],
+                    "list_var": kwargs["list_var"],
                 }
 
             template: types.django_html = """
@@ -135,24 +129,17 @@ class TestDynamicExpr:
 
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(
-                self,
-                pos_var1: Any,
-                *args: Any,
-                bool_var: bool,
-                list_var: Dict,
-                dict_var: Dict,
-            ):
-                captured["pos_var1"] = pos_var1
-                captured["bool_var"] = bool_var
-                captured["list_var"] = list_var
-                captured["dict_var"] = dict_var
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["pos_var1"] = args[0]
+                captured["bool_var"] = kwargs["bool_var"]
+                captured["list_var"] = kwargs["list_var"]
+                captured["dict_var"] = kwargs["dict_var"]
 
                 return {
-                    "pos_var1": pos_var1,
-                    "bool_var": bool_var,
-                    "list_var": list_var,
-                    "dict_var": dict_var,
+                    "pos_var1": args[0],
+                    "bool_var": kwargs["bool_var"],
+                    "list_var": kwargs["list_var"],
+                    "dict_var": kwargs["dict_var"],
                 }
 
             template: types.django_html = """
@@ -209,24 +196,17 @@ class TestDynamicExpr:
 
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(
-                self,
-                pos_var1: Any,
-                pos_var2: Any,
-                *args: Any,
-                bool_var: bool,
-                list_var: Dict,
-            ):
-                captured["pos_var1"] = pos_var1
-                captured["pos_var2"] = pos_var2
-                captured["bool_var"] = bool_var
-                captured["list_var"] = list_var
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["pos_var1"] = args[0]
+                captured["pos_var2"] = args[1]
+                captured["bool_var"] = kwargs["bool_var"]
+                captured["list_var"] = kwargs["list_var"]
 
                 return {
-                    "pos_var1": pos_var1,
-                    "pos_var2": pos_var2,
-                    "bool_var": bool_var,
-                    "list_var": list_var,
+                    "pos_var1": args[0],
+                    "pos_var2": args[1],
+                    "bool_var": kwargs["bool_var"],
+                    "list_var": kwargs["list_var"],
                 }
 
             template: types.django_html = """
@@ -281,26 +261,18 @@ class TestDynamicExpr:
 
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(
-                self,
-                pos_var1: Any,
-                pos_var2: Any,
-                *args: Any,
-                bool_var: bool,
-                list_var: Dict,
-                dict_var: Dict,
-            ):
-                captured["pos_var1"] = pos_var1
-                captured["bool_var"] = bool_var
-                captured["list_var"] = list_var
-                captured["dict_var"] = dict_var
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["pos_var1"] = args[0]
+                captured["bool_var"] = kwargs["bool_var"]
+                captured["list_var"] = kwargs["list_var"]
+                captured["dict_var"] = kwargs["dict_var"]
 
                 return {
-                    "pos_var1": pos_var1,
-                    "pos_var2": pos_var2,
-                    "bool_var": bool_var,
-                    "list_var": list_var,
-                    "dict_var": dict_var,
+                    "pos_var1": args[0],
+                    "pos_var2": args[1],
+                    "bool_var": kwargs["bool_var"],
+                    "list_var": kwargs["list_var"],
+                    "dict_var": kwargs["dict_var"],
                 }
 
             template: types.django_html = """
@@ -357,17 +329,11 @@ class TestDynamicExpr:
 
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(
-                self,
-                pos_var1: Any,
-                pos_var2: Any,
-                *args: Any,
-                bool_var: bool,
-            ):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "pos_var1": pos_var1,
-                    "pos_var2": pos_var2,
-                    "bool_var": bool_var,
+                    "pos_var1": args[0],
+                    "pos_var2": args[1],
+                    "bool_var": kwargs["bool_var"],
                 }
 
             template: types.django_html = """
@@ -404,15 +370,10 @@ class TestDynamicExpr:
 
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(
-                self,
-                pos_var1: Any,
-                *args: Any,
-                bool_var: bool,
-            ):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "pos_var1": pos_var1,
-                    "bool_var": bool_var,
+                    "pos_var1": args[0],
+                    "bool_var": kwargs["bool_var"],
                 }
 
             template: types.django_html = """
@@ -461,17 +422,12 @@ class TestSpreadOperator:
 
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(
-                self,
-                pos_var1: Any,
-                *args: Any,
-                **kwargs: Any,
-            ):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal captured
                 captured = kwargs
 
                 return {
-                    "pos_var1": pos_var1,
+                    "pos_var1": args[0],
                     **kwargs,
                 }
 
@@ -531,7 +487,7 @@ class TestSpreadOperator:
     def test_slot(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "my_dict": {
                         "attrs:@click": "() => {}",
@@ -568,7 +524,7 @@ class TestSpreadOperator:
     def test_fill(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     "my_dict": {
                         "attrs:@click": "() => {}",
@@ -618,7 +574,7 @@ class TestSpreadOperator:
     def test_provide(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(self):
+            def get_template_data(self, args, kwargs, slots, context):
                 data = self.inject("test")
                 return {
                     "attrs": data.attrs,
@@ -692,11 +648,7 @@ class TestSpreadOperator:
     def test_later_spreads_do_not_overwrite_earlier(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
-            def get_context_data(
-                self,
-                *args: Any,
-                **kwargs: Any,
-            ):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {
                     **kwargs,
                 }
@@ -794,7 +746,7 @@ class TestSpreadOperator:
         class SimpleComponent(Component):
             template = ""
 
-            def get_context_data(self, *args, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal captured
                 captured = args, kwargs
                 return {}
@@ -820,7 +772,7 @@ class TestSpreadOperator:
         template.render(context)
 
         assert captured == (
-            ("a", "b", "c", 1, 2, 3),
+            ["a", "b", "c", 1, 2, 3],
             {},
         )
 
@@ -858,7 +810,7 @@ class TestAggregateKwargs:
         class Test(Component):
             template = ""
 
-            def get_context_data(self, *args, **kwargs):
+            def get_template_data(self, args, kwargs, slots, context):
                 nonlocal captured
                 captured = args, kwargs
                 return {}
@@ -879,7 +831,7 @@ class TestAggregateKwargs:
         template.render(Context({"class_var": "padding-top-8", "four": 4}))
 
         assert captured == (
-            (),
+            [],
             {
                 "attrs": {
                     "@click.stop": "dispatch('click_event')",

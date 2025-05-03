@@ -38,10 +38,10 @@ class SimpleComponent(Component):
         console.log("xyz");
     """
 
-    def get_context_data(self, variable, variable2="default"):
+    def get_template_data(self, args, kwargs, slots, context):
         return {
-            "variable": variable,
-            "variable2": variable2,
+            "variable": kwargs["variable"],
+            "variable2": kwargs.get("variable2", "default"),
         }
 
     class Media:
@@ -551,7 +551,7 @@ class TestDependenciesStrategySimple:
                 console.log("Hello");
             """
 
-            def get_context_data(self, variable):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {}
 
             class Media:
@@ -573,7 +573,7 @@ class TestDependenciesStrategySimple:
                 console.log("xyz");
             """
 
-            def get_context_data(self, variable):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {}
 
             class Media:
@@ -711,7 +711,7 @@ class TestDependenciesStrategyPrepend:
                 console.log("Hello");
             """
 
-            def get_context_data(self, variable):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {}
 
             class Media:
@@ -733,7 +733,7 @@ class TestDependenciesStrategyPrepend:
                 console.log("xyz");
             """
 
-            def get_context_data(self, variable):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {}
 
             class Media:
@@ -868,7 +868,7 @@ class TestDependenciesStrategyAppend:
                 console.log("Hello");
             """
 
-            def get_context_data(self, variable):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {}
 
             class Media:
@@ -890,7 +890,7 @@ class TestDependenciesStrategyAppend:
                 console.log("xyz");
             """
 
-            def get_context_data(self, variable):
+            def get_template_data(self, args, kwargs, slots, context):
                 return {}
 
             class Media:
