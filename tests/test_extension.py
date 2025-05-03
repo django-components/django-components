@@ -300,7 +300,7 @@ class TestExtensionHooks:
         data_call: OnComponentDataContext = extension.calls["on_component_data"][0]
         assert data_call.component_cls == TestComponent
         assert isinstance(data_call.component_id, str)
-        assert data_call.context_data == {"name": "Test"}
+        assert data_call.template_data == {"name": "Test"}
         assert data_call.js_data == {"script": "console.log('Hello!')"}
         assert data_call.css_data == {"style": "body { color: blue; }"}
 

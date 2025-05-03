@@ -61,9 +61,10 @@ name | type | description
 `component` | [`Component`](../api#django_components.Component) | The Component instance that is being rendered
 `component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class
 `component_id` | `str` | The unique identifier for this component instance
-`context_data` | `Dict` | Dictionary of context data from `Component.get_context_data()`
+`context_data` | `Dict` | Deprecated. Use `template_data` instead. Will be removed in v1.0.
 `css_data` | `Dict` | Dictionary of CSS data from `Component.get_css_data()`
 `js_data` | `Dict` | Dictionary of JavaScript data from `Component.get_js_data()`
+`template_data` | `Dict` | Dictionary of template data from `Component.get_template_data()`
 
 ::: django_components.extension.ComponentExtension.on_component_input
     options:

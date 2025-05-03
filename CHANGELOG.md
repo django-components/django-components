@@ -194,6 +194,26 @@
 
 - `SlotContent` was renamed to `SlotInput`. The old name is deprecated and will be removed in v1.
 
+- In the `on_component_data()` extension hook, the `context_data` field of the context object was superseded by `template_data`.
+
+    The `context_data` field will be removed in v1.0.
+
+    Before:
+
+    ```py
+    class MyExtension(ComponentExtension):
+        def on_component_data(self, ctx: OnComponentDataContext) -> None:
+            ctx.context_data["my_template_var"] = "my_value"
+    ```
+
+    After:
+
+    ```py
+    class MyExtension(ComponentExtension):
+        def on_component_data(self, ctx: OnComponentDataContext) -> None:
+            ctx.template_data["my_template_var"] = "my_value"
+    ```
+
 #### Feat
 
 - New method to render template variables - `get_template_data()`

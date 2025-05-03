@@ -2476,7 +2476,9 @@ class Component(metaclass=ComponentMeta):
                 component=self,
                 component_cls=self.__class__,
                 component_id=render_id,
+                # TODO_V1 - Remove `context_data`
                 context_data=template_data,
+                template_data=template_data,
                 js_data=js_data,
                 css_data=css_data,
             )
