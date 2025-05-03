@@ -100,6 +100,44 @@ class ProfileCard(Component):
         }
 ```
 
+There is a slight difference between [`get_context_data()`](../../../reference/api/#django_components.Component.get_context_data) and [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data)
+when rendering a component with the [`{% component %}`](../../../reference/template_tags/#component) tag.
+
+For example if you have component that accepts kwarg `date`:
+
+```py
+class MyComponent(Component):
+    def get_context_data(self, date, *args, **kwargs):
+        return {
+            "date": date,
+        }
+
+    def get_template_data(self, args, kwargs, slots, context):
+        return {
+            "date": kwargs["date"],
+        }
+```
+
+The difference is that:
+
+- With [`get_context_data()`](../../../reference/api/#django_components.Component.get_context_data), you can pass `date` either as arg or kwarg:
+
+    ```django
+    ✅
+    {% component "my_component" date=some_date %}
+    {% component "my_component" some_date %}
+    ```
+
+- But with [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data), `date` MUST be passed as kwarg:
+
+    ```django
+    ✅
+    {% component "my_component" date=some_date %}
+
+    ❌
+    {% component "my_component" some_date %}
+    ```
+
 !!! warning
 
     [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data)
