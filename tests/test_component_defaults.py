@@ -1,5 +1,4 @@
 from dataclasses import field
-from typing import Any
 
 from django.template import Context
 

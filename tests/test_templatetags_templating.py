@@ -1,7 +1,5 @@
 """This file tests various ways how the individual tags can be combined inside the templates"""
 
-from typing import Any, Dict, Optional
-
 from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual
 

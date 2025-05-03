@@ -1,5 +1,4 @@
 import time
-from typing import Any
 
 from django.core.cache import caches
 from django.template import Template
