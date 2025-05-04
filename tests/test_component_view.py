@@ -9,6 +9,7 @@ from django.urls import path
 
 from django_components import Component, ComponentView, get_component_url, register, types
 from django_components.urls import urlpatterns as dc_urlpatterns
+from django_components.util.misc import format_url
 
 from django_components.testing import djc_test
 from .testutils import setup_test_config
@@ -314,6 +315,14 @@ class TestComponentAsView(SimpleTestCase):
         # Check that the query and fragment are correctly escaped
         component_url3 = get_component_url(TestComponent, query={"f'oo": "b ar&ba'z"}, fragment='q u"x')
         assert component_url3 == f"/components/ext/view/components/{TestComponent.class_id}/?f%27oo=b+ar%26ba%27z#q%20u%22x"  # noqa: E501
+
+        # Merges query params from original URL
+        component_url4 = format_url(
+            "/components/ext/view/components/123?foo=123&bar=456#abc",
+            query={"foo": "new", "baz": "new2"},
+            fragment='xyz',
+        )
+        assert component_url4 == "/components/ext/view/components/123?foo=new&bar=456&baz=new2#xyz"
 
     def test_public_url(self):
         did_call_get = False

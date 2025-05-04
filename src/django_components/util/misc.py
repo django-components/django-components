@@ -161,19 +161,10 @@ def format_url(url: str, query: Optional[Dict] = None, fragment: Optional[str] =
 
     `query` and `fragment` are optional, and not applied if `None`.
     """
-    url_parts = parse.urlsplit(url)
+    parts = parse.urlsplit(url)
+    fragment_enc = parse.quote(fragment or parts.fragment, safe="")
+    base_qs = dict(parse.parse_qsl(parts.query))
+    merged = {**base_qs, **(query or {})}
+    encoded_qs = parse.urlencode(merged, safe="")
 
-    escaped_fragment = parse.quote(str(fragment)) if fragment is not None else url_parts.fragment
-
-    # NOTE: parse_qsl returns a list of tuples. For simpicity we support only one
-    # value per key, so we need to unpack the first element.
-    query_from_url = {key: val[0] for key, val in parse.parse_qsl(url_parts.query)}
-    all_params = {**query_from_url, **(query or {})}
-
-    encoded_params = parse.urlencode(all_params)
-    updated_parts = url_parts._replace(
-        query=encoded_params,
-        fragment=escaped_fragment,
-    )
-    new_url = parse.urlunsplit(updated_parts)
-    return new_url
+    return parse.urlunsplit(parts._replace(query=encoded_qs, fragment=fragment_enc))
