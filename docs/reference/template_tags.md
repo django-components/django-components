@@ -20,7 +20,7 @@ Import as
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1069" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1024" target="_blank">See source code</a>
 
 
 
@@ -30,7 +30,7 @@ Generally, this should be inserted into the `<head>` tag of the HTML.
 
 If the generated HTML does NOT contain any `{% component_css_dependencies %}` tags, CSS links
 are by default inserted into the `<head>` tag of the HTML. (See
-[JS and CSS output locations](../../concepts/advanced/rendering_js_css/#js-and-css-output-locations))
+[Default JS / CSS locations](../../concepts/advanced/rendering_js_css/#default-js-css-locations))
 
 Note that there should be only one `{% component_css_dependencies %}` for the whole HTML document.
 If you insert this tag multiple times, ALL CSS links will be duplicately inserted into ALL these places.
@@ -43,7 +43,7 @@ If you insert this tag multiple times, ALL CSS links will be duplicately inserte
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1091" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1046" target="_blank">See source code</a>
 
 
 
@@ -53,7 +53,7 @@ Generally, this should be inserted at the end of the `<body>` tag of the HTML.
 
 If the generated HTML does NOT contain any `{% component_js_dependencies %}` tags, JS scripts
 are by default inserted at the end of the `<body>` tag of the HTML. (See
-[JS and CSS output locations](../../concepts/advanced/rendering_js_css/#js-and-css-output-locations))
+[Default JS / CSS locations](../../concepts/advanced/rendering_js_css/#default-js-css-locations))
 
 Note that there should be only one `{% component_js_dependencies %}` for the whole HTML document.
 If you insert this tag multiple times, ALL JS scripts will be duplicately inserted into ALL these places.
@@ -67,7 +67,7 @@ If you insert this tag multiple times, ALL JS scripts will be duplicately insert
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L2791" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L2785" target="_blank">See source code</a>
 
 
 

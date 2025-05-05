@@ -3,6 +3,8 @@ from typing import Any, Type
 from django.template import Context, NodeList, Template
 from django.template.base import Parser
 
+from django_components.context import _COMPONENT_CONTEXT_KEY, _STRATEGY_CONTEXT_KEY
+from django_components.dependencies import render_dependencies
 from django_components.util.template_parser import parse_template
 
 
@@ -99,9 +101,32 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
             if context.template is None:
                 with context.bind_template(self):
                     context.template_name = self.name
-                    return self._render(context, *args, **kwargs)
+                    result = self._render(context, *args, **kwargs)
             else:
-                return self._render(context, *args, **kwargs)
+                result = self._render(context, *args, **kwargs)
+
+        # If the key is present, that means this Template is rendered as part of `Component.render()`
+        # or `{% component %}`. In that case the parent component will take care of rendering the
+        # dependencies, so we don't need to do that here.
+        if _COMPONENT_CONTEXT_KEY in context:
+            return result
+
+        # Allow users to configure the `deps_strategy` kwarg of `render_dependencies()`, even if
+        # they render a Template directly with `Template.render()` or Django's `django.shortcuts.render()`.
+        #
+        # Example:
+        # ```
+        # result = render_dependencies(
+        #     result,
+        #     Context({ "DJC_DEPS_STRATEGY": "fragment" }),
+        # )
+        # ```
+        if _STRATEGY_CONTEXT_KEY in context and context[_STRATEGY_CONTEXT_KEY] is not None:
+            strategy = context[_STRATEGY_CONTEXT_KEY]
+            result = render_dependencies(result, strategy)
+        else:
+            result = render_dependencies(result)
+        return result
 
     template_cls.render = _template_render
 

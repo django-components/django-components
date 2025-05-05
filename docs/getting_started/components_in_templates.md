@@ -159,7 +159,8 @@ and keeping your CSS and Javascript in the static directory.
     Remember that you can use
     [`{% component_js_dependencies %}`](../../reference/template_tags#component_js_dependencies)
     and [`{% component_css_dependencies %}`](../../reference/template_tags#component_css_dependencies)
-    to change where the `<script>` and `<style>` tags will be rendered (See [JS and CSS output locations](../../concepts/advanced/rendering_js_css/#js-and-css-output-locations)).
+    to change where the `<script>` and `<style>` tags will be rendered
+    (See [Default JS / CSS locations](../../concepts/advanced/rendering_js_css#default-js-css-locations)).
 
 !!! info
 

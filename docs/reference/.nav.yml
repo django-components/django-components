@@ -7,7 +7,6 @@ nav:
   - Extension commands: extension_commands.md
   - Extension hooks: extension_hooks.md
   - Extension URLs: extension_urls.md
-  - Middlewares: middlewares.md
   - Settings: settings.md
   - Signals: signals.md
   - Tag formatters: tag_formatters.md

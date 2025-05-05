@@ -59,7 +59,7 @@ class DynamicComponent(Component):
         },
         slots={
             "pagination": PaginationComponent.render(
-                render_dependencies=False,
+                deps_strategy="raw",
             ),
         },
     )
@@ -143,7 +143,6 @@ class DynamicComponent(Component):
             # was already escaped (if set so).
             escape_slots_content=False,
             deps_strategy=self.input.deps_strategy,
-            render_dependencies=self.input.render_dependencies,
         )
 
         context["output"] = output

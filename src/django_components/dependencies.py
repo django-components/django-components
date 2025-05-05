@@ -6,7 +6,6 @@ import re
 from hashlib import md5
 from typing import (
     TYPE_CHECKING,
-    Callable,
     Dict,
     List,
     Literal,
@@ -21,14 +20,11 @@ from typing import (
     cast,
 )
 
-from asgiref.sync import iscoroutinefunction, markcoroutinefunction
 from django.forms import Media
-from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed, HttpResponseNotFound, StreamingHttpResponse
-from django.http.response import HttpResponseBase
+from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed, HttpResponseNotFound
 from django.template import Context, TemplateSyntaxError
 from django.templatetags.static import static
 from django.urls import path, reverse
-from django.utils.decorators import sync_and_async_middleware
 from django.utils.safestring import SafeString, mark_safe
 from djc_core_html_parser import set_html_attributes
 
@@ -42,14 +38,14 @@ if TYPE_CHECKING:
 
 
 ScriptType = Literal["css", "js"]
-DependenciesStrategy = Literal["document", "fragment", "simple", "prepend", "append"]
+DependenciesStrategy = Literal["document", "fragment", "simple", "prepend", "append", "raw"]
 """
 Type for the available strategies for rendering JS and CSS dependencies.
 
 Read more about the [dependencies strategies](../../concepts/advanced/rendering_js_css).
 """
 
-DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append")
+DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append", "raw")
 
 
 #########################################################
@@ -316,7 +312,7 @@ def insert_component_dependencies_comment(
 ) -> SafeString:
     """
     Given some textual content, prepend it with a short string that
-    will be used by the ComponentDependencyMiddleware to collect all
+    will be used by the `render_dependencies()` function to collect all
     declared JS / CSS scripts.
     """
     data = f"{component_cls.class_id},{component_id},{js_input_hash or ''},{css_input_hash or ''}"
@@ -413,6 +409,8 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
     """
     if strategy not in DEPS_STRATEGIES:
         raise ValueError(f"Invalid strategy '{strategy}'")
+    elif strategy == "raw":
+        return content
 
     is_safestring = isinstance(content, SafeString)
 
@@ -1006,50 +1004,7 @@ urlpatterns = [
 
 
 #########################################################
-# 5. Middleware that automatically applies the dependency-
-#    aggregating logic on all HTML responses.
-#########################################################
-
-
-@sync_and_async_middleware
-class ComponentDependencyMiddleware:
-    """
-    Middleware that inserts CSS/JS dependencies for all rendered
-    components at points marked with template tags.
-    """
-
-    def __init__(self, get_response: "Callable[[HttpRequest], HttpResponse]") -> None:
-        self._get_response = get_response
-
-        # NOTE: Required to work with async
-        if iscoroutinefunction(self._get_response):
-            markcoroutinefunction(self)
-
-    def __call__(self, request: HttpRequest) -> HttpResponseBase:
-        if iscoroutinefunction(self):
-            return self.__acall__(request)
-
-        response = self._get_response(request)
-        response = self._process_response(response)
-        return response
-
-    # NOTE: Required to work with async
-    async def __acall__(self, request: HttpRequest) -> HttpResponseBase:
-        response = await self._get_response(request)
-        response = self._process_response(response)
-        return response
-
-    def _process_response(self, response: HttpResponse) -> HttpResponse:
-        if not isinstance(response, StreamingHttpResponse) and response.get("Content-Type", "").startswith(
-            "text/html"
-        ):
-            response.content = render_dependencies(response.content, strategy="document")
-
-        return response
-
-
-#########################################################
-# 6. Template tags
+# 5. Template tags
 #########################################################
 
 
@@ -1075,7 +1030,7 @@ class ComponentCssDependenciesNode(BaseNode):
 
     If the generated HTML does NOT contain any `{% component_css_dependencies %}` tags, CSS links
     are by default inserted into the `<head>` tag of the HTML. (See
-    [JS and CSS output locations](../../concepts/advanced/rendering_js_css/#js-and-css-output-locations))
+    [Default JS / CSS locations](../../concepts/advanced/rendering_js_css/#default-js-css-locations))
 
     Note that there should be only one `{% component_css_dependencies %}` for the whole HTML document.
     If you insert this tag multiple times, ALL CSS links will be duplicately inserted into ALL these places.
@@ -1097,7 +1052,7 @@ class ComponentJsDependenciesNode(BaseNode):
 
     If the generated HTML does NOT contain any `{% component_js_dependencies %}` tags, JS scripts
     are by default inserted at the end of the `<body>` tag of the HTML. (See
-    [JS and CSS output locations](../../concepts/advanced/rendering_js_css/#js-and-css-output-locations))
+    [Default JS / CSS locations](../../concepts/advanced/rendering_js_css/#default-js-css-locations))
 
     Note that there should be only one `{% component_js_dependencies %}` for the whole HTML document.
     If you insert this tag multiple times, ALL JS scripts will be duplicately inserted into ALL these places.

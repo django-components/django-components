@@ -41,7 +41,7 @@ if not settings.configured:
             "autodiscover": False,
             "context_behavior": CONTEXT_MODE,
         },
-        MIDDLEWARE=["django_components.middleware.ComponentDependencyMiddleware"],
+        MIDDLEWARE=[],
         DATABASES={
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",

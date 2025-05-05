@@ -247,7 +247,6 @@ Button.render(
 - `deps_strategy` - Dependencies rendering strategy (default: `"document"`)
 - `request` - HTTP request object, used for context processors (optional)
 - `escape_slots_content` - Whether to HTML-escape slot content (default: `True`)
-- `render_dependencies` - Whether to process JS and CSS dependencies (default: `True`)
 
 All arguments are optional. If not provided, they default to empty values or sensible defaults.
 
@@ -347,7 +346,7 @@ The `deps_strategy` parameter is ultimately passed to [`render_dependencies()`](
 
 Learn more about [Rendering JS / CSS](../../advanced/rendering_js_css).
 
-There are five dependencies rendering strategies:
+There are six dependencies rendering strategies:
 
 - [`document`](../../advanced/rendering_js_css#document) (default)
     - Smartly inserts JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) or into `<head>` and `<body>` tags.
@@ -368,6 +367,10 @@ There are five dependencies rendering strategies:
     - Insert JS / CSS after the rendered HTML.
     - Ignores the placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) and any `<head>`/`<body>` HTML tags.
     - No extra script loaded.
+- [`raw`](../../advanced/rendering_js_css#raw)
+    - HTML is left as-is. You can still process it with a different strategy later with
+      [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
+    - Used for inserting rendered HTML into other components.
 
 !!! info
 
@@ -434,7 +437,7 @@ class Button(Component):
         icon = Icon.render(
             context=context,
             args=["icon-name"],
-            render_dependencies=False,
+            deps_strategy="raw",
         )
         # Update context with icon
         with context.update({"icon": icon}):
@@ -515,9 +518,10 @@ Button.render(
 )
 ```
 
-## Nesting components
+## Components as input
 
-You can nest components by rendering one component and using its output as input to another:
+django_components makes it possible to compose components in a "React-like" way,
+where you can render one component and use its output as input to another component:
 
 ```python
 from django.utils.safestring import mark_safe
@@ -525,7 +529,7 @@ from django.utils.safestring import mark_safe
 # Render the inner component
 inner_html = InnerComponent.render(
     kwargs={"some_data": "value"},
-    render_dependencies=False,  # Important for nesting!
+    deps_strategy="raw",  # Important for nesting!
 )
 
 # Use inner component's output in the outer component
@@ -536,9 +540,10 @@ outer_html = OuterComponent.render(
 )
 ```
 
-The key here is setting `render_dependencies=False` for the inner component. This prevents duplicate dependencies when the outer component is rendered.
+The key here is setting [`deps_strategy="raw"`](../../advanced/rendering_js_css#raw) for the inner component. This prevents duplicate
+rendering of JS / CSS dependencies when the outer component is rendered.
 
-When `render_dependencies=False`:
+When `deps_strategy="raw"`:
 
 - No JS or CSS dependencies will be added to the output HTML
 - The component's content is rendered as-is
@@ -582,7 +587,7 @@ DynamicComponent.render(
     },
     slots={
         "pagination": PaginationComponent.render(
-            render_dependencies=False,
+            deps_strategy="raw",
         ),
     },
 )
@@ -611,3 +616,13 @@ After which you will be able to use the dynamic component with the new name:
     {% endfill %}
 {% endcomponent %}
 ```
+
+## HTML fragments
+
+Django-components provides a seamless integration with HTML fragments with AJAX ([HTML over the wire](https://hotwired.dev/)),
+whether you're using jQuery, HTMX, AlpineJS, vanilla JavaScript, or other.
+
+This is achieved by the combination of the [`"document"`](../../advanced/rendering_js_css#document)
+and [`"fragment"`](../../advanced/rendering_js_css#fragment) dependencies rendering strategies.
+
+Read more about [HTML fragments](../../advanced/html_fragments) and [Rendering JS / CSS](../../advanced/rendering_js_css).

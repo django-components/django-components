@@ -1,15 +1,20 @@
-## JS and CSS output locations
+## Introduction
 
-If:
+Components consist of 3 parts - HTML, JS and CSS.
 
-1. Your components use JS and CSS via any of:
-    - [`Component.css`](#TODO)
-    - [`Component.js`](#TODO)
-    - [`Component.Media.css`](#TODO)
-    - [`Component.Media.js`](#TODO)
-2. And you use the [`ComponentDependencyMiddleware`](#TODO) middleware
+Handling of HTML is straightforward - it is rendered as is, and inserted where
+the [`{% component %}`](../../../reference/template_tags#component) tag is.
 
-Then, by default, the components' JS and CSS will be automatically inserted into the HTML:
+However, handling of JS and CSS is more complex:
+
+- JS and CSS is are inserted elsewhere in the HTML. As a best practice, JS is placed in the `<body>` HTML tag, and CSS in the `<head>`.
+- Multiple components may use the same JS and CSS files. We don't want to load the same files multiple times.
+- Fetching of JS and CSS may block the page, so the JS / CSS should be embedded in the HTML.
+- Components inserted as HTML fragments need different handling for JS and CSS.
+
+## Default JS / CSS locations
+
+If your components use JS and CSS then, by default, the JS and CSS will be automatically inserted into the HTML:
 
 - CSS styles will be inserted at the end of the `<head>`
 - JS scripts will be inserted at the end of the `<body>`
@@ -17,8 +22,8 @@ Then, by default, the components' JS and CSS will be automatically inserted into
 If you want to place the dependencies elsewhere in the HTML, you can override
 the locations by inserting following Django template tags:
 
-- [`{% component_js_dependencies %}`](#TODO) - Set new location(s) for JS scripts
-- [`{% component_css_dependencies %}`](#TODO) - Set new location(s) for CSS styles
+- [`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies) - Set new location(s) for JS scripts
+- [`{% component_css_dependencies %}`](../../../reference/template_tags#component_css_dependencies) - Set new location(s) for CSS styles
 
 So if you have a component with JS and CSS:
 
@@ -31,6 +36,7 @@ class MyButton(Component):
             Click me!
         </button>
     """
+
     js: types.js = """
         for (const btnEl of document.querySelectorAll(".my-button")) {
             btnEl.addEventListener("click", () => {
@@ -38,6 +44,7 @@ class MyButton(Component):
             });
         }
     """
+
     css: types.css """
         .my-button {
             background: green;
@@ -49,11 +56,13 @@ class MyButton(Component):
         css = ["/extra/style.css"]
 ```
 
-Then the JS from `MyButton.js` and `MyButton.Media.js` will be rendered at the default place,
-or in [`{% component_js_dependencies %}`](#TODO).
+Then:
 
-And the CSS from `MyButton.css` and `MyButton.Media.css` will be rendered at the default place,
-or in [`{% component_css_dependencies %}`](#TODO).
+- JS from `MyButton.js` and `MyButton.Media.js` will be rendered at the default place (`<body>`),
+  or in [`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies).
+
+- CSS from `MyButton.css` and `MyButton.Media.css` will be rendered at the default place (`<head>`),
+or in [`{% component_css_dependencies %}`](../../../reference/template_tags#component_css_dependencies).
 
 And if you don't specify `{% component_dependencies %}` tags, it is the equivalent of:
 
@@ -74,169 +83,62 @@ And if you don't specify `{% component_dependencies %}` tags, it is the equivale
 </html>
 ```
 
-### Setting up the middleware
+!!! warning
 
-[`ComponentDependencyMiddleware`](#TODO) is a Django [middleware](https://docs.djangoproject.com/en/5.1/topics/http/middleware/)
-designed to manage and inject CSS / JS dependencies of rendered components dynamically.
-It ensures that only the necessary stylesheets and scripts are loaded
-in your HTML responses, based on the components used in your Django templates.
+    If the rendered HTML does NOT contain neither `{% component_dependencies %}` template tags,
+    nor `<head>` and `<body>` HTML tags, then the JS and CSS will NOT be inserted!
 
-To set it up, add the middleware to your [`MIDDLEWARE`](https://docs.djangoproject.com/en/5.1/ref/settings/#std-setting-MIDDLEWARE)
-in `settings.py`:
-
-```python
-MIDDLEWARE = [
-    # ... other middleware classes ...
-    'django_components.middleware.ComponentDependencyMiddleware'
-    # ... other middleware classes ...
-]
-```
-
-### `render_dependencies` and rendering JS / CSS without the middleware
-
-For most scenarios, using the [`ComponentDependencyMiddleware`](#TODO) middleware will be just fine.
-
-However, this section is for you if you want to:
-
-- Render HTML that will NOT be sent as a server response
-- Insert pre-rendered HTML into another component
-- Render HTML fragments (partials)
-
-Every time there is an HTML string that has parts which were rendered using components,
-and any of those components has JS / CSS, then this HTML string MUST be processed with [`render_dependencies()`](#TODO).
-
-It is actually [`render_dependencies()`](#TODO) that finds all used components in the HTML string,
-and inserts the component's JS and CSS into `{% component_dependencies %}` tags, or at the default locations.
-
-#### Render JS / CSS without the middleware
-
-The truth is that the [`ComponentDependencyMiddleware`](#TODO) middleware just calls [`render_dependencies()`](#TODO),
-passing in the HTML content. So if you render a template that contained [`{% component %}`](#TODO) tags,
-you MUST pass the result through [`render_dependencies()`](#TODO). And the middleware is just one of the options.
-
-Here is how you can achieve the same, without the middleware, using [`render_dependencies()`](#TODO):
-
-```python
-from django.template.base import Template
-from django.template.context import Context
-from django_component import render_dependencies
-
-template = Template("""
-    {% load component_tags %}
-    <!doctype html>
-    <html>
-    <head>
-        <title>MyPage</title>
-    </head>
-    <body>
-        <main>
-            {% component "my_button" %}
-                Click me!
-            {% endcomponent %}
-        </main>
-    </body>
-    </html>
-""")
-
-rendered = template.render(Context())
-rendered = render_dependencies(rendered)
-```
-
-Same applies if you render a template using Django's [`django.shortcuts.render`](https://docs.djangoproject.com/en/5.1/topics/http/shortcuts/#render):
-
-```python
-from django.shortcuts import render
-
-def my_view(request):
-    rendered = render(request, "pages/home.html")
-    rendered = render_dependencies(rendered)
-    return rendered
-```
-
-Alternatively, when you render HTML with [`Component.render()`](#TODO)
-or [`Component.render_to_response()`](#TODO),
-these, by default, call [`render_dependencies()`](#TODO) for you, so you don't have to:
-
-```python
-from django_components import Component
-
-class MyButton(Component):
-    ...
-
-# No need to call `render_dependencies()`
-rendered = MyButton.render()
-```
-
-#### Inserting pre-rendered HTML into another component
-
-In previous section we've shown that [`render_dependencies()`](#TODO) does NOT need to be called
-when you render a component via [`Component.render()`](#TODO).
-
-API of django_components makes it possible to compose components in a "React-like" way,
-where we pre-render a piece of HTML and then insert it into a larger structure.
-
-To do this, you must add [`render_dependencies=False`](#TODO) to the nested components:
-
-```python
-card_actions = CardActions.render(
-    kwargs={"editable": editable},
-    render_dependencies=False,
-)
-
-card = Card.render(
-    slots={"actions": card_actions},
-    render_dependencies=False,
-)
-
-page = MyPage.render(
-    slots={"card": card},
-)
-```
-
-Why is `render_dependencies=False` required?
-
-This is a technical limitation of the current implementation.
-
-As mentioned earlier, each time we call [`Component.render()`](#TODO),
-we also call [`render_dependencies()`](#TODO).
-
-However, there is a problem here - When we call [`render_dependencies()`](#TODO)
-inside [`CardActions.render()`](#TODO),
-we extract and REMOVE the info on components' JS and CSS from the HTML. But the template
-of `CardActions` contains no `{% component_depedencies %}` tags, and nor `<head>` nor `<body>` HTML tags.
-So the component's JS and CSS will NOT be inserted, and will be lost.
-
-To work around this, you must set [`render_dependencies=False`](#TODO) when rendering pieces of HTML
-with [`Component.render()`](#TODO) and inserting them into larger structures.
-
-#### Summary
-
-1. Every time you render HTML that contained components, you have to call [`render_dependencies()`](#TODO)
-   on the rendered output.
-2. There are several ways to call [`render_dependencies()`](#TODO):
-    - Using the [`ComponentDependencyMiddleware`](#TODO) middleware
-    - Rendering the HTML by calling [`Component.render()`](#TODO) with `render_dependencies=True` (default)
-    - Rendering the HTML by calling [`Component.render_to_response()`](#TODO) (always renders dependencies)
-    - Directly passing rendered HTML to [`render_dependencies()`](#TODO)
-3. If you pre-render one component to pass it into another, the pre-rendered component must be rendered with
-   [`render_dependencies=False`](#TODO).
+    To force the JS and CSS to be inserted, use the [`"append"`](#append) or [`"prepend"`](#prepend)
+    strategies.
 
 ## Dependencies strategies
 
 The rendered HTML may be used in different contexts (browser, email, etc).
 If your components use JS and CSS scripts, you may need to handle them differently.
 
+The different ways for handling JS / CSS are called **"dependencies strategies"**.
+
 [`render()`](../../../reference/api/#django_components.Component.render) and [`render_to_response()`](../../../reference/api/#django_components.Component.render_to_response)
 accept a `deps_strategy` parameter, which controls where and how the JS / CSS are inserted into the HTML.
 
+```python
+main_page = MainPage.render(deps_strategy="document")
+fragment = MyComponent.render_to_response(deps_strategy="fragment")
+```
+
 The `deps_strategy` parameter is set at the root of a component render tree, which is why it is not available for
 the [`{% component %}`](../../../reference/template_tags#component) tag.
+
+When you use Django's [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.1/topics/http/shortcuts/#render)
+or [`Template.render()`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Template.render) to render templates,
+you can't directly set the `deps_strategy` parameter.
+
+In this case, you can set the `deps_strategy` with the `DJC_DEPS_STRATEGY` context variable.
+
+```python
+from django.template.context import Context
+from django.shortcuts import render
+
+ctx = Context({"DJC_DEPS_STRATEGY": "fragment"})
+fragment = render(request, "my_component.html", ctx=ctx)
+```
 
 !!! info
 
     The `deps_strategy` parameter is ultimately passed to [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
 
-There are five dependencies strategies:
+!!! note "Why is `deps_strategy` required?"
+
+    This is a technical limitation of the current implementation.
+
+    When a component is rendered, django-components embeds metadata about the component's JS and CSS into the HTML.
+
+    This way we can compose components together, and know which JS / CSS dependencies are needed.
+
+    As the last step of rendering, django-components extracts this metadata and uses a selected strategy
+    to insert the JS / CSS into the HTML.
+
+There are six dependencies strategies:
 
 - [`document`](../../advanced/rendering_js_css#document) (default)
     - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
@@ -254,6 +156,10 @@ There are five dependencies strategies:
 - [`append`](../../advanced/rendering_js_css#append)
     - Insert JS / CSS after the rendered HTML.
     - No extra script loaded.
+- [`raw`](../../advanced/rendering_js_css#raw)
+    - HTML is left as-is. You can still process it with a different strategy later with
+      [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
+    - Used for inserting rendered HTML into other components.
 
 ### `document`
 
@@ -290,7 +196,7 @@ the page in the browser:
     </script>
     <style>
         .button {
-        background-color: blue;
+            background-color: blue;
         }
     </style>
     ```
@@ -420,3 +326,106 @@ JS and CSS is **always** inserted after the rendered content.
 **Included scripts:**
 
 Same as for the [`"simple"`](#simple) strategy.
+
+### `raw`
+
+`deps_strategy="raw"` is used when you do NOT want to process JS and CSS of the rendered HTML.
+
+```python
+html = MyComponent.render(deps_strategy="raw")
+```
+
+The rendered HTML is left as-is. You can still process it with a different strategy later with `render_dependencies()`.
+
+This is useful when you want to insert rendered HTML into another component.
+
+```python
+html = MyComponent.render(deps_strategy="raw")
+html = AnotherComponent.render(slots={"content": html})
+```
+
+## Manually rendering JS / CSS
+
+When rendering templates or components, django-components covers all the traditional ways how components
+or templates can be rendered:
+
+-  [`Component.render()`](../../../reference/api/#django_components.Component.render)
+-  [`Component.render_to_response()`](../../../reference/api/#django_components.Component.render_to_response)
+-  [`Template.render()`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Template.render)
+-  [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.1/topics/http/shortcuts/#render)
+
+This way you don't need to manually handle rendering of JS / CSS.
+
+However, for advanced or low-level use cases, you may need to control when to render JS / CSS.
+
+In such case you can directly pass rendered HTML to [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
+
+This function will extract all used components in the HTML string, and insert the components' JS and CSS
+based on given strategy.
+
+!!! info
+
+    The truth is that all the methods listed above call [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies)
+    internally.
+
+**Example:**
+
+To see how [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies) works,
+let's render a template with a component.
+
+We will render it twice:
+
+- First time, we let `template.render()` handle the rendering.
+- Second time, we prevent `template.render()` from inserting the component's JS and CSS with `deps_strategy="raw"`.
+
+    Instead, we pass the raw HTML to `render_dependencies()` ourselves to insert the component's JS and CSS.
+
+```python
+from django.template.base import Template
+from django.template.context import Context
+from django_components import render_dependencies
+
+template = Template("""
+    {% load component_tags %}
+    <!doctype html>
+    <html>
+    <head>
+        <title>MyPage</title>
+    </head>
+    <body>
+        <main>
+            {% component "my_button" %}
+                Click me!
+            {% endcomponent %}
+        </main>
+    </body>
+    </html>
+""")
+
+rendered = template.render(Context({}))
+
+rendered2_raw = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+rendered2 = render_dependencies(rendered2_raw)
+
+assert rendered == rendered2
+```
+
+Same applies to other strategies and other methods of rendering:
+
+```python
+raw_html = MyComponent.render(deps_strategy="raw")
+html = render_dependencies(raw_html, deps_strategy="document")
+
+html2 = MyComponent.render(deps_strategy="document")
+
+assert html == html2
+```
+
+## HTML fragments
+
+Django-components provides a seamless integration with HTML fragments with AJAX ([HTML over the wire](https://hotwired.dev/)),
+whether you're using jQuery, HTMX, AlpineJS, vanilla JavaScript, or other.
+
+This is achieved by the combination of the [`"document"`](#document) and [`"fragment"`](#fragment) strategies.
+
+Read more about [HTML fragments](../../advanced/html_fragments).

@@ -70,7 +70,7 @@ if not settings.configured:
             "autodiscover": False,
             "context_behavior": CONTEXT_MODE,
         },
-        MIDDLEWARE=["django_components.middleware.ComponentDependencyMiddleware"],
+        MIDDLEWARE=[],
         DATABASES={
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
@@ -2455,7 +2455,7 @@ class ProjectLayoutTabbed(Component):
                             "stroke_width": 2,
                             "color": "text-gray-400 hover:text-gray-500",
                         },
-                        render_dependencies=False,
+                        deps_strategy="raw",
                     ),
                 ),
                 Breadcrumb(value=data.project["name"], link=curr_project_url),
@@ -4490,7 +4490,7 @@ class Tabs(Component):
                 "header_attrs": context["header_attrs"],
                 "content_attrs": context["content_attrs"],
             },
-            render_dependencies=False,
+            deps_strategy="raw",
         )
 
     template: types.django_html = """
@@ -5135,7 +5135,7 @@ class ProjectUsers(Component):
                         "project_id": project_id,
                         "role_id": role['id'],
                     },
-                    render_dependencies=False,
+                    deps_strategy="raw",
                 )
             else:
                 delete_action = ""

@@ -11,7 +11,7 @@ from pytest_django.asserts import assertHTMLEqual, assertInHTML
 from django_components import Component, registry, types
 from django_components.testing import djc_test
 
-from .testutils import create_and_process_template_response, setup_test_config
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -120,7 +120,7 @@ class TestDependencyRendering:
             {% component_css_dependencies %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
@@ -141,7 +141,7 @@ class TestDependencyRendering:
             {% load component_tags %}{% component_js_dependencies %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
@@ -162,7 +162,7 @@ class TestDependencyRendering:
             {% load component_tags %}{% component_css_dependencies %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         assert rendered.count("<script") == 0  # No JS
         assert rendered.count("<link") == 0  # No CSS
@@ -178,7 +178,7 @@ class TestDependencyRendering:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
@@ -213,7 +213,7 @@ class TestDependencyRendering:
             {% component 'te-s/t' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
@@ -248,7 +248,7 @@ class TestDependencyRendering:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         assert "_RENDERED" not in rendered
 
@@ -260,7 +260,7 @@ class TestDependencyRendering:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         # Dependency manager script - NOT present
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
@@ -279,7 +279,7 @@ class TestDependencyRendering:
             {% component 'test' variable='foo' %}{% endcomponent %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
@@ -315,7 +315,7 @@ class TestDependencyRendering:
             {% component 'test' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
@@ -372,7 +372,7 @@ class TestDependencyRendering:
             {% component_css_dependencies %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
@@ -400,7 +400,7 @@ class TestDependencyRendering:
             {% endcomponent %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered: str = template.render(Context({}))
 
         # Dependency manager script
         # NOTE: Should be present only ONCE!
@@ -499,7 +499,7 @@ class TestDependencyRendering:
             {% component 'test' variable='variable' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
         assert "_RENDERED" not in rendered
 
     def test_adds_component_id_html_attr_single(self):
@@ -510,7 +510,7 @@ class TestDependencyRendering:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         assertHTMLEqual(rendered, "Variable: <strong data-djc-id-ca1bc3f>foo</strong>")
 
@@ -529,7 +529,7 @@ class TestDependencyRendering:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         assertHTMLEqual(
             rendered,
@@ -565,7 +565,7 @@ class TestDependencyRendering:
             {% component 'outer' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template)
+        rendered = template.render(Context({}))
 
         assertHTMLEqual(
             rendered,
@@ -605,10 +605,7 @@ class TestDependencyRendering:
             {% endfor %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(
-            template,
-            context=Context({"lst": range(3)}),
-        )
+        rendered = template.render(Context({"lst": range(3)}))
 
         assertHTMLEqual(
             rendered,

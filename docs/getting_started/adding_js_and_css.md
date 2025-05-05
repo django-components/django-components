@@ -52,7 +52,8 @@ Be sure to prefix your rules with unique CSS class like `calendar`, so the CSS d
 
 This CSS will be inserted into the page as an inlined `<style>` tag, at the position defined by
 [`{% component_css_dependencies %}`](../../reference/template_tags#component_css_dependencies),
-or at the end of the inside the `<head>` tag (See [JS and CSS output locations](../../concepts/advanced/rendering_js_css/#js-and-css-output-locations)).
+or at the end of the inside the `<head>` tag
+(See [Default JS / CSS locations](../../concepts/advanced/rendering_js_css#default-js-css-locations)).
 
 So in your HTML, you may see something like this:
 
@@ -103,7 +104,7 @@ This makes all variables defined only be defined inside this component and not a
 
 Similarly to CSS, JS will be inserted into the page as an inlined `<script>` tag, at the position defined by
 [`{% component_js_dependencies %}`](../../reference/template_tags#component_js_dependencies),
-or at the end of the inside the `<body>` tag (See [JS and CSS output locations](../../concepts/advanced/rendering_js_css/#js-and-css-output-locations)).
+or at the end of the inside the `<body>` tag (See [Default JS / CSS locations](../../concepts/advanced/rendering_js_css#default-js-css-locations)).
 
 So in your HTML, you may see something like this:
 

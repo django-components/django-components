@@ -26,6 +26,44 @@
 
     See [Migrating from generics to class attributes](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/#migrating-from-generics-to-class-attributes) for more info.
 
+- The middleware `ComponentDependencyMiddleware` was removed as it is no longer needed.
+
+    The middleware served one purpose - to render the JS and CSS dependencies of components
+    when you rendered templates with `Template.render()` or `django.shortcuts.render()` and those templates contained `{% component %}` tags.
+
+    Now, the JS and CSS dependencies of components are automatically rendered,
+    even when you render Templates with `Template.render()` or `django.shortcuts.render()`.
+
+    - NOTE: If you rendered HTML with `Component.render()` or `Component.render_to_response()`, the JS and CSS were already rendered.
+
+    To disable this behavior, set the `DJC_DEPS_STRATEGY` context key to `"raw"`
+    when rendering the template:
+
+    ```py
+    # With `Template.render()`:
+    template = Template(template_str)
+    rendered = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+
+    # Or with django.shortcuts.render():
+    from django.shortcuts import render
+    rendered = render(
+        request,
+        "my_template.html",
+        context={"DJC_DEPS_STRATEGY": "raw"},
+    )
+    ```
+
+    In fact, you can set the `DJC_DEPS_STRATEGY` context key to any of the strategies:
+
+    - `"document"`
+    - `"fragment"`
+    - `"simple"`
+    - `"prepend"`
+    - `"append"`
+    - `"raw"`
+
+    See [Dependencies rendering](https://django-components.github.io/django-components/0.140/concepts/advanced/rendering_js_css/) for more info.
+
 - The interface of the not-yet-released `get_js_data()` and `get_css_data()` methods has changed to
   match `get_template_data()`.
 
@@ -192,6 +230,20 @@
     Calendar.render_to_response(deps_strategy="fragment")
     ```
 
+- The `render_dependencies` kwarg in `Component.render()` and `Component.render_to_response()` is now deprecated. Use `deps_strategy="raw"` instead. The `render_dependencies` kwarg will be removed in v1.
+
+    Before:
+
+    ```py
+    Calendar.render_to_response(render_dependencies=False)
+    ```
+
+    After:
+
+    ```py
+    Calendar.render_to_response(deps_strategy="raw")
+    ```
+
 - `SlotContent` was renamed to `SlotInput`. The old name is deprecated and will be removed in v1.
 
 - In the `on_component_data()` extension hook, the `context_data` field of the context object was superseded by `template_data`.
@@ -258,10 +310,15 @@
 
     Read more on [Typing and validation](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/)
 
-- Render emails or other non-browser HTML with new "dependencies render strategies"
+- Render emails or other non-browser HTML with new "dependencies strategies"
 
     When rendering a component with `Component.render()` or `Component.render_to_response()`,
-    the `deps_strategy` kwarg (previously `type`) now accepts a new options `"simple"`, `"prepend"`, or `"append"`.
+    the `deps_strategy` kwarg (previously `type`) now accepts additional options:
+
+    - `"simple"`
+    - `"prepend"`
+    - `"append"`
+    - `"raw"`
 
     ```py
     Calendar.render_to_response(
@@ -294,6 +351,11 @@
         - Insert JS / CSS after the rendered HTML.
         - Ignores placeholders and any `<head>` / `<body>` tags.
         - No extra script loaded.
+    - `"raw"`
+        - Rendered HTML is left as-is. You can still process it with a different strategy later with `render_dependencies()`.
+        - Used for inserting rendered HTML into other components.
+
+    See [Dependencies rendering](https://django-components.github.io/django-components/0.140/concepts/advanced/rendering_js_css/) for more info.
 
 - `get_component_url()` now optionally accepts `query` and `fragment` arguments.
 

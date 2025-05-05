@@ -156,15 +156,17 @@ This is how we achieve that:
 
     There's multiple ways to achieve this:
 
-    - The approach recommended to the users is to use the `ComponentDependencyMiddleware` middleware, which scans all outgoing HTML, and post-processes the `<!-- _RENDERED -->` comments.
-
     - If users are using `Component.render()` or `Component.render_to_response()`, these post-process the `<!-- _RENDERED -->` comments by default.
 
-      - NOTE: Users are able to opt out of the post-processing by setting `render_dependencies=False`.
+      - NOTE: Users are able to opt out of the post-processing by setting `deps_strategy="raw"`.
 
-    - For advanced use cases, users may use `render_dependencies()` directly. This is the function that both `ComponentDependencyMiddleware` and `Component.render()` call internally.
+    - If one renders a Template directly, the `<!-- _RENDERED -->` will be processed too. We achieve this by
+      modifying Django's `Template.render()` method.
 
-    `render_dependencies()`, whether called directly, via middleware or other way, does the following:
+    - For advanced use cases, users may use `render_dependencies()` directly. This is the function that
+      `Component.render()` calls internally.
+
+    `render_dependencies()`, whether called directly, or other way, does the following:
 
     1. Find all `<!-- _RENDERED -->` comments, and for each comment:
 

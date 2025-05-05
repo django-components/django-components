@@ -59,7 +59,7 @@ class TestExtendsCompat:
                 {% endcomponent %}
             {% endblock %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         expected = """
             <!DOCTYPE html>
@@ -109,7 +109,7 @@ class TestExtendsCompat:
                 {% endcomponent %}
             {% endblock %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         expected = """
             <!DOCTYPE html>
@@ -176,7 +176,7 @@ class TestExtendsCompat:
             {% endblock %}
         """
         template = Template(template_str)
-        rendered = template.render(Context())
+        rendered = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         expected = """
             <!DOCTYPE html>
@@ -242,7 +242,7 @@ class TestExtendsCompat:
                 {% endcomponent %}
             {% endblock %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         expected = """
             <!DOCTYPE html>
@@ -295,7 +295,7 @@ class TestExtendsCompat:
             </body>
             </html>
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         expected = """
             <!DOCTYPE html>
@@ -343,7 +343,7 @@ class TestExtendsCompat:
             </body>
             </html>
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         expected = """
             <!DOCTYPE html>
@@ -395,7 +395,7 @@ class TestExtendsCompat:
                 {% endcomponent %}
             {% endblock %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         expected = """
             <!DOCTYPE html>
@@ -440,7 +440,7 @@ class TestExtendsCompat:
                 {% component "extended_component" / %}
             {% endblock %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         expected = """
             <!DOCTYPE html>
@@ -458,7 +458,7 @@ class TestExtendsCompat:
         assertHTMLEqual(rendered, expected)
 
         # second rendering after cache built
-        rendered_2 = Template(template).render(Context())
+        rendered_2 = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected_2 = expected.replace("data-djc-id-ca1bc3f", "data-djc-id-ca1bc41")
         assertHTMLEqual(rendered_2, expected_2)
 
@@ -480,7 +480,7 @@ class TestExtendsCompat:
                 {% endfill %}
             {% endcomponent %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc40 lang="en">
@@ -513,7 +513,7 @@ class TestExtendsCompat:
                 {% endfill %}
             {% endcomponent %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc40 lang="en">
@@ -544,7 +544,7 @@ class TestExtendsCompat:
             {% endcomponent %}
             {% endblock %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html lang="en">
@@ -575,7 +575,7 @@ class TestExtendsCompat:
             </div>
             {% endblock %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html lang="en">
@@ -604,7 +604,7 @@ class TestExtendsCompat:
             {% load component_tags %}
             {% component "block_in_component_parent" %}{% endcomponent %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc3f lang="en">
@@ -644,7 +644,7 @@ class TestExtendsCompat:
                 wow
             {% endblock %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc40 lang="en">
@@ -674,7 +674,7 @@ class TestExtendsCompat:
             {% load component_tags %}
             {% component "slot_inside_block" %}{% endcomponent %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc3f lang="en">
@@ -710,7 +710,7 @@ class TestExtendsCompat:
             {% load component_tags %}
             {% component "slot_inside_block" %}{% endcomponent %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc3f lang="en">
@@ -746,7 +746,7 @@ class TestExtendsCompat:
                 {% endfill %}
             {% endcomponent %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc40 lang="en">
@@ -792,7 +792,7 @@ class TestExtendsCompat:
                 {% endfill %}
             {% endcomponent %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc41 lang="en">
@@ -832,7 +832,7 @@ class TestExtendsCompat:
                 {% endcomponent %}
             {% endblock %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html lang="en">
@@ -857,7 +857,7 @@ class TestExtendsCompat:
             {% load component_tags %}
             {% component "relative_file_component_using_template_file" %}{% endcomponent %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc3f="" lang="en">
@@ -880,7 +880,7 @@ class TestExtendsCompat:
             {% load component_tags %}
             {% component "relative_file_component_using_get_template_name" %}{% endcomponent %}
         """
-        rendered = Template(template).render(Context())
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         expected = """
             <!DOCTYPE html>
             <html data-djc-id-ca1bc3f="" lang="en">

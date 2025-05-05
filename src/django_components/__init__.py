@@ -1,7 +1,6 @@
 """Main package for Django Components."""
 
 # Public API
-# NOTE: Middleware is exposed via django_components.middleware
 # NOTE: Some of the documentation is generated based on these exports
 # isort: off
 from django_components.app_settings import ContextBehavior, ComponentsSettings

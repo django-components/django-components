@@ -311,7 +311,7 @@ class TestComponentSlot:
         """
         self.template = Template(template_str)
 
-        nested_ctx = Context()
+        nested_ctx = Context({"DJC_DEPS_STRATEGY": "raw"})
         # Check that the component can access vars across different context layers
         nested_ctx.push({"some": "var"})
         nested_ctx.push({"name": "carl"})
@@ -470,7 +470,7 @@ class TestComponentSlot:
             slots={
                 "main": "MAIN",
             },
-            render_dependencies=False,
+            deps_strategy="raw",
         )
 
         # 2. Specify the non-required slot by the "default" name
@@ -479,7 +479,7 @@ class TestComponentSlot:
             slots={
                 "default": "MAIN",
             },
-            render_dependencies=False,
+            deps_strategy="raw",
         )
 
         assertHTMLEqual(rendered1, "<div data-djc-id-ca1bc3e><div>MAIN</div></div>")
@@ -491,7 +491,7 @@ class TestComponentSlot:
             slots={
                 "main": "MAIN",
             },
-            render_dependencies=False,
+            deps_strategy="raw",
         )
         assertHTMLEqual(rendered3, "<div data-djc-id-ca1bc42><main>MAIN</main><div>MAIN</div></div>")
 
@@ -506,7 +506,7 @@ class TestComponentSlot:
                 slots={
                     "default": "MAIN",
                 },
-                render_dependencies=False,
+                deps_strategy="raw",
             )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)

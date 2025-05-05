@@ -6,19 +6,15 @@ For checking the OUTPUT of the dependencies, see `test_dependency_rendering.py`.
 """
 
 import re
-from unittest.mock import Mock
 
 import pytest
-from django.http import HttpResponseNotModified
 from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, registry, render_dependencies, types
-from django_components.components.dynamic import DynamicComponent
-from django_components.middleware import ComponentDependencyMiddleware
 
 from django_components.testing import djc_test
-from .testutils import create_and_process_template_response, setup_test_config
+from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
 
@@ -69,7 +65,8 @@ class TestDependenciesLegacy:
 
 @djc_test
 class TestRenderDependencies:
-    def test_standalone_render_dependencies(self):
+    # Check that `render_dependencies()` works when called directly
+    def test_render_dependencies(self):
         registry.register(name="test", component=SimpleComponent)
 
         template_str: types.django_html = """
@@ -79,7 +76,8 @@ class TestRenderDependencies:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({}))
+        # NOTE: `"raw"` is a special value that means "do not render dependencies"
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         # Placeholders
         assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
@@ -100,7 +98,8 @@ class TestRenderDependencies:
 
         assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
 
-    def test_middleware_renders_dependencies(self):
+    # Check that instead of `render_dependencies()`, we can simply call `Template.render()`
+    def test_template_render(self):
         registry.register(name="test", component=SimpleComponent)
 
         template_str: types.django_html = """
@@ -110,19 +109,64 @@ class TestRenderDependencies:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered = create_and_process_template_response(template, use_middleware=True)
+        rendered = template.render(Context({}))
 
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
-        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML(
+            "<style>.xyz { color: red; }</style>",
+            rendered,
+            count=1,
+        )  # Inlined CSS
+        assertInHTML(
+            '<script>console.log("xyz");</script>', rendered, count=1
+        )  # Inlined JS
 
         assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
         assert rendered.count("<link") == 1
         assert rendered.count("<style") == 1
 
-    def test_component_render_renders_dependencies(self):
+    # Check that we can change the dependencies strategy via `DJC_DEPS_STRATEGY` context key
+    def test_template_render_deps_strategy(self):
+        registry.register(name="test", component=SimpleComponent)
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% component 'test' variable='foo' / %}
+        """
+        template = Template(template_str)
+        rendered: str = template.render(Context({"DJC_DEPS_STRATEGY": "append"}))
+
+        # Dependency manager script NOT included
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+
+        assertInHTML(
+            "<style>.xyz { color: red; }</style>",
+            rendered,
+            count=1,
+        )  # Inlined CSS
+        assertInHTML(
+            '<script>console.log("xyz");</script>', rendered, count=1
+        )  # Inlined JS
+
+        assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
+        assert rendered.count("<link") == 1
+        assert rendered.count("<style") == 1
+
+        # Check that the order is correct (dependencies are appended)
+        assert rendered.strip() == (
+            'Variable: <strong data-djc-id-ca1bc41="">foo</strong>\n'
+            '    \n'
+            '        <script src="script.js"></script><script>console.log("xyz");</script><style>.xyz {\n'
+            '            color: red;\n'
+            '        }</style><link href="style.css" media="all" rel="stylesheet">'
+        )
+
+    # Check that `Component.render()` renders dependencies
+    def test_component_render(self):
         class SimpleComponentWithDeps(SimpleComponent):
             template: types.django_html = (
                 """
@@ -149,7 +193,7 @@ class TestRenderDependencies:
         assert rendered.count("<link") == 1
         assert rendered.count("<style") == 1
 
-    def test_component_render_renders_dependencies_opt_out(self):
+    def test_component_render_opt_out(self):
         class SimpleComponentWithDeps(SimpleComponent):
             template: types.django_html = (
                 """
@@ -164,7 +208,7 @@ class TestRenderDependencies:
 
         rendered_raw = SimpleComponentWithDeps.render(
             kwargs={"variable": "foo"},
-            render_dependencies=False,
+            deps_strategy="raw",
         )
 
         assert rendered_raw.count("<script") == 1
@@ -184,7 +228,8 @@ class TestRenderDependencies:
             count=0,
         )  # Inlined JS
 
-    def test_component_render_to_response_renders_dependencies(self):
+    # Check that `Component.render_to_response()` renders dependencies
+    def test_component_render_to_response(self):
         class SimpleComponentWithDeps(SimpleComponent):
             template: types.django_html = (
                 """
@@ -211,6 +256,103 @@ class TestRenderDependencies:
         assert rendered.count('<link href="style.css" media="all" rel="stylesheet">') == 1  # Media.css
         assert rendered.count("<link") == 1
         assert rendered.count("<style") == 1
+
+    def test_inserts_styles_and_script_to_default_places_if_not_overriden(self):
+        registry.register(name="test", component=SimpleComponent)
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head></head>
+                <body>
+                    {% component "test" variable="foo" / %}
+                </body>
+            </html>
+        """
+        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered = render_dependencies(rendered_raw)
+
+        assert rendered.count("<script") == 4
+        assert rendered.count("<style") == 1
+        assert rendered.count("<link") == 1
+        assert rendered.count("_RENDERED") == 0
+
+        assertInHTML(
+            """
+            <head>
+                <style>.xyz { color: red; }</style>
+                <link href="style.css" media="all" rel="stylesheet">
+            </head>
+            """,
+            rendered,
+            count=1,
+        )
+
+        body_re = re.compile(r"<body>(.*?)</body>", re.DOTALL)
+        rendered_body = body_re.search(rendered).group(1)  # type: ignore[union-attr]
+
+        assertInHTML(
+            """<script src="django_components/django_components.min.js">""",
+            rendered_body,
+            count=1,
+        )
+        assertInHTML(
+            '<script>console.log("xyz");</script>',
+            rendered_body,
+            count=1,
+        )
+
+    def test_does_not_insert_styles_and_script_to_default_places_if_overriden(self):
+        registry.register(name="test", component=SimpleComponent)
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_js_dependencies %}
+                </head>
+                <body>
+                    {% component "test" variable="foo" / %}
+                    {% component_css_dependencies %}
+                </body>
+            </html>
+        """
+        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered: str = render_dependencies(rendered_raw)
+
+        assert rendered.count("<script") == 4
+        assert rendered.count("<style") == 1
+        assert rendered.count("<link") == 1
+        assert rendered.count("_RENDERED") == 0
+
+        assertInHTML(
+            """
+            <body>
+                Variable: <strong data-djc-id-ca1bc41>foo</strong>
+
+                <style>.xyz { color: red; }</style>
+                <link href="style.css" media="all" rel="stylesheet">
+            </body>
+            """,
+            rendered,
+            count=1,
+        )
+
+        head_re = re.compile(r"<head>(.*?)</head>", re.DOTALL)
+        rendered_head = head_re.search(rendered).group(1)  # type: ignore[union-attr]
+
+        assertInHTML(
+            """<script src="django_components/django_components.min.js">""",
+            rendered_head,
+            count=1,
+        )
+        assertInHTML(
+            '<script>console.log("xyz");</script>',
+            rendered_head,
+            count=1,
+        )
 
     # NOTE: Some HTML parser libraries like selectolax or lxml try to "correct" the given HTML.
     #       We want to avoid this behavior, so user gets the exact same HTML back.
@@ -319,7 +461,7 @@ class TestRenderDependencies:
             </table>
         """
 
-        rendered_raw = Template(template_str).render(Context({"formset": [1]}))
+        rendered_raw = Template(template_str).render(Context({"formset": [1], "DJC_DEPS_STRATEGY": "raw"}))
         rendered = render_dependencies(rendered_raw, strategy="fragment")
 
         # Base64 encodings:
@@ -408,7 +550,7 @@ class TestDependenciesStrategyDocument:
                 </body>
             </html>
         """
-        rendered_raw = Template(template_str).render(Context({}))
+        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         rendered = render_dependencies(rendered_raw, strategy="document")
 
         assert rendered.count("<script") == 4
@@ -457,7 +599,7 @@ class TestDependenciesStrategyDocument:
                 </body>
             </html>
         """
-        rendered_raw = Template(template_str).render(Context({}))
+        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
         rendered = render_dependencies(rendered_raw, strategy="document")
 
         assert rendered.count("<script") == 4
@@ -505,7 +647,7 @@ class TestDependenciesStrategySimple:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         # Placeholders
         assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
@@ -593,7 +735,7 @@ class TestDependenciesStrategySimple:
             {% endcomponent %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         rendered = render_dependencies(rendered_raw, strategy="simple")
 
@@ -663,7 +805,7 @@ class TestDependenciesStrategyPrepend:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         # Placeholders
         assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
@@ -753,7 +895,7 @@ class TestDependenciesStrategyPrepend:
             {% endcomponent %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         rendered = render_dependencies(rendered_raw, strategy="prepend")
 
@@ -823,7 +965,7 @@ class TestDependenciesStrategyAppend:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         # Placeholders
         assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
@@ -910,7 +1052,7 @@ class TestDependenciesStrategyAppend:
             {% endcomponent %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
         rendered = render_dependencies(rendered_raw, strategy="append")
 
@@ -969,58 +1111,32 @@ class TestDependenciesStrategyAppend:
 
 
 @djc_test
-class TestMiddleware:
-    def test_middleware_response_without_content_type(self):
-        response = HttpResponseNotModified()
-        middleware = ComponentDependencyMiddleware(get_response=lambda _: response)
-        request = Mock()
-        assert response == middleware(request=request)
-
-    def test_middleware_response_with_components_with_slash_dash_and_underscore(self):
-        registry.register("dynamic", DynamicComponent)
-        registry.register("test-component", component=SimpleComponent)
-        registry.register("test/component", component=SimpleComponent)
-        registry.register("test_component", component=SimpleComponent)
+class TestDependenciesStrategyRaw:
+    def test_single_component(self):
+        registry.register(name="test", component=SimpleComponent)
 
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component_css_dependencies %}
             {% component_js_dependencies %}
-            {% component "dynamic" is=component_name variable='value' / %}
+            {% component_css_dependencies %}
+            {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
 
-        def assert_dependencies(content: str):
-            # Dependency manager script (empty)
-            assertInHTML('<script src="django_components/django_components.min.js"></script>', content, count=1)
+        # Placeholders
+        assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
+        assert rendered_raw.count('<script name="JS_PLACEHOLDER"></script>') == 1
 
-            # Inlined JS
-            assertInHTML('<script>console.log("xyz");</script>', content, count=1)
-            # Inlined CSS
-            assertInHTML("<style>.xyz { color: red; }</style>", content, count=1)
-            # Media.css
-            assertInHTML('<link href="style.css" media="all" rel="stylesheet">', content, count=1)
+        assert rendered_raw.count("<script") == 1
+        assert rendered_raw.count("<style") == 0
+        assert rendered_raw.count("<link") == 1
+        assert rendered_raw.count("_RENDERED") == 1
 
-        rendered1 = create_and_process_template_response(
-            template,
-            context=Context({"component_name": "test-component"}),
+        # Check that it contains inlined JS and CSS, and Media.css
+        assert rendered_raw.strip() == (
+            '<script name="JS_PLACEHOLDER"></script>\n'
+            '            <link name="CSS_PLACEHOLDER">\n'
+            '            <!-- _RENDERED SimpleComponent_311097,ca1bc41,, -->\n'
+            '        Variable: <strong data-djc-id-ca1bc41="">foo</strong>'
         )
-
-        assert_dependencies(rendered1)
-        assert rendered1.count('Variable: <strong data-djc-id-ca1bc42="" data-djc-id-ca1bc41="">value</strong>') == 1
-
-        rendered2 = create_and_process_template_response(
-            template,
-            context=Context({"component_name": "test-component"}),
-        )
-
-        assert_dependencies(rendered2)
-        assert rendered2.count('Variable: <strong data-djc-id-ca1bc44="" data-djc-id-ca1bc43="">value</strong>') == 1
-
-        rendered3 = create_and_process_template_response(
-            template,
-            context=Context({"component_name": "test_component"}),
-        )
-
-        assert_dependencies(rendered3)
-        assert rendered3.count('Variable: <strong data-djc-id-ca1bc46="" data-djc-id-ca1bc45="">value</strong>') == 1

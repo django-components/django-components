@@ -54,9 +54,7 @@ python manage.py components ext run <extension> <command>
 ## `components create`
 
 ```txt
-usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose]
-              [--dry-run]
-              name
+usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run] name
 
 ```
 
@@ -238,7 +236,7 @@ List all extensions.
 - `--columns COLUMNS`
     - Comma-separated list of columns to show. Available columns: name. Defaults to `--columns name`.
 - `-s`, `--simple`
-    - Only show table data, without headers. Use this option for generating machine- readable output.
+    - Only show table data, without headers. Use this option for generating machine-readable output.
 
 
 
@@ -401,7 +399,7 @@ List all components created in this project.
 - `--columns COLUMNS`
     - Comma-separated list of columns to show. Available columns: name, full_name, path. Defaults to `--columns full_name,path`.
 - `-s`, `--simple`
-    - Only show table data, without headers. Use this option for generating machine- readable output.
+    - Only show table data, without headers. Use this option for generating machine-readable output.
 
 
 
@@ -463,9 +461,8 @@ ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAc
 ## `upgradecomponent`
 
 ```txt
-usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
-                        [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
-                        [--skip-checks]
+usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback] [--no-color]
+                        [--force-color] [--skip-checks]
 
 ```
 
@@ -509,10 +506,8 @@ Deprecated. Use `components upgrade` instead.
 ## `startcomponent`
 
 ```txt
-usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force]
-                      [--verbose] [--dry-run] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
-                      [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
-                      [--skip-checks]
+usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run] [--version] [-v {0,1,2,3}]
+                      [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color] [--skip-checks]
                       name
 
 ```

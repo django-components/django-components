@@ -1,13 +1,8 @@
 from pathlib import Path
 from typing import Dict, Optional
-from unittest.mock import Mock
 
 import django
 from django.conf import settings
-from django.template import Context
-from django.template.response import TemplateResponse
-
-from django_components.middleware import ComponentDependencyMiddleware
 
 # Common use case in our tests is to check that the component works in both
 # "django" and "isolated" context behaviors. If you need only that, pass this
@@ -20,28 +15,6 @@ PARAMETRIZE_CONTEXT_BEHAVIOR = (
     ],
     ["django", "isolated"],
 )
-
-
-# Create middleware instance
-response_stash = None
-middleware = ComponentDependencyMiddleware(get_response=lambda _: response_stash)
-
-request = Mock()
-mock_template = Mock()
-
-
-def create_and_process_template_response(template, context=None, use_middleware=True):
-    context = context if context is not None else Context({})
-    mock_template.render = lambda context, _: template.render(context)
-    response = TemplateResponse(request, mock_template, context)
-    if use_middleware:
-        response.render()
-        global response_stash
-        response_stash = response
-        response = middleware(request)
-    else:
-        response.render()
-    return response.content.decode("utf-8")
 
 
 def setup_test_config(
@@ -72,7 +45,7 @@ def setup_test_config(
             "template_cache_size": 128,
             **(components or {}),
         },
-        "MIDDLEWARE": ["django_components.middleware.ComponentDependencyMiddleware"],
+        "MIDDLEWARE": [],
         "DATABASES": {
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",

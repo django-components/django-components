@@ -1,8 +1,7 @@
 Django-components provides a seamless integration with HTML fragments with AJAX ([HTML over the wire](https://hotwired.dev/)),
-whether you're using jQuery, HTMX, AlpineJS, or vanilla JavaScript.
+whether you're using jQuery, HTMX, AlpineJS, vanilla JavaScript, or other.
 
-When you define a component that has extra JS or CSS, and you use django-components
-to render the fragment, django-components will:
+If the fragment component has any JS or CSS, django-components will:
 
 - Automatically load the associated JS and CSS
 - Ensure that JS is loaded and executed only once even if the fragment is inserted multiple times
@@ -24,9 +23,11 @@ to render the fragment, django-components will:
 
 ## Document and fragment strategies
 
-Components support different "strategies" for rendering JS and CSS.
+Components support different ["strategies"](../../advanced/rendering_js_css#dependencies-strategies)
+for rendering JS and CSS.
 
-Two of them are used to enable HTML fragments - "document" and "fragment".
+Two of them are used to enable HTML fragments - ["document"](../../advanced/rendering_js_css#document)
+and ["fragment"](../../advanced/rendering_js_css#fragment).
 
 What's the difference?
 
@@ -36,7 +37,7 @@ Document strategy assumes that the rendered components will be embedded into the
 of the initial page load. This means that:
 
 - The JS and CSS is embedded into the HTML as `<script>` and `<style>` tags
-  (see [JS and CSS output locations](./rendering_js_css.md#js-and-css-output-locations))
+  (see [Default JS / CSS locations](./rendering_js_css.md#default-js-css-locations))
 - Django-components injects a JS script for managing JS and CSS assets
 
 A component is rendered as a "document" when:
@@ -103,15 +104,12 @@ Then navigate to these URLs:
 
 ### 1. Define document HTML
 
+This is the HTML into which a fragment will be loaded using HTMX.
+
 ```djc_py title="[root]/components/demo.py"
 from django_components import Component, types
 
-# HTML into which a fragment will be loaded using HTMX
 class MyPage(Component):
-    Class View:
-        def get(self, request):
-            return self.component.render_to_response(request=request)
-
     template = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -135,20 +133,20 @@ class MyPage(Component):
             </body>
         </html>
     """
+
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(request=request)
 ```
 
 ### 2. Define fragment HTML
 
+The fragment to be inserted into the document.
+
+IMPORTANT: Don't forget to set `deps_strategy="fragment"`
+
 ```djc_py title="[root]/components/demo.py"
 class Frag(Component):
-    class View:
-        def get(self, request):
-            return self.component.render_to_response(
-                request=request,
-                # IMPORTANT: Don't forget `deps_strategy="fragment"`
-                deps_strategy="fragment",
-            )
-
     template = """
         <div class="frag">
             123
@@ -165,6 +163,14 @@ class Frag(Component):
             background: blue;
         }
     """
+
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(
+                request=request,
+                # IMPORTANT: Don't forget `deps_strategy="fragment"`
+                deps_strategy="fragment",
+            )
 ```
 
 ### 3. Create view and URLs
@@ -184,15 +190,12 @@ urlpatterns = [
 
 ### 1. Define document HTML
 
+This is the HTML into which a fragment will be loaded using AlpineJS.
+
 ```djc_py title="[root]/components/demo.py"
 from django_components import Component, types
 
-# HTML into which a fragment will be loaded using AlpineJS
 class MyPage(Component):
-    class View:
-        def get(self, request):
-            return self.component.render_to_response(request=request)
-
     template = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -222,20 +225,20 @@ class MyPage(Component):
             </body>
         </html>
     """
+
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(request=request)
 ```
 
 ### 2. Define fragment HTML
 
+The fragment to be inserted into the document.
+
+IMPORTANT: Don't forget to set `deps_strategy="fragment"`
+
 ```djc_py title="[root]/components/demo.py"
 class Frag(Component):
-    class View:
-        def get(self, request):
-            return self.component.render_to_response(
-                request=request,
-                # IMPORTANT: Don't forget `deps_strategy="fragment"`
-                deps_strategy="fragment",
-            )
-
     # NOTE: We wrap the actual fragment in a template tag with x-if="false" to prevent it
     #       from being rendered until we have registered the component with AlpineJS.
     template = """
@@ -265,6 +268,14 @@ class Frag(Component):
             background: blue;
         }
     """
+
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(
+                request=request,
+                # IMPORTANT: Don't forget `deps_strategy="fragment"`
+                deps_strategy="fragment",
+            )
 ```
 
 ### 3. Create view and URLs
@@ -284,15 +295,12 @@ urlpatterns = [
 
 ### 1. Define document HTML
 
+This is the HTML into which a fragment will be loaded using vanilla JS.
+
 ```djc_py title="[root]/components/demo.py"
 from django_components import Component, types
 
-# HTML into which a fragment will be loaded using JS
 class MyPage(Component):
-    class View:
-        def get(self, request):
-            return self.component.render_to_response(request=request)
-
     template = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -321,20 +329,20 @@ class MyPage(Component):
             </body>
         </html>
     """
+
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(request=request)
 ```
 
 ### 2. Define fragment HTML
 
+The fragment to be inserted into the document.
+
+IMPORTANT: Don't forget to set `deps_strategy="fragment"`
+
 ```djc_py title="[root]/components/demo.py"
 class Frag(Component):
-    class View:
-        def get(self, request):
-            return self.component.render_to_response(
-                request=request,
-                # IMPORTANT: Don't forget `deps_strategy="fragment"`
-                deps_strategy="fragment",
-            )
-
     template = """
         <div class="frag">
             123
@@ -351,6 +359,14 @@ class Frag(Component):
             background: blue;
         }
     """
+
+    class View:
+        def get(self, request):
+            return self.component.render_to_response(
+                request=request,
+                # IMPORTANT: Don't forget `deps_strategy="fragment"`
+                deps_strategy="fragment",
+            )
 ```
 
 ### 3. Create view and URLs
