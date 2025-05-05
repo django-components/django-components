@@ -4,7 +4,7 @@ from django.template import Context, NodeList, Template
 from django.template.base import Parser
 
 from django_components.context import _COMPONENT_CONTEXT_KEY, _STRATEGY_CONTEXT_KEY
-from django_components.dependencies import render_dependencies
+from django_components.dependencies import COMPONENT_COMMENT_REGEX, render_dependencies
 from django_components.util.template_parser import parse_template
 
 
@@ -101,7 +101,7 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
             if context.template is None:
                 with context.bind_template(self):
                     context.template_name = self.name
-                    result = self._render(context, *args, **kwargs)
+                    result: str = self._render(context, *args, **kwargs)
             else:
                 result = self._render(context, *args, **kwargs)
 
@@ -109,6 +109,12 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
         # or `{% component %}`. In that case the parent component will take care of rendering the
         # dependencies, so we don't need to do that here.
         if _COMPONENT_CONTEXT_KEY in context:
+            return result
+
+        # NOTE: Only process dependencies if the rendered result contains AT LEAST ONE rendered component.
+        #       This is to avoid unnecessary processing which otherwise has a considerable perf overhead.
+        #       See https://github.com/django-components/django-components/pull/1166#issuecomment-2850899765
+        if not COMPONENT_COMMENT_REGEX.search(result.encode("utf-8")):
             return result
 
         # Allow users to configure the `deps_strategy` kwarg of `render_dependencies()`, even if
