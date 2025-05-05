@@ -13519,7 +13519,7 @@
                       });
               };
           </script>
-      <script src="django_components/django_components.min.js"></script><script src="django_components/django_components.min.js"></script><script src="django_components/django_components.min.js"></script></body>
+      </body>
       </html>
   
   

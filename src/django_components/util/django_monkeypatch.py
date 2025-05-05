@@ -109,8 +109,11 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
             return result
 
         # NOTE: Only process dependencies if the rendered result contains AT LEAST ONE rendered component.
-        #       This is to avoid unnecessary processing which otherwise has a considerable perf overhead.
-        #       See https://github.com/django-components/django-components/pull/1166#issuecomment-2850899765
+        #       This has two reasons:
+        #       1. To keep the behavior consistent with the previous implementation, when `Template.render()`
+        #          didn't call `render_dependencies()`.
+        #       2. To avoid unnecessary processing which otherwise has a considerable perf overhead.
+        #          See https://github.com/django-components/django-components/pull/1166#issuecomment-2850899765
         if not COMPONENT_COMMENT_REGEX.search(result.encode("utf-8")):
             return result
 
