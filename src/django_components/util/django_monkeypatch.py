@@ -83,11 +83,9 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
         # Do not patch if done so already. This helps us avoid RecursionError
         return
 
+    # NOTE: This implementation is based on Django v5.1.3)
     def _template_render(self: Template, context: Context, *args: Any, **kwargs: Any) -> str:
         "Display stage -- can be called many times"
-        #  ---------------- ORIGINAL (Django v5.1.3) ----------------
-        # with context.render_context.push_state(self):
-        #  ---------------- OUR CHANGES START ----------------
         # We parametrized `isolated_context`, which was `True` in the original method.
         if not hasattr(self, "_djc_is_component_nested"):
             isolated_context = True
@@ -97,7 +95,6 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
             isolated_context = not self._djc_is_component_nested
 
         with context.render_context.push_state(self, isolated_context=isolated_context):
-            #  ---------------- OUR CHANGES END ----------------
             if context.template is None:
                 with context.bind_template(self):
                     context.template_name = self.name
