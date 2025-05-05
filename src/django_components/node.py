@@ -313,11 +313,13 @@ class BaseNode(Node, metaclass=NodeMeta):
         flags: Optional[Dict[str, bool]] = None,
         nodelist: Optional[NodeList] = None,
         node_id: Optional[str] = None,
+        contents: Optional[str] = None,
     ):
         self.params = params
         self.flags = flags or {flag: False for flag in self.allowed_flags or []}
         self.nodelist = nodelist or NodeList()
         self.node_id = node_id or gen_id()
+        self.contents = contents
 
     def __repr__(self) -> str:
         return (
@@ -350,12 +352,13 @@ class BaseNode(Node, metaclass=NodeMeta):
 
         trace_node_msg("PARSE", cls.tag, tag_id)
 
-        body = tag.parse_body()
+        body, contents = tag.parse_body()
         node = cls(
             nodelist=body,
             node_id=tag_id,
             params=tag.params,
             flags=tag.flags,
+            contents=contents,
             **kwargs,
         )
 

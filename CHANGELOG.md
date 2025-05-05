@@ -406,6 +406,36 @@
     # /components/ext/view/components/c1ab2c3?foo=bar#baz
     ```
 
+- The `BaseNode` class has a new `contents` attribute, which contains the raw contents (string) of the tag body.
+
+    This is relevant when you define custom template tags with `@template_tag` decorator or `BaseNode` class.
+
+    When you define a custom template tag like so:
+
+    ```py
+    from django_components import BaseNode, template_tag
+
+    @template_tag(
+        library,
+        tag="mytag",
+        end_tag="endmytag",
+        allowed_flags=["required"]
+    )
+    def mytag(node: BaseNode, context: Context, name: str, **kwargs) -> str:
+        print(node.contents)
+        return f"Hello, {name}!"
+    ```
+
+    And render it like so:
+
+    ```django
+    {% mytag name="John" %}
+        Hello, world!
+    {% endmytag %}
+    ```
+
+    Then, the `contents` attribute of the `BaseNode` instance will contain the string `"Hello, world!"`.
+
 #### Fix
 
 - Fix bug: Context processors data was being generated anew for each component. Now the data is correctly created once and reused across components with the same request ([#1165](https://github.com/django-components/django-components/issues/1165)).

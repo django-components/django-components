@@ -2,11 +2,14 @@ import inspect
 import re
 import pytest
 from django.template import Context, Template
+from django.template.base import TextNode, VariableNode
+from django.template.defaulttags import IfNode, LoremNode
 from django.template.exceptions import TemplateSyntaxError
 
 from django_components import types
 from django_components.node import BaseNode, template_tag
 from django_components.templatetags import component_tags
+from django_components.util.tag_parser import TagAttr
 
 from django_components.testing import djc_test
 from .testutils import setup_test_config
@@ -835,6 +838,96 @@ class TestSignatureBasedValidation:
         assert active_flags == ["required"]
 
         TestNode.unregister(component_tags.register)
+
+    def test_node_class_attributes(self):
+        captured = None
+
+        class TestNodeWithEndTag(BaseNode):
+            tag = "mytag"
+            end_tag = "endmytag"
+
+            @force_signature_validation
+            def render(self, context: Context, name: str, **kwargs) -> str:
+                nonlocal captured
+                captured = self.params, self.nodelist, self.node_id, self.contents
+                return f"Hello, {name}!"
+
+        # Case 1 - Node with end tag and NOT self-closing
+        TestNodeWithEndTag.register(component_tags.register)
+
+        template_str1 = """
+            {% load component_tags %}
+            {% mytag 'John' %}
+              INSIDE TAG {{ my_var }} {# comment #} {% lorem 1 w %} {% if True %} henlo {% endif %}
+            {% endmytag %}
+        """
+        template1 = Template(template_str1)
+        template1.render(Context({}))
+
+        params1, nodelist1, node_id1, contents1 = captured  # type: ignore
+        assert len(params1) == 1
+        assert isinstance(params1[0], TagAttr)
+        # NOTE: The comment node is not included in the nodelist
+        assert len(nodelist1) == 8
+        assert isinstance(nodelist1[0], TextNode)
+        assert isinstance(nodelist1[1], VariableNode)
+        assert isinstance(nodelist1[2], TextNode)
+        assert isinstance(nodelist1[3], TextNode)
+        assert isinstance(nodelist1[4], LoremNode)
+        assert isinstance(nodelist1[5], TextNode)
+        assert isinstance(nodelist1[6], IfNode)
+        assert isinstance(nodelist1[7], TextNode)
+        assert contents1 == "\n              INSIDE TAG {{ my_var }} {# comment #} {% lorem 1 w %} {% if True %} henlo {% endif %}\n            "  # noqa: E501
+        assert node_id1 == "a1bc3e"
+
+        captured = None  # Reset captured
+
+        # Case 2 - Node with end tag and NOT self-closing
+        template_str2 = """
+            {% load component_tags %}
+            {% mytag 'John' / %}
+        """
+        template2 = Template(template_str2)
+        template2.render(Context({}))
+
+        params2, nodelist2, node_id2, contents2 = captured  # type: ignore
+        assert len(params2) == 1  # type: ignore
+        assert isinstance(params2[0], TagAttr)  # type: ignore
+        assert len(nodelist2) == 0  # type: ignore
+        assert contents2 is None  # type: ignore
+        assert node_id2 == "a1bc3f"  # type: ignore
+
+        captured = None  # Reset captured
+
+        # Case 3 - Node without end tag
+        class TestNodeWithoutEndTag(BaseNode):
+            tag = "mytag2"
+
+            @force_signature_validation
+            def render(self, context: Context, name: str, **kwargs) -> str:
+                nonlocal captured
+                captured = self.params, self.nodelist, self.node_id, self.contents
+                return f"Hello, {name}!"
+
+        TestNodeWithoutEndTag.register(component_tags.register)
+
+        template_str3 = """
+            {% load component_tags %}
+            {% mytag2 'John' %}
+        """
+        template3 = Template(template_str3)
+        template3.render(Context({}))
+
+        params3, nodelist3, node_id3, contents3 = captured  # type: ignore
+        assert len(params3) == 1
+        assert isinstance(params3[0], TagAttr)
+        assert len(nodelist3) == 0
+        assert contents3 is None
+        assert node_id3 == "a1bc40"
+
+        # Cleanup
+        TestNodeWithEndTag.unregister(component_tags.register)
+        TestNodeWithoutEndTag.unregister(component_tags.register)
 
     def test_node_render(self):
         # Check that the render function is called with the context
