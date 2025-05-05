@@ -189,6 +189,7 @@ class ComponentInput:
     render_dependencies: bool
     """Deprecated. Instead use `deps_strategy="raw"`."""
 
+
 @dataclass()
 class MetadataItem:
     render_id: str
@@ -2308,9 +2309,7 @@ class Component(metaclass=ComponentMeta):
     ) -> str:
         # Modify the error to display full component path (incl. slots)
         with component_error_message([self.name]):
-            return self._render_impl(
-                context, args, kwargs, slots, escape_slots_content, deps_strategy, request
-            )
+            return self._render_impl(context, args, kwargs, slots, escape_slots_content, deps_strategy, request)
 
     def _render_impl(
         self,
