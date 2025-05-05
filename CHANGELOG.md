@@ -370,6 +370,10 @@
     # /components/ext/view/components/c1ab2c3?foo=bar#baz
     ```
 
+#### Fix
+
+- Fix bug: Context processors data was being generated anew for each component. Now the data correctly created once and reused across components with the same request ([#1165](https://github.com/django-components/django-components/issues/1165)).
+
 ## v0.139.1
 
 #### Fix

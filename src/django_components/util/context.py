@@ -131,7 +131,7 @@ def _copy_block_context(block_context: BlockContext) -> BlockContext:
 # See https://github.com/django/django/blame/2d34ebe49a25d0974392583d5bbd954baf742a32/django/template/context.py#L255
 def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> Dict[str, Any]:
     if request in context_processors_data:
-        return context_processors_data[request]
+        return context_processors_data[request].copy()
 
     # TODO_REMOVE_IN_V2 - In v2, if we still support context processors,
     #     it should be set on our settings, so we wouldn't have to get the Engine for that.
@@ -152,5 +152,7 @@ def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> D
             processors_data.update(data)
         except TypeError as e:
             raise TypeError(f"Context processor {processor.__qualname__} didn't return a " "dictionary.") from e
+
+    context_processors_data[request] = processors_data
 
     return processors_data

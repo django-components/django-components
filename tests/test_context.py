@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Optional
+from typing import Dict, Optional, cast
 
 import pytest
 from django.http import HttpRequest
@@ -7,11 +7,18 @@ from django.template import Context, RequestContext, Template
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, register, registry, types
+from django_components.util.misc import gen_id
 
 from django_components.testing import djc_test
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
+
+
+# Context processor that generates a unique ID. This is used to test that the context
+# processor is generated only once, as each time this is called, it should generate a different ID.
+def dummy_context_processor(request):
+    return {"dummy": gen_id()}
 
 
 #########################
@@ -630,9 +637,7 @@ class TestContextProcessors:
         class TestParentComponent(Component):
             template: types.django_html = """
                 {% load component_tags %}
-                {% component "test_child" %}
-                    {% slot "content" default / %}
-                {% endcomponent %}
+                {% slot "content" default / %}
             """
 
             def get_template_data(self, args, kwargs, slots, context):
@@ -689,7 +694,7 @@ class TestContextProcessors:
 
         request = HttpRequest()
         request_context = RequestContext(request)
-        rendered = TestComponent.render(request_context)
+        rendered = TestComponent.render(context=request_context)
 
         assert "csrfmiddlewaretoken" in rendered
         assert list(context_processors_data.keys()) == ["csrf_token"]  # type: ignore[union-attr]
@@ -870,6 +875,62 @@ class TestContextProcessors:
         assert "csrfmiddlewaretoken" in rendered
         assert list(context_processors_data.keys()) == ["csrf_token"]  # type: ignore[union-attr]
         assert inner_request == request
+
+    @djc_test(django_settings={
+        "TEMPLATES": [
+            {
+                "BACKEND": "django.template.backends.django.DjangoTemplates",
+                "DIRS": ["tests/templates/", "tests/components/"],
+                "OPTIONS": {
+                    "builtins": [
+                        "django_components.templatetags.component_tags",
+                    ],
+                    "context_processors": [
+                        "tests.test_context.dummy_context_processor",
+                    ],
+                },
+            }
+        ],
+    })
+    def test_data_generated_only_once(self):
+        context_processors_data: Optional[Dict] = None
+        context_processors_data_child: Optional[Dict] = None
+
+        @register("test_parent")
+        class TestParentComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component "test_child" / %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal context_processors_data
+                context_processors_data = self.context_processors_data
+                return {}
+
+        @register("test_child")
+        class TestChildComponent(Component):
+            template: types.django_html = """{% csrf_token %}"""
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal context_processors_data_child
+                context_processors_data_child = self.context_processors_data
+                return {}
+
+        request = HttpRequest()
+        TestParentComponent.render(request=request)
+
+        parent_data = cast(dict, context_processors_data)
+        child_data = cast(dict, context_processors_data_child)
+
+        # Check that the context processors data is reused across the components with
+        # the same request.
+        assert list(parent_data.keys()) == ["csrf_token", "dummy"]
+        assert list(child_data.keys()) == ["csrf_token", "dummy"]
+
+        assert parent_data["dummy"] == "a1bc3f"
+        assert child_data["dummy"] == "a1bc3f"
+        assert parent_data["csrf_token"] == child_data["csrf_token"]
 
     def test_raises_on_accessing_context_processors_data_outside_of_rendering(self):
         class TestComponent(Component):
