@@ -156,7 +156,7 @@ There are six dependencies strategies:
 - [`append`](../../advanced/rendering_js_css#append)
     - Insert JS / CSS after the rendered HTML.
     - No extra script loaded.
-- [`raw`](../../advanced/rendering_js_css#raw)
+- [`ignore`](../../advanced/rendering_js_css#ignore)
     - HTML is left as-is. You can still process it with a different strategy later with
       [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
     - Used for inserting rendered HTML into other components.
@@ -327,12 +327,12 @@ JS and CSS is **always** inserted after the rendered content.
 
 Same as for the [`"simple"`](#simple) strategy.
 
-### `raw`
+### `ignore`
 
-`deps_strategy="raw"` is used when you do NOT want to process JS and CSS of the rendered HTML.
+`deps_strategy="ignore"` is used when you do NOT want to process JS and CSS of the rendered HTML.
 
 ```python
-html = MyComponent.render(deps_strategy="raw")
+html = MyComponent.render(deps_strategy="ignore")
 ```
 
 The rendered HTML is left as-is. You can still process it with a different strategy later with `render_dependencies()`.
@@ -340,7 +340,7 @@ The rendered HTML is left as-is. You can still process it with a different strat
 This is useful when you want to insert rendered HTML into another component.
 
 ```python
-html = MyComponent.render(deps_strategy="raw")
+html = MyComponent.render(deps_strategy="ignore")
 html = AnotherComponent.render(slots={"content": html})
 ```
 
@@ -376,9 +376,9 @@ let's render a template with a component.
 We will render it twice:
 
 - First time, we let `template.render()` handle the rendering.
-- Second time, we prevent `template.render()` from inserting the component's JS and CSS with `deps_strategy="raw"`.
+- Second time, we prevent `template.render()` from inserting the component's JS and CSS with `deps_strategy="ignore"`.
 
-    Instead, we pass the raw HTML to `render_dependencies()` ourselves to insert the component's JS and CSS.
+    Instead, we pass the "unprocessed" HTML to `render_dependencies()` ourselves to insert the component's JS and CSS.
 
 ```python
 from django.template.base import Template
@@ -404,7 +404,7 @@ template = Template("""
 
 rendered = template.render(Context({}))
 
-rendered2_raw = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+rendered2_raw = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 rendered2 = render_dependencies(rendered2_raw)
 
 assert rendered == rendered2
@@ -413,7 +413,7 @@ assert rendered == rendered2
 Same applies to other strategies and other methods of rendering:
 
 ```python
-raw_html = MyComponent.render(deps_strategy="raw")
+raw_html = MyComponent.render(deps_strategy="ignore")
 html = render_dependencies(raw_html, deps_strategy="document")
 
 html2 = MyComponent.render(deps_strategy="document")

@@ -232,7 +232,7 @@ class TestDynamicExpr:
         rendered: str = template.render(
             Context(
                 {
-                    "DJC_DEPS_STRATEGY": "raw",
+                    "DJC_DEPS_STRATEGY": "ignore",
                     "var_a": 3,
                     "is_active": True,
                     "list": [{"a": 1}, {"a": 2}],
@@ -301,7 +301,7 @@ class TestDynamicExpr:
         rendered: str = template.render(
             Context(
                 {
-                    "DJC_DEPS_STRATEGY": "raw",
+                    "DJC_DEPS_STRATEGY": "ignore",
                     "var_a": 3,
                     "is_active": True,
                     "list": [{"a": 1}, {"a": 2}],

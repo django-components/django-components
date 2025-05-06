@@ -367,7 +367,7 @@ There are six dependencies rendering strategies:
     - Insert JS / CSS after the rendered HTML.
     - Ignores the placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) and any `<head>`/`<body>` HTML tags.
     - No extra script loaded.
-- [`raw`](../../advanced/rendering_js_css#raw)
+- [`ignore`](../../advanced/rendering_js_css#ignore)
     - HTML is left as-is. You can still process it with a different strategy later with
       [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
     - Used for inserting rendered HTML into other components.
@@ -437,7 +437,7 @@ class Button(Component):
         icon = Icon.render(
             context=context,
             args=["icon-name"],
-            deps_strategy="raw",
+            deps_strategy="ignore",
         )
         # Update context with icon
         with context.update({"icon": icon}):
@@ -529,7 +529,7 @@ from django.utils.safestring import mark_safe
 # Render the inner component
 inner_html = InnerComponent.render(
     kwargs={"some_data": "value"},
-    deps_strategy="raw",  # Important for nesting!
+    deps_strategy="ignore",  # Important for nesting!
 )
 
 # Use inner component's output in the outer component
@@ -540,10 +540,10 @@ outer_html = OuterComponent.render(
 )
 ```
 
-The key here is setting [`deps_strategy="raw"`](../../advanced/rendering_js_css#raw) for the inner component. This prevents duplicate
+The key here is setting [`deps_strategy="ignore"`](../../advanced/rendering_js_css#ignore) for the inner component. This prevents duplicate
 rendering of JS / CSS dependencies when the outer component is rendered.
 
-When `deps_strategy="raw"`:
+When `deps_strategy="ignore"`:
 
 - No JS or CSS dependencies will be added to the output HTML
 - The component's content is rendered as-is
@@ -587,7 +587,7 @@ DynamicComponent.render(
     },
     slots={
         "pagination": PaginationComponent.render(
-            deps_strategy="raw",
+            deps_strategy="ignore",
         ),
     },
 )

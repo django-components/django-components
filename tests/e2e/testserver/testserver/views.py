@@ -23,8 +23,7 @@ def single_component_view(request):
     """
     template = Template(template_str)
 
-    rendered_raw = template.render(Context({}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({}))
     return HttpResponse(rendered)
 
 
@@ -47,8 +46,7 @@ def multiple_components_view(request):
         </html>
     """
     template = Template(template_str)
-    rendered_raw = template.render(Context({}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({}))
     return HttpResponse(rendered)
 
 
@@ -72,8 +70,7 @@ def check_js_order_in_js_view(request):
         </html>
     """
     template = Template(template_str)
-    rendered_raw = template.render(Context({}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({}))
     return HttpResponse(rendered)
 
 
@@ -97,8 +94,7 @@ def check_js_order_in_media_view(request):
         </html>
     """
     template = Template(template_str)
-    rendered_raw = template.render(Context({}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({}))
     return HttpResponse(rendered)
 
 
@@ -122,8 +118,7 @@ def check_js_order_vars_not_available_before_view(request):
         </html>
     """
     template = Template(template_str)
-    rendered_raw = template.render(Context({}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({}))
     return HttpResponse(rendered)
 
 
@@ -163,14 +158,13 @@ def fragment_base_js_view(request):
     template = Template(template_str)
 
     frag = request.GET["frag"]
-    rendered_raw = template.render(
+    rendered = template.render(
         Context(
             {
                 "frag": frag,
             }
         )
     )
-    rendered = render_dependencies(rendered_raw)
     return HttpResponse(rendered)
 
 
@@ -211,8 +205,7 @@ def fragment_base_alpine_view(request):
     template = Template(template_str)
 
     frag = request.GET["frag"]
-    rendered_raw = template.render(Context({"frag": frag}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({"frag": frag}))
     return HttpResponse(rendered)
 
 
@@ -242,8 +235,7 @@ def fragment_base_htmx_view(request):
     template = Template(template_str)
 
     frag = request.GET["frag"]
-    rendered_raw = template.render(Context({"frag": frag}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({"frag": frag}))
     return HttpResponse(rendered)
 
 
@@ -273,8 +265,7 @@ def alpine_in_head_view(request):
         </html>
     """
     template = Template(template_str)
-    rendered_raw = template.render(Context({}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({}))
     return HttpResponse(rendered)
 
 
@@ -294,8 +285,7 @@ def alpine_in_body_view(request):
         </html>
     """
     template = Template(template_str)
-    rendered_raw = template.render(Context({}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({}))
     return HttpResponse(rendered)
 
 
@@ -316,8 +306,7 @@ def alpine_in_body_view_2(request):
         </html>
     """
     template = Template(template_str)
-    rendered_raw = template.render(Context({}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({}))
     return HttpResponse(rendered)
 
 
@@ -338,6 +327,5 @@ def alpine_in_body_vars_not_available_before_view(request):
         </html>
     """
     template = Template(template_str)
-    rendered_raw = template.render(Context({}))
-    rendered = render_dependencies(rendered_raw)
+    rendered = template.render(Context({}))
     return HttpResponse(rendered)

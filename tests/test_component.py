@@ -872,7 +872,7 @@ class TestComponentRender:
                 {% endblock %}
             """
 
-        rendered = SimpleComponent.render(deps_strategy="raw")
+        rendered = SimpleComponent.render(deps_strategy="ignore")
         assertHTMLEqual(
             rendered,
             """

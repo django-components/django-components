@@ -36,20 +36,20 @@
 
     - NOTE: If you rendered HTML with `Component.render()` or `Component.render_to_response()`, the JS and CSS were already rendered.
 
-    To disable this behavior, set the `DJC_DEPS_STRATEGY` context key to `"raw"`
+    To disable this behavior, set the `DJC_DEPS_STRATEGY` context key to `"ignore"`
     when rendering the template:
 
     ```py
     # With `Template.render()`:
     template = Template(template_str)
-    rendered = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+    rendered = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 
     # Or with django.shortcuts.render():
     from django.shortcuts import render
     rendered = render(
         request,
         "my_template.html",
-        context={"DJC_DEPS_STRATEGY": "raw"},
+        context={"DJC_DEPS_STRATEGY": "ignore"},
     )
     ```
 
@@ -60,7 +60,7 @@
     - `"simple"`
     - `"prepend"`
     - `"append"`
-    - `"raw"`
+    - `"ignore"`
 
     See [Dependencies rendering](https://django-components.github.io/django-components/0.140/concepts/advanced/rendering_js_css/) for more info.
 
@@ -230,7 +230,7 @@
     Calendar.render_to_response(deps_strategy="fragment")
     ```
 
-- The `render_dependencies` kwarg in `Component.render()` and `Component.render_to_response()` is now deprecated. Use `deps_strategy="raw"` instead. The `render_dependencies` kwarg will be removed in v1.
+- The `render_dependencies` kwarg in `Component.render()` and `Component.render_to_response()` is now deprecated. Use `deps_strategy="ignore"` instead. The `render_dependencies` kwarg will be removed in v1.
 
     Before:
 
@@ -241,7 +241,7 @@
     After:
 
     ```py
-    Calendar.render_to_response(deps_strategy="raw")
+    Calendar.render_to_response(deps_strategy="ignore")
     ```
 
 - `SlotContent` was renamed to `SlotInput`. The old name is deprecated and will be removed in v1.
@@ -318,7 +318,7 @@
     - `"simple"`
     - `"prepend"`
     - `"append"`
-    - `"raw"`
+    - `"ignore"`
 
     ```py
     Calendar.render_to_response(
@@ -351,7 +351,7 @@
         - Insert JS / CSS after the rendered HTML.
         - Ignores placeholders and any `<head>` / `<body>` tags.
         - No extra script loaded.
-    - `"raw"`
+    - `"ignore"`
         - Rendered HTML is left as-is. You can still process it with a different strategy later with `render_dependencies()`.
         - Used for inserting rendered HTML into other components.
 

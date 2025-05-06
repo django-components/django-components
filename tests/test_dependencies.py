@@ -76,8 +76,8 @@ class TestRenderDependencies:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        # NOTE: `"raw"` is a special value that means "do not render dependencies"
-        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        # NOTE: `"ignore"` is a special value that means "do not render dependencies"
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 
         # Placeholders
         assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
@@ -208,7 +208,7 @@ class TestRenderDependencies:
 
         rendered_raw = SimpleComponentWithDeps.render(
             kwargs={"variable": "foo"},
-            deps_strategy="raw",
+            deps_strategy="ignore",
         )
 
         assert rendered_raw.count("<script") == 1
@@ -270,7 +270,7 @@ class TestRenderDependencies:
                 </body>
             </html>
         """
-        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
         rendered = render_dependencies(rendered_raw)
 
         assert rendered.count("<script") == 4
@@ -319,7 +319,7 @@ class TestRenderDependencies:
                 </body>
             </html>
         """
-        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
         rendered: str = render_dependencies(rendered_raw)
 
         assert rendered.count("<script") == 4
@@ -461,7 +461,7 @@ class TestRenderDependencies:
             </table>
         """
 
-        rendered_raw = Template(template_str).render(Context({"formset": [1], "DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw = Template(template_str).render(Context({"formset": [1], "DJC_DEPS_STRATEGY": "ignore"}))
         rendered = render_dependencies(rendered_raw, strategy="fragment")
 
         # Base64 encodings:
@@ -550,7 +550,7 @@ class TestDependenciesStrategyDocument:
                 </body>
             </html>
         """
-        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
         rendered = render_dependencies(rendered_raw, strategy="document")
 
         assert rendered.count("<script") == 4
@@ -599,7 +599,7 @@ class TestDependenciesStrategyDocument:
                 </body>
             </html>
         """
-        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw = Template(template_str).render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
         rendered = render_dependencies(rendered_raw, strategy="document")
 
         assert rendered.count("<script") == 4
@@ -647,7 +647,7 @@ class TestDependenciesStrategySimple:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 
         # Placeholders
         assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
@@ -735,7 +735,7 @@ class TestDependenciesStrategySimple:
             {% endcomponent %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 
         rendered = render_dependencies(rendered_raw, strategy="simple")
 
@@ -805,7 +805,7 @@ class TestDependenciesStrategyPrepend:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 
         # Placeholders
         assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
@@ -895,7 +895,7 @@ class TestDependenciesStrategyPrepend:
             {% endcomponent %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 
         rendered = render_dependencies(rendered_raw, strategy="prepend")
 
@@ -965,7 +965,7 @@ class TestDependenciesStrategyAppend:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 
         # Placeholders
         assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1
@@ -1052,7 +1052,7 @@ class TestDependenciesStrategyAppend:
             {% endcomponent %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 
         rendered = render_dependencies(rendered_raw, strategy="append")
 
@@ -1122,7 +1122,7 @@ class TestDependenciesStrategyRaw:
             {% component 'test' variable='foo' / %}
         """
         template = Template(template_str)
-        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "raw"}))
+        rendered_raw: str = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
 
         # Placeholders
         assert rendered_raw.count('<link name="CSS_PLACEHOLDER">') == 1

@@ -59,7 +59,7 @@ class DynamicComponent(Component):
         },
         slots={
             "pagination": PaginationComponent.render(
-                deps_strategy="raw",
+                deps_strategy="ignore",
             ),
         },
     )

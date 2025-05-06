@@ -79,7 +79,7 @@ class TestMainMedia:
         assert ".html-css-only {\n  color: blue;\n}" in TestComponent.css  # type: ignore[operator]
         assert 'console.log("JS file");' in TestComponent.js  # type: ignore[operator]
 
-        rendered_raw = Template(
+        rendered = Template(
             """
             {% load component_tags %}
             {% component_js_dependencies %}
@@ -87,7 +87,6 @@ class TestMainMedia:
             {% component "test" variable="test" / %}
             """
         ).render(Context())
-        rendered = render_dependencies(rendered_raw)
 
         assertInHTML(
             """
@@ -143,7 +142,7 @@ class TestMainMedia:
         assert ".html-css-only {\n    color: blue;\n}" in TestComponent.css  # type: ignore[operator]
         assert 'console.log("HTML and JS only");' in TestComponent.js  # type: ignore[operator]
 
-        rendered_raw = Template(
+        rendered = Template(
             """
             {% load component_tags %}
             {% component_js_dependencies %}
@@ -151,7 +150,6 @@ class TestMainMedia:
             {% component "test" variable="test" / %}
             """
         ).render(Context())
-        rendered = render_dependencies(rendered_raw)
 
         assert 'Variable: <strong data-djc-id-ca1bc41="">test</strong>' in rendered
         assertInHTML(

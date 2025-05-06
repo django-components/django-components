@@ -38,14 +38,14 @@ if TYPE_CHECKING:
 
 
 ScriptType = Literal["css", "js"]
-DependenciesStrategy = Literal["document", "fragment", "simple", "prepend", "append", "raw"]
+DependenciesStrategy = Literal["document", "fragment", "simple", "prepend", "append", "ignore"]
 """
 Type for the available strategies for rendering JS and CSS dependencies.
 
 Read more about the [dependencies strategies](../../concepts/advanced/rendering_js_css).
 """
 
-DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append", "raw")
+DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append", "ignore")
 
 
 #########################################################
@@ -409,7 +409,7 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
     """
     if strategy not in DEPS_STRATEGIES:
         raise ValueError(f"Invalid strategy '{strategy}'")
-    elif strategy == "raw":
+    elif strategy == "ignore":
         return content
 
     is_safestring = isinstance(content, SafeString)

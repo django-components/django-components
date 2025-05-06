@@ -187,7 +187,7 @@ class ComponentInput:
     """Deprecated alias for `deps_strategy`."""
     # TODO_v1 - Remove, superseded by `deps_strategy`
     render_dependencies: bool
-    """Deprecated. Instead use `deps_strategy="raw"`."""
+    """Deprecated. Instead use `deps_strategy="ignore"`."""
 
 
 @dataclass()
@@ -2001,7 +2001,7 @@ class Component(metaclass=ComponentMeta):
         deps_strategy: DependenciesStrategy = "document",
         # TODO_v1 - Remove, superseded by `deps_strategy`
         type: Optional[DependenciesStrategy] = None,
-        # TODO_v1 - Remove, superseded by `deps_strategy="raw"`
+        # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
         **response_kwargs: Any,
@@ -2083,7 +2083,7 @@ class Component(metaclass=ComponentMeta):
         deps_strategy: DependenciesStrategy = "document",
         # TODO_v1 - Remove, superseded by `deps_strategy`
         type: Optional[DependenciesStrategy] = None,
-        # TODO_v1 - Remove, superseded by `deps_strategy="raw"`
+        # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
     ) -> str:
@@ -2181,7 +2181,7 @@ class Component(metaclass=ComponentMeta):
                     icon = Icon.render(
                         context=context,
                         args=["icon-name"],
-                        deps_strategy="raw",
+                        deps_strategy="ignore",
                     )
                     # Update context with icon
                     with context.update({"icon": icon}):
@@ -2217,7 +2217,7 @@ class Component(metaclass=ComponentMeta):
             - [`"append"`](../../concepts/advanced/rendering_js_css#append)
                 - Insert JS / CSS after the rendered HTML.
                 - No extra script loaded.
-            - [`"raw"`](../../concepts/advanced/rendering_js_css#raw)
+            - [`"ignore"`](../../concepts/advanced/rendering_js_css#ignore)
                 - HTML is left as-is. You can still process it with a different strategy later with
                   [`render_dependencies()`](../api/#django_components.render_dependencies).
                 - Used for inserting rendered HTML into other components.
@@ -2288,9 +2288,9 @@ class Component(metaclass=ComponentMeta):
                 )
             deps_strategy = type
 
-        # TODO_v1 - Remove, superseded by `deps_strategy="raw"`
+        # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
         if not render_dependencies:
-            deps_strategy = "raw"
+            deps_strategy = "ignore"
 
         return comp._render_with_error_trace(
             context, args, kwargs, slots, escape_slots_content, deps_strategy, request
@@ -2376,7 +2376,7 @@ class Component(metaclass=ComponentMeta):
                 # TODO_v1 - Remove, superseded by `deps_strategy`
                 type=deps_strategy,
                 # TODO_v1 - Remove, superseded by `deps_strategy`
-                render_dependencies=deps_strategy != "raw",
+                render_dependencies=deps_strategy != "ignore",
             ),
             is_filled=None,
             request=request,
@@ -2964,7 +2964,7 @@ class ComponentNode(BaseNode):
             slots=slot_fills,
             # NOTE: When we render components inside the template via template tags,
             # do NOT render deps, because this may be decided by outer component
-            deps_strategy="raw",
+            deps_strategy="ignore",
         )
 
         return output

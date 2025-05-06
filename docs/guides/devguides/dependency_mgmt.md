@@ -158,7 +158,7 @@ This is how we achieve that:
 
     - If users are using `Component.render()` or `Component.render_to_response()`, these post-process the `<!-- _RENDERED -->` comments by default.
 
-      - NOTE: Users are able to opt out of the post-processing by setting `deps_strategy="raw"`.
+      - NOTE: Users are able to opt out of the post-processing by setting `deps_strategy="ignore"`.
 
     - If one renders a Template directly, the `<!-- _RENDERED -->` will be processed too. We achieve this by
       modifying Django's `Template.render()` method.

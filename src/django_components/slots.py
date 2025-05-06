@@ -1103,9 +1103,9 @@ def _nodelist_to_slot_render_func(
         trace_component_msg("RENDER_NODELIST", component_name, component_id=None, slot_name=slot_name)
 
         # We wrap the slot nodelist in Template. However, we also override Django's `Template.render()`
-        # to call `render_dependencies()` on the results. So we need to set the strategy to `raw`
+        # to call `render_dependencies()` on the results. So we need to set the strategy to `ignore`
         # so that the dependencies are processed only once the whole component tree is rendered.
-        with ctx.push({"DJC_DEPS_STRATEGY": "raw"}):
+        with ctx.push({"DJC_DEPS_STRATEGY": "ignore"}):
             rendered = template.render(ctx)
 
         # After the rendering is done, remove the `extra_context` from the context stack
