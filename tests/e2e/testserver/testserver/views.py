@@ -2,7 +2,7 @@ from django.http import HttpResponse
 from django.template import Context, Template
 from testserver.components import FragComp, FragMedia
 
-from django_components import render_dependencies, types
+from django_components import types
 
 
 def single_component_view(request):

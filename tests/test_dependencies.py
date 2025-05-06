@@ -363,7 +363,7 @@ class TestRenderDependencies:
             <thead>
         """
 
-        rendered_raw = Template(template_str).render(Context({"formset": [1]}))
+        rendered_raw = Template(template_str).render(Context({"formset": [1], "DJC_DEPS_STRATEGY": "ignore"}))
         rendered = render_dependencies(rendered_raw, strategy="fragment")
 
         assertHTMLEqual(rendered, "<thead>")
@@ -398,7 +398,7 @@ class TestRenderDependencies:
             </table>
         """
 
-        rendered_raw = Template(template_str).render(Context({"formset": [1]}))
+        rendered_raw = Template(template_str).render(Context({"formset": [1], "DJC_DEPS_STRATEGY": "ignore"}))
         rendered = render_dependencies(rendered_raw, strategy="fragment")
 
         expected = """
