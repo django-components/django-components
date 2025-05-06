@@ -56,7 +56,9 @@ jobs:
       - name: Install dependencies
         run: |
             python -m pip install --upgrade pip wheel
-            python -m pip install -q hatch pre-commit asv
+            # NOTE: pin virtualenv to <20.31 until asv fixes it.
+            # See https://github.com/airspeed-velocity/asv/issues/1484
+            python -m pip install -q hatch pre-commit asv virtualenv==20.30
             hatch --version
 
       ###########################################

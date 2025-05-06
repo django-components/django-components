@@ -39,7 +39,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install asv
+        # NOTE: pin virtualenv to <20.31 until asv fixes it.
+        # See https://github.com/airspeed-velocity/asv/issues/1484
+        pip install asv virtualenv==20.30
 
     - name: Run benchmarks
       run: |
