@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Iterable, Optional, Protocol
+from typing import Any, Dict, Iterable, Optional, Protocol, Type, TypeVar
+
+TClass = TypeVar("TClass", bound=Type[Any])
 
 
 # Mark object as related to extension URLs so we can place these in
 # a separate documentation section
-def mark_extension_url_api(obj: Any) -> Any:
+def mark_extension_url_api(obj: TClass) -> TClass:
     obj._extension_url_api = True
     return obj
 

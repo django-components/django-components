@@ -1,15 +1,31 @@
 import sys
 from argparse import Action, ArgumentParser
 from dataclasses import asdict, dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Optional, Protocol, Sequence, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Protocol,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 
 if TYPE_CHECKING:
     from argparse import _ArgumentGroup, _FormatterClass
 
 
+TClass = TypeVar("TClass", bound=Type[Any])
+
+
 # Mark object as related to extension commands so we can place these in
 # a separate documentation section
-def mark_extension_command_api(obj: Any) -> Any:
+def mark_extension_command_api(obj: TClass) -> TClass:
     obj._extension_command_api = True
     return obj
 
@@ -27,7 +43,7 @@ The basic type of action to be taken when this argument is encountered at the co
 This is a subset of the values for `action` in
 [`ArgumentParser.add_argument()`](https://docs.python.org/3/library/argparse.html#the-add-argument-method).
 """
-mark_extension_command_api(CommandLiteralAction)
+mark_extension_command_api(CommandLiteralAction)  # type: ignore
 
 
 @mark_extension_command_api

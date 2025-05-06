@@ -233,7 +233,7 @@ class ViewExtension(ComponentExtension):
 
     # Create URL route on creation
     def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
-        comp_cls: Type["Component"] = ctx.component_cls
+        comp_cls = ctx.component_cls
         view_cls: Optional[Type[ComponentView]] = getattr(comp_cls, "View", None)
         if view_cls is None or not view_cls.public:
             return
@@ -254,7 +254,7 @@ class ViewExtension(ComponentExtension):
 
     # Remove URL route on deletion
     def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
-        comp_cls: Type["Component"] = ctx.component_cls
+        comp_cls = ctx.component_cls
         route = self.routes_by_component.pop(comp_cls, None)
         if route is None:
             return

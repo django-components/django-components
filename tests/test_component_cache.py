@@ -45,7 +45,7 @@ class TestComponentCache:
         assert result == "Hello"
 
         # Check if the cache entry is set
-        cache_key = component.cache.get_cache_key()
+        cache_key = component.cache.get_cache_key([], {}, {})
         assert cache_key == "components:cache:TestComponent_c9770f::"
         assert component.cache.get_entry(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3e,, -->Hello"
         assert caches["default"].get(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3e,, -->Hello"
@@ -81,7 +81,7 @@ class TestComponentCache:
 
         # Check if the cache entry is not set
         cache_instance = component.cache
-        cache_key = cache_instance.get_cache_key()
+        cache_key = cache_instance.get_cache_key([], {}, {})
         assert cache_instance.get_entry(cache_key) is None
 
         # Second render
@@ -104,7 +104,7 @@ class TestComponentCache:
         component.render()
 
         cache_instance = component.cache
-        cache_key = cache_instance.get_cache_key()
+        cache_key = cache_instance.get_cache_key([], {}, {})
         assert cache_instance.get_entry(cache_key) == "<!-- _RENDERED TestComponent_42aca9,ca1bc3e,, -->Hello"
 
         # Wait for TTL to expire
@@ -186,7 +186,7 @@ class TestComponentCache:
 
         # The key consists of `component._class_hash`, hashed args, and hashed kwargs
         expected_key = "1,2:key-value"
-        assert component.cache.hash(1, 2, key="value") == expected_key
+        assert component.cache.hash([1, 2], {"key": "value"}) == expected_key
 
     def test_override_hash_methods(self):
         class TestComponent(Component):
@@ -207,7 +207,7 @@ class TestComponentCache:
 
         # The key should use the custom hash methods
         expected_key = "components:cache:TestComponent_28880f:custom-args-and-kwargs"
-        assert component.cache.get_cache_key(1, 2, key="value") == expected_key
+        assert component.cache.get_cache_key([1, 2], {"key": "value"}, {}) == expected_key
 
     def test_cached_component_inside_include(self):
 

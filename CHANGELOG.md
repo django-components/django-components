@@ -4,37 +4,17 @@
 
 #### 🚨📢 BREAKING CHANGES
 
-- Component typing no longer uses generics. Instead, the types are now defined as class attributes of the component class.
-
-    Before:
-
-    ```py
-    Args = Tuple[float, str]
-
-    class Button(Component[Args]):
-        pass
-    ```
-
-    After:
-
-    ```py
-    class Button(Component):
-        class Args(NamedTuple):
-            size: float
-            text: str
-    ```
-
-    See [Migrating from generics to class attributes](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/#migrating-from-generics-to-class-attributes) for more info.
+**Middleware**
 
 - The middleware `ComponentDependencyMiddleware` was removed as it is no longer needed.
 
     The middleware served one purpose - to render the JS and CSS dependencies of components
     when you rendered templates with `Template.render()` or `django.shortcuts.render()` and those templates contained `{% component %}` tags.
 
+    - NOTE: If you rendered HTML with `Component.render()` or `Component.render_to_response()`, the JS and CSS were already rendered.
+
     Now, the JS and CSS dependencies of components are automatically rendered,
     even when you render Templates with `Template.render()` or `django.shortcuts.render()`.
-
-    - NOTE: If you rendered HTML with `Component.render()` or `Component.render_to_response()`, the JS and CSS were already rendered.
 
     To disable this behavior, set the `DJC_DEPS_STRATEGY` context key to `"ignore"`
     when rendering the template:
@@ -64,6 +44,44 @@
 
     See [Dependencies rendering](https://django-components.github.io/django-components/0.140/concepts/advanced/rendering_js_css/) for more info.
 
+**Typing**
+
+- Component typing no longer uses generics. Instead, the types are now defined as class attributes of the component class.
+
+    Before:
+
+    ```py
+    Args = Tuple[float, str]
+
+    class Button(Component[Args]):
+        pass
+    ```
+
+    After:
+
+    ```py
+    class Button(Component):
+        class Args(NamedTuple):
+            size: float
+            text: str
+    ```
+
+    See [Migrating from generics to class attributes](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/#migrating-from-generics-to-class-attributes) for more info.
+
+- Removed `EmptyTuple` and `EmptyDict` types. Instead, there is now a single `Empty` type.
+
+    ```py
+    from django_components import Component, Empty
+
+    class Button(Component):
+        template = "Hello"
+
+        Args = Empty
+        Kwargs = Empty
+    ```
+
+**Component API**
+
 - The interface of the not-yet-released `get_js_data()` and `get_css_data()` methods has changed to
   match `get_template_data()`.
 
@@ -79,18 +97,6 @@
     ```py
     def get_js_data(self, args, kwargs, slots, context):
     def get_css_data(self, args, kwargs, slots, context):
-    ```
-
-- Removed `EmptyTuple` and `EmptyDict` types. Instead, there is now a single `Empty` type.
-
-    ```py
-    from django_components import Component, Empty
-
-    class Button(Component):
-        template = "Hello"
-
-        Args = Empty
-        Kwargs = Empty
     ```
 
 - Arguments in `Component.render_to_response()` have changed
@@ -170,6 +176,28 @@
                 return self.render_to_response()
     ```
 
+- Caching - The function signatures of `Component.Cache.get_cache_key()` and `Component.Cache.hash()` have changed to enable passing slots.
+
+    Args and kwargs are no longer spread, but passed as a list and a dict, respectively.
+
+    Before:
+
+    ```py
+    def get_cache_key(self, *args: Any, **kwargs: Any) -> str:
+
+    def hash(self, *args: Any, **kwargs: Any) -> str:
+    ```
+
+    After:
+
+    ```py
+    def get_cache_key(self, args: Any, kwargs: Any, slots: Any) -> str:
+
+    def hash(self, args: Any, kwargs: Any) -> str:
+    ```
+
+**Template tags**
+
 - Component name in the `{% component %}` tag can no longer be set as a kwarg.
 
     Instead, the component name MUST be the first POSITIONAL argument only.
@@ -193,6 +221,8 @@
     {% component "profile" name="John" job="Developer" / %}
     ```
 
+**Miscellaneous**
+
 - The second argument to `render_dependencies()` is now `strategy` instead of `type`.
 
     Before:
@@ -209,7 +239,9 @@
 
 #### 🚨📢 Deprecation
 
-- `get_context_data()` is now deprecated. Use `get_template_data()` instead.
+**Component API**
+
+- `Component.get_context_data()` is now deprecated. Use `Component.get_template_data()` instead.
 
     `get_template_data()` behaves the same way, but has a different function signature
     to accept also slots and context.
@@ -244,7 +276,7 @@
     Calendar.render_to_response(deps_strategy="ignore")
     ```
 
-- `SlotContent` was renamed to `SlotInput`. The old name is deprecated and will be removed in v1.
+**Extensions**
 
 - In the `on_component_data()` extension hook, the `context_data` field of the context object was superseded by `template_data`.
 
@@ -265,6 +297,10 @@
         def on_component_data(self, ctx: OnComponentDataContext) -> None:
             ctx.template_data["my_template_var"] = "my_value"
     ```
+
+**Miscellaneous**
+
+- `SlotContent` was renamed to `SlotInput`. The old name is deprecated and will be removed in v1.
 
 #### Feat
 
@@ -372,7 +408,7 @@
 
 #### Fix
 
-- Fix bug: Context processors data was being generated anew for each component. Now the data correctly created once and reused across components with the same request ([#1165](https://github.com/django-components/django-components/issues/1165)).
+- Fix bug: Context processors data was being generated anew for each component. Now the data is correctly created once and reused across components with the same request ([#1165](https://github.com/django-components/django-components/issues/1165)).
 
 ## v0.139.1
 

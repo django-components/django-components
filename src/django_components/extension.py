@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
 
 TCallable = TypeVar("TCallable", bound=Callable)
+TClass = TypeVar("TClass", bound=Type[Any])
 
 
 ################################################
@@ -29,7 +30,7 @@ TCallable = TypeVar("TCallable", bound=Callable)
 
 # Mark a class as an extension hook context so we can place these in
 # a separate documentation section
-def mark_extension_hook_api(cls: Type[Any]) -> Type[Any]:
+def mark_extension_hook_api(cls: TClass) -> TClass:
     cls._extension_hook_api = True
     return cls
 

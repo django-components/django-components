@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from django.core.cache import BaseCache, caches
 
@@ -67,14 +67,14 @@ class ComponentCache(ComponentExtension.ExtensionClass):  # type: ignore
         cache = caches[cache_name]
         return cache
 
-    def get_cache_key(self, *args: Any, **kwargs: Any) -> str:
+    def get_cache_key(self, args: List, kwargs: Dict, slots: Dict) -> str:
         # Allow user to override how the input is hashed into a cache key with `hash()`,
         # but then still prefix it wih our own prefix, so it's clear where it comes from.
-        cache_key = self.hash(*args, **kwargs)
+        cache_key = self.hash(args, kwargs)
         cache_key = CACHE_KEY_PREFIX + self.component._class_hash + ":" + cache_key
         return cache_key
 
-    def hash(self, *args: Any, **kwargs: Any) -> str:
+    def hash(self, args: List, kwargs: Dict) -> str:
         """
         Defines how the input (both args and kwargs) is hashed into a cache key.
 
@@ -117,11 +117,11 @@ class CacheExtension(ComponentExtension):
         self.render_id_to_cache_key: dict[str, str] = {}
 
     def on_component_input(self, ctx: OnComponentInputContext) -> Optional[Any]:
-        cache_instance: ComponentCache = ctx.component.cache
+        cache_instance = ctx.component.cache
         if not cache_instance.enabled:
             return None
 
-        cache_key = cache_instance.get_cache_key(*ctx.args, **ctx.kwargs)
+        cache_key = cache_instance.get_cache_key(ctx.args, ctx.kwargs, ctx.slots)
         self.render_id_to_cache_key[ctx.component_id] = cache_key
 
         # If cache entry exists, return it. This will short-circuit the rendering process.
@@ -132,7 +132,7 @@ class CacheExtension(ComponentExtension):
 
     # Save the rendered component to cache
     def on_component_rendered(self, ctx: OnComponentRenderedContext) -> None:
-        cache_instance: ComponentCache = ctx.component.cache
+        cache_instance = ctx.component.cache
         if not cache_instance.enabled:
             return None
 
