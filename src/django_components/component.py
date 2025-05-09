@@ -2888,8 +2888,9 @@ class ComponentNode(BaseNode):
         flags: Optional[Dict[str, bool]] = None,
         nodelist: Optional[NodeList] = None,
         node_id: Optional[str] = None,
+        contents: Optional[str] = None,
     ) -> None:
-        super().__init__(params=params, flags=flags, nodelist=nodelist, node_id=node_id)
+        super().__init__(params=params, flags=flags, nodelist=nodelist, node_id=node_id, contents=contents)
 
         self.name = name
         self.registry = registry

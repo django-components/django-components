@@ -52,7 +52,7 @@ This will allow you to use the tag in your templates like this:
 
 ### Parameters
 
-The `@template_tag` decorator accepts the following parameters:
+The [`@template_tag`](../../../reference/api#django_components.template_tag) decorator accepts the following parameters:
 
 - `library`: The Django template library to register the tag with
 - `tag`: The name of the template tag (e.g. `"mytag"` for `{% mytag %}`)
@@ -61,7 +61,8 @@ The `@template_tag` decorator accepts the following parameters:
 
 ### Function signature
 
-The function decorated with `@template_tag` must accept at least two arguments:
+The function decorated with [`@template_tag`](../../../reference/api#django_components.template_tag)
+must accept at least two arguments:
 
 1. `node`: The node instance (we'll explain this in detail in the next section)
 2. `context`: The Django template context
@@ -150,15 +151,16 @@ GreetNode.register(library)
 
 ### Node properties
 
-When using `BaseNode`, you have access to several useful properties:
+When using [`BaseNode`](../../../reference/api#django_components.BaseNode), you have access to several useful properties:
 
 - `node_id`: A unique identifier for this node instance
 - `flags`: Dictionary of flag values (e.g. `{"required": True}`)
 - `params`: List of raw parameters passed to the tag
 - `nodelist`: The template nodes between the start and end tags
+- `contents`: The raw contents between the start and end tags
 - `active_flags`: List of flags that are currently set to True
 
-This is what the `node` parameter in the `@template_tag` decorator gives you access to - it's the instance of the node class that was automatically created for your template tag.
+This is what the `node` parameter in the [`@template_tag`](../../../reference/api#django_components.template_tag) decorator gives you access to - it's the instance of the node class that was automatically created for your template tag.
 
 ### Rendering content between tags
 

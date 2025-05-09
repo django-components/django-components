@@ -104,7 +104,7 @@ def resolve_params(
 class ParsedTag(NamedTuple):
     flags: Dict[str, bool]
     params: List[TagAttr]
-    parse_body: Callable[[], NodeList]
+    parse_body: Callable[[], Tuple[NodeList, Optional[str]]]
 
 
 def parse_template_tag(
@@ -140,13 +140,15 @@ def parse_template_tag(
 
     raw_params, flags = _extract_flags(tag_name, attrs, allowed_flags or [])
 
-    def _parse_tag_body(parser: Parser, end_tag: str, inline: bool) -> NodeList:
+    def _parse_tag_body(parser: Parser, end_tag: str, inline: bool) -> Tuple[NodeList, Optional[str]]:
         if inline:
             body = NodeList()
+            contents: Optional[str] = None
         else:
+            contents = _extract_contents_until(parser, [end_tag])
             body = parser.parse(parse_until=[end_tag])
             parser.delete_first_token()
-        return body
+        return body, contents
 
     return ParsedTag(
         params=raw_params,
@@ -155,8 +157,51 @@ def parse_template_tag(
         # loggers before the parsing. This is because, if the body contains any other
         # tags, it will trigger their tag handlers. So the code called AFTER
         # `parse_body()` is already after all the nested tags were processed.
-        parse_body=lambda: _parse_tag_body(parser, end_tag, is_inline) if end_tag else NodeList(),
+        parse_body=lambda: _parse_tag_body(parser, end_tag, is_inline) if end_tag else (NodeList(), None),
     )
+
+
+# Similar to `parser.parse(parse_until=[end_tag])`, except:
+# 1. Does not remove the token it goes over (unlike `parser.parse()`, which mutates the parser state)
+# 2. Returns a string, instead of a NodeList
+#
+# This is used so we can access the contents of the tag body as strings, for example
+# to be used for caching slots.
+#
+# See https://github.com/django/django/blob/1fb3f57e81239a75eb8f873b392e11534c041fdc/django/template/base.py#L471
+def _extract_contents_until(parser: Parser, until_blocks: List[str]) -> str:
+    contents: List[str] = []
+    for token in reversed(parser.tokens):
+        # Use the raw values here for TokenType.* for a tiny performance boost.
+        token_type = token.token_type.value
+        if token_type == 0:  # TokenType.TEXT
+            contents.append(token.contents)
+        elif token_type == 1:  # TokenType.VAR
+            contents.append("{{ " + token.contents + " }}")
+        elif token_type == 2:  # TokenType.BLOCK
+            try:
+                command = token.contents.split()[0]
+            except IndexError:
+                # NOTE: Django's `Parser.parse()` raises a `TemplateSyntaxError` when there
+                # was a an empty block tag, e.g. `{% %}`.
+                # We skip raising an error here and let `Parser.parse()` raise it.
+                contents.append("{% " + token.contents + " %}")
+            if command in until_blocks:
+                return "".join(contents)
+            else:
+                contents.append("{% " + token.contents + " %}")
+        elif token_type == 3:  # TokenType.COMMENT
+            contents.append("{# " + token.contents + " #}")
+        else:
+            raise ValueError(f"Unknown token type {token_type}")
+
+    # NOTE: If we got here, then we've reached the end of the tag body without
+    # encountering any of the `until_blocks`.
+    # Django's `Parser.parse()` raises a `TemplateSyntaxError` in such case.
+    #
+    # Currently `_extract_contents_until()` runs right before `parser.parse()`,
+    # so we skip raising an error here.
+    return "".join(contents)
 
 
 def _extract_flags(
