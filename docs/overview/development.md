@@ -156,6 +156,37 @@ twine upload --repository pypi dist/* -u __token__ -p <PyPI_TOKEN>
 
 [See the full workflow here.](https://github.com/django-components/django-components/discussions/557#discussioncomment-10179141)
 
+## Maintenance
+
+### Updating supported versions
+
+The `scripts/supported_versions.py` script can be used to update the supported versions.
+
+```sh
+python scripts/supported_versions.py
+```
+
+This will check the current versions of Django and Python, and will print to the terminal
+all the places that need updating and what to set them to.
+
+### Updating link references
+
+The `scripts/validate_links.py` script can be used to update the link references.
+
+```sh
+python scripts/validate_links.py
+```
+
+When new version of Django is released, you can use the script to update the URLs pointing to the Django documentation.
+
+First, you need to update the `URL_REWRITE_MAP` in the script to point to the new version of Django.
+
+Then, you can run the script to update the URLs in the codebase.
+
+```sh
+python scripts/validate_links.py --rewrite
+```
+
 ## Development guides
 
 Head over to [Dev guides](../guides/devguides/dependency_mgmt.md) for a deep dive into how django_components' features are implemented.
