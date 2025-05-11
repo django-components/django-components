@@ -237,16 +237,16 @@ def validate_urls(all_urls):
 
         # Classify and fetch
         if url in url_cache:
-            print(f"[done {done_count+1}/{total_urls}] {url} (cache hit)")
+            print(f"[done {done_count + 1}/{total_urls}] {url} (cache hit)")
             done_count += 1
             continue
         if not URL_VALIDATOR_REGEX.match(url):
             url_cache[url] = "INVALID_URL"
-            print(f"[done {done_count+1}/{total_urls}] {url} WARNING: Invalid URL format, not fetched.")
+            print(f"[done {done_count + 1}/{total_urls}] {url} WARNING: Invalid URL format, not fetched.")
             done_count += 1
             continue
 
-        print(f"[done {done_count+1}/{total_urls}] {url} ...", end=" ")
+        print(f"[done {done_count + 1}/{total_urls}] {url} ...", end=" ")
         try:
             resp = requests.get(
                 url, timeout=REQUEST_TIMEOUT, headers={"User-Agent": "django-components-link-checker/0.1"}
