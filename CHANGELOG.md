@@ -718,7 +718,7 @@ where each class name or style property can be managed separately.
     - If using `pytest`, the decorator allows you to parametrize Django or Components settings.
     - The decorator also serves as a stand-in for Django's `@override_settings`.
 
-    See the API reference for [`@djc_test`](https://django-components.github.io/django-components/0.131/reference/testing_api/#djc_test) for more details.
+    See the API reference for [`@djc_test`](https://django-components.github.io/django-components/0.131/reference/testing_api/#django_components.testing.djc_test) for more details.
 
 - `ComponentRegistry` now has a `has()` method to check if a component is registered
    without raising an error.
@@ -920,12 +920,12 @@ If you see any broken links or other issues, please report them in [#922](https:
 - Component inheritance:
 
     - When you subclass a component, the JS and CSS defined on parent's `Media` class is now inherited by the child component.
-    - You can disable or customize Media inheritance by setting `extend` attribute on the `Component.Media` nested class. This work similarly to Django's [`Media.extend`](https://docs.djangoproject.com/en/5.1/topics/forms/media/#extend).
+    - You can disable or customize Media inheritance by setting `extend` attribute on the `Component.Media` nested class. This work similarly to Django's [`Media.extend`](https://docs.djangoproject.com/en/5.2/topics/forms/media/#extend).
     - When child component defines either `template` or `template_file`, both of parent's `template` and `template_file` are ignored. The same applies to `js_file` and `css_file`.
 
 - Autodiscovery now ignores files and directories that start with an underscore (`_`), except `__init__.py`
 
-- The [Signals](https://docs.djangoproject.com/en/5.1/topics/signals/) emitted by or during the use of django-components are now documented, together the `template_rendered` signal.
+- The [Signals](https://docs.djangoproject.com/en/5.2/topics/signals/) emitted by or during the use of django-components are now documented, together the `template_rendered` signal.
 
 ## v0.123
 
@@ -937,7 +937,7 @@ If you see any broken links or other issues, please report them in [#922](https:
 
 #### Feat
 
-- Add support for HTML fragments. HTML fragments can be rendered by passing `type="fragment"` to `Component.render()` or `Component.render_to_response()`. Read more on how to [use HTML fragments with HTMX, AlpineJS, or vanillaJS](https://django-components.github.io/django-components/latest/concepts/advanced/html_tragments).
+- Add support for HTML fragments. HTML fragments can be rendered by passing `type="fragment"` to `Component.render()` or `Component.render_to_response()`. Read more on how to [use HTML fragments with HTMX, AlpineJS, or vanillaJS](https://django-components.github.io/django-components/latest/concepts/advanced/html_fragments).
 
 ## v0.121
 
@@ -1555,7 +1555,7 @@ importing them.
 
         - `SETTINGS_MODULE` - Define component dirs using `STATICFILES_DIRS`
 
-    - Previously, autodiscovery handled relative files in `STATICFILES_DIRS`. To align with Django, `STATICFILES_DIRS` now must be full paths ([Django docs](https://docs.djangoproject.com/en/5.0/ref/settings/#std-setting-STATICFILES_DIRS)).
+    - Previously, autodiscovery handled relative files in `STATICFILES_DIRS`. To align with Django, `STATICFILES_DIRS` now must be full paths ([Django docs](https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-STATICFILES_DIRS)).
 
 ## 🚨📢 v0.81
 

@@ -172,14 +172,14 @@ class ComponentRegistry:
 
     When you register a component to a registry, behind the scenes the registry
     automatically adds the component's template tag (e.g. `{% component %}` to
-    the [`Library`](https://docs.djangoproject.com/en/5.1/howto/custom-template-tags/#code-layout).
+    the [`Library`](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#code-layout).
     And the opposite happens when you unregister a component - the tag is removed.
 
     See [Registering components](../../concepts/advanced/component_registry).
 
     Args:
         library (Library, optional): Django\
-            [`Library`](https://docs.djangoproject.com/en/5.1/howto/custom-template-tags/#code-layout)\
+            [`Library`](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#code-layout)\
             associated with this registry. If omitted, the default Library instance from django_components is used.
         settings (Union[RegistrySettings, Callable[[ComponentRegistry], RegistrySettings]], optional): Configure\
             how the components registered with this registry will behave when rendered.\
@@ -281,7 +281,7 @@ class ComponentRegistry:
     @property
     def library(self) -> Library:
         """
-        The template tag [`Library`](https://docs.djangoproject.com/en/5.1/howto/custom-template-tags/#code-layout)
+        The template tag [`Library`](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#code-layout)
         that is associated with the registry.
         """
         # Lazily use the default library if none was passed

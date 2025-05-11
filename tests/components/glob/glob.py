@@ -62,10 +62,10 @@ class UrlComponent(Component):
 
     class Media:
         css = [
-            "https://cdnjs.cloudflare.com/example/style.min.css",
-            "http://cdnjs.cloudflare.com/example/style.min.css",
+            "https://example.com/example/style.min.css",
+            "http://example.com/example/style.min.css",
             # :// is not a valid URL - will be resolved as static path
-            "://cdnjs.cloudflare.com/example/style.min.css",
+            "://example.com/example/style.min.css",
             "/path/to/style.css",
         ]
         js = [

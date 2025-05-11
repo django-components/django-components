@@ -561,7 +561,6 @@ class TestContextProcessors:
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
                 inner_request = self.request
-                return {}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -597,7 +596,6 @@ class TestContextProcessors:
                 nonlocal parent_request
                 context_processors_data = self.context_processors_data
                 parent_request = self.request
-                return {}
 
         @register("test_child")
         class TestChildComponent(Component):
@@ -608,7 +606,6 @@ class TestContextProcessors:
                 nonlocal child_request
                 context_processors_data_child = self.context_processors_data
                 child_request = self.request
-                return {}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -645,7 +642,6 @@ class TestContextProcessors:
                 nonlocal parent_request
                 context_processors_data = self.context_processors_data
                 parent_request = self.request
-                return {}
 
         @register("test_child")
         class TestChildComponent(Component):
@@ -656,7 +652,6 @@ class TestContextProcessors:
                 nonlocal child_request
                 context_processors_data_child = self.context_processors_data
                 child_request = self.request
-                return {}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -690,7 +685,6 @@ class TestContextProcessors:
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
                 inner_request = self.request
-                return {}
 
         request = HttpRequest()
         request_context = RequestContext(request)
@@ -719,7 +713,6 @@ class TestContextProcessors:
                 nonlocal parent_request
                 context_processors_data = self.context_processors_data
                 parent_request = self.request
-                return {}
 
         @register("test_child")
         class TestChildComponent(Component):
@@ -730,7 +723,6 @@ class TestContextProcessors:
                 nonlocal child_request
                 context_processors_data_child = self.context_processors_data
                 child_request = self.request
-                return {}
 
         request = HttpRequest()
         request_context = RequestContext(request)
@@ -756,7 +748,6 @@ class TestContextProcessors:
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
                 inner_request = self.request
-                return {}
 
         request = HttpRequest()
         rendered = TestComponent.render(request=request)
@@ -784,7 +775,6 @@ class TestContextProcessors:
                 nonlocal parent_request
                 context_processors_data = self.context_processors_data
                 parent_request = self.request
-                return {}
 
         @register("test_child")
         class TestChildComponent(Component):
@@ -795,7 +785,6 @@ class TestContextProcessors:
                 nonlocal child_request
                 context_processors_data_child = self.context_processors_data
                 child_request = self.request
-                return {}
 
         request = HttpRequest()
         rendered = TestParentComponent.render(request=request)
@@ -821,7 +810,6 @@ class TestContextProcessors:
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
                 inner_request = self.request
-                return {}
 
         rendered = TestComponent.render(context=Context())
 
@@ -844,7 +832,6 @@ class TestContextProcessors:
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
                 inner_request = self.request
-                return {}
 
         rendered = TestComponent.render()
 
@@ -867,7 +854,6 @@ class TestContextProcessors:
                 nonlocal inner_request
                 context_processors_data = self.context_processors_data
                 inner_request = self.request
-                return {}
 
         request = HttpRequest()
         rendered = TestComponent.render(Context(), request=request)
@@ -906,7 +892,6 @@ class TestContextProcessors:
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data
                 context_processors_data = self.context_processors_data
-                return {}
 
         @register("test_child")
         class TestChildComponent(Component):
@@ -915,7 +900,6 @@ class TestContextProcessors:
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal context_processors_data_child
                 context_processors_data_child = self.context_processors_data
-                return {}
 
         request = HttpRequest()
         TestParentComponent.render(request=request)

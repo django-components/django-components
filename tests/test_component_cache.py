@@ -35,7 +35,6 @@ class TestComponentCache:
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal did_call_get
                 did_call_get = True
-                return {}
 
         # First render
         component = TestComponent()
@@ -70,7 +69,6 @@ class TestComponentCache:
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal did_call_get
                 did_call_get = True
-                return {}
 
         # First render
         component = TestComponent()
@@ -198,9 +196,6 @@ class TestComponentCache:
                 def hash(self, *args, **kwargs):
                     # Custom hash method for args and kwargs
                     return "custom-args-and-kwargs"
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {}
 
         component = TestComponent()
         component.render(args=(1, 2), kwargs={"key": "value"})

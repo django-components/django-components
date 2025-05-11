@@ -11,9 +11,9 @@ class TagProtectedError(Exception):
     The way the [`TagFormatter`](../../concepts/advanced/tag_formatter) works is that,
     based on which start and end tags are used for rendering components,
     the [`ComponentRegistry`](../api#django_components.ComponentRegistry) behind the scenes
-    [un-/registers the template tags](https://docs.djangoproject.com/en/5.1/howto/custom-template-tags/#registering-the-tag)
+    [un-/registers the template tags](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#registering-the-tag)
     with the associated instance of Django's
-    [`Library`](https://docs.djangoproject.com/en/5.1/howto/custom-template-tags/#code-layout).
+    [`Library`](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#code-layout).
 
     In other words, if I have registered a component `"table"`, and I use the shorthand
     syntax:

@@ -11,3 +11,4 @@ virtualenv==20.30
 pytest-asyncio
 pytest-django
 typing-extensions>=4.12.2
+pathspec

@@ -121,7 +121,7 @@ class Calendar(Component):
 
     # Additional JS and CSS
     class Media:
-        js = ["https://cdn.jsdelivr.net/npm/htmx.org@2.1.1/dist/htmx.min.js"]
+        js = ["https://cdn.jsdelivr.net/npm/htmx.org@2/dist/htmx.min.js"]
         css = ["bootstrap/dist/css/bootstrap.min.css"]
 
     # Variables available in the template

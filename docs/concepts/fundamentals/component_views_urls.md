@@ -11,7 +11,7 @@ django-components has a suite of features that help you write and manage views a
 
 - For each component, you can define methods for handling HTTP requests (GET, POST, etc.) - `get()`, `post()`, etc.
   
-- Use [`Component.as_view()`](../../../reference/api#django_components.Component.as_view) to be able to use your Components  with Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.1/topics/http/urls/). This works the same way as [`View.as_view()`](https://docs.djangoproject.com/en/5.1/ref/class-based-views/base/#django.views.generic.base.View.as_view).
+- Use [`Component.as_view()`](../../../reference/api#django_components.Component.as_view) to be able to use your Components  with Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/). This works the same way as [`View.as_view()`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View.as_view).
 
 - To avoid having to manually define the endpoints for each component, you can set the component to be "public" with [`Component.View.public = True`](../../../reference/api#django_components.ComponentView.public). This will automatically create a URL for the component. To retrieve the component URL, use [`get_component_url()`](../../../reference/api#django_components.get_component_url).
 
@@ -54,11 +54,11 @@ class Calendar(Component):
 
 !!! info
 
-    The View class supports all the same HTTP methods as Django's [`View`](https://docs.djangoproject.com/en/5.1/ref/class-based-views/base/#django.views.generic.base.View) class. These are:
+    The View class supports all the same HTTP methods as Django's [`View`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View) class. These are:
 
     `get()`, `post()`, `put()`, `patch()`, `delete()`, `head()`, `options()`, `trace()`
 
-    Each of these receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.1/ref/request-response/#django.http.HttpRequest) object as the first argument.
+    Each of these receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest) object as the first argument.
 
 
 <!-- TODO_V1 REMOVE -->
@@ -108,7 +108,7 @@ class Calendar(Component):
 ## Register URLs manually
 
 To register the component as a route / endpoint in Django, add an entry to your
-[`urlpatterns`](https://docs.djangoproject.com/en/5.1/topics/http/urls/).
+[`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/).
 In place of the view function, create a view object with [`Component.as_view()`](../../../reference/api#django_components.Component.as_view):
 
 ```python title="[project root]/urls.py"
@@ -121,7 +121,7 @@ urlpatterns = [
 ```
 
 [`Component.as_view()`](../../../reference/api#django_components.Component.as_view)
-internally calls [`View.as_view()`](https://docs.djangoproject.com/en/5.1/ref/class-based-views/base/#django.views.generic.base.View.as_view), passing the component
+internally calls [`View.as_view()`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View.as_view), passing the component
 instance as one of the arguments.
 
 ## Register URLs automatically

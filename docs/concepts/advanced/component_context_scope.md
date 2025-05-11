@@ -53,8 +53,8 @@ This has two modes:
     you can access are a union of:
 
     - All the variables that were OUTSIDE the fill tag, including any\
-      [`{% with %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#with) tags.
-    - Any loops ([`{% for ... %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#cycle))
+      [`{% with %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#with) tags.
+    - Any loops ([`{% for ... %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#cycle))
       that the `{% fill %}` tag is part of.
     - Data returned from [`Component.get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
       of the component that owns the fill tag.
@@ -67,7 +67,7 @@ This has two modes:
 
     Inside the [`{% fill %}`](../../../reference/template_tags#fill) tag, you can ONLY access variables from 2 places:
 
-    - Any loops ([`{% for ... %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#cycle))
+    - Any loops ([`{% for ... %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#cycle))
       that the `{% fill %}` tag is part of.
     - [`Component.get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
       of the component which defined the template (AKA the "root" component).
@@ -177,5 +177,5 @@ But since `"cheese"` is not defined there, it's empty.
 
 !!! info
 
-    Notice that the variables defined with the [`{% with %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#with)
+    Notice that the variables defined with the [`{% with %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#with)
     tag are ignored inside the [`{% fill %}`](../../../reference/template_tags#fill) tag with the `"isolated"` mode.

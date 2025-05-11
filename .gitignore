@@ -1,3 +1,6 @@
+# Project-specific files
+sampleproject/staticfiles/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -43,6 +46,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *,cover
+.pytest_cache/
 
 # Translations
 *.mo
@@ -76,7 +80,11 @@ poetry.lock
 site
 .direnv/
 .envrc
+.mypy_cache/
 
 # JS, NPM Dependency directories
 node_modules/
 jspm_packages/
+
+# Cursor
+.cursorrules

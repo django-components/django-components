@@ -48,7 +48,7 @@ By default, the Python files found in the
 [`COMPONENTS.app_dirs`](../../../reference/settings#django_components.app_settings.ComponentsSettings.app_dirs)
 are auto-imported in order to execute the code that registers the components.
 
-Autodiscovery occurs when Django is loaded, during the [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.1/ref/applications/#django.apps.AppConfig.ready)
+Autodiscovery occurs when Django is loaded, during the [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.2/ref/applications/#django.apps.AppConfig.ready)
 hook of the `apps.py` file.
 
 If you are using autodiscovery, keep a few points in mind:

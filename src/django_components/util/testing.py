@@ -175,7 +175,7 @@ def djc_test(
     **Arguments:**
 
     - `django_settings`: Django settings, a dictionary passed to Django's
-      [`@override_settings`](https://docs.djangoproject.com/en/5.1/topics/testing/tools/#django.test.override_settings).
+      [`@override_settings`](https://docs.djangoproject.com/en/5.2/topics/testing/tools/#django.test.override_settings).
       The test runs within the context of these overridden settings.
 
         If `django_settings` contains django-components settings (`COMPONENTS` field), these are merged.

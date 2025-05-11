@@ -168,3 +168,55 @@ def format_url(url: str, query: Optional[Dict] = None, fragment: Optional[str] =
     encoded_qs = parse.urlencode(merged, safe="")
 
     return parse.urlunsplit(parts._replace(query=encoded_qs, fragment=fragment_enc))
+
+
+def format_as_ascii_table(data: List[Dict[str, Any]], headers: List[str], include_headers: bool = True) -> str:
+    """
+    Format a list of dictionaries as an ASCII table.
+
+    Example:
+
+    ```python
+    data = [
+        {"name": "ProjectPage", "full_name": "project.pages.project.ProjectPage", "path": "./project/pages/project"},
+        {"name": "ProjectDashboard", "full_name": "project.components.dashboard.ProjectDashboard", "path": "./project/components/dashboard"},
+        {"name": "ProjectDashboardAction", "full_name": "project.components.dashboard_action.ProjectDashboardAction", "path": "./project/components/dashboard_action"},
+    ]
+    headers = ["name", "full_name", "path"]
+    print(format_as_ascii_table(data, headers))
+    ```
+
+    Which prints:
+
+    ```txt
+    name                      full_name                                                     path
+    ==================================================================================================
+    ProjectPage               project.pages.project.ProjectPage                             ./project/pages/project
+    ProjectDashboard          project.components.dashboard.ProjectDashboard                 ./project/components/dashboard
+    ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAction    ./project/components/dashboard_action
+    ```
+    """  # noqa: E501
+    # Calculate the width of each column
+    column_widths = {header: len(header) for header in headers}
+    for row in data:
+        for header in headers:
+            row_value = str(row.get(header, ""))
+            column_widths[header] = max(column_widths[header], len(row_value))
+
+    # Create the header row
+    header_row = "  ".join(f"{header:<{column_widths[header]}}" for header in headers)
+    separator = "=" * len(header_row)
+
+    # Create the data rows
+    data_rows = []
+    for row in data:
+        row_values = [str(row.get(header, "")) for header in headers]
+        data_row = "  ".join(f"{value:<{column_widths[header]}}" for value, header in zip(row_values, headers))
+        data_rows.append(data_row)
+
+    # Combine all parts into the final table
+    if include_headers:
+        table = "\n".join([header_row, separator] + data_rows)
+    else:
+        table = "\n".join(data_rows)
+    return table

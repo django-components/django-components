@@ -22,3 +22,4 @@ asv
 # See https://github.com/airspeed-velocity/asv/issues/1484
 virtualenv==20.30
 typing-extensions>=4.12.2
+pathspec

@@ -226,7 +226,7 @@ automatically embed the associated JS and CSS.
 Your components may depend on third-party packages or styling, or other shared logic.
 To load these additional dependencies, you can use a nested [`Media` class](../../reference/api#django_components.Component.Media).
 
-This `Media` class behaves similarly to [Django's Media class](https://docs.djangoproject.com/en/5.1/topics/forms/media/#assets-as-a-static-definition),
+This `Media` class behaves similarly to [Django's Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#assets-as-a-static-definition),
 with a few differences:
 
 1. Our Media class accepts various formats for the JS and CSS files: either a single file, a list, or (CSS-only) a dictonary (see below).
@@ -275,7 +275,7 @@ class Calendar(Component):
 
 !!! info
 
-    The `Media` nested class is shaped based on [Django's Media class](https://docs.djangoproject.com/en/5.1/topics/forms/media/).
+    The `Media` nested class is shaped based on [Django's Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/).
 
     As such, django-components allows multiple formats to define the nested Media class:
 

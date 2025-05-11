@@ -46,6 +46,8 @@ packaging==24.2
     #   pyproject-api
     #   pytest
     #   tox
+pathspec==0.12.1
+    # via -r requirements-ci.in
 platformdirs==4.3.6
     # via
     #   tox

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Type
 
 from django_components.component import all_components
 from django_components.util.command import CommandArg, ComponentCommand
-from django_components.util.misc import get_import_path, get_module_info
+from django_components.util.misc import format_as_ascii_table, get_import_path, get_module_info
 
 
 # This descriptor generates the list of command arguments (e.g. `--all`), such that
@@ -85,58 +85,6 @@ class ListCommand(ComponentCommand):
 
         table = format_as_ascii_table(data, columns, include_headers=include_headers)
         print(table)
-
-
-def format_as_ascii_table(data: List[Dict[str, Any]], headers: List[str], include_headers: bool = True) -> str:
-    """
-    Format a list of dictionaries as an ASCII table.
-
-    Example:
-
-    ```python
-    data = [
-        {"name": "ProjectPage", "full_name": "project.pages.project.ProjectPage", "path": "./project/pages/project"},
-        {"name": "ProjectDashboard", "full_name": "project.components.dashboard.ProjectDashboard", "path": "./project/components/dashboard"},
-        {"name": "ProjectDashboardAction", "full_name": "project.components.dashboard_action.ProjectDashboardAction", "path": "./project/components/dashboard_action"},
-    ]
-    headers = ["name", "full_name", "path"]
-    print(format_as_ascii_table(data, headers))
-    ```
-
-    Which prints:
-
-    ```txt
-    name                      full_name                                                     path
-    ==================================================================================================
-    ProjectPage               project.pages.project.ProjectPage                             ./project/pages/project
-    ProjectDashboard          project.components.dashboard.ProjectDashboard                 ./project/components/dashboard
-    ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAction    ./project/components/dashboard_action
-    ```
-    """  # noqa: E501
-    # Calculate the width of each column
-    column_widths = {header: len(header) for header in headers}
-    for row in data:
-        for header in headers:
-            row_value = str(row.get(header, ""))
-            column_widths[header] = max(column_widths[header], len(row_value))
-
-    # Create the header row
-    header_row = "  ".join(f"{header:<{column_widths[header]}}" for header in headers)
-    separator = "=" * len(header_row)
-
-    # Create the data rows
-    data_rows = []
-    for row in data:
-        row_values = [str(row.get(header, "")) for header in headers]
-        data_row = "  ".join(f"{value:<{column_widths[header]}}" for value, header in zip(row_values, headers))
-        data_rows.append(data_row)
-
-    # Combine all parts into the final table
-    if include_headers:
-        table = "\n".join([header_row, separator] + data_rows)
-    else:
-        table = "\n".join(data_rows)
-    return table
 
 
 class ComponentListCommand(ListCommand):

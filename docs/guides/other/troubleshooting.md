@@ -63,10 +63,10 @@ KeyError: "An error occured while rendering components my_page > layout > layout
 
 ## Debug and trace logging
 
-Django components supports [logging with Django](https://docs.djangoproject.com/en/5.0/howto/logging/#logging-how-to).
+Django components supports [logging with Django](https://docs.djangoproject.com/en/5.2/howto/logging/#logging-how-to).
 
 To configure logging for Django components, set the `django_components` logger in
-[`LOGGING`](https://docs.djangoproject.com/en/5.1/ref/settings/#std-setting-LOGGING)
+[`LOGGING`](https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-LOGGING)
 in `settings.py` (below).
 
 Also see the [`settings.py` file in sampleproject](https://github.com/django-components/django-components/blob/master/sampleproject/sampleproject/settings.py) for a real-life example.

@@ -243,7 +243,7 @@ class ComponentCommand:
     Definition of a CLI command.
 
     This class is based on Python's [`argparse`](https://docs.python.org/3/library/argparse.html)
-    module and Django's [`BaseCommand`](https://docs.djangoproject.com/en/5.1/howto/custom-management-commands/)
+    module and Django's [`BaseCommand`](https://docs.djangoproject.com/en/5.2/howto/custom-management-commands/)
     class. `ComponentCommand` allows you to define:
 
     - Command name, description, and help text

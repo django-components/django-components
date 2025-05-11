@@ -28,11 +28,11 @@ class Calendar(Component):
 
 !!! note
 
-    django-component's management of files is inspired by [Django's `Media` class](https://docs.djangoproject.com/en/5.0/topics/forms/media/).
+    django-component's management of files is inspired by [Django's `Media` class](https://docs.djangoproject.com/en/5.2/topics/forms/media/).
 
     To be familiar with how Django handles static files, we recommend reading also:
 
-    - [How to manage static files (e.g. images, JavaScript, CSS)](https://docs.djangoproject.com/en/5.0/howto/static-files/)
+    - [How to manage static files (e.g. images, JavaScript, CSS)](https://docs.djangoproject.com/en/5.2/howto/static-files/)
 
 ## `Media` class
 
@@ -50,14 +50,14 @@ class Calendar(Component):
 Use the `Media` class to define secondary JS / CSS files for a component.
 
 This `Media` class behaves similarly to
-[Django's Media class](https://docs.djangoproject.com/en/5.1/topics/forms/media/#assets-as-a-static-definition):
+[Django's Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#assets-as-a-static-definition):
 
 - **Static paths** - Paths are handled as static file paths, and are resolved to URLs with Django's
-  [`{% static %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#static) template tag.
-- **URLs** - A path that starts with `http`, `https`, or `/` is considered a URL. URLs are NOT resolved with [`{% static %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#static).
+  [`{% static %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#static) template tag.
+- **URLs** - A path that starts with `http`, `https`, or `/` is considered a URL. URLs are NOT resolved with [`{% static %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#static).
 - **HTML tags** - Both static paths and URLs are rendered to `<script>` and `<link>` HTML tags with
   `media_class.render_js()` and `media_class.render_css()`.
-- **Bypass formatting** - A [`SafeString`](https://docs.djangoproject.com/en/5.1/ref/utils/#django.utils.safestring.SafeString),
+- **Bypass formatting** - A [`SafeString`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.SafeString),
   or a function (with `__html__` method) is considered an already-formatted HTML tag, skipping both static file
   resolution and rendering with `media_class.render_js()` or `media_class.render_css()`.
 - **Inheritance** - You can set [`extend`](../../../reference/api#django_components.ComponentMediaInput.extend) to configure
@@ -68,7 +68,7 @@ However, there's a few differences from Django's Media class:
 1. Our Media class accepts various formats for the JS and CSS files: either a single file, a list,
    or (CSS-only) a dictonary (See [`ComponentMediaInput`](../../../reference/api#django_components.ComponentMediaInput)).
 2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`,
-   [`SafeString`](https://docs.djangoproject.com/en/5.1/ref/utils/#django.utils.safestring.SafeString), or a function
+   [`SafeString`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.SafeString), or a function
    (See [`ComponentMediaInputPath`](../../../reference/api#django_components.ComponentMediaInputPath)).
 3. Individual JS / CSS files can be glob patterns, e.g. `*.js` or `styles/**/*.css`.
 4. If you set [`Media.extend`](../../../reference/api/#django_components.ComponentMediaInput.extend) to a list,
@@ -104,7 +104,7 @@ class MyTable(Component):
 You can define which stylesheets will be associated with which
 [CSS media types](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_media_queries/Using_media_queries#targeting_media_types). You do so by defining CSS files as a dictionary.
 
-See the corresponding [Django Documentation](https://docs.djangoproject.com/en/5.0/topics/forms/media/#css).
+See the corresponding [Django Documentation](https://docs.djangoproject.com/en/5.2/topics/forms/media/#css).
 
 Again, you can set either a single file or a list of files per media type:
 
@@ -196,7 +196,7 @@ print(MyComponent.media._js)  # ["script.js", "other1.js", "other2.js"]
 !!! info
 
     The `extend` behaves consistently with
-    [Django's Media class](https://docs.djangoproject.com/en/5.1/topics/forms/media/#extend),
+    [Django's Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#extend),
     with one exception:
 
     - When you set `extend` to a list, the list is expected to contain Component classes (or other classes that have a nested `Media` class).
@@ -207,7 +207,7 @@ To access the files that you defined under [`Component.Media`](../../../referenc
 use [`Component.media`](../../reference/api.md#django_components.Component.media) (lowercase).
 
 This is consistent behavior with
-[Django's Media class](https://docs.djangoproject.com/en/5.1/topics/forms/media/#assets-as-a-static-definition).
+[Django's Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#assets-as-a-static-definition).
 
 ```py
 class MyComponent(Component):
@@ -396,11 +396,11 @@ class SimpleComponent(Component):
 ### Paths as objects
 
 In the example [above](#supported-types), you can see that when we used Django's
-[`mark_safe()`](https://docs.djangoproject.com/en/5.1/ref/utils/#django.utils.safestring.mark_safe)
-to mark a string as a [`SafeString`](https://docs.djangoproject.com/en/5.1/ref/utils/#django.utils.safestring.SafeString),
+[`mark_safe()`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe)
+to mark a string as a [`SafeString`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.SafeString),
 we had to define the URL / path as an HTML `<script>`/`<link>` elements.
 
-This is an extension of Django's [Paths as objects](https://docs.djangoproject.com/en/5.0/topics/forms/media/#paths-as-objects)
+This is an extension of Django's [Paths as objects](https://docs.djangoproject.com/en/5.2/topics/forms/media/#paths-as-objects)
 feature, where "safe" strings are taken as is, and are accessed only at render time.
 
 Because of that, the paths defined as "safe" strings are NEVER resolved, neither relative to component's directory,
@@ -446,7 +446,7 @@ In the [Paths as objects](#paths-as-objects) section, we saw that we can use tha
 how the HTML tags are constructed.
 
 However, if you need to change how ALL CSS and JS files are rendered for a given component,
-you can provide your own subclass of [Django's `Media` class](https://docs.djangoproject.com/en/5.0/topics/forms/media) to the [`Component.media_class`](../../reference/api.md#django_components.Component.media_class) attribute.
+you can provide your own subclass of [Django's `Media` class](https://docs.djangoproject.com/en/5.2/topics/forms/media) to the [`Component.media_class`](../../reference/api.md#django_components.Component.media_class) attribute.
 
 To change how the tags are constructed, you can override the [`Media.render_js()` and `Media.render_css()` methods](https://github.com/django/django/blob/fa7848146738a9fe1d415ee4808664e54739eeb7/django/forms/widgets.py#L102):
 

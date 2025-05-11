@@ -80,8 +80,6 @@ class Table(Component):
     def get_template_data(self, args, kwargs, slots, context):
         # Access component's ID
         assert self.id == "c1A2b3c"
-
-        return {}
 ```
 
 ## Component inputs
@@ -96,7 +94,7 @@ All the component inputs are captured and available as [`self.input`](../../../r
 - `context` - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
 - And other kwargs passed to [`Component.render()`](../../../reference/api/#django_components.Component.render) like `type` and `render_dependencies`
 
-Thus, use can use [`self.input.args`](../../../reference/api/#django_components.ComponentInput.args)
+For example, you can use [`self.input.args`](../../../reference/api/#django_components.ComponentInput.args)
 and [`self.input.kwargs`](../../../reference/api/#django_components.ComponentInput.kwargs)
 to access the positional and keyword arguments passed to [`Component.render()`](../../../reference/api/#django_components.Component.render).
 
@@ -109,8 +107,6 @@ class Table(Component):
         footer_slot = self.input.slots["footer"]
         some_var = self.input.context["some_var"]
 
-        return {}
-
 rendered = TestComponent.render(
     kwargs={"variable": "test", "another": 1},
     args=(123, "str"),
@@ -120,9 +116,9 @@ rendered = TestComponent.render(
 
 ## Request object and context processors
 
-If the component was either:
+Components have access to the request object and context processors data if the component was:
 
-- Given a [`request`](../../../reference/api/#django_components.Component.render) kwarg
+- Given a [`request`](../../../reference/api/#django_components.Component.render) kwarg directly
 - Rendered with [`RenderContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
 - Nested in another component for which any of these conditions is true
 
@@ -144,8 +140,6 @@ class Table(Component):
         # Access the request object and Django's context processors
         assert self.request.GET == {"query": "something"}
         assert self.context_processors_data['user'].username == "admin"
-
-        return {}
 
 rendered = Table.render(
     request=HttpRequest(),

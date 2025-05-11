@@ -109,8 +109,8 @@ fragment = MyComponent.render_to_response(deps_strategy="fragment")
 The `deps_strategy` parameter is set at the root of a component render tree, which is why it is not available for
 the [`{% component %}`](../../../reference/template_tags#component) tag.
 
-When you use Django's [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.1/topics/http/shortcuts/#render)
-or [`Template.render()`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Template.render) to render templates,
+When you use Django's [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.2/topics/http/shortcuts/#render)
+or [`Template.render()`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template.render) to render templates,
 you can't directly set the `deps_strategy` parameter.
 
 In this case, you can set the `deps_strategy` with the `DJC_DEPS_STRATEGY` context variable.
@@ -351,8 +351,8 @@ or templates can be rendered:
 
 -  [`Component.render()`](../../../reference/api/#django_components.Component.render)
 -  [`Component.render_to_response()`](../../../reference/api/#django_components.Component.render_to_response)
--  [`Template.render()`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Template.render)
--  [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.1/topics/http/shortcuts/#render)
+-  [`Template.render()`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template.render)
+-  [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.2/topics/http/shortcuts/#render)
 
 This way you don't need to manually handle rendering of JS / CSS.
 

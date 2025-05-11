@@ -522,7 +522,7 @@ class Component(metaclass=ComponentMeta):
     Alias for [`template_file`](../api#django_components.Component.template_file).
 
     For historical reasons, django-components used `template_name` to align with Django's
-    [TemplateView](https://docs.djangoproject.com/en/5.1/ref/class-based-views/base/#django.views.generic.base.TemplateView).
+    [TemplateView](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.TemplateView).
 
     `template_file` was introduced to align with `js/js_file` and `css/css_file`.
 
@@ -640,7 +640,7 @@ class Component(metaclass=ComponentMeta):
         - `args`: Positional arguments passed to the component.
         - `kwargs`: Keyword arguments passed to the component.
         - `slots`: Slots passed to the component.
-        - `context`: [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
+        - `context`: [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
            used for rendering the component template.
 
         **Pass-through kwargs:**
@@ -911,7 +911,7 @@ class Component(metaclass=ComponentMeta):
         - `args`: Positional arguments passed to the component.
         - `kwargs`: Keyword arguments passed to the component.
         - `slots`: Slots passed to the component.
-        - `context`: [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
+        - `context`: [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
            used for rendering the component template.
 
         **Pass-through kwargs:**
@@ -1182,7 +1182,7 @@ class Component(metaclass=ComponentMeta):
         - `args`: Positional arguments passed to the component.
         - `kwargs`: Keyword arguments passed to the component.
         - `slots`: Slots passed to the component.
-        - `context`: [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
+        - `context`: [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
            used for rendering the component template.
 
         **Pass-through kwargs:**
@@ -1383,7 +1383,7 @@ class Component(metaclass=ComponentMeta):
 
     media_class: Type[MediaCls] = MediaCls
     """
-    Set the [Media class](https://docs.djangoproject.com/en/5.1/topics/forms/media/#assets-as-a-static-definition)
+    Set the [Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#assets-as-a-static-definition)
     that will be instantiated with the JS and CSS media files from
     [`Component.Media`](../api#django_components.Component.Media).
 
@@ -1409,7 +1409,7 @@ class Component(metaclass=ComponentMeta):
     Defines JS and CSS media files associated with this component.
 
     This `Media` class behaves similarly to
-    [Django's Media class](https://docs.djangoproject.com/en/5.1/topics/forms/media/#assets-as-a-static-definition):
+    [Django's Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#assets-as-a-static-definition):
 
     - Paths are generally handled as static file paths, and resolved URLs are rendered to HTML with
       `media_class.render_js()` or `media_class.render_css()`.
@@ -1667,7 +1667,6 @@ class Component(metaclass=ComponentMeta):
         class MyComponent(Component):
             def get_template_data(self, args, kwargs, slots, context):
                 print(f"Rendering '{self.id}'")
-                return {}
 
         MyComponent.render()
         # Rendering 'ab3c4d'
@@ -1713,8 +1712,6 @@ class Component(metaclass=ComponentMeta):
                 footer_slot = self.input.slots["footer"]
                 some_var = self.input.context["some_var"]
 
-                return {}
-
         rendered = TestComponent.render(
             kwargs={"variable": "test", "another": 1},
             args=(123, "str"),
@@ -1756,11 +1753,11 @@ class Component(metaclass=ComponentMeta):
     @property
     def request(self) -> Optional[HttpRequest]:
         """
-        [HTTPRequest](https://docs.djangoproject.com/en/5.1/ref/request-response/#django.http.HttpRequest)
+        [HTTPRequest](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest)
         object passed to this component.
 
         In regular Django templates, you have to use
-        [`RequestContext`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.RequestContext)
+        [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
         to pass the `HttpRequest` object to the template.
 
         But in Components, you can either use `RequestContext`, or pass the `request` object
@@ -1794,30 +1791,30 @@ class Component(metaclass=ComponentMeta):
     def context_processors_data(self) -> Dict:
         """
         Retrieve data injected by
-        [`context_processors`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#configuring-an-engine).
+        [`context_processors`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#configuring-an-engine).
 
         This data is also available from within the component's template, without having to
         return this data from
         [`get_template_data()`](../api#django_components.Component.get_template_data).
 
         In regular Django templates, you need to use
-        [`RequestContext`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.RequestContext)
+        [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
         to apply context processors.
 
         In Components, the context processors are applied to components either when:
 
         - The component is rendered with
-            [`RequestContext`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.RequestContext)
+            [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
             (Regular Django behavior)
         - The component is rendered with a regular
-            [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context) (or none),
+            [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) (or none),
             but the `request` kwarg of [`Component.render()`](../api#django_components.Component.render) is set.
         - The component is nested in another component that matches any of these conditions.
 
         See
         [`Component.request`](../api#django_components.Component.request)
         on how the `request`
-        ([HTTPRequest](https://docs.djangoproject.com/en/5.1/ref/request-response/#django.http.HttpRequest))
+        ([HTTPRequest](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest))
         object is passed to and within the components.
 
         Raises `RuntimeError` if accessed outside of rendering execution.
@@ -2160,7 +2157,7 @@ class Component(metaclass=ComponentMeta):
             You can pass
             [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
             to the `context` argument, so that the component will gain access to the request object and will use
-            [context processors](https://docs.djangoproject.com/en/5.1/ref/templates/api/#using-requestcontext).
+            [context processors](https://docs.djangoproject.com/en/5.2/ref/templates/api/#using-requestcontext).
             Read more on [Working with HTTP requests](../../concepts/fundamentals/http_request).
 
             ```py
@@ -2833,7 +2830,7 @@ class ComponentNode(BaseNode):
     ### Isolating components
 
     By default, components behave similarly to Django's
-    [`{% include %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#include),
+    [`{% include %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#include),
     and the template inside the component has access to the variables defined in the outer template.
 
     You can selectively isolate a component, using the `only` flag, so that the inner template

@@ -811,7 +811,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                 # or here:                                          ^
                 if is_next_token(["'", '"', "_("]):
                     # NOTE: Strings may be wrapped in `_()` to allow for translation.
-                    # See https://docs.djangoproject.com/en/5.1/topics/i18n/translation/#string-literals-passed-to-tags-and-filters  # noqa: E501
+                    # See https://docs.djangoproject.com/en/5.2/topics/i18n/translation/#string-literals-passed-to-tags-and-filters  # noqa: E501
                     # NOTE 2: We could potentially raise if this token is supposed to be a filter
                     # name (after `|`) and we got a translation or a quoted string instead. But we
                     # leave that up for Django.

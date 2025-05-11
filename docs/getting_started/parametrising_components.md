@@ -114,7 +114,7 @@ the component inputs, and massage them into a shape that's most appropriate for
 what the template needs. And it also allows us to pass in static data into the template.
 
 Imagine our component receives data from the database that looks like below
-([taken from Django](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#regroup)).
+([taken from Django](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#regroup)).
 
 ```py
 cities = [

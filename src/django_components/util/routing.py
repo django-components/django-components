@@ -25,7 +25,7 @@ class URLRoute:
     Framework-agnostic route definition.
 
     This is similar to Django's `URLPattern` object created with
-    [`django.urls.path()`](https://docs.djangoproject.com/en/5.1/ref/urls/#path).
+    [`django.urls.path()`](https://docs.djangoproject.com/en/5.2/ref/urls/#path).
 
     The `URLRoute` must either define a `handler` function or have a list of child routes `children`.
     If both are defined, an error will be raised.

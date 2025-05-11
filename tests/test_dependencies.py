@@ -693,9 +693,6 @@ class TestDependenciesStrategySimple:
                 console.log("Hello");
             """
 
-            def get_template_data(self, args, kwargs, slots, context):
-                return {}
-
             class Media:
                 css = ["style.css", "style2.css"]
                 js = "script2.js"
@@ -714,9 +711,6 @@ class TestDependenciesStrategySimple:
             js: types.js = """
                 console.log("xyz");
             """
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {}
 
             class Media:
                 css = "xyz1.css"
@@ -853,9 +847,6 @@ class TestDependenciesStrategyPrepend:
                 console.log("Hello");
             """
 
-            def get_template_data(self, args, kwargs, slots, context):
-                return {}
-
             class Media:
                 css = ["style.css", "style2.css"]
                 js = "script2.js"
@@ -874,9 +865,6 @@ class TestDependenciesStrategyPrepend:
             js: types.js = """
                 console.log("xyz");
             """
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {}
 
             class Media:
                 css = "xyz1.css"
@@ -1010,9 +998,6 @@ class TestDependenciesStrategyAppend:
                 console.log("Hello");
             """
 
-            def get_template_data(self, args, kwargs, slots, context):
-                return {}
-
             class Media:
                 css = ["style.css", "style2.css"]
                 js = "script2.js"
@@ -1031,9 +1016,6 @@ class TestDependenciesStrategyAppend:
             js: types.js = """
                 console.log("xyz");
             """
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {}
 
             class Media:
                 css = "xyz1.css"

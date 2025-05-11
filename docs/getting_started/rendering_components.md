@@ -39,7 +39,7 @@ If you have embedded the component in a Django template using the
 
 You can simply render the template with the Django tooling:
 
-#### With [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.1/topics/http/shortcuts/#render)
+#### With [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.2/topics/http/shortcuts/#render)
 
 ```python
 from django.shortcuts import render
@@ -48,9 +48,9 @@ context = {"date": "2024-12-13"}
 rendered_template = render(request, "my_template.html", context)
 ```
 
-#### With [`Template.render()`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Template.render)
+#### With [`Template.render()`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template.render)
 
-Either loading the template with [`get_template()`](https://docs.djangoproject.com/en/5.1/topics/templates/#django.template.loader.get_template):
+Either loading the template with [`get_template()`](https://docs.djangoproject.com/en/5.2/topics/templates/#django.template.loader.get_template):
 
 ```python
 from django.template.loader import get_template
@@ -60,7 +60,7 @@ context = {"date": "2024-12-13"}
 rendered_template = template.render(context)
 ```
 
-Or creating a new [`Template`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Template) instance:
+Or creating a new [`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template) instance:
 
 ```python
 from django.template import Template
@@ -113,7 +113,7 @@ rendered_component = calendar.render(
     rendered_component = calendar.render(request=request)
     ```
 
-    The `request` object is required for some of the component's features, like using [Django's context processors](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.RequestContext).
+    The `request` object is required for some of the component's features, like using [Django's context processors](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext).
 
 ### 3. Render the component to HttpResponse
 
@@ -121,7 +121,7 @@ A common pattern in Django is to render the component and then return the result
 
 For this, you can use the [`Component.render_to_response()`](../../reference/api#django_components.Component.render_to_response) convenience method.
 
-`render_to_response()` accepts the same args, kwargs, slots, and more, as [`Component.render()`](../../reference/api#django_components.Component.render), but wraps the result in an [`HttpResponse`](https://docs.djangoproject.com/en/5.1/ref/request-response/#django.http.HttpResponse).
+`render_to_response()` accepts the same args, kwargs, slots, and more, as [`Component.render()`](../../reference/api#django_components.Component.render), but wraps the result in an [`HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpResponse).
 
 ```python
 from components.calendar import Calendar
@@ -144,7 +144,7 @@ def my_view(request):
 
     **Response class of `render_to_response`**
 
-    While `render` method returns a plain string, `render_to_response` wraps the rendered content in a "Response" class. By default, this is [`django.http.HttpResponse`](https://docs.djangoproject.com/en/5.1/ref/request-response/#django.http.HttpResponse).
+    While `render` method returns a plain string, `render_to_response` wraps the rendered content in a "Response" class. By default, this is [`django.http.HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpResponse).
 
     If you want to use a different Response class in `render_to_response`, set the [`Component.response_class`](../../reference/api#django_components.Component.response_class) attribute:
 
@@ -164,7 +164,7 @@ def my_view(request):
 
 Slots content are automatically escaped by default to prevent XSS attacks.
 
-In other words, it's as if you would be using Django's [`mark_safe()`](https://docs.djangoproject.com/en/5.0/ref/utils/#django.utils.safestring.mark_safe) function on the slot content:
+In other words, it's as if you would be using Django's [`mark_safe()`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe) function on the slot content:
 
 ```python
 from django.utils.safestring import mark_safe
@@ -196,8 +196,8 @@ methods.
 !!! info
 
     If you're planning on passing an HTML string, check Django's use of
-    [`format_html`](https://docs.djangoproject.com/en/5.0/ref/utils/#django.utils.html.format_html)
-    and [`mark_safe`](https://docs.djangoproject.com/en/5.0/ref/utils/#django.utils.safestring.mark_safe).
+    [`format_html`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.html.format_html)
+    and [`mark_safe`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe).
 
 ### Component views and URLs
 
@@ -247,11 +247,11 @@ class Calendar(Component):
 
 !!! info
 
-    The View class supports all the same HTTP methods as Django's [`View`](https://docs.djangoproject.com/en/5.1/ref/class-based-views/base/#django.views.generic.base.View) class. These are:
+    The View class supports all the same HTTP methods as Django's [`View`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View) class. These are:
 
     `get()`, `post()`, `put()`, `patch()`, `delete()`, `head()`, `options()`, `trace()`
 
-    Each of these receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.1/ref/request-response/#django.http.HttpRequest) object as the first argument.
+    Each of these receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest) object as the first argument.
 
 Next, you need to set the URL for the component.
 
@@ -284,7 +284,7 @@ You can either:
 
 And with that, you're all set! When you visit the URL, the component will be rendered and the content will be returned.
 
-The `get()`, `post()`, etc methods will receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.1/ref/request-response/#django.http.HttpRequest) object as the first argument. So you can parametrize how the component is rendered for example by passing extra query parameters to the URL:
+The `get()`, `post()`, etc methods will receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest) object as the first argument. So you can parametrize how the component is rendered for example by passing extra query parameters to the URL:
 
 ```
 http://localhost:8000/calendar/?date=2024-12-13

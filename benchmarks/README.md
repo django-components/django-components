@@ -26,7 +26,7 @@ django-components uses `asv` for these use cases:
   1.  When a git tag is created and pushed, we also update the documentation website (see `docs.yml`).
   2.  Before we publish the docs website, we generate the HTML report for the benchmark results.
   3.  The generated report is placed in the `docs/benchmarks/` directory, and is thus
-      published with the rest of the docs website and available under [`/benchmarks/`](https://django-components.github.io/django-components/benchmarks).
+      published with the rest of the docs website and available under [`/benchmarks/`](https://django-components.github.io/django-components/latest/benchmarks).
       - NOTE: The location where the report is placed is defined in `asv.conf.json`.
 
 - Compare performance between commits on pull requests:

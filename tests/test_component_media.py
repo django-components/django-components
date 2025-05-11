@@ -440,10 +440,10 @@ class TestComponentMedia:
         from tests.components.glob.glob import UrlComponent
         rendered = UrlComponent.render()
 
-        assertInHTML('<link href="https://cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
-        assertInHTML('<link href="http://cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="https://example.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="http://example.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
         # `://` is escaped because Django's `Media.absolute_path()` doesn't consider `://` a valid URL
-        assertInHTML('<link href="%3A//cdnjs.cloudflare.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="%3A//example.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
         assertInHTML('<link href="/path/to/style.css" media="all" rel="stylesheet">', rendered)
 
         assertInHTML('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
@@ -460,7 +460,7 @@ class TestMediaPathAsObject:
         Test that media work with paths defined as instances of classes that define
         the `__html__` method.
 
-        See https://docs.djangoproject.com/en/5.0/topics/forms/media/#paths-as-objects
+        See https://docs.djangoproject.com/en/5.2/topics/forms/media/#paths-as-objects
         """
 
         # NOTE: @html_safe adds __html__ method from __str__
@@ -745,7 +745,7 @@ class TestMediaStaticfiles:
             # Configure static files. The dummy files are set up in the `./static_root` dir.
             # The URL should have path prefix /static/.
             # NOTE: We don't need STATICFILES_DIRS, because we don't run collectstatic
-            #       See https://docs.djangoproject.com/en/5.0/ref/settings/#std-setting-STATICFILES_DIRS
+            #       See https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-STATICFILES_DIRS
             "STATIC_URL": "static/",
             "STATIC_ROOT": os.path.join(Path(__file__).resolve().parent, "static_root"),
             # `django.contrib.staticfiles` MUST be installed for staticfiles resolution to work.
@@ -793,11 +793,11 @@ class TestMediaStaticfiles:
             # Configure static files. The dummy files are set up in the `./static_root` dir.
             # The URL should have path prefix /static/.
             # NOTE: We don't need STATICFILES_DIRS, because we don't run collectstatic
-            #       See https://docs.djangoproject.com/en/5.0/ref/settings/#std-setting-STATICFILES_DIRS
+            #       See https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-STATICFILES_DIRS
             "STATIC_URL": "static/",
             "STATIC_ROOT": os.path.join(Path(__file__).resolve().parent, "static_root"),
             # NOTE: STATICFILES_STORAGE is deprecated since 5.1, use STORAGES instead
-            #       See https://docs.djangoproject.com/en/5.0/ref/settings/#staticfiles-storage
+            #       See https://docs.djangoproject.com/en/5.2/ref/settings/#storages
             "STORAGES": {
                 # This was NOT changed
                 "default": {

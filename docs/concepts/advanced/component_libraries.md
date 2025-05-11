@@ -23,13 +23,13 @@ For live examples, see the [Community examples](../../overview/community.md#comm
         |--  mytags.py
     ```
 
-2.  Create custom [`Library`](https://docs.djangoproject.com/en/5.1/howto/custom-template-tags/#how-to-create-custom-template-tags-and-filters)
+2.  Create custom [`Library`](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#how-to-create-custom-template-tags-and-filters)
     and [`ComponentRegistry`](django_components.component_registry.ComponentRegistry) instances in `mytags.py`
 
     This will be the entrypoint for using the components inside Django templates.
 
-    Remember that Django requires the [`Library`](https://docs.djangoproject.com/en/5.1/howto/custom-template-tags/#how-to-create-custom-template-tags-and-filters)
-    instance to be accessible under the `register` variable ([See Django docs](https://docs.djangoproject.com/en/dev/howto/custom-template-tags)):
+    Remember that Django requires the [`Library`](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#how-to-create-custom-template-tags-and-filters)
+    instance to be accessible under the `register` variable ([See Django docs](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags)):
 
     ```py
     from django.template import Library
@@ -148,7 +148,7 @@ For live examples, see the [Community examples](../../overview/community.md#comm
 
     Since you, as the library author, are not in control of the file system, it is recommended to load the components manually.
 
-    We recommend doing this in the [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.1/ref/applications/#django.apps.AppConfig.ready)
+    We recommend doing this in the [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.2/ref/applications/#django.apps.AppConfig.ready)
     hook of your `apps.py`:
 
     ```py
@@ -170,7 +170,7 @@ For live examples, see the [Community examples](../../overview/community.md#comm
     ```
 
     Note that you can also include any other startup logic within
-    [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.1/ref/applications/#django.apps.AppConfig.ready).
+    [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.2/ref/applications/#django.apps.AppConfig.ready).
 
 And that's it! The next step is to publish it.
 
@@ -185,7 +185,7 @@ django_components uses the [`build`](https://build.pypa.io/en/stable/) utility t
 python -m build --sdist --wheel --outdir dist/ .
 ```
 
-And to publish to PyPI, you can use [`twine`](https://docs.djangoproject.com/en/5.1/ref/applications/#django.apps.AppConfig.ready)
+And to publish to PyPI, you can use [`twine`](https://docs.djangoproject.com/en/5.2/ref/applications/#django.apps.AppConfig.ready)
 ([See Python user guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-the-distribution-archives))
 
 ```bash
@@ -219,7 +219,7 @@ After the package has been published, all that remains is to install it in other
     ]
     ```
 
-3. Optionally add the template tags to the [`builtins`](https://docs.djangoproject.com/en/5.1/topics/templates/#django.template.backends.django.DjangoTemplates),
+3. Optionally add the template tags to the [`builtins`](https://docs.djangoproject.com/en/5.2/topics/templates/#django.template.backends.django.DjangoTemplates),
    so you don't have to call `{% load mytags %}` in every template:
 
     ```python

@@ -188,7 +188,7 @@ class ComponentsSettings(NamedTuple):
     Defaults to `[Path(settings.BASE_DIR) / "components"]`. That is, the root `components/` app.
 
     Directories must be full paths, same as with
-    [STATICFILES_DIRS](https://docs.djangoproject.com/en/5.1/ref/settings/#std-setting-STATICFILES_DIRS).
+    [STATICFILES_DIRS](https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-STATICFILES_DIRS).
 
     These locations are searched during [autodiscovery](../../concepts/fundamentals/autodiscovery),
     or when you [define HTML, JS, or CSS as separate files](../../concepts/fundamentals/defining_js_css_html_files).
@@ -238,10 +238,10 @@ class ComponentsSettings(NamedTuple):
 
     cache: Optional[str] = None
     """
-    Name of the [Django cache](https://docs.djangoproject.com/en/5.1/topics/cache/)
+    Name of the [Django cache](https://docs.djangoproject.com/en/5.2/topics/cache/)
     to be used for storing component's JS and CSS files.
 
-    If `None`, a [`LocMemCache`](https://docs.djangoproject.com/en/5.1/topics/cache/#local-memory-caching)
+    If `None`, a [`LocMemCache`](https://docs.djangoproject.com/en/5.2/topics/cache/#local-memory-caching)
     is used with default settings.
 
     Defaults to `None`.
@@ -359,7 +359,7 @@ class ComponentsSettings(NamedTuple):
     ```
 
     This would be the equivalent of importing these modules from within Django's
-    [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.1/ref/applications/#django.apps.AppConfig.ready):
+    [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.2/ref/applications/#django.apps.AppConfig.ready):
 
     ```python
     class MyAppConfig(AppConfig):
@@ -441,12 +441,12 @@ class ComponentsSettings(NamedTuple):
     [`COMPONENTS.dirs`](../settings/#django_components.app_settings.ComponentsSettings.dirs)
     or
     [`COMPONENTS.app_dirs`](../settings/#django_components.app_settings.ComponentsSettings.app_dirs)
-    are treated as [static files](https://docs.djangoproject.com/en/5.1/howto/static-files/).
+    are treated as [static files](https://docs.djangoproject.com/en/5.2/howto/static-files/).
 
     If a file is matched against any of the patterns, it's considered a static file. Such files are collected
-    when running [`collectstatic`](https://docs.djangoproject.com/en/5.1/ref/contrib/staticfiles/#collectstatic),
+    when running [`collectstatic`](https://docs.djangoproject.com/en/5.2/ref/contrib/staticfiles/#collectstatic),
     and can be accessed under the
-    [static file endpoint](https://docs.djangoproject.com/en/5.1/ref/settings/#static-url).
+    [static file endpoint](https://docs.djangoproject.com/en/5.2/ref/settings/#static-url).
 
     You can also pass in compiled regexes ([`re.Pattern`](https://docs.python.org/3/library/re.html#re.Pattern))
     for more advanced patterns.
@@ -486,7 +486,7 @@ class ComponentsSettings(NamedTuple):
     [`COMPONENTS.dirs`](../settings/#django_components.app_settings.ComponentsSettings.dirs)
     or
     [`COMPONENTS.app_dirs`](../settings/#django_components.app_settings.ComponentsSettings.app_dirs)
-    will NEVER be treated as [static files](https://docs.djangoproject.com/en/5.1/howto/static-files/).
+    will NEVER be treated as [static files](https://docs.djangoproject.com/en/5.2/howto/static-files/).
 
     If a file is matched against any of the patterns, it will never be considered a static file,
     even if the file matches a pattern in
@@ -589,7 +589,7 @@ class ComponentsSettings(NamedTuple):
 
     Defaults to `128`.
 
-    Each time a [Django template](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Template)
+    Each time a [Django template](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
     is rendered, it is cached to a global in-memory cache (using Python's
     [`lru_cache`](https://docs.python.org/3/library/functools.html#functools.lru_cache)
     decorator). This speeds up the next render of the component.

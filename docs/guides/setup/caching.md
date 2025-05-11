@@ -30,7 +30,7 @@ COMPONENTS = {
 }
 ```
 
-The value should be the name of one of your configured cache backends from Django's [`CACHES`](https://docs.djangoproject.com/en/stable/ref/settings/#std-setting-CACHES) setting.
+The value should be the name of one of your configured cache backends from Django's [`CACHES`](https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-CACHES) setting.
 
 For example, to use Redis for caching component assets:
 

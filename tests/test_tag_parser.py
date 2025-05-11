@@ -2709,7 +2709,6 @@ class TestResolver:
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal captured
                 captured = kwargs
-                return {}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -2774,7 +2773,6 @@ class TestResolver:
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal captured
                 captured = args, kwargs
-                return {}
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -2795,7 +2793,6 @@ class TestResolver:
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal captured
                 captured = args, kwargs
-                return {}
 
         template_str: types.django_html = """
             {% load component_tags %}

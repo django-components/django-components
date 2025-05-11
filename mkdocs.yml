@@ -158,8 +158,8 @@ plugins:
         python:
           import:
             - https://docs.python.org/3.12/objects.inv
-            - url: https://docs.djangoproject.com/en/5.0/_objects/
-              base: https://docs.djangoproject.com/en/5.0/
+            - url: https://docs.djangoproject.com/en/5.2/_objects/
+              base: https://docs.djangoproject.com/en/5.2/
               domains: [std, py]
           paths: [src]  # search packages in the src folder
           options:

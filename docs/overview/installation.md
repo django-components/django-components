@@ -29,7 +29,7 @@
 
     - _Remove `'APP_DIRS': True,`_
         - NOTE: Instead of `APP_DIRS: True`, we will use
-          [`django.template.loaders.app_directories.Loader`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.loaders.app_directories.Loader),
+          [`django.template.loaders.app_directories.Loader`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.loaders.app_directories.Loader),
           which has the same effect.
     - Add `loaders` to `OPTIONS` list and set it to following value:
 
@@ -176,7 +176,7 @@ COMPONENTS = ComponentsSettings(
 
     The input to [`COMPONENTS.dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
     is the same as for `STATICFILES_DIRS`, and the paths must be full paths.
-    [See Django docs](https://docs.djangoproject.com/en/5.0/ref/settings/#staticfiles-dirs).
+    [See Django docs](https://docs.djangoproject.com/en/5.2/ref/settings/#staticfiles-dirs).
 
 ---
 

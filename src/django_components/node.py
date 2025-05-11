@@ -340,7 +340,7 @@ class BaseNode(Node, metaclass=NodeMeta):
     def parse(cls, parser: Parser, token: Token, **kwargs: Any) -> "BaseNode":
         """
         This function is what is passed to Django's `Library.tag()` when
-        [registering the tag](https://docs.djangoproject.com/en/5.1/howto/custom-template-tags/#registering-the-tag).
+        [registering the tag](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#registering-the-tag).
 
         In other words, this method is called by Django's template parser when we encounter
         a tag that matches this node's tag, e.g. `{% component %}` or `{% slot %}`.
@@ -434,7 +434,7 @@ def template_tag(
     The function MUST accept at least two positional arguments: `node` and `context`
 
     - `node` is the [`BaseNode`](../api#django_components.BaseNode) instance.
-    - `context` is the [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
+    - `context` is the [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
         of the template.
 
     Any extra parameters defined on this function will be part of the tag's input parameters.

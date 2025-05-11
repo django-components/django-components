@@ -213,9 +213,6 @@ class TestProvideTemplateTag:
                 <div></div>
             """
 
-            def get_template_data(self, args, kwargs, slots, context):
-                return {}
-
         template_str: types.django_html = """
             {% load component_tags %}
             {% provide "my_provide" key="hi" another=6 %}

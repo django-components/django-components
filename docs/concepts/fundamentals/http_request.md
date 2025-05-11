@@ -56,7 +56,7 @@ class MyComponent(Component):
 
 ## Context Processors
 
-Components support Django's [context processors](https://docs.djangoproject.com/en/5.1/ref/templates/api/#using-requestcontext).
+Components support Django's [context processors](https://docs.djangoproject.com/en/5.2/ref/templates/api/#using-requestcontext).
 
 In regular Django templates, the context processors are applied only when the template is rendered with [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext).
 

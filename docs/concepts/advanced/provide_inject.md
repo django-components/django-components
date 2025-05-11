@@ -82,7 +82,6 @@ class ChildComponent(Component):
         my_data = self.inject("my_data")
         print(my_data.hello)    # hi
         print(my_data.another)  # 123
-        return {}
 ```
 
 First argument to [`Component.inject()`](../../../reference/api/#django_components.Component.inject) is the _key_ (or _name_) of the provided data. This
@@ -97,7 +96,6 @@ class ChildComponent(Component):
     def get_template_data(self, args, kwargs, slots, context):
         my_data = self.inject("invalid_key", DEFAULT_DATA)
         assert my_data == DEFAULT_DATA
-        return {}
 ```
 
 !!! note

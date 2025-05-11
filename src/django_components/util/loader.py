@@ -87,7 +87,7 @@ def get_component_dirs(include_apps: bool = True) -> List[Path]:
     # Validate and add other values from the config
     for component_dir in component_dirs:
         # Consider tuples for STATICFILES_DIRS (See #489)
-        # See https://docs.djangoproject.com/en/5.0/ref/settings/#prefixes-optional
+        # See https://docs.djangoproject.com/en/5.2/ref/settings/#prefixes-optional
         if isinstance(component_dir, (tuple, list)):
             component_dir = component_dir[1]
         try:

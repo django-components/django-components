@@ -7,7 +7,7 @@ from django_components.provide import ProvideNode
 from django_components.slots import FillNode, SlotNode
 
 # NOTE: Variable name `register` is required by Django to recognize this as a template tag library
-# See https://docs.djangoproject.com/en/dev/howto/custom-template-tags
+# See https://docs.djangoproject.com/en/5.2/howto/custom-template-tags
 register = django.template.Library()
 
 

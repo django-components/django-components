@@ -55,9 +55,6 @@ class SimpleComponentNested(Component):
         console.log("Hello");
     """
 
-    def get_template_data(self, args, kwargs, slots, context):
-        return {}
-
     class Media:
         css = ["style.css", "style2.css"]
         js = "script2.js"
@@ -78,9 +75,6 @@ class OtherComponent(Component):
         console.log("xyz");
     """
 
-    def get_template_data(self, args, kwargs, slots, context):
-        return {}
-
     class Media:
         css = "xyz1.css"
         js = "xyz1.js"
@@ -90,9 +84,6 @@ class SimpleComponentWithSharedDependency(Component):
     template: types.django_html = """
         Variable: <strong>{{ variable }}</strong>
     """
-
-    def get_template_data(self, args, kwargs, slots, context):
-        return {}
 
     class Media:
         css = ["style.css", "style2.css"]

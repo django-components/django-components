@@ -624,7 +624,7 @@ The help message prints out all the arguments and options available for the comm
 
 ### Testing Commands
 
-Commands can be tested using Django's [`call_command()`](https://docs.djangoproject.com/en/5.1/ref/django-admin/#running-management-commands-from-your-code)
+Commands can be tested using Django's [`call_command()`](https://docs.djangoproject.com/en/5.2/ref/django-admin/#running-management-commands-from-your-code)
 function, which allows you to simulate running the command in tests.
 
 ```python
@@ -699,8 +699,8 @@ class MyExtension(ComponentExtension):
 
     The [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) objects
     are different from objects created with Django's
-    [`django.urls.path()`](https://docs.djangoproject.com/en/5.1/ref/urls/#path).
-    Do NOT use `URLRoute` objects in Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.1/topics/http/urls/#example)
+    [`django.urls.path()`](https://docs.djangoproject.com/en/5.2/ref/urls/#path).
+    Do NOT use `URLRoute` objects in Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/#example)
     and vice versa!
 
     django-components uses a custom [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) class to define framework-agnostic routing rules.
@@ -758,7 +758,7 @@ The [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) c
 so that extensions could be used with non-Django frameworks in the future.
 
 However, that means that there may be some extra fields that Django's
-[`django.urls.path()`](https://docs.djangoproject.com/en/5.1/ref/urls/#path)
+[`django.urls.path()`](https://docs.djangoproject.com/en/5.2/ref/urls/#path)
 accepts, but which are not defined on the `URLRoute` object.
 
 To address this, the [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) object has

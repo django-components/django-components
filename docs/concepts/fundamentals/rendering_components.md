@@ -147,39 +147,39 @@ If you have embedded the component in a Django template using the
 
 You can simply render the template with the Django's API:
 
-- [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.1/topics/http/shortcuts/#render)
+- [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.2/topics/http/shortcuts/#render)
 
-  ```python
-  from django.shortcuts import render
+    ```python
+    from django.shortcuts import render
 
-  context = {"date": "2024-12-13"}
-  rendered_template = render(request, "my_template.html", context)
-  ```
+    context = {"date": "2024-12-13"}
+    rendered_template = render(request, "my_template.html", context)
+    ```
 
-- [`Template.render()`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Template.render)
+- [`Template.render()`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template.render)
 
-  ```python
-  from django.template import Template
-  from django.template.loader import get_template
+    ```python
+    from django.template import Template
+    from django.template.loader import get_template
 
-  # Either from a file
-  template = get_template("my_template.html")
+    # Either from a file
+    template = get_template("my_template.html")
 
-  # or inlined
-  template = Template("""
-      {% load component_tags %}
-      <div>
-          {% component "calendar" date="2024-12-13" / %}
-      </div>
-  """)
+    # or inlined
+    template = Template("""
+        {% load component_tags %}
+        <div>
+            {% component "calendar" date="2024-12-13" / %}
+        </div>
+    """)
 
-  rendered_template = template.render()
-  ```
+    rendered_template = template.render()
+    ```
 
 ### Isolating components
 
 By default, components behave similarly to Django's
-[`{% include %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#include),
+[`{% include %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#include),
 and the template inside the component has access to the variables defined in the outer template.
 
 You can selectively isolate a component, using the `only` flag, so that the inner template
@@ -244,8 +244,8 @@ Button.render(
 - `kwargs` - Keyword arguments to pass to the component (as a dictionary)
 - `slots` - Slot content to pass to the component (as a dictionary)
 - `context` - Django context for rendering (can be a dictionary or a `Context` object)
-- `deps_strategy` - Dependencies rendering strategy (default: `"document"`)
-- `request` - HTTP request object, used for context processors (optional)
+- `deps_strategy` - [Dependencies rendering strategy](#dependencies-rendering) (default: `"document"`)
+- `request` - [HTTP request object](../http_request), used for context processors (optional)
 - `escape_slots_content` - Whether to HTML-escape slot content (default: `True`)
 
 All arguments are optional. If not provided, they default to empty values or sensible defaults.
@@ -416,7 +416,7 @@ Instead, use `args`, `kwargs`, and `slots` to pass data to the component.
 However, you can pass
 [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
 to the `context` argument, so that the component will gain access to the request object and will use
-[context processors](https://docs.djangoproject.com/en/5.1/ref/templates/api/#using-requestcontext).
+[context processors](https://docs.djangoproject.com/en/5.2/ref/templates/api/#using-requestcontext).
 Read more on [Working with HTTP requests](../http_request).
 
 ```py
