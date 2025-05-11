@@ -125,7 +125,7 @@ class Slot(Generic[TSlotData]):
                 nodelist=NodeList([TextNode(contents)]),
                 contents=contents,
                 data_var=None,
-                fallback_var=None,
+                default_var=None,
             )
             return slot.contents, slot.nodelist, slot.content_func
 
@@ -800,7 +800,7 @@ class FillNode(BaseNode):
         if default is not None:
             if not isinstance(default, str):
                 raise TemplateSyntaxError(
-                    f"Fill tag '{FILL_DEFAULT_KWARG}' kwarg must resolve to a string, got {fallback}"
+                    f"Fill tag '{FILL_DEFAULT_KWARG}' kwarg must resolve to a string, got {default}"
                 )
             if not is_identifier(default):
                 raise RuntimeError(
