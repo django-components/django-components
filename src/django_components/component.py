@@ -24,7 +24,7 @@ from weakref import ReferenceType, WeakValueDictionary, finalize
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.widgets import Media as MediaCls
 from django.http import HttpRequest, HttpResponse
-from django.template.base import NodeList, Origin, Parser, Template, TextNode, Token
+from django.template.base import NodeList, Origin, Parser, Template, Token
 from django.template.context import Context, RequestContext
 from django.template.loader import get_template
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext
@@ -74,7 +74,6 @@ from django_components.slots import (
     SlotRef,
     SlotResult,
     _is_extracting_fill,
-    _nodelist_to_slot_render_func,
     resolve_fills,
 )
 from django_components.template import cached_template
@@ -2716,14 +2715,14 @@ class Component(metaclass=ComponentMeta):
         # NOTE: `gen_escaped_content_func` is defined as a separate function, instead of being inlined within
         #       the forloop, because the value the forloop variable points to changes with each loop iteration.
         def gen_escaped_content_func(content: SlotFunc, slot_name: str) -> Slot:
-            # Case: Already Slot, already escaped, and names tracing names assigned, so nothing to do.
+            # Case: Already Slot, already escaped, and names assigned, so nothing to do.
             if isinstance(content, Slot) and content.escaped and content.slot_name and content.component_name:
                 return content
 
             # Otherwise, we create a new instance of Slot, whether `content` was already Slot or not.
-            # This is so that user can potentially define a single `Slot` and use it in multiple components.
+            # so we can assign metadata to our internal copies.
             if not isinstance(content, Slot) or not content.escaped:
-
+                # We wrap the original function so we post-process it by escaping the result.
                 def content_fn(ctx: Context, slot_data: Dict, slot_ref: SlotRef) -> SlotResult:
                     rendered = content(ctx, slot_data, slot_ref)
                     return conditional_escape(rendered) if escape_content else rendered
@@ -2737,12 +2736,15 @@ class Component(metaclass=ComponentMeta):
                 used_component_name = content.component_name or self.name
                 used_slot_name = content.slot_name or slot_name
                 used_nodelist = content.nodelist
+                used_contents = content.contents if content.contents is not None else content_func
             else:
                 used_component_name = self.name
                 used_slot_name = slot_name
                 used_nodelist = None
+                used_contents = content_func
 
             slot = Slot(
+                contents=used_contents,
                 content_func=content_func,
                 component_name=used_component_name,
                 slot_name=used_slot_name,
@@ -2753,16 +2755,17 @@ class Component(metaclass=ComponentMeta):
             return slot
 
         for slot_name, content in fills.items():
+            # Case: No content, so nothing to do.
             if content is None:
                 continue
+            # Case: Content is a string / scalar
             elif not callable(content):
-                slot = _nodelist_to_slot_render_func(
-                    component_name=self.name,
-                    slot_name=slot_name,
-                    nodelist=NodeList([TextNode(conditional_escape(content) if escape_content else content)]),
-                    data_var=None,
-                    default_var=None,
+                escaped_content = conditional_escape(content) if escape_content else content
+                # NOTE: `Slot.content_func` and `Slot.nodelist` are set in `Slot.__init__()`
+                slot: Slot = Slot(
+                    contents=escaped_content, component_name=self.name, slot_name=slot_name, escaped=True
                 )
+            # Case: Content is a callable, so either a plain function or a `Slot` instance.
             else:
                 slot = gen_escaped_content_func(content, slot_name)
 
@@ -2943,7 +2946,7 @@ class ComponentNode(BaseNode):
 
         component_cls: Type[Component] = self.registry.get(self.name)
 
-        slot_fills = resolve_fills(context, self.nodelist, self.name)
+        slot_fills = resolve_fills(context, self, self.name)
 
         component: Component = component_cls(
             registered_name=self.name,

@@ -13,6 +13,7 @@ from typing import (
     Optional,
     Protocol,
     Set,
+    Tuple,
     TypeVar,
     Union,
     cast,
@@ -34,17 +35,17 @@ from django_components.util.logger import trace_component_msg
 from django_components.util.misc import get_index, get_last_index, is_identifier
 
 if TYPE_CHECKING:
-    from django_components.component import ComponentContext
+    from django_components.component import ComponentContext, ComponentNode
 
 TSlotData = TypeVar("TSlotData", bound=Mapping, contravariant=True)
 
 DEFAULT_SLOT_KEY = "default"
 FILL_GEN_CONTEXT_KEY = "_DJANGO_COMPONENTS_GEN_FILL"
-SLOT_DATA_KWARG = "data"
 SLOT_NAME_KWARG = "name"
-SLOT_DEFAULT_KWARG = "default"
-SLOT_REQUIRED_KEYWORD = "required"
-SLOT_DEFAULT_KEYWORD = "default"
+SLOT_REQUIRED_FLAG = "required"
+SLOT_DEFAULT_FLAG = "default"
+FILL_DATA_KWARG = "data"
+FILL_DEFAULT_KWARG = "default"
 
 
 # Public types
@@ -60,7 +61,13 @@ class SlotFunc(Protocol, Generic[TSlotData]):
 class Slot(Generic[TSlotData]):
     """This class holds the slot content function along with related metadata."""
 
-    content_func: SlotFunc[TSlotData]
+    contents: Any
+    """
+    The original value that was passed to the `Slot` constructor.
+
+    If the slot was defined with `{% fill %}` tag, this will be the raw string contents of the slot.
+    """
+    content_func: SlotFunc[TSlotData] = cast(SlotFunc[TSlotData], None)
     escaped: bool = False
     """Whether the slot content has been escaped."""
 
@@ -70,16 +77,29 @@ class Slot(Generic[TSlotData]):
     slot_name: Optional[str] = None
     """Name of the slot that originally defined or accepted this slot fill."""
     nodelist: Optional[NodeList] = None
-    """Nodelist of the slot content."""
+    """If the slot was defined with `{% fill %} tag, this will be the Nodelist of the slot content."""
 
     def __post_init__(self) -> None:
+        # Since the `Slot` instance is treated as a function, it may be passed as `contents`
+        # to the `Slot()` constructor. In that case we need to unwrap to the original value
+        # if `Slot()` constructor got another Slot instance.
+        # NOTE: If `Slot` was passed as `contents`, we do NOT take the metadata from the inner Slot instance.
+        #       Instead we treat is simply as a function.
+        # NOTE: Try to avoid infinite loop if `Slot.contents` points to itself.
+        seen_contents = set()
+        while isinstance(self.contents, Slot) and self.contents not in seen_contents:
+            seen_contents.add(id(self.contents))
+            self.contents = self.contents.contents
+        if id(self.contents) in seen_contents:
+            raise ValueError("Detected infinite loop in `Slot.contents` pointing to itself")
+
+        if self.content_func is None:
+            self.contents, new_nodelist, self.content_func = self._resolve_contents(self.contents)
+            if self.nodelist is None:
+                self.nodelist = new_nodelist
+
         if not callable(self.content_func):
             raise ValueError(f"Slot content must be a callable, got: {self.content_func}")
-
-        # Allow passing Slot instances as content functions
-        if isinstance(self.content_func, Slot):
-            inner_slot = self.content_func
-            self.content_func = inner_slot.content_func
 
     # Allow to treat the instances as functions
     def __call__(self, ctx: Context, slot_data: TSlotData, slot_ref: "SlotRef") -> SlotResult:
@@ -95,6 +115,22 @@ class Slot(Generic[TSlotData]):
         comp_name = f"'{self.component_name}'" if self.component_name else None
         slot_name = f"'{self.slot_name}'" if self.slot_name else None
         return f"<{self.__class__.__name__} component_name={comp_name} slot_name={slot_name}>"
+
+    def _resolve_contents(self, contents: Any) -> Tuple[Any, NodeList, SlotFunc[TSlotData]]:
+        # Case: Content is a string / scalar, so we can use `TextNode` to render it.
+        if not callable(contents):
+            slot = _nodelist_to_slot(
+                component_name=self.component_name or "<Slot._resolve_contents>",
+                slot_name=self.slot_name,
+                nodelist=NodeList([TextNode(contents)]),
+                contents=contents,
+                data_var=None,
+                fallback_var=None,
+            )
+            return slot.contents, slot.nodelist, slot.content_func
+
+        # Otherwise, we're dealing with a function.
+        return contents, None, contents
 
 
 # NOTE: This must be defined here, so we don't have any forward references
@@ -313,7 +349,7 @@ class SlotNode(BaseNode):
 
     tag = "slot"
     end_tag = "endslot"
-    allowed_flags = [SLOT_DEFAULT_KEYWORD, SLOT_REQUIRED_KEYWORD]
+    allowed_flags = [SLOT_DEFAULT_FLAG, SLOT_REQUIRED_FLAG]
 
     # NOTE:
     # In the current implementation, the slots are resolved only at the render time.
@@ -356,8 +392,8 @@ class SlotNode(BaseNode):
         component_path = component_ctx.component_path
         slot_fills = component_ctx.fills
         slot_name = name
-        is_default = self.flags[SLOT_DEFAULT_KEYWORD]
-        is_required = self.flags[SLOT_REQUIRED_KEYWORD]
+        is_default = self.flags[SLOT_DEFAULT_FLAG]
+        is_required = self.flags[SLOT_REQUIRED_FLAG]
 
         trace_component_msg(
             "RENDER_SLOT_START",
@@ -515,12 +551,15 @@ class SlotNode(BaseNode):
             slot_fill = SlotFill(
                 name=slot_name,
                 is_filled=False,
-                slot=_nodelist_to_slot_render_func(
+                slot=_nodelist_to_slot(
                     component_name=component_name,
                     slot_name=slot_name,
                     nodelist=self.nodelist,
+                    contents=self.contents,
                     data_var=None,
                     default_var=None,
+                    # Escaped because this was defined in the template
+                    escaped=True,
                 ),
             )
 
@@ -752,28 +791,28 @@ class FillNode(BaseNode):
 
         if data is not None:
             if not isinstance(data, str):
-                raise TemplateSyntaxError(f"Fill tag '{SLOT_DATA_KWARG}' kwarg must resolve to a string, got {data}")
+                raise TemplateSyntaxError(f"Fill tag '{FILL_DATA_KWARG}' kwarg must resolve to a string, got {data}")
             if not is_identifier(data):
                 raise RuntimeError(
-                    f"Fill tag kwarg '{SLOT_DATA_KWARG}' does not resolve to a valid Python identifier, got '{data}'"
+                    f"Fill tag kwarg '{FILL_DATA_KWARG}' does not resolve to a valid Python identifier, got '{data}'"
                 )
 
         if default is not None:
             if not isinstance(default, str):
                 raise TemplateSyntaxError(
-                    f"Fill tag '{SLOT_DEFAULT_KWARG}' kwarg must resolve to a string, got {default}"
+                    f"Fill tag '{FILL_DEFAULT_KWARG}' kwarg must resolve to a string, got {fallback}"
                 )
             if not is_identifier(default):
                 raise RuntimeError(
-                    f"Fill tag kwarg '{SLOT_DEFAULT_KWARG}' does not resolve to a valid Python identifier,"
+                    f"Fill tag kwarg '{FILL_DEFAULT_KWARG}' does not resolve to a valid Python identifier,"
                     f" got '{default}'"
                 )
 
         # data and default cannot be bound to the same variable
         if data and default and data == default:
             raise RuntimeError(
-                f"Fill '{name}' received the same string for slot default ({SLOT_DEFAULT_KWARG}=...)"
-                f" and slot data ({SLOT_DATA_KWARG}=...)"
+                f"Fill '{name}' received the same string for slot default ({FILL_DEFAULT_KWARG}=...)"
+                f" and slot data ({FILL_DATA_KWARG}=...)"
             )
 
         fill_data = FillWithData(
@@ -873,7 +912,7 @@ class FillWithData(NamedTuple):
 
 def resolve_fills(
     context: Context,
-    nodelist: NodeList,
+    component_node: "ComponentNode",
     component_name: str,
 ) -> Dict[SlotName, Slot]:
     """
@@ -924,6 +963,9 @@ def resolve_fills(
     """
     slots: Dict[SlotName, Slot] = {}
 
+    nodelist = component_node.nodelist
+    contents = component_node.contents
+
     if not nodelist:
         return slots
 
@@ -941,12 +983,15 @@ def resolve_fills(
         )
 
         if not nodelist_is_empty:
-            slots[DEFAULT_SLOT_KEY] = _nodelist_to_slot_render_func(
+            slots[DEFAULT_SLOT_KEY] = _nodelist_to_slot(
                 component_name=component_name,
                 slot_name=None,  # Will be populated later
                 nodelist=nodelist,
+                contents=contents,
                 data_var=None,
                 default_var=None,
+                # Escaped because this was defined in the template
+                escaped=True,
             )
 
     # The content has fills
@@ -954,13 +999,16 @@ def resolve_fills(
         # NOTE: If slot fills are explicitly defined, we use them even if they are empty (or only whitespace).
         #       This is different from the default slot, where we ignore empty content.
         for fill in maybe_fills:
-            slots[fill.name] = _nodelist_to_slot_render_func(
+            slots[fill.name] = _nodelist_to_slot(
                 component_name=component_name,
                 slot_name=fill.name,
                 nodelist=fill.fill.nodelist,
+                contents=fill.fill.contents,
                 data_var=fill.data_var,
                 default_var=fill.default_var,
                 extra_context=fill.extra_context,
+                # Escaped because this was defined in the template
+                escaped=True,
             )
 
     return slots
@@ -1026,12 +1074,14 @@ def _escape_slot_name(name: str) -> str:
     return escaped_name
 
 
-def _nodelist_to_slot_render_func(
+def _nodelist_to_slot(
     component_name: str,
     slot_name: Optional[str],
     nodelist: NodeList,
+    contents: Optional[str] = None,
     data_var: Optional[str] = None,
     default_var: Optional[str] = None,
+    escaped: bool = False,
     extra_context: Optional[Dict[str, Any]] = None,
 ) -> Slot:
     if data_var:
@@ -1117,8 +1167,13 @@ def _nodelist_to_slot_render_func(
         content_func=cast(SlotFunc, render_func),
         component_name=component_name,
         slot_name=slot_name,
-        escaped=False,
+        escaped=escaped,
         nodelist=nodelist,
+        # The `contents` param passed to this function may be `None`, because it's taken from
+        # `BaseNode.contents` which is `None` for self-closing tags like `{% fill "footer" / %}`.
+        # But `Slot(contents=None)` would result in `Slot.contents` being the render function.
+        # So we need to special-case this.
+        contents=contents if contents is not None else "",
     )
 
 

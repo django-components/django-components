@@ -2,6 +2,8 @@
 
 ## 🚨📢 v0.140.0
 
+⚠️ Major release ⚠️ - Please test thoroughly before / after upgrading.
+
 #### 🚨📢 BREAKING CHANGES
 
 **Middleware**
@@ -221,6 +223,28 @@
     {% component "profile" name="John" job="Developer" / %}
     ```
 
+**Slots**
+
+- If you instantiated `Slot` class with kwargs, you should now use `contents` instead of `content_func`.
+
+    Before:
+
+    ```py
+    slot = Slot(content_func=lambda *a, **kw: "CONTENT")
+    ```
+
+    After:
+
+    ```py
+    slot = Slot(contents=lambda *a, **kw: "CONTENT")
+    ```
+
+    Alternatively, pass the function / content as first positional argument:
+
+    ```py
+    slot = Slot(lambda *a, **kw: "CONTENT")
+    ```
+
 **Miscellaneous**
 
 - The second argument to `render_dependencies()` is now `strategy` instead of `type`.
@@ -435,6 +459,12 @@
     ```
 
     Then, the `contents` attribute of the `BaseNode` instance will contain the string `"Hello, world!"`.
+
+- `Slot` class now has a `Slot.contents` attribute, which contains the original contents:
+
+    - If `Slot` was created from `{% fill %}` tag, `Slot.contents` will contain the body of the `{% fill %}` tag.
+    - If `Slot` was created from string via `Slot("...")`, `Slot.contents` will contain that string.
+    - If `Slot` was created from a function, `Slot.contents` will contain that function.
 
 #### Fix
 

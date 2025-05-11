@@ -2374,7 +2374,6 @@ class TestSlotInput:
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal seen_slots
                 seen_slots = slots
-                return {}
 
         assert seen_slots == {}
 
@@ -2414,7 +2413,7 @@ class TestSlotInput:
 
         assert seen_slots == {}
 
-        header_slot = Slot(lambda *a, **kw: "HEADER_SLOT")
+        header_slot: Slot = Slot(lambda *a, **kw: "HEADER_SLOT")
         main_slot_str = "MAIN_SLOT"
         footer_slot_fn = lambda *a, **kw: "FOOTER_SLOT"  # noqa: E731
 

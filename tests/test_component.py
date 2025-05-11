@@ -4,13 +4,13 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 """
 
 import re
-from typing import Dict, no_type_check
+from typing import no_type_check
 
 import pytest
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, HttpResponse
-from django.template import Context, RequestContext, Template, TemplateSyntaxError
+from django.template import Context, RequestContext, Template
 from django.template.base import TextNode
 from django.test import Client
 from django.urls import path
@@ -24,7 +24,6 @@ from django_components import (
     register,
     types,
 )
-from django_components.slots import SlotRef
 from django_components.urls import urlpatterns as dc_urlpatterns
 
 from django_components.testing import djc_test
@@ -283,6 +282,38 @@ class TestComponent:
             """,
         )
 
+    def test_get_component_by_id(self):
+        class SimpleComponent(Component):
+            pass
+
+        assert get_component_by_class_id(SimpleComponent.class_id) == SimpleComponent
+
+    def test_get_component_by_id_raises_on_missing_component(self):
+        with pytest.raises(KeyError):
+            get_component_by_class_id("nonexistent")
+
+    def test_get_context_data_returns_none(self):
+        class SimpleComponent(Component):
+            template = "Hello"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return None
+
+        assert SimpleComponent.render() == "Hello"
+
+
+@djc_test
+class TestComponentRenderAPI:
+    def test_component_render_id(self):
+        class SimpleComponent(Component):
+            template = "render_id: {{ render_id }}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"render_id": self.id}
+
+        rendered = SimpleComponent.render()
+        assert rendered == "render_id: ca1bc3e"
+
     def test_input(self):
         class TestComponent(Component):
             @no_type_check
@@ -324,98 +355,6 @@ class TestComponent:
             Variable: <strong data-djc-id-ca1bc3e>test</strong> MY_SLOT
             """,
         )
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_prepends_exceptions_with_component_path(self, components_settings):
-        @register("broken")
-        class Broken(Component):
-            template: types.django_html = """
-                {% load component_tags %}
-                <div> injected: {{ data|safe }} </div>
-                <main>
-                    {% slot "content" default / %}
-                </main>
-            """
-
-            def get_template_data(self, args, kwargs, slots, context):
-                data = self.inject("my_provide")
-                data["data1"]  # This should raise TypeError
-                return {"data": data}
-
-        @register("provider")
-        class Provider(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                return {"data": kwargs["data"]}
-
-            template: types.django_html = """
-                {% load component_tags %}
-                {% provide "my_provide" key="hi" data=data %}
-                    {% slot "content" default / %}
-                {% endprovide %}
-            """
-
-        @register("parent")
-        class Parent(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                return {"data": kwargs["data"]}
-
-            template: types.django_html = """
-                {% load component_tags %}
-                {% component "provider" data=data %}
-                    {% component "broken" %}
-                        {% slot "content" default / %}
-                    {% endcomponent %}
-                {% endcomponent %}
-            """
-
-        @register("root")
-        class Root(Component):
-            template: types.django_html = """
-                {% load component_tags %}
-                {% component "parent" data=123 %}
-                    {% fill "content" %}
-                        456
-                    {% endfill %}
-                {% endcomponent %}
-            """
-
-        with pytest.raises(
-            TypeError,
-            match=re.escape(
-                "An error occured while rendering components Root > parent > provider > provider(slot:content) > broken:\n"  # noqa: E501
-                "tuple indices must be integers or slices, not str"
-            ),
-        ):
-            Root.render()
-
-    def test_get_component_by_id(self):
-        class SimpleComponent(Component):
-            pass
-
-        assert get_component_by_class_id(SimpleComponent.class_id) == SimpleComponent
-
-    def test_get_component_by_id_raises_on_missing_component(self):
-        with pytest.raises(KeyError):
-            get_component_by_class_id("nonexistent")
-
-    def test_component_render_id(self):
-        class SimpleComponent(Component):
-            template = "render_id: {{ render_id }}"
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {"render_id": self.id}
-
-        rendered = SimpleComponent.render()
-        assert rendered == "render_id: ca1bc3e"
-
-    def test_get_context_data_returns_none(self):
-        class SimpleComponent(Component):
-            template = "Hello"
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return None
-
-        assert SimpleComponent.render() == "Hello"
 
 
 @djc_test
@@ -584,92 +523,6 @@ class TestComponentRender:
         assertHTMLEqual(
             rendered.content.decode(),
             "HELLO",
-        )
-
-    @djc_test(
-        parametrize=(
-            ["components_settings", "is_isolated"],
-            [
-                [{"context_behavior": "django"}, False],
-                [{"context_behavior": "isolated"}, True],
-            ],
-            ["django", "isolated"],
-        )
-    )
-    def test_render_slot_as_func(self, components_settings, is_isolated):
-        class SimpleComponent(Component):
-            template: types.django_html = """
-                {% load component_tags %}
-                {% slot "first" required data1="abc" data2:hello="world" data2:one=123 %}
-                    SLOT_DEFAULT
-                {% endslot %}
-            """
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "the_arg": args[0],
-                    "the_kwarg": kwargs.pop("the_kwarg", None),
-                    "kwargs": kwargs,
-                }
-
-        def first_slot(ctx: Context, slot_data: Dict, slot_ref: SlotRef):
-            assert isinstance(ctx, Context)
-            # NOTE: Since the slot has access to the Context object, it should behave
-            # the same way as it does in templates - when in "isolated" mode, then the
-            # slot fill has access only to the "root" context, but not to the data of
-            # get_template_data() of SimpleComponent.
-            if is_isolated:
-                assert ctx.get("the_arg") is None
-                assert ctx.get("the_kwarg") is None
-                assert ctx.get("kwargs") is None
-                assert ctx.get("abc") is None
-            else:
-                assert ctx["the_arg"] == "1"
-                assert ctx["the_kwarg"] == 3
-                assert ctx["kwargs"] == {}
-                assert ctx["abc"] == "def"
-
-            slot_data_expected = {
-                "data1": "abc",
-                "data2": {"hello": "world", "one": 123},
-            }
-            assert slot_data_expected == slot_data
-
-            assert isinstance(slot_ref, SlotRef)
-            assert "SLOT_DEFAULT" == str(slot_ref).strip()
-
-            return f"FROM_INSIDE_FIRST_SLOT | {slot_ref}"
-
-        rendered = SimpleComponent.render(
-            context={"abc": "def"},
-            args=["1"],
-            kwargs={"the_kwarg": 3},
-            slots={"first": first_slot},
-        )
-        assertHTMLEqual(
-            rendered,
-            "FROM_INSIDE_FIRST_SLOT | SLOT_DEFAULT",
-        )
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_render_raises_on_missing_slot(self, components_settings):
-        class SimpleComponent(Component):
-            template: types.django_html = """
-                {% load component_tags %}
-                {% slot "first" required %}
-                {% endslot %}
-            """
-
-        with pytest.raises(
-            TemplateSyntaxError,
-            match=re.escape(
-                "Slot 'first' is marked as 'required' (i.e. non-optional), yet no fill is provided."
-            ),
-        ):
-            SimpleComponent.render()
-
-        SimpleComponent.render(
-            slots={"first": "FIRST_SLOT"},
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -920,6 +773,69 @@ class TestComponentRender:
             rendered_resp.content.decode("utf-8"),
             "Variable: <strong data-djc-id-ca1bc3e>ca1bc3e</strong>",
         )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_prepends_exceptions_with_component_path(self, components_settings):
+        @register("broken")
+        class Broken(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div> injected: {{ data|safe }} </div>
+                <main>
+                    {% slot "content" default / %}
+                </main>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                data = self.inject("my_provide")
+                data["data1"]  # This should raise TypeError
+                return {"data": data}
+
+        @register("provider")
+        class Provider(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
+
+            template: types.django_html = """
+                {% load component_tags %}
+                {% provide "my_provide" key="hi" data=data %}
+                    {% slot "content" default / %}
+                {% endprovide %}
+            """
+
+        @register("parent")
+        class Parent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
+
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component "provider" data=data %}
+                    {% component "broken" %}
+                        {% slot "content" default / %}
+                    {% endcomponent %}
+                {% endcomponent %}
+            """
+
+        @register("root")
+        class Root(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component "parent" data=123 %}
+                    {% fill "content" %}
+                        456
+                    {% endfill %}
+                {% endcomponent %}
+            """
+
+        with pytest.raises(
+            TypeError,
+            match=re.escape(
+                "An error occured while rendering components Root > parent > provider > provider(slot:content) > broken:\n"  # noqa: E501
+                "tuple indices must be integers or slices, not str"
+            ),
+        ):
+            Root.render()
 
 
 @djc_test
