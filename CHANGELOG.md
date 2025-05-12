@@ -322,9 +322,29 @@
             ctx.template_data["my_template_var"] = "my_value"
     ```
 
-**Miscellaneous**
+**Slots**
 
 - `SlotContent` was renamed to `SlotInput`. The old name is deprecated and will be removed in v1.
+
+- `SlotRef` was renamed to `SlotFallback`. The old name is deprecated and will be removed in v1.
+
+- The `default` kwarg in `{% fill %}` tag was renamed to `fallback`. The old name is deprecated and will be removed in v1.
+
+    Before:
+
+    ```django
+    {% fill "footer" default="footer" %}
+        {{ footer }}
+    {% endfill %}
+    ```
+
+    After:
+
+    ```django
+    {% fill "footer" fallback="footer" %}
+        {{ footer }}
+    {% endfill %}
+    ```
 
 #### Feat
 

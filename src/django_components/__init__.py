@@ -50,7 +50,7 @@ from django_components.extensions.defaults import ComponentDefaults, Default
 from django_components.extensions.view import ComponentView, get_component_url
 from django_components.library import TagProtectedError
 from django_components.node import BaseNode, template_tag
-from django_components.slots import Slot, SlotContent, SlotFunc, SlotInput, SlotRef, SlotResult
+from django_components.slots import Slot, SlotContent, SlotFallback, SlotFunc, SlotInput, SlotRef, SlotResult
 from django_components.tag_formatter import (
     ComponentFormatter,
     ShorthandComponentFormatter,
@@ -125,6 +125,7 @@ __all__ = [
     "ShorthandComponentFormatter",
     "Slot",
     "SlotContent",
+    "SlotFallback",
     "SlotFunc",
     "SlotInput",
     "SlotRef",

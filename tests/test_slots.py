@@ -12,7 +12,7 @@ from django.template.base import NodeList, TextNode
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
-from django_components.slots import Slot, SlotRef
+from django_components.slots import Slot, SlotFallback
 
 from django_components.testing import djc_test
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
@@ -49,7 +49,7 @@ class TestSlot:
                     "kwargs": kwargs,
                 }
 
-        def first_slot(ctx: Context, slot_data: Dict, slot_ref: SlotRef):
+        def first_slot(ctx: Context, slot_data: Dict, slot_ref: SlotFallback):
             assert isinstance(ctx, Context)
             # NOTE: Since the slot has access to the Context object, it should behave
             # the same way as it does in templates - when in "isolated" mode, then the
@@ -72,7 +72,7 @@ class TestSlot:
             }
             assert slot_data_expected == slot_data
 
-            assert isinstance(slot_ref, SlotRef)
+            assert isinstance(slot_ref, SlotFallback)
             assert "SLOT_DEFAULT" == str(slot_ref).strip()
 
             return f"FROM_INSIDE_FIRST_SLOT | {slot_ref}"

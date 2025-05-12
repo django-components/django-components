@@ -895,8 +895,8 @@ class TestPassthroughSlots:
             {% component "test" %}
                 {% if slot_names %}
                     {% for slot in slot_names %}
-                        {% fill name=slot default="default" %}
-                            OVERRIDEN_SLOT "{{ slot }}" - INDEX {{ forloop.counter0 }} - ORIGINAL "{{ default }}"
+                        {% fill name=slot fallback="fallback" %}
+                            OVERRIDEN_SLOT "{{ slot }}" - INDEX {{ forloop.counter0 }} - ORIGINAL "{{ fallback }}"
                         {% endfill %}
                     {% endfor %}
                 {% endif %}
@@ -950,8 +950,8 @@ class TestPassthroughSlots:
             {% load component_tags %}
             {% component "test" %}
                 {% with slot="header" %}
-                    {% fill name=slot default="default" %}
-                        OVERRIDEN_SLOT "{{ slot }}" - ORIGINAL "{{ default }}"
+                    {% fill name=slot fallback="fallback" %}
+                        OVERRIDEN_SLOT "{{ slot }}" - ORIGINAL "{{ fallback }}"
                     {% endfill %}
                 {% endwith %}
             {% endcomponent %}
@@ -996,7 +996,7 @@ class TestPassthroughSlots:
                 {% if slot_names %}
                     {% for slot in slot_names %}
                         {{ forloop.counter0 }}
-                        {% fill name=slot default="default" %}
+                        {% fill name=slot fallback="fallback" %}
                             OVERRIDEN_SLOT
                         {% endfill %}
                     {% endfor %}
@@ -1365,9 +1365,11 @@ class TestSlottedTemplateRegression:
 
 
 @djc_test
-class TestSlotDefault:
+class TestSlotFallback:
+
+    # TODO_v1 - REMOVE
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_basic(self, components_settings):
+    def test_basic_legacy(self, components_settings):
         registry.register("test", _gen_slotted_component())
         template_str: types.django_html = """
             {% load component_tags %}
@@ -1392,12 +1394,37 @@ class TestSlotDefault:
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_basic(self, components_settings):
+        registry.register("test", _gen_slotted_component())
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+                {% fill "header" fallback="header" %}Before: {{ header }}{% endfill %}
+                {% fill "main" fallback="main" %}{{ main }}{% endfill %}
+                {% fill "footer" fallback="footer" %}{{ footer }}, after{% endfill %}
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+
+        assertHTMLEqual(
+            rendered,
+            """
+            <custom-template data-djc-id-ca1bc42>
+                <header>Before: Default header</header>
+                <main>Default main</main>
+                <footer>Default footer, after</footer>
+            </custom-template>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_multiple_calls(self, components_settings):
         registry.register("test", _gen_slotted_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
-                {% fill "header" default="header" %}
+                {% fill "header" fallback="header" %}
                     First: {{ header }};
                     Second: {{ header }}
                 {% endfill %}
@@ -1423,7 +1450,7 @@ class TestSlotDefault:
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
-                {% fill "header" default="header" %}
+                {% fill "header" fallback="header" %}
                     {% for i in range %}
                         {% if forloop.first %}
                             First {{ header }}
@@ -1454,14 +1481,14 @@ class TestSlotDefault:
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
-                {% fill "header" default="header1" %}
+                {% fill "header" fallback="header1" %}
                     header1_in_header1: {{ header1 }}
                     {% component "test" %}
-                        {% fill "header" default="header2" %}
+                        {% fill "header" fallback="header2" %}
                             header1_in_header2: {{ header1 }}
                             header2_in_header2: {{ header2 }}
                         {% endfill %}
-                        {% fill "footer" default="footer2" %}
+                        {% fill "footer" fallback="footer2" %}
                             header1_in_footer2: {{ header1 }}
                             footer2_in_footer2: {{ footer2 }}
                         {% endfill %}
@@ -1570,7 +1597,7 @@ class TestScopedSlot:
         assertHTMLEqual(rendered, expected)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_slot_data_with_slot_default(self, components_settings):
+    def test_slot_data_with_slot_fallback(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1589,8 +1616,8 @@ class TestScopedSlot:
         template: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
-                {% fill "my_slot" data="slot_data_in_fill" default="slot_var" %}
-                    {{ slot_var }}
+                {% fill "my_slot" data="slot_data_in_fill" fallback="fallback" %}
+                    {{ fallback }}
                     {{ slot_data_in_fill.abc }}
                     {{ slot_data_in_fill.var123 }}
                 {% endfill %}
@@ -1681,7 +1708,7 @@ class TestScopedSlot:
         assertHTMLEqual(rendered, expected)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_slot_data_and_default_on_default_slot(self, components_settings):
+    def test_slot_data_and_fallback_on_default_slot(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1701,7 +1728,7 @@ class TestScopedSlot:
         template: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
-                {% fill name="default" data="slot_data_in_fill" default="slot_var" %}
+                {% fill name="default" data="slot_data_in_fill" fallback="slot_var" %}
                     {{ slot_data_in_fill.abc }}
                     {{ slot_var }}
                     {{ slot_data_in_fill.var123 }}
@@ -1718,7 +1745,7 @@ class TestScopedSlot:
         assertHTMLEqual(rendered, expected)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_slot_data_raises_on_slot_data_and_slot_default_same_var(self, components_settings):
+    def test_slot_data_raises_on_slot_data_and_slot_fallback_same_var(self, components_settings):
         @register("test")
         class TestComponent(Component):
             template: types.django_html = """
@@ -1737,14 +1764,14 @@ class TestScopedSlot:
         template: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
-                {% fill "my_slot" data="slot_var" default="slot_var" %}
+                {% fill "my_slot" data="slot_var" fallback="slot_var" %}
                     {{ slot_var }}
                 {% endfill %}
             {% endcomponent %}
         """
         with pytest.raises(
             RuntimeError,
-            match=re.escape("Fill 'my_slot' received the same string for slot default (default=...) and slot data (data=...)"),  # noqa: E501
+            match=re.escape("Fill 'my_slot' received the same string for slot fallback (fallback=...) and slot data (data=...)"),  # noqa: E501
         ):
             Template(template).render(Context())
 
