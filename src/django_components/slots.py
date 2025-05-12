@@ -38,7 +38,7 @@ from django_components.util.misc import get_index, get_last_index, is_identifier
 if TYPE_CHECKING:
     from django_components.component import ComponentContext, ComponentNode
 
-TSlotData = TypeVar("TSlotData", bound=Mapping, contravariant=True)
+TSlotData = TypeVar("TSlotData", bound=Mapping)
 
 DEFAULT_SLOT_KEY = "default"
 FILL_GEN_CONTEXT_KEY = "_DJANGO_COMPONENTS_GEN_FILL"
@@ -54,32 +54,193 @@ SlotResult = Union[str, SafeString]
 """Type representing the result of a slot render function."""
 
 
+@dataclass(frozen=True)
+class SlotContext(Generic[TSlotData]):
+    """
+    Metadata available inside slot functions.
+
+    Read more about [Slot functions](../../concepts/fundamentals/slots#slot-class).
+
+    **Example:**
+
+    ```python
+    from django_components import SlotContext
+
+    def my_slot(ctx: SlotContext):
+        return f"Hello, {ctx.data['name']}!"
+    ```
+
+    You can pass a type parameter to the `SlotContext` to specify the type of the data passed to the slot:
+
+    ```python
+    class MySlotData(TypedDict):
+        name: str
+
+    def my_slot(ctx: SlotContext[MySlotData]):
+        return f"Hello, {ctx.data['name']}!"
+    ```
+    """
+
+    data: TSlotData
+    """
+    Data passed to the slot.
+
+    Read more about [Slot data](../../concepts/fundamentals/slots#slot-data).
+
+    **Example:**
+
+    ```python
+    def my_slot(ctx: SlotContext):
+        return f"Hello, {ctx.data['name']}!"
+    ```
+    """
+    fallback: Optional[Union[str, "SlotFallback"]] = None
+    """
+    Slot's fallback content. Lazily-rendered - coerce this value to string to force it to render.
+
+    Read more about [Slot fallback](../../concepts/fundamentals/slots#slot-fallback).
+
+    **Example:**
+
+    ```python
+    def my_slot(ctx: SlotContext):
+        return f"Hello, {ctx.fallback}!"
+    ```
+
+    May be `None` if you call the slot fill directly, without using [`{% slot %}`](../template_tags#slot) tags.
+    """
+    context: Optional[Context] = None
+    """
+    Django template [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
+    available inside the [`{% fill %}`](../template_tags#fill) tag.
+
+    May be `None` if you call the slot fill directly, without using [`{% slot %}`](../template_tags#slot) tags.
+    """
+
+
 @runtime_checkable
 class SlotFunc(Protocol, Generic[TSlotData]):
-    def __call__(self, ctx: Context, slot_data: TSlotData, slot_ref: "SlotFallback") -> SlotResult: ...  # noqa E704
+    """
+    When rendering components with
+    [`Component.render()`](../api#django_components.Component.render)
+    or
+    [`Component.render_to_response()`](../api#django_components.Component.render_to_response),
+    the slots can be given either as strings or as functions.
+
+    If a slot is given as a function, it will have the signature of `SlotFunc`.
+
+    Read more about [Slot functions](../../concepts/fundamentals/slots#slot-functions).
+
+    Args:
+        ctx (SlotContext): Single named tuple that holds the slot data and metadata.
+
+    Returns:
+        (str | SafeString): The rendered slot content.
+
+    **Example:**
+
+    ```python
+    from django_components import SlotContext, SlotResult
+
+    def header(ctx: SlotContext) -> SlotResult:
+        if ctx.data.get("name"):
+            return f"Hello, {ctx.data['name']}!"
+        else:
+            return ctx.fallback
+
+    html = MyTable.render(
+        slots={
+            "header": header,
+        },
+    )
+    ```
+    """
+
+    def __call__(self, ctx: SlotContext[TSlotData]) -> SlotResult: ...  # noqa E704
 
 
 @dataclass
 class Slot(Generic[TSlotData]):
-    """This class holds the slot content function along with related metadata."""
+    """
+    This class is the main way for defining and handling slots.
+
+    It holds the slot content function along with related metadata.
+
+    Read more about [Slot class](../../concepts/fundamentals/slots#slot-class).
+
+    **Example:**
+
+    Passing slots to components:
+
+    ```python
+    from django_components import Slot
+
+    slot = Slot(lambda ctx: f"Hello, {ctx.data['name']}!")
+
+    MyComponent.render(
+        slots={
+            "my_slot": slot,
+        },
+    )
+    ```
+
+    Accessing slots inside the components:
+
+    ```python
+    from django_components import Component
+
+    class MyComponent(Component):
+        def get_template_data(self, args, kwargs, slots, context):
+            my_slot = slots["my_slot"]
+            return {
+                "my_slot": my_slot,
+            }
+    ```
+
+    Rendering slots:
+
+    ```python
+    from django_components import Slot
+
+    slot = Slot(lambda ctx: f"Hello, {ctx.data['name']}!")
+    html = slot({"name": "John"})  # Output: Hello, John!
+    ```
+    """
 
     contents: Any
     """
     The original value that was passed to the `Slot` constructor.
 
-    If the slot was defined with `{% fill %}` tag, this will be the raw string contents of the slot.
+    - If Slot was created from [`{% fill %}`](../template_tags#fill) tag, `Slot.contents` will contain
+      the body (string) of that `{% fill %}` tag.
+    - If Slot was created from string as `Slot("...")`, `Slot.contents` will contain that string.
+    - If Slot was created from a function, `Slot.contents` will contain that function.
+    - If Slot was created from another `Slot` as `Slot(slot)`, `Slot.contents` will contain the inner
+      slot's `Slot.contents`.
+
+    Read more about [Slot contents](../../concepts/fundamentals/slots#slot-contents).
     """
     content_func: SlotFunc[TSlotData] = cast(SlotFunc[TSlotData], None)
+    """
+    The actual slot function.
+
+    Do NOT call this function directly, instead call the `Slot` instance as a function.
+
+    Read more about [Rendering slot functions](../../concepts/fundamentals/slots#rendering-slots).
+    """
     escaped: bool = False
     """Whether the slot content has been escaped."""
 
     # Following fields are only for debugging
     component_name: Optional[str] = None
-    """Name of the component that originally defined or accepted this slot fill."""
+    """Name of the component that originally received this slot fill."""
     slot_name: Optional[str] = None
-    """Name of the slot that originally defined or accepted this slot fill."""
+    """Slot name to which this Slot was initially assigned."""
     nodelist: Optional[NodeList] = None
-    """If the slot was defined with `{% fill %} tag, this will be the Nodelist of the slot content."""
+    """
+    If the slot was defined with [`{% fill %}`](../template_tags#fill) tag,
+    this will be the Nodelist of the fill's content.
+    """
 
     def __post_init__(self) -> None:
         # Since the `Slot` instance is treated as a function, it may be passed as `contents`
@@ -104,13 +265,23 @@ class Slot(Generic[TSlotData]):
             raise ValueError(f"Slot content must be a callable, got: {self.content_func}")
 
     # Allow to treat the instances as functions
-    def __call__(self, ctx: Context, slot_data: TSlotData, slot_ref: "SlotFallback") -> SlotResult:
-        return self.content_func(ctx, slot_data, slot_ref)
+    def __call__(
+        self,
+        data: Optional[TSlotData] = None,
+        fallback: Optional[Union[str, "SlotFallback"]] = None,
+        context: Optional[Context] = None,
+    ) -> SlotResult:
+        slot_ctx: SlotContext = SlotContext(context=context, data=data or {}, fallback=fallback)
+        return self.content_func(slot_ctx)
 
     # Make Django pass the instances of this class within the templates without calling
     # the instances as a function.
     @property
     def do_not_call_in_templates(self) -> bool:
+        """
+        Django special property to prevent calling the instance as a function
+        inside Django templates.
+        """
         return True
 
     def __repr__(self) -> str:
@@ -177,10 +348,10 @@ html = Table.render(
         "header": mark_safe("<i><am><safe>"),
 
         # Function
-        "footer": lambda ctx, slot_data, slot_ref: f"Page: {slot_data['page_number']}!",
+        "footer": lambda ctx: f"Page: {ctx.data['page_number']}!",
 
         # Slot instance
-        "footer": Slot(lambda ctx, slot_data, slot_ref: f"Page: {slot_data['page_number']}!"),
+        "footer": Slot(lambda ctx: f"Page: {ctx.data['page_number']}!"),
 
         # None (Same as no slot)
         "header": None,
@@ -211,8 +382,8 @@ class SlotFallback:
     Usage in slot functions:
 
     ```py
-    def slot_function(self, ctx: Context, slot_data: TSlotData, fallback: SlotFallback):
-        return f"Hello, {fallback}!"
+    def slot_function(self, ctx: SlotContext):
+        return f"Hello, {ctx.fallback}!"
     ```
     """
 
@@ -637,7 +808,7 @@ class SlotNode(BaseNode):
             if key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
                 extra_context[key] = value
 
-        slot_ref = SlotFallback(self, context)
+        fallback = SlotFallback(self, context)
 
         # For the user-provided slot fill, we want to use the context of where the slot
         # came from (or current context if configured so)
@@ -658,7 +829,7 @@ class SlotNode(BaseNode):
                     # Render slot as a function
                     # NOTE: While `{% fill %}` tag has to opt in for the `fallback` and `data` variables,
                     #       the render function ALWAYS receives them.
-                    output = slot(used_ctx, kwargs, slot_ref)
+                    output = slot(data=kwargs, fallback=fallback, context=used_ctx)
 
         if app_settings.DEBUG_HIGHLIGHT_SLOTS:
             output = apply_component_highlight("slot", output, f"{component_name} - {slot_name}")
@@ -1119,7 +1290,7 @@ def normalize_slot_fills(
 
     # NOTE: `gen_escaped_content_func` is defined as a separate function, instead of being inlined within
     #       the forloop, because the value the forloop variable points to changes with each loop iteration.
-    def gen_escaped_content_func(content: SlotFunc, slot_name: str) -> Slot:
+    def gen_escaped_content_func(content: Union[SlotFunc, Slot], slot_name: str) -> Slot:
         # Case: Already Slot, already escaped, and names assigned, so nothing to do.
         if isinstance(content, Slot) and content.escaped and content.slot_name and content.component_name:
             return content
@@ -1128,8 +1299,8 @@ def normalize_slot_fills(
         # so we can assign metadata to our internal copies.
         if not isinstance(content, Slot) or not content.escaped:
             # We wrap the original function so we post-process it by escaping the result.
-            def content_fn(ctx: Context, slot_data: Dict, fallback: SlotFallback) -> SlotResult:
-                rendered = content(ctx, slot_data, fallback)
+            def content_fn(ctx: SlotContext) -> SlotResult:
+                rendered = content(ctx)
                 return conditional_escape(rendered) if escape_content else rendered
 
             content_func = cast(SlotFunc, content_fn)
@@ -1227,17 +1398,19 @@ def _nodelist_to_slot(
     # This allows the template to access current RenderContext layer.
     template._djc_is_component_nested = True
 
-    def render_func(ctx: Context, slot_data: Dict[str, Any], slot_ref: SlotFallback) -> SlotResult:
+    def render_func(ctx: SlotContext) -> SlotResult:
+        context = ctx.context or Context()
+
         # Expose the kwargs that were passed to the `{% slot %}` tag. These kwargs
         # are made available through a variable name that was set on the `{% fill %}`
         # tag.
         if data_var:
-            ctx[data_var] = slot_data
+            context[data_var] = ctx.data
 
         # If slot fill is using `{% fill "myslot" fallback="abc" %}`, then set the "abc" to
         # the context, so users can refer to the fallback slot from within the fill content.
         if fallback_var:
-            ctx[fallback_var] = slot_ref
+            context[fallback_var] = ctx.fallback
 
         # NOTE: If a `{% fill %}` tag inside a `{% component %}` tag is inside a forloop,
         # the `extra_context` contains the forloop variables. We want to make these available
@@ -1260,7 +1433,7 @@ def _nodelist_to_slot(
         # HOWEVER, the layer with `_COMPONENT_CONTEXT_KEY` also contains user-defined data from `get_template_data()`.
         # Data from `get_template_data()` should take precedence over `extra_context`. So we have to insert
         # the forloop variables BEFORE that.
-        index_of_last_component_layer = get_last_index(ctx.dicts, lambda d: _COMPONENT_CONTEXT_KEY in d)
+        index_of_last_component_layer = get_last_index(context.dicts, lambda d: _COMPONENT_CONTEXT_KEY in d)
         if index_of_last_component_layer is None:
             index_of_last_component_layer = 0
 
@@ -1272,18 +1445,18 @@ def _nodelist_to_slot(
 
         # Insert the `extra_context` layer BEFORE the layer that defines the variables from get_template_data.
         # Thus, get_template_data will overshadow these on conflict.
-        ctx.dicts.insert(index_of_last_component_layer, extra_context or {})
+        context.dicts.insert(index_of_last_component_layer, extra_context or {})
 
         trace_component_msg("RENDER_NODELIST", component_name, component_id=None, slot_name=slot_name)
 
         # We wrap the slot nodelist in Template. However, we also override Django's `Template.render()`
         # to call `render_dependencies()` on the results. So we need to set the strategy to `ignore`
         # so that the dependencies are processed only once the whole component tree is rendered.
-        with ctx.push({"DJC_DEPS_STRATEGY": "ignore"}):
-            rendered = template.render(ctx)
+        with context.push({"DJC_DEPS_STRATEGY": "ignore"}):
+            rendered = template.render(context)
 
         # After the rendering is done, remove the `extra_context` from the context stack
-        ctx.dicts.pop(index_of_last_component_layer)
+        context.dicts.pop(index_of_last_component_layer)
 
         return rendered
 

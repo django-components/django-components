@@ -4,7 +4,6 @@ For tests focusing on the `{% slot %}` tag, see `test_templatetags_slot_fill.py`
 """
 
 import re
-from typing import Dict
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
@@ -12,7 +11,7 @@ from django.template.base import NodeList, TextNode
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
-from django_components.slots import Slot, SlotFallback
+from django_components.slots import Slot, SlotContext, SlotFallback
 
 from django_components.testing import djc_test
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
@@ -49,43 +48,44 @@ class TestSlot:
                     "kwargs": kwargs,
                 }
 
-        def first_slot(ctx: Context, slot_data: Dict, slot_ref: SlotFallback):
-            assert isinstance(ctx, Context)
+        def slot_fn(ctx: SlotContext):
+            context = ctx.context
+            assert isinstance(context, Context)
             # NOTE: Since the slot has access to the Context object, it should behave
             # the same way as it does in templates - when in "isolated" mode, then the
             # slot fill has access only to the "root" context, but not to the data of
             # get_template_data() of SimpleComponent.
             if is_isolated:
-                assert ctx.get("the_arg") is None
-                assert ctx.get("the_kwarg") is None
-                assert ctx.get("kwargs") is None
-                assert ctx.get("abc") is None
+                assert context.get("the_arg") is None
+                assert context.get("the_kwarg") is None
+                assert context.get("kwargs") is None
+                assert context.get("abc") is None
             else:
-                assert ctx["the_arg"] == "1"
-                assert ctx["the_kwarg"] == 3
-                assert ctx["kwargs"] == {}
-                assert ctx["abc"] == "def"
+                assert context["the_arg"] == "1"
+                assert context["the_kwarg"] == 3
+                assert context["kwargs"] == {}
+                assert context["abc"] == "def"
 
             slot_data_expected = {
                 "data1": "abc",
                 "data2": {"hello": "world", "one": 123},
             }
-            assert slot_data_expected == slot_data
+            assert slot_data_expected == ctx.data
 
-            assert isinstance(slot_ref, SlotFallback)
-            assert "SLOT_DEFAULT" == str(slot_ref).strip()
+            assert isinstance(ctx.fallback, SlotFallback)
+            assert "SLOT_DEFAULT" == str(ctx.fallback).strip()
 
-            return f"FROM_INSIDE_FIRST_SLOT | {slot_ref}"
+            return f"FROM_INSIDE_SLOT_FN | {ctx.fallback}"
 
         rendered = SimpleComponent.render(
             context={"abc": "def"},
             args=["1"],
             kwargs={"the_kwarg": 3},
-            slots={"first": first_slot},
+            slots={"first": slot_fn},
         )
         assertHTMLEqual(
             rendered,
-            "FROM_INSIDE_FIRST_SLOT | SLOT_DEFAULT",
+            "FROM_INSIDE_SLOT_FN | SLOT_DEFAULT",
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -116,7 +116,66 @@ class TestSlot:
             )
 
         SimpleComponent.render(
-            slots={"first": "FIRST_SLOT"},
+            slots={"first": "SLOT_FN"},
+        )
+
+    def test_render_slot_in_python__minimal(self):
+        def slot_fn(ctx: SlotContext):
+            assert ctx.context is None
+            assert ctx.data == {}
+            assert ctx.fallback is None
+
+            return "FROM_INSIDE_SLOT_FN"
+
+        slot: Slot = Slot(slot_fn)
+        rendered = slot()
+        assertHTMLEqual(
+            rendered,
+            "FROM_INSIDE_SLOT_FN",
+        )
+
+    def test_render_slot_in_python__with_data(self):
+        def slot_fn(ctx: SlotContext):
+            assert ctx.context is not None
+            assert ctx.context["the_arg"] == "1"
+            assert ctx.context["the_kwarg"] == 3
+            assert ctx.context["kwargs"] == {}
+            assert ctx.context["abc"] == "def"
+
+            slot_data_expected = {
+                "data1": "abc",
+                "data2": {"hello": "world", "one": 123},
+            }
+            assert slot_data_expected == ctx.data
+
+            assert isinstance(ctx.fallback, str)
+            assert "SLOT_DEFAULT" == ctx.fallback
+
+            return f"FROM_INSIDE_SLOT_FN | {ctx.fallback}"
+
+        slot: Slot = Slot(slot_fn)
+        context = Context({"the_arg": "1", "the_kwarg": 3, "kwargs": {}, "abc": "def"})
+
+        # Test positional arguments
+        rendered = slot(
+            {"data1": "abc", "data2": {"hello": "world", "one": 123}},
+            "SLOT_DEFAULT",
+            context,
+        )
+        assertHTMLEqual(
+            rendered,
+            "FROM_INSIDE_SLOT_FN | SLOT_DEFAULT",
+        )
+
+        # Test keyword arguments
+        rendered2 = slot(
+            data={"data1": "abc", "data2": {"hello": "world", "one": 123}},
+            fallback="SLOT_DEFAULT",
+            context=context,
+        )
+        assertHTMLEqual(
+            rendered2,
+            "FROM_INSIDE_SLOT_FN | SLOT_DEFAULT",
         )
 
     # Part of the slot caching feature - test that static content slots reuse the slot function.
@@ -180,7 +239,7 @@ class TestSlot:
                 nonlocal captured_slots
                 captured_slots = slots
 
-        slot_func = lambda ctx, slot_data, slot_ref: "FROM_INSIDE_SLOT"  # noqa: E731
+        slot_func = lambda ctx: "FROM_INSIDE_SLOT"  # noqa: E731
 
         SimpleComponent.render(
             slots={"first": slot_func},
@@ -223,7 +282,7 @@ class TestSlot:
                 nonlocal captured_slots
                 captured_slots = slots
 
-        slot_func = lambda ctx, slot_data, slot_ref: "FROM_INSIDE_SLOT"  # noqa: E731
+        slot_func = lambda ctx: "FROM_INSIDE_SLOT"  # noqa: E731
 
         SimpleComponent.render(
             slots={"first": Slot(slot_func)},

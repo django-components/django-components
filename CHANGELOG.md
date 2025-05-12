@@ -236,14 +236,102 @@
     After:
 
     ```py
-    slot = Slot(contents=lambda *a, **kw: "CONTENT")
+    slot = Slot(contents=lambda ctx: "CONTENT")
     ```
 
     Alternatively, pass the function / content as first positional argument:
 
     ```py
-    slot = Slot(lambda *a, **kw: "CONTENT")
+    slot = Slot(lambda ctx: "CONTENT")
     ```
+
+- Slot functions behavior has changed. See the new [Slots](https://django-components.github.io/django-components/latest/concepts/fundamentals/slots/) docs for more info.
+
+    - Function signature:
+
+        1. All parameters are now passed under a single `ctx` argument.
+
+            You can still access all the same parameters via `ctx.context`, `ctx.data`, and `ctx.fallback`.
+
+        2. `context` and `fallback` now may be `None` if the slot function was called outside of `{% slot %}` tag.
+
+        Before:
+
+        ```py
+        def slot_fn(context: Context, data: Dict, slot_ref: SlotRef):
+            isinstance(context, Context)
+            isinstance(data, Dict)
+            isinstance(slot_ref, SlotRef)
+
+            return "CONTENT"
+        ```
+
+        After:
+
+        ```py
+        def slot_fn(ctx: SlotContext):
+            assert isinstance(ctx.context, Context) # May be None
+            assert isinstance(ctx.data, Dict)
+            assert isinstance(ctx.fallback, SlotFallback) # May be None
+
+            return "CONTENT"
+        ```
+
+    - Calling slot functions:
+
+        1. Rather than calling the slot functions directly, you should now call the `Slot` instances.
+
+        2. All parameters are now optional.
+
+        3. The order of parameters has changed.
+
+        Before:
+
+        ```py
+        def slot_fn(context: Context, data: Dict, slot_ref: SlotRef):
+            return "CONTENT"
+
+        html = slot_fn(context, data, slot_ref)
+        ```
+
+        After:
+
+        ```py
+        def slot_fn(ctx: SlotContext):
+            return "CONTENT"
+
+        slot = Slot(slot_fn)
+        html = slot()
+        html = slot({"data1": "abc", "data2": "hello"})
+        html = slot({"data1": "abc", "data2": "hello"}, fallback="FALLBACK")
+        ```
+
+    - Usage in components:
+
+        Before:
+
+        ```python
+        class MyComponent(Component):
+            def get_context_data(self, *args, **kwargs):
+                slots = self.input.slots
+                slot_fn = slots["my_slot"]
+                html = slot_fn(context, data, slot_ref)
+                return {
+                    "html": html,
+                }
+        ```
+
+        After:
+
+        ```python
+        class MyComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                slot_fn = slots["my_slot"]
+                html = slot_fn(data)
+                return {
+                    "html": html,
+                }
+        ```
 
 **Miscellaneous**
 

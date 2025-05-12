@@ -128,7 +128,7 @@ Button.render(
         age=30,
     ),
     slots=Button.Slots(
-        footer=Slot(lambda *a, **kwa: "Click me!"),
+        footer=Slot(lambda ctx: "Click me!"),
     ),
 )
 ```
@@ -601,7 +601,7 @@ Button.render(
     },
     slots={
         "my_slot": "...",
-        "another_slot": Slot(lambda: ...),
+        "another_slot": Slot(lambda ctx: ...),
     },
 )
 ```
@@ -662,7 +662,7 @@ Button.render(
     ),
     slots=Button.Slots(
         my_slot="...",
-        another_slot=Slot(lambda: ...),
+        another_slot=Slot(lambda ctx: ...),
     ),
 )
 ```

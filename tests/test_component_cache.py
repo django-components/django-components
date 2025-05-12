@@ -346,5 +346,5 @@ class TestComponentCache:
         ):
             TestComponent.render(
                 kwargs={"input": "cake"},
-                slots={"content": lambda *a, **kwa: "ONE"},
+                slots={"content": lambda ctx: "ONE"},
             )

@@ -458,7 +458,7 @@ class Component(metaclass=ComponentMeta):
     Table.render(
         slots=Table.Slots(
             header="HELLO IM HEADER",
-            footer=Slot(lambda: ...),
+            footer=Slot(lambda ctx: ...),
         ),
     )
     ```
@@ -2132,8 +2132,8 @@ class Component(metaclass=ComponentMeta):
             Button.render(
                 slots={
                     "content": "Click me!"
-                    "content2": lambda *a, **kwa: "Click me!",
-                    "content3": Slot(lambda *a, **kwa: "Click me!"),
+                    "content2": lambda ctx: "Click me!",
+                    "content3": Slot(lambda ctx: "Click me!"),
                 },
             )
             ```
@@ -2260,7 +2260,7 @@ class Component(metaclass=ComponentMeta):
                 age=30,
             ),
             slots=Button.Slots(
-                footer=Slot(lambda *a, **kwa: "Click me!"),
+                footer=Slot(lambda ctx: "Click me!"),
             ),
         )
         ```

@@ -2440,9 +2440,9 @@ class TestSlotInput:
 
         assert seen_slots == {}
 
-        header_slot: Slot = Slot(lambda *a, **kw: "HEADER_SLOT")
+        header_slot: Slot = Slot(lambda ctx: "HEADER_SLOT")
         main_slot_str = "MAIN_SLOT"
-        footer_slot_fn = lambda *a, **kw: "FOOTER_SLOT"  # noqa: E731
+        footer_slot_fn = lambda ctx: "FOOTER_SLOT"  # noqa: E731
 
         SlottedComponent.render(
             slots={

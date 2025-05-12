@@ -513,7 +513,7 @@ Button.render(
         age=30,
     ),
     slots=Button.Slots(
-        footer=Slot(lambda *a, **kwa: "Click me!"),
+        footer=Slot(lambda ctx: "Click me!"),
     ),
 )
 ```

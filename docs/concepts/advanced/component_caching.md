@@ -131,7 +131,7 @@ MyComponent.render(
     ```py
     MyComponent.render(
         kwargs={"position": "left"},
-        slots={"content": lambda *a, **kwa: "Hello, Alice"}
+        slots={"content": lambda ctx: "Hello, Alice"}
     )
     ```
 

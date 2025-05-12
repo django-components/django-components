@@ -322,7 +322,8 @@ class TestComponentRenderAPI:
                 assert self.input.kwargs == {"variable": "test", "another": 1}
                 assert isinstance(self.input.context, Context)
                 assert list(self.input.slots.keys()) == ["my_slot"]
-                assert self.input.slots["my_slot"](Context(), None, None) == "MY_SLOT"
+                my_slot = self.input.slots["my_slot"]
+                assert my_slot() == "MY_SLOT"
 
                 return {
                     "variable": kwargs["variable"],
@@ -334,7 +335,8 @@ class TestComponentRenderAPI:
                 assert self.input.kwargs == {"variable": "test", "another": 1}
                 assert isinstance(self.input.context, Context)
                 assert list(self.input.slots.keys()) == ["my_slot"]
-                assert self.input.slots["my_slot"](Context(), None, None) == "MY_SLOT"
+                my_slot = self.input.slots["my_slot"]
+                assert my_slot() == "MY_SLOT"
 
                 template_str: types.django_html = """
                     {% load component_tags %}
