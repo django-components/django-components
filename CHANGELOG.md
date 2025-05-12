@@ -486,6 +486,42 @@
     - If `Slot` was created from string via `Slot("...")`, `Slot.contents` will contain that string.
     - If `Slot` was created from a function, `Slot.contents` will contain that function.
 
+- Component caching can now take slots into account, by setting `Component.Cache.include_slots` to `True`.
+
+    ```py
+    class MyComponent(Component):
+        class Cache:
+            enabled = True
+            include_slots = True
+    ```
+
+    In which case the following two calls will generate separate cache entries:
+
+    ```django
+    {% component "my_component" position="left" %}
+        Hello, Alice
+    {% endcomponent %}
+
+    {% component "my_component" position="left" %}
+        Hello, Bob
+    {% endcomponent %}
+    ```
+
+    Same applies to `Component.render()` with string slots:
+
+    ```py
+    MyComponent.render(
+        kwargs={"position": "left"},
+        slots={"content": "Hello, Alice"}
+    )
+    MyComponent.render(
+        kwargs={"position": "left"},
+        slots={"content": "Hello, Bob"}
+    )
+    ```
+
+    Read more on [Component caching](https://django-components.github.io/django-components/0.140/concepts/advanced/component_caching/).
+
 #### Fix
 
 - Fix bug: Context processors data was being generated anew for each component. Now the data is correctly created once and reused across components with the same request ([#1165](https://github.com/django-components/django-components/issues/1165)).

@@ -1,8 +1,10 @@
+import re
 import time
 
 from django.core.cache import caches
 from django.template import Template
 from django.template.context import Context
+import pytest
 
 from django_components import Component, register
 from django_components.testing import djc_test
@@ -45,7 +47,7 @@ class TestComponentCache:
 
         # Check if the cache entry is set
         cache_key = component.cache.get_cache_key([], {}, {})
-        assert cache_key == "components:cache:TestComponent_c9770f::"
+        assert cache_key == "components:cache:c98bf483e9a1937732d4542c714462ac"
         assert component.cache.get_entry(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3e,, -->Hello"
         assert caches["default"].get(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3e,, -->Hello"
 
@@ -137,9 +139,9 @@ class TestComponentCache:
 
         assert component.cache.get_cache() is caches["custom"]
         assert (
-            component.cache.get_entry("components:cache:TestComponent_90ef7a::")
+            component.cache.get_entry("components:cache:bcb4b049d8556e06871b39e0e584e452")
             == "<!-- _RENDERED TestComponent_90ef7a,ca1bc3e,, -->Hello"
-        )  # noqa: E501
+        )
 
     def test_cache_by_input(self):
         class TestComponent(Component):
@@ -162,15 +164,16 @@ class TestComponentCache:
 
         # Check if the cache entry is set
         cache = caches["default"]
+
         assert len(cache._cache) == 2
         assert (
-            component.cache.get_entry("components:cache:TestComponent_648b95::input-world")
+            component.cache.get_entry("components:cache:3535e1d1e5f6fa5bc521e7fe203a68d0")
             == "<!-- _RENDERED TestComponent_648b95,ca1bc3e,, -->Hello world"
-        )  # noqa: E501
+        )
         assert (
-            component.cache.get_entry("components:cache:TestComponent_648b95::input-cake")
+            component.cache.get_entry("components:cache:a98a8bd5e72a544d7601798d5e777a77")
             == "<!-- _RENDERED TestComponent_648b95,ca1bc3f,, -->Hello cake"
-        )  # noqa: E501
+        )
 
     def test_cache_input_hashing(self):
         class TestComponent(Component):
@@ -201,8 +204,9 @@ class TestComponentCache:
         component.render(args=(1, 2), kwargs={"key": "value"})
 
         # The key should use the custom hash methods
-        expected_key = "components:cache:TestComponent_28880f:custom-args-and-kwargs"
+        expected_key = "components:cache:3d54974c467a578c509efec189b0d14b"
         assert component.cache.get_cache_key([1, 2], {"key": "value"}, {}) == expected_key
+        assert component.cache.get_entry(expected_key) == "<!-- _RENDERED TestComponent_28880f,ca1bc3e,, -->Hello"
 
     def test_cached_component_inside_include(self):
 
@@ -213,12 +217,14 @@ class TestComponentCache:
             class Cache:
                 enabled = True
 
-        template = Template("""
+        template = Template(
+            """
             {% extends "test_cached_component_inside_include_base.html" %}
             {% block content %}
                 THIS_IS_IN_ACTUAL_TEMPLATE_SO_SHOULD_NOT_BE_OVERRIDDEN
             {% endblock %}
-        """)
+        """
+        )
 
         result = template.render(Context({}))
         assert "THIS_IS_IN_BASE_TEMPLATE_SO_SHOULD_BE_OVERRIDDEN" not in result
@@ -227,3 +233,118 @@ class TestComponentCache:
         result_cached = template.render(Context({}))
         assert "THIS_IS_IN_BASE_TEMPLATE_SO_SHOULD_BE_OVERRIDDEN" not in result_cached
         assert "THIS_IS_IN_ACTUAL_TEMPLATE_SO_SHOULD_NOT_BE_OVERRIDDEN" in result_cached
+
+    def test_cache_slots__fills(self):
+        @register("test_component")
+        class TestComponent(Component):
+            template = "Hello {{ input }} <div>{% slot 'content' default / %}</div>"
+
+            class Cache:
+                enabled = True
+                include_slots = True
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"input": kwargs["input"]}
+
+        Template(
+            """
+            {% component "test_component" input="cake" %}
+                ONE
+            {% endcomponent %}
+        """
+        ).render(Context({}))
+
+        Template(
+            """
+            {% component "test_component" input="cake" %}
+                ONE
+            {% endcomponent %}
+        """
+        ).render(Context({}))
+
+        # Check if the cache entry is set
+        component = TestComponent()
+        cache = caches["default"]
+
+        assert len(cache._cache) == 1
+        assert (
+            component.cache.get_entry("components:cache:87b9e27abdd3c6ef70982d065fc836a9")
+            == '<!-- _RENDERED TestComponent_dd1dee,ca1bc3f,, -->Hello cake <div data-djc-id-ca1bc3f="">\n                ONE\n            </div>'
+        )  # noqa: E501
+
+        Template(
+            """
+            {% component "test_component" input="cake" %}
+                TWO
+            {% endcomponent %}
+        """
+        ).render(Context({}))
+
+        assert len(cache._cache) == 2
+        assert (
+            component.cache.get_entry("components:cache:1d7e3a58972550cf9bec18f457fb1a61")
+            == '<!-- _RENDERED TestComponent_dd1dee,ca1bc44,, -->Hello cake <div data-djc-id-ca1bc44="">\n                TWO\n            </div>'
+        )  # noqa: E501
+
+    def test_cache_slots__strings(self):
+        class TestComponent(Component):
+            template = "Hello {{ input }} <div>{% slot 'content' default / %}</div>"
+
+            class Cache:
+                enabled = True
+                include_slots = True
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"input": kwargs["input"]}
+
+        TestComponent.render(
+            kwargs={"input": "cake"},
+            slots={"content": "ONE"},
+        )
+        TestComponent.render(
+            kwargs={"input": "cake"},
+            slots={"content": "ONE"},
+        )
+
+        # Check if the cache entry is set
+        component = TestComponent()
+        cache = caches["default"]
+
+        assert len(cache._cache) == 1
+        assert (
+            component.cache.get_entry("components:cache:362766726cd0e991f33b0527ef8a513c")
+            == '<!-- _RENDERED TestComponent_34b6d1,ca1bc3e,, -->Hello cake <div data-djc-id-ca1bc3e="">ONE</div>'
+        )
+
+        TestComponent.render(
+            kwargs={"input": "cake"},
+            slots={"content": "TWO"},
+        )
+
+        assert len(cache._cache) == 2
+        assert (
+            component.cache.get_entry("components:cache:468e3f122ac305cff5d9096a3c548faf")
+            == '<!-- _RENDERED TestComponent_34b6d1,ca1bc41,, -->Hello cake <div data-djc-id-ca1bc41="">TWO</div>'
+        )
+
+    def test_cache_slots_raises_on_func(self):
+        class TestComponent(Component):
+            template = "Hello {{ input }} <div>{% slot 'content' default / %}</div>"
+
+            class Cache:
+                enabled = True
+                include_slots = True
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"input": kwargs["input"]}
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Cannot hash slot 'content' of component 'TestComponent' - Slot functions are unhashable."
+            ),
+        ):
+            TestComponent.render(
+                kwargs={"input": "cake"},
+                slots={"content": lambda *a, **kwa: "ONE"},
+            )

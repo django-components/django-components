@@ -5,7 +5,8 @@ This is particularly useful for components that are expensive to render or do no
 
 !!! info
 
-    Component caching uses Django's cache framework, so you can use any cache backend that is supported by Django.
+    Component caching uses [Django's cache framework](https://docs.djangoproject.com/en/5.2/topics/cache/),
+    so you can use any cache backend that is supported by Django.
 
 ### Enabling caching
 
@@ -82,6 +83,81 @@ For even more control, you can override other methods available on the [`Compone
 
     The default implementation of `Cache.hash()` simply serializes the input into a string.
     As such, it might not be suitable if you need to hash complex objects like Models.
+
+### Caching slots
+
+By default, the cache key is generated based ONLY on the args and kwargs.
+
+To cache the component based on the slots, set [`Component.Cache.include_slots`](../../reference/api.md#django_components.ComponentCache.include_slots) to `True`:
+
+```python
+class MyComponent(Component):
+    class Cache:
+        enabled = True
+        include_slots = True
+```
+
+with `include_slots = True`, the cache key will be generated also based on the given slots.
+
+As such, the following two calls would generate separate entries in the cache:
+
+```django
+{% component "my_component" position="left" %}
+    Hello, Alice
+{% endcomponent %}
+
+{% component "my_component" position="left" %}
+    Hello, Bob
+{% endcomponent %}
+```
+
+Same when using [`Component.render()`](../../reference/api.md#django_components.Component.render) with string slots:
+
+```py
+MyComponent.render(
+    kwargs={"position": "left"},
+    slots={"content": "Hello, Alice"}
+)
+MyComponent.render(
+    kwargs={"position": "left"},
+    slots={"content": "Hello, Bob"}
+)
+```
+
+!!! warning
+
+    Passing slots as functions to cached components with `include_slots=True` will raise an error.
+
+    ```py
+    MyComponent.render(
+        kwargs={"position": "left"},
+        slots={"content": lambda *a, **kwa: "Hello, Alice"}
+    )
+    ```
+
+!!! warning
+
+    Slot caching DOES NOT account for context variables within
+    the [`{% fill %}`](../../reference/template_tags.md#fill) tag.
+
+    For example, the following two cases will be treated as the same entry:
+
+    ```django
+    {% with my_var="foo" %}
+        {% component "mycomponent" name="foo" %}
+            {{ my_var }}
+        {% endcomponent %}
+    {% endwith %}
+
+    {% with my_var="bar" %}
+        {% component "mycomponent" name="bar" %}
+            {{ my_var }}
+        {% endcomponent %}
+    {% endwith %}
+    ```
+
+    Currently it's impossible to capture used variables. This will be addressed in v2.
+    Read more about it in [django-components/#1164](https://github.com/django-components/django-components/issues/1164).
 
 ### Example
 
