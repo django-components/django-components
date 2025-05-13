@@ -21,8 +21,7 @@ class HtmlAttrsNode(BaseNode):
     Generate HTML attributes (`key="value"`), combining data from multiple sources,
     whether its template variables or static text.
 
-    It is designed to easily merge HTML attributes passed from outside with the internal.
-    See how to in [Passing HTML attributes to components](../../guides/howto/passing_html_attrs/).
+    It is designed to easily merge HTML attributes passed from outside as well as inside the component.
 
     **Args:**
 
