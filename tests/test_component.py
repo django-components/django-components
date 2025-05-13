@@ -4,7 +4,7 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 """
 
 import re
-from typing import no_type_check
+from typing import NamedTuple
 
 import pytest
 from django.conf import settings
@@ -19,6 +19,8 @@ from pytest_django.asserts import assertHTMLEqual, assertInHTML
 from django_components import (
     Component,
     ComponentView,
+    Slot,
+    SlotInput,
     all_components,
     get_component_by_class_id,
     register,
@@ -316,7 +318,6 @@ class TestComponentRenderAPI:
 
     def test_input(self):
         class TestComponent(Component):
-            @no_type_check
             def get_template_data(self, args, kwargs, slots, context):
                 assert self.input.args == [123, "str"]
                 assert self.input.kwargs == {"variable": "test", "another": 1}
@@ -329,7 +330,6 @@ class TestComponentRenderAPI:
                     "variable": kwargs["variable"],
                 }
 
-            @no_type_check
             def get_template(self, context):
                 assert self.input.args == [123, "str"]
                 assert self.input.kwargs == {"variable": "test", "another": 1}
@@ -355,6 +355,323 @@ class TestComponentRenderAPI:
             rendered,
             """
             Variable: <strong data-djc-id-ca1bc3e>test</strong> MY_SLOT
+            """,
+        )
+
+    def test_args_kwargs_slots__simple(self):
+        called = False
+
+        class TestComponent(Component):
+            template = ""
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal called
+                called = True
+
+                assert self.args == [123, "str"]
+                assert self.kwargs == {"variable": "test", "another": 1}
+                assert list(self.slots.keys()) == ["my_slot"]
+                my_slot = self.slots["my_slot"]
+                assert my_slot() == "MY_SLOT"
+
+        TestComponent.render(
+            kwargs={"variable": "test", "another": 1},
+            args=(123, "str"),
+            slots={"my_slot": "MY_SLOT"},
+        )
+
+        assert called
+
+    def test_args_kwargs_slots__typed(self):
+        called = False
+
+        class TestComponent(Component):
+            template = ""
+
+            class Args(NamedTuple):
+                variable: int
+                another: str
+
+            class Kwargs(NamedTuple):
+                variable: str
+                another: int
+
+            class Slots(NamedTuple):
+                my_slot: SlotInput
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal called
+                called = True
+
+                assert self.args == TestComponent.Args(123, "str")
+                assert self.kwargs == TestComponent.Kwargs(variable="test", another=1)
+                assert isinstance(self.slots, TestComponent.Slots)
+                assert isinstance(self.slots.my_slot, Slot)
+                assert self.slots.my_slot() == "MY_SLOT"
+
+                # Check that the instances are reused across multiple uses
+                assert self.args is self.args
+                assert self.kwargs is self.kwargs
+                assert self.slots is self.slots
+
+        TestComponent.render(
+            kwargs={"variable": "test", "another": 1},
+            args=(123, "str"),
+            slots={"my_slot": "MY_SLOT"},
+        )
+
+        assert called
+
+    def test_args_kwargs_slots__raises_outside_render(self):
+        class TestComponent(Component):
+            template = ""
+
+        comp = TestComponent()
+        with pytest.raises(RuntimeError):
+            comp.args
+        with pytest.raises(RuntimeError):
+            comp.kwargs
+        with pytest.raises(RuntimeError):
+            comp.slots
+
+
+@djc_test
+class TestComponentTemplateVars:
+    def test_args_kwargs_slots__simple_untyped(self):
+        class TestComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="test-component">
+                    {# Test whole objects #}
+                    args: {{ component_vars.args|safe }}
+                    kwargs: {{ component_vars.kwargs|safe }}
+                    slots: {{ component_vars.slots|safe }}
+
+                    {# Test individual values #}
+                    arg: {{ component_vars.args.0|safe }}
+                    kwarg: {{ component_vars.kwargs.variable|safe }}
+                    slot: {{ component_vars.slots.my_slot|safe }}
+                </div>
+            """
+
+        html = TestComponent.render(
+            args=[123, "str"],
+            kwargs={"variable": "test", "another": 1},
+            slots={"my_slot": "MY_SLOT"},
+        )
+        assertHTMLEqual(
+            html,
+            """
+            <div class="test-component" data-djc-id-ca1bc3e="">
+                args: [123, 'str']
+                kwargs: {'variable': 'test', 'another': 1}
+                slots: {'my_slot': <Slot component_name='TestComponent' slot_name='my_slot'>}
+                arg: 123
+                kwarg: test
+                slot: <Slot component_name='TestComponent' slot_name='my_slot'>
+            </div>
+            """,
+        )
+
+    def test_args_kwargs_slots__simple_typed(self):
+        class TestComponent(Component):
+            class Args(NamedTuple):
+                variable: int
+                another: str
+
+            class Kwargs(NamedTuple):
+                variable: str
+                another: int
+
+            class Slots(NamedTuple):
+                my_slot: SlotInput
+
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="test-component">
+                    {# Test whole objects #}
+                    args: {{ component_vars.args|safe }}
+                    kwargs: {{ component_vars.kwargs|safe }}
+                    slots: {{ component_vars.slots|safe }}
+
+                    {# Test individual values #}
+                    arg: {{ component_vars.args.variable|safe }}
+                    kwarg: {{ component_vars.kwargs.variable|safe }}
+                    slot: {{ component_vars.slots.my_slot|safe }}
+                </div>
+            """
+
+        html = TestComponent.render(
+            args=[123, "str"],
+            kwargs={"variable": "test", "another": 1},
+            slots={"my_slot": "MY_SLOT"},
+        )
+        assertHTMLEqual(
+            html,
+            """
+            <div class="test-component" data-djc-id-ca1bc3e="">
+                args: Args(variable=123, another='str')
+                kwargs: Kwargs(variable='test', another=1)
+                slots: Slots(my_slot=<Slot component_name='TestComponent' slot_name='my_slot'>)
+                arg: 123
+                kwarg: test
+                slot: <Slot component_name='TestComponent' slot_name='my_slot'>
+            </div>
+            """,
+        )
+
+    def test_args_kwargs_slots__nested_untyped(self):
+        @register("wrapper")
+        class Wrapper(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="wrapper">
+                    {% slot "content" default %}
+                        <div class="test">DEFAULT</div>
+                    {% endslot %}
+                </div>
+            """
+
+        class TestComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="test-component">
+                    {% component "wrapper" %}
+                        {# Test whole objects #}
+                        args: {{ component_vars.args|safe }}
+                        kwargs: {{ component_vars.kwargs|safe }}
+                        slots: {{ component_vars.slots|safe }}
+
+                        {# Test individual values #}
+                        arg: {{ component_vars.args.0|safe }}
+                        kwarg: {{ component_vars.kwargs.variable|safe }}
+                        slot: {{ component_vars.slots.my_slot|safe }}
+                    {% endcomponent %}
+                </div>
+            """
+
+        html = TestComponent.render(
+            args=[123, "str"],
+            kwargs={"variable": "test", "another": 1},
+            slots={"my_slot": "MY_SLOT"},
+        )
+        assertHTMLEqual(
+            html,
+            """
+            <div class="test-component" data-djc-id-ca1bc3e="">
+                <div class="wrapper" data-djc-id-ca1bc40="">
+                    args: [123, 'str']
+                    kwargs: {'variable': 'test', 'another': 1}
+                    slots: {'my_slot': <Slot component_name='TestComponent' slot_name='my_slot'>}
+                    arg: 123
+                    kwarg: test
+                    slot: <Slot component_name='TestComponent' slot_name='my_slot'>
+                </div>
+            </div>
+            """,
+        )
+
+    def test_args_kwargs_slots__nested_typed(self):
+        @register("wrapper")
+        class Wrapper(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="wrapper">
+                    {% slot "content" default %}
+                        <div class="test">DEFAULT</div>
+                    {% endslot %}
+                </div>
+            """
+
+        class TestComponent(Component):
+            class Args(NamedTuple):
+                variable: int
+                another: str
+
+            class Kwargs(NamedTuple):
+                variable: str
+                another: int
+
+            class Slots(NamedTuple):
+                my_slot: SlotInput
+
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="test-component">
+                    {% component "wrapper" %}
+                        {# Test whole objects #}
+                        args: {{ component_vars.args|safe }}
+                        kwargs: {{ component_vars.kwargs|safe }}
+                        slots: {{ component_vars.slots|safe }}
+
+                        {# Test individual values #}
+                        arg: {{ component_vars.args.variable|safe }}
+                        kwarg: {{ component_vars.kwargs.variable|safe }}
+                        slot: {{ component_vars.slots.my_slot|safe }}
+                    {% endcomponent %}
+                </div>
+            """
+
+        html = TestComponent.render(
+            args=[123, "str"],
+            kwargs={"variable": "test", "another": 1},
+            slots={"my_slot": "MY_SLOT"},
+        )
+        assertHTMLEqual(
+            html,
+            """
+            <div class="test-component" data-djc-id-ca1bc3e="">
+                <div class="wrapper" data-djc-id-ca1bc40="">
+                    args: Args(variable=123, another='str')
+                    kwargs: Kwargs(variable='test', another=1)
+                    slots: Slots(my_slot=<Slot component_name='TestComponent' slot_name='my_slot'>)
+                    arg: 123
+                    kwarg: test
+                    slot: <Slot component_name='TestComponent' slot_name='my_slot'>
+                </div>
+            </div>
+            """,
+        )
+
+    def test_args_kwargs_slots__nested_conditional_slots(self):
+        @register("wrapper")
+        class Wrapper(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="wrapper">
+                    {% slot "content" default %}
+                        <div class="test">DEFAULT</div>
+                    {% endslot %}
+                </div>
+            """
+
+        class TestComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="test-component">
+                    {% component "wrapper" %}
+                        {% if component_vars.slots.subtitle %}
+                            <div class="subtitle">
+                                {% slot "subtitle" %}
+                                    Optional subtitle
+                                {% endslot %}
+                            </div>
+                        {% endif %}
+                    {% endcomponent %}
+                </div>
+            """
+
+        html = TestComponent.render(
+            slots={"subtitle": "SUBTITLE_FILLED"},
+        )
+        assertHTMLEqual(
+            html,
+            """
+            <div class="test-component" data-djc-id-ca1bc3e="">
+                <div class="wrapper" data-djc-id-ca1bc41="">
+                    <div class="subtitle">SUBTITLE_FILLED</div>
+                </div>
+            </div>
             """,
         )
 

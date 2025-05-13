@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict, Optional, Type, Union, cast
+from typing import Any, Optional, Type, Union, cast
 
 from django.template import Context, Template
 
@@ -99,35 +99,24 @@ class DynamicComponent(Component):
 
     _is_dynamic_component = True
 
-    def get_template_data(
-        self,
-        args: Any,
-        kwargs: Any,
-        slots: Any,
-        context: Any,
-    ) -> Dict:
-        registry: Optional[ComponentRegistry] = kwargs.pop("registry", None)
-        comp_name_or_class: Union[str, Type[Component]] = kwargs.pop("is", None)
-        if not comp_name_or_class:
-            raise TypeError(f"Component '{self.name}' is missing a required argument 'is'")
-
-        comp_class = self._resolve_component(comp_name_or_class, registry)
-
-        return {
-            "comp_class": comp_class,
-            "args": args,
-            "kwargs": kwargs,
-        }
-
     # TODO: Replace combination of `on_render_before()` + `template` with single `on_render()`
+    #
     # NOTE: The inner component is rendered in `on_render_before`, so that the `Context` object
     # is already configured as if the inner component was rendered inside the template.
     # E.g. the `_COMPONENT_CONTEXT_KEY` is set, which means that the child component
     # will know that it's a child of this component.
     def on_render_before(self, context: Context, template: Template) -> Context:
-        comp_class: type[Component] = context["comp_class"]
-        args = context["args"]
-        kwargs = context["kwargs"]
+        # Make a copy of kwargs so we pass to the child only the kwargs that are
+        # actually used by the child component.
+        cleared_kwargs = self.input.kwargs.copy()
+
+        # Resolve the component class
+        registry: Optional[ComponentRegistry] = cleared_kwargs.pop("registry", None)
+        comp_name_or_class: Union[str, Type[Component]] = cleared_kwargs.pop("is", None)
+        if not comp_name_or_class:
+            raise TypeError(f"Component '{self.name}' is missing a required argument 'is'")
+
+        comp_class = self._resolve_component(comp_name_or_class, registry)
 
         comp = comp_class(
             registered_name=self.registered_name,
@@ -136,8 +125,8 @@ class DynamicComponent(Component):
         )
         output = comp.render(
             context=self.input.context,
-            args=args,
-            kwargs=kwargs,
+            args=self.input.args,
+            kwargs=cleared_kwargs,
             slots=self.input.slots,
             # NOTE: Since we're accessing slots as `self.input.slots`, the content of slot functions
             # was already escaped (if set so).
@@ -145,6 +134,7 @@ class DynamicComponent(Component):
             deps_strategy=self.input.deps_strategy,
         )
 
+        # Set the output to the context so it can be accessed from within the template.
         context["output"] = output
         return context
 

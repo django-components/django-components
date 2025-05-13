@@ -20,23 +20,20 @@ Example:
 
 ```python
 class Table(Component):
-    def get_template_data(self, args, kwargs, slots, context):
+    def on_render_before(self, context, template):
         # Access component's ID
         assert self.id == "c1A2b3c"
 
         # Access component's inputs, slots and context
-        assert self.input.args == (123, "str")
-        assert self.input.kwargs == {"variable": "test", "another": 1}
-        footer_slot = self.input.slots["footer"]
+        assert self.args == [123, "str"]
+        assert self.kwargs == {"variable": "test", "another": 1}
+        footer_slot = self.slots["footer"]
         some_var = self.input.context["some_var"]
 
+    def get_template_data(self, args, kwargs, slots, context):
         # Access the request object and Django's context processors, if available
         assert self.request.GET == {"query": "something"}
         assert self.context_processors_data['user'].username == "admin"
-
-        return {
-            "variable": variable,
-        }
 
 rendered = Table.render(
     kwargs={"variable": "test", "another": 1},
@@ -49,42 +46,159 @@ rendered = Table.render(
 
 The Render API includes:
 
-- [`self.id`](../render_api/#component-id) - The unique ID for the current render call
+- [`self.args`](../render_api/#args) - The positional arguments for the current render call
+- [`self.kwargs`](../render_api/#kwargs) - The keyword arguments for the current render call
+- [`self.slots`](../render_api/#slots) - The slots for the current render call
 - [`self.input`](../render_api/#component-inputs) - All the component inputs
+- [`self.id`](../render_api/#component-id) - The unique ID for the current render call
 - [`self.request`](../render_api/#request-object-and-context-processors) - The request object (if available)
 - [`self.context_processors_data`](../render_api/#request-object-and-context-processors) - Data from Django's context processors (if request is available)
 - [`self.inject()`](../render_api/#provide-inject) - Inject data into the component
 
-## Component ID
+## Args
 
-Component ID (or render ID) is a unique identifier for the current render call.
+The `args` argument as passed to
+[`Component.get_template_data()`](../../../reference/api/#django_components.Component.get_template_data).
 
-That means that if you call [`Component.render()`](../../../reference/api#django_components.Component.render)
-multiple times, the ID will be different for each call.
+If you defined the [`Component.Args`](../../../reference/api/#django_components.Component.Args) class,
+then the [`Component.args`](../../../reference/api/#django_components.Component.args) property will return an instance of that class.
 
-It is available as [`self.id`](../../../reference/api#django_components.Component.id).
+Otherwise, `args` will be a plain list.
 
-The ID is a 7-letter alphanumeric string in the format `cXXXXXX`,
-where `XXXXXX` is a random string of 6 alphanumeric characters (case-sensitive).
+Raises `RuntimeError` if accessed outside of rendering execution.
 
-E.g. `c1a2b3c`.
+**Example:**
 
-A single render ID has a chance of collision 1 in 57 billion. However, due to birthday paradox, the chance of collision increases to 1% when approaching ~33K render IDs.
-
-Thus, there is currently a soft-cap of ~30K components rendered on a single page.
-
-If you need to expand this limit, please open an issue on GitHub.
+With `Args` class:
 
 ```python
+from django_components import Component
+
 class Table(Component):
-    def get_template_data(self, args, kwargs, slots, context):
-        # Access component's ID
-        assert self.id == "c1A2b3c"
+    class Args(NamedTuple):
+        page: int
+        per_page: int
+
+    def on_render_before(self, context: Context, template: Template) -> None:
+        assert self.args.page == 123
+        assert self.args.per_page == 10
+
+rendered = Table.render(
+    args=[123, 10],
+)
+```
+
+Without `Args` class:
+
+```python
+from django_components import Component
+
+class Table(Component):
+    def on_render_before(self, context: Context, template: Template) -> None:
+        assert self.args[0] == 123
+        assert self.args[1] == 10
+```
+
+## Kwargs
+
+The `kwargs` argument as passed to
+[`Component.get_template_data()`](../../../reference/api/#django_components.Component.get_template_data).
+
+If you defined the [`Component.Kwargs`](../../../reference/api/#django_components.Component.Kwargs) class,
+then the [`Component.kwargs`](../../../reference/api/#django_components.Component.kwargs) property will return an instance of that class.
+
+Otherwise, `kwargs` will be a plain dictionary.
+
+Raises `RuntimeError` if accessed outside of rendering execution.
+
+**Example:**
+
+With `Kwargs` class:
+
+```python
+from django_components import Component
+
+class Table(Component):
+    class Kwargs(NamedTuple):
+        page: int
+        per_page: int
+
+    def on_render_before(self, context: Context, template: Template) -> None:
+        assert self.kwargs.page == 123
+        assert self.kwargs.per_page == 10
+
+rendered = Table.render(
+    kwargs={"page": 123, "per_page": 10},
+)
+```
+
+Without `Kwargs` class:
+
+```python
+from django_components import Component
+
+class Table(Component):
+    def on_render_before(self, context: Context, template: Template) -> None:
+        assert self.kwargs["page"] == 123
+        assert self.kwargs["per_page"] == 10
+```
+
+## Slots
+
+The `slots` argument as passed to
+[`Component.get_template_data()`](../../../reference/api/#django_components.Component.get_template_data).
+
+If you defined the [`Component.Slots`](../../../reference/api/#django_components.Component.Slots) class,
+then the [`Component.slots`](../../../reference/api/#django_components.Component.slots) property will return an instance of that class.
+
+Otherwise, `slots` will be a plain dictionary.
+
+Raises `RuntimeError` if accessed outside of rendering execution.
+
+**Example:**
+
+With `Slots` class:
+
+```python
+from django_components import Component, Slot, SlotInput
+
+class Table(Component):
+    class Slots(NamedTuple):
+        header: SlotInput
+        footer: SlotInput
+
+    def on_render_before(self, context: Context, template: Template) -> None:
+        assert isinstance(self.slots.header, Slot)
+        assert isinstance(self.slots.footer, Slot)
+
+rendered = Table.render(
+    slots={
+        "header": "MY_HEADER",
+        "footer": lambda ctx: "FOOTER: " + ctx.data["user_id"],
+    },
+)
+```
+
+Without `Slots` class:
+
+```python
+from django_components import Component, Slot, SlotInput
+
+class Table(Component):
+    def on_render_before(self, context: Context, template: Template) -> None:
+        assert isinstance(self.slots["header"], Slot)
+        assert isinstance(self.slots["footer"], Slot)
 ```
 
 ## Component inputs
 
-All the component inputs are captured and available as [`self.input`](../../../reference/api/#django_components.Component.input).
+You can access the most important inputs via [`self.args`](../render_api/#args),
+[`self.kwargs`](../render_api/#kwargs),
+and [`self.slots`](../render_api/#slots) properties.
+
+There are additional settings that may be passed to components.
+If you need to access these, you can use [`self.input`](../../../reference/api/#django_components.Component.input) property
+for a low-level access to all the inputs passed to the component.
 
 [`self.input`](../../../reference/api/#django_components.Component.input) ([`ComponentInput`](../../../reference/api/#django_components.ComponentInput)) has the mostly the same fields as the input to [`Component.render()`](../../../reference/api/#django_components.Component.render). This includes:
 
@@ -112,6 +226,33 @@ rendered = TestComponent.render(
     args=(123, "str"),
     slots={"footer": "MY_SLOT"},
 )
+```
+
+## Component ID
+
+Component ID (or render ID) is a unique identifier for the current render call.
+
+That means that if you call [`Component.render()`](../../../reference/api#django_components.Component.render)
+multiple times, the ID will be different for each call.
+
+It is available as [`self.id`](../../../reference/api#django_components.Component.id).
+
+The ID is a 7-letter alphanumeric string in the format `cXXXXXX`,
+where `XXXXXX` is a random string of 6 alphanumeric characters (case-sensitive).
+
+E.g. `c1a2b3c`.
+
+A single render ID has a chance of collision 1 in 57 billion. However, due to birthday paradox, the chance of collision increases to 1% when approaching ~33K render IDs.
+
+Thus, there is currently a soft-cap of ~30K components rendered on a single page.
+
+If you need to expand this limit, please open an issue on GitHub.
+
+```python
+class Table(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        # Access component's ID
+        assert self.id == "c1A2b3c"
 ```
 
 ## Request object and context processors

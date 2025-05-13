@@ -4,6 +4,17 @@
 
 ⚠️ Major release ⚠️ - Please test thoroughly before / after upgrading.
 
+Summary:
+
+- Overhauled typing system
+- Middleware removed, no longer needed
+- `get_context_data()` is the new canonical way to define template data
+- Slots API polished and prepared for v1.
+- Merged `Component.Url` with `Component.View`
+- Added `Component.args`, `Component.kwargs`, `Component.slots`
+- Added `{{ component_vars.args }}`, `{{ component_vars.kwargs }}`, `{{ component_vars.slots }}`
+- And lot more...
+
 #### 🚨📢 BREAKING CHANGES
 
 **Middleware**
@@ -68,7 +79,7 @@
             text: str
     ```
 
-    See [Migrating from generics to class attributes](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/#migrating-from-generics-to-class-attributes) for more info.
+    See [Migrating from generics to class attributes](https://django-components.github.io/django-components/0.140/concepts/fundamentals/typing_and_validation/#migrating-from-generics-to-class-attributes) for more info.
 
 - Removed `EmptyTuple` and `EmptyDict` types. Instead, there is now a single `Empty` type.
 
@@ -434,6 +445,66 @@
     {% endfill %}
     ```
 
+- The template variable `{{ component_vars.is_filled }}` is now deprecated. Will be removed in v1. Use `{{ component_vars.slots }}` instead.
+
+    Before:
+
+    ```django
+    {% if component_vars.is_filled.footer %}
+        <div>
+            {% slot "footer" / %}
+        </div>
+    {% endif %}
+    ```
+
+    After:
+
+    ```django
+    {% if component_vars.slots.footer %}
+        <div>
+            {% slot "footer" / %}
+        </div>
+    {% endif %}
+    ```
+
+    NOTE: `component_vars.is_filled` automatically escaped slot names, so that even slot names that are
+    not valid python identifiers could be set as slot names. `component_vars.slots` no longer does that.
+
+- Component attribute `Component.is_filled` is now deprecated. Will be removed in v1. Use `Component.slots` instead.
+
+    Before:
+
+    ```py
+    class MyComponent(Component):
+        def get_template_data(self, args, kwargs, slots, context):
+            if self.is_filled.footer:
+                color = "red"
+            else:
+                color = "blue"
+
+            return {
+                "color": color,
+            }
+    ```
+
+    After:
+
+    ```py
+    class MyComponent(Component):
+        def get_template_data(self, args, kwargs, slots, context):
+            if "footer" in slots:
+                color = "red"
+            else:
+                color = "blue"
+
+            return {
+                "color": color,
+            }
+    ```
+
+    NOTE: `Component.is_filled` automatically escaped slot names, so that even slot names that are
+    not valid python identifiers could be set as slot names. `Component.slots` no longer does that.
+
 #### Feat
 
 - New method to render template variables - `get_template_data()`
@@ -476,7 +547,7 @@
     This practically brings back input validation, because the instantiation of the types
     will raise an error if the inputs are not valid.
 
-    Read more on [Typing and validation](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/)
+    Read more on [Typing and validation](https://django-components.github.io/django-components/latest/concepts/fundamentals/typing_and_validation/)
 
 - Render emails or other non-browser HTML with new "dependencies strategies"
 
@@ -524,6 +595,57 @@
         - Used for inserting rendered HTML into other components.
 
     See [Dependencies rendering](https://django-components.github.io/django-components/0.140/concepts/advanced/rendering_js_css/) for more info.
+
+- New `Component.args`, `Component.kwargs`, `Component.slots` attributes available on the component class itself.
+
+    These attributes are the same as the ones available in `Component.get_template_data()`.
+
+    You can use these in other methods like `Component.on_render_before()` or `Component.on_render_after()`.
+
+    ```py
+    from django_components import Component, SlotInput
+
+    class Table(Component):
+        class Args(NamedTuple):
+            page: int
+
+        class Kwargs(NamedTuple):
+            per_page: int
+
+        class Slots(NamedTuple):
+            content: SlotInput
+
+        def on_render_before(self, context: Context, template: Template) -> None:
+            assert self.args.page == 123
+            assert self.kwargs.per_page == 10
+            content_html = self.slots.content()
+    ```
+
+    Same as with the parameters in `Component.get_template_data()`, they will be instances of the `Args`, `Kwargs`, `Slots` classes
+    if defined, or plain lists / dictionaries otherwise.
+
+- New template variables `{{ component_vars.args }}`, `{{ component_vars.kwargs }}`, `{{ component_vars.slots }}`
+
+    These attributes are the same as the ones available in `Component.get_template_data()`.
+
+    ```django
+    {# Typed #}
+    {% if component_vars.args.page == 123 %}
+        <div>
+            {% slot "content" / %}
+        </div>
+    {% endif %}
+
+    {# Untyped #}
+    {% if component_vars.args.0 == 123 %}
+        <div>
+            {% slot "content" / %}
+        </div>
+    {% endif %}
+    ```
+
+    Same as with the parameters in `Component.get_template_data()`, they will be instances of the `Args`, `Kwargs`, `Slots` classes
+    if defined, or plain lists / dictionaries otherwise.
 
 - `get_component_url()` now optionally accepts `query` and `fragment` arguments.
 

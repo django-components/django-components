@@ -400,17 +400,36 @@ class SlotFallback:
 SlotRef = SlotFallback
 
 
+name_escape_re = re.compile(r"[^\w]")
+
+
+# TODO_v1 - Remove, superseded by `Component.slots` and `component_vars.slots`
 class SlotIsFilled(dict):
     """
     Dictionary that returns `True` if the slot is filled (key is found), `False` otherwise.
     """
 
     def __init__(self, fills: Dict, *args: Any, **kwargs: Any) -> None:
-        escaped_fill_names = {_escape_slot_name(fill_name): True for fill_name in fills.keys()}
+        escaped_fill_names = {self._escape_slot_name(fill_name): True for fill_name in fills.keys()}
         super().__init__(escaped_fill_names, *args, **kwargs)
 
     def __missing__(self, key: Any) -> bool:
         return False
+
+    def _escape_slot_name(self, name: str) -> str:
+        """
+        Users may define slots with names which are invalid identifiers like 'my slot'.
+        But these cannot be used as keys in the template context, e.g. `{{ component_vars.is_filled.'my slot' }}`.
+        So as workaround, we instead use these escaped names which are valid identifiers.
+
+        So e.g. `my slot` should be escaped as `my_slot`.
+        """
+        # NOTE: Do a simple substitution where we replace all non-identifier characters with `_`.
+        # Identifiers consist of alphanum (a-zA-Z0-9) and underscores.
+        # We don't check if these escaped names conflict with other existing slots in the template,
+        # we leave this obligation to the user.
+        escaped_name = name_escape_re.sub("_", name)
+        return escaped_name
 
 
 class SlotNode(BaseNode):
@@ -795,7 +814,7 @@ class SlotNode(BaseNode):
             and _COMPONENT_CONTEXT_KEY in component_ctx.outer_context
         ):
             extra_context[_COMPONENT_CONTEXT_KEY] = component_ctx.outer_context[_COMPONENT_CONTEXT_KEY]
-            # This ensures that `component_vars.is_filled`is accessible in the fill
+            # This ensures that the ComponentVars API (e.g. `{{ component_vars.is_filled }}`) is accessible in the fill
             extra_context["component_vars"] = component_ctx.outer_context["component_vars"]
 
         # Irrespective of which context we use ("root" context or the one passed to this
@@ -1348,25 +1367,6 @@ def normalize_slot_fills(
         norm_fills[slot_name] = slot
 
     return norm_fills
-
-
-name_escape_re = re.compile(r"[^\w]")
-
-
-def _escape_slot_name(name: str) -> str:
-    """
-    Users may define slots with names which are invalid identifiers like 'my slot'.
-    But these cannot be used as keys in the template context, e.g. `{{ component_vars.is_filled.'my slot' }}`.
-    So as workaround, we instead use these escaped names which are valid identifiers.
-
-    So e.g. `my slot` should be escaped as `my_slot`.
-    """
-    # NOTE: Do a simple substitution where we replace all non-identifier characters with `_`.
-    # Identifiers consist of alphanum (a-zA-Z0-9) and underscores.
-    # We don't check if these escaped names conflict with other existing slots in the template,
-    # we leave this obligation to the user.
-    escaped_name = name_escape_re.sub("_", name)
-    return escaped_name
 
 
 def _nodelist_to_slot(

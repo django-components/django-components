@@ -237,9 +237,9 @@ class Table(Component):
         assert self.id == "djc1A2b3c"
 
         # Access component's inputs and slots
-        assert self.input.args == (123, "str")
-        assert self.input.kwargs == {"variable": "test", "another": 1}
-        footer_slot = self.input.slots["footer"]
+        assert self.args == [123, "str"]
+        assert self.kwargs == {"variable": "test", "another": 1}
+        footer_slot = self.slots["footer"]
         some_var = self.input.context["some_var"]
 
         # Access the request object and Django's context processors, if available
@@ -390,7 +390,7 @@ class Header(Component):
 
 ### Input validation and static type hints
 
-Avoid needless errors with [type hints and runtime input validation](https://django-components.github.io/django-components/latest/concepts/advanced/typing_and_validation/).
+Avoid needless errors with [type hints and runtime input validation](https://django-components.github.io/django-components/latest/concepts/fundamentals/typing_and_validation/).
 
 To opt-in to input validation, define types for component's args, kwargs, slots, and more:
 
