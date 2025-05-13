@@ -104,8 +104,9 @@ urllib3==2.2.3
     # via
     #   requests
     #   types-requests
-virtualenv==20.29.2
+virtualenv==20.31.2
     # via
+    #   -r requirements-ci.in
     #   asv
     #   tox
 whitenoise==6.7.0

@@ -80,7 +80,9 @@ packaging==24.2
     #   pytest
     #   tox
 pathspec==0.12.1
-    # via -r requirements-ci.in
+    # via
+    #   -r requirements-dev.in
+    #   black
 platformdirs==4.3.6
     # via
     #   black
@@ -160,7 +162,7 @@ urllib3==2.2.3
     # via
     #   requests
     #   types-requests
-virtualenv==20.30.0
+virtualenv==20.31.2
     # via
     #   -r requirements-dev.in
     #   asv
