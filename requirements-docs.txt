@@ -202,7 +202,7 @@ pyyaml==6.0.2
     #   mkdocs-get-deps
     #   pymdown-extensions
     #   pyyaml-env-tag
-pyyaml-env-tag==0.1
+pyyaml-env-tag==1.0
     # via
     #   mike
     #   mkdocs
