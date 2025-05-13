@@ -137,7 +137,7 @@ class Calendar(Component):
   [`{% component %}`](https://django-components.github.io/django-components/latest/reference/template_tags#component) tag.
 - Compose them with [`{% slot %}`](https://django-components.github.io/django-components/latest/reference/template_tags#slot)
   and [`{% fill %}`](https://django-components.github.io/django-components/latest/reference/template_tags#fill) tags.
-- Vue-like slot system, including [scoped slots](https://django-components.github.io/django-components/latest/concepts/fundamentals/slots/#scoped-slots).
+- Vue-like slot system, including [scoped slots](https://django-components.github.io/django-components/latest/concepts/fundamentals/slots/#slot-data).
 
 ```django
 {% component "Layout"

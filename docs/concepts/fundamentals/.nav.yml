@@ -7,8 +7,8 @@ nav:
   - Component defaults: component_defaults.md
   - Render API: render_api.md
   - Rendering components: rendering_components.md
-  - Template tag syntax: template_tag_syntax.md
   - Slots: slots.md
+  - Template tag syntax: template_tag_syntax.md
   - HTML attributes: html_attributes.md
   - Component views and URLs: component_views_urls.md
   - HTTP Request: http_request.md

@@ -189,7 +189,8 @@ which is NOT the same as the `date` variable used inside Calendar's template.
 
 We want to use the same `date` variable that's used inside Calendar's template.
 
-Luckily, django-components allows passing data to the slot, also known as [Scoped slots](../../concepts/fundamentals/slots#scoped-slots).
+Luckily, django-components allows [passing data to slots](../../concepts/fundamentals/slots#slot-data),
+also known as [Scoped slots](https://vuejs.org/guide/components/slots#scoped-slots).
 
 This consists of two steps:
 

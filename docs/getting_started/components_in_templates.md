@@ -102,7 +102,7 @@ and render the component inside a template:
 
 !!! info
 
-    Component tags should end with `/` if they do not contain any [Slot fills](../../concepts/fundamentals/slots#slot-fills).
+    Component tags should end with `/` if they do not contain any [Slot fills](../../concepts/fundamentals/slots).
     But you can also use `{% endcomponent %}` instead:
 
     ```htmldjango
