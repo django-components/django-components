@@ -45,7 +45,7 @@ SLOT_NAME_KWARG = "name"
 SLOT_REQUIRED_FLAG = "required"
 SLOT_DEFAULT_FLAG = "default"
 FILL_DATA_KWARG = "data"
-FILL_DEFAULT_KWARG = "default"
+FILL_FALLBACK_KWARG = "fallback"
 
 
 # Public types
@@ -54,7 +54,7 @@ SlotResult = Union[str, SafeString]
 
 @runtime_checkable
 class SlotFunc(Protocol, Generic[TSlotData]):
-    def __call__(self, ctx: Context, slot_data: TSlotData, slot_ref: "SlotRef") -> SlotResult: ...  # noqa E704
+    def __call__(self, ctx: Context, slot_data: TSlotData, slot_ref: "SlotFallback") -> SlotResult: ...  # noqa E704
 
 
 @dataclass
@@ -102,7 +102,7 @@ class Slot(Generic[TSlotData]):
             raise ValueError(f"Slot content must be a callable, got: {self.content_func}")
 
     # Allow to treat the instances as functions
-    def __call__(self, ctx: Context, slot_data: TSlotData, slot_ref: "SlotRef") -> SlotResult:
+    def __call__(self, ctx: Context, slot_data: TSlotData, slot_ref: "SlotFallback") -> SlotResult:
         return self.content_func(ctx, slot_data, slot_ref)
 
     # Make Django pass the instances of this class within the templates without calling
@@ -125,7 +125,7 @@ class Slot(Generic[TSlotData]):
                 nodelist=NodeList([TextNode(contents)]),
                 contents=contents,
                 data_var=None,
-                default_var=None,
+                fallback_var=None,
             )
             return slot.contents, slot.nodelist, slot.content_func
 
@@ -191,23 +191,34 @@ class SlotFill(Generic[TSlotData]):
     slot: Slot[TSlotData]
 
 
-class SlotRef:
+class SlotFallback:
     """
-    SlotRef allows to treat a slot as a variable. The slot is rendered only once
+    SlotFallback allows to treat a slot fallback as a variable. The slot is rendered only once
     the instance is coerced to string.
 
-    This is used to access slots as variables inside the templates. When a SlotRef
+    This is used to access slots as variables inside the templates. When a `SlotFallback`
     is rendered in the template with `{{ my_lazy_slot }}`, it will output the contents
     of the slot.
+
+    Usage in slot functions:
+
+    ```py
+    def slot_function(self, ctx: Context, slot_data: TSlotData, fallback: SlotFallback):
+        return f"Hello, {fallback}!"
+    ```
     """
 
     def __init__(self, slot: "SlotNode", context: Context):
         self._slot = slot
         self._context = context
 
-    # Render the slot when the template coerces SlotRef to string
+    # Render the slot when the template coerces SlotFallback to string
     def __str__(self) -> str:
         return mark_safe(self._slot.nodelist.render(self._context))
+
+
+# TODO_v1 - REMOVE - superseded by SlotFallback
+SlotRef = SlotFallback
 
 
 class SlotIsFilled(dict):
@@ -312,13 +323,13 @@ class SlotNode(BaseNode):
         \"\"\"
     ```
 
-    ### Accessing default slot content
+    ### Accessing fallback slot content
 
-    The content between the `{% slot %}..{% endslot %}` tags is the default content that
+    The content between the `{% slot %}..{% endslot %}` tags is the fallback content that
     will be rendered if no fill is given for the slot.
 
-    This default content can then be accessed from within the [`{% fill %}`](#fill) tag using
-    the fill's `default` kwarg.
+    This fallback content can then be accessed from within the [`{% fill %}`](#fill) tag using
+    the fill's `fallback` kwarg.
     This is useful if you need to wrap / prepend / append the original slot's content.
 
     ```python
@@ -327,7 +338,7 @@ class SlotNode(BaseNode):
         template = \"\"\"
           <div>
             {% slot "content" %}
-              This is default content!
+              This is fallback content!
             {% endslot %}
           </div>
         \"\"\"
@@ -337,10 +348,10 @@ class SlotNode(BaseNode):
     @register("parent")
     class Parent(Component):
         template = \"\"\"
-          {# Parent can access the slot's default content #}
+          {# Parent can access the slot's fallback content #}
           {% component "child" %}
-            {% fill "content" default="default" %}
-              {{ default }}
+            {% fill "content" fallback="fallback" %}
+              {{ fallback }}
             {% endfill %}
           {% endcomponent %}
         \"\"\"
@@ -547,7 +558,7 @@ class SlotNode(BaseNode):
                 slot=slot_fill_fn,
             )
         else:
-            # No fill was supplied, render the slot's default content
+            # No fill was supplied, render the slot's fallback content
             slot_fill = SlotFill(
                 name=slot_name,
                 is_filled=False,
@@ -557,7 +568,7 @@ class SlotNode(BaseNode):
                     nodelist=self.nodelist,
                     contents=self.contents,
                     data_var=None,
-                    default_var=None,
+                    fallback_var=None,
                     # Escaped because this was defined in the template
                     escaped=True,
                 ),
@@ -625,7 +636,7 @@ class SlotNode(BaseNode):
             if key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
                 extra_context[key] = value
 
-        slot_ref = SlotRef(self, context)
+        slot_ref = SlotFallback(self, context)
 
         # For the user-provided slot fill, we want to use the context of where the slot
         # came from (or current context if configured so)
@@ -644,7 +655,7 @@ class SlotNode(BaseNode):
             with used_ctx.render_context.push(render_ctx_layer):
                 with add_slot_to_error_message(component_name, slot_name):
                     # Render slot as a function
-                    # NOTE: While `{% fill %}` tag has to opt in for the `default` and `data` variables,
+                    # NOTE: While `{% fill %}` tag has to opt in for the `fallback` and `data` variables,
                     #       the render function ALWAYS receives them.
                     output = slot_fill.slot(used_ctx, kwargs, slot_ref)
 
@@ -669,7 +680,7 @@ class SlotNode(BaseNode):
         component_ctx: "ComponentContext",
     ) -> Context:
         """Prepare the context used in a slot fill based on the settings."""
-        # If slot is NOT filled, we use the slot's default AKA content between
+        # If slot is NOT filled, we use the slot's fallback AKA content between
         # the `{% slot %}` tags. These should be evaluated as if the `{% slot %}`
         # tags weren't even there, which means that we use the current context.
         if not slot_fill.is_filled:
@@ -696,11 +707,10 @@ class FillNode(BaseNode):
 
     - `name` (str, required): Name of the slot to insert this content into. Use `"default"` for
         the default slot.
-    - `default` (str, optional): This argument allows you to access the original content of the slot
-        under the specified variable name. See
-        [Accessing original content of slots](../../concepts/fundamentals/slots#accessing-original-content-of-slots)
+    - `fallback` (str, optional): This argument allows you to access the original content of the slot
+        under the specified variable name. See [Slot fallback](../../concepts/fundamentals/slots#slot-fallback).
     - `data` (str, optional): This argument allows you to access the data passed to the slot
-        under the specified variable name. See [Scoped slots](../../concepts/fundamentals/slots#scoped-slots)
+        under the specified variable name. See [Slot data](../../concepts/fundamentals/slots#slot-data).
 
     **Examples:**
 
@@ -713,7 +723,7 @@ class FillNode(BaseNode):
     {% endcomponent %}
     ```
 
-    ### Accessing slot's default content with the `default` kwarg
+    ### Accessing slot's fallback content with the `fallback` kwarg
 
     ```django
     {# my_table.html #}
@@ -727,9 +737,9 @@ class FillNode(BaseNode):
 
     ```django
     {% component "my_table" %}
-      {% fill "pagination" default="default_pag" %}
+      {% fill "pagination" fallback="fallback" %}
         <div class="my-class">
-          {{ default_pag }}
+          {{ fallback }}
         </div>
       {% endfill %}
     {% endcomponent %}
@@ -759,16 +769,16 @@ class FillNode(BaseNode):
     {% endcomponent %}
     ```
 
-    ### Accessing slot data and default content on the default slot
+    ### Accessing slot data and fallback content on the default slot
 
-    To access slot data and the default slot content on the default slot,
+    To access slot data and the fallback slot content on the default slot,
     use `{% fill %}` with `name` set to `"default"`:
 
     ```django
     {% component "button" %}
-      {% fill name="default" data="slot_data" default="default_slot" %}
+      {% fill name="default" data="slot_data" fallback="slot_fallback" %}
         You clicked me {{ slot_data.count }} times!
-        {{ default_slot }}
+        {{ slot_fallback }}
       {% endfill %}
     {% endcomponent %}
     ```
@@ -778,7 +788,25 @@ class FillNode(BaseNode):
     end_tag = "endfill"
     allowed_flags = []
 
-    def render(self, context: Context, name: str, *, data: Optional[str] = None, default: Optional[str] = None) -> str:
+    def render(
+        self,
+        context: Context,
+        name: str,
+        *,
+        data: Optional[str] = None,
+        fallback: Optional[str] = None,
+        # TODO_V1: Use `fallback` kwarg instead of `default`
+        default: Optional[str] = None,
+    ) -> str:
+        # TODO_V1: Use `fallback` kwarg instead of `default`
+        if fallback is not None and default is not None:
+            raise TemplateSyntaxError(
+                f"Fill tag received both 'default' and '{FILL_FALLBACK_KWARG}' kwargs. "
+                f"Use '{FILL_FALLBACK_KWARG}' instead."
+            )
+        elif fallback is None and default is not None:
+            fallback = default
+
         if not _is_extracting_fill(context):
             raise TemplateSyntaxError(
                 "FillNode.render() (AKA {% fill ... %} block) cannot be rendered outside of a Component context. "
@@ -797,28 +825,28 @@ class FillNode(BaseNode):
                     f"Fill tag kwarg '{FILL_DATA_KWARG}' does not resolve to a valid Python identifier, got '{data}'"
                 )
 
-        if default is not None:
-            if not isinstance(default, str):
+        if fallback is not None:
+            if not isinstance(fallback, str):
                 raise TemplateSyntaxError(
-                    f"Fill tag '{FILL_DEFAULT_KWARG}' kwarg must resolve to a string, got {default}"
+                    f"Fill tag '{FILL_FALLBACK_KWARG}' kwarg must resolve to a string, got {fallback}"
                 )
-            if not is_identifier(default):
+            if not is_identifier(fallback):
                 raise RuntimeError(
-                    f"Fill tag kwarg '{FILL_DEFAULT_KWARG}' does not resolve to a valid Python identifier,"
-                    f" got '{default}'"
+                    f"Fill tag kwarg '{FILL_FALLBACK_KWARG}' does not resolve to a valid Python identifier,"
+                    f" got '{fallback}'"
                 )
 
-        # data and default cannot be bound to the same variable
-        if data and default and data == default:
+        # data and fallback cannot be bound to the same variable
+        if data and fallback and data == fallback:
             raise RuntimeError(
-                f"Fill '{name}' received the same string for slot default ({FILL_DEFAULT_KWARG}=...)"
+                f"Fill '{name}' received the same string for slot fallback ({FILL_FALLBACK_KWARG}=...)"
                 f" and slot data ({FILL_DATA_KWARG}=...)"
             )
 
         fill_data = FillWithData(
             fill=self,
             name=name,
-            default_var=default,
+            fallback_var=fallback,
             data_var=data,
             extra_context={},
         )
@@ -905,7 +933,7 @@ class FillNode(BaseNode):
 class FillWithData(NamedTuple):
     fill: FillNode
     name: str
-    default_var: Optional[str]
+    fallback_var: Optional[str]
     data_var: Optional[str]
     extra_context: Dict[str, Any]
 
@@ -989,7 +1017,7 @@ def resolve_fills(
                 nodelist=nodelist,
                 contents=contents,
                 data_var=None,
-                default_var=None,
+                fallback_var=None,
                 # Escaped because this was defined in the template
                 escaped=True,
             )
@@ -1005,7 +1033,7 @@ def resolve_fills(
                 nodelist=fill.fill.nodelist,
                 contents=fill.fill.contents,
                 data_var=fill.data_var,
-                default_var=fill.default_var,
+                fallback_var=fill.fallback_var,
                 extra_context=fill.extra_context,
                 # Escaped because this was defined in the template
                 escaped=True,
@@ -1080,7 +1108,7 @@ def _nodelist_to_slot(
     nodelist: NodeList,
     contents: Optional[str] = None,
     data_var: Optional[str] = None,
-    default_var: Optional[str] = None,
+    fallback_var: Optional[str] = None,
     escaped: bool = False,
     extra_context: Optional[Dict[str, Any]] = None,
 ) -> Slot:
@@ -1090,10 +1118,10 @@ def _nodelist_to_slot(
                 f"Slot data alias in fill '{slot_name}' must be a valid identifier. Got '{data_var}'"
             )
 
-    if default_var:
-        if not default_var.isidentifier():
+    if fallback_var:
+        if not fallback_var.isidentifier():
             raise TemplateSyntaxError(
-                f"Slot default alias in fill '{slot_name}' must be a valid identifier. Got '{default_var}'"
+                f"Slot fallback alias in fill '{slot_name}' must be a valid identifier. Got '{fallback_var}'"
             )
 
     # We use Template.render() to render the nodelist, so that Django correctly sets up
@@ -1103,17 +1131,17 @@ def _nodelist_to_slot(
     # This allows the template to access current RenderContext layer.
     template._djc_is_component_nested = True
 
-    def render_func(ctx: Context, slot_data: Dict[str, Any], slot_ref: SlotRef) -> SlotResult:
+    def render_func(ctx: Context, slot_data: Dict[str, Any], slot_ref: SlotFallback) -> SlotResult:
         # Expose the kwargs that were passed to the `{% slot %}` tag. These kwargs
         # are made available through a variable name that was set on the `{% fill %}`
         # tag.
         if data_var:
             ctx[data_var] = slot_data
 
-        # If slot fill is using `{% fill "myslot" default="abc" %}`, then set the "abc" to
-        # the context, so users can refer to the default slot from within the fill content.
-        if default_var:
-            ctx[default_var] = slot_ref
+        # If slot fill is using `{% fill "myslot" fallback="abc" %}`, then set the "abc" to
+        # the context, so users can refer to the fallback slot from within the fill content.
+        if fallback_var:
+            ctx[fallback_var] = slot_ref
 
         # NOTE: If a `{% fill %}` tag inside a `{% component %}` tag is inside a forloop,
         # the `extra_context` contains the forloop variables. We want to make these available

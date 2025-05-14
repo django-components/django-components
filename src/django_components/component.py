@@ -67,11 +67,11 @@ from django_components.perfutil.provide import register_provide_reference, unreg
 from django_components.provide import get_injected_context_var
 from django_components.slots import (
     Slot,
+    SlotFallback,
     SlotFunc,
     SlotInput,
     SlotIsFilled,
     SlotName,
-    SlotRef,
     SlotResult,
     _is_extracting_fill,
     resolve_fills,
@@ -2723,8 +2723,8 @@ class Component(metaclass=ComponentMeta):
             # so we can assign metadata to our internal copies.
             if not isinstance(content, Slot) or not content.escaped:
                 # We wrap the original function so we post-process it by escaping the result.
-                def content_fn(ctx: Context, slot_data: Dict, slot_ref: SlotRef) -> SlotResult:
-                    rendered = content(ctx, slot_data, slot_ref)
+                def content_fn(ctx: Context, slot_data: Dict, fallback: SlotFallback) -> SlotResult:
+                    rendered = content(ctx, slot_data, fallback)
                     return conditional_escape(rendered) if escape_content else rendered
 
                 content_func = cast(SlotFunc, content_fn)

@@ -445,7 +445,7 @@ class TestSlotIteration:
             ["django", "isolated"],
         )
     )
-    def test_inner_slot_iteration_nested_with_slot_default(self, components_settings, expected):
+    def test_inner_slot_iteration_nested_with_slot_fallback(self, components_settings, expected):
         registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
 
         objects = [
@@ -458,7 +458,7 @@ class TestSlotIteration:
             {% component "slot_in_a_loop" objects=objects %}
                 {% fill "slot_inner" %}
                     {% component "slot_in_a_loop" objects=object.inner %}
-                        {% fill "slot_inner" default="super_slot_inner" %}
+                        {% fill "slot_inner" fallback="super_slot_inner" %}
                             {{ super_slot_inner }}
                         {% endfill %}
                     {% endcomponent %}
@@ -498,7 +498,7 @@ class TestSlotIteration:
             ["django", "isolated"],
         )
     )
-    def test_inner_slot_iteration_nested_with_slot_default_and_outer_scope_variable(
+    def test_inner_slot_iteration_nested_with_slot_fallback_and_outer_scope_variable(
         self,
         components_settings,
         expected,
@@ -516,7 +516,7 @@ class TestSlotIteration:
                 {% fill "slot_inner" %}
                     {{ outer_scope_variable_1 }}
                     {% component "slot_in_a_loop" objects=object.inner %}
-                        {% fill "slot_inner" default="super_slot_inner" %}
+                        {% fill "slot_inner" fallback="super_slot_inner" %}
                             {{ outer_scope_variable_2 }}
                             {{ super_slot_inner }}
                         {% endfill %}
@@ -537,7 +537,7 @@ class TestSlotIteration:
         assertHTMLEqual(rendered, expected)
 
     @djc_test(components_settings={"context_behavior": "isolated"})
-    def test_inner_slot_iteration_nested_with_slot_default_and_outer_scope_variable__isolated_2(
+    def test_inner_slot_iteration_nested_with_slot_fallback_and_outer_scope_variable__isolated_2(
         self,
     ):
         registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
@@ -556,7 +556,7 @@ class TestSlotIteration:
                 {% fill "slot_inner" %}
                     {{ outer_scope_variable_1|safe }}
                     {% component "slot_in_a_loop" objects=objects %}
-                        {% fill "slot_inner" default="super_slot_inner" %}
+                        {% fill "slot_inner" fallback="super_slot_inner" %}
                             {{ outer_scope_variable_2|safe }}
                             {{ super_slot_inner }}
                         {% endfill %}
@@ -959,14 +959,14 @@ class TestComponentNesting:
             ["django", "isolated"],
         )
     )
-    def test_component_nesting_component_with_slot_default(self, components_settings, expected):
+    def test_component_nesting_component_with_slot_fallback(self, components_settings, expected):
         registry.register("dashboard", self._get_dashboard_component())
         registry.register("calendar", self._get_calendar_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "dashboard" %}
-              {% fill "header" default="h" %} Hello! {{ h }} {% endfill %}
+              {% fill "header" fallback="h" %} Hello! {{ h }} {% endfill %}
             {% endcomponent %}
         """
         template = Template(template_str)
