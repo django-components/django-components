@@ -1,4 +1,4 @@
-django-components has THE most extensive slot system of all the popular Python templating engines.
+django-components has the most extensive slot system of all the popular Python templating engines.
 
 The slot system is based on [Vue](https://vuejs.org/guide/components/slots.html), and works across both Django templates and Python code.
 

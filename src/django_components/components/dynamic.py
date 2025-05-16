@@ -128,9 +128,6 @@ class DynamicComponent(Component):
             args=self.input.args,
             kwargs=cleared_kwargs,
             slots=self.input.slots,
-            # NOTE: Since we're accessing slots as `self.input.slots`, the content of slot functions
-            # was already escaped (if set so).
-            escape_slots_content=False,
             deps_strategy=self.input.deps_strategy,
         )
 

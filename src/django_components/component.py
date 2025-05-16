@@ -2344,7 +2344,6 @@ class Component(metaclass=ComponentMeta):
         args: Optional[Any] = None,
         kwargs: Optional[Any] = None,
         slots: Optional[Any] = None,
-        escape_slots_content: bool = True,
         deps_strategy: DependenciesStrategy = "document",
         # TODO_v1 - Remove, superseded by `deps_strategy`
         type: Optional[DependenciesStrategy] = None,
@@ -2409,7 +2408,6 @@ class Component(metaclass=ComponentMeta):
             kwargs=kwargs,
             context=context,
             slots=slots,
-            escape_slots_content=escape_slots_content,
             deps_strategy=deps_strategy,
             # TODO_v1 - Remove, superseded by `deps_strategy`
             type=type,
@@ -2426,7 +2424,6 @@ class Component(metaclass=ComponentMeta):
         args: Optional[Any] = None,
         kwargs: Optional[Any] = None,
         slots: Optional[Any] = None,
-        escape_slots_content: bool = True,
         deps_strategy: DependenciesStrategy = "document",
         # TODO_v1 - Remove, superseded by `deps_strategy`
         type: Optional[DependenciesStrategy] = None,
@@ -2574,10 +2571,6 @@ class Component(metaclass=ComponentMeta):
 
             Read more about [Working with HTTP requests](../../concepts/fundamentals/http_request).
 
-        - `escape_slots_content` - Optional. Whether the content from `slots` should be escaped with Django's
-            [`escape`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#std-templatefilter-escape).
-            Defaults to `True`.
-
         **Type hints:**
 
         `Component.render()` is NOT typed. To add type hints, you can wrap the inputs
@@ -2639,9 +2632,7 @@ class Component(metaclass=ComponentMeta):
         if not render_dependencies:
             deps_strategy = "ignore"
 
-        return comp._render_with_error_trace(
-            context, args, kwargs, slots, escape_slots_content, deps_strategy, request
-        )
+        return comp._render_with_error_trace(context, args, kwargs, slots, deps_strategy, request)
 
     # This is the internal entrypoint for the render function
     def _render_with_error_trace(
@@ -2650,13 +2641,12 @@ class Component(metaclass=ComponentMeta):
         args: Optional[Any] = None,
         kwargs: Optional[Any] = None,
         slots: Optional[Any] = None,
-        escape_slots_content: bool = True,
         deps_strategy: DependenciesStrategy = "document",
         request: Optional[HttpRequest] = None,
     ) -> str:
         # Modify the error to display full component path (incl. slots)
         with component_error_message([self.name]):
-            return self._render_impl(context, args, kwargs, slots, escape_slots_content, deps_strategy, request)
+            return self._render_impl(context, args, kwargs, slots, deps_strategy, request)
 
     def _render_impl(
         self,
@@ -2664,7 +2654,6 @@ class Component(metaclass=ComponentMeta):
         args: Optional[Any] = None,
         kwargs: Optional[Any] = None,
         slots: Optional[Any] = None,
-        escape_slots_content: bool = True,
         deps_strategy: DependenciesStrategy = "document",
         request: Optional[HttpRequest] = None,
     ) -> str:
@@ -2691,7 +2680,6 @@ class Component(metaclass=ComponentMeta):
         kwargs_dict = to_dict(kwargs) if kwargs is not None else {}
         slots_dict = normalize_slot_fills(
             to_dict(slots) if slots is not None else {},
-            escape_slots_content,
             component_name=self.name,
         )
         # Use RequestContext if request is provided, so that child non-component template tags

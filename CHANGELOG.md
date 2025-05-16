@@ -153,12 +153,35 @@ Summary:
         args: Optional[Tuple[Any, ...]] = None,
         kwargs: Optional[Mapping] = None,
         slots: Optional[Mapping] = None,
-        escape_slots_content: bool = True,
         deps_strategy: DependenciesStrategy = "document",
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
         **response_kwargs: Any,
     ) -> HttpResponse:
+    ```
+
+- `Component.render()` and `Component.render_to_response()` NO LONGER accept `escape_slots_content` kwarg.
+
+    Instead, slots are now always escaped.
+
+    To disable escaping, wrap the result of `slots` in
+    [`mark_safe()`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe).
+
+    Before:
+
+    ```py
+    html = component.render(
+        slots={"my_slot": "CONTENT"},
+        escape_slots_content=False,
+    )
+    ```
+
+    After:
+
+    ```py
+    html = component.render(
+        slots={"my_slot": mark_safe("CONTENT")}
+    )
     ```
 
 - The `Component.Url` class was merged with `Component.View`.
@@ -256,6 +279,13 @@ Summary:
     ```py
     slot = Slot(lambda ctx: "CONTENT")
     ```
+
+- The undocumented `Slot.escaped` attribute was removed.
+
+    Instead, slots are now always escaped.
+
+    To disable escaping, wrap the result of `slots` in
+    [`mark_safe()`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe).
 
 - Slot functions behavior has changed. See the new [Slots](https://django-components.github.io/django-components/latest/concepts/fundamentals/slots/) docs for more info.
 

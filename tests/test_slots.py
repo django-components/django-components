@@ -7,6 +7,7 @@ import re
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
+from django.utils.safestring import mark_safe
 from django.template.base import NodeList, TextNode
 from pytest_django.asserts import assertHTMLEqual
 
@@ -174,6 +175,30 @@ class TestSlot:
             "FROM_INSIDE_SLOT_FN | SLOT_DEFAULT",
         )
 
+    def test_render_slot_unsafe_content__func(self):
+        def slot_fn1(ctx: SlotContext):
+            return mark_safe("<script>alert('XSS')</script>")
+
+        def slot_fn2(ctx: SlotContext):
+            return "<script>alert('XSS')</script>"
+
+        slot1: Slot = Slot(slot_fn1)
+        slot2: Slot = Slot(slot_fn2)
+
+        rendered1 = slot1()
+        rendered2 = slot2()
+        assert rendered1 == "<script>alert('XSS')</script>"
+        assert rendered2 == "&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;"
+
+    def test_render_slot_unsafe_content__string(self):
+        slot1: Slot = Slot(mark_safe("<script>alert('XSS')</script>"))
+        slot2: Slot = Slot("<script>alert('XSS')</script>")
+
+        rendered1 = slot1()
+        rendered2 = slot2()
+        assert rendered1 == "<script>alert('XSS')</script>"
+        assert rendered2 == "&lt;script&gt;alert(&#x27;XSS&#x27;)&lt;/script&gt;"
+
     # Part of the slot caching feature - test that static content slots reuse the slot function.
     # See https://github.com/django-components/django-components/issues/1164#issuecomment-2854682354
     def test_slots_reuse_functions__string(self):
@@ -258,9 +283,7 @@ class TestSlot:
         assert callable(second_slot_func.contents)
         assert second_slot_func.nodelist is None
 
-        # NOTE: Both are functions, but different, because internally we wrap the function
-        #       to escape the results.
-        assert first_slot_func.contents is not second_slot_func.contents
+        assert first_slot_func.contents is second_slot_func.contents
 
     # Part of the slot caching feature - test that `Slot` instances with identical function
     # passed as slots reuse the slot function.

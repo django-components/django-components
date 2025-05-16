@@ -229,8 +229,6 @@ class Slot(Generic[TSlotData]):
 
     Read more about [Rendering slot functions](../../concepts/fundamentals/slots#rendering-slots).
     """
-    escaped: bool = False
-    """Whether the slot content has been escaped."""
 
     # Following fields are only for debugging
     component_name: Optional[str] = None
@@ -273,7 +271,8 @@ class Slot(Generic[TSlotData]):
         context: Optional[Context] = None,
     ) -> SlotResult:
         slot_ctx: SlotContext = SlotContext(context=context, data=data or {}, fallback=fallback)
-        return self.content_func(slot_ctx)
+        result = self.content_func(slot_ctx)
+        return conditional_escape(result)
 
     # Make Django pass the instances of this class within the templates without calling
     # the instances as a function.
@@ -293,6 +292,8 @@ class Slot(Generic[TSlotData]):
     def _resolve_contents(self, contents: Any) -> Tuple[Any, NodeList, SlotFunc[TSlotData]]:
         # Case: Content is a string / scalar, so we can use `TextNode` to render it.
         if not callable(contents):
+            contents = str(contents) if not isinstance(contents, (str, SafeString)) else contents
+            contents = conditional_escape(contents)
             slot = _nodelist_to_slot(
                 component_name=self.component_name or "<Slot._resolve_contents>",
                 slot_name=self.slot_name,
@@ -762,8 +763,6 @@ class SlotNode(BaseNode):
                 contents=self.contents,
                 data_var=None,
                 fallback_var=None,
-                # Escaped because this was defined in the template
-                escaped=True,
             )
 
         # Check: If a slot is marked as 'required', it must be filled.
@@ -1307,8 +1306,6 @@ def resolve_fills(
                 contents=contents,
                 data_var=None,
                 fallback_var=None,
-                # Escaped because this was defined in the template
-                escaped=True,
             )
 
     # The content has fills
@@ -1329,8 +1326,6 @@ def resolve_fills(
                     data_var=fill.data_var,
                     fallback_var=fill.fallback_var,
                     extra_context=fill.extra_context,
-                    # Escaped because this was defined in the template
-                    escaped=True,
                 )
             slots[fill.name] = slot_fill
 
@@ -1380,28 +1375,21 @@ def _extract_fill_content(
 
 def normalize_slot_fills(
     fills: Mapping[SlotName, SlotInput],
-    escape_content: bool = True,
     component_name: Optional[str] = None,
 ) -> Dict[SlotName, Slot]:
-    # Preprocess slots to escape content if `escape_content=True`
     norm_fills = {}
 
-    # NOTE: `gen_escaped_content_func` is defined as a separate function, instead of being inlined within
+    # NOTE: `copy_slot` is defined as a separate function, instead of being inlined within
     #       the forloop, because the value the forloop variable points to changes with each loop iteration.
-    def gen_escaped_content_func(content: Union[SlotFunc, Slot], slot_name: str) -> Slot:
-        # Case: Already Slot, already escaped, and names assigned, so nothing to do.
-        if isinstance(content, Slot) and content.escaped and content.slot_name and content.component_name:
+    def copy_slot(content: Union[SlotFunc, Slot], slot_name: str) -> Slot:
+        # Case: Already Slot and names assigned, so nothing to do.
+        if isinstance(content, Slot) and content.slot_name and content.component_name:
             return content
 
-        # Otherwise, we create a new instance of Slot, whether `content` was already Slot or not.
-        # so we can assign metadata to our internal copies.
-        if not isinstance(content, Slot) or not content.escaped:
-            # We wrap the original function so we post-process it by escaping the result.
-            def content_fn(ctx: SlotContext) -> SlotResult:
-                rendered = content(ctx)
-                return conditional_escape(rendered) if escape_content else rendered
-
-            content_func = cast(SlotFunc, content_fn)
+        # Otherwise, we create a new instance of Slot, whether we've been given Slot or not,
+        # so we can assign metadata to our internal copies without affecting the original.
+        if not isinstance(content, Slot):
+            content_func = content
         else:
             content_func = content.content_func
 
@@ -1423,7 +1411,6 @@ def normalize_slot_fills(
             component_name=used_component_name,
             slot_name=used_slot_name,
             nodelist=used_nodelist,
-            escaped=True,
         )
 
         return slot
@@ -1432,16 +1419,13 @@ def normalize_slot_fills(
         # Case: No content, so nothing to do.
         if content is None:
             continue
-        # Case: Content is a string / scalar
+        # Case: Content is a string / non-slot / non-callable
         elif not callable(content):
-            escaped_content = conditional_escape(content) if escape_content else content
-            # NOTE: `Slot.content_func` and `Slot.nodelist` are set in `Slot.__init__()`
-            slot: Slot = Slot(
-                contents=escaped_content, component_name=component_name, slot_name=slot_name, escaped=True
-            )
+            # NOTE: `Slot.content_func` and `Slot.nodelist` will be set in `Slot.__init__()`
+            slot: Slot = Slot(contents=content, component_name=component_name, slot_name=slot_name)
         # Case: Content is a callable, so either a plain function or a `Slot` instance.
         else:
-            slot = gen_escaped_content_func(content, slot_name)
+            slot = copy_slot(content, slot_name)
 
         norm_fills[slot_name] = slot
 
@@ -1455,7 +1439,6 @@ def _nodelist_to_slot(
     contents: Optional[str] = None,
     data_var: Optional[str] = None,
     fallback_var: Optional[str] = None,
-    escaped: bool = False,
     extra_context: Optional[Dict[str, Any]] = None,
 ) -> Slot:
     if data_var:
@@ -1543,7 +1526,6 @@ def _nodelist_to_slot(
         content_func=cast(SlotFunc, render_func),
         component_name=component_name,
         slot_name=slot_name,
-        escaped=escaped,
         nodelist=nodelist,
         # The `contents` param passed to this function may be `None`, because it's taken from
         # `BaseNode.contents` which is `None` for self-closing tags like `{% fill "footer" / %}`.
