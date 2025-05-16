@@ -97,7 +97,14 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ncache   \ndefaults\nview"
+        assert output.strip() == (
+            "name           \n"
+            "===============\n"
+            "cache          \n"
+            "defaults       \n"
+            "view           \n"
+            "debug_highlight"
+        )
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -108,7 +115,16 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ncache   \ndefaults\nview    \nempty   \ndummy"
+        assert output.strip() == (
+            "name           \n"
+            "===============\n"
+            "cache          \n"
+            "defaults       \n"
+            "view           \n"
+            "debug_highlight\n"
+            "empty          \n"
+            "dummy"
+        )
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -119,7 +135,16 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--all")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ncache   \ndefaults\nview    \nempty   \ndummy"
+        assert output.strip() == (
+            "name           \n"
+            "===============\n"
+            "cache          \n"
+            "defaults       \n"
+            "view           \n"
+            "debug_highlight\n"
+            "empty          \n"
+            "dummy"
+        )
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -130,7 +155,16 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--columns", "name")
         output = out.getvalue()
 
-        assert output.strip() == "name    \n========\ncache   \ndefaults\nview    \nempty   \ndummy"
+        assert output.strip() == (
+            "name           \n"
+            "===============\n"
+            "cache          \n"
+            "defaults       \n"
+            "view           \n"
+            "debug_highlight\n"
+            "empty          \n"
+            "dummy"
+        )
 
     @djc_test(
         components_settings={"extensions": [EmptyExtension, DummyExtension]},
@@ -141,7 +175,14 @@ class TestExtensionsListCommand:
             call_command("components", "ext", "list", "--simple")
         output = out.getvalue()
 
-        assert output.strip() == "cache   \ndefaults\nview    \nempty   \ndummy"
+        assert output.strip() == (
+            "cache          \n"
+            "defaults       \n"
+            "view           \n"
+            "debug_highlight\n"
+            "empty          \n"
+            "dummy"
+        )
 
 
 @djc_test
@@ -159,7 +200,7 @@ class TestExtensionsRunCommand:
             output
             == dedent(
                 f"""
-                usage: components ext run [-h] {{cache,defaults,view,empty,dummy}} ...
+                usage: components ext run [-h] {{cache,defaults,view,debug_highlight,empty,dummy}} ...
 
                 Run a command added by an extension.
 
@@ -167,10 +208,11 @@ class TestExtensionsRunCommand:
                   -h, --help            show this help message and exit
 
                 subcommands:
-                  {{cache,defaults,view,empty,dummy}}
+                  {{cache,defaults,view,debug_highlight,empty,dummy}}
                     cache               Run commands added by the 'cache' extension.
                     defaults            Run commands added by the 'defaults' extension.
                     view                Run commands added by the 'view' extension.
+                    debug_highlight     Run commands added by the 'debug_highlight' extension.
                     empty               Run commands added by the 'empty' extension.
                     dummy               Run commands added by the 'dummy' extension.
                 """

@@ -8,7 +8,8 @@ Summary:
 
 - Overhauled typing system
 - Middleware removed, no longer needed
-- `get_template_data()` is the new canonical way to define template data
+- `get_template_data()` is the new canonical way to define template data.
+  `get_context_data()` is now deprecated but will remain until v2.
 - Slots API polished and prepared for v1.
 - Merged `Component.Url` with `Component.View`
 - Added `Component.args`, `Component.kwargs`, `Component.slots`
@@ -755,6 +756,24 @@ Summary:
     ```
 
     Read more on [Component caching](https://django-components.github.io/django-components/0.140/concepts/advanced/component_caching/).
+
+- New extension hook `on_slot_rendered()`
+
+    This hook is called when a slot is rendered, and allows you to access and/or modify the rendered result.
+
+    This is used by the ["debug highlight" feature](https://django-components.github.io/django-components/0.140/guides/other/troubleshooting/#component-and-slot-highlighting).
+
+    To modify the rendered result, return the new value:
+
+    ```py
+    class MyExtension(ComponentExtension):
+        def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
+            return ctx.result + "<!-- Hello, world! -->"
+    ```
+
+    If you don't want to modify the rendered result, return `None`.
+
+    See all [Extension hooks](https://django-components.github.io/django-components/0.140/reference/extension_hooks/).
 
 #### Fix
 

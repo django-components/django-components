@@ -14,6 +14,7 @@ from django_components.util.routing import URLRoute
 if TYPE_CHECKING:
     from django_components import Component
     from django_components.component_registry import ComponentRegistry
+    from django_components.slots import Slot, SlotResult
 
 
 TCallable = TypeVar("TCallable", bound=Callable)
@@ -126,6 +127,26 @@ class OnComponentRenderedContext(NamedTuple):
     """The unique identifier for this component instance"""
     result: str
     """The rendered component"""
+
+
+# TODO - Add `component` once we create instances inside `render()`
+#        See https://github.com/django-components/django-components/issues/1186
+@mark_extension_hook_api
+class OnSlotRenderedContext(NamedTuple):
+    component_cls: Type["Component"]
+    """The Component class that contains the `{% slot %}` tag"""
+    component_id: str
+    """The unique identifier for this component instance"""
+    slot: "Slot"
+    """The Slot instance that was rendered"""
+    slot_name: str
+    """The name of the `{% slot %}` tag"""
+    slot_is_required: bool
+    """Whether the slot is required"""
+    slot_is_default: bool
+    """Whether the slot is default"""
+    result: "SlotResult"
+    """The rendered result of the slot"""
 
 
 ################################################
@@ -529,6 +550,31 @@ class ComponentExtension:
         """
         pass
 
+    ##########################
+    # Tags lifecycle hooks
+    ##########################
+
+    def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
+        """
+        Called when a [`{% slot %}`](../template_tags#slot) tag was rendered.
+
+        Use this hook to access or post-process the slot's rendered output.
+
+        To modify the output, return a new string from this hook.
+
+        **Example:**
+
+        ```python
+        from django_components import ComponentExtension, OnSlotRenderedContext
+
+        class MyExtension(ComponentExtension):
+            def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
+                # Append a comment to the slot's rendered output
+                return ctx.result + "<!-- MyExtension comment -->"
+        ```
+        """
+        pass
+
 
 # Decorator to store events in `ExtensionManager._events` when django_components is not yet initialized.
 def store_events(func: TCallable) -> TCallable:
@@ -842,6 +888,17 @@ class ExtensionManager:
     def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str:
         for extension in self.extensions:
             result = extension.on_component_rendered(ctx)
+            if result is not None:
+                ctx = ctx._replace(result=result)
+        return ctx.result
+
+    ##########################
+    # Tags lifecycle hooks
+    ##########################
+
+    def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
+        for extension in self.extensions:
+            result = extension.on_slot_rendered(ctx)
             if result is not None:
                 ctx = ctx._replace(result=result)
         return ctx.result

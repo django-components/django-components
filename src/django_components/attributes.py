@@ -64,8 +64,8 @@ class HtmlAttrsNode(BaseNode):
     <div class="my-class extra-class" data-id="123">
     ```
 
-    **See more usage examples in
-    [HTML attributes](../../concepts/fundamentals/html_attributes#examples-for-html_attrs).**
+    See more usage examples in
+    [HTML attributes](../../concepts/fundamentals/html_attributes#examples-for-html_attrs).
     """
 
     tag = "html_attrs"

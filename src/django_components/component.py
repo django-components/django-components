@@ -31,7 +31,7 @@ from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext
 from django.test.signals import template_rendered
 from django.views import View
 
-from django_components.app_settings import ContextBehavior, app_settings
+from django_components.app_settings import ContextBehavior
 from django_components.component_media import ComponentMediaInput, ComponentMediaMeta
 from django_components.component_registry import ComponentRegistry
 from django_components.component_registry import registry as registry_
@@ -74,7 +74,6 @@ from django_components.slots import (
     resolve_fills,
 )
 from django_components.template import cached_template
-from django_components.util.component_highlight import apply_component_highlight
 from django_components.util.context import gen_context_processors_data, snapshot_context
 from django_components.util.django_monkeypatch import is_template_cls_patched
 from django_components.util.exception import component_error_message
@@ -2942,9 +2941,6 @@ class Component(metaclass=ComponentMeta):
             # Remove component from caches
             del component_context_cache[render_id]  # type: ignore[arg-type]
             unregister_provide_reference(render_id)  # type: ignore[arg-type]
-
-            if app_settings.DEBUG_HIGHLIGHT_COMPONENTS:
-                html = apply_component_highlight("component", html, f"{self.name} ({render_id})")
 
             html = extensions.on_component_rendered(
                 OnComponentRenderedContext(

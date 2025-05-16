@@ -751,10 +751,11 @@ class InternalSettings:
 
         # Prepend built-in extensions
         from django_components.extensions.cache import CacheExtension
+        from django_components.extensions.debug_highlight import DebugHighlightExtension
         from django_components.extensions.defaults import DefaultsExtension
         from django_components.extensions.view import ViewExtension
 
-        extensions = [CacheExtension, DefaultsExtension, ViewExtension] + list(extensions)
+        extensions = [CacheExtension, DefaultsExtension, ViewExtension, DebugHighlightExtension] + list(extensions)
 
         # Extensions may be passed in either as classes or import strings.
         extension_instances: List["ComponentExtension"] = []

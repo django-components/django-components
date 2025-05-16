@@ -26,11 +26,11 @@ from django.template.exceptions import TemplateSyntaxError
 from django.utils.html import conditional_escape
 from django.utils.safestring import SafeString, mark_safe
 
-from django_components.app_settings import ContextBehavior, app_settings
+from django_components.app_settings import ContextBehavior
 from django_components.context import _COMPONENT_CONTEXT_KEY, _INJECT_CONTEXT_KEY_PREFIX
+from django_components.extension import OnSlotRenderedContext, extensions
 from django_components.node import BaseNode
 from django_components.perfutil.component import component_context_cache
-from django_components.util.component_highlight import apply_component_highlight
 from django_components.util.exception import add_slot_to_error_message
 from django_components.util.logger import trace_component_msg
 from django_components.util.misc import get_index, get_last_index, is_identifier
@@ -851,8 +851,18 @@ class SlotNode(BaseNode):
                     #       the render function ALWAYS receives them.
                     output = slot(data=kwargs, fallback=fallback, context=used_ctx)
 
-        if app_settings.DEBUG_HIGHLIGHT_SLOTS:
-            output = apply_component_highlight("slot", output, f"{component_name} - {slot_name}")
+        # Allow plugins to post-process the slot's rendered output
+        output = extensions.on_slot_rendered(
+            OnSlotRenderedContext(
+                component_cls=component_ctx.component_class,
+                component_id=component_ctx.component_id,
+                slot=slot,
+                slot_name=slot_name,
+                slot_is_required=is_required,
+                slot_is_default=is_default,
+                result=output,
+            ),
+        )
 
         trace_component_msg(
             "RENDER_SLOT_END",
@@ -1104,9 +1114,9 @@ class FillNode(BaseNode):
         #       ...
         #     {% endfill %}
         #   {% endfor %}
-        collected_fills: Optional[List[FillWithData]] = context.get(FILL_GEN_CONTEXT_KEY, None)
+        captured_fills: Optional[List[FillWithData]] = context.get(FILL_GEN_CONTEXT_KEY, None)
 
-        if collected_fills is None:
+        if captured_fills is None:
             raise RuntimeError(
                 "FillNode.render() (AKA {% fill ... %} block) cannot be rendered outside of a Component context. "
                 "Make sure that the {% fill %} tags are nested within {% component %} tags."
@@ -1166,7 +1176,7 @@ class FillNode(BaseNode):
                 layer["forloop"] = layer["forloop"].copy()
                 data.extra_context.update(layer)
 
-        collected_fills.append(data)
+        captured_fills.append(data)
 
 
 #######################################

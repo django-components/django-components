@@ -66,7 +66,7 @@ def get_component_url(
     ```
     """
     view_cls: Optional[Type[ComponentView]] = getattr(component, "View", None)
-    if view_cls is None or not view_cls.public:
+    if not _is_view_public(view_cls):
         raise RuntimeError("Component URL is not available - Component is not public")
 
     route_name = _get_component_route_name(component)
@@ -235,7 +235,7 @@ class ViewExtension(ComponentExtension):
     def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
         comp_cls = ctx.component_cls
         view_cls: Optional[Type[ComponentView]] = getattr(comp_cls, "View", None)
-        if view_cls is None or not view_cls.public:
+        if not _is_view_public(view_cls):
             return
 
         # Create a URL route like `components/MyTable_a1b2c3/`
@@ -259,3 +259,9 @@ class ViewExtension(ComponentExtension):
         if route is None:
             return
         extensions.remove_extension_urls(self.name, [route])
+
+
+def _is_view_public(view_cls: Optional[Type[ComponentView]]) -> bool:
+    if view_cls is None:
+        return False
+    return getattr(view_cls, "public", False)

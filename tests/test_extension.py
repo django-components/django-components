@@ -22,6 +22,7 @@ from django_components.extension import (
     OnComponentDataContext,
 )
 from django_components.extensions.cache import CacheExtension
+from django_components.extensions.debug_highlight import DebugHighlightExtension
 from django_components.extensions.defaults import DefaultsExtension
 from django_components.extensions.view import ViewExtension
 
@@ -132,11 +133,12 @@ def with_registry(on_created: Callable):
 class TestExtension:
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_extensions_setting(self):
-        assert len(app_settings.EXTENSIONS) == 4
+        assert len(app_settings.EXTENSIONS) == 5
         assert isinstance(app_settings.EXTENSIONS[0], CacheExtension)
         assert isinstance(app_settings.EXTENSIONS[1], DefaultsExtension)
         assert isinstance(app_settings.EXTENSIONS[2], ViewExtension)
-        assert isinstance(app_settings.EXTENSIONS[3], DummyExtension)
+        assert isinstance(app_settings.EXTENSIONS[3], DebugHighlightExtension)
+        assert isinstance(app_settings.EXTENSIONS[4], DummyExtension)
 
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_access_component_from_extension(self):
@@ -175,7 +177,7 @@ class TestExtension:
 class TestExtensionHooks:
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_component_class_lifecycle_hooks(self):
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[3])
+        extension = cast(DummyExtension, app_settings.EXTENSIONS[4])
 
         assert len(extension.calls["on_component_class_created"]) == 0
         assert len(extension.calls["on_component_class_deleted"]) == 0
@@ -207,7 +209,7 @@ class TestExtensionHooks:
 
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_registry_lifecycle_hooks(self):
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[3])
+        extension = cast(DummyExtension, app_settings.EXTENSIONS[4])
 
         assert len(extension.calls["on_registry_created"]) == 0
         assert len(extension.calls["on_registry_deleted"]) == 0
@@ -244,7 +246,7 @@ class TestExtensionHooks:
                 return {"name": kwargs.get("name", "World")}
 
         registry.register("test_comp", TestComponent)
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[3])
+        extension = cast(DummyExtension, app_settings.EXTENSIONS[4])
 
         # Verify on_component_registered was called
         assert len(extension.calls["on_component_registered"]) == 1
@@ -282,7 +284,7 @@ class TestExtensionHooks:
         test_slots = {"content": "Some content"}
         TestComponent.render(context=test_context, args=("arg1", "arg2"), kwargs={"name": "Test"}, slots=test_slots)
 
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[3])
+        extension = cast(DummyExtension, app_settings.EXTENSIONS[4])
 
         # Verify on_component_input was called with correct args
         assert len(extension.calls["on_component_input"]) == 1
