@@ -2680,9 +2680,8 @@ class Component(metaclass=ComponentMeta):
             request = getattr(context, "request", None)
             # Check if this is a nested component and whether parent has request
             if request is None:
-                parent_id = context.get(_COMPONENT_CONTEXT_KEY, None)
-                if parent_id:
-                    parent_comp_ctx = component_context_cache[parent_id]
+                _, parent_comp_ctx = _get_parent_component_context(context)
+                if parent_comp_ctx:
                     request = parent_comp_ctx.request
 
         # Allow to provide no args/kwargs/slots/context
@@ -2736,13 +2735,11 @@ class Component(metaclass=ComponentMeta):
         # We pass down the components the info about the component's parent.
         # This is used for correctly resolving slot fills, correct rendering order,
         # or CSS scoping.
-        if context.get(_COMPONENT_CONTEXT_KEY, None):
-            parent_id = cast(str, context[_COMPONENT_CONTEXT_KEY])
-            parent_comp_ctx = component_context_cache[parent_id]
+        parent_id, parent_comp_ctx = _get_parent_component_context(context)
+        if parent_comp_ctx is not None:
             component_path = [*parent_comp_ctx.component_path, self.name]
             post_render_callbacks = parent_comp_ctx.post_render_callbacks
         else:
-            parent_id = None
             component_path = [self.name]
             post_render_callbacks = {}
 
@@ -3298,6 +3295,20 @@ class ComponentNode(BaseNode):
         )
 
         return output
+
+
+def _get_parent_component_context(context: Context) -> Union[Tuple[None, None], Tuple[str, ComponentContext]]:
+    parent_id = context.get(_COMPONENT_CONTEXT_KEY, None)
+    if parent_id is None:
+        return None, None
+
+    # NOTE: This may happen when slots are rendered outside of the component's render context.
+    # See https://github.com/django-components/django-components/issues/1189
+    if parent_id not in component_context_cache:
+        return None, None
+
+    parent_comp_ctx = component_context_cache[parent_id]
+    return parent_id, parent_comp_ctx
 
 
 @contextmanager

@@ -779,6 +779,8 @@ Summary:
 
 - Fix bug: Context processors data was being generated anew for each component. Now the data is correctly created once and reused across components with the same request ([#1165](https://github.com/django-components/django-components/issues/1165)).
 
+- Fix KeyError on `component_context_cache` when slots are rendered outside of the component's render context. ([#1189](https://github.com/django-components/django-components/issues/1189))
+
 ## v0.139.1
 
 #### Fix

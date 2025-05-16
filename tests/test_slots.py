@@ -474,3 +474,54 @@ class TestSlot:
             match=re.escape("Fill 'first' received content both through 'body' kwarg and '{% fill %}' body."),
         ):
             template.render(Context({"my_slot": my_slot}))
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_slot_call_outside_render_context(self, components_settings):
+        from django_components import register, Component
+
+        seen_slots = []
+
+        @register("MyTopLevelComponent")
+        class MyTopLevelComponent(Component):
+            template = """
+                {% for thing in words %}
+                    {% component "MyComponentBeingLooped" / %}
+                {% endfor %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "words": ["apple", "car", "russia"],
+                }
+
+        @register("MyComponentBeingLooped")
+        class MyComponentBeingLooped(Component):
+            template = """
+                {% component "MyComponentWithASlot" %}
+                    {% fill "my_slot" %}
+                        {% component "MyInnerComponent" / %}
+                    {% endfill %}
+                {% endcomponent %}
+            """
+
+        @register("MyInnerComponent")
+        class MyInnerComponent(Component):
+            template = "Hello!"
+
+        @register("MyComponentWithASlot")
+        class MyComponentWithASlot(Component):
+            template = "CAPTURER"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                seen_slots.append(self.input.slots["my_slot"])
+
+        MyTopLevelComponent.render()
+
+        assert len(seen_slots) == 3
+
+        results = [slot().strip() for slot in seen_slots]
+        assert results == [
+            "<!-- _RENDERED MyInnerComponent_fb676b,ca1bc49,, -->Hello!",
+            "<!-- _RENDERED MyInnerComponent_fb676b,ca1bc4a,, -->Hello!",
+            "<!-- _RENDERED MyInnerComponent_fb676b,ca1bc4b,, -->Hello!",
+        ]
