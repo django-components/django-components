@@ -23,6 +23,7 @@ from typing import (
 from django.template import Context, Template
 from django.template.base import NodeList, TextNode
 from django.template.exceptions import TemplateSyntaxError
+from django.utils.html import conditional_escape
 from django.utils.safestring import SafeString, mark_safe
 
 from django_components.app_settings import ContextBehavior, app_settings
@@ -50,6 +51,7 @@ FILL_FALLBACK_KWARG = "fallback"
 
 # Public types
 SlotResult = Union[str, SafeString]
+"""Type representing the result of a slot render function."""
 
 
 @runtime_checkable
@@ -137,6 +139,8 @@ class Slot(Generic[TSlotData]):
 # otherwise Pydantic has problem resolving the types.
 SlotInput = Union[SlotResult, SlotFunc[TSlotData], Slot[TSlotData]]
 """
+Type representing all forms in which slot content can be passed to a component.
+
 When rendering a component with [`Component.render()`](../api#django_components.Component.render)
 or [`Component.render_to_response()`](../api#django_components.Component.render_to_response),
 the slots may be given a strings, functions, or [`Slot`](../api#django_components.Slot) instances.
@@ -163,6 +167,25 @@ class Table(Component):
         footer: SlotInput[TableFooterSlotData]
 
     template = "<div>{% slot 'footer' %}</div>"
+
+html = Table.render(
+    slots={
+        # As a string
+        "header": "Hello, World!",
+
+        # Safe string
+        "header": mark_safe("<i><am><safe>"),
+
+        # Function
+        "footer": lambda ctx, slot_data, slot_ref: f"Page: {slot_data['page_number']}!",
+
+        # Slot instance
+        "footer": Slot(lambda ctx, slot_data, slot_ref: f"Page: {slot_data['page_number']}!"),
+
+        # None (Same as no slot)
+        "header": None,
+    },
+)
 ```
 """
 # TODO_V1 - REMOVE, superseded by SlotInput
@@ -174,21 +197,6 @@ DEPRECATED: Use [`SlotInput`](../api#django_components.SlotInput) instead. Will 
 
 # Internal type aliases
 SlotName = str
-
-
-@dataclass(frozen=True)
-class SlotFill(Generic[TSlotData]):
-    """
-    SlotFill describes what WILL be rendered.
-
-    The fill may be provided by the user from the outside (`is_filled=True`),
-    or it may be the default content of the slot (`is_filled=False`).
-    """
-
-    name: str
-    """Name of the slot."""
-    is_filled: bool
-    slot: Slot[TSlotData]
 
 
 class SlotFallback:
@@ -551,27 +559,20 @@ class SlotNode(BaseNode):
                 )
 
         if fill_name in slot_fills:
-            slot_fill_fn = slot_fills[fill_name]
-            slot_fill = SlotFill(
-                name=slot_name,
-                is_filled=True,
-                slot=slot_fill_fn,
-            )
+            slot_is_filled = True
+            slot = slot_fills[fill_name]
         else:
             # No fill was supplied, render the slot's fallback content
-            slot_fill = SlotFill(
-                name=slot_name,
-                is_filled=False,
-                slot=_nodelist_to_slot(
-                    component_name=component_name,
-                    slot_name=slot_name,
-                    nodelist=self.nodelist,
-                    contents=self.contents,
-                    data_var=None,
-                    fallback_var=None,
-                    # Escaped because this was defined in the template
-                    escaped=True,
-                ),
+            slot_is_filled = False
+            slot = _nodelist_to_slot(
+                component_name=component_name,
+                slot_name=slot_name,
+                nodelist=self.nodelist,
+                contents=self.contents,
+                data_var=None,
+                fallback_var=None,
+                # Escaped because this was defined in the template
+                escaped=True,
             )
 
         # Check: If a slot is marked as 'required', it must be filled.
@@ -584,7 +585,7 @@ class SlotNode(BaseNode):
         # Note: Finding a good `cutoff` value may require further trial-and-error.
         # Higher values make matching stricter. This is probably preferable, as it
         # reduces false positives.
-        if is_required and not slot_fill.is_filled and not component_ctx.is_dynamic_component:
+        if is_required and not slot_is_filled and not component_ctx.is_dynamic_component:
             msg = (
                 f"Slot '{slot_name}' is marked as 'required' (i.e. non-optional), "
                 f"yet no fill is provided. Check template.'"
@@ -640,7 +641,7 @@ class SlotNode(BaseNode):
 
         # For the user-provided slot fill, we want to use the context of where the slot
         # came from (or current context if configured so)
-        used_ctx = self._resolve_slot_context(context, slot_fill, component_ctx)
+        used_ctx = self._resolve_slot_context(context, slot_is_filled, component_ctx)
         with used_ctx.update(extra_context):
             # Required for compatibility with Django's {% extends %} tag
             # This makes sure that the render context used outside of a component
@@ -657,7 +658,7 @@ class SlotNode(BaseNode):
                     # Render slot as a function
                     # NOTE: While `{% fill %}` tag has to opt in for the `fallback` and `data` variables,
                     #       the render function ALWAYS receives them.
-                    output = slot_fill.slot(used_ctx, kwargs, slot_ref)
+                    output = slot(used_ctx, kwargs, slot_ref)
 
         if app_settings.DEBUG_HIGHLIGHT_SLOTS:
             output = apply_component_highlight("slot", output, f"{component_name} - {slot_name}")
@@ -676,14 +677,14 @@ class SlotNode(BaseNode):
     def _resolve_slot_context(
         self,
         context: Context,
-        slot_fill: "SlotFill",
+        slot_is_filled: bool,
         component_ctx: "ComponentContext",
     ) -> Context:
         """Prepare the context used in a slot fill based on the settings."""
         # If slot is NOT filled, we use the slot's fallback AKA content between
         # the `{% slot %}` tags. These should be evaluated as if the `{% slot %}`
         # tags weren't even there, which means that we use the current context.
-        if not slot_fill.is_filled:
+        if not slot_is_filled:
             return context
 
         registry_settings = component_ctx.registry.settings
@@ -887,7 +888,8 @@ class FillNode(BaseNode):
         # `{% component %} ... {% endcomponent %}`. Hence we search for the last
         # index of `FILL_GEN_CONTEXT_KEY`.
         index_of_new_layers = get_last_index(context.dicts, lambda d: FILL_GEN_CONTEXT_KEY in d)
-        for dict_layer in context.dicts[index_of_new_layers:]:
+        context_dicts: List[Dict[str, Any]] = context.dicts
+        for dict_layer in context_dicts[index_of_new_layers:]:
             for key, value in dict_layer.items():
                 if not key.startswith("_"):
                     data.extra_context[key] = value
@@ -933,9 +935,33 @@ class FillNode(BaseNode):
 class FillWithData(NamedTuple):
     fill: FillNode
     name: str
+    """Name of the slot to be filled, as set on the `{% fill %}` tag."""
     fallback_var: Optional[str]
+    """Name of the FALLBACK variable, as set on the `{% fill %}` tag."""
     data_var: Optional[str]
+    """Name of the DATA variable, as set on the `{% fill %}` tag."""
     extra_context: Dict[str, Any]
+    """
+    Extra context variables that will be available inside the `{% fill %}` tag.
+
+    For example, if the `{% fill %}` tags are nested within `{% with %}` or `{% for %}` tags,
+    then the variables defined within those tags will be available inside the `{% fill %}` tags:
+
+    ```django
+    {% component "mycomponent" %}
+        {% with extra_var="extra_value" %}
+            {% fill "my_fill" %}
+                {{ extra_var }}
+            {% endfill %}
+        {% endwith %}
+        {% for item in items %}
+            {% fill "my_fill" %}
+                {{ item }}
+            {% endfill %}
+        {% endfor %}
+    {% endcomponent %}
+    ```
+    """
 
 
 def resolve_fills(
@@ -1081,6 +1107,76 @@ def _extract_fill_content(
 #######################################
 # MISC
 #######################################
+
+
+def normalize_slot_fills(
+    fills: Mapping[SlotName, SlotInput],
+    escape_content: bool = True,
+    component_name: Optional[str] = None,
+) -> Dict[SlotName, Slot]:
+    # Preprocess slots to escape content if `escape_content=True`
+    norm_fills = {}
+
+    # NOTE: `gen_escaped_content_func` is defined as a separate function, instead of being inlined within
+    #       the forloop, because the value the forloop variable points to changes with each loop iteration.
+    def gen_escaped_content_func(content: SlotFunc, slot_name: str) -> Slot:
+        # Case: Already Slot, already escaped, and names assigned, so nothing to do.
+        if isinstance(content, Slot) and content.escaped and content.slot_name and content.component_name:
+            return content
+
+        # Otherwise, we create a new instance of Slot, whether `content` was already Slot or not.
+        # so we can assign metadata to our internal copies.
+        if not isinstance(content, Slot) or not content.escaped:
+            # We wrap the original function so we post-process it by escaping the result.
+            def content_fn(ctx: Context, slot_data: Dict, fallback: SlotFallback) -> SlotResult:
+                rendered = content(ctx, slot_data, fallback)
+                return conditional_escape(rendered) if escape_content else rendered
+
+            content_func = cast(SlotFunc, content_fn)
+        else:
+            content_func = content.content_func
+
+        # Populate potentially missing fields so we can trace the component and slot
+        if isinstance(content, Slot):
+            used_component_name = content.component_name or component_name
+            used_slot_name = content.slot_name or slot_name
+            used_nodelist = content.nodelist
+            used_contents = content.contents if content.contents is not None else content_func
+        else:
+            used_component_name = component_name
+            used_slot_name = slot_name
+            used_nodelist = None
+            used_contents = content_func
+
+        slot = Slot(
+            contents=used_contents,
+            content_func=content_func,
+            component_name=used_component_name,
+            slot_name=used_slot_name,
+            nodelist=used_nodelist,
+            escaped=True,
+        )
+
+        return slot
+
+    for slot_name, content in fills.items():
+        # Case: No content, so nothing to do.
+        if content is None:
+            continue
+        # Case: Content is a string / scalar
+        elif not callable(content):
+            escaped_content = conditional_escape(content) if escape_content else content
+            # NOTE: `Slot.content_func` and `Slot.nodelist` are set in `Slot.__init__()`
+            slot: Slot = Slot(
+                contents=escaped_content, component_name=component_name, slot_name=slot_name, escaped=True
+            )
+        # Case: Content is a callable, so either a plain function or a `Slot` instance.
+        else:
+            slot = gen_escaped_content_func(content, slot_name)
+
+        norm_fills[slot_name] = slot
+
+    return norm_fills
 
 
 name_escape_re = re.compile(r"[^\w]")

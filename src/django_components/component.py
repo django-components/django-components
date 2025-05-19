@@ -29,7 +29,6 @@ from django.template.context import Context, RequestContext
 from django.template.loader import get_template
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext
 from django.test.signals import template_rendered
-from django.utils.html import conditional_escape
 from django.views import View
 
 from django_components.app_settings import ContextBehavior, app_settings
@@ -67,13 +66,11 @@ from django_components.perfutil.provide import register_provide_reference, unreg
 from django_components.provide import get_injected_context_var
 from django_components.slots import (
     Slot,
-    SlotFallback,
-    SlotFunc,
-    SlotInput,
     SlotIsFilled,
     SlotName,
     SlotResult,
     _is_extracting_fill,
+    normalize_slot_fills,
     resolve_fills,
 )
 from django_components.template import cached_template
@@ -2335,7 +2332,7 @@ class Component(metaclass=ComponentMeta):
         # without affecting the original values.
         args_list = list(args) if args is not None else []
         kwargs_dict = to_dict(kwargs) if kwargs is not None else {}
-        slots_dict = self._normalize_slot_fills(
+        slots_dict = normalize_slot_fills(
             to_dict(slots) if slots is not None else {},
             escape_slots_content,
         )
@@ -2703,75 +2700,6 @@ class Component(metaclass=ComponentMeta):
             self.CssData(**css_data)
 
         return template_data, js_data, css_data
-
-    def _normalize_slot_fills(
-        self,
-        fills: Mapping[SlotName, SlotInput],
-        escape_content: bool = True,
-    ) -> Dict[SlotName, Slot]:
-        # Preprocess slots to escape content if `escape_content=True`
-        norm_fills = {}
-
-        # NOTE: `gen_escaped_content_func` is defined as a separate function, instead of being inlined within
-        #       the forloop, because the value the forloop variable points to changes with each loop iteration.
-        def gen_escaped_content_func(content: SlotFunc, slot_name: str) -> Slot:
-            # Case: Already Slot, already escaped, and names assigned, so nothing to do.
-            if isinstance(content, Slot) and content.escaped and content.slot_name and content.component_name:
-                return content
-
-            # Otherwise, we create a new instance of Slot, whether `content` was already Slot or not.
-            # so we can assign metadata to our internal copies.
-            if not isinstance(content, Slot) or not content.escaped:
-                # We wrap the original function so we post-process it by escaping the result.
-                def content_fn(ctx: Context, slot_data: Dict, fallback: SlotFallback) -> SlotResult:
-                    rendered = content(ctx, slot_data, fallback)
-                    return conditional_escape(rendered) if escape_content else rendered
-
-                content_func = cast(SlotFunc, content_fn)
-            else:
-                content_func = content.content_func
-
-            # Populate potentially missing fields so we can trace the component and slot
-            if isinstance(content, Slot):
-                used_component_name = content.component_name or self.name
-                used_slot_name = content.slot_name or slot_name
-                used_nodelist = content.nodelist
-                used_contents = content.contents if content.contents is not None else content_func
-            else:
-                used_component_name = self.name
-                used_slot_name = slot_name
-                used_nodelist = None
-                used_contents = content_func
-
-            slot = Slot(
-                contents=used_contents,
-                content_func=content_func,
-                component_name=used_component_name,
-                slot_name=used_slot_name,
-                nodelist=used_nodelist,
-                escaped=True,
-            )
-
-            return slot
-
-        for slot_name, content in fills.items():
-            # Case: No content, so nothing to do.
-            if content is None:
-                continue
-            # Case: Content is a string / scalar
-            elif not callable(content):
-                escaped_content = conditional_escape(content) if escape_content else content
-                # NOTE: `Slot.content_func` and `Slot.nodelist` are set in `Slot.__init__()`
-                slot: Slot = Slot(
-                    contents=escaped_content, component_name=self.name, slot_name=slot_name, escaped=True
-                )
-            # Case: Content is a callable, so either a plain function or a `Slot` instance.
-            else:
-                slot = gen_escaped_content_func(content, slot_name)
-
-            norm_fills[slot_name] = slot
-
-        return norm_fills
 
 
 # Perf

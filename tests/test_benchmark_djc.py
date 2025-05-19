@@ -2455,8 +2455,7 @@ class ProjectLayoutTabbed(Component):
                             "stroke_width": 2,
                             "color": "text-gray-400 hover:text-gray-500",
                         },
-                        # deps_strategy="ignore",
-                        render_dependencies=False,
+                        deps_strategy="ignore",
                     ),
                 ),
                 Breadcrumb(value=data.project["name"], link=curr_project_url),
@@ -4491,8 +4490,7 @@ class Tabs(Component):
                 "header_attrs": context["header_attrs"],
                 "content_attrs": context["content_attrs"],
             },
-            # deps_strategy="ignore",
-            render_dependencies=False,
+            deps_strategy="ignore",
         )
 
     template: types.django_html = """
@@ -5137,8 +5135,7 @@ class ProjectUsers(Component):
                         "project_id": project_id,
                         "role_id": role['id'],
                     },
-                    # deps_strategy="ignore",
-                    render_dependencies=False,
+                    deps_strategy="ignore",
                 )
             else:
                 delete_action = ""
