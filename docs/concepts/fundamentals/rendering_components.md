@@ -246,7 +246,6 @@ Button.render(
 - `context` - Django context for rendering (can be a dictionary or a `Context` object)
 - `deps_strategy` - [Dependencies rendering strategy](#dependencies-rendering) (default: `"document"`)
 - `request` - [HTTP request object](../http_request), used for context processors (optional)
-- `escape_slots_content` - Whether to HTML-escape slot content (default: `True`)
 
 All arguments are optional. If not provided, they default to empty values or sensible defaults.
 

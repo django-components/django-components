@@ -164,10 +164,10 @@ def my_view(request):
 
 Slots content are automatically escaped by default to prevent XSS attacks.
 
-In other words, it's as if you would be using Django's [`mark_safe()`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe) function on the slot content:
+In other words, it's as if you would be using Django's [`escape()`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#std-templatefilter-escape) on the slot contents / result:
 
 ```python
-from django.utils.safestring import mark_safe
+from django.utils.html import escape
 
 class Calendar(Component):
     template = """
@@ -178,24 +178,28 @@ class Calendar(Component):
 
 Calendar.render(
     slots={
-        "date": mark_safe("<b>Hello</b>"),
+        "date": escape("<b>Hello</b>"),
     }
 )
 ```
 
-To disable escaping, you can pass `escape_slots_content=False` to
-[`Component.render()`](../../reference/api#django_components.Component.render)
-or [`Component.render_to_response()`](../../reference/api#django_components.Component.render_to_response)
-methods.
+To disable escaping, you can wrap the slot string or slot result in Django's [`mark_safe()`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe):
 
-!!! warning
+```py
+Calendar.render(
+    slots={
+        # string
+        "date": mark_safe("<b>Hello</b>"),
 
-    If you disable escaping, you should make sure that any content you pass to the slots is safe,
-    especially if it comes from user input!
+        # function
+        "date": lambda ctx: mark_safe("<b>Hello</b>"),
+    }
+)
+```
 
 !!! info
 
-    If you're planning on passing an HTML string, check Django's use of
+    Read more about Django's
     [`format_html`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.html.format_html)
     and [`mark_safe`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe).
 

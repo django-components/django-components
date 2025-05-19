@@ -110,6 +110,6 @@ from django_components.testing import djc_test
     )
 )
 def test_context_behavior(components_settings):
-    rendered = MyComponent().render()
+    rendered = MyComponent.render()
     ...
 ```

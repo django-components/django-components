@@ -52,6 +52,12 @@ See the full list in [Extension Hooks Reference](../../../reference/extension_ho
 Each extension has a corresponding nested class within the [`Component`](../../../reference/api#django_components.Component) class. These allow
 to configure the extensions on a per-component basis.
 
+E.g.:
+
+- `"view"` extension -> [`Component.View`](../../../reference/api#django_components.Component.View)
+- `"cache"` extension -> [`Component.Cache`](../../../reference/api#django_components.Component.Cache)
+- `"defaults"` extension -> [`Component.Defaults`](../../../reference/api#django_components.Component.Defaults)
+
 !!! note
 
     **Accessing the component instance from inside the nested classes:**
@@ -61,10 +67,10 @@ to configure the extensions on a per-component basis.
 
     ```python
     class MyTable(Component):
-        class View:
+        class MyExtension:
             def get(self, request):
                 # `self.component` points to the instance of `MyTable` Component.
-                return self.component.get(request)
+                return self.component.render_to_response(request=request)
     ```
 
 ### Example: Component as View
@@ -78,10 +84,14 @@ You can override the `get()`, `post()`, etc methods to customize the behavior of
 class MyTable(Component):
     class View:
         def get(self, request):
-            return self.component.get(request)
+            # TO BE IMPLEMENTED BY USER
+            # return self.component_cls.render_to_response(request=request)
+            raise NotImplementedError("You must implement the `get` method.")
 
         def post(self, request):
-            return self.component.post(request)
+            # TO BE IMPLEMENTED BY USER
+            # return self.component_cls.render_to_response(request=request)
+            raise NotImplementedError("You must implement the `post` method.")
 
         ...
 ```
@@ -97,12 +107,12 @@ JSON file from the component.
 class MyTable(Component):
     class Storybook:
         def title(self):
-            return self.component.__class__.__name__
+            return self.component_cls.__name__
 
         def parameters(self) -> Parameters:
             return {
                 "server": {
-                    "id": self.component.__class__.__name__,
+                    "id": self.component_cls.__name__,
                 }
             }
 
@@ -208,10 +218,14 @@ class ViewExtension(ComponentExtension):
     # The default behavior of the `View` extension class.
     class ExtensionClass(ComponentExtension.ExtensionClass):
         def get(self, request):
-            return self.component.get(request)
+            # TO BE IMPLEMENTED BY USER
+            # return self.component_cls.render_to_response(request=request)
+            raise NotImplementedError("You must implement the `get` method.")
 
         def post(self, request):
-            return self.component.post(request)
+            # TO BE IMPLEMENTED BY USER
+            # return self.component_cls.render_to_response(request=request)
+            raise NotImplementedError("You must implement the `post` method.")
 
         ...
 ```

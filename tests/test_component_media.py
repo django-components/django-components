@@ -215,10 +215,9 @@ class TestMainMedia:
             def get_template(self, context):
                 return Template("<div class='variable-html'>{{ variable }}</div>")
 
-        comp = VariableHTMLComponent("variable_html_component")
-        context = Context({"variable": "Dynamic Content"})
+        rendered = VariableHTMLComponent.render(context=Context({"variable": "Dynamic Content"}))
         assertHTMLEqual(
-            comp.render(context),
+            rendered,
             '<div class="variable-html" data-djc-id-ca1bc3e>Dynamic Content</div>',
         )
 
@@ -1047,6 +1046,13 @@ class TestSubclassingMedia:
         assertInHTML('<script src="child.js"></script>', rendered)
         assertInHTML('<script src="parent.js"></script>', rendered)
 
+        assert str(ChildComponent.media) == (
+            '<link href="child.css" media="all" rel="stylesheet">\n'
+            '<link href="parent.css" media="all" rel="stylesheet">\n'
+            '<script src="child.js"></script>\n'
+            '<script src="parent.js"></script>'
+        )
+
     def test_media_in_child_and_grandparent(self):
         class GrandParentComponent(Component):
             template: types.django_html = """
@@ -1075,6 +1081,13 @@ class TestSubclassingMedia:
         assertInHTML('<script src="child.js"></script>', rendered)
         assertInHTML('<script src="grandparent.js"></script>', rendered)
 
+        assert str(ChildComponent.media) == (
+            '<link href="child.css" media="all" rel="stylesheet">\n'
+            '<link href="grandparent.css" media="all" rel="stylesheet">\n'
+            '<script src="child.js"></script>\n'
+            '<script src="grandparent.js"></script>'
+        )
+
     def test_media_in_parent_and_grandparent(self):
         class GrandParentComponent(Component):
             template: types.django_html = """
@@ -1102,6 +1115,13 @@ class TestSubclassingMedia:
 
         assertInHTML('<script src="parent.js"></script>', rendered)
         assertInHTML('<script src="grandparent.js"></script>', rendered)
+
+        assert str(ChildComponent.media) == (
+            '<link href="parent.css" media="all" rel="stylesheet">\n'
+            '<link href="grandparent.css" media="all" rel="stylesheet">\n'
+            '<script src="parent.js"></script>\n'
+            '<script src="grandparent.js"></script>'
+        )
 
     def test_media_in_multiple_bases(self):
         class GrandParent1Component(Component):
@@ -1154,6 +1174,17 @@ class TestSubclassingMedia:
         assertInHTML('<script src="grandparent1.js"></script>', rendered)
         assertInHTML('<script src="grandparent3.js"></script>', rendered)
 
+        assert str(ChildComponent.media) == (
+            '<link href="child.css" media="all" rel="stylesheet">\n'
+            '<link href="grandparent3.css" media="all" rel="stylesheet">\n'
+            '<link href="parent1.css" media="all" rel="stylesheet">\n'
+            '<link href="grandparent1.css" media="all" rel="stylesheet">\n'
+            '<script src="child.js"></script>\n'
+            '<script src="grandparent3.js"></script>\n'
+            '<script src="parent1.js"></script>\n'
+            '<script src="grandparent1.js"></script>'
+        )
+
     def test_extend_false_in_child(self):
         class Parent1Component(Component):
             template: types.django_html = """
@@ -1186,6 +1217,11 @@ class TestSubclassingMedia:
         assert "parent1.js" not in rendered
         assert "parent2.js" not in rendered
         assertInHTML('<script src="child.js"></script>', rendered)
+
+        assert str(ChildComponent.media) == (
+            '<link href="child.css" media="all" rel="stylesheet">\n'
+            '<script src="child.js"></script>'
+        )
 
     def test_extend_false_in_parent(self):
         class GrandParentComponent(Component):
@@ -1226,6 +1262,15 @@ class TestSubclassingMedia:
         assertInHTML('<script src="parent1.js"></script>', rendered)
         assertInHTML('<script src="parent2.js"></script>', rendered)
         assertInHTML('<script src="child.js"></script>', rendered)
+
+        assert str(ChildComponent.media) == (
+            '<link href="child.css" media="all" rel="stylesheet">\n'
+            '<link href="parent2.css" media="all" rel="stylesheet">\n'
+            '<link href="parent1.css" media="all" rel="stylesheet">\n'
+            '<script src="child.js"></script>\n'
+            '<script src="parent2.js"></script>\n'
+            '<script src="parent1.js"></script>'
+        )
 
     def test_extend_list_in_child(self):
         class Parent1Component(Component):
@@ -1273,6 +1318,15 @@ class TestSubclassingMedia:
         assertInHTML('<script src="other1.js"></script>', rendered)
         assertInHTML('<script src="other2.js"></script>', rendered)
         assertInHTML('<script src="child.js"></script>', rendered)
+
+        assert str(ChildComponent.media) == (
+            '<link href="child.css" media="all" rel="stylesheet">\n'
+            '<link href="other2.css" media="all" rel="stylesheet">\n'
+            '<link href="other1.css" media="all" rel="stylesheet">\n'
+            '<script src="child.js"></script>\n'
+            '<script src="other2.js"></script>\n'
+            '<script src="other1.js"></script>'
+        )
 
     def test_extend_list_in_parent(self):
         class Other1Component(Component):
@@ -1327,3 +1381,16 @@ class TestSubclassingMedia:
         assertInHTML('<script src="parent1.js"></script>', rendered)
         assertInHTML('<script src="parent2.js"></script>', rendered)
         assertInHTML('<script src="child.js"></script>', rendered)
+
+        assert str(ChildComponent.media) == (
+            '<link href="child.css" media="all" rel="stylesheet">\n'
+            '<link href="parent2.css" media="all" rel="stylesheet">\n'
+            '<link href="parent1.css" media="all" rel="stylesheet">\n'
+            '<link href="other2.css" media="all" rel="stylesheet">\n'
+            '<link href="other1.css" media="all" rel="stylesheet">\n'
+            '<script src="child.js"></script>\n'
+            '<script src="parent2.js"></script>\n'
+            '<script src="parent1.js"></script>\n'
+            '<script src="other2.js"></script>\n'
+            '<script src="other1.js"></script>'
+        )

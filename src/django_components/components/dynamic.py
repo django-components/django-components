@@ -118,17 +118,15 @@ class DynamicComponent(Component):
 
         comp_class = self._resolve_component(comp_name_or_class, registry)
 
-        comp = comp_class(
-            registered_name=self.registered_name,
-            outer_context=self.outer_context,
-            registry=self.registry,
-        )
-        output = comp.render(
+        output = comp_class.render(
             context=self.input.context,
             args=self.input.args,
             kwargs=cleared_kwargs,
             slots=self.input.slots,
             deps_strategy=self.input.deps_strategy,
+            registered_name=self.registered_name,
+            outer_context=self.outer_context,
+            registry=self.registry,
         )
 
         # Set the output to the context so it can be accessed from within the template.

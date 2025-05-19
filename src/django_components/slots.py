@@ -36,7 +36,7 @@ from django_components.util.logger import trace_component_msg
 from django_components.util.misc import get_index, get_last_index, is_identifier
 
 if TYPE_CHECKING:
-    from django_components.component import ComponentContext, ComponentNode
+    from django_components.component import Component, ComponentNode
 
 TSlotData = TypeVar("TSlotData", bound=Mapping)
 
@@ -597,11 +597,19 @@ class SlotNode(BaseNode):
                 f"SlotNode: {self.__repr__()}"
             )
 
+        # Component info
         component_id: str = context[_COMPONENT_CONTEXT_KEY]
         component_ctx = component_context_cache[component_id]
-        component_name = component_ctx.component_name
+        component = component_ctx.component
+        component_name = component.name
         component_path = component_ctx.component_path
-        slot_fills = component_ctx.fills
+        is_dynamic_component = getattr(component, "_is_dynamic_component", False)
+        # NOTE: Use `ComponentContext.outer_context`, and NOT `Component.outer_context`.
+        #       The first is a SNAPSHOT of the outer context.
+        outer_context = component_ctx.outer_context
+
+        # Slot info
+        slot_fills = component.input.slots
         slot_name = name
         is_default = self.flags[SLOT_DEFAULT_FLAG]
         is_required = self.flags[SLOT_REQUIRED_FLAG]
@@ -617,7 +625,7 @@ class SlotNode(BaseNode):
         )
 
         # Check for errors
-        if is_default and not component_ctx.is_dynamic_component:
+        if is_default and not is_dynamic_component:
             # Allow one slot to be marked as 'default', or multiple slots but with
             # the same name. If there is multiple 'default' slots with different names, raise.
             default_slot_name = component_ctx.default_slot
@@ -677,9 +685,9 @@ class SlotNode(BaseNode):
         # In this case, we need to find the context that was used to render the component,
         # and use the fills from that context.
         if (
-            component_ctx.registry.settings.context_behavior == ContextBehavior.DJANGO
-            and component_ctx.outer_context is None
-            and (slot_name not in component_ctx.fills)
+            component.registry.settings.context_behavior == ContextBehavior.DJANGO
+            and outer_context is None
+            and (slot_name not in slot_fills)
         ):
             # When we have nested components with fills, the context layers are added in
             # the following order:
@@ -726,10 +734,10 @@ class SlotNode(BaseNode):
 
             trace_component_msg(
                 "SLOT_PARENT_INDEX",
-                component_name=component_ctx.component_name,
-                component_id=component_ctx.component_id,
+                component_name=component_name,
+                component_id=component_id,
                 slot_name=name,
-                component_path=component_ctx.component_path,
+                component_path=component_path,
                 extra=(
                     f"Parent index: {parent_index}, Current index: {curr_index}, "
                     f"Context stack: {[d.get(_COMPONENT_CONTEXT_KEY) for d in context.dicts]}"
@@ -775,7 +783,7 @@ class SlotNode(BaseNode):
         # Note: Finding a good `cutoff` value may require further trial-and-error.
         # Higher values make matching stricter. This is probably preferable, as it
         # reduces false positives.
-        if is_required and not slot_is_filled and not component_ctx.is_dynamic_component:
+        if is_required and not slot_is_filled and not is_dynamic_component:
             msg = (
                 f"Slot '{slot_name}' is marked as 'required' (i.e. non-optional), "
                 f"yet no fill is provided. Check template.'"
@@ -809,13 +817,13 @@ class SlotNode(BaseNode):
         #
         # Hence, even in the "django" mode, we MUST use slots of the context of the parent component.
         if (
-            component_ctx.registry.settings.context_behavior == ContextBehavior.DJANGO
-            and component_ctx.outer_context is not None
-            and _COMPONENT_CONTEXT_KEY in component_ctx.outer_context
+            component.registry.settings.context_behavior == ContextBehavior.DJANGO
+            and outer_context is not None
+            and _COMPONENT_CONTEXT_KEY in outer_context
         ):
-            extra_context[_COMPONENT_CONTEXT_KEY] = component_ctx.outer_context[_COMPONENT_CONTEXT_KEY]
+            extra_context[_COMPONENT_CONTEXT_KEY] = outer_context[_COMPONENT_CONTEXT_KEY]
             # This ensures that the ComponentVars API (e.g. `{{ component_vars.is_filled }}`) is accessible in the fill
-            extra_context["component_vars"] = component_ctx.outer_context["component_vars"]
+            extra_context["component_vars"] = outer_context["component_vars"]
 
         # Irrespective of which context we use ("root" context or the one passed to this
         # render function), pass down the keys used by inject/provide feature. This makes it
@@ -831,7 +839,7 @@ class SlotNode(BaseNode):
 
         # For the user-provided slot fill, we want to use the context of where the slot
         # came from (or current context if configured so)
-        used_ctx = self._resolve_slot_context(context, slot_is_filled, component_ctx)
+        used_ctx = self._resolve_slot_context(context, slot_is_filled, component, outer_context)
         with used_ctx.update(extra_context):
             # Required for compatibility with Django's {% extends %} tag
             # This makes sure that the render context used outside of a component
@@ -853,8 +861,9 @@ class SlotNode(BaseNode):
         # Allow plugins to post-process the slot's rendered output
         output = extensions.on_slot_rendered(
             OnSlotRenderedContext(
-                component_cls=component_ctx.component_class,
-                component_id=component_ctx.component_id,
+                component=component,
+                component_cls=component.__class__,
+                component_id=component_id,
                 slot=slot,
                 slot_name=slot_name,
                 slot_is_required=is_required,
@@ -878,7 +887,8 @@ class SlotNode(BaseNode):
         self,
         context: Context,
         slot_is_filled: bool,
-        component_ctx: "ComponentContext",
+        component: "Component",
+        outer_context: Optional[Context],
     ) -> Context:
         """Prepare the context used in a slot fill based on the settings."""
         # If slot is NOT filled, we use the slot's fallback AKA content between
@@ -887,11 +897,10 @@ class SlotNode(BaseNode):
         if not slot_is_filled:
             return context
 
-        registry_settings = component_ctx.registry.settings
+        registry_settings = component.registry.settings
         if registry_settings.context_behavior == ContextBehavior.DJANGO:
             return context
         elif registry_settings.context_behavior == ContextBehavior.ISOLATED:
-            outer_context = component_ctx.outer_context
             return outer_context if outer_context is not None else Context()
         else:
             raise ValueError(f"Unknown value for context_behavior: '{registry_settings.context_behavior}'")

@@ -4,7 +4,7 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 """
 
 import re
-from typing import NamedTuple
+from typing import Any, NamedTuple, Tuple, cast
 
 import pytest
 from django.conf import settings
@@ -103,6 +103,55 @@ class TestComponentLegacyApi:
             """,
         )
 
+    # TODO_REMOVE_IN_V1 - Registry and registered name should be passed to `Component.render()`,
+    #                     not to the constructor.
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_instantiation(self, components_settings):
+        class SimpleComponent(Component):
+            template = """
+                <div>
+                    Name: {{ name }}
+                </div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "name": self.name,
+                }
+
+        # Old syntax
+        rendered = SimpleComponent("simple").render()
+        assertHTMLEqual(
+            rendered,
+            """
+            <div data-djc-id-ca1bc3f>
+                Name: simple
+            </div>
+            """,
+        )
+
+        # New syntax
+        rendered = SimpleComponent.render(registered_name="simple")
+        assertHTMLEqual(
+            rendered,
+            """
+            <div data-djc-id-ca1bc40>
+                Name: simple
+            </div>
+            """,
+        )
+
+        # Sanity check
+        rendered = SimpleComponent.render()
+        assertHTMLEqual(
+            rendered,
+            """
+            <div data-djc-id-ca1bc41>
+                Name: SimpleComponent
+            </div>
+            """,
+        )
+
 
 @djc_test
 class TestComponent:
@@ -112,7 +161,7 @@ class TestComponent:
             pass
 
         with pytest.raises(ImproperlyConfigured):
-            EmptyComponent("empty_component")._get_template(Context({}), "123")
+            EmptyComponent.render(args=["123"])
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_template_string_static_inlined(self, components_settings):
@@ -200,6 +249,7 @@ class TestComponent:
                 css = "style.css"
                 js = "script.js"
 
+        # Access fields on Component class
         assert SimpleComponent.template_name == "simple_template.html"
         assert SimpleComponent.template_file == "simple_template.html"
 
@@ -216,13 +266,14 @@ class TestComponent:
             """,
         )
 
+        # Access fields on Component instance
         comp = SimpleComponent()
         assert comp.template_name == "simple_template.html"
         assert comp.template_file == "simple_template.html"
 
         # NOTE: Setting `template_file` on INSTANCE is not supported, as users should work
         #       with classes and not instances. This is tested for completeness.
-        comp.template_name = "other_template_2.html"
+        comp.template_name = "other_template_2.html"  # type: ignore[misc]
         assert comp.template_name == "other_template_2.html"
         assert comp.template_file == "other_template_2.html"
         assert SimpleComponent.template_name == "other_template_2.html"
@@ -233,7 +284,7 @@ class TestComponent:
         assertHTMLEqual(
             rendered,
             """
-            Variable: <strong data-djc-id-ca1bc3f>test</strong>
+            Variable: <strong data-djc-id-ca1bc40>test</strong>
             """,
         )
 
@@ -422,17 +473,26 @@ class TestComponentRenderAPI:
 
         assert called
 
-    def test_args_kwargs_slots__raises_outside_render(self):
+    def test_args_kwargs_slots__available_outside_render(self):
+        data: Any = None
+
         class TestComponent(Component):
             template = ""
 
-        comp = TestComponent()
-        with pytest.raises(RuntimeError):
-            comp.args
-        with pytest.raises(RuntimeError):
-            comp.kwargs
-        with pytest.raises(RuntimeError):
-            comp.slots
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal data
+
+                data = (args, kwargs, slots, context)
+
+        assert data is None
+
+        TestComponent.render()
+
+        args, kwargs, slots, context = cast(Tuple[Any, Any, Any, Context], data)  # type: ignore[misc]
+        assert args == []
+        assert kwargs == {}
+        assert slots == {}
+        assert context == Context()
 
 
 @djc_test
@@ -953,7 +1013,7 @@ class TestComponentRender:
         # """
         assertInHTML(
             """
-            <kbd data-djc-id-ca1bc3e>
+            <kbd data-djc-id-ca1bc3f>
                 Rendered via GET request
             </kbd>
             """,

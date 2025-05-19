@@ -208,7 +208,7 @@ When you render a component, you can access everything about the component:
 
 - Component input: [args, kwargs, slots and context](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#component-inputs)
 - Component's template, CSS and JS
-- Django's [context processors](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#request-object-and-context-processors)
+- Django's [context processors](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#request-and-context-processors)
 - Unique [render ID](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#component-id)
 
 ```python

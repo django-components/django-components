@@ -582,9 +582,7 @@ def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) ->
         from django_components.component import get_component_by_class_id
 
         comp_cls = get_component_by_class_id(comp_cls_id)
-        # NOTE: We instantiate the component classes so the `Media` are processed into `media`
-        comp = comp_cls()
-        return comp.media
+        return comp_cls.media
 
     all_medias = [
         # JS / CSS files from Component.Media.js/css.

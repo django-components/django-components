@@ -430,6 +430,58 @@ Summary:
     Calendar.render_to_response(deps_strategy="ignore")
     ```
 
+- Support for `Component` constructor kwargs `registered_name`, `outer_context`, and `registry` is deprecated, and will be removed in v1.
+
+    Before, you could instantiate a standalone component,
+    and then call `render()` on the instance:
+
+    ```py
+    comp = MyComponent(
+        registered_name="my_component",
+        outer_context=my_context,
+        registry=my_registry,
+    )
+    comp.render(
+        args=[1, 2, 3],
+        kwargs={"a": 1, "b": 2},
+        slots={"my_slot": "CONTENT"},
+    )
+    ```
+
+    Now you should instead pass all that data to `Component.render()` / `Component.render_to_response()`:
+
+    ```py
+    MyComponent.render(
+        args=[1, 2, 3],
+        kwargs={"a": 1, "b": 2},
+        slots={"my_slot": "CONTENT"},
+        # NEW
+        registered_name="my_component",
+        outer_context=my_context,
+        registry=my_registry,
+    )
+    ```
+
+- If you are using the Components as views, the way to access the component class is now different.
+
+    Instead of `self.component`, use `self.component_cls`. `self.component` will be removed in v1.
+
+    Before:
+
+    ```py
+    class MyView(View):
+        def get(self, request):
+            return self.component.render_to_response(request=request)
+    ```
+
+    After:
+
+    ```py
+    class MyView(View):
+        def get(self, request):
+            return self.component_cls.render_to_response(request=request)
+    ```
+
 **Extensions**
 
 - In the `on_component_data()` extension hook, the `context_data` field of the context object was superseded by `template_data`.
@@ -805,11 +857,45 @@ Summary:
 
     See all [Extension hooks](https://django-components.github.io/django-components/0.140/reference/extension_hooks/).
 
+#### Refactor
+
+- When a component is being rendered, a proper `Component` instance is now created.
+
+    Previously, the `Component` state was managed as half-instance, half-stack.
+
+- Component's "Render API" (args, kwargs, slots, context, inputs, request, context data, etc)
+  can now be accessed also outside of the render call. So now its possible to take the component
+  instance out of `get_template_data()` (although this is not recommended).
+
+    ```py
+    comp = None
+
+    class TestComponent(Component):
+        template = "..."
+
+        def get_template_data(self, args, kwargs, slots, context):
+            nonlocal comp
+            comp = self
+
+    TestComponent.render(
+        args=[1],
+        kwargs={"foo": "bar"},
+        slots={"content": "Hello, world!"},
+    )
+
+    assert comp.args == [1]
+    assert comp.kwargs == {"foo": "bar"}
+    assert comp.slots == {"content": "Hello, world!"}
+    assert comp.context == Context()
+    ```
+
 #### Fix
 
 - Fix bug: Context processors data was being generated anew for each component. Now the data is correctly created once and reused across components with the same request ([#1165](https://github.com/django-components/django-components/issues/1165)).
 
 - Fix KeyError on `component_context_cache` when slots are rendered outside of the component's render context. ([#1189](https://github.com/django-components/django-components/issues/1189))
+
+- Component classes now have `do_not_call_in_templates=True` to prevent them from being called as functions in templates.
 
 ## v0.139.1
 

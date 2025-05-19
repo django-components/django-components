@@ -260,7 +260,7 @@ This includes:
 - [`input.type`](../../../reference/api/#django_components.ComponentInput.type) - The type of the component (document, fragment)
 - [`input.render_dependencies`](../../../reference/api/#django_components.ComponentInput.render_dependencies) - Whether to render dependencies (CSS, JS)
 
-For more details, see [Component inputs](../render_api/#component-inputs).
+For more details, see [Component inputs](../render_api/#other-inputs).
 
 ```python
 class ProfileCard(Component):
@@ -343,16 +343,20 @@ class ProfileCard(Component):
 
 ## Accessing Render API
 
-All three data methods have access to the Component's [Render API](./render_api.md), which includes:
+All three data methods have access to the Component's [Render API](../render_api), which includes:
 
-- [`self.args`](./render_api/#args) - The positional arguments for the current render call
-- [`self.kwargs`](./render_api/#kwargs) - The keyword arguments for the current render call
-- [`self.slots`](./render_api/#slots) - The slots for the current render call
-- [`self.input`](./render_api/#component-inputs) - All the component inputs
-- [`self.id`](./render_api/#component-id) - The unique ID for the current render call
-- [`self.request`](./render_api/#request-object-and-context-processors) - The request object (if available)
-- [`self.context_processors_data`](./render_api/#request-object-and-context-processors) - Data from Django's context processors (if request is available)
-- [`self.inject()`](./render_api/#provide-inject) - Inject data into the component
+- [`self.args`](../render_api/#args) - The positional arguments for the current render call
+- [`self.kwargs`](../render_api/#kwargs) - The keyword arguments for the current render call
+- [`self.slots`](../render_api/#slots) - The slots for the current render call
+- [`self.context`](../render_api/#context) - The context for the current render call
+- [`self.input`](../render_api/#other-inputs) - All the component inputs
+- [`self.id`](../render_api/#component-id) - The unique ID for the current render call
+- [`self.request`](../render_api/#request-and-context-processors) - The request object
+- [`self.context_processors_data`](../render_api/#request-and-context-processors) - Data from Django's context processors
+- [`self.inject()`](../render_api/#provide-inject) - Inject data into the component
+- [`self.registry`](../render_api/#template-tag-metadata) - The [`ComponentRegistry`](../../../reference/api/#django_components.ComponentRegistry) instance
+- [`self.registered_name`](../render_api/#template-tag-metadata) - The name under which the component was registered
+- [`self.outer_context`](../render_api/#template-tag-metadata) - The context outside of the [`{% component %}`](../../../reference/template_tags#component) tag
 
 ## Type hints
 

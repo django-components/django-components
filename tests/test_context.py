@@ -1,7 +1,5 @@
-import re
 from typing import Dict, Optional, cast
 
-import pytest
 from django.http import HttpRequest
 from django.template import Context, RequestContext, Template
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
@@ -916,25 +914,24 @@ class TestContextProcessors:
         assert child_data["dummy"] == "a1bc3f"
         assert parent_data["csrf_token"] == child_data["csrf_token"]
 
-    def test_raises_on_accessing_context_processors_data_outside_of_rendering(self):
+    def test_context_processors_data_outside_of_rendering(self):
         class TestComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-        with pytest.raises(
-            RuntimeError,
-            match=re.escape("Tried to access Component's `context_processors_data` attribute while outside of rendering execution"),  # noqa: E501
-        ):
-            TestComponent().context_processors_data
+        request = HttpRequest()
+        component = TestComponent(request=request)
+        data = component.context_processors_data
 
-    def test_raises_on_accessing_request_outside_of_rendering(self):
+        assert list(data.keys()) == ["csrf_token"]
+
+    def test_request_outside_of_rendering(self):
         class TestComponent(Component):
             template: types.django_html = """{% csrf_token %}"""
 
-        with pytest.raises(
-            RuntimeError,
-            match=re.escape("Tried to access Component's `request` attribute while outside of rendering execution"),
-        ):
-            TestComponent().request
+        request = HttpRequest()
+        component = TestComponent(request=request)
+
+        assert component.request == request
 
 
 @djc_test

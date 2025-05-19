@@ -3,7 +3,7 @@ from dataclasses import MISSING, Field, dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Type
 from weakref import WeakKeyDictionary
 
-from django_components.extension import ComponentExtension, OnComponentClassCreatedContext, OnComponentInputContext
+from django_components.extension import ComponentExtension, OnComponentClassCreatedContext
 
 if TYPE_CHECKING:
     from django_components.component import Component
@@ -99,7 +99,7 @@ def _extract_defaults(defaults: Optional[Type]) -> List[ComponentDefaultField]:
     return defaults_fields
 
 
-def _apply_defaults(kwargs: Dict, defaults: List[ComponentDefaultField]) -> None:
+def apply_defaults(kwargs: Dict, defaults: List[ComponentDefaultField]) -> None:
     """
     Apply the defaults from `Component.Defaults` to the given `kwargs`.
 
@@ -171,11 +171,3 @@ class DefaultsExtension(ComponentExtension):
     def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
         defaults_cls = getattr(ctx.component_cls, "Defaults", None)
         defaults_by_component[ctx.component_cls] = _extract_defaults(defaults_cls)
-
-    # Apply defaults to missing or `None` values in `kwargs`
-    def on_component_input(self, ctx: OnComponentInputContext) -> None:
-        defaults = defaults_by_component.get(ctx.component_cls, None)
-        if defaults is None:
-            return
-
-        _apply_defaults(ctx.kwargs, defaults)

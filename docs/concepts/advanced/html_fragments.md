@@ -136,7 +136,7 @@ class MyPage(Component):
 
     class View:
         def get(self, request):
-            return self.component.render_to_response(request=request)
+            return self.component_cls.render_to_response(request=request)
 ```
 
 ### 2. Define fragment HTML
@@ -166,7 +166,7 @@ class Frag(Component):
 
     class View:
         def get(self, request):
-            return self.component.render_to_response(
+            return self.component_cls.render_to_response(
                 request=request,
                 # IMPORTANT: Don't forget `deps_strategy="fragment"`
                 deps_strategy="fragment",
@@ -228,7 +228,7 @@ class MyPage(Component):
 
     class View:
         def get(self, request):
-            return self.component.render_to_response(request=request)
+            return self.component_cls.render_to_response(request=request)
 ```
 
 ### 2. Define fragment HTML
@@ -271,7 +271,7 @@ class Frag(Component):
 
     class View:
         def get(self, request):
-            return self.component.render_to_response(
+            return self.component_cls.render_to_response(
                 request=request,
                 # IMPORTANT: Don't forget `deps_strategy="fragment"`
                 deps_strategy="fragment",
@@ -332,7 +332,7 @@ class MyPage(Component):
 
     class View:
         def get(self, request):
-            return self.component.render_to_response(request=request)
+            return self.component_cls.render_to_response(request=request)
 ```
 
 ### 2. Define fragment HTML
@@ -362,7 +362,7 @@ class Frag(Component):
 
     class View:
         def get(self, request):
-            return self.component.render_to_response(
+            return self.component_cls.render_to_response(
                 request=request,
                 # IMPORTANT: Don't forget `deps_strategy="fragment"`
                 deps_strategy="fragment",

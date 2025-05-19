@@ -20,6 +20,7 @@ from django_components.extension import (
     OnComponentUnregisteredContext,
     OnComponentInputContext,
     OnComponentDataContext,
+    OnSlotRenderedContext,
 )
 from django_components.extensions.cache import CacheExtension
 from django_components.extensions.debug_highlight import DebugHighlightExtension
@@ -59,6 +60,7 @@ class DummyExtension(ComponentExtension):
             "on_component_unregistered": [],
             "on_component_input": [],
             "on_component_data": [],
+            "on_slot_rendered": [],
         }
 
     urls = [
@@ -93,6 +95,9 @@ class DummyExtension(ComponentExtension):
 
     def on_component_data(self, ctx: OnComponentDataContext) -> None:
         self.calls["on_component_data"].append(ctx)
+
+    def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> None:
+        self.calls["on_slot_rendered"].append(ctx)
 
 
 class DummyNestedExtension(ComponentExtension):
@@ -305,6 +310,36 @@ class TestExtensionHooks:
         assert data_call.template_data == {"name": "Test"}
         assert data_call.js_data == {"script": "console.log('Hello!')"}
         assert data_call.css_data == {"style": "body { color: blue; }"}
+
+    @djc_test(components_settings={"extensions": [DummyExtension]})
+    def test_on_slot_rendered(self):
+        @register("test_comp")
+        class TestComponent(Component):
+            template = "Hello {% slot 'content' required default / %}!"
+
+        # Render the component with some args and kwargs
+        test_context = Context({"foo": "bar"})
+        TestComponent.render(
+            context=test_context,
+            args=("arg1", "arg2"),
+            kwargs={"name": "Test"},
+            slots={"content": "Some content"},
+        )
+
+        extension = cast(DummyExtension, app_settings.EXTENSIONS[4])
+
+        # Verify on_slot_rendered was called with correct args
+        assert len(extension.calls["on_slot_rendered"]) == 1
+        slot_call: OnSlotRenderedContext = extension.calls["on_slot_rendered"][0]
+        assert isinstance(slot_call.component, TestComponent)
+        assert slot_call.component_cls == TestComponent
+
+        assert slot_call.component_id == "ca1bc3e"
+        assert isinstance(slot_call.slot, Slot)
+        assert slot_call.slot_name == "content"
+        assert slot_call.slot_is_required is True
+        assert slot_call.slot_is_default is True
+        assert slot_call.result == "Some content"
 
 
 @djc_test

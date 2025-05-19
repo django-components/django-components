@@ -1,5 +1,5 @@
 import sys
-from typing import TYPE_CHECKING, Any, Dict, Optional, Protocol, Type, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional, Protocol, Type, Union, cast
 from weakref import WeakKeyDictionary
 
 import django.urls
@@ -82,8 +82,8 @@ class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
 
     This class is a subclass of
     [`django.views.View`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#view).
-    The [`Component`](../api#django_components.Component) instance is available
-    via `self.component`.
+    The [`Component`](../api#django_components.Component) class is available
+    via `self.component_cls`.
 
     Override the methods of this class to define the behavior of the component.
 
@@ -116,18 +116,21 @@ class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
 
     Will create a URL route like `/components/ext/view/components/a1b2c3/`.
 
-    To get the URL for the component, use `get_component_url`:
+    To get the URL for the component, use [`get_component_url()`](../api#django_components.get_component_url):
 
     ```py
     url = get_component_url(MyComponent)
     ```
     """
 
-    # NOTE: This class attribute must be declared on the class for `View.as_view()` to allow
-    # us to pass `component` kwarg.
+    # NOTE: The `component` / `component_cls` attributes are NOT user input, but still must be declared
+    # on this class for Django's `View.as_view()` to allow us to pass `component` kwarg.
+
+    # TODO_v1 - Remove. Superseded by `component_cls` attribute because we don't actually have access to an instance.
     component = cast("Component", None)
     """
-    The component instance.
+    DEPRECATED: Will be removed in v1.0.
+    Use [`component_cls`](../api#django_components.ComponentView.component_cls) instead.
 
     This is a dummy instance created solely for the View methods.
 
@@ -139,7 +142,48 @@ class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
     ```
     """
 
-    public = False
+    component_cls = cast(Type["Component"], None)
+    """
+    The parent component class.
+
+    **Example:**
+
+    ```py
+    class MyComponent(Component):
+        class View:
+            def get(self, request):
+                return self.component_cls.render_to_response(request=request)
+    ```
+    """
+
+    def __init__(self, component: "Component", **kwargs: Any) -> None:
+        ComponentExtension.ExtensionClass.__init__(self, component)
+        View.__init__(self, **kwargs)
+
+    @property
+    def url(self) -> str:
+        """
+        The URL for the component.
+
+        Raises `RuntimeError` if the component is not public.
+
+        This is the same as calling [`get_component_url()`](../api#django_components.get_component_url)
+        with the parent [`Component`](../api#django_components.Component) class:
+
+        ```py
+        class MyComponent(Component):
+            class View:
+                def get(self, request):
+                    assert self.url == get_component_url(self.component_cls)
+        ```
+        """
+        return get_component_url(self.component_cls)
+
+    # #####################################
+    # PUBLIC API (Configurable by users)
+    # #####################################
+
+    public: ClassVar[bool] = False
     """
     Whether the component should be available via a URL.
 
@@ -155,25 +199,12 @@ class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
 
     Will create a URL route like `/components/ext/view/components/a1b2c3/`.
 
-    To get the URL for the component, use `get_component_url`:
+    To get the URL for the component, use [`get_component_url()`](../api#django_components.get_component_url):
 
     ```py
     url = get_component_url(MyComponent)
     ```
     """
-
-    def __init__(self, component: "Component", **kwargs: Any) -> None:
-        ComponentExtension.ExtensionClass.__init__(self, component)
-        View.__init__(self, **kwargs)
-
-    @property
-    def url(self) -> str:
-        """
-        The URL for the component.
-
-        Raises `RuntimeError` if the component is not public.
-        """
-        return get_component_url(self.component.__class__)
 
     # NOTE: The methods below are defined to satisfy the `View` class. All supported methods
     # are defined in `View.http_method_names`.
@@ -185,30 +216,31 @@ class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
     #           not the Component class directly. This is to align Views with the extensions API
     #           where each extension should keep its methods in the extension class.
     #           Instead, the defaults for these methods should be something like
-    #           `return self.component.render_to_response()` or similar.
+    #           `return self.component_cls.render_to_response(request, *args, **kwargs)` or similar
+    #           or raise NotImplementedError.
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component, "get")(request, *args, **kwargs)
+        return getattr(self.component_cls(), "get")(request, *args, **kwargs)
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component, "post")(request, *args, **kwargs)
+        return getattr(self.component_cls(), "post")(request, *args, **kwargs)
 
     def put(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component, "put")(request, *args, **kwargs)
+        return getattr(self.component_cls(), "put")(request, *args, **kwargs)
 
     def patch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component, "patch")(request, *args, **kwargs)
+        return getattr(self.component_cls(), "patch")(request, *args, **kwargs)
 
     def delete(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component, "delete")(request, *args, **kwargs)
+        return getattr(self.component_cls(), "delete")(request, *args, **kwargs)
 
     def head(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component, "head")(request, *args, **kwargs)
+        return getattr(self.component_cls(), "head")(request, *args, **kwargs)
 
     def options(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component, "options")(request, *args, **kwargs)
+        return getattr(self.component_cls(), "options")(request, *args, **kwargs)
 
     def trace(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component, "trace")(request, *args, **kwargs)
+        return getattr(self.component_cls(), "trace")(request, *args, **kwargs)
 
 
 class ViewExtension(ComponentExtension):

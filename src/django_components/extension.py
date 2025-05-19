@@ -129,10 +129,10 @@ class OnComponentRenderedContext(NamedTuple):
     """The rendered component"""
 
 
-# TODO - Add `component` once we create instances inside `render()`
-#        See https://github.com/django-components/django-components/issues/1186
 @mark_extension_hook_api
 class OnSlotRenderedContext(NamedTuple):
+    component: "Component"
+    """The Component instance that contains the `{% slot %}` tag"""
     component_cls: Type["Component"]
     """The Component class that contains the `{% slot %}` tag"""
     component_id: str

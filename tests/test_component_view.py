@@ -195,11 +195,12 @@ class TestComponentAsView(SimpleTestCase):
             def get(self, request, *args, **kwargs) -> HttpResponse:
                 return self.render_to_response(kwargs={"variable": self.name})
 
-        client = CustomClient(urlpatterns=[path("test/", MockComponentRequest("my_comp").as_view())])
+        view = MockComponentRequest.as_view()
+        client = CustomClient(urlpatterns=[path("test/", view)])
         response = client.get("/test/")
         self.assertEqual(response.status_code, 200)
         self.assertInHTML(
-            '<input type="text" name="variable" value="my_comp">',
+            '<input type="text" name="variable" value="MockComponentRequest">',
             response.content.decode(),
         )
 

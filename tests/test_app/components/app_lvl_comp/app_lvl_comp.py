@@ -1,12 +1,10 @@
-from typing import Optional
-
 from django_components import Component, register
 
 
 # Used for testing the template_loader
 @register("app_lvl_comp")
 class AppLvlCompComponent(Component):
-    template_file: Optional[str] = "app_lvl_comp.html"
+    template_file = "app_lvl_comp.html"
     js_file = "app_lvl_comp.js"
     css_file = "app_lvl_comp.css"
 

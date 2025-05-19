@@ -4,6 +4,7 @@ nav:
   - Compatibility: compatibility.md
   - Installation: installation.md
   - Security notes 🚨: security_notes.md
+  - Migrating: migrating.md
   - Community: community.md
   - Contributing: contributing.md
   - Development: development.md

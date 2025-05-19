@@ -238,7 +238,7 @@ def djc_test(
             )
         )
         def test_context_behavior(components_settings):
-            rendered = MyComponent().render()
+            rendered = MyComponent.render()
             ...
         ```
 

@@ -12,10 +12,6 @@ Render API is available inside these [`Component`](../../../reference/api#django
 - [`on_render_before()`](../../../reference/api#django_components.Component.on_render_before)
 - [`on_render_after()`](../../../reference/api#django_components.Component.on_render_after)
 
-!!! note
-
-    If you try to access the Render API outside of these methods, you will get a `RuntimeError`.
-
 Example:
 
 ```python
@@ -46,16 +42,31 @@ rendered = Table.render(
 
 The Render API includes:
 
-- [`self.args`](../render_api/#args) - The positional arguments for the current render call
-- [`self.kwargs`](../render_api/#kwargs) - The keyword arguments for the current render call
-- [`self.slots`](../render_api/#slots) - The slots for the current render call
-- [`self.input`](../render_api/#component-inputs) - All the component inputs
-- [`self.id`](../render_api/#component-id) - The unique ID for the current render call
-- [`self.request`](../render_api/#request-object-and-context-processors) - The request object (if available)
-- [`self.context_processors_data`](../render_api/#request-object-and-context-processors) - Data from Django's context processors (if request is available)
-- [`self.inject()`](../render_api/#provide-inject) - Inject data into the component
+- Component inputs:
+    - [`self.args`](../render_api/#args) - The positional arguments for the current render call
+    - [`self.kwargs`](../render_api/#kwargs) - The keyword arguments for the current render call
+    - [`self.slots`](../render_api/#slots) - The slots for the current render call
+    - [`self.context`](../render_api/#context) - The context for the current render call
+    - [`self.input`](../render_api/#other-inputs) - All the component inputs
 
-## Args
+- Request-related:
+    - [`self.request`](../render_api/#request-and-context-processors) - The request object (if available)
+    - [`self.context_processors_data`](../render_api/#request-and-context-processors) - Data from Django's context processors
+
+- Provide / inject:
+    - [`self.inject()`](../render_api/#provide-inject) - Inject data into the component
+
+- Template tag metadata:
+    - [`self.registry`](../render_api/#template-tag-metadata) - The [`ComponentRegistry`](../../../reference/api/#django_components.ComponentRegistry) instance
+    - [`self.registered_name`](../render_api/#template-tag-metadata) - The name under which the component was registered
+    - [`self.outer_context`](../render_api/#template-tag-metadata) - The context outside of the [`{% component %}`](../../../reference/template_tags#component) tag
+
+- Other metadata:
+    - [`self.id`](../render_api/#component-id) - The unique ID for the current render call
+
+## Component inputs
+
+### Args
 
 The `args` argument as passed to
 [`Component.get_template_data()`](../../../reference/api/#django_components.Component.get_template_data).
@@ -64,8 +75,6 @@ If you defined the [`Component.Args`](../../../reference/api/#django_components.
 then the [`Component.args`](../../../reference/api/#django_components.Component.args) property will return an instance of that class.
 
 Otherwise, `args` will be a plain list.
-
-Raises `RuntimeError` if accessed outside of rendering execution.
 
 **Example:**
 
@@ -99,7 +108,7 @@ class Table(Component):
         assert self.args[1] == 10
 ```
 
-## Kwargs
+### Kwargs
 
 The `kwargs` argument as passed to
 [`Component.get_template_data()`](../../../reference/api/#django_components.Component.get_template_data).
@@ -108,8 +117,6 @@ If you defined the [`Component.Kwargs`](../../../reference/api/#django_component
 then the [`Component.kwargs`](../../../reference/api/#django_components.Component.kwargs) property will return an instance of that class.
 
 Otherwise, `kwargs` will be a plain dictionary.
-
-Raises `RuntimeError` if accessed outside of rendering execution.
 
 **Example:**
 
@@ -143,7 +150,7 @@ class Table(Component):
         assert self.kwargs["per_page"] == 10
 ```
 
-## Slots
+### Slots
 
 The `slots` argument as passed to
 [`Component.get_template_data()`](../../../reference/api/#django_components.Component.get_template_data).
@@ -152,8 +159,6 @@ If you defined the [`Component.Slots`](../../../reference/api/#django_components
 then the [`Component.slots`](../../../reference/api/#django_components.Component.slots) property will return an instance of that class.
 
 Otherwise, `slots` will be a plain dictionary.
-
-Raises `RuntimeError` if accessed outside of rendering execution.
 
 **Example:**
 
@@ -190,7 +195,27 @@ class Table(Component):
         assert isinstance(self.slots["footer"], Slot)
 ```
 
-## Component inputs
+### Context
+
+The `context` argument as passed to
+[`Component.get_template_data()`](../../../reference/api/#django_components.Component.get_template_data).
+
+This is Django's [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
+with which the component template is rendered.
+
+If the root component or template was rendered with
+[`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
+then this will be an instance of `RequestContext`.
+
+Whether the context variables defined in `context` are available to the template depends on the
+[context behavior mode](../../../reference/settings#django_components.app_settings.ComponentsSettings.context_behavior):
+
+- In `"django"` context behavior mode, the template will have access to the keys of this context.
+
+- In `"isolated"` context behavior mode, the template will NOT have access to this context,
+    and data MUST be passed via component's args and kwargs.
+
+### Other inputs
 
 You can access the most important inputs via [`self.args`](../render_api/#args),
 [`self.kwargs`](../render_api/#kwargs),
@@ -255,7 +280,7 @@ class Table(Component):
         assert self.id == "c1A2b3c"
 ```
 
-## Request object and context processors
+## Request and context processors
 
 Components have access to the request object and context processors data if the component was:
 
@@ -305,4 +330,33 @@ class Table(Component):
         # Access provided data
         data = self.inject("some_data")
         assert data.some_data == "some_data"
+```
+
+## Template tag metadata
+
+If the component is rendered with [`{% component %}`](../../../reference/template_tags#component) template tag,
+the following metadata is available:
+
+- [`self.registry`](../../../reference/api/#django_components.Component.registry) - The [`ComponentRegistry`](../../../reference/api/#django_components.ComponentRegistry) instance
+  that was used to render the component
+- [`self.registered_name`](../../../reference/api/#django_components.Component.registered_name) - The name under which the component was registered
+- [`self.outer_context`](../../../reference/api/#django_components.Component.outer_context) - The context outside of the [`{% component %}`](../../../reference/template_tags#component) tag
+
+```django
+{% with abc=123 %}
+    {{ abc }} {# <--- This is in outer context #}
+    {% component "my_component" / %}
+{% endwith %}
+```
+
+You can use these to check whether the component was rendered inside a template with [`{% component %}`](../../../reference/template_tags#component) tag
+or in Python with [`Component.render()`](../../../reference/api/#django_components.Component.render).
+
+```python
+class MyComponent(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        if self.registered_name is None:
+            # Do something for the render() function
+        else:
+            # Do something for the {% component %} template tag
 ```

@@ -500,7 +500,7 @@ class TestDynamicComponentTemplateTag:
         )
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_raises_on_invalid_args(self, components_settings):
+    def test_raises_on_invalid_input(self, components_settings):
         registry.register(name="test", component=self.SimpleComponent)
 
         simple_tag_template: types.django_html = """

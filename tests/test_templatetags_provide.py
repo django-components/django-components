@@ -772,7 +772,7 @@ class TestInject:
         self._assert_clear_cache()
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_inject_raises_on_called_outside_get_context_data(self, components_settings):
+    def test_inject_called_outside_rendering(self, components_settings):
         @register("injectee")
         class InjectComponent(Component):
             template: types.django_html = """
@@ -783,9 +783,8 @@ class TestInject:
                 var = self.inject("abc", "default")
                 return {"var": var}
 
-        comp = InjectComponent("")
-        with pytest.raises(RuntimeError):
-            comp.inject("abc", "def")
+        comp = InjectComponent()
+        comp.inject("abc", "def")
 
         self._assert_clear_cache()
 

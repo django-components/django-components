@@ -155,8 +155,8 @@ def set_provided_context_var(
     # We turn the kwargs into a NamedTuple so that the object that's "provided"
     # is immutable. This ensures that the data returned from `inject` will always
     # have all the keys that were passed to the `provide` tag.
-    tpl_cls = namedtuple("DepInject", provided_kwargs.keys())  # type: ignore[misc]
-    payload = tpl_cls(**provided_kwargs)
+    tuple_cls = namedtuple("DepInject", provided_kwargs.keys())  # type: ignore[misc]
+    payload = tuple_cls(**provided_kwargs)
 
     # Instead of storing the provided data on the Context object, we store it
     # in a separate dictionary, and we set only the key to the data on the Context.

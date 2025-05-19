@@ -48,8 +48,8 @@ class TestComponentCache:
         # Check if the cache entry is set
         cache_key = component.cache.get_cache_key([], {}, {})
         assert cache_key == "components:cache:c98bf483e9a1937732d4542c714462ac"
-        assert component.cache.get_entry(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3e,, -->Hello"
-        assert caches["default"].get(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3e,, -->Hello"
+        assert component.cache.get_entry(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3f,, -->Hello"
+        assert caches["default"].get(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3f,, -->Hello"
 
         # Second render
         did_call_get = False
@@ -105,7 +105,7 @@ class TestComponentCache:
 
         cache_instance = component.cache
         cache_key = cache_instance.get_cache_key([], {}, {})
-        assert cache_instance.get_entry(cache_key) == "<!-- _RENDERED TestComponent_42aca9,ca1bc3e,, -->Hello"
+        assert cache_instance.get_entry(cache_key) == "<!-- _RENDERED TestComponent_42aca9,ca1bc3f,, -->Hello"
 
         # Wait for TTL to expire
         time.sleep(0.2)
@@ -140,7 +140,7 @@ class TestComponentCache:
         assert component.cache.get_cache() is caches["custom"]
         assert (
             component.cache.get_entry("components:cache:bcb4b049d8556e06871b39e0e584e452")
-            == "<!-- _RENDERED TestComponent_90ef7a,ca1bc3e,, -->Hello"
+            == "<!-- _RENDERED TestComponent_90ef7a,ca1bc3f,, -->Hello"
         )
 
     def test_cache_by_input(self):
@@ -168,11 +168,11 @@ class TestComponentCache:
         assert len(cache._cache) == 2
         assert (
             component.cache.get_entry("components:cache:3535e1d1e5f6fa5bc521e7fe203a68d0")
-            == "<!-- _RENDERED TestComponent_648b95,ca1bc3e,, -->Hello world"
+            == "<!-- _RENDERED TestComponent_648b95,ca1bc3f,, -->Hello world"
         )
         assert (
             component.cache.get_entry("components:cache:a98a8bd5e72a544d7601798d5e777a77")
-            == "<!-- _RENDERED TestComponent_648b95,ca1bc3f,, -->Hello cake"
+            == "<!-- _RENDERED TestComponent_648b95,ca1bc40,, -->Hello cake"
         )
 
     def test_cache_input_hashing(self):
@@ -206,7 +206,7 @@ class TestComponentCache:
         # The key should use the custom hash methods
         expected_key = "components:cache:3d54974c467a578c509efec189b0d14b"
         assert component.cache.get_cache_key([1, 2], {"key": "value"}, {}) == expected_key
-        assert component.cache.get_entry(expected_key) == "<!-- _RENDERED TestComponent_28880f,ca1bc3e,, -->Hello"
+        assert component.cache.get_entry(expected_key) == "<!-- _RENDERED TestComponent_28880f,ca1bc3f,, -->Hello"
 
     def test_cached_component_inside_include(self):
 
@@ -283,7 +283,7 @@ class TestComponentCache:
         assert len(cache._cache) == 2
         assert (
             component.cache.get_entry("components:cache:1d7e3a58972550cf9bec18f457fb1a61")
-            == '<!-- _RENDERED TestComponent_dd1dee,ca1bc44,, -->Hello cake <div data-djc-id-ca1bc44="">\n                TWO\n            </div>'  # noqa: E501
+            == '<!-- _RENDERED TestComponent_dd1dee,ca1bc45,, -->Hello cake <div data-djc-id-ca1bc45="">\n                TWO\n            </div>'  # noqa: E501
         )
 
     def test_cache_slots__strings(self):
@@ -324,7 +324,7 @@ class TestComponentCache:
         assert len(cache._cache) == 2
         assert (
             component.cache.get_entry("components:cache:468e3f122ac305cff5d9096a3c548faf")
-            == '<!-- _RENDERED TestComponent_34b6d1,ca1bc41,, -->Hello cake <div data-djc-id-ca1bc41="">TWO</div>'
+            == '<!-- _RENDERED TestComponent_34b6d1,ca1bc42,, -->Hello cake <div data-djc-id-ca1bc42="">TWO</div>'
         )
 
     def test_cache_slots_raises_on_func(self):

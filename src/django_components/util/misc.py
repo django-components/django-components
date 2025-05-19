@@ -5,7 +5,7 @@ from hashlib import md5
 from importlib import import_module
 from itertools import chain
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union, cast
 from urllib import parse
 
 from django_components.constants import UID_LENGTH
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from django_components.component import Component
 
 T = TypeVar("T")
+U = TypeVar("U")
 
 
 # Based on nanoid implementation from
@@ -91,8 +92,13 @@ def get_module_info(
     return module, module_name, module_file_path
 
 
-def default(val: Optional[T], default: T) -> T:
-    return val if val is not None else default
+def default(val: Optional[T], default: Union[U, Callable[[], U], Type[T]], factory: bool = False) -> Union[T, U]:
+    if val is not None:
+        return val
+    if factory:
+        default_func = cast(Callable[[], U], default)
+        return default_func()
+    return cast(U, default)
 
 
 def get_index(lst: List, key: Callable[[Any], bool]) -> Optional[int]:
