@@ -36,7 +36,7 @@ bracex==2.5.post1
     # via wcmatch
 cairocffi==1.7.1
     # via cairosvg
-cairosvg==2.8.0
+cairosvg==2.8.2
     # via mkdocs-material
 certifi==2025.4.26
     # via requests
