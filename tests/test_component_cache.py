@@ -269,8 +269,8 @@ class TestComponentCache:
         assert len(cache._cache) == 1
         assert (
             component.cache.get_entry("components:cache:87b9e27abdd3c6ef70982d065fc836a9")
-            == '<!-- _RENDERED TestComponent_dd1dee,ca1bc3f,, -->Hello cake <div data-djc-id-ca1bc3f="">\n                ONE\n            </div>'
-        )  # noqa: E501
+            == '<!-- _RENDERED TestComponent_dd1dee,ca1bc3f,, -->Hello cake <div data-djc-id-ca1bc3f="">\n                ONE\n            </div>'  # noqa: E501
+        )
 
         Template(
             """
@@ -283,8 +283,8 @@ class TestComponentCache:
         assert len(cache._cache) == 2
         assert (
             component.cache.get_entry("components:cache:1d7e3a58972550cf9bec18f457fb1a61")
-            == '<!-- _RENDERED TestComponent_dd1dee,ca1bc44,, -->Hello cake <div data-djc-id-ca1bc44="">\n                TWO\n            </div>'
-        )  # noqa: E501
+            == '<!-- _RENDERED TestComponent_dd1dee,ca1bc44,, -->Hello cake <div data-djc-id-ca1bc44="">\n                TWO\n            </div>'  # noqa: E501
+        )
 
     def test_cache_slots__strings(self):
         class TestComponent(Component):
