@@ -10,7 +10,7 @@ Django-components functionality can be extended with "extensions". Extensions al
 
 - [djc-ext-pydantic](https://github.com/django-components/djc-ext-pydantic)
 
-## Setting up extensions
+## Install extensions
 
 Extensions are configured in the Django settings under [`COMPONENTS.extensions`](../../../reference/settings#django_components.app_settings.ComponentsSettings.extensions).
 
@@ -22,7 +22,7 @@ Extensions can be set by either as an import string or by passing in a class:
 class MyExtension(ComponentExtension):
     name = "my_extension"
 
-    class ExtensionClass(ComponentExtension.ExtensionClass):
+    class ComponentConfig(ExtensionComponentConfig):
         ...
 
 COMPONENTS = ComponentsSettings(
@@ -47,7 +47,7 @@ Extensions can define methods to hook into lifecycle events, such as:
 
 See the full list in [Extension Hooks Reference](../../../reference/extension_hooks).
 
-## Configuring extensions per component
+## Per-component configuration
 
 Each extension has a corresponding nested class within the [`Component`](../../../reference/api#django_components.Component) class. These allow
 to configure the extensions on a per-component basis.
@@ -84,18 +84,15 @@ You can override the `get()`, `post()`, etc methods to customize the behavior of
 class MyTable(Component):
     class View:
         def get(self, request):
-            # TO BE IMPLEMENTED BY USER
-            # return self.component_cls.render_to_response(request=request)
-            raise NotImplementedError("You must implement the `get` method.")
+            return self.component_class.render_to_response(request=request)
 
         def post(self, request):
-            # TO BE IMPLEMENTED BY USER
-            # return self.component_cls.render_to_response(request=request)
-            raise NotImplementedError("You must implement the `post` method.")
+            return self.component_class.render_to_response(request=request)
 
         ...
 ```
 
+<!-- TODO - LINK TO IT ONCE RELEASED -->
 ### Example: Storybook integration
 
 The Storybook integration (work in progress) is an extension that is configured by a `Storybook` nested class.
@@ -122,11 +119,78 @@ class MyTable(Component):
         ...
 ```
 
-## Accessing extensions in components
+### Extension defaults
+
+Extensions are incredibly flexible, but configuring the same extension for every component can be a pain.
+
+For this reason, django-components allows for extension defaults. This is like setting the extension config for every component.
+
+To set extension defaults, use the [`COMPONENTS.extensions_defaults`](../../../reference/settings#django_components.app_settings.ComponentsSettings.extensions_defaults) setting.
+
+The `extensions_defaults` setting is a dictionary where the key is the extension name and the value is a dictionary of config attributes:
+
+```python
+COMPONENTS = ComponentsSettings(
+    extensions=[
+        "my_extension.MyExtension",
+        "storybook.StorybookExtension",
+    ],
+    extensions_defaults={
+        "my_extension": {
+            "key": "value",
+        },
+        "view": {
+            "public": True,
+        },
+        "cache": {
+            "ttl": 60,
+        },
+        "storybook": {
+            "title": lambda self: self.component_cls.__name__,
+        },
+    },
+)
+```
+
+Which is equivalent to setting the following for every component:
+
+```python
+class MyTable(Component):
+    class MyExtension:
+        key = "value"
+
+    class View:
+        public = True
+
+    class Cache:
+        ttl = 60
+
+    class Storybook:
+        def title(self):
+            return self.component_cls.__name__
+```
+
+!!! info
+
+    If you define an attribute as a function, it is like defining a method on the extension class.
+
+    E.g. in the example above, `title` is a method on the `Storybook` extension class.
+
+As the name suggests, these are defaults, and so you can still selectively override them on a per-component basis:
+
+```python
+class MyTable(Component):
+    class View:
+        public = False
+```
+
+### Extensions in component instances
 
 Above, we've configured extensions `View` and `Storybook` for the `MyTable` component.
 
 You can access the instances of these extension classes in the component instance.
+
+Extensions are available under their names (e.g. `self.view`, `self.storybook`).
 
 For example, the View extension is available as `self.view`:
 
@@ -150,23 +214,23 @@ class MyTable(Component):
         }
 ```
 
-Thus, you can use extensions to add methods or attributes that will be available to all components
-in their component context.
-
 ## Writing extensions
 
 Creating extensions in django-components involves defining a class that inherits from
 [`ComponentExtension`](../../../reference/api/#django_components.ComponentExtension).
 This class can implement various lifecycle hooks and define new attributes or methods to be added to components.
 
-### Defining an extension
+### Extension class
 
 To create an extension, define a class that inherits from [`ComponentExtension`](../../../reference/api/#django_components.ComponentExtension)
 and implement the desired hooks.
 
 - Each extension MUST have a `name` attribute. The name MUST be a valid Python identifier.
-- The extension MAY implement any of the [hook methods](../../../reference/extension_hooks).
-- Each hook method receives a context object with relevant data.
+- The extension may implement any of the [hook methods](../../../reference/extension_hooks).
+
+    Each hook method receives a context object with relevant data.
+
+- Extension may own [URLs](#extension-urls) or [CLI commands](#extension-commands).
 
 ```python
 from django_components.extension import ComponentExtension, OnComponentClassCreatedContext
@@ -187,9 +251,10 @@ class MyExtension(ComponentExtension):
 
     So if you name an extension `render`, it will conflict with the [`render()`](../../../reference/api/#django_components.Component.render) method of the `Component` class.
 
-### Defining the extension class
+### Component config
 
-In previous sections we've seen the `View` and `Storybook` extensions classes that were nested within the `Component` class:
+In previous sections we've seen the `View` and `Storybook` extensions classes that were nested
+within the [`Component`](../../../reference/api/#django_components.Component) class:
 
 ```python
 class MyComponent(Component):
@@ -202,36 +267,30 @@ class MyComponent(Component):
 
 These can be understood as component-specific overrides or configuration.
 
-The nested extension classes like `View` or `Storybook` will actually subclass from a base extension
-class as defined on the [`ComponentExtension.ExtensionClass`](../../../reference/api/#django_components.ComponentExtension.ExtensionClass).
+Whether it's `Component.View` or `Component.Storybook`, their respective extensions
+defined how these nested classes will behave.
 
-This is how extensions define the "default" behavior of their nested extension classes.
-
-For example, the `View` base extension class defines the handlers for GET, POST, etc:
+For example, the View extension defines the API that users may override in `ViewExtension.ComponentConfig`:
 
 ```python
-from django_components.extension import ComponentExtension
+from django_components.extension import ComponentExtension, ExtensionComponentConfig
 
 class ViewExtension(ComponentExtension):
     name = "view"
 
     # The default behavior of the `View` extension class.
-    class ExtensionClass(ComponentExtension.ExtensionClass):
+    class ComponentConfig(ExtensionComponentConfig):
         def get(self, request):
-            # TO BE IMPLEMENTED BY USER
-            # return self.component_cls.render_to_response(request=request)
             raise NotImplementedError("You must implement the `get` method.")
 
         def post(self, request):
-            # TO BE IMPLEMENTED BY USER
-            # return self.component_cls.render_to_response(request=request)
             raise NotImplementedError("You must implement the `post` method.")
 
         ...
 ```
 
-In any component that then defines a nested `View` extension class, the `View` extension class will actually
-subclass from the `ViewExtension.ExtensionClass` class.
+In any component that then defines a nested `Component.View` extension class, the resulting `View` class
+will actually subclass from the `ViewExtension.ComponentConfig` class.
 
 In other words, when you define a component like this:
 
@@ -243,11 +302,11 @@ class MyTable(Component):
             ...
 ```
 
-It will actually be implemented as if the `View` class subclassed from base class `ViewExtension.ExtensionClass`:
+Behind the scenes it is as if you defined the following:
 
 ```python
 class MyTable(Component):
-    class View(ViewExtension.ExtensionClass):
+    class View(ViewExtension.ComponentConfig):
         def get(self, request):
             # Do something
             ...
@@ -255,13 +314,13 @@ class MyTable(Component):
 
 !!! warning
 
-    When writing an extension, the `ExtensionClass` MUST subclass the base class [`ComponentExtension.ExtensionClass`](../../../reference/api/#django_components.ComponentExtension.ExtensionClass).
+    When writing an extension, the `ComponentConfig` MUST subclass the base class [`ExtensionComponentConfig`](../../../reference/api/#django_components.ExtensionComponentConfig).
 
     This base class ensures that the extension class will have access to the component instance.
 
-### Registering extensions
+### Install your extension
 
-Once the extension is defined, it needs to be registered in the Django settings to be used by the application.
+Once the extension is defined, it needs to be installed in the Django settings to be used by the application.
 
 Extensions can be given either as an extension class, or its import string:
 
@@ -297,30 +356,30 @@ To tie it all together, here's an example of a custom logging extension that log
 ```python
 from django_components.extension import (
     ComponentExtension,
+    ExtensionComponentConfig,
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
     OnComponentInputContext,
 )
-
-class ColorLoggerExtensionClass(ComponentExtension.ExtensionClass):
-    color: str
 
 
 class ColorLoggerExtension(ComponentExtension):
     name = "color_logger"
 
     # All `Component.ColorLogger` classes will inherit from this class.
-    ExtensionClass = ColorLoggerExtensionClass
+    class ComponentConfig(ExtensionComponentConfig):
+        color: str
 
-    # These hooks don't have access to the Component instance, only to the Component class,
-    # so we access the color as `Component.ColorLogger.color`.
-    def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
+    # These hooks don't have access to the Component instance,
+    # only to the Component class, so we access the color
+    # as `Component.ColorLogger.color`.
+    def on_component_class_created(self, ctx: OnComponentClassCreatedContext):
         log.info(
             f"Component {ctx.component_cls} created.",
             color=ctx.component_cls.ColorLogger.color,
         )
 
-    def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
+    def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext):
         log.info(
             f"Component {ctx.component_cls} deleted.",
             color=ctx.component_cls.ColorLogger.color,
@@ -328,7 +387,7 @@ class ColorLoggerExtension(ComponentExtension):
 
     # This hook has access to the Component instance, so we access the color
     # as `self.component.color_logger.color`.
-    def on_component_input(self, ctx: OnComponentInputContext) -> None:
+    def on_component_input(self, ctx: OnComponentInputContext):
         log.info(
             f"Rendering component {ctx.component_cls}.",
             color=ctx.component.color_logger.color,
@@ -346,7 +405,7 @@ COMPONENTS = {
 }
 ```
 
-Once registered, in any component, you can define a `ColorLogger` attribute:
+Once installed, in any component, you can define a `ColorLogger` attribute:
 
 ```python
 class MyComponent(Component):
@@ -363,45 +422,38 @@ django-components provides a few utility functions to help with writing extensio
 - [`all_components()`](../../../reference/api#django_components.all_components) - returns a list of all created component classes.
 - [`all_registries()`](../../../reference/api#django_components.all_registries) - returns a list of all created registry instances.
 
-### Accessing the component class from within an extension
+### Access component class
 
-When you are writing the extension class that will be nested inside a Component class, e.g.
-
-```py
-class MyTable(Component):
-    class MyExtension:
-        def some_method(self):
-            ...
-```
-
-You can access the owner Component class (`MyTable`) from within methods of the extension class (`MyExtension`) by using the `component_class` attribute:
+You can access the owner [`Component`](../../../reference/api/#django_components.Component) class (`MyTable`) from within methods
+of the extension class (`MyExtension`) by using
+the [`component_cls`](../../../reference/api/#django_components.ExtensionComponentConfig.component_cls) attribute:
 
 ```py
 class MyTable(Component):
     class MyExtension:
         def some_method(self):
-            print(self.component_class)
+            print(self.component_cls)
 ```
 
-Here is how the `component_class` attribute may be used with our `ColorLogger`
+Here is how the `component_cls` attribute may be used with our `ColorLogger`
 extension shown above:
 
 ```python
-class ColorLoggerExtensionClass(ComponentExtension.ExtensionClass):
+class ColorLoggerComponentConfig(ExtensionComponentConfig):
     color: str
 
     def log(self, msg: str) -> None:
-        print(f"{self.component_class.name}: {msg}")
+        print(f"{self.component_cls.__name__}: {msg}")
 
 
 class ColorLoggerExtension(ComponentExtension):
     name = "color_logger"
 
     # All `Component.ColorLogger` classes will inherit from this class.
-    ExtensionClass = ColorLoggerExtensionClass
+    ComponentConfig = ColorLoggerComponentConfig
 ```
 
-## Extension Commands
+## Extension commands
 
 Extensions in django-components can define custom commands that can be executed via the Django management command interface. This allows for powerful automation and customization capabilities.
 
@@ -418,7 +470,7 @@ Where:
 - `my_ext` - is the extension name
 - `hello` - is the command name
 
-### Defining Commands
+### Define commands
 
 To define a command, subclass from [`ComponentCommand`](../../../reference/extension_commands#django_components.ComponentCommand).
 This subclass should define:
@@ -442,7 +494,7 @@ class MyExt(ComponentExtension):
     commands = [HelloCommand]
 ```
 
-### Defining Command Arguments and Options
+### Define arguments and options
 
 Commands can accept positional arguments and options (e.g. `--foo`), which are defined using the
 [`arguments`](../../../reference/extension_commands#django_components.ComponentCommand.arguments)
@@ -507,7 +559,7 @@ python manage.py components ext run my_ext hello John --shout
     If a command doesn't have the [`handle`](../../../reference/extension_commands#django_components.ComponentCommand.handle)
     method defined, the command will print a help message and exit.
 
-### Grouping Arguments
+### Argument groups 
 
 Arguments can be grouped using [`CommandArgGroup`](../../../reference/extension_commands#django_components.CommandArgGroup)
 to provide better organization and help messages.
@@ -626,7 +678,7 @@ python manage.py components ext run parent child
     python manage.py components ext run parent child --foo --bar
     ```
 
-### Print command help
+### Help message
 
 By default, all commands will print their help message when run with the `--help` / `-h` flag.
 
@@ -636,7 +688,7 @@ python manage.py components ext run my_ext --help
 
 The help message prints out all the arguments and options available for the command, as well as any subcommands.
 
-### Testing Commands
+### Testing commands
 
 Commands can be tested using Django's [`call_command()`](https://docs.djangoproject.com/en/5.2/ref/django-admin/#running-management-commands-from-your-code)
 function, which allows you to simulate running the command in tests.
@@ -721,7 +773,7 @@ class MyExtension(ComponentExtension):
 
     As of v0.131, `URLRoute` objects are directly converted to Django's `URLPattern` and `URLResolver` objects.
 
-### Accessing Extension URLs
+### URL paths
 
 The URLs defined in an extension are available under the path
 
@@ -766,7 +818,7 @@ In this example, the URL
 
 would call the `my_view` handler with the parameter `name` set to `"John"`.
 
-### Passing kwargs and other extra fields to URL routes
+### Extra URL data
 
 The [`URLRoute`](../../../reference/extension_urls#django_components.URLRoute) class is framework-agnostic,
 so that extensions could be used with non-Django frameworks in the future.

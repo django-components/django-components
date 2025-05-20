@@ -8,6 +8,7 @@ from django.views.generic import View
 
 from django_components.extension import (
     ComponentExtension,
+    ExtensionComponentConfig,
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
     URLRoute,
@@ -74,7 +75,7 @@ def get_component_url(
     return format_url(url, query=query, fragment=fragment)
 
 
-class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
+class ComponentView(ExtensionComponentConfig, View):
     """
     The interface for `Component.View`.
 
@@ -157,7 +158,7 @@ class ComponentView(ComponentExtension.ExtensionClass, View):  # type: ignore
     """
 
     def __init__(self, component: "Component", **kwargs: Any) -> None:
-        ComponentExtension.ExtensionClass.__init__(self, component)
+        ComponentExtension.ComponentConfig.__init__(self, component)
         View.__init__(self, **kwargs)
 
     @property
@@ -257,7 +258,7 @@ class ViewExtension(ComponentExtension):
 
     name = "view"
 
-    ExtensionClass = ComponentView
+    ComponentConfig = ComponentView
 
     def __init__(self) -> None:
         # Remember which route belongs to which component

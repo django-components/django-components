@@ -56,6 +56,7 @@ from django_components.extension import (
     extensions,
 )
 from django_components.extensions.cache import ComponentCache
+from django_components.extensions.debug_highlight import ComponentDebugHighlight
 from django_components.extensions.defaults import ComponentDefaults
 from django_components.extensions.view import ComponentView, ViewFn
 from django_components.node import BaseNode
@@ -1727,6 +1728,13 @@ class Component(metaclass=ComponentMeta):
     """
     Instance of [`ComponentView`](../api#django_components.ComponentView) available at component render time.
     """
+    DebugHighlight: ClassVar[Type[ComponentDebugHighlight]]
+    """
+    The fields of this class are used to configure the component debug highlighting.
+
+    Read more about [Component debug highlighting](../../guides/other/troubleshooting#component-and-slot-highlighting).
+    """
+    debug_highlight: ComponentDebugHighlight
 
     # #####################################
     # MISC

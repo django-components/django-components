@@ -506,6 +506,65 @@ Summary:
             ctx.template_data["my_template_var"] = "my_value"
     ```
 
+- When creating extensions, the `ComponentExtension.ExtensionClass` attribute was renamed to `ComponentConfig`.
+
+    The old name is deprecated and will be removed in v1.
+
+    Before:
+
+    ```py
+    from django_components import ComponentExtension
+
+    class MyExtension(ComponentExtension):
+        class ExtensionClass(ComponentExtension.ComponentConfig):
+            pass
+    ```
+
+    After:
+
+    ```py
+    from django_components import ComponentExtension, ExtensionComponentConfig
+
+    class MyExtension(ComponentExtension):
+        class ComponentConfig(ExtensionComponentConfig):
+            pass
+    ```
+
+- When creating extensions, to access the Component class from within the methods of the extension nested classes,
+  use `component_cls`.
+
+    Previously this field was named `component_class`. The old name is deprecated and will be removed in v1.
+  
+   `ComponentExtension.ExtensionClass` attribute was renamed to `ComponentConfig`.
+
+    The old name is deprecated and will be removed in v1.
+
+    Before:
+
+    ```py
+    from django_components import ComponentExtension, ExtensionComponentConfig
+
+    class LoggerExtension(ComponentExtension):
+        name = "logger"
+
+        class ComponentConfig(ExtensionComponentConfig):
+            def log(self, msg: str) -> None:
+                print(f"{self.component_class.__name__}: {msg}")
+    ```
+
+    After:
+
+    ```py
+    from django_components import ComponentExtension, ExtensionComponentConfig
+
+    class LoggerExtension(ComponentExtension):
+        name = "logger"
+
+        class ComponentConfig(ExtensionComponentConfig):
+            def log(self, msg: str) -> None:
+                print(f"{self.component_cls.__name__}: {msg}")
+    ```
+
 **Slots**
 
 - `SlotContent` was renamed to `SlotInput`. The old name is deprecated and will be removed in v1.
@@ -589,6 +648,47 @@ Summary:
 
     NOTE: `Component.is_filled` automatically escaped slot names, so that even slot names that are
     not valid python identifiers could be set as slot names. `Component.slots` no longer does that.
+
+**Miscellaneous**
+
+- The `debug_highlight_components` and `debug_highlight_slots` settings are deprecated.
+    These will be removed in v1.
+
+    The debug highlighting feature was re-implemented as an extension.
+    As such, the recommended way for enabling it has changed:
+    
+    Before:
+
+    ```python
+    COMPONENTS = ComponentsSettings(
+        debug_highlight_components=True,
+        debug_highlight_slots=True,
+    )
+    ```
+
+    After:
+
+    Set `extensions_defaults` in your `settings.py` file.
+
+    ```python
+    COMPONENTS = ComponentsSettings(
+        extensions_defaults={
+            "debug_highlight": {
+                "highlight_components": True,
+                "highlight_slots": True,
+            },
+        },
+    )
+    ```
+
+    Alternatively, you can enable highlighting for specific components by setting `Component.DebugHighlight.highlight_components` to `True`:
+
+    ```python
+    class MyComponent(Component):
+        class DebugHighlight:
+            highlight_components = True
+            highlight_slots = True
+    ```
 
 #### Feat
 
@@ -858,6 +958,31 @@ Summary:
     If you don't want to modify the rendered result, return `None`.
 
     See all [Extension hooks](https://django-components.github.io/django-components/0.140/reference/extension_hooks/).
+
+- When creating extensions, the previous syntax with `ComponentExtension.ExtensionClass` was causing
+  Mypy errors, because Mypy doesn't allow using class attributes as bases:
+
+    Before:
+
+    ```py
+    from django_components import ComponentExtension
+
+    class MyExtension(ComponentExtension):
+        class ExtensionClass(ComponentExtension.ComponentConfig):  # Error!
+            pass
+    ```
+
+    Instead, you can import `ExtensionComponentConfig` directly:
+
+    After:
+
+    ```py
+    from django_components import ComponentExtension, ExtensionComponentConfig
+
+    class MyExtension(ComponentExtension):
+        class ComponentConfig(ExtensionComponentConfig):
+            pass
+    ```
 
 #### Refactor
 

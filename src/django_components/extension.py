@@ -1,5 +1,19 @@
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Set, Tuple, Type, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import django.urls
 from django.template import Context
@@ -154,43 +168,159 @@ class OnSlotRenderedContext(NamedTuple):
 ################################################
 
 
-class BaseExtensionClass:
-    """Base class for all extension classes."""
+class ExtensionComponentConfig:
+    """
+    `ExtensionComponentConfig` is the base class for all extension component configs.
 
+    Extensions can define nested classes on the component class,
+    such as [`Component.View`](../api#django_components.Component.View) or
+    [`Component.Cache`](../api#django_components.Component.Cache):
+
+    ```py
+    class MyComp(Component):
+        class View:
+            def get(self, request):
+                ...
+
+        class Cache:
+            ttl = 60
+    ```
+
+    This allows users to configure extension behavior per component.
+
+    Behind the scenes, the nested classes that users define on their components
+    are merged with the extension's "base" class.
+
+    So the example above is the same as:
+
+    ```py
+    class MyComp(Component):
+        class View(ViewExtension.ComponentConfig):
+            def get(self, request):
+                ...
+
+        class Cache(CacheExtension.ComponentConfig):
+            ttl = 60
+    ```
+
+    Where both `ViewExtension.ComponentConfig` and `CacheExtension.ComponentConfig` are
+    subclasses of `ExtensionComponentConfig`.
+    """
+
+    component_cls: Type["Component"]
+    """The [`Component`](../api#django_components.Component) class that this extension is defined on."""
+
+    # TODO_v1 - Remove, superseded by `component_cls`
     component_class: Type["Component"]
-    """The Component class that this extension is defined on."""
+    """The [`Component`](../api#django_components.Component) class that this extension is defined on."""
+
+    component: "Component"
+    """
+    When a [`Component`](../api#django_components.Component) is instantiated,
+    also the nested extension classes (such as `Component.View`) are instantiated,
+    receiving the component instance as an argument.
+
+    This attribute holds the owner [`Component`](../api#django_components.Component) instance
+    that this extension is defined on.
+    """
 
     def __init__(self, component: "Component") -> None:
         self.component = component
 
 
+# TODO_v1 - Delete
+BaseExtensionClass = ExtensionComponentConfig
+"""
+Deprecated. Will be removed in v1.0. Use
+[`ComponentConfig`](../api#django_components.ExtensionComponentConfig) instead.
+"""
+
+
+# TODO_V1 - Delete, meta class was needed only for backwards support for ExtensionClass.
+class ExtensionMeta(type):
+    def __new__(mcs, name: Any, bases: Tuple, attrs: Dict) -> Any:
+        # Rename `ExtensionClass` to `ComponentConfig`
+        if "ExtensionClass" in attrs:
+            attrs["ComponentConfig"] = attrs.pop("ExtensionClass")
+
+        return super().__new__(mcs, name, bases, attrs)
+
+
 # NOTE: This class is used for generating documentation for the extension hooks API.
 #       To be recognized, all hooks must start with `on_` prefix.
-class ComponentExtension:
+class ComponentExtension(metaclass=ExtensionMeta):
     """
     Base class for all extensions.
 
     Read more on [Extensions](../../concepts/advanced/extensions).
+
+    **Example:**
+
+    ```python
+    class ExampleExtension(ComponentExtension):
+        name = "example"
+
+        # Component-level behavior and settings. User will be able to override
+        # the attributes and methods defined here on the component classes.
+        class ComponentConfig(ComponentExtension.ComponentConfig):
+            foo = "1"
+            bar = "2"
+
+            def baz(cls):
+                return "3"
+
+        # URLs
+        urls = [
+            URLRoute(path="dummy-view/", handler=dummy_view, name="dummy"),
+            URLRoute(path="dummy-view-2/<int:id>/<str:name>/", handler=dummy_view_2, name="dummy-2"),
+        ]
+
+        # Commands
+        commands = [
+            HelloWorldCommand,
+        ]
+
+        # Hooks
+        def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
+            print(ctx.component_cls.__name__)
+
+        def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
+            print(ctx.component_cls.__name__)
+    ```
+
+    Which users then can override on a per-component basis. E.g.:
+
+    ```python
+    class MyComp(Component):
+        class Example:
+            foo = "overridden"
+
+            def baz(self):
+                return "overridden baz"
+    ```
     """
 
     ###########################
     # USER INPUT
     ###########################
 
-    name: str
+    name: ClassVar[str]
     """
     Name of the extension.
 
     Name must be lowercase, and must be a valid Python identifier (e.g. `"my_extension"`).
 
     The extension may add new features to the [`Component`](../api#django_components.Component)
-    class by allowing users to define and access a nested class in the `Component` class.
+    class by allowing users to define and access a nested class in
+    the [`Component`](../api#django_components.Component) class.
 
-    The extension name determines the name of the nested class in the `Component` class, and the attribute
+    The extension name determines the name of the nested class in
+    the [`Component`](../api#django_components.Component) class, and the attribute
     under which the extension will be accessible.
 
-    E.g. if the extension name is `"my_extension"`, then the nested class in the `Component` class
-    will be `MyExtension`, and the extension will be accessible as `MyComp.my_extension`.
+    E.g. if the extension name is `"my_extension"`, then the nested class in
+    the [`Component`](../api#django_components.Component) class will be
+    `MyExtension`, and the extension will be accessible as `MyComp.my_extension`.
 
     ```python
     class MyComp(Component):
@@ -202,13 +332,20 @@ class ComponentExtension:
                 "my_extension": self.my_extension.do_something(),
             }
     ```
+
+    !!! info
+
+        The extension class name can be customized by setting
+        the [`class_name`](../api#django_components.ComponentExtension.class_name) attribute.
     """
 
-    class_name: str
+    class_name: ClassVar[str]
     """
     Name of the extension class.
 
-    By default, this is the same as `name`, but with snake_case converted to PascalCase.
+    By default, this is set automatically at class creation. The class name is the same as
+    the [`name`](../api#django_components.ComponentExtension.name) attribute, but with snake_case
+    converted to PascalCase.
 
     So if the extension name is `"my_extension"`, then the extension class name will be `"MyExtension"`.
 
@@ -217,20 +354,41 @@ class ComponentExtension:
         class MyExtension:  # <--- This is the extension class
             ...
     ```
+
+    To customize the class name, you can manually set the `class_name` attribute.
+
+    The class name must be a valid Python identifier.
+
+    **Example:**
+
+    ```python
+    class MyExt(ComponentExtension):
+        name = "my_extension"
+        class_name = "MyCustomExtension"
+    ```
+
+    This will make the extension class name `"MyCustomExtension"`.
+
+    ```python
+    class MyComp(Component):
+        class MyCustomExtension:  # <--- This is the extension class
+            ...
+    ```
     """
 
-    ExtensionClass = BaseExtensionClass
+    ComponentConfig: ClassVar[Type[ExtensionComponentConfig]] = ExtensionComponentConfig
     """
-    Base class that the "extension class" nested within a [`Component`](../api#django_components.Component)
-    class will inherit from.
+    Base class that the "component-level" extension config nested within
+    a [`Component`](../api#django_components.Component) class will inherit from.
 
     This is where you can define new methods and attributes that will be available to the component
     instance.
 
     Background:
 
-    The extension may add new features to the `Component` class by allowing users to
-    define and access a nested class in the `Component` class. E.g.:
+    The extension may add new features to the [`Component`](../api#django_components.Component) class
+    by allowing users to define and access a nested class in
+    the [`Component`](../api#django_components.Component) class. E.g.:
 
     ```python
     class MyComp(Component):
@@ -243,19 +401,20 @@ class ComponentExtension:
             }
     ```
 
-    When rendering a component, the nested extension class will be set as a subclass of `ExtensionClass`.
-    So it will be same as if the user had directly inherited from `ExtensionClass`. E.g.:
+    When rendering a component, the nested extension class will be set as a subclass of
+    `ComponentConfig`. So it will be same as if the user had directly inherited from extension's
+    `ComponentConfig`. E.g.:
 
     ```python
     class MyComp(Component):
-        class MyExtension(ComponentExtension.ExtensionClass):
+        class MyExtension(ComponentExtension.ComponentConfig):
             ...
     ```
 
     This setting decides what the extension class will inherit from.
     """
 
-    commands: List[Type[ComponentCommand]] = []
+    commands: ClassVar[List[Type[ComponentCommand]]] = []
     """
     List of commands that can be run by the extension.
 
@@ -315,7 +474,7 @@ class ComponentExtension:
     ```
     """
 
-    urls: List[URLRoute] = []
+    urls: ClassVar[List[URLRoute]] = []
 
     ###########################
     # Misc
@@ -629,19 +788,19 @@ class ExtensionManager:
         for extension in self.extensions:
             ext_class_name = extension.class_name
 
-            # If a Component class has an extension class, e.g.
+            # If a Component class has a nested extension class, e.g.
             # ```python
             # class MyComp(Component):
             #     class MyExtension:
             #         ...
             # ```
             # then create a dummy class to make `MyComp.MyExtension` extend
-            # the base class `extension.ExtensionClass`.
+            # the base class `extension.ComponentConfig`.
             #
-            # So it will be same as if the user had directly inherited from `extension.ExtensionClass`.
+            # So it will be same as if the user had directly inherited from `extension.ComponentConfig`.
             # ```python
             # class MyComp(Component):
-            #     class MyExtension(MyExtension.ExtensionClass):
+            #     class MyExtension(MyExtension.ComponentConfig):
             #         ...
             # ```
             component_ext_subclass = getattr(component_cls, ext_class_name, None)
@@ -649,11 +808,11 @@ class ExtensionManager:
             # Add escape hatch, so that user can override the extension class
             # from within the component class. E.g.:
             # ```python
-            # class MyExtDifferentStillSame(MyExtension.ExtensionClass):
+            # class MyExtDifferentButStillSame(MyExtension.ComponentConfig):
             #     ...
             #
             # class MyComp(Component):
-            #     my_extension_class = MyExtDifferentStillSame
+            #     my_extension_class = MyExtDifferentButStillSame
             #     class MyExtension:
             #         ...
             # ```
@@ -661,20 +820,54 @@ class ExtensionManager:
             # Will be effectively the same as:
             # ```python
             # class MyComp(Component):
-            #     class MyExtension(MyExtDifferentStillSame):
+            #     class MyExtension(MyExtDifferentButStillSame):
             #         ...
             # ```
             ext_class_override_attr = extension.name + "_class"  # "my_extension_class"
-            ext_base_class = getattr(component_cls, ext_class_override_attr, extension.ExtensionClass)
+            ext_base_class = getattr(component_cls, ext_class_override_attr, extension.ComponentConfig)
+
+            # Extensions have 3 levels of configuration:
+            # 1. Factory defaults - The values that the extension author set on the extension class
+            # 2. User global defaults with `COMPONENTS.extensions_defaults`
+            # 3. User component-level settings - The values that the user set on the component class
+            #
+            # The component-level settings override the global defaults, which in turn override
+            # the factory defaults.
+            #
+            # To apply these defaults, we set them as bases for our new extension class.
+            #
+            # The final class will look like this:
+            # ```
+            # class MyExtension(MyComp.MyExtension, MyExtensionDefaults, MyExtensionBase):
+            #     component_cls = MyComp
+            #     ...
+            # ```
+            # Where:
+            # - `MyComp.MyExtension` is the extension class that the user defined on the component class.
+            # - `MyExtensionDefaults` is a dummy class that holds the extension defaults from settings.
+            # - `MyExtensionBase` is the base class that the extension class inherits from.
+            bases_list = [ext_base_class]
+
+            all_extensions_defaults = app_settings._settings.extensions_defaults or {}
+            extension_defaults = all_extensions_defaults.get(extension.name, None)
+            if extension_defaults:
+                # Create dummy class that holds the extension defaults
+                defaults_class = type(f"{ext_class_name}Defaults", tuple(), extension_defaults.copy())
+                bases_list.insert(0, defaults_class)
 
             if component_ext_subclass:
-                bases: tuple[Type, ...] = (component_ext_subclass, ext_base_class)
-            else:
-                bases = (ext_base_class,)
+                bases_list.insert(0, component_ext_subclass)
 
-            # Allow to extension class to access the owner `Component` class that via
-            # `ExtensionClass.component_class`.
-            component_ext_subclass = type(ext_class_name, bases, {"component_class": component_cls})
+            bases: tuple[Type, ...] = tuple(bases_list)
+
+            # Allow component-level extension class to access the owner `Component` class that via
+            # `component_cls`.
+            component_ext_subclass = type(
+                ext_class_name,
+                bases,
+                # TODO_v1 - Remove `component_class`, superseded by `component_cls`
+                {"component_cls": component_cls, "component_class": component_cls},
+            )
 
             # Finally, reassign the new class extension class on the component class.
             setattr(component_cls, ext_class_name, component_ext_subclass)

@@ -43,6 +43,7 @@ defaults = ComponentsSettings(
     debug_highlight_slots=False,
     dynamic_component_name="dynamic",
     extensions=[],
+    extensions_defaults={},
     libraries=[],  # E.g. ["mysite.components.forms", ...]
     multiline_tags=True,
     reload_on_file_change=False,
@@ -148,6 +149,16 @@ defaults = ComponentsSettings(
       show_labels: false
 
 ::: django_components.app_settings.ComponentsSettings.extensions
+    options:
+      show_root_heading: true
+      show_signature: true
+      separate_signature: true
+      show_symbol_type_heading: false
+      show_symbol_type_toc: false
+      show_if_no_docstring: true
+      show_labels: false
+
+::: django_components.app_settings.ComponentsSettings.extensions_defaults
     options:
       show_root_heading: true
       show_signature: true

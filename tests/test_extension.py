@@ -12,6 +12,7 @@ from django_components.component_registry import ComponentRegistry
 from django_components.extension import (
     URLRoute,
     ComponentExtension,
+    ExtensionComponentConfig,
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
     OnRegistryCreatedContext,
@@ -43,12 +44,33 @@ def dummy_view_2(request: HttpRequest, id: int, name: str):
     return HttpResponse(f"Hello, world! {id} {name}")
 
 
+# TODO_V1 - Remove
+class LegacyExtension(ComponentExtension):
+    name = "legacy"
+
+    class ExtensionClass(ExtensionComponentConfig):
+        foo = "1"
+        bar = "2"
+
+        @classmethod
+        def baz(cls):
+            return "3"
+
+
 class DummyExtension(ComponentExtension):
     """
     Test extension that tracks all hook calls and their arguments.
     """
 
     name = "test_extension"
+
+    class ComponentConfig(ExtensionComponentConfig):
+        foo = "1"
+        bar = "2"
+
+        @classmethod
+        def baz(cls):
+            return "3"
 
     def __init__(self) -> None:
         self.calls: Dict[str, List[Any]] = {
@@ -154,7 +176,7 @@ class TestExtension:
                 return {"name": kwargs.get("name", "World")}
 
         ext_class = TestAccessComp.TestExtension  # type: ignore[attr-defined]
-        assert issubclass(ext_class, ComponentExtension.ExtensionClass)
+        assert issubclass(ext_class, ComponentExtension.ComponentConfig)
         assert ext_class.component_class is TestAccessComp
 
         # NOTE: Required for test_component_class_lifecycle_hooks to work
@@ -371,3 +393,64 @@ class TestExtensionViews:
         response2 = client.get("/components/ext/test_nested_extension/nested-view/123/John/")
         assert response2.status_code == 200
         assert response2.content == b"Hello, world! 123 John"
+
+
+@djc_test
+class TestExtensionDefaults:
+    @djc_test(
+        components_settings={
+            "extensions": [DummyExtension],
+            "extensions_defaults": {
+                "test_extension": {},
+            },
+        }
+    )
+    def test_no_defaults(self):
+        class TestComponent(Component):
+            template = "Hello"
+
+        dummy_ext_cls: DummyExtension.ComponentConfig = TestComponent.TestExtension  # type: ignore[attr-defined]
+        assert dummy_ext_cls.foo == "1"
+        assert dummy_ext_cls.bar == "2"
+        assert dummy_ext_cls.baz() == "3"
+
+    @djc_test(
+        components_settings={
+            "extensions": [DummyExtension],
+            "extensions_defaults": {
+                "test_extension": {
+                    "foo": "NEW_FOO",
+                    "baz": classmethod(lambda self: "OVERRIDEN"),
+                },
+                "nonexistent": {
+                    "1": "2",
+                },
+            },
+        }
+    )
+    def test_defaults(self):
+        class TestComponent(Component):
+            template = "Hello"
+
+        dummy_ext_cls: DummyExtension.ComponentConfig = TestComponent.TestExtension  # type: ignore[attr-defined]
+        assert dummy_ext_cls.foo == "NEW_FOO"
+        assert dummy_ext_cls.bar == "2"
+        assert dummy_ext_cls.baz() == "OVERRIDEN"
+
+
+@djc_test
+class TestLegacyApi:
+    # TODO_V1 - Remove
+    @djc_test(
+        components_settings={
+            "extensions": [LegacyExtension],
+        }
+    )
+    def test_extension_class(self):
+        class TestComponent(Component):
+            template = "Hello"
+
+        dummy_ext_cls: LegacyExtension.ExtensionClass = TestComponent.Legacy  # type: ignore[attr-defined]
+        assert dummy_ext_cls.foo == "1"
+        assert dummy_ext_cls.bar == "2"
+        assert dummy_ext_cls.baz() == "3"

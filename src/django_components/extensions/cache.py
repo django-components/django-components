@@ -5,6 +5,7 @@ from django.core.cache import BaseCache, caches
 
 from django_components.extension import (
     ComponentExtension,
+    ExtensionComponentConfig,
     OnComponentInputContext,
     OnComponentRenderedContext,
 )
@@ -15,7 +16,7 @@ from django_components.slots import Slot
 CACHE_KEY_PREFIX = "components:cache:"
 
 
-class ComponentCache(ComponentExtension.ExtensionClass):  # type: ignore
+class ComponentCache(ExtensionComponentConfig):
     """
     The interface for `Component.Cache`.
 
@@ -172,7 +173,7 @@ class CacheExtension(ComponentExtension):
 
     name = "cache"
 
-    ExtensionClass = ComponentCache
+    ComponentConfig = ComponentCache
 
     def __init__(self, *args: Any, **kwargs: Any):
         self.render_id_to_cache_key: dict[str, str] = {}

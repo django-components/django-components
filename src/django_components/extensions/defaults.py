@@ -3,7 +3,12 @@ from dataclasses import MISSING, Field, dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Type
 from weakref import WeakKeyDictionary
 
-from django_components.extension import ComponentExtension, OnComponentClassCreatedContext, OnComponentInputContext
+from django_components.extension import (
+    ComponentExtension,
+    ExtensionComponentConfig,
+    OnComponentClassCreatedContext,
+    OnComponentInputContext,
+)
 
 if TYPE_CHECKING:
     from django_components.component import Component
@@ -62,7 +67,8 @@ def _extract_defaults(defaults: Optional[Type]) -> List[ComponentDefaultField]:
     for default_field_key in dir(defaults):
         # Iterate only over fields set by the user (so non-dunder fields).
         # Plus ignore `component_class` because that was set by the extension system.
-        if default_field_key.startswith("__") or default_field_key == "component_class":
+        # TODO_V1 - Remove `component_class`
+        if default_field_key.startswith("__") or default_field_key in {"component_class", "component_cls"}:
             continue
 
         default_field = getattr(defaults, default_field_key)
@@ -119,7 +125,7 @@ def _apply_defaults(kwargs: Dict, defaults: List[ComponentDefaultField]) -> None
         kwargs[default_field.key] = default_value
 
 
-class ComponentDefaults(ComponentExtension.ExtensionClass):  # type: ignore[misc,valid-type]
+class ComponentDefaults(ExtensionComponentConfig):
     """
     The interface for `Component.Defaults`.
 
@@ -164,7 +170,7 @@ class DefaultsExtension(ComponentExtension):
     """
 
     name = "defaults"
-    ExtensionClass = ComponentDefaults
+    ComponentConfig = ComponentDefaults
 
     # Preprocess the `Component.Defaults` class, if given, so we don't have to do it
     # each time a component is rendered.

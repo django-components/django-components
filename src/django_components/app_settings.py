@@ -158,12 +158,39 @@ class ComponentsSettings(NamedTuple):
     - Python import path, e.g. `"path.to.my_extension.MyExtension"`.
     - Extension class, e.g. `my_extension.MyExtension`.
 
+    Read more about [extensions](../../concepts/advanced/extensions).
+
+    **Example:**
+
     ```python
     COMPONENTS = ComponentsSettings(
         extensions=[
             "path.to.my_extension.MyExtension",
             StorybookExtension,
         ],
+    )
+    ```
+    """
+
+    extensions_defaults: Optional[Dict[str, Any]] = None
+    """
+    Global defaults for the extension classes.
+
+    Read more about [Extension defaults](../../concepts/advanced/extensions#extension-defaults).
+
+    **Example:**
+
+    ```python
+    COMPONENTS = ComponentsSettings(
+        extensions_defaults={
+            "my_extension": {
+                "my_setting": "my_value",
+            },
+            "cache": {
+                "enabled": True,
+                "ttl": 60,
+            },
+        },
     )
     ```
     """
@@ -282,8 +309,13 @@ class ComponentsSettings(NamedTuple):
     > [here](https://github.com/django-components/django-components/issues/498).
     """
 
+    # TODO_v1 - remove. Users should use extension defaults instead.
     debug_highlight_components: Optional[bool] = None
     """
+    DEPRECATED. Use
+    [`extensions_defaults`](../settings/#django_components.app_settings.ComponentsSettings.extensions_defaults)
+    instead. Will be removed in v1.
+
     Enable / disable component highlighting.
     See [Troubleshooting](../../guides/other/troubleshooting#component-highlighting) for more details.
 
@@ -296,8 +328,13 @@ class ComponentsSettings(NamedTuple):
     ```
     """
 
+    # TODO_v1 - remove. Users should use extension defaults instead.
     debug_highlight_slots: Optional[bool] = None
     """
+    DEPRECATED. Use
+    [`extensions_defaults`](../settings/#django_components.app_settings.ComponentsSettings.extensions_defaults)
+    instead. Will be removed in v1.
+
     Enable / disable slot highlighting.
     See [Troubleshooting](../../guides/other/troubleshooting#slot-highlighting) for more details.
 
@@ -670,6 +707,7 @@ defaults = ComponentsSettings(
     debug_highlight_slots=False,
     dynamic_component_name="dynamic",
     extensions=[],
+    extensions_defaults={},
     libraries=[],  # E.g. ["mysite.components.forms", ...]
     multiline_tags=True,
     reload_on_file_change=False,
@@ -735,6 +773,7 @@ class InternalSettings:
             # NOTE: Internally we store the extensions as a list of instances, but the user
             #       can pass in either a list of classes or a list of import strings.
             extensions=self._prepare_extensions(components_settings),  # type: ignore[arg-type]
+            extensions_defaults=default(components_settings.extensions_defaults, defaults.extensions_defaults),
             multiline_tags=default(components_settings.multiline_tags, defaults.multiline_tags),
             reload_on_file_change=self._prepare_reload_on_file_change(components_settings),
             template_cache_size=default(components_settings.template_cache_size, defaults.template_cache_size),
@@ -755,7 +794,15 @@ class InternalSettings:
         from django_components.extensions.defaults import DefaultsExtension
         from django_components.extensions.view import ViewExtension
 
-        extensions = [CacheExtension, DefaultsExtension, ViewExtension, DebugHighlightExtension] + list(extensions)
+        extensions = cast(
+            List[Type["ComponentExtension"]],
+            [
+                CacheExtension,
+                DefaultsExtension,
+                ViewExtension,
+                DebugHighlightExtension,
+            ],
+        ) + list(extensions)
 
         # Extensions may be passed in either as classes or import strings.
         extension_instances: List["ComponentExtension"] = []

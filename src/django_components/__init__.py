@@ -36,6 +36,7 @@ from django_components.components import DynamicComponent
 from django_components.dependencies import DependenciesStrategy, render_dependencies
 from django_components.extension import (
     ComponentExtension,
+    ExtensionComponentConfig,
     OnComponentRegisteredContext,
     OnComponentUnregisteredContext,
     OnRegistryCreatedContext,
@@ -47,6 +48,7 @@ from django_components.extension import (
 )
 from django_components.extensions.cache import ComponentCache
 from django_components.extensions.defaults import ComponentDefaults, Default
+from django_components.extensions.debug_highlight import ComponentDebugHighlight
 from django_components.extensions.view import ComponentView, get_component_url
 from django_components.library import TagProtectedError
 from django_components.node import BaseNode, template_tag
@@ -93,6 +95,7 @@ __all__ = [
     "Component",
     "ComponentCache",
     "ComponentCommand",
+    "ComponentDebugHighlight",
     "ComponentDefaults",
     "ComponentExtension",
     "ComponentFileEntry",
@@ -111,6 +114,7 @@ __all__ = [
     "DependenciesStrategy",
     "DynamicComponent",
     "Empty",
+    "ExtensionComponentConfig",
     "format_attributes",
     "get_component_by_class_id",
     "get_component_dirs",

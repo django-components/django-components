@@ -67,7 +67,7 @@ If you insert this tag multiple times, ALL JS scripts will be duplicately insert
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L3164" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L3172" target="_blank">See source code</a>
 
 
 
@@ -169,7 +169,7 @@ COMPONENTS = {
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L949" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L948" target="_blank">See source code</a>
 
 
 
@@ -467,7 +467,7 @@ user = self.inject("user_data")["user"]
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L475" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L474" target="_blank">See source code</a>
 
 
 
