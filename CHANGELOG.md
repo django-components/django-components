@@ -775,17 +775,27 @@ Summary:
 
     Then, the `contents` attribute of the `BaseNode` instance will contain the string `"Hello, world!"`.
 
-- `Slot` class now has a `Slot.contents` attribute, which contains the original contents:
+- `Slot` class now has 3 new metadata fields:
 
-    - If `Slot` was created from `{% fill %}` tag, `Slot.contents` will contain the body of the `{% fill %}` tag.
-    - If `Slot` was created from string via `Slot("...")`, `Slot.contents` will contain that string.
-    - If `Slot` was created from a function, `Slot.contents` will contain that function.
+    1. `Slot.contents` attribute contains the original contents:
+
+        - If `Slot` was created from `{% fill %}` tag, `Slot.contents` will contain the body of the `{% fill %}` tag.
+        - If `Slot` was created from string via `Slot("...")`, `Slot.contents` will contain that string.
+        - If `Slot` was created from a function, `Slot.contents` will contain that function.
+
+    2. `Slot.extra` attribute where you can put arbitrary metadata about the slot.
+
+    3. `Slot.source` attribute tells where the slot comes from:
+
+        - `'template'` if the slot was created from `{% fill %}` tag.
+        - `'python'` if the slot was created from string, function, or `Slot` instance.
+
+    See [Slot metadata](https://django-components.github.io/django-components/0.140/concepts/fundamentals/slots/#slot-metadata).
 
 - `{% fill %}` tag now accepts `body` kwarg to pass a Slot instance to fill.
 
-    First pass a [`Slot`](../api#django_components.Slot) instance to the template
-    with the [`get_template_data()`](../api#django_components.Component.get_template_data)
-    method:
+    First pass a `Slot` instance to the template
+    with the `get_template_data()` method:
 
     ```python
     from django_components import component, Slot

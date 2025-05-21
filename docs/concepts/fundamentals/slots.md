@@ -723,25 +723,52 @@ html = slot()
 
 When accessing slots from within [`Component`](../../../reference/api#django_components.Component) methods,
 the [`Slot`](../../../reference/api#django_components.Slot) instances are populated
-with extra metadata [`component_name`](../../../reference/api#django_components.Slot.component_name),
-[`slot_name`](../../../reference/api#django_components.Slot.slot_name), and
-[`nodelist`](../../../reference/api#django_components.Slot.nodelist).
+with extra metadata:
 
-These are used for debugging, such as printing the path to the slot in the component tree.
+- [`component_name`](../../../reference/api#django_components.Slot.component_name)
+- [`slot_name`](../../../reference/api#django_components.Slot.slot_name)
+- [`nodelist`](../../../reference/api#django_components.Slot.nodelist)
+- [`source`](../../../reference/api#django_components.Slot.source)
+- [`extra`](../../../reference/api#django_components.Slot.extra)
 
-When you create a slot, you can set these fields too:
+These are populated the first time a slot is passed to a component.
+
+So if you pass the same slot through multiple nested components, the metadata will
+still point to the first component that received the slot.
+
+You can use these for debugging, such as printing out the slot's component name and slot name.
+
+Extensions can use [`Slot.source`](../../../reference/api#django_components.Slot.source)
+to handle slots differently based on whether the slot
+was defined in the template with [`{% fill %}`](../../../reference/template_tags#fill) tag
+or in the component's Python code. See an example in [Pass slot metadata](../../advanced/extensions#pass-slot-metadata).
+
+You can also pass any additional data along with the slot by setting it in [`Slot.extra`](../../../reference/api#django_components.Slot.extra):
+
+```py
+slot = Slot(
+    lambda ctx: f"Hello, {ctx.data['name']}!",
+    extra={"foo": "bar"},
+)
+```
+
+When you create a slot, you can set any of these fields too:
 
 ```py
 # Either at slot creation
 slot = Slot(
     lambda ctx: f"Hello, {ctx.data['name']}!",
+    # Optional
     component_name="table",
     slot_name="name",
+    source="python",
+    extra={},
 )
 
 # Or later
 slot.component_name = "table"
 slot.slot_name = "name"
+slot.extra["foo"] = "bar"
 ```
 
 ### Slot contents

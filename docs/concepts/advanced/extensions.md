@@ -401,7 +401,46 @@ class ColorLoggerExtension(ComponentExtension):
     ExtensionClass = ColorLoggerExtensionClass
 ```
 
-## Extension Commands
+### Pass slot metadata
+
+When a slot is passed to a component, it is copied, so that the original slot is not modified
+with rendering metadata.
+
+Therefore, don't use slot's identity to associate metadata with the slot:
+
+```py
+# ❌ Don't do this:
+slots_cache = {}
+
+class LoggerExtension(ComponentExtension):
+    name = "logger"
+
+    def on_component_input(self, ctx: OnComponentInputContext):
+        for slot in ctx.component.slots.values():
+            slots_cache[id(slot)] = {"some": "metadata"}
+```
+
+Instead, use the [`Slot.extra`](../../../reference/api#django_components.Slot.extra) attribute,
+which is copied from the original slot:
+
+```python
+# ✅ Do this:
+class LoggerExtension(ComponentExtension):
+    name = "logger"
+
+    # Save component-level logger settings for each slot when a component is rendered.
+    def on_component_input(self, ctx: OnComponentInputContext):
+        for slot in ctx.component.slots.values():
+            slot.extra["logger"] = ctx.component.logger
+
+    # Then, when a fill is rendered with `{% slot %}`, we can access the logger settings
+    # from the slot's metadata.
+    def on_slot_rendered(self, ctx: OnSlotRenderedContext):
+        logger = ctx.slot.extra["logger"]
+        logger.log(...)
+```
+
+## Extension commands
 
 Extensions in django-components can define custom commands that can be executed via the Django management command interface. This allows for powerful automation and customization capabilities.
 

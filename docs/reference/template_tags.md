@@ -169,7 +169,7 @@ COMPONENTS = {
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L949" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L968" target="_blank">See source code</a>
 
 
 
@@ -467,7 +467,7 @@ user = self.inject("user_data")["user"]
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L475" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L494" target="_blank">See source code</a>
 
 
 

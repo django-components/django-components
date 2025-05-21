@@ -210,7 +210,7 @@ class TestSlot:
 
     # Part of the slot caching feature - test that static content slots reuse the slot function.
     # See https://github.com/django-components/django-components/issues/1164#issuecomment-2854682354
-    def test_slots_reuse_functions__string(self):
+    def test_slots_same_contents__string(self):
         captured_slots = {}
 
         class SimpleComponent(Component):
@@ -229,13 +229,9 @@ class TestSlot:
         )
 
         first_slot_func = captured_slots["first"]
-        first_nodelist: NodeList = first_slot_func.nodelist
         assert isinstance(first_slot_func, Slot)
         assert first_slot_func.content_func is not None
         assert first_slot_func.contents == "FIRST_SLOT"
-        assert len(first_nodelist) == 1
-        assert isinstance(first_nodelist[0], TextNode)
-        assert first_nodelist[0].s == "FIRST_SLOT"
 
         captured_slots = {}
         SimpleComponent.render(
@@ -243,19 +239,15 @@ class TestSlot:
         )
 
         second_slot_func = captured_slots["first"]
-        second_nodelist: NodeList = second_slot_func.nodelist
         assert isinstance(second_slot_func, Slot)
         assert second_slot_func.content_func is not None
         assert second_slot_func.contents == "FIRST_SLOT"
-        assert len(second_nodelist) == 1
-        assert isinstance(second_nodelist[0], TextNode)
-        assert second_nodelist[0].s == "FIRST_SLOT"
 
         assert first_slot_func.contents == second_slot_func.contents
 
     # Part of the slot caching feature - test that consistent functions passed as slots
     # reuse the slot function.
-    def test_slots_reuse_functions__func(self):
+    def test_slots_same_contents__func(self):
         captured_slots = {}
 
         class SimpleComponent(Component):
@@ -279,7 +271,6 @@ class TestSlot:
         assert isinstance(first_slot_func, Slot)
         assert callable(first_slot_func.content_func)
         assert callable(first_slot_func.contents)
-        assert first_slot_func.nodelist is None
 
         captured_slots = {}
         SimpleComponent.render(
@@ -290,13 +281,12 @@ class TestSlot:
         assert isinstance(second_slot_func, Slot)
         assert callable(second_slot_func.content_func)
         assert callable(second_slot_func.contents)
-        assert second_slot_func.nodelist is None
 
         assert first_slot_func.contents is second_slot_func.contents
 
     # Part of the slot caching feature - test that `Slot` instances with identical function
     # passed as slots reuse the slot function.
-    def test_slots_reuse_functions__slot(self):
+    def test_slots_same_contents__slot(self):
         captured_slots = {}
 
         class SimpleComponent(Component):
@@ -320,7 +310,6 @@ class TestSlot:
         assert isinstance(first_slot_func, Slot)
         assert callable(first_slot_func.content_func)
         assert callable(first_slot_func.contents)
-        assert first_slot_func.nodelist is None
 
         captured_slots = {}
         SimpleComponent.render(
@@ -331,13 +320,12 @@ class TestSlot:
         assert isinstance(second_slot_func, Slot)
         assert callable(second_slot_func.content_func)
         assert callable(second_slot_func.contents)
-        assert second_slot_func.nodelist is None
 
         assert first_slot_func.contents == second_slot_func.contents
 
     # Part of the slot caching feature - test that identical slot fill content
     # slots reuse the slot function.
-    def test_slots_reuse_functions__fill_tag_default(self):
+    def test_slots_same_contents__fill_tag_default(self):
         captured_slots = {}
 
         @register("test")
@@ -363,31 +351,23 @@ class TestSlot:
         template.render(Context())
 
         first_slot_func = captured_slots["default"]
-        first_nodelist: NodeList = first_slot_func.nodelist
         assert isinstance(first_slot_func, Slot)
         assert callable(first_slot_func.content_func)
         assert first_slot_func.contents == "\n              FROM_INSIDE_DEFAULT_SLOT\n            "
-        assert len(first_nodelist) == 1
-        assert isinstance(first_nodelist[0], TextNode)
-        assert first_nodelist[0].s == "\n              FROM_INSIDE_DEFAULT_SLOT\n            "
 
         captured_slots = {}
         template.render(Context())
 
         second_slot_func = captured_slots["default"]
-        second_nodelist: NodeList = second_slot_func.nodelist
         assert isinstance(second_slot_func, Slot)
         assert callable(second_slot_func.content_func)
         assert second_slot_func.contents == "\n              FROM_INSIDE_DEFAULT_SLOT\n            "
-        assert len(second_nodelist) == 1
-        assert isinstance(second_nodelist[0], TextNode)
-        assert second_nodelist[0].s == "\n              FROM_INSIDE_DEFAULT_SLOT\n            "
 
         assert first_slot_func.contents == second_slot_func.contents
 
     # Part of the slot caching feature - test that identical slot fill content
     # slots reuse the slot function.
-    def test_slots_reuse_functions__fill_tag_named(self):
+    def test_slots_same_contents__fill_tag_named(self):
         captured_slots = {}
 
         @register("test")
@@ -415,27 +395,230 @@ class TestSlot:
         template.render(Context())
 
         first_slot_func = captured_slots["first"]
-        first_nodelist: NodeList = first_slot_func.nodelist
         assert isinstance(first_slot_func, Slot)
         assert callable(first_slot_func.content_func)
         assert first_slot_func.contents == "\n                FROM_INSIDE_NAMED_SLOT\n              "
-        assert len(first_nodelist) == 1
-        assert isinstance(first_nodelist[0], TextNode)
-        assert first_nodelist[0].s == "\n                FROM_INSIDE_NAMED_SLOT\n              "
 
         captured_slots = {}
         template.render(Context())
 
         second_slot_func = captured_slots["first"]
-        second_nodelist: NodeList = second_slot_func.nodelist
         assert isinstance(second_slot_func, Slot)
         assert callable(second_slot_func.content_func)
         assert second_slot_func.contents == "\n                FROM_INSIDE_NAMED_SLOT\n              "
-        assert len(second_nodelist) == 1
-        assert isinstance(second_nodelist[0], TextNode)
-        assert second_nodelist[0].s == "\n                FROM_INSIDE_NAMED_SLOT\n              "
 
         assert first_slot_func.contents == second_slot_func.contents
+
+    def test_slot_metadata__string(self):
+        captured_slots = {}
+
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "first" required %}
+                {% endslot %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal captured_slots
+                captured_slots = slots
+
+        SimpleComponent.render(
+            slots={"first": "FIRST_SLOT"},
+        )
+
+        first_slot_func = captured_slots["first"]
+        assert isinstance(first_slot_func, Slot)
+        assert first_slot_func.component_name == "SimpleComponent"
+        assert first_slot_func.slot_name == "first"
+        assert first_slot_func.source == "python"
+        assert first_slot_func.extra == {}
+
+        first_nodelist: NodeList = first_slot_func.nodelist
+        assert len(first_nodelist) == 1
+        assert isinstance(first_nodelist[0], TextNode)
+        assert first_nodelist[0].s == "FIRST_SLOT"
+
+    # Part of the slot caching feature - test that consistent functions passed as slots
+    # reuse the slot function.
+    def test_slot_metadata__func(self):
+        captured_slots = {}
+
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "first" required %}
+                {% endslot %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal captured_slots
+                captured_slots = slots
+
+        slot_func = lambda ctx: "FROM_INSIDE_SLOT"  # noqa: E731
+
+        SimpleComponent.render(
+            slots={"first": slot_func},
+        )
+
+        first_slot_func = captured_slots["first"]
+        assert isinstance(first_slot_func, Slot)
+        assert first_slot_func.component_name == "SimpleComponent"
+        assert first_slot_func.slot_name == "first"
+        assert first_slot_func.source == "python"
+        assert first_slot_func.extra == {}
+        assert first_slot_func.nodelist is None
+
+    # Part of the slot caching feature - test that `Slot` instances with identical function
+    # passed as slots reuse the slot function.
+    def test_slot_metadata__slot(self):
+        captured_slots = {}
+
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "first" required %}
+                {% endslot %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal captured_slots
+                captured_slots = slots
+
+        slot_func = lambda ctx: "FROM_INSIDE_SLOT"  # noqa: E731
+
+        SimpleComponent.render(
+            slots={"first": Slot(slot_func, extra={"foo": "bar"}, slot_name="whoop")},
+        )
+
+        first_slot_func = captured_slots["first"]
+        assert isinstance(first_slot_func, Slot)
+        assert first_slot_func.component_name == "SimpleComponent"
+        assert first_slot_func.slot_name == "whoop"
+        assert first_slot_func.source == "python"
+        assert first_slot_func.extra == {"foo": "bar"}
+        assert first_slot_func.nodelist is None
+
+    # Part of the slot caching feature - test that identical slot fill content
+    # slots reuse the slot function.
+    def test_slot_metadata__fill_tag_default(self):
+        captured_slots = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "first" default %}
+                {% endslot %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal captured_slots
+                captured_slots = slots
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+              FROM_INSIDE_DEFAULT_SLOT
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+
+        template.render(Context())
+
+        first_slot_func = captured_slots["default"]
+        assert isinstance(first_slot_func, Slot)
+        assert first_slot_func.component_name == "test"
+        assert first_slot_func.slot_name == "default"
+        assert first_slot_func.source == "template"
+        assert first_slot_func.extra == {}
+
+        first_nodelist: NodeList = first_slot_func.nodelist
+        assert len(first_nodelist) == 1
+        assert isinstance(first_nodelist[0], TextNode)
+        assert first_nodelist[0].s == "\n              FROM_INSIDE_DEFAULT_SLOT\n            "
+
+    # Part of the slot caching feature - test that identical slot fill content
+    # slots reuse the slot function.
+    def test_slot_metadata__fill_tag_named(self):
+        captured_slots = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "first" default %}
+                {% endslot %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal captured_slots
+                captured_slots = slots
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+              {% fill "first" %}
+                FROM_INSIDE_NAMED_SLOT
+              {% endfill %}
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+
+        template.render(Context())
+
+        first_slot_func = captured_slots["first"]
+        assert isinstance(first_slot_func, Slot)
+        assert first_slot_func.component_name == "test"
+        assert first_slot_func.slot_name == "first"
+        assert first_slot_func.source == "template"
+        assert first_slot_func.extra == {}
+
+        first_nodelist: NodeList = first_slot_func.nodelist
+        assert len(first_nodelist) == 1
+        assert isinstance(first_nodelist[0], TextNode)
+        assert first_nodelist[0].s == "\n                FROM_INSIDE_NAMED_SLOT\n              "
+
+    # Part of the slot caching feature - test that identical slot fill content
+    # slots reuse the slot function.
+    def test_slot_metadata__fill_tag_body(self):
+        captured_slots = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "first" default %}
+                {% endslot %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal captured_slots
+                captured_slots = slots
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+              {% fill "first" body=my_slot / %}
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+
+        template.render(
+            Context(
+                {
+                    "my_slot": Slot(lambda ctx: "FROM_INSIDE_NAMED_SLOT", extra={"foo": "bar"}, slot_name="whoop"),
+                }
+            )
+        )
+
+        first_slot_func = captured_slots["first"]
+        assert isinstance(first_slot_func, Slot)
+        assert first_slot_func.component_name == "test"
+        assert first_slot_func.slot_name == "whoop"
+        assert first_slot_func.source == "template"
+        assert first_slot_func.extra == {"foo": "bar"}
+        assert first_slot_func.nodelist is None
 
     def test_pass_body_to_fill__slot(self):
         @register("test")

@@ -1,6 +1,7 @@
 import difflib
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from dataclasses import replace as dataclass_replace
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -33,7 +34,7 @@ from django_components.node import BaseNode
 from django_components.perfutil.component import component_context_cache
 from django_components.util.exception import add_slot_to_error_message
 from django_components.util.logger import trace_component_msg
-from django_components.util.misc import get_index, get_last_index, is_identifier
+from django_components.util.misc import default, get_index, get_last_index, is_identifier
 
 if TYPE_CHECKING:
     from django_components.component import Component, ComponentNode
@@ -263,6 +264,34 @@ class Slot(Generic[TSlotData]):
     this will be the Nodelist of the fill's content.
 
     See [Slot metadata](../../concepts/fundamentals/slots#slot-metadata).
+    """
+    source: Literal["template", "python"] = "python"
+    """
+    Whether the slot was created from a [`{% fill %}`](../template_tags#fill) tag (`'template'`),
+    or Python (`'python'`).
+
+    Extensions can use this info to handle slots differently based on their source.
+
+    See [Slot metadata](../../concepts/fundamentals/slots#slot-metadata).
+    """
+    extra: Dict[str, Any] = field(default_factory=dict)
+    """
+    Dictionary that can be used to store arbitrary metadata about the slot.
+
+    See [Slot metadata](../../concepts/fundamentals/slots#slot-metadata).
+
+    See [Pass slot metadata](../../concepts/advanced/extensions#pass-slot-metadata)
+    for usage for extensions.
+
+    **Example:**
+
+    ```python
+    # Either at slot creation
+    slot = Slot(lambda ctx: "Hello, world!", extra={"foo": "bar"})
+
+    # Or later
+    slot.extra["baz"] = "qux"
+    ```
     """
 
     def __post_init__(self) -> None:
@@ -1366,6 +1395,7 @@ def resolve_fills(
                 contents=contents,
                 data_var=None,
                 fallback_var=None,
+                source="template",
             )
 
     # The content has fills
@@ -1375,7 +1405,14 @@ def resolve_fills(
         for fill in maybe_fills:
             # Case: Slot fill was explicitly defined as `{% fill body=... / %}`
             if fill.body is not None:
-                slot_fill = fill.body if isinstance(fill.body, Slot) else Slot(fill.body)
+                if isinstance(fill.body, Slot):
+                    # Make a copy of the Slot instance and set it to `source="template"`,
+                    # so it behaves the same as if the content was written inside the `{% fill %}` tag.
+                    # This for example allows CSS scoping to work even on slots that are defined
+                    # as `{% fill ... body=... / %}`
+                    slot_fill = dataclass_replace(fill.body, source="template")
+                else:
+                    slot_fill = Slot(fill.body)
             # Case: Slot fill was defined as the body of `{% fill / %}...{% endfill %}`
             else:
                 slot_fill = _nodelist_to_slot(
@@ -1386,6 +1423,7 @@ def resolve_fills(
                     data_var=fill.data_var,
                     fallback_var=fill.fallback_var,
                     extra_context=fill.extra_context,
+                    source="template",
                 )
             slots[fill.name] = slot_fill
 
@@ -1459,11 +1497,15 @@ def normalize_slot_fills(
             used_slot_name = content.slot_name or slot_name
             used_nodelist = content.nodelist
             used_contents = content.contents if content.contents is not None else content_func
+            used_source = content.source
+            used_extra = content.extra.copy()
         else:
             used_component_name = component_name
             used_slot_name = slot_name
             used_nodelist = None
             used_contents = content_func
+            used_source = "python"
+            used_extra = {}
 
         slot = Slot(
             contents=used_contents,
@@ -1471,6 +1513,8 @@ def normalize_slot_fills(
             component_name=used_component_name,
             slot_name=used_slot_name,
             nodelist=used_nodelist,
+            source=used_source,
+            extra=used_extra,
         )
 
         return slot
@@ -1500,6 +1544,8 @@ def _nodelist_to_slot(
     data_var: Optional[str] = None,
     fallback_var: Optional[str] = None,
     extra_context: Optional[Dict[str, Any]] = None,
+    source: Optional[Literal["template", "python"]] = None,
+    extra: Optional[Dict[str, Any]] = None,
 ) -> Slot:
     if data_var:
         if not data_var.isidentifier():
@@ -1591,7 +1637,9 @@ def _nodelist_to_slot(
         # `BaseNode.contents` which is `None` for self-closing tags like `{% fill "footer" / %}`.
         # But `Slot(contents=None)` would result in `Slot.contents` being the render function.
         # So we need to special-case this.
-        contents=contents if contents is not None else "",
+        contents=default(contents, ""),
+        source=default(source, "python"),
+        extra=default(extra, {}),
     )
 
 
