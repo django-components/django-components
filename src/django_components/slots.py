@@ -47,6 +47,7 @@ SLOT_REQUIRED_FLAG = "required"
 SLOT_DEFAULT_FLAG = "default"
 FILL_DATA_KWARG = "data"
 FILL_FALLBACK_KWARG = "fallback"
+FILL_BODY_KWARG = "body"
 
 
 # Public types
@@ -973,6 +974,46 @@ class FillNode(BaseNode):
       {% endfill %}
     {% endcomponent %}
     ```
+
+    ### Passing slot fill from Python
+
+    You can pass a slot fill from Python to a component by setting the `body` kwarg
+    on the `{% fill %}` tag.
+
+    First pass a [`Slot`](../api#django_components.Slot) instance to the template
+    with the [`get_template_data()`](../api#django_components.Component.get_template_data)
+    method:
+
+    ```python
+    from django_components import component, Slot
+
+    class Table(Component):
+      def get_template_data(self, args, kwargs, slots, context):
+        return {
+            "my_slot": Slot(lambda ctx: "Hello, world!"),
+        }
+    ```
+
+    Then pass the slot to the `{% fill %}` tag:
+
+    ```django
+    {% component "table" %}
+      {% fill "pagination" body=my_slot / %}
+    {% endcomponent %}
+    ```
+
+    !!! warning
+
+        If you define both the `body` kwarg and the `{% fill %}` tag's body,
+        an error will be raised.
+
+        ```django
+        {% component "table" %}
+          {% fill "pagination" body=my_slot %}
+            ...
+          {% endfill %}
+        {% endcomponent %}
+        ```
     """
 
     tag = "fill"
@@ -986,6 +1027,7 @@ class FillNode(BaseNode):
         *,
         data: Optional[str] = None,
         fallback: Optional[str] = None,
+        body: Optional[SlotInput] = None,
         # TODO_V1: Use `fallback` kwarg instead of `default`
         default: Optional[str] = None,
     ) -> str:
@@ -1034,12 +1076,19 @@ class FillNode(BaseNode):
                 f" and slot data ({FILL_DATA_KWARG}=...)"
             )
 
+        if body is not None and self.contents:
+            raise TemplateSyntaxError(
+                f"Fill '{name}' received content both through '{FILL_BODY_KWARG}' kwarg and '{{% fill %}}' body. "
+                f"Use only one method."
+            )
+
         fill_data = FillWithData(
             fill=self,
             name=name,
             fallback_var=fallback,
             data_var=data,
             extra_context={},
+            body=body,
         )
 
         self._extract_fill(context, fill_data)
@@ -1055,10 +1104,13 @@ class FillNode(BaseNode):
         #       ...
         #     {% endfill %}
         #   {% endfor %}
-        collected_fills: List[FillWithData] = context.get(FILL_GEN_CONTEXT_KEY, None)
+        collected_fills: Optional[List[FillWithData]] = context.get(FILL_GEN_CONTEXT_KEY, None)
 
         if collected_fills is None:
-            return
+            raise RuntimeError(
+                "FillNode.render() (AKA {% fill ... %} block) cannot be rendered outside of a Component context. "
+                "Make sure that the {% fill %} tags are nested within {% component %} tags."
+            )
 
         # To allow using variables which were defined within the template and to which
         # the `{% fill %}` tag has access, we need to capture those variables too.
@@ -1126,6 +1178,17 @@ class FillWithData(NamedTuple):
     fill: FillNode
     name: str
     """Name of the slot to be filled, as set on the `{% fill %}` tag."""
+    body: Optional[SlotInput]
+    """
+    Slot fill as set by the `body` kwarg on the `{% fill %}` tag.
+
+    E.g.
+    ```django
+    {% component "mycomponent" %}
+        {% fill "footer" body=my_slot / %}
+    {% endcomponent %}
+    ```
+    """
     fallback_var: Optional[str]
     """Name of the FALLBACK variable, as set on the `{% fill %}` tag."""
     data_var: Optional[str]
@@ -1243,17 +1306,23 @@ def resolve_fills(
         # NOTE: If slot fills are explicitly defined, we use them even if they are empty (or only whitespace).
         #       This is different from the default slot, where we ignore empty content.
         for fill in maybe_fills:
-            slots[fill.name] = _nodelist_to_slot(
-                component_name=component_name,
-                slot_name=fill.name,
-                nodelist=fill.fill.nodelist,
-                contents=fill.fill.contents,
-                data_var=fill.data_var,
-                fallback_var=fill.fallback_var,
-                extra_context=fill.extra_context,
-                # Escaped because this was defined in the template
-                escaped=True,
-            )
+            # Case: Slot fill was explicitly defined as `{% fill body=... / %}`
+            if fill.body is not None:
+                slot_fill = fill.body if isinstance(fill.body, Slot) else Slot(fill.body)
+            # Case: Slot fill was defined as the body of `{% fill / %}...{% endfill %}`
+            else:
+                slot_fill = _nodelist_to_slot(
+                    component_name=component_name,
+                    slot_name=fill.name,
+                    nodelist=fill.fill.nodelist,
+                    contents=fill.fill.contents,
+                    data_var=fill.data_var,
+                    fallback_var=fill.fallback_var,
+                    extra_context=fill.extra_context,
+                    # Escaped because this was defined in the template
+                    escaped=True,
+                )
+            slots[fill.name] = slot_fill
 
     return slots
 

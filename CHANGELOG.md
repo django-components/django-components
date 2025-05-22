@@ -696,6 +696,30 @@ Summary:
     - If `Slot` was created from string via `Slot("...")`, `Slot.contents` will contain that string.
     - If `Slot` was created from a function, `Slot.contents` will contain that function.
 
+- `{% fill %}` tag now accepts `body` kwarg to pass a Slot instance to fill.
+
+    First pass a [`Slot`](../api#django_components.Slot) instance to the template
+    with the [`get_template_data()`](../api#django_components.Component.get_template_data)
+    method:
+
+    ```python
+    from django_components import component, Slot
+
+    class Table(Component):
+      def get_template_data(self, args, kwargs, slots, context):
+        return {
+            "my_slot": Slot(lambda ctx: "Hello, world!"),
+        }
+    ```
+
+    Then pass the slot to the `{% fill %}` tag:
+
+    ```django
+    {% component "table" %}
+      {% fill "pagination" body=my_slot / %}
+    {% endcomponent %}
+    ```
+
 - Component caching can now take slots into account, by setting `Component.Cache.include_slots` to `True`.
 
     ```py

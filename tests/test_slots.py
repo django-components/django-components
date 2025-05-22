@@ -99,17 +99,13 @@ class TestSlot:
 
         with pytest.raises(
             TemplateSyntaxError,
-            match=re.escape(
-                "Slot 'first' is marked as 'required' (i.e. non-optional), yet no fill is provided."
-            ),
+            match=re.escape("Slot 'first' is marked as 'required' (i.e. non-optional), yet no fill is provided."),
         ):
             SimpleComponent.render()
 
         with pytest.raises(
             TemplateSyntaxError,
-            match=re.escape(
-                "Slot 'first' is marked as 'required' (i.e. non-optional), yet no fill is provided."
-            ),
+            match=re.escape("Slot 'first' is marked as 'required' (i.e. non-optional), yet no fill is provided."),
         ):
             SimpleComponent.render(
                 slots={"first": None},
@@ -408,3 +404,73 @@ class TestSlot:
         assert second_nodelist[0].s == "\n                FROM_INSIDE_NAMED_SLOT\n              "
 
         assert first_slot_func.contents == second_slot_func.contents
+
+    def test_pass_body_to_fill__slot(self):
+        @register("test")
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "first" default %}
+                {% endslot %}
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+              {% fill "first" body=my_slot / %}
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+
+        my_slot: Slot = Slot(lambda ctx: "FROM_INSIDE_NAMED_SLOT")
+        rendered: str = template.render(Context({"my_slot": my_slot}))
+
+        assert rendered.strip() == "FROM_INSIDE_NAMED_SLOT"
+
+    def test_pass_body_to_fill__string(self):
+        @register("test")
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "first" default %}
+                {% endslot %}
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+              {% fill "first" body=my_slot / %}
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+
+        rendered: str = template.render(Context({"my_slot": "FROM_INSIDE_NAMED_SLOT"}))
+
+        assert rendered.strip() == "FROM_INSIDE_NAMED_SLOT"
+
+    def test_pass_body_to_fill_raises_on_body(self):
+        @register("test")
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "first" default %}
+                {% endslot %}
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+              {% fill "first" body=my_slot %}
+                FROM_INSIDE_NAMED_SLOT
+              {% endfill %}
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+
+        my_slot: Slot = Slot(lambda ctx: "FROM_INSIDE_NAMED_SLOT")
+
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape("Fill 'first' received content both through 'body' kwarg and '{% fill %}' body."),
+        ):
+            template.render(Context({"my_slot": my_slot}))
