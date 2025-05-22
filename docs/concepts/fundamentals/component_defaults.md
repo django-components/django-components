@@ -67,7 +67,7 @@ and so `selected_items` will be set to `[1, 2, 3]`.
 
 !!! warning
 
-    When [typing](../advanced/typing_and_validation.md) your components with [`Args`](../../../reference/api/#django_components.Component.Args),
+    When [typing](../fundamentals/typing_and_validation.md) your components with [`Args`](../../../reference/api/#django_components.Component.Args),
     [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
     or [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
     you may be inclined to define the defaults in the classes.

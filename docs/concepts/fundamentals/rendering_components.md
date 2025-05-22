@@ -484,7 +484,7 @@ in component's [`Args`](../../../reference/api/#django_components.Component.Args
 [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
 and [`Slots`](../../../reference/api/#django_components.Component.Slots) classes.
 
-Read more on [Typing and validation](../../advanced/typing_and_validation).
+Read more on [Typing and validation](../../fundamentals/typing_and_validation).
 
 ```python
 from typing import NamedTuple, Optional

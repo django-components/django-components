@@ -152,75 +152,141 @@ The difference is that:
 
 ## Accessing component inputs
 
-The component inputs are available in two ways:
+The component inputs are available in 3 ways:
 
-1. **Function arguments (recommended)**
+### Function arguments
 
-    The data methods receive the inputs as parameters, which you can access directly.
+The data methods receive the inputs as parameters directly.
 
-    ```python
+```python
+class ProfileCard(Component):
+    # Access inputs directly as parameters
+    def get_template_data(self, args, kwargs, slots, context):
+        return {
+            "user_id": args[0],
+            "show_details": kwargs["show_details"],
+        }
+```
+
+!!! info
+
+    By default, the `args` parameter is a list, while `kwargs` and `slots` are dictionaries.
+
+    If you add typing to your component with
+    [`Args`](../../../reference/api/#django_components.Component.Args),
+    [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
+    or [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
+    the respective inputs will be given as instances of these classes.
+
+    Learn more about [Component typing](../../fundamentals/typing_and_validation).
+
+    ```py
     class ProfileCard(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            # Access inputs directly as parameters
+        class Args(NamedTuple):
+            user_id: int
+
+        class Kwargs(NamedTuple):
+            show_details: bool
+
+        # Access inputs directly as parameters
+        def get_template_data(self, args: Args, kwargs: Kwargs, slots, context):
             return {
-                "user_id": user_id,
-                "show_details": show_details,
+                "user_id": args.user_id,
+                "show_details": kwargs.show_details,
             }
     ```
 
-    !!! info
+### `args`, `kwargs`, `slots` properties
 
-        By default, the `args` parameter is a list, while `kwargs` and `slots` are dictionaries.
+In other methods, you can access the inputs via
+[`self.args`](../../../reference/api/#django_components.Component.args),
+[`self.kwargs`](../../../reference/api/#django_components.Component.kwargs),
+and [`self.slots`](../../../reference/api/#django_components.Component.slots) properties:
 
-        If you add typing to your component with
-        [`Args`](../../../reference/api/#django_components.Component.Args),
-        [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
-        or [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
-        the respective inputs will be given as instances of these classes.
+```py
+class ProfileCard(Component):
+    def on_render_before(self, *args, **kwargs):
+        # Access inputs via self.args, self.kwargs, self.slots
+        self.args[0]
+        self.kwargs.get("show_details", False)
+        self.slots["footer"]
+```
 
-        Learn more about [Component typing](../../advanced/typing_and_validation).
+!!! info
 
-2. **`self.input` property**
+    These properties work the same way as `args`, `kwargs`, and `slots` parameters in the data methods:
 
-    The data methods receive only the main inputs. There are additional settings that may be passed
-    to components. If you need to access these, you can do so via the [`self.input`](../../../reference/api/#django_components.Component.input) property.
+    By default, the `args` property is a list, while `kwargs` and `slots` are dictionaries.
 
-    The `input` property contains all the inputs passed to the component (instance of [`ComponentInput`](../../../reference/api/#django_components.ComponentInput)).
+    If you add typing to your component with
+    [`Args`](../../../reference/api/#django_components.Component.Args),
+    [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
+    or [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
+    the respective inputs will be given as instances of these classes.
 
-    This includes:
+    Learn more about [Component typing](../../fundamentals/typing_and_validation).
 
-    - [`input.args`](../../../reference/api/#django_components.ComponentInput.args) - List of positional arguments
-    - [`input.kwargs`](../../../reference/api/#django_components.ComponentInput.kwargs) - Dictionary of keyword arguments
-    - [`input.slots`](../../../reference/api/#django_components.ComponentInput.slots) - Dictionary of slots. Values are normalized to [`Slot`](../../../reference/api/#django_components.Slot) instances
-    - [`input.context`](../../../reference/api/#django_components.ComponentInput.context) - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
-    - [`input.type`](../../../reference/api/#django_components.ComponentInput.type) - The type of the component (document, fragment)
-    - [`input.render_dependencies`](../../../reference/api/#django_components.ComponentInput.render_dependencies) - Whether to render dependencies (CSS, JS)
-
-    For more details, see [Component inputs](../render_api/#component-inputs).
-
-    ```python
+    ```py
     class ProfileCard(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            # Access positional arguments
-            user_id = self.input.args[0] if self.input.args else None
+        class Args(NamedTuple):
+            user_id: int
 
-            # Access keyword arguments
-            show_details = self.input.kwargs.get("show_details", False)
+        class Kwargs(NamedTuple):
+            show_details: bool
 
-            # Render component differently depending on the type
-            if self.input.type == "fragment":
-                ...
-
+        def get_template_data(self, args: Args, kwargs: Kwargs, slots, context):
             return {
-                "user_id": user_id,
-                "show_details": show_details,
+                "user_id": self.args.user_id,
+                "show_details": self.kwargs.show_details,
             }
     ```
 
-    !!! info
+### `input` property (low-level)
 
-        Unlike the parameters passed to the data methods, the `args`, `kwargs`, and `slots` in `self.input` property are always lists and dictionaries,
-        regardless of whether you added typing to your component.
+The previous two approaches allow you to access only the most important inputs.
+
+There are additional settings that may be passed to components.
+If you need to access these, you can use [`self.input`](../../../reference/api/#django_components.Component.input) property
+for a low-level access to all the inputs.
+
+The `input` property contains all the inputs passed to the component (instance of [`ComponentInput`](../../../reference/api/#django_components.ComponentInput)).
+
+This includes:
+
+- [`input.args`](../../../reference/api/#django_components.ComponentInput.args) - List of positional arguments
+- [`input.kwargs`](../../../reference/api/#django_components.ComponentInput.kwargs) - Dictionary of keyword arguments
+- [`input.slots`](../../../reference/api/#django_components.ComponentInput.slots) - Dictionary of slots. Values are normalized to [`Slot`](../../../reference/api/#django_components.Slot) instances
+- [`input.context`](../../../reference/api/#django_components.ComponentInput.context) - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
+- [`input.type`](../../../reference/api/#django_components.ComponentInput.type) - The type of the component (document, fragment)
+- [`input.render_dependencies`](../../../reference/api/#django_components.ComponentInput.render_dependencies) - Whether to render dependencies (CSS, JS)
+
+For more details, see [Component inputs](../render_api/#component-inputs).
+
+```python
+class ProfileCard(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        # Access positional arguments
+        user_id = self.input.args[0] if self.input.args else None
+
+        # Access keyword arguments
+        show_details = self.input.kwargs.get("show_details", False)
+
+        # Render component differently depending on the type
+        if self.input.type == "fragment":
+            ...
+
+        return {
+            "user_id": user_id,
+            "show_details": show_details,
+        }
+```
+
+!!! info
+
+    Unlike the parameters passed to the data methods, the `args`, `kwargs`, and `slots` in `self.input` property are always lists and dictionaries,
+    regardless of whether you added typing classes to your component (like [`Args`](../../../reference/api/#django_components.Component.Args),
+    [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
+    or [`Slots`](../../../reference/api/#django_components.Component.Slots)).
 
 ## Default values
 
@@ -279,8 +345,11 @@ class ProfileCard(Component):
 
 All three data methods have access to the Component's [Render API](./render_api.md), which includes:
 
-- [`self.id`](./render_api/#component-id) - The unique ID for the current render call
+- [`self.args`](./render_api/#args) - The positional arguments for the current render call
+- [`self.kwargs`](./render_api/#kwargs) - The keyword arguments for the current render call
+- [`self.slots`](./render_api/#slots) - The slots for the current render call
 - [`self.input`](./render_api/#component-inputs) - All the component inputs
+- [`self.id`](./render_api/#component-id) - The unique ID for the current render call
 - [`self.request`](./render_api/#request-object-and-context-processors) - The request object (if available)
 - [`self.context_processors_data`](./render_api/#request-object-and-context-processors) - Data from Django's context processors (if request is available)
 - [`self.inject()`](./render_api/#provide-inject) - Inject data into the component
@@ -298,7 +367,7 @@ and then add type hints to the data methods.
 
 This will also validate the inputs at runtime, as the type classes will be instantiated with the inputs.
 
-Read more about [Component typing](../../advanced/typing_and_validation).
+Read more about [Component typing](../../fundamentals/typing_and_validation).
 
 ```python
 from typing import NamedTuple, Optional

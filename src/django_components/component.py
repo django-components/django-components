@@ -169,28 +169,43 @@ class ComponentInput:
     This object is available only during render under [`Component.input`](../api#django_components.Component.input).
 
     Read more about the [Render API](../../concepts/fundamentals/render_api).
-
-    This class can be typed as:
     """
 
     context: Context
+    """
+    Django's [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
+    passed to `Component.render()`
+    """
     args: List
+    """Positional arguments (as list) passed to `Component.render()`"""
     kwargs: Dict
+    """Keyword arguments (as dict) passed to `Component.render()`"""
     slots: Dict[SlotName, Slot]
+    """Slots (as dict) passed to `Component.render()`"""
     deps_strategy: DependenciesStrategy
+    """Dependencies strategy passed to `Component.render()`"""
     # TODO_v1 - Remove, superseded by `deps_strategy`
     type: DependenciesStrategy
-    """Deprecated alias for `deps_strategy`."""
+    """Deprecated. Will be removed in v1. Use `deps_strategy` instead."""
     # TODO_v1 - Remove, superseded by `deps_strategy`
     render_dependencies: bool
-    """Deprecated. Instead use `deps_strategy="ignore"`."""
+    """Deprecated. Will be removed in v1. Use `deps_strategy="ignore"` instead."""
 
 
 @dataclass()
 class MetadataItem:
     render_id: str
+    args: Any
+    """`args` as passed to `get_template_data()` - instance of `Component.Args` if set, otherwise plain list"""
+    kwargs: Any
+    """`kwargs` as passed to `get_template_data()` - instance of `Component.Kwargs` if set, otherwise plain dict"""
+    slots: Any
+    """`slots` as passed to `get_template_data()` - instance of `Component.Slots` if set, otherwise plain dict"""
     input: ComponentInput
-    is_filled: Optional[SlotIsFilled]
+    """Raw input as passed to `Component.render()`"""
+    # TODO_V1 - Remove, superseded by `Component.slots`
+    is_filled: SlotIsFilled
+    """Dictionary describing which component slots are filled (`True`) or are not (`False`)."""
     request: Optional[HttpRequest]
 
 
@@ -199,15 +214,174 @@ class ComponentVars(NamedTuple):
     Type for the variables available inside the component templates.
 
     All variables here are scoped under `component_vars.`, so e.g. attribute
-    `is_filled` on this class is accessible inside the template as:
+    `kwargs` on this class is accessible inside the template as:
 
     ```django
-    {{ component_vars.is_filled }}
+    {{ component_vars.kwargs }}
     ```
     """
 
+    args: Any
+    """
+    The `args` argument as passed to
+    [`Component.get_template_data()`](../api/#django_components.Component.get_template_data).
+
+    This is the same [`Component.args`](../api/#django_components.Component.args)
+    that's available on the component instance.
+
+    If you defined the [`Component.Args`](../api/#django_components.Component.Args) class,
+    then the `args` property will return an instance of that class.
+
+    Otherwise, `args` will be a plain list.
+
+    **Example:**
+
+    With `Args` class:
+
+    ```djc_py
+    from django_components import Component, register
+
+    @register("table")
+    class Table(Component):
+        class Args(NamedTuple):
+            page: int
+            per_page: int
+
+        template = '''
+            <div>
+                <h1>Table</h1>
+                <p>Page: {{ component_vars.args.page }}</p>
+                <p>Per page: {{ component_vars.args.per_page }}</p>
+            </div>
+        '''
+    ```
+
+    Without `Args` class:
+
+    ```djc_py
+    from django_components import Component, register
+
+    @register("table")
+    class Table(Component):
+        template = '''
+            <div>
+                <h1>Table</h1>
+                <p>Page: {{ component_vars.args.0 }}</p>
+                <p>Per page: {{ component_vars.args.1 }}</p>
+            </div>
+        '''
+    ```
+    """
+
+    kwargs: Any
+    """
+    The `kwargs` argument as passed to
+    [`Component.get_template_data()`](../api/#django_components.Component.get_template_data).
+
+    This is the same [`Component.kwargs`](../api/#django_components.Component.kwargs)
+    that's available on the component instance.
+
+    If you defined the [`Component.Kwargs`](../api/#django_components.Component.Kwargs) class,
+    then the `kwargs` property will return an instance of that class.
+
+    Otherwise, `kwargs` will be a plain dict.
+
+    **Example:**
+
+    With `Kwargs` class:
+
+    ```djc_py
+    from django_components import Component, register
+
+    @register("table")
+    class Table(Component):
+        class Kwargs(NamedTuple):
+            page: int
+            per_page: int
+
+        template = '''
+            <div>
+                <h1>Table</h1>
+                <p>Page: {{ component_vars.kwargs.page }}</p>
+                <p>Per page: {{ component_vars.kwargs.per_page }}</p>
+            </div>
+        '''
+    ```
+
+    Without `Kwargs` class:
+
+    ```djc_py
+    from django_components import Component, register
+
+    @register("table")
+    class Table(Component):
+        template = '''
+            <div>
+                <h1>Table</h1>
+                <p>Page: {{ component_vars.kwargs.page }}</p>
+                <p>Per page: {{ component_vars.kwargs.per_page }}</p>
+            </div>
+        '''
+    ```
+    """
+
+    slots: Any
+    """
+    The `slots` argument as passed to
+    [`Component.get_template_data()`](../api/#django_components.Component.get_template_data).
+
+    This is the same [`Component.slots`](../api/#django_components.Component.slots)
+    that's available on the component instance.
+
+    If you defined the [`Component.Slots`](../api/#django_components.Component.Slots) class,
+    then the `slots` property will return an instance of that class.
+
+    Otherwise, `slots` will be a plain dict.
+
+    **Example:**
+
+    With `Slots` class:
+
+    ```djc_py
+    from django_components import Component, SlotInput, register
+
+    @register("table")
+    class Table(Component):
+        class Slots(NamedTuple):
+            footer: SlotInput
+
+        template = '''
+            <div>
+                {% component "pagination" %}
+                    {% fill "footer" body=component_vars.slots.footer / %}
+                {% endcomponent %}
+            </div>
+        '''
+    ```
+
+    Without `Slots` class:
+
+    ```djc_py
+    from django_components import Component, SlotInput, register
+
+    @register("table")
+    class Table(Component):
+        template = '''
+            <div>
+                {% component "pagination" %}
+                    {% fill "footer" body=component_vars.slots.footer / %}
+                {% endcomponent %}
+            </div>
+        '''
+    ```
+    """
+
+    # TODO_v1 - Remove, superseded by `component_vars.slots`
     is_filled: Dict[str, bool]
     """
+    Deprecated. Will be removed in v1. Use [`component_vars.slots`](../template_vars#django_components.component.ComponentVars.slots) instead.
+    Note that `component_vars.slots` no longer escapes the slot names.
+
     Dictonary describing which component slots are filled (`True`) or are not (`False`).
 
     <i>New in version 0.70</i>
@@ -234,7 +408,7 @@ class ComponentVars(NamedTuple):
                 "my_slot_filled": "my_slot" in slots
             }
     ```
-    """
+    """  # noqa: E501
 
 
 # Descriptor to pass getting/setting of `template_name` onto `template_file`
@@ -346,7 +520,7 @@ class Component(metaclass=ComponentMeta):
     )
     ```
 
-    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+    Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
     """
 
     Kwargs: Type = cast(Type, None)
@@ -403,7 +577,7 @@ class Component(metaclass=ComponentMeta):
     )
     ```
 
-    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+    Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
     """
 
     Slots: Type = cast(Type, None)
@@ -463,7 +637,7 @@ class Component(metaclass=ComponentMeta):
     )
     ```
 
-    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+    Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
     !!! info
 
@@ -669,7 +843,7 @@ class Component(metaclass=ComponentMeta):
         When you omit these classes, or set them to `None`, then the `args`, `kwargs`, and `slots`
         parameters will be given as plain lists / dictionaries, unmodified.
 
-        Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+        Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
         **Example:**
 
@@ -786,7 +960,7 @@ class Component(metaclass=ComponentMeta):
     - Set type hints for this data.
     - Document the component data.
 
-    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+    Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
     !!! info
 
@@ -939,7 +1113,7 @@ class Component(metaclass=ComponentMeta):
         When you omit these classes, or set them to `None`, then the `args`, `kwargs`, and `slots`
         parameters will be given as plain lists / dictionaries, unmodified.
 
-        Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+        Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
         **Example:**
 
@@ -1049,7 +1223,7 @@ class Component(metaclass=ComponentMeta):
     - Set type hints for this data.
     - Document the component data.
 
-    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+    Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
     !!! info
 
@@ -1210,7 +1384,7 @@ class Component(metaclass=ComponentMeta):
         When you omit these classes, or set them to `None`, then the `args`, `kwargs`, and `slots`
         parameters will be given as plain lists / dictionaries, unmodified.
 
-        Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+        Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
         **Example:**
 
@@ -1319,7 +1493,7 @@ class Component(metaclass=ComponentMeta):
     - Set type hints for this data.
     - Document the component data.
 
-    Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+    Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
     !!! info
 
@@ -1703,14 +1877,14 @@ class Component(metaclass=ComponentMeta):
         class Table(Component):
             def get_template_data(self, args, kwargs, slots, context):
                 # Access component's inputs, slots and context
-                assert self.input.args == [123, "str"]
-                assert self.input.kwargs == {"variable": "test", "another": 1}
-                footer_slot = self.input.slots["footer"]
+                assert self.args == [123, "str"]
+                assert self.kwargs == {"variable": "test", "another": 1}
+                footer_slot = self.slots["footer"]
                 some_var = self.input.context["some_var"]
 
         rendered = TestComponent.render(
             kwargs={"variable": "test", "another": 1},
-            args=(123, "str"),
+            args=[123, "str"],
             slots={"footer": "MY_SLOT"},
         )
         ```
@@ -1723,15 +1897,196 @@ class Component(metaclass=ComponentMeta):
         return self._metadata_stack[-1].input
 
     @property
-    def is_filled(self) -> SlotIsFilled:
+    def args(self) -> Any:
         """
-        Dictionary describing which slots have or have not been filled.
-
-        This attribute is available for use only within the template as `{{ component_vars.is_filled.slot_name }}`,
-        and within `on_render_before` and `on_render_after` hooks.
+        The `args` argument as passed to
+        [`Component.get_template_data()`](../api/#django_components.Component.get_template_data).
 
         Raises `RuntimeError` if accessed outside of rendering execution.
+
+        This is part of the [Render API](../../concepts/fundamentals/render_api).
+
+        If you defined the [`Component.Args`](../api/#django_components.Component.Args) class,
+        then the `args` property will return an instance of that class.
+
+        Otherwise, `args` will be a plain list.
+
+        **Example:**
+
+        With `Args` class:
+
+        ```python
+        from django_components import Component
+
+        class Table(Component):
+            class Args(NamedTuple):
+                page: int
+                per_page: int
+
+            def on_render_before(self, context: Context, template: Template) -> None:
+                assert self.args.page == 123
+                assert self.args.per_page == 10
+
+        rendered = Table.render(
+            args=[123, 10],
+        )
+        ```
+
+        Without `Args` class:
+
+        ```python
+        from django_components import Component
+
+        class Table(Component):
+            def on_render_before(self, context: Context, template: Template) -> None:
+                assert self.args[0] == 123
+                assert self.args[1] == 10
+        ```
         """
+        if not len(self._metadata_stack):
+            raise RuntimeError(
+                f"{self.name}: Tried to access Component's `args` attribute while outside of rendering execution"
+            )
+
+        # NOTE: Input is managed as a stack, so if `render` is called within another `render`,
+        # the propertes below will return only the inner-most state.
+        return self._metadata_stack[-1].args
+
+    @property
+    def kwargs(self) -> Any:
+        """
+        The `kwargs` argument as passed to
+        [`Component.get_template_data()`](../api/#django_components.Component.get_template_data).
+
+        Raises `RuntimeError` if accessed outside of rendering execution.
+
+        This is part of the [Render API](../../concepts/fundamentals/render_api).
+
+        If you defined the [`Component.Kwargs`](../api/#django_components.Component.Kwargs) class,
+        then the `kwargs` property will return an instance of that class.
+
+        Otherwise, `kwargs` will be a plain dict.
+
+        **Example:**
+
+        With `Kwargs` class:
+
+        ```python
+        from django_components import Component
+
+        class Table(Component):
+            class Kwargs(NamedTuple):
+                page: int
+                per_page: int
+
+            def on_render_before(self, context: Context, template: Template) -> None:
+                assert self.kwargs.page == 123
+                assert self.kwargs.per_page == 10
+
+        rendered = Table.render(
+            kwargs={
+                "page": 123,
+                "per_page": 10,
+            },
+        )
+        ```
+
+        Without `Kwargs` class:
+
+        ```python
+        from django_components import Component
+
+        class Table(Component):
+            def on_render_before(self, context: Context, template: Template) -> None:
+                assert self.kwargs["page"] == 123
+                assert self.kwargs["per_page"] == 10
+        ```
+        """
+        if not len(self._metadata_stack):
+            raise RuntimeError(
+                f"{self.name}: Tried to access Component's `kwargs` attribute while outside of rendering execution"
+            )
+
+        # NOTE: Input is managed as a stack, so if `render` is called within another `render`,
+        # the propertes below will return only the inner-most state.
+        return self._metadata_stack[-1].kwargs
+
+    @property
+    def slots(self) -> Any:
+        """
+        The `slots` argument as passed to
+        [`Component.get_template_data()`](../api/#django_components.Component.get_template_data).
+
+        Raises `RuntimeError` if accessed outside of rendering execution.
+
+        This is part of the [Render API](../../concepts/fundamentals/render_api).
+
+        If you defined the [`Component.Slots`](../api/#django_components.Component.Slots) class,
+        then the `slots` property will return an instance of that class.
+
+        Otherwise, `slots` will be a plain dict.
+
+        **Example:**
+
+        With `Slots` class:
+
+        ```python
+        from django_components import Component, Slot, SlotInput
+
+        class Table(Component):
+            class Slots(NamedTuple):
+                header: SlotInput
+                footer: SlotInput
+
+            def on_render_before(self, context: Context, template: Template) -> None:
+                assert isinstance(self.slots.header, Slot)
+                assert isinstance(self.slots.footer, Slot)
+
+        rendered = Table.render(
+            slots={
+                "header": "MY_HEADER",
+                "footer": lambda ctx: "FOOTER: " + ctx.data["user_id"],
+            },
+        )
+        ```
+
+        Without `Slots` class:
+
+        ```python
+        from django_components import Component, Slot, SlotInput
+
+        class Table(Component):
+            def on_render_before(self, context: Context, template: Template) -> None:
+                assert isinstance(self.slots["header"], Slot)
+                assert isinstance(self.slots["footer"], Slot)
+        ```
+        """
+        if not len(self._metadata_stack):
+            raise RuntimeError(
+                f"{self.name}: Tried to access Component's `slots` attribute while outside of rendering execution"
+            )
+
+        # NOTE: Input is managed as a stack, so if `render` is called within another `render`,
+        # the propertes below will return only the inner-most state.
+        return self._metadata_stack[-1].slots
+
+    # TODO_v1 - Remove, superseded by `Component.slots`
+    @property
+    def is_filled(self) -> SlotIsFilled:
+        """
+        Deprecated. Will be removed in v1. Use [`Component.slots`](../api/#django_components.Component.slots) instead.
+        Note that `Component.slots` no longer escapes the slot names.
+
+        Dictionary describing which slots have or have not been filled.
+
+        This attribute is available for use only within:
+
+        - The template as [`{{ component_vars.is_filled.slot_name }}`](../template_vars#django_components.component.ComponentVars.is_filled)
+        - Within [`on_render_before()`](../api/#django_components.Component.on_render_before)
+            and [`on_render_after()`](../api/#django_components.Component.on_render_after) hooks.
+
+        Raises `RuntimeError` if accessed outside of rendering execution.
+        """  # noqa: E501
         if not len(self._metadata_stack):
             raise RuntimeError(
                 f"{self.name}: Tried to access Component's `is_filled` attribute "
@@ -2231,7 +2586,7 @@ class Component(metaclass=ComponentMeta):
         [`Kwargs`](../api/#django_components.Component.Kwargs),
         and [`Slots`](../api/#django_components.Component.Slots) classes.
 
-        Read more on [Typing and validation](../../concepts/advanced/typing_and_validation).
+        Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
         ```python
         from typing import NamedTuple, Optional
@@ -2314,6 +2669,10 @@ class Component(metaclass=ComponentMeta):
         deps_strategy: DependenciesStrategy = "document",
         request: Optional[HttpRequest] = None,
     ) -> str:
+        ######################################
+        # 1. Handle inputs
+        ######################################
+
         # Allow to pass down Request object via context.
         # `context` may be passed explicitly via `Component.render()` and `Component.render_to_response()`,
         # or implicitly via `{% component %}` tag.
@@ -2335,6 +2694,7 @@ class Component(metaclass=ComponentMeta):
         slots_dict = normalize_slot_fills(
             to_dict(slots) if slots is not None else {},
             escape_slots_content,
+            component_name=self.name,
         )
         # Use RequestContext if request is provided, so that child non-component template tags
         # can access the request object too.
@@ -2346,34 +2706,7 @@ class Component(metaclass=ComponentMeta):
         if not isinstance(context, Context):
             context = RequestContext(request, context) if request else Context(context)
 
-        # Required for compatibility with Django's {% extends %} tag
-        # See https://github.com/django-components/django-components/pull/859
-        context.render_context.push({BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())})
-
-        # By adding the current input to the stack, we temporarily allow users
-        # to access the provided context, slots, etc. Also required so users can
-        # call `self.inject()` from within `get_template_data()`.
-        #
-        # This is handled as a stack, as users can potentially call `component.render()`
-        # from within component hooks. Thus, then they do so, `component.id` will be the ID
-        # of the deepest-most call to `component.render()`.
         render_id = COMP_ID_PREFIX + gen_id()
-        metadata = MetadataItem(
-            render_id=render_id,
-            input=ComponentInput(
-                context=context,
-                args=args_list,
-                kwargs=kwargs_dict,
-                slots=slots_dict,
-                deps_strategy=deps_strategy,
-                # TODO_v1 - Remove, superseded by `deps_strategy`
-                type=deps_strategy,
-                # TODO_v1 - Remove, superseded by `deps_strategy`
-                render_dependencies=deps_strategy != "ignore",
-            ),
-            is_filled=None,
-            request=request,
-        )
 
         # Allow plugins to modify or validate the inputs
         result_override = extensions.on_component_input(
@@ -2391,9 +2724,15 @@ class Component(metaclass=ComponentMeta):
         # The component rendering was short-circuited by an extension, skipping
         # the rest of the rendering process. This may be for example a cached content.
         if result_override is not None:
-            # Cleanup needs to be done even if short-circuited
-            context.render_context.pop()
             return result_override
+
+        ######################################
+        # 2. Prepare component state
+        ######################################
+
+        # Required for compatibility with Django's {% extends %} tag
+        # See https://github.com/django-components/django-components/pull/859
+        context.render_context.push({BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())})
 
         # We pass down the components the info about the component's parent.
         # This is used for correctly resolving slot fills, correct rendering order,
@@ -2448,14 +2787,59 @@ class Component(metaclass=ComponentMeta):
         # Instead of passing the ComponentContext directly through the Context, the entry on the Context
         # contains only a key to retrieve the ComponentContext from `component_context_cache`.
         #
-        # This way, the flow is easier to debug. Because otherwise, if you try to print out
-        # or inspect the Context object, your screen is filled with the deeply nested ComponentContext objects.
+        # This way, the flow is easier to debug. Because otherwise, if you tried to print out
+        # or inspect the Context object, your screen would be filled with the deeply nested ComponentContext objects.
+        # But now, the printed Context may simply look like this:
+        # `[{ "True": True, "False": False, "None": None }, {"_DJC_COMPONENT_CTX": "c1A2b3c"}]`
         component_context_cache[render_id] = component_ctx
+
+        # If user doesn't specify `Args`, `Kwargs`, `Slots` types, then we pass them in as plain
+        # dicts / lists.
+        args_inst = self.Args(*args_list) if self.Args is not None else args_list
+        kwargs_inst = self.Kwargs(**kwargs_dict) if self.Kwargs is not None else kwargs_dict
+        slots_inst = self.Slots(**slots_dict) if self.Slots is not None else slots_dict
+
+        # By adding the current input to the stack, we temporarily allow users
+        # to access the provided context, slots, etc. Also required so users can
+        # call `self.inject()` from within `get_template_data()`.
+        #
+        # This is handled as a stack, as users can potentially call `component.render()`
+        # from within component hooks. Thus, then they do so, `component.id` will be the ID
+        # of the deepest-most call to `component.render()`.
+        metadata = MetadataItem(
+            render_id=render_id,
+            # args, kwargs, slots as instances of `Args`, `Kwargs`, `Slots`
+            args=args_inst,
+            kwargs=kwargs_inst,
+            slots=slots_inst,
+            input=ComponentInput(
+                context=context,
+                # args, kwargs, slots are plain list / dicts
+                args=args_list,
+                kwargs=kwargs_dict,
+                slots=slots_dict,
+                deps_strategy=deps_strategy,
+                # TODO_v1 - Remove, superseded by `deps_strategy`
+                type=deps_strategy,
+                # TODO_v1 - Remove, superseded by `deps_strategy`
+                render_dependencies=deps_strategy != "ignore",
+            ),
+            # TODO_v1 - Remove, superseded by `Component.slots`
+            is_filled=SlotIsFilled(slots_dict),
+            request=request,
+        )
+
+        ######################################
+        # 3. Call data methods
+        ######################################
 
         # Allow to access component input and metadata like component ID from within data methods
         with self._with_metadata(metadata):
-            template_data, js_data, css_data = self._call_data_methods(args_list, kwargs_dict, slots_dict, context)
-            # Prepare context processors data, so we don't have to call `_with_metadata() later again
+            template_data, js_data, css_data = self._call_data_methods(
+                args_inst, kwargs_inst, slots_inst, context, args_list, kwargs_dict
+            )
+
+            # Prepare data for which we need the metadata context, so we don't have to call `_with_metadata() again
             context_processors_data = self.context_processors_data
 
         extensions.on_component_data(
@@ -2478,14 +2862,16 @@ class Component(metaclass=ComponentMeta):
         cache_component_css(self.__class__)
         css_input_hash = cache_component_css_vars(self.__class__, css_data) if css_data else None
 
+        #############################################################################
+        # 4. Make Context copy
+        #
+        # NOTE: To support infinite recursion, we make a copy of the context.
+        #       This way we don't have to call the whole component tree in one go recursively,
+        #       but instead can render one component at a time.
+        #############################################################################
+
         with _prepare_template(self, context, template_data, metadata) as template:
             component_ctx.template_name = template.name
-
-            # For users, we expose boolean variables that they may check
-            # to see if given slot was filled, e.g.:
-            # `{% if variable > 8 and component_vars.is_filled.header %}`
-            is_filled = SlotIsFilled(slots_dict)
-            metadata.is_filled = is_filled
 
             with context.update(
                 {
@@ -2496,7 +2882,15 @@ class Component(metaclass=ComponentMeta):
                     # NOTE: Public API for variables accessible from within a component's template
                     # See https://github.com/django-components/django-components/issues/280#issuecomment-2081180940
                     "component_vars": ComponentVars(
-                        is_filled=is_filled,
+                        args=args_inst,
+                        kwargs=kwargs_inst,
+                        slots=slots_inst,
+                        # TODO_v1 - Remove this, superseded by `component_vars.slots`
+                        #
+                        # For users, we expose boolean variables that they may check
+                        # to see if given slot was filled, e.g.:
+                        # `{% if variable > 8 and component_vars.is_filled.header %}`
+                        is_filled=metadata.is_filled,
                     ),
                 }
             ):
@@ -2513,6 +2907,14 @@ class Component(metaclass=ComponentMeta):
 
         # Cleanup
         context.render_context.pop()
+
+        ######################################
+        # 5. Render component
+        #
+        # NOTE: To support infinite recursion, we don't directly call `Template.render()`.
+        #       Instead, we defer rendering of the component - we prepare a callback that will
+        #       be called when the rendering process reaches this component.
+        ######################################
 
         # Instead of rendering component at the time we come across the `{% component %}` tag
         # in the template, we defer rendering in order to scalably handle deeply nested components.
@@ -2662,19 +3064,22 @@ class Component(metaclass=ComponentMeta):
 
         return renderer
 
-    def _call_data_methods(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Tuple[Dict, Dict, Dict]:
-        # If user doesn't specify `Args`, `Kwargs`, `Slots` types, then we pass them in as plain
-        # dicts / lists.
-        args_inst = self.Args(*args) if self.Args is not None else args
-        kwargs_inst = self.Kwargs(**kwargs) if self.Kwargs is not None else kwargs
-        slots_inst = self.Slots(**slots) if self.Slots is not None else slots
-
+    def _call_data_methods(
+        self,
+        args: Any,
+        kwargs: Any,
+        slots: Any,
+        context: Context,
+        # TODO_V2 - Remove `raw_args` and `raw_kwargs` in v2
+        raw_args: List,
+        raw_kwargs: Dict,
+    ) -> Tuple[Dict, Dict, Dict]:
         # Template data
-        maybe_template_data = self.get_template_data(args_inst, kwargs_inst, slots_inst, context)
+        maybe_template_data = self.get_template_data(args, kwargs, slots, context)
         new_template_data = to_dict(default(maybe_template_data, {}))
 
         # TODO_V2 - Remove this in v2
-        legacy_template_data = to_dict(default(self.get_context_data(*args, **kwargs), {}))
+        legacy_template_data = to_dict(default(self.get_context_data(*raw_args, **raw_kwargs), {}))
         if legacy_template_data and new_template_data:
             raise RuntimeError(
                 f"Component {self.name} has both `get_context_data()` and `get_template_data()` methods. "
@@ -2684,11 +3089,11 @@ class Component(metaclass=ComponentMeta):
 
         # TODO - Enable JS and CSS vars - expose, and document
         # JS data
-        maybe_js_data = self.get_js_data(args_inst, kwargs_inst, slots_inst, context)
+        maybe_js_data = self.get_js_data(args, kwargs, slots, context)
         js_data = to_dict(default(maybe_js_data, {}))
 
         # CSS data
-        maybe_css_data = self.get_css_data(args_inst, kwargs_inst, slots_inst, context)
+        maybe_css_data = self.get_css_data(args, kwargs, slots, context)
         css_data = to_dict(default(maybe_css_data, {}))
 
         # Validate outputs
