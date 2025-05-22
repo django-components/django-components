@@ -8,7 +8,7 @@ Summary:
 
 - Overhauled typing system
 - Middleware removed, no longer needed
-- `get_context_data()` is the new canonical way to define template data
+- `get_template_data()` is the new canonical way to define template data
 - Slots API polished and prepared for v1.
 - Merged `Component.Url` with `Component.View`
 - Added `Component.args`, `Component.kwargs`, `Component.slots`
