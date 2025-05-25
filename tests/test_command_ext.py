@@ -1,3 +1,4 @@
+import re
 import sys
 from io import StringIO
 from textwrap import dedent
@@ -195,6 +196,11 @@ class TestExtensionsRunCommand:
         with patch("sys.stdout", new=out):
             call_command("components", "ext", "run")
         output = out.getvalue()
+
+        # Fix line breaking in CI on the first line between the `[-h]` and `{{cmd_name}}`
+        output = re.compile(r"\]\s+\{").sub("] {", output)
+        # Fix line breaking in CI on the first line between the `{{cmd_name}}` and `...`
+        output = re.compile(r"\}\s+\.\.\.").sub("} ...", output)
 
         assert (
             output
