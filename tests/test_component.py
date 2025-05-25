@@ -4,7 +4,7 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 """
 
 import re
-from typing import Any, NamedTuple, Tuple, cast
+from typing import Any, NamedTuple
 
 import pytest
 from django.conf import settings
@@ -487,10 +487,10 @@ class TestComponentRenderAPI:
 
         TestComponent.render()
 
-        assert comp.args == []
-        assert comp.kwargs == {}
-        assert comp.slots == {}
-        assert comp.context == Context()
+        assert comp.args == []  # type: ignore[attr-defined]
+        assert comp.kwargs == {}  # type: ignore[attr-defined]
+        assert comp.slots == {}  # type: ignore[attr-defined]
+        assert comp.context == Context()  # type: ignore[attr-defined]
 
 
 @djc_test
