@@ -867,28 +867,6 @@ Summary:
   can now be accessed also outside of the render call. So now its possible to take the component
   instance out of `get_template_data()` (although this is not recommended).
 
-    ```py
-    comp = None
-
-    class TestComponent(Component):
-        template = "..."
-
-        def get_template_data(self, args, kwargs, slots, context):
-            nonlocal comp
-            comp = self
-
-    TestComponent.render(
-        args=[1],
-        kwargs={"foo": "bar"},
-        slots={"content": "Hello, world!"},
-    )
-
-    assert comp.args == [1]
-    assert comp.kwargs == {"foo": "bar"}
-    assert comp.slots == {"content": "Hello, world!"}
-    assert comp.context == Context()
-    ```
-
 #### Fix
 
 - Fix bug: Context processors data was being generated anew for each component. Now the data is correctly created once and reused across components with the same request ([#1165](https://github.com/django-components/django-components/issues/1165)).
