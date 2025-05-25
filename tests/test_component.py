@@ -474,25 +474,23 @@ class TestComponentRenderAPI:
         assert called
 
     def test_args_kwargs_slots__available_outside_render(self):
-        data: Any = None
+        comp: Any = None
 
         class TestComponent(Component):
             template = ""
 
             def get_template_data(self, args, kwargs, slots, context):
-                nonlocal data
+                nonlocal comp
+                comp = self
 
-                data = (args, kwargs, slots, context)
-
-        assert data is None
+        assert comp is None
 
         TestComponent.render()
 
-        args, kwargs, slots, context = cast(Tuple[Any, Any, Any, Context], data)  # type: ignore[misc]
-        assert args == []
-        assert kwargs == {}
-        assert slots == {}
-        assert context == Context()
+        assert comp.args == []
+        assert comp.kwargs == {}
+        assert comp.slots == {}
+        assert comp.context == Context()
 
 
 @djc_test
