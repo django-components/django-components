@@ -52,7 +52,23 @@ FILL_BODY_KWARG = "body"
 
 # Public types
 SlotResult = Union[str, SafeString]
-"""Type representing the result of a slot render function."""
+"""
+Type representing the result of a slot render function.
+
+**Example:**
+
+```python
+from django_components import SlotContext, SlotResult
+
+def my_slot_fn(ctx: SlotContext) -> SlotResult:
+    return "Hello, world!"
+
+my_slot = Slot(my_slot_fn)
+html = my_slot()  # Output: Hello, world!
+```
+
+Read more about [Slot functions](../../concepts/fundamentals/slots#slot-functions).
+"""
 
 
 @dataclass(frozen=True)
@@ -65,9 +81,9 @@ class SlotContext(Generic[TSlotData]):
     **Example:**
 
     ```python
-    from django_components import SlotContext
+    from django_components import SlotContext, SlotResult
 
-    def my_slot(ctx: SlotContext):
+    def my_slot(ctx: SlotContext) -> SlotResult:
         return f"Hello, {ctx.data['name']}!"
     ```
 
@@ -216,8 +232,6 @@ class Slot(Generic[TSlotData]):
       the body (string) of that `{% fill %}` tag.
     - If Slot was created from string as `Slot("...")`, `Slot.contents` will contain that string.
     - If Slot was created from a function, `Slot.contents` will contain that function.
-    - If Slot was created from another `Slot` as `Slot(slot)`, `Slot.contents` will contain the inner
-      slot's `Slot.contents`.
 
     Read more about [Slot contents](../../concepts/fundamentals/slots#slot-contents).
     """
@@ -232,28 +246,30 @@ class Slot(Generic[TSlotData]):
 
     # Following fields are only for debugging
     component_name: Optional[str] = None
-    """Name of the component that originally received this slot fill."""
+    """
+    Name of the component that originally received this slot fill.
+
+    See [Slot metadata](../../concepts/fundamentals/slots#slot-metadata).
+    """
     slot_name: Optional[str] = None
-    """Slot name to which this Slot was initially assigned."""
+    """
+    Slot name to which this Slot was initially assigned.
+
+    See [Slot metadata](../../concepts/fundamentals/slots#slot-metadata).
+    """
     nodelist: Optional[NodeList] = None
     """
     If the slot was defined with [`{% fill %}`](../template_tags#fill) tag,
     this will be the Nodelist of the fill's content.
+
+    See [Slot metadata](../../concepts/fundamentals/slots#slot-metadata).
     """
 
     def __post_init__(self) -> None:
-        # Since the `Slot` instance is treated as a function, it may be passed as `contents`
-        # to the `Slot()` constructor. In that case we need to unwrap to the original value
-        # if `Slot()` constructor got another Slot instance.
-        # NOTE: If `Slot` was passed as `contents`, we do NOT take the metadata from the inner Slot instance.
-        #       Instead we treat is simply as a function.
-        # NOTE: Try to avoid infinite loop if `Slot.contents` points to itself.
-        seen_contents = set()
-        while isinstance(self.contents, Slot) and self.contents not in seen_contents:
-            seen_contents.add(id(self.contents))
-            self.contents = self.contents.contents
-        if id(self.contents) in seen_contents:
-            raise ValueError("Detected infinite loop in `Slot.contents` pointing to itself")
+        # Raise if Slot received another Slot instance as `contents`,
+        # because this leads to ambiguity about how to handle the metadata.
+        if isinstance(self.contents, Slot):
+            raise ValueError("Slot received another Slot instance as `contents`")
 
         if self.content_func is None:
             self.contents, new_nodelist, self.content_func = self._resolve_contents(self.contents)
@@ -261,7 +277,7 @@ class Slot(Generic[TSlotData]):
                 self.nodelist = new_nodelist
 
         if not callable(self.content_func):
-            raise ValueError(f"Slot content must be a callable, got: {self.content_func}")
+            raise ValueError(f"Slot 'content_func' must be a callable, got: {self.content_func}")
 
     # Allow to treat the instances as functions
     def __call__(
@@ -374,20 +390,30 @@ SlotName = str
 
 class SlotFallback:
     """
-    SlotFallback allows to treat a slot fallback as a variable. The slot is rendered only once
-    the instance is coerced to string.
+    The content between the `{% slot %}..{% endslot %}` tags is the *fallback* content that
+    will be rendered if no fill is given for the slot.
 
-    This is used to access slots as variables inside the templates. When a `SlotFallback`
-    is rendered in the template with `{{ my_lazy_slot }}`, it will output the contents
-    of the slot.
+    ```django
+    {% slot "name" %}
+        Hello, my name is {{ name }}  <!-- Fallback content -->
+    {% endslot %}
+    ```
 
-    Usage in slot functions:
+    Because the fallback is defined as a piece of the template
+    ([`NodeList`](https://github.com/django/django/blob/ddb85294159185c5bd5cae34c9ef735ff8409bfe/django/template/base.py#L1017)),
+    we want to lazily render it only when needed.
+
+    `SlotFallback` type allows to pass around the slot fallback as a variable.
+
+    To force the fallback to render, coerce it to string to trigger the `__str__()` method.
+
+    **Example:**
 
     ```py
     def slot_function(self, ctx: SlotContext):
         return f"Hello, {ctx.fallback}!"
     ```
-    """
+    """  # noqa: E501
 
     def __init__(self, slot: "SlotNode", context: Context):
         self._slot = slot
@@ -400,6 +426,9 @@ class SlotFallback:
 
 # TODO_v1 - REMOVE - superseded by SlotFallback
 SlotRef = SlotFallback
+"""
+DEPRECATED: Use [`SlotFallback`](../api#django_components.SlotFallback) instead. Will be removed in v1.
+"""
 
 
 name_escape_re = re.compile(r"[^\w]")
@@ -457,7 +486,7 @@ class SlotNode(BaseNode):
 
     **Example:**
 
-    ```python
+    ```djc_py
     @register("child")
     class Child(Component):
         template = \"\"\"
@@ -472,7 +501,7 @@ class SlotNode(BaseNode):
         \"\"\"
     ```
 
-    ```python
+    ```djc_py
     @register("parent")
     class Parent(Component):
         template = \"\"\"
@@ -490,12 +519,14 @@ class SlotNode(BaseNode):
         \"\"\"
     ```
 
-    ### Passing data to slots
+    ### Slot data
 
     Any extra kwargs will be considered as slot data, and will be accessible in the [`{% fill %}`](#fill)
     tag via fill's `data` kwarg:
 
-    ```python
+    Read more about [Slot data](../../concepts/fundamentals/slots#slot-data).
+
+    ```djc_py
     @register("child")
     class Child(Component):
         template = \"\"\"
@@ -508,7 +539,7 @@ class SlotNode(BaseNode):
         \"\"\"
     ```
 
-    ```python
+    ```djc_py
     @register("parent")
     class Parent(Component):
         template = \"\"\"
@@ -523,7 +554,7 @@ class SlotNode(BaseNode):
         \"\"\"
     ```
 
-    ### Accessing fallback slot content
+    ### Slot fallback
 
     The content between the `{% slot %}..{% endslot %}` tags is the fallback content that
     will be rendered if no fill is given for the slot.
@@ -532,7 +563,7 @@ class SlotNode(BaseNode):
     the fill's `fallback` kwarg.
     This is useful if you need to wrap / prepend / append the original slot's content.
 
-    ```python
+    ```djc_py
     @register("child")
     class Child(Component):
         template = \"\"\"
@@ -544,7 +575,7 @@ class SlotNode(BaseNode):
         \"\"\"
     ```
 
-    ```python
+    ```djc_py
     @register("parent")
     class Parent(Component):
         template = \"\"\"
@@ -910,21 +941,20 @@ class FillNode(BaseNode):
     """
     Use this tag to insert content into component's slots.
 
-    `{% fill %}` tag may be used only within a `{% component %}..{% endcomponent %}` block.
-    Runtime checks should prohibit other usages.
+    `{% fill %}` tag may be used only within a `{% component %}..{% endcomponent %}` block,
+    and raises a `TemplateSyntaxError` if used outside of a component.
 
     **Args:**
 
     - `name` (str, required): Name of the slot to insert this content into. Use `"default"` for
         the default slot.
-    - `fallback` (str, optional): This argument allows you to access the original content of the slot
-        under the specified variable name. See [Slot fallback](../../concepts/fundamentals/slots#slot-fallback).
     - `data` (str, optional): This argument allows you to access the data passed to the slot
         under the specified variable name. See [Slot data](../../concepts/fundamentals/slots#slot-data).
+    - `fallback` (str, optional): This argument allows you to access the original content of the slot
+        under the specified variable name. See [Slot fallback](../../concepts/fundamentals/slots#slot-fallback).
 
-    **Examples:**
+    **Example:**
 
-    Basic usage:
     ```django
     {% component "my_table" %}
       {% fill "pagination" %}
@@ -933,7 +963,15 @@ class FillNode(BaseNode):
     {% endcomponent %}
     ```
 
-    ### Accessing slot's fallback content with the `fallback` kwarg
+    ### Access slot fallback
+
+    Use the `fallback` kwarg to access the original content of the slot.
+
+    The `fallback` kwarg defines the name of the variable that will contain the slot's fallback content.
+
+    Read more about [Slot fallback](../../concepts/fundamentals/slots#slot-fallback).
+
+    Component template:
 
     ```django
     {# my_table.html #}
@@ -945,6 +983,8 @@ class FillNode(BaseNode):
     </table>
     ```
 
+    Fill:
+
     ```django
     {% component "my_table" %}
       {% fill "pagination" fallback="fallback" %}
@@ -955,7 +995,15 @@ class FillNode(BaseNode):
     {% endcomponent %}
     ```
 
-    ### Accessing slot's data with the `data` kwarg
+    ### Access slot data
+
+    Use the `data` kwarg to access the data passed to the slot.
+
+    The `data` kwarg defines the name of the variable that will contain the slot's data.
+
+    Read more about [Slot data](../../concepts/fundamentals/slots#slot-data).
+
+    Component template:
 
     ```django
     {# my_table.html #}
@@ -966,6 +1014,8 @@ class FillNode(BaseNode):
       {% endslot %}
     </table>
     ```
+
+    Fill:
 
     ```django
     {% component "my_table" %}
@@ -979,7 +1029,7 @@ class FillNode(BaseNode):
     {% endcomponent %}
     ```
 
-    ### Accessing slot data and fallback content on the default slot
+    ### Using default slot
 
     To access slot data and the fallback slot content on the default slot,
     use `{% fill %}` with `name` set to `"default"`:
@@ -993,7 +1043,7 @@ class FillNode(BaseNode):
     {% endcomponent %}
     ```
 
-    ### Passing slot fill from Python
+    ### Slot fills from Python
 
     You can pass a slot fill from Python to a component by setting the `body` kwarg
     on the `{% fill %}` tag.
@@ -1189,6 +1239,7 @@ class FillNode(BaseNode):
 
 #######################################
 # EXTRACTING {% fill %} FROM TEMPLATES
+# (internal)
 #######################################
 
 

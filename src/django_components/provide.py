@@ -30,7 +30,7 @@ class ProvideNode(BaseNode):
 
     Provide the "user_data" in parent component:
 
-    ```python
+    ```djc_py
     @register("parent")
     class Parent(Component):
         template = \"\"\"
@@ -50,7 +50,7 @@ class ProvideNode(BaseNode):
     Since the "child" component is used within the `{% provide %} / {% endprovide %}` tags,
     we can request the "user_data" using `Component.inject("user_data")`:
 
-    ```python
+    ```djc_py
     @register("child")
     class Child(Component):
         template = \"\"\"

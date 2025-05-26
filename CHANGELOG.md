@@ -12,8 +12,10 @@ Summary:
   `get_context_data()` is now deprecated but will remain until v2.
 - Slots API polished and prepared for v1.
 - Merged `Component.Url` with `Component.View`
-- Added `Component.args`, `Component.kwargs`, `Component.slots`
+- Added `Component.args`, `Component.kwargs`, `Component.slots`, `Component.context`
 - Added `{{ component_vars.args }}`, `{{ component_vars.kwargs }}`, `{{ component_vars.slots }}`
+- You should no longer instantiate `Component` instances. Instead, call `Component.render()` or `Component.render_to_response()` directly.
+- Component caching can now consider slots (opt-in)
 - And lot more...
 
 #### 🚨📢 BREAKING CHANGES
@@ -866,6 +868,8 @@ Summary:
 - Component's "Render API" (args, kwargs, slots, context, inputs, request, context data, etc)
   can now be accessed also outside of the render call. So now its possible to take the component
   instance out of `get_template_data()` (although this is not recommended).
+
+- Passing `Slot` instance to `Slot` constructor raises an error.
 
 #### Fix
 

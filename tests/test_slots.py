@@ -116,6 +116,15 @@ class TestSlot:
             slots={"first": "SLOT_FN"},
         )
 
+    def test_render_raises_on_slot_instance_in_slot_constructor(self):
+        slot: Slot = Slot(lambda ctx: "SLOT_FN")
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape("Slot received another Slot instance as `contents`"),
+        ):
+            Slot(slot)
+
     def test_render_slot_in_python__minimal(self):
         def slot_fn(ctx: SlotContext):
             assert ctx.context is None

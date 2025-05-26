@@ -20,7 +20,7 @@ Import as
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1024" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1022" target="_blank">See source code</a>
 
 
 
@@ -43,7 +43,7 @@ If you insert this tag multiple times, ALL CSS links will be duplicately inserte
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1046" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L1044" target="_blank">See source code</a>
 
 
 
@@ -67,7 +67,7 @@ If you insert this tag multiple times, ALL JS scripts will be duplicately insert
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L2784" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L3164" target="_blank">See source code</a>
 
 
 
@@ -120,7 +120,7 @@ and other tags:
 ### Isolating components
 
 By default, components behave similarly to Django's
-[`{% include %}`](https://docs.djangoproject.com/en/5.1/ref/templates/builtins/#include),
+[`{% include %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#include),
 and the template inside the component has access to the variables defined in the outer template.
 
 You can selectively isolate a component, using the `only` flag, so that the inner template
@@ -163,34 +163,32 @@ COMPONENTS = {
 ## fill
 
 ```django
-{% fill name: str, *, data: Optional[str] = None, default: Optional[str] = None %}
+{% fill name: str, *, data: Optional[str] = None, fallback: Optional[str] = None, body: Union[str, django.utils.safestring.SafeString, django_components.slots.SlotFunc[~TSlotData], django_components.slots.Slot[~TSlotData], NoneType] = None, default: Optional[str] = None %}
 {% endfill %}
 ```
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L648" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L949" target="_blank">See source code</a>
 
 
 
 Use this tag to insert content into component's slots.
 
-`{% fill %}` tag may be used only within a `{% component %}..{% endcomponent %}` block.
-Runtime checks should prohibit other usages.
+`{% fill %}` tag may be used only within a `{% component %}..{% endcomponent %}` block,
+and raises a `TemplateSyntaxError` if used outside of a component.
 
 **Args:**
 
 - `name` (str, required): Name of the slot to insert this content into. Use `"default"` for
     the default slot.
-- `default` (str, optional): This argument allows you to access the original content of the slot
-    under the specified variable name. See
-    [Accessing original content of slots](../../concepts/fundamentals/slots#accessing-original-content-of-slots)
 - `data` (str, optional): This argument allows you to access the data passed to the slot
-    under the specified variable name. See [Scoped slots](../../concepts/fundamentals/slots#scoped-slots)
+    under the specified variable name. See [Slot data](../../concepts/fundamentals/slots#slot-data).
+- `fallback` (str, optional): This argument allows you to access the original content of the slot
+    under the specified variable name. See [Slot fallback](../../concepts/fundamentals/slots#slot-fallback).
 
-**Examples:**
+**Example:**
 
-Basic usage:
 ```django
 {% component "my_table" %}
   {% fill "pagination" %}
@@ -199,7 +197,15 @@ Basic usage:
 {% endcomponent %}
 ```
 
-### Accessing slot's default content with the `default` kwarg
+### Access slot fallback
+
+Use the `fallback` kwarg to access the original content of the slot.
+
+The `fallback` kwarg defines the name of the variable that will contain the slot's fallback content.
+
+Read more about [Slot fallback](../../concepts/fundamentals/slots#slot-fallback).
+
+Component template:
 
 ```django
 {# my_table.html #}
@@ -211,17 +217,27 @@ Basic usage:
 </table>
 ```
 
+Fill:
+
 ```django
 {% component "my_table" %}
-  {% fill "pagination" default="default_pag" %}
+  {% fill "pagination" fallback="fallback" %}
     <div class="my-class">
-      {{ default_pag }}
+      {{ fallback }}
     </div>
   {% endfill %}
 {% endcomponent %}
 ```
 
-### Accessing slot's data with the `data` kwarg
+### Access slot data
+
+Use the `data` kwarg to access the data passed to the slot.
+
+The `data` kwarg defines the name of the variable that will contain the slot's data.
+
+Read more about [Slot data](../../concepts/fundamentals/slots#slot-data).
+
+Component template:
 
 ```django
 {# my_table.html #}
@@ -232,6 +248,8 @@ Basic usage:
   {% endslot %}
 </table>
 ```
+
+Fill:
 
 ```django
 {% component "my_table" %}
@@ -245,19 +263,59 @@ Basic usage:
 {% endcomponent %}
 ```
 
-### Accessing slot data and default content on the default slot
+### Using default slot
 
-To access slot data and the default slot content on the default slot,
+To access slot data and the fallback slot content on the default slot,
 use `{% fill %}` with `name` set to `"default"`:
 
 ```django
 {% component "button" %}
-  {% fill name="default" data="slot_data" default="default_slot" %}
+  {% fill name="default" data="slot_data" fallback="slot_fallback" %}
     You clicked me {{ slot_data.count }} times!
-    {{ default_slot }}
+    {{ slot_fallback }}
   {% endfill %}
 {% endcomponent %}
 ```
+
+### Slot fills from Python
+
+You can pass a slot fill from Python to a component by setting the `body` kwarg
+on the `{% fill %}` tag.
+
+First pass a [`Slot`](../api#django_components.Slot) instance to the template
+with the [`get_template_data()`](../api#django_components.Component.get_template_data)
+method:
+
+```python
+from django_components import component, Slot
+
+class Table(Component):
+  def get_template_data(self, args, kwargs, slots, context):
+    return {
+        "my_slot": Slot(lambda ctx: "Hello, world!"),
+    }
+```
+
+Then pass the slot to the `{% fill %}` tag:
+
+```django
+{% component "table" %}
+  {% fill "pagination" body=my_slot / %}
+{% endcomponent %}
+```
+
+!!! warning
+
+    If you define both the `body` kwarg and the `{% fill %}` tag's body,
+    an error will be raised.
+
+    ```django
+    {% component "table" %}
+      {% fill "pagination" body=my_slot %}
+        ...
+      {% endfill %}
+    {% endcomponent %}
+    ```
 
 ## html_attrs
 
@@ -274,8 +332,7 @@ use `{% fill %}` with `name` set to `"default"`:
 Generate HTML attributes (`key="value"`), combining data from multiple sources,
 whether its template variables or static text.
 
-It is designed to easily merge HTML attributes passed from outside with the internal.
-See how to in [Passing HTML attributes to components](../../guides/howto/passing_html_attrs/).
+It is designed to easily merge HTML attributes passed from outside as well as inside the component.
 
 **Args:**
 
@@ -318,8 +375,8 @@ renders
 <div class="my-class extra-class" data-id="123">
 ```
 
-**See more usage examples in
-[HTML attributes](../../concepts/fundamentals/html_attributes#examples-for-html_attrs).**
+See more usage examples in
+[HTML attributes](../../concepts/fundamentals/html_attributes#examples-for-html_attrs).
 
 ## provide
 
@@ -352,7 +409,7 @@ or Vue's [`provide()`](https://vuejs.org/guide/components/provide-inject).
 
 Provide the "user_data" in parent component:
 
-```python
+```djc_py
 @register("parent")
 class Parent(Component):
     template = """
@@ -372,7 +429,7 @@ class Parent(Component):
 Since the "child" component is used within the `{% provide %} / {% endprovide %}` tags,
 we can request the "user_data" using `Component.inject("user_data")`:
 
-```python
+```djc_py
 @register("child")
 class Child(Component):
     template = """
@@ -410,7 +467,7 @@ user = self.inject("user_data")["user"]
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L189" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L475" target="_blank">See source code</a>
 
 
 
@@ -435,7 +492,7 @@ or [React's `children`](https://react.dev/learn/passing-props-to-a-component#pas
 
 **Example:**
 
-```python
+```djc_py
 @register("child")
 class Child(Component):
     template = """
@@ -450,7 +507,7 @@ class Child(Component):
     """
 ```
 
-```python
+```djc_py
 @register("parent")
 class Parent(Component):
     template = """
@@ -468,12 +525,14 @@ class Parent(Component):
     """
 ```
 
-### Passing data to slots
+### Slot data
 
 Any extra kwargs will be considered as slot data, and will be accessible in the [`{% fill %}`](#fill)
 tag via fill's `data` kwarg:
 
-```python
+Read more about [Slot data](../../concepts/fundamentals/slots#slot-data).
+
+```djc_py
 @register("child")
 class Child(Component):
     template = """
@@ -486,7 +545,7 @@ class Child(Component):
     """
 ```
 
-```python
+```djc_py
 @register("parent")
 class Parent(Component):
     template = """
@@ -501,35 +560,35 @@ class Parent(Component):
     """
 ```
 
-### Accessing default slot content
+### Slot fallback
 
-The content between the `{% slot %}..{% endslot %}` tags is the default content that
+The content between the `{% slot %}..{% endslot %}` tags is the fallback content that
 will be rendered if no fill is given for the slot.
 
-This default content can then be accessed from within the [`{% fill %}`](#fill) tag using
-the fill's `default` kwarg.
+This fallback content can then be accessed from within the [`{% fill %}`](#fill) tag using
+the fill's `fallback` kwarg.
 This is useful if you need to wrap / prepend / append the original slot's content.
 
-```python
+```djc_py
 @register("child")
 class Child(Component):
     template = """
       <div>
         {% slot "content" %}
-          This is default content!
+          This is fallback content!
         {% endslot %}
       </div>
     """
 ```
 
-```python
+```djc_py
 @register("parent")
 class Parent(Component):
     template = """
-      {# Parent can access the slot's default content #}
+      {# Parent can access the slot's fallback content #}
       {% component "child" %}
-        {% fill "content" default="default" %}
-          {{ default }}
+        {% fill "content" fallback="fallback" %}
+          {{ fallback }}
         {% endfill %}
       {% endcomponent %}
     """

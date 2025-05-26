@@ -640,14 +640,24 @@ Table.render(
 )
 ```
 
-Slot class can be instantiated with a function, a string, or from another
-[`Slot`](../../../reference/api#django_components.Slot) instance:
+Slot class can be instantiated with a function or a string:
 
 ```py
 slot1 = Slot(lambda ctx: f"Hello, {ctx.data['name']}!")
 slot2 = Slot("Hello, world!")
-slot3 = Slot(slot1)
 ```
+
+!!! warning
+
+    Pass a [`Slot`](../../../reference/api#django_components.Slot) instance to the `Slot`
+    constructor results in an error:
+
+    ```py
+    slot = Slot("Hello")
+
+    # Raises an error
+    slot2 = Slot(slot)
+    ```
 
 ### Rendering slots
 
@@ -713,12 +723,13 @@ html = slot()
 
 When accessing slots from within [`Component`](../../../reference/api#django_components.Component) methods,
 the [`Slot`](../../../reference/api#django_components.Slot) instances are populated
-with extra metadata [`component_name`](../../../reference/api#django_components.Slot.component_name)
-and [`slot_name`](../../../reference/api#django_components.Slot.slot_name).
+with extra metadata [`component_name`](../../../reference/api#django_components.Slot.component_name),
+[`slot_name`](../../../reference/api#django_components.Slot.slot_name), and
+[`nodelist`](../../../reference/api#django_components.Slot.nodelist).
 
-These are used solely for debugging.
+These are used for debugging, such as printing the path to the slot in the component tree.
 
-In fact, you can set these fields too when creating new slots:
+When you create a slot, you can set these fields too:
 
 ```py
 # Either at slot creation
@@ -752,19 +763,6 @@ the contents will be accessible also as a Nodelist under [`Slot.nodelist`](../..
 slot = Slot("Hello!")
 print(slot.nodelist)  # <django.template.Nodelist: ['Hello!']>
 ```
-
-!!! info
-
-    If you pass a [`Slot`](../../../reference/api#django_components.Slot) instance to the constructor,
-    the inner slot will be "unwrapped" and its `Slot.contents` will be used instead.
-
-    ```py
-    slot = Slot("Hello")
-    print(slot.contents)  # "Hello"
-
-    slot2 = Slot(slot)
-    print(slot2.contents)  # "Hello"
-    ```
 
 ### Escaping slots content
 

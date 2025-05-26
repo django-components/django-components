@@ -56,7 +56,7 @@ from django_components.extension import (
     extensions,
 )
 from django_components.extensions.cache import ComponentCache
-from django_components.extensions.defaults import ComponentDefaults, apply_defaults, defaults_by_component
+from django_components.extensions.defaults import ComponentDefaults
 from django_components.extensions.view import ComponentView, ViewFn
 from django_components.node import BaseNode
 from django_components.perfutil.component import ComponentRenderer, component_context_cache, component_post_render
@@ -2798,22 +2798,11 @@ class Component(metaclass=ComponentMeta):
 
         render_id = _gen_component_id()
 
-        # Apply defaults to missing or `None` values in `kwargs`
-        defaults = defaults_by_component.get(comp_cls, None)
-        if defaults is not None:
-            apply_defaults(kwargs_dict, defaults)
-
-        # If user doesn't specify `Args`, `Kwargs`, `Slots` types, then we pass them in as plain
-        # dicts / lists.
-        args_inst = comp_cls.Args(*args_list) if comp_cls.Args is not None else args_list
-        kwargs_inst = comp_cls.Kwargs(**kwargs_dict) if comp_cls.Kwargs is not None else kwargs_dict
-        slots_inst = comp_cls.Slots(**slots_dict) if comp_cls.Slots is not None else slots_dict
-
         component = comp_cls(
             id=render_id,
-            args=args_inst,
-            kwargs=kwargs_inst,
-            slots=slots_inst,
+            args=args_list,
+            kwargs=kwargs_dict,
+            slots=slots_dict,
             context=context,
             request=request,
             deps_strategy=deps_strategy,
@@ -2840,6 +2829,12 @@ class Component(metaclass=ComponentMeta):
         # the rest of the rendering process. This may be for example a cached content.
         if result_override is not None:
             return result_override
+
+        # If user doesn't specify `Args`, `Kwargs`, `Slots` types, then we pass them in as plain
+        # dicts / lists.
+        component.args = comp_cls.Args(*args_list) if comp_cls.Args is not None else args_list
+        component.kwargs = comp_cls.Kwargs(**kwargs_dict) if comp_cls.Kwargs is not None else kwargs_dict
+        component.slots = comp_cls.Slots(**slots_dict) if comp_cls.Slots is not None else slots_dict
 
         ######################################
         # 2. Prepare component state

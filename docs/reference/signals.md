@@ -6,7 +6,7 @@ Below are the signals that are sent by or during the use of django-components.
 
 ## template_rendered
 
-Django's [`template_rendered`](https://docs.djangoproject.com/en/5.1/ref/signals/#template-rendered) signal.
+Django's [`template_rendered`](https://docs.djangoproject.com/en/5.2/ref/signals/#template-rendered) signal.
 This signal is sent when a template is rendered.
 
 Django-components triggers this signal when a component is rendered. If there are nested components,

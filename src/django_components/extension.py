@@ -92,7 +92,7 @@ class OnComponentInputContext(NamedTuple):
     """List of positional arguments passed to the component"""
     kwargs: Dict
     """Dictionary of keyword arguments passed to the component"""
-    slots: Dict
+    slots: Dict[str, "Slot"]
     """Dictionary of slot definitions"""
     context: Context
     """The Django template Context object"""
@@ -498,6 +498,19 @@ class ComponentExtension:
                 # Add extra kwarg to all components when they are rendered
                 ctx.kwargs["my_input"] = "my_value"
         ```
+
+        !!! warning
+
+            In this hook, the components' inputs are still mutable.
+
+            As such, if a component defines [`Args`](../api#django_components.Component.Args),
+            [`Kwargs`](../api#django_components.Component.Kwargs),
+            [`Slots`](../api#django_components.Component.Slots) types, these types are NOT yet instantiated.
+
+            Instead, component fields like [`Component.args`](../api#django_components.Component.args),
+            [`Component.kwargs`](../api#django_components.Component.kwargs),
+            [`Component.slots`](../api#django_components.Component.slots)
+            are plain `list` / `dict` objects.
         """
         pass
 

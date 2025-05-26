@@ -7,5 +7,11 @@ template and in [`on_render_before` / `on_render_after`](../concepts/advanced/ho
 hooks.
 
 
+::: django_components.component.ComponentVars.args
+
+::: django_components.component.ComponentVars.kwargs
+
+::: django_components.component.ComponentVars.slots
+
 ::: django_components.component.ComponentVars.is_filled
 

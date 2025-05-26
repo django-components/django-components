@@ -87,6 +87,14 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.SlotContext
+    options:
+      show_if_no_docstring: true
+
+::: django_components.SlotFallback
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.SlotFunc
     options:
       show_if_no_docstring: true

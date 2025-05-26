@@ -85,9 +85,9 @@ name | type | description
 `component` | [`Component`](../api#django_components.Component) | The Component instance that received the input and is being rendered
 `component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class
 `component_id` | `str` | The unique identifier for this component instance
-`context` | [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context) | The Django template Context object
+`context` | [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) | The Django template Context object
 `kwargs` | `Dict` | Dictionary of keyword arguments passed to the component
-`slots` | `Dict` | Dictionary of slot definitions
+`slots` | `Dict[str, Slot]` | Dictionary of slot definitions
 
 ::: django_components.extension.ComponentExtension.on_component_registered
     options:
@@ -180,6 +180,30 @@ name | type | description
 name | type | description
 --|--|--
 `registry` | [`ComponentRegistry`](../api#django_components.ComponentRegistry) | The to-be-deleted ComponentRegistry instance
+
+::: django_components.extension.ComponentExtension.on_slot_rendered
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_signature: true
+      separate_signature: true
+      show_symbol_type_heading: false
+      show_symbol_type_toc: false
+      show_if_no_docstring: true
+      show_labels: false
+
+**Available data:**
+
+name | type | description
+--|--|--
+`component` | [`Component`](../api#django_components.Component) | The Component instance that contains the `{% slot %}` tag
+`component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class that contains the `{% slot %}` tag
+`component_id` | `str` | The unique identifier for this component instance
+`result` | `SlotResult` | The rendered result of the slot
+`slot` | `Slot` | The Slot instance that was rendered
+`slot_is_default` | `bool` | Whether the slot is default
+`slot_is_required` | `bool` | Whether the slot is required
+`slot_name` | `str` | The name of the `{% slot %}` tag
 
 ## Objects
 
