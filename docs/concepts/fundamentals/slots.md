@@ -649,7 +649,7 @@ slot2 = Slot("Hello, world!")
 
 !!! warning
 
-    Pass a [`Slot`](../../../reference/api#django_components.Slot) instance to the `Slot`
+    Passing a [`Slot`](../../../reference/api#django_components.Slot) instance to the `Slot`
     constructor results in an error:
 
     ```py
