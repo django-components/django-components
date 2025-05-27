@@ -82,7 +82,13 @@ class TestComponentHighlight:
         assert COLORS["slot"].text_color in result
         assert COLORS["slot"].border_color in result
 
-    @djc_test(components_settings={"debug_highlight_components": True})
+    @djc_test(
+        components_settings={
+            "extensions_defaults": {
+                "debug_highlight": {"highlight_components": True},
+            },
+        }
+    )
     def test_component_highlight_extension(self):
         template = _prepare_template()
         rendered = template.render(Context({"items": [1, 2]}))
@@ -151,8 +157,158 @@ class TestComponentHighlight:
         """
         assertHTMLEqual(rendered, expected)
 
-    @djc_test(components_settings={"debug_highlight_slots": True})
+    # TODO_v1 - Remove this test once we've removed the `debug_highlight_components` setting.
+    @djc_test(components_settings={"debug_highlight_components": True})
+    def test_component_highlight_extension__legacy(self):
+        template = _prepare_template()
+        rendered = template.render(Context({"items": [1, 2]}))
+
+        expected = """
+            <div class="item">
+                <style>
+                    .component-highlight-a1bc45::before {
+                        content: "outer (ca1bc3f): ";
+                        font-weight: bold;
+                        color: #2f14bb;
+                    }
+                </style>
+                <div class="component-highlight-a1bc45" style="border: 1px solid blue">
+                    <div class="outer" data-djc-id-ca1bc3f="">
+                        <style>
+                            .component-highlight-a1bc44::before {
+                                content: "inner (ca1bc41): ";
+                                font-weight: bold;
+                                color: #2f14bb;
+                            }
+                        </style>
+                        <div class="component-highlight-a1bc44" style="border: 1px solid blue">
+                            <div class="inner" data-djc-id-ca1bc41="">
+                                <div>
+                                    1: 1
+                                </div>
+                                <div>
+                                    2: 1
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="item">
+                <style>
+                    .component-highlight-a1bc49::before {
+                        content: "outer (ca1bc46): ";
+                        font-weight: bold;
+                        color: #2f14bb;
+                    }
+                </style>
+                <div class="component-highlight-a1bc49" style="border: 1px solid blue">
+                    <div class="outer" data-djc-id-ca1bc46="">
+                        <style>
+                            .component-highlight-a1bc48::before {
+                                content: "inner (ca1bc47): ";
+                                font-weight: bold;
+                                color: #2f14bb;
+                            }
+                        </style>
+                        <div class="component-highlight-a1bc48" style="border: 1px solid blue">
+                            <div class="inner" data-djc-id-ca1bc47="">
+                                <div>
+                                    1: 2
+                                </div>
+                                <div>
+                                    2: 2
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """
+        assertHTMLEqual(rendered, expected)
+
+    @djc_test(
+        components_settings={
+            "extensions_defaults": {
+                "debug_highlight": {"highlight_slots": True},
+            },
+        }
+    )
     def test_slot_highlight_extension(self):
+        template = _prepare_template()
+        rendered = template.render(Context({"items": [1, 2]}))
+
+        expected = """
+            <div class="item">
+                <div class="outer" data-djc-id-ca1bc3f="">
+                    <div class="inner" data-djc-id-ca1bc41="">
+                        <div>
+                            1:
+                            <style>
+                                .slot-highlight-a1bc44::before {
+                                    content: "InnerComponent - content: ";
+                                    font-weight: bold;
+                                    color: #bb1414;
+                                }
+                            </style>
+                            <div class="slot-highlight-a1bc44" style="border: 1px solid #e40c0c">
+                                1
+                            </div>
+                        </div>
+                        <div>
+                            2:
+                            <style>
+                                .slot-highlight-a1bc45::before {
+                                    content: "InnerComponent - content: ";
+                                    font-weight: bold;
+                                    color: #bb1414;
+                                }
+                            </style>
+                            <div class="slot-highlight-a1bc45" style="border: 1px solid #e40c0c">
+                                1
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="item">
+                <div class="outer" data-djc-id-ca1bc46="">
+                    <div class="inner" data-djc-id-ca1bc47="">
+                        <div>
+                            1:
+                            <style>
+                                .slot-highlight-a1bc48::before {
+                                    content: "InnerComponent - content: ";
+                                    font-weight: bold;
+                                    color: #bb1414;
+                                }
+                            </style>
+                            <div class="slot-highlight-a1bc48" style="border: 1px solid #e40c0c">
+                                2
+                            </div>
+                        </div>
+                        <div>
+                            2:
+                            <style>
+                                .slot-highlight-a1bc49::before {
+                                    content: "InnerComponent - content: ";
+                                    font-weight: bold;
+                                    color: #bb1414;
+                                }
+                            </style>
+                            <div class="slot-highlight-a1bc49" style="border: 1px solid #e40c0c">
+                                2
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        """
+        assertHTMLEqual(rendered, expected)
+
+    # TODO_v1 - Remove this test once we've removed the `debug_highlight_slots` setting.
+    @djc_test(components_settings={"debug_highlight_slots": True})
+    def test_slot_highlight_extension__legacy(self):
         template = _prepare_template()
         rendered = template.render(Context({"items": [1, 2]}))
 

@@ -121,7 +121,7 @@ mkdocs==1.6.1
     #   mkdocs-minify-plugin
     #   mkdocs-redirects
     #   mkdocstrings
-mkdocs-autorefs==1.4.1
+mkdocs-autorefs==1.4.2
     # via
     #   hatch.envs.docs
     #   mkdocstrings
@@ -136,7 +136,7 @@ mkdocs-get-deps==0.2.0
     #   mkdocstrings
 mkdocs-git-authors-plugin==0.9.5
     # via hatch.envs.docs
-mkdocs-git-revision-date-localized-plugin==1.4.5
+mkdocs-git-revision-date-localized-plugin==1.4.6
     # via hatch.envs.docs
 mkdocs-include-markdown-plugin==7.1.5
     # via hatch.envs.docs
@@ -152,7 +152,7 @@ mkdocstrings==0.29.1
     # via
     #   hatch.envs.docs
     #   mkdocstrings-python
-mkdocstrings-python==1.16.10
+mkdocstrings-python==1.16.11
     # via hatch.envs.docs
 mypy-extensions==1.1.0
     # via black
@@ -232,5 +232,5 @@ webencodings==0.5.1
     # via
     #   cssselect2
     #   tinycss2
-zipp==3.21.0
+zipp==3.22.0
     # via importlib-metadata

@@ -19,6 +19,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.ComponentDebugHighlight
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.ComponentDefaults
     options:
       show_if_no_docstring: true
@@ -72,6 +76,10 @@
       show_if_no_docstring: true
 
 ::: django_components.Empty
+    options:
+      show_if_no_docstring: true
+
+::: django_components.ExtensionComponentConfig
     options:
       show_if_no_docstring: true
 

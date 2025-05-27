@@ -1,7 +1,12 @@
 from typing import Any, Literal, NamedTuple, Optional, Type
 
 from django_components.app_settings import app_settings
-from django_components.extension import ComponentExtension, OnComponentRenderedContext, OnSlotRenderedContext
+from django_components.extension import (
+    ComponentExtension,
+    ExtensionComponentConfig,
+    OnComponentRenderedContext,
+    OnSlotRenderedContext,
+)
 from django_components.util.misc import gen_id
 
 
@@ -45,14 +50,6 @@ def apply_component_highlight(type: Literal["component", "slot"], output: str, n
     return output
 
 
-# TODO - Deprecate `DEBUG_HIGHLIGHT_SLOTS` and `DEBUG_HIGHLIGHT_COMPONENTS` (with removal in v1)
-#        once `extension_defaults` is implemented.
-#        That way people will be able to set the highlighting from single place.
-#        At that point also document this extension in the docs:
-#        - Exposing `ComponentDebugHighlight` from `__init__.py`
-#        - Adding `Component.DebugHighlight` and `Component.debug_highlight` attributes to Component class
-#          so it's easier to find.
-#        - Check docstring of `ComponentDebugHighlight` in the docs and make sure it's correct.
 class HighlightComponentsDescriptor:
     def __get__(self, obj: Optional[Any], objtype: Type) -> bool:
         return app_settings.DEBUG_HIGHLIGHT_COMPONENTS
@@ -63,14 +60,14 @@ class HighlightSlotsDescriptor:
         return app_settings.DEBUG_HIGHLIGHT_SLOTS
 
 
-class ComponentDebugHighlight(ComponentExtension.ExtensionClass):  # type: ignore
+class ComponentDebugHighlight(ExtensionComponentConfig):
     """
     The interface for `Component.DebugHighlight`.
 
     The fields of this class are used to configure the component debug highlighting for this component
     and its direct slots.
 
-    Read more about [Component debug highlighting](../../concepts/advanced/component_debug_highlighting).
+    Read more about [Component debug highlighting](../../guides/other/troubleshooting#component-and-slot-highlighting).
 
     **Example:**
 
@@ -84,10 +81,22 @@ class ComponentDebugHighlight(ComponentExtension.ExtensionClass):  # type: ignor
     ```
 
     To highlight ALL components and slots, set
-    [`ComponentsSettings.DEBUG_HIGHLIGHT_SLOTS`](../../settings/components_settings.md#debug_highlight_slots) and
-    [`ComponentsSettings.DEBUG_HIGHLIGHT_COMPONENTS`](../../settings/components_settings.md#debug_highlight_components)
-    to `True`.
-    """
+    [extension defaults](../../reference/settings/#django_components.app_settings.ComponentsSettings.extensions_defaults)
+    in your settings:
+
+    ```python
+    from django_components import ComponentsSettings
+
+    COMPONENTS = ComponentsSettings(
+        extensions_defaults={
+            "debug_highlight": {
+                "highlight_components": True,
+                "highlight_slots": True,
+            },
+        },
+    )
+    ```
+    """  # noqa: E501
 
     # TODO_v1 - Remove `DEBUG_HIGHLIGHT_COMPONENTS` and `DEBUG_HIGHLIGHT_SLOTS`
     #           Instead set this as plain boolean fields.
@@ -112,7 +121,7 @@ class DebugHighlightExtension(ComponentExtension):
     """
 
     name = "debug_highlight"
-    ExtensionClass = ComponentDebugHighlight
+    ComponentConfig = ComponentDebugHighlight
 
     # Apply highlight to the slot's rendered output
     def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
