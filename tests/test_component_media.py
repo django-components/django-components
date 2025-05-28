@@ -1,8 +1,12 @@
 import os
+import re
 import sys
 from pathlib import Path
 from textwrap import dedent
+from typing import Optional
 
+import pytest
+from django.core.exceptions import ImproperlyConfigured
 from django.forms.widgets import Media
 from django.template import Context, Template
 from django.templatetags.static import static
@@ -11,6 +15,7 @@ from django.utils.safestring import mark_safe
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, autodiscover, registry, render_dependencies, types
+from django_components.component_media import UNSET
 
 from django_components.testing import djc_test
 from .testutils import setup_test_config
@@ -24,12 +29,14 @@ setup_test_config({"autodiscover": False})
 class TestMainMedia:
     def test_html_js_css_inlined(self):
         class TestComponent(Component):
-            template = dedent("""
+            template = dedent(
+                """
                 {% load component_tags %}
                 {% component_js_dependencies %}
                 {% component_css_dependencies %}
                 <div class='html-css-only'>Content</div>
-            """)
+                """
+            )
             css = ".html-css-only { color: blue; }"
             js = "console.log('HTML and JS only');"
 
@@ -52,12 +59,14 @@ class TestMainMedia:
         )
 
         # Check that the HTML / JS / CSS can be accessed on the component class
-        assert TestComponent.template == dedent("""
+        assert TestComponent.template == dedent(
+            """
             {% load component_tags %}
             {% component_js_dependencies %}
             {% component_css_dependencies %}
             <div class='html-css-only'>Content</div>
-        """)
+            """
+        )
         assert TestComponent.css == ".html-css-only { color: blue; }"
         assert TestComponent.js == "console.log('HTML and JS only');"
 
@@ -170,8 +179,7 @@ class TestMainMedia:
             "}"
         )
         assert TestComponent.js == (
-            "/* Used in `MainMediaTest` tests in `test_component_media.py` */\n"
-            'console.log("HTML and JS only");\n'
+            '/* Used in `MainMediaTest` tests in `test_component_media.py` */\nconsole.log("HTML and JS only");\n'
         )
 
     @djc_test(
@@ -189,7 +197,7 @@ class TestMainMedia:
 
         # NOTE: Since this is a subclass, actual CSS is defined on the parent class, and thus
         # the corresponding ComponentMedia instance is also on the parent class.
-        assert AppLvlCompComponent._component_media.css is None  # type: ignore[attr-defined]
+        assert AppLvlCompComponent._component_media.css is UNSET  # type: ignore[attr-defined]
         assert AppLvlCompComponent._component_media.css_file == "app_lvl_comp.css"  # type: ignore[attr-defined]
 
         # Access the property to load the CSS
@@ -379,6 +387,7 @@ class TestComponentMedia:
     )
     def test_glob_pattern_relative_to_component(self):
         from tests.components.glob.glob import GlobComponent
+
         rendered = GlobComponent.render()
 
         assertInHTML('<link href="glob/glob_1.css" media="all" rel="stylesheet">', rendered)
@@ -393,6 +402,7 @@ class TestComponentMedia:
     )
     def test_glob_pattern_relative_to_root_dir(self):
         from tests.components.glob.glob import GlobComponentRootDir
+
         rendered = GlobComponentRootDir.render()
 
         assertInHTML('<link href="glob/glob_1.css" media="all" rel="stylesheet">', rendered)
@@ -407,6 +417,7 @@ class TestComponentMedia:
     )
     def test_non_globs_not_modified(self):
         from tests.components.glob.glob import NonGlobComponentRootDir
+
         rendered = NonGlobComponentRootDir.render()
 
         assertInHTML('<link href="glob/glob_1.css" media="all" rel="stylesheet">', rendered)
@@ -419,6 +430,7 @@ class TestComponentMedia:
     )
     def test_non_globs_not_modified_nonexist(self):
         from tests.components.glob.glob import NonGlobNonexistComponentRootDir
+
         rendered = NonGlobNonexistComponentRootDir.render()
 
         assertInHTML('<link href="glob/glob_nonexist.css" media="all" rel="stylesheet">', rendered)
@@ -426,6 +438,7 @@ class TestComponentMedia:
 
     def test_glob_pattern_does_not_break_urls(self):
         from tests.components.glob.glob import UrlComponent
+
         rendered = UrlComponent.render()
 
         assertInHTML('<link href="https://example.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
@@ -434,10 +447,16 @@ class TestComponentMedia:
         assertInHTML('<link href="%3A//example.com/example/style.min.css" media="all" rel="stylesheet">', rendered)
         assertInHTML('<link href="/path/to/style.css" media="all" rel="stylesheet">', rendered)
 
-        assertInHTML('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
-        assertInHTML('<script src="http://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
+        assertInHTML(
+            '<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered
+        )
+        assertInHTML(
+            '<script src="http://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered
+        )
         # `://` is escaped because Django's `Media.absolute_path()` doesn't consider `://` a valid URL
-        assertInHTML('<script src="%3A//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered)
+        assertInHTML(
+            '<script src="%3A//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered
+        )
         assertInHTML('<script src="/path/to/script.js"></script>', rendered)
 
 
@@ -831,9 +850,7 @@ class TestMediaStaticfiles:
 
         # NOTE: Since we're using ManifestStaticFilesStorage, we expect the rendered media to link
         # to the files as defined in staticfiles.json
-        assertInHTML(
-            '<link href="/static/calendar/style.0eeb72042b59.css" media="all" rel="stylesheet">', rendered
-        )
+        assertInHTML('<link href="/static/calendar/style.0eeb72042b59.css" media="all" rel="stylesheet">', rendered)
 
         assertInHTML('<script defer src="/static/calendar/script.e1815e23e0ec.js"></script>', rendered)
 
@@ -1015,6 +1032,129 @@ class TestMediaRelativePath:
 
 
 @djc_test
+class TestSubclassingAttributes:
+    def test_both_js_and_js_file_none(self):
+        class TestComp(Component):
+            js = None
+            js_file = None
+
+        assert TestComp.js is None
+        assert TestComp.js_file is None
+
+    def test_mixing_none_and_non_none_raises(self):
+        with pytest.raises(
+            ImproperlyConfigured,
+            match=re.escape("Received non-empty value from both 'js' and 'js_file' in Component TestComp"),
+        ):
+
+            class TestComp(Component):
+                js = "console.log('hi')"
+                js_file = None
+
+    def test_both_non_none_raises(self):
+        with pytest.raises(
+            ImproperlyConfigured,
+            match=re.escape("Received non-empty value from both 'js' and 'js_file' in Component TestComp"),
+        ):
+
+            class TestComp(Component):
+                js = "console.log('hi')"
+                js_file = "file.js"
+
+    def test_parent_non_null_child_non_null(self):
+        class ParentComp(Component):
+            js = "console.log('parent')"
+
+        class TestComp(ParentComp):
+            js = "console.log('child')"
+
+        assert TestComp.js == "console.log('child')"
+        assert TestComp.js_file is None
+
+    def test_parent_null_child_non_null(self):
+        class ParentComp(Component):
+            js = None
+
+        class TestComp(ParentComp):
+            js = "console.log('child')"
+
+        assert TestComp.js == "console.log('child')"
+        assert TestComp.js_file is None
+
+    def test_parent_non_null_child_null(self):
+        class ParentComp(Component):
+            js: Optional[str] = "console.log('parent')"
+
+        class TestComp(ParentComp):
+            js = None
+
+        assert TestComp.js is None
+        assert TestComp.js_file is None
+
+    def test_parent_null_child_null(self):
+        class ParentComp(Component):
+            js = None
+
+        class TestComp(ParentComp):
+            js = None
+
+        assert TestComp.js is None
+        assert TestComp.js_file is None
+
+    def test_grandparent_non_null_parent_pass_child_pass(self):
+        class GrandParentComp(Component):
+            js = "console.log('grandparent')"
+
+        class ParentComp(GrandParentComp):
+            pass
+
+        class TestComp(ParentComp):
+            pass
+
+        assert TestComp.js == "console.log('grandparent')"
+        assert TestComp.js_file is None
+
+    def test_grandparent_non_null_parent_null_child_pass(self):
+        class GrandParentComp(Component):
+            js: Optional[str] = "console.log('grandparent')"
+
+        class ParentComp(GrandParentComp):
+            js = None
+
+        class TestComp(ParentComp):
+            pass
+
+        assert TestComp.js is None
+        assert TestComp.js_file is None
+
+    def test_grandparent_non_null_parent_pass_child_non_null(self):
+        class GrandParentComp(Component):
+            js = "console.log('grandparent')"
+
+        class ParentComp(GrandParentComp):
+            pass
+
+        class TestComp(ParentComp):
+            js = "console.log('child')"
+
+        assert TestComp.js == "console.log('child')"
+        assert TestComp.js_file is None
+
+    def test_grandparent_null_parent_pass_child_non_null(self):
+        class GrandParentComp(Component):
+            js = None
+
+        class ParentComp(GrandParentComp):
+            pass
+
+        class TestComp(ParentComp):
+            js = "console.log('child')"
+
+        assert TestComp.js == "console.log('child')"
+        assert TestComp.js_file is None
+
+
+@djc_test
 class TestSubclassingMedia:
     def test_media_in_child_and_parent(self):
         class ParentComponent(Component):
@@ -1060,8 +1200,9 @@ class TestSubclassingMedia:
                 css = "grandparent.css"
                 js = "grandparent.js"
 
+        # `pass` means that we inherit `Media` from `GrandParentComponent`
         class ParentComponent(GrandParentComponent):
-            Media = None  # type: ignore[assignment]
+            pass
 
         class ChildComponent(ParentComponent):
             class Media:
@@ -1081,6 +1222,40 @@ class TestSubclassingMedia:
             '<link href="grandparent.css" media="all" rel="stylesheet">\n'
             '<script src="child.js"></script>\n'
             '<script src="grandparent.js"></script>'
+        )
+
+    # Check that setting `Media = None` on a child class means that we will NOT inherit `Media` from the parent class
+    def test_media_in_child_and_grandparent__inheritance_off(self):
+        class GrandParentComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component_js_dependencies %}
+                {% component_css_dependencies %}
+            """
+
+            class Media:
+                css = "grandparent.css"
+                js = "grandparent.js"
+
+        # `None` means that we will NOT inherit `Media` from `GrandParentComponent`
+        class ParentComponent(GrandParentComponent):
+            Media = None
+
+        class ChildComponent(ParentComponent):
+            class Media:
+                css = "child.css"
+                js = "child.js"
+
+        rendered = ChildComponent.render()
+
+        assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<script src="child.js"></script>', rendered)
+
+        assert "grandparent.css" not in rendered
+        assert "grandparent.js" not in rendered
+
+        assert str(ChildComponent.media) == (
+            '<link href="child.css" media="all" rel="stylesheet">\n<script src="child.js"></script>'
         )
 
     def test_media_in_parent_and_grandparent(self):
@@ -1143,8 +1318,9 @@ class TestSubclassingMedia:
                 css = "parent1.css"
                 js = "parent1.js"
 
+        # `pass` means that we inherit `Media` from `GrandParent3Component` and `GrandParent4Component`
         class Parent2Component(GrandParent3Component, GrandParent4Component):
-            Media = None  # type: ignore[assignment]
+            pass
 
         class ChildComponent(Parent1Component, Parent2Component):
             template: types.django_html = """
@@ -1176,6 +1352,69 @@ class TestSubclassingMedia:
             '<link href="grandparent1.css" media="all" rel="stylesheet">\n'
             '<script src="child.js"></script>\n'
             '<script src="grandparent3.js"></script>\n'
+            '<script src="parent1.js"></script>\n'
+            '<script src="grandparent1.js"></script>'
+        )
+
+    # Check that setting `Media = None` on a child class means that we will NOT inherit `Media` from the parent class
+    def test_media_in_multiple_bases__inheritance_off(self):
+        class GrandParent1Component(Component):
+            class Media:
+                css = "grandparent1.css"
+                js = "grandparent1.js"
+
+        class GrandParent2Component(Component):
+            pass
+
+        # NOTE: The bases don't even have to be Component classes,
+        # as long as they have the nested `Media` class.
+        class GrandParent3Component:
+            # NOTE: When we don't subclass `Component`, we have to correctly format the `Media` class
+            class Media:
+                css = {"all": ["grandparent3.css"]}
+                js = ["grandparent3.js"]
+
+        class GrandParent4Component:
+            pass
+
+        class Parent1Component(GrandParent1Component, GrandParent2Component):
+            class Media:
+                css = "parent1.css"
+                js = "parent1.js"
+
+        # `None` means that we will NOT inherit `Media` from `GrandParent3Component` and `GrandParent4Component`
+        class Parent2Component(GrandParent3Component, GrandParent4Component):
+            Media = None
+
+        class ChildComponent(Parent1Component, Parent2Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component_js_dependencies %}
+                {% component_css_dependencies %}
+            """
+
+            class Media:
+                css = "child.css"
+                js = "child.js"
+
+        rendered = ChildComponent.render()
+
+        assertInHTML('<link href="child.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="parent1.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML('<link href="grandparent1.css" media="all" rel="stylesheet">', rendered)
+
+        assertInHTML('<script src="child.js"></script>', rendered)
+        assertInHTML('<script src="parent1.js"></script>', rendered)
+        assertInHTML('<script src="grandparent1.js"></script>', rendered)
+
+        assert "grandparent3.css" not in rendered
+        assert "grandparent3.js" not in rendered
+
+        assert str(ChildComponent.media) == (
+            '<link href="child.css" media="all" rel="stylesheet">\n'
+            '<link href="parent1.css" media="all" rel="stylesheet">\n'
+            '<link href="grandparent1.css" media="all" rel="stylesheet">\n'
+            '<script src="child.js"></script>\n'
             '<script src="parent1.js"></script>\n'
             '<script src="grandparent1.js"></script>'
         )
@@ -1214,8 +1453,7 @@ class TestSubclassingMedia:
         assertInHTML('<script src="child.js"></script>', rendered)
 
         assert str(ChildComponent.media) == (
-            '<link href="child.css" media="all" rel="stylesheet">\n'
-            '<script src="child.js"></script>'
+            '<link href="child.css" media="all" rel="stylesheet">\n<script src="child.js"></script>'
         )
 
     def test_extend_false_in_parent(self):

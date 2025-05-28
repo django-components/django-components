@@ -4,6 +4,12 @@
 
 ⚠️ Major release ⚠️ - Please test thoroughly before / after upgrading.
 
+This is the biggest step towards v1. While this version introduces
+many small API changes, we don't expect to make further changes to
+the affected parts before v1.
+
+For more details see [#433](https://github.com/django-components/django-components/issues/433).
+
 Summary:
 
 - Overhauled typing system
@@ -219,6 +225,38 @@ Summary:
                 dynamic_template = do_something_dynamic()
                 return dynamic_template.render(context)
         ```
+
+- Subclassing of components with `None` values has changed:
+
+    Previously, when a child component's template / JS / CSS attributes were set to `None`, the child component still inherited the parent's template / JS / CSS.
+
+    Now, the child component will not inherit the parent's template / JS / CSS if it sets the attribute to `None`.
+
+    Before:
+
+    ```py
+    class Parent(Component):
+        template = "parent.html"
+
+    class Child(Parent):
+        template = None
+
+    # Child still inherited parent's template
+    assert Child.template == Parent.template
+    ```
+
+    After:
+
+    ```py
+    class Parent(Component):
+        template = "parent.html"
+
+    class Child(Parent):
+        template = None
+
+    # Child does not inherit parent's template
+    assert Child.template is None
+    ```
 
 - The `Component.Url` class was merged with `Component.View`.
 

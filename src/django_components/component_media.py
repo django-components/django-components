@@ -41,6 +41,21 @@ if TYPE_CHECKING:
 COMP_MEDIA_LAZY_ATTRS = ("media", "template", "template_file", "js", "js_file", "css", "css_file")
 
 
+# Sentinel value to indicate that a media attribute is not set.
+# We use this to differntiate between setting template to `None` and not setting it at all.
+# If not set, we will use the template from the parent component.
+# If set to `None`, then this compoenent has no template.
+class Unset:
+    def __bool__(self) -> bool:
+        return False
+
+    def __repr__(self) -> str:
+        return "<UNSET>"
+
+
+UNSET = Unset()
+
+
 ComponentMediaInputPath = Union[
     str,
     bytes,
@@ -240,20 +255,36 @@ class ComponentMedia:
     comp_cls: Type["Component"]
     resolved: bool = False
     resolved_relative_files: bool = False
-    Media: Optional[Type[ComponentMediaInput]] = None
-    template: Optional[str] = None
-    template_file: Optional[str] = None
-    js: Optional[str] = None
-    js_file: Optional[str] = None
-    css: Optional[str] = None
-    css_file: Optional[str] = None
+    Media: Union[Type[ComponentMediaInput], Unset, None] = UNSET
+    template: Union[str, Unset, None] = UNSET
+    template_file: Union[str, Unset, None] = UNSET
+    js: Union[str, Unset, None] = UNSET
+    js_file: Union[str, Unset, None] = UNSET
+    css: Union[str, Unset, None] = UNSET
+    css_file: Union[str, Unset, None] = UNSET
 
     def __post_init__(self) -> None:
         for inlined_attr in ("template", "js", "css"):
             file_attr = f"{inlined_attr}_file"
-            if getattr(self, inlined_attr) is not None and getattr(self, file_attr) is not None:
+
+            inlined_val = getattr(self, inlined_attr)
+            file_val = getattr(self, file_attr)
+            # NOTE: We raise if Component class received both inlined and file values:
+            # ```py
+            # class MyComp(Component):
+            #     js = "..."
+            #     js_file = "..."
+            # ```
+            #
+            # But both `None` are allowed:
+            # ```py
+            # class MyComp(Component):
+            #     js = None
+            #     js_file = None
+            # ```
+            if (inlined_val is not UNSET and file_val is not UNSET) and not (inlined_val is None and file_val is None):
                 raise ImproperlyConfigured(
-                    f"Received non-null value from both '{inlined_attr}' and '{file_attr}' in"
+                    f"Received non-empty value from both '{inlined_attr}' and '{file_attr}' in"
                     f" Component {self.comp_cls.__name__}. Only one of the two must be set."
                 )
         # Make a copy of the original state, so we can reset it in tests
@@ -340,13 +371,13 @@ def _setup_lazy_media_resolve(comp_cls: Type["Component"], attrs: Dict[str, Any]
         resolved=False,
         # NOTE: We take the values from `attrs` so we consider only the values that were set on THIS class,
         #       and not the values that were inherited from the parent classes.
-        Media=attrs.get("Media", None),
-        template=attrs.get("template", None),
-        template_file=attrs.get("template_file", None),
-        js=attrs.get("js", None),
-        js_file=attrs.get("js_file", None),
-        css=attrs.get("css", None),
-        css_file=attrs.get("css_file", None),
+        Media=attrs.get("Media", UNSET),
+        template=attrs.get("template", UNSET),
+        template_file=attrs.get("template_file", UNSET),
+        js=attrs.get("js", UNSET),
+        js_file=attrs.get("js_file", UNSET),
+        css=attrs.get("css", UNSET),
+        css_file=attrs.get("css_file", UNSET),
     )
 
     def get_comp_media_attr(attr: str) -> Any:
@@ -383,34 +414,34 @@ def _get_comp_cls_attr(comp_cls: Type["Component"], attr: str) -> Any:
             continue
         if not comp_media.resolved:
             _resolve_media(base, comp_media)
-        value = getattr(comp_media, attr, None)
+
+        # NOTE: We differentiate between `None` and `UNSET`, so that users can set `None` to
+        #       override parent class's value and set it to `None`.
+        value = getattr(comp_media, attr, UNSET)
 
         # For each of the pairs of inlined_content + file (e.g. `js` + `js_file`), if at least one of the two
         # is defined, we interpret it such that this (sub)class has overridden what was set by the parent class(es),
         # and we won't search further up the MRO.
-        def check_pair_empty(inline_attr: str, file_attr: str) -> bool:
-            inline_attr_empty = getattr(comp_media, inline_attr, None) is None
-            file_attr_empty = getattr(comp_media, file_attr, None) is None
-            return inline_attr_empty and file_attr_empty
+        def resolve_pair(inline_attr: str, file_attr: str) -> Any:
+            inline_attr_empty = getattr(comp_media, inline_attr, UNSET) is UNSET
+            file_attr_empty = getattr(comp_media, file_attr, UNSET) is UNSET
 
-        if attr in ("js", "js_file"):
-            if check_pair_empty("js", "js_file"):
-                continue
-            else:
-                return value
-        if attr in ("css", "css_file"):
-            if check_pair_empty("css", "css_file"):
-                continue
-            else:
-                return value
-        if attr in ("template", "template_file"):
-            if check_pair_empty("template", "template_file"):
-                continue
+            is_pair_empty = inline_attr_empty and file_attr_empty
+            if is_pair_empty:
+                return UNSET
             else:
                 return value
 
-        # For the other attributes, simply search for the closest non-null
-        if value is not None:
+        if attr in ("js", "js_file"):
+            value = resolve_pair("js", "js_file")
+        elif attr in ("css", "css_file"):
+            value = resolve_pair("css", "css_file")
+        elif attr in ("template", "template_file"):
+            value = resolve_pair("template", "template_file")
+
+        if value is UNSET:
+            continue
+        else:
             return value
     return None
 
@@ -452,8 +483,20 @@ def _get_comp_cls_media(comp_cls: Type["Component"]) -> Any:
             continue
 
         # Prepare base classes
-        media_input = getattr(curr_cls, "Media", None)
-        media_extend = getattr(media_input, "extend", True)
+        # NOTE: If the `Component.Media` class is explicitly set to `None`, then we should not inherit
+        #       from any parent classes.
+        #       ```py
+        #       class MyComponent(Component):
+        #           Media = None
+        #       ```
+        #       But if the `Component.Media` class is NOT set, then we inherit from the parent classes.
+        #       ```py
+        #       class MyComponent(Component):
+        #           pass
+        #       ```
+        media_input = getattr(curr_cls, "Media", UNSET)
+        default_extend = True if media_input is not None else False
+        media_extend = getattr(media_input, "extend", default_extend)
 
         # This ensures the same behavior as Django's Media class, where:
         # - If `Media.extend == True`, then the media files are inherited from the parent classes.
@@ -746,13 +789,9 @@ def _resolve_component_relative_files(
     # First check if we even need to resolve anything. If the class doesn't define any
     # HTML/JS/CSS files, just skip.
     will_resolve_files = False
-    if (
-        getattr(comp_media, "template_file", None)
-        or getattr(comp_media, "js_file", None)
-        or getattr(comp_media, "css_file", None)
-    ):
+    if _is_set(comp_media.template_file) or _is_set(comp_media.js_file) or _is_set(comp_media.css_file):
         will_resolve_files = True
-    elif not will_resolve_files and getattr(comp_media, "Media", None):
+    elif not will_resolve_files and _is_set(comp_media.Media) and comp_media.Media:
         if getattr(comp_media.Media, "css", None) or getattr(comp_media.Media, "js", None):
             will_resolve_files = True
 
@@ -831,14 +870,14 @@ def _resolve_component_relative_files(
         return resolved_filepaths
 
     # Check if template name is a local file or not
-    if getattr(comp_media, "template_file", None):
+    if _is_set(comp_media.template_file):
         comp_media.template_file = resolve_relative_media_file(comp_media.template_file, False)[0]
-    if getattr(comp_media, "js_file", None):
+    if _is_set(comp_media.js_file):
         comp_media.js_file = resolve_relative_media_file(comp_media.js_file, False)[0]
-    if getattr(comp_media, "css_file", None):
+    if _is_set(comp_media.css_file):
         comp_media.css_file = resolve_relative_media_file(comp_media.css_file, False)[0]
 
-    if hasattr(comp_media, "Media") and comp_media.Media:
+    if comp_media.Media is not None and not isinstance(comp_media.Media, Unset):
         _map_media_filepaths(
             comp_media.Media,
             # Media files can be defined as a glob patterns that match multiple files.
@@ -933,7 +972,7 @@ def _get_asset(
     file_attr: str,
     comp_dirs: List[Path],
     type: Literal["template", "static"],
-) -> Optional[str]:
+) -> Union[str, Unset, None]:
     """
     In case of Component's JS or CSS, one can either define that as "inlined" or as a file.
 
@@ -957,23 +996,72 @@ def _get_asset(
 
     These are mutually exclusive, so only one of the two can be set at class creation.
     """
-    asset_content = getattr(comp_media, inlined_attr, None)
-    asset_file = getattr(comp_media, file_attr, None)
+    asset_content = getattr(comp_media, inlined_attr, UNSET)
+    asset_file = getattr(comp_media, file_attr, UNSET)
 
     # No inlined content, nor file name
-    if asset_content is None and asset_file is None:
+    # ```py
+    # class MyComp(Component):
+    #     pass
+    # ```
+    if asset_content is UNSET and asset_file is UNSET:
+        return UNSET
+
+    # Either file or content attr was set to `None`
+    # ```py
+    # class MyComp(Component):
+    #     js_file = None
+    # ```
+    # or
+    # ```py
+    # class MyComp(Component):
+    #     js = None
+    # ```
+    # or
+    # ```py
+    # class MyComp(Component):
+    #     js = None
+    #     js_file = None
+    # ```
+    if (asset_content in (UNSET, None) and asset_file is None) or (
+        asset_content is None and asset_file in (UNSET, None)
+    ):
         return None
 
-    if asset_content is not None and asset_file is not None:
+    # Received both inlined content and file name
+    # ```py
+    # class MyComp(Component):
+    #     js = "..."
+    #     js_file = "..."
+    # ```
+    #
+    # Or received file name / content AND explicit `None`
+    # ```py
+    # class MyComp(Component):
+    #     js = "..."
+    #     js_file = None
+    # ```
+    # or
+    # ```py
+    # class MyComp(Component):
+    #     js = None
+    #     js_file = "..."
+    # ```
+    if asset_content is not UNSET and asset_file is not UNSET:
         raise ValueError(
             f"Received both '{inlined_attr}' and '{file_attr}' in Component {comp_cls.__qualname__}."
             " Only one of the two must be set."
         )
 
+    # At this point we can tall that only EITHER `asset_content` OR `asset_file` is set.
+
     # If the content was inlined into the component (e.g. `Component.template = "..."`)
     # then there's nothing to resolve. Return as is.
-    if asset_content is not None:
+    if asset_content is not UNSET:
         return asset_content
+
+    if asset_file is None:
+        return None
 
     # The rest of the code assumes that we were given only a file name
     asset_file = cast(str, asset_file)
@@ -1004,3 +1092,7 @@ def _get_asset(
     # NOTE: `on_template_preprocess()` is already applied inside `load_component_template()`
 
     return asset_content
+
+
+def _is_set(value: Any) -> bool:
+    return value is not None and value is not UNSET

@@ -4,7 +4,7 @@ In such cases, you can extract shared behavior into a standalone component class
 
 When subclassing a component, there's a couple of things to keep in mind:
 
-### Template, JS, and CSS inheritance
+## Template, JS, and CSS inheritance
 
 When it comes to the pairs:
 
@@ -52,7 +52,7 @@ class CustomCard(BaseCard):
     """
 ```
 
-### Media inheritance
+## Media inheritance
 
 The [`Component.Media`](../../reference/api.md#django_components.Component.Media) nested class follows Django's media inheritance rules:
 
@@ -83,7 +83,35 @@ class SimpleModal(BaseModal):
         js = ["simple_modal.js"]    # Only this JS will be included
 ```
 
-### Regular Python inheritance
+## Opt out of inheritance
+
+For the following media attributes, when you don't want to inherit from the parent,
+but you also don't need to set the template / JS / CSS to any specific value,
+you can set these attributes to `None`.
+
+- [`template`](../../reference/api.md#django_components.Component.template) / [`template_file`](../../reference/api.md#django_components.Component.template_file)
+- [`js`](../../reference/api.md#django_components.Component.js) / [`js_file`](../../reference/api.md#django_components.Component.js_file)
+- [`css`](../../reference/api.md#django_components.Component.css) / [`css_file`](../../reference/api.md#django_components.Component.css_file)
+- [`Media`](../../reference/api.md#django_components.Component.Media) class
+
+For example:
+
+```djc_py
+class BaseForm(Component):
+    template = "..."
+    css = "..."
+    js = "..."
+
+    class Media:
+        js = ["form.js"]
+
+# Use parent's template and CSS, but no JS
+class ContactForm(BaseForm):
+    js = None
+    Media = None
+```
+
+## Regular Python inheritance
 
 All other attributes and methods (including the [`Component.View`](../../reference/api.md#django_components.ComponentView) class and its methods) follow standard Python inheritance rules.
 
