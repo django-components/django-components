@@ -186,6 +186,40 @@ Summary:
     )
     ```
 
+- `Component.template` no longer accepts a Template instance, only plain string.
+
+    Before:
+
+    ```py
+    class MyComponent(Component):
+        template = Template("{{ my_var }}")
+    ```
+
+    Instead, either:
+
+    1. Set `Component.template` to a plain string.
+
+        ```py
+        class MyComponent(Component):
+            template = "{{ my_var }}"
+        ```
+
+    2. Move the template to it's own HTML file and set `Component.template_file`.
+
+        ```py
+        class MyComponent(Component):
+            template_file = "my_template.html"
+        ```
+
+    3. Or, if you dynamically created the template, render the template inside `Component.on_render()`.
+
+        ```py
+        class MyComponent(Component):
+            def on_render(self, context, template):
+                dynamic_template = do_something_dynamic()
+                return dynamic_template.render(context)
+        ```
+
 - The `Component.Url` class was merged with `Component.View`.
 
     Instead of `Component.Url.public`, use `Component.View.public`.
@@ -403,6 +437,51 @@ Summary:
     to accept also slots and context.
 
     Since `get_context_data()` is widely used, it will remain available until v2.
+
+- `Component.get_template_name()` and `Component.get_template()` are now deprecated. Use `Component.template`,
+`Component.template_file` or `Component.on_render()` instead.
+
+    `Component.get_template_name()` and `Component.get_template()` will be removed in v1.
+
+    In v1, each Component will have at most one static template.
+    This is needed to enable support for Markdown, Pug, or other pre-processing of templates by extensions.
+
+    If you are using the deprecated methods to point to different templates, there's 2 ways to migrate:
+
+    1. Split the single Component into multiple Components, each with its own template. Then switch between them in `Component.on_render()`:
+
+        ```py
+        class MyComponentA(Component):
+            template_file = "a.html"
+
+        class MyComponentB(Component):
+            template_file = "b.html"
+
+        class MyComponent(Component):
+            def on_render(self, context, template):
+                if context["a"]:
+                    return MyComponentA.render(context)
+                else:
+                    return MyComponentB.render(context)
+        ```
+
+    2. Alternatively, use `Component.on_render()` with Django's `get_template()` to dynamically render different templates:
+
+        ```py
+        from django.template.loader import get_template
+
+        class MyComponent(Component):
+            def on_render(self, context, template):
+                if context["a"]:
+                    template_name = "a.html"
+                else:
+                    template_name = "b.html"
+
+                actual_template = get_template(template_name)
+                return actual_template.render(context)
+        ```
+
+    Read more in [django-components#1204](https://github.com/django-components/django-components/discussions/1204).
 
 - The `type` kwarg in `Component.render()` and `Component.render_to_response()` is now deprecated. Use `deps_strategy` instead. The `type` kwarg will be removed in v1.
 
@@ -651,6 +730,22 @@ Summary:
 
 **Miscellaneous**
 
+- Template caching with `cached_template()` helper and `template_cache_size` setting is deprecated.
+    These will be removed in v1.
+
+    This feature made sense if you were dynamically generating templates for components using
+    `Component.get_template_string()` and `Component.get_template()`.
+
+    However, in v1, each Component will have at most one static template. This static template
+    is cached internally per component class, and reused across renders.
+
+    This makes the template caching feature obsolete.
+
+    If you relied on `cached_template()`, you should either:
+
+    1. Wrap the templates as Components.
+    2. Manage the cache of Templates yourself.
+
 - The `debug_highlight_components` and `debug_highlight_slots` settings are deprecated.
     These will be removed in v1.
 
@@ -875,6 +970,13 @@ Summary:
 
     Then, the `contents` attribute of the `BaseNode` instance will contain the string `"Hello, world!"`.
 
+- The `BaseNode` class also has two new metadata attributes:
+
+    - `template_name` - the name of the template that rendered the node.
+    - `template_component` - the component class that the template belongs to.
+
+    This is useful for debugging purposes.
+
 - `Slot` class now has 3 new metadata fields:
 
     1. `Slot.contents` attribute contains the original contents:
@@ -1003,6 +1105,35 @@ Summary:
 - Component's "Render API" (args, kwargs, slots, context, inputs, request, context data, etc)
   can now be accessed also outside of the render call. So now its possible to take the component
   instance out of `get_template_data()` (although this is not recommended).
+
+- Components can now be defined without a template.
+
+    Previously, the following would raise an error:
+
+    ```py
+    class MyComponent(Component):
+        pass
+    ```
+
+    "Template-less" components can be used together with `Component.on_render()` to dynamically
+    pick what to render:
+
+    ```py
+    class TableNew(Component):
+        template_file = "table_new.html"
+
+    class TableOld(Component):
+        template_file = "table_old.html"
+
+    class Table(Component):
+        def on_render(self, context, template):
+            if self.kwargs.get("feat_table_new_ui"):
+                return TableNew.render(args=self.args, kwargs=self.kwargs, slots=self.slots)
+            else:
+                return TableOld.render(args=self.args, kwargs=self.kwargs, slots=self.slots)
+    ```
+
+    "Template-less" components can be also used as a base class for other components, or as mixins.
 
 - Passing `Slot` instance to `Slot` constructor raises an error.
 

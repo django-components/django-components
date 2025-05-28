@@ -6,7 +6,7 @@ from typing import Any
 from django.conf import settings
 from django.template.engine import Engine
 
-from django_components.template_loader import Loader
+from django_components.template_loader import DjcLoader
 from django_components.util.command import CommandArg, ComponentCommand
 
 
@@ -24,7 +24,7 @@ class UpgradeCommand(ComponentCommand):
 
     def handle(self, *args: Any, **options: Any) -> None:
         current_engine = Engine.get_default()
-        loader = Loader(current_engine)
+        loader = DjcLoader(current_engine)
         dirs = loader.get_dirs(include_apps=False)
 
         if settings.BASE_DIR:

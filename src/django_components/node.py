@@ -1,7 +1,7 @@
 import functools
 import inspect
 import keyword
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type, cast
 
 from django.template import Context, Library
 from django.template.base import Node, NodeList, Parser, Token
@@ -14,6 +14,9 @@ from django_components.util.template_tag import (
     resolve_params,
     validate_params,
 )
+
+if TYPE_CHECKING:
+    from django_components.component import Component
 
 
 # Normally, when `Node.render()` is called, it receives only a single argument `context`.
@@ -252,32 +255,77 @@ class BaseNode(Node, metaclass=NodeMeta):
     # PUBLIC API (Configurable by users)
     # #####################################
 
-    tag: str
+    tag: ClassVar[str]
     """
     The tag name.
 
     E.g. `"component"` or `"slot"` will make this class match
     template tags `{% component %}` or `{% slot %}`.
+
+    ```python
+    class SlotNode(BaseNode):
+        tag = "slot"
+        end_tag = "endslot"
+    ```
+
+    This will allow the template tag `{% slot %}` to be used like this:
+
+    ```django
+    {% slot %} ... {% endslot %}
+    ```
     """
 
-    end_tag: Optional[str] = None
+    end_tag: ClassVar[Optional[str]] = None
     """
     The end tag name.
 
     E.g. `"endcomponent"` or `"endslot"` will make this class match
     template tags `{% endcomponent %}` or `{% endslot %}`.
 
+    ```python
+    class SlotNode(BaseNode):
+        tag = "slot"
+        end_tag = "endslot"
+    ```
+
+    This will allow the template tag `{% slot %}` to be used like this:
+
+    ```django
+    {% slot %} ... {% endslot %}
+    ```
+
     If not set, then this template tag has no end tag.
 
     So instead of `{% component %} ... {% endcomponent %}`, you'd use only
     `{% component %}`.
+
+    ```python
+    class MyNode(BaseNode):
+        tag = "mytag"
+        end_tag = None
+    ```
     """
 
-    allowed_flags: Optional[List[str]] = None
+    allowed_flags: ClassVar[Optional[List[str]]] = None
     """
-    The allowed flags for this tag.
+    The list of all *possible* flags for this tag.
 
     E.g. `["required"]` will allow this tag to be used like `{% slot required %}`.
+
+    ```python
+    class SlotNode(BaseNode):
+        tag = "slot"
+        end_tag = "endslot"
+        allowed_flags = ["required", "default"]
+    ```
+
+    This will allow the template tag `{% slot %}` to be used like this:
+
+    ```django
+    {% slot required %} ... {% endslot %}
+    {% slot default %} ... {% endslot %}
+    {% slot required default %} ... {% endslot %}
+    ```
     """
 
     def render(self, context: Context, *args: Any, **kwargs: Any) -> str:
@@ -304,6 +352,133 @@ class BaseNode(Node, metaclass=NodeMeta):
         return self.nodelist.render(context)
 
     # #####################################
+    # Attributes
+    # #####################################
+
+    params: List[TagAttr]
+    """
+    The parameters to the tag in the template.
+
+    A single param represents an arg or kwarg of the template tag.
+
+    E.g. the following tag:
+
+    ```django
+    {% component "my_comp" key=val key2='val2 two' %}
+    ```
+
+    Has 3 params:
+
+    - Posiitonal arg `"my_comp"`
+    - Keyword arg `key=val`
+    - Keyword arg `key2='val2 two'`
+    """
+
+    flags: Dict[str, bool]
+    """
+    Dictionary of all [`allowed_flags`](../api#django_components.BaseNode.allowed_flags)
+    that were set on the tag.
+
+    Flags that were set are `True`, and the rest are `False`.
+
+    E.g. the following tag:
+
+    ```python
+    class SlotNode(BaseNode):
+        tag = "slot"
+        end_tag = "endslot"
+        allowed_flags = ["default", "required"]
+    ```
+
+    ```django
+    {% slot "content" default %}
+    ```
+
+    Has 2 flags, `default` and `required`, but only `default` was set.
+
+    The `flags` dictionary will be:
+
+    ```python
+    {
+        "default": True,
+        "required": False,
+    }
+    ```
+
+    You can check if a flag is set by doing:
+
+    ```python
+    if node.flags["default"]:
+        ...
+    ```
+    """
+
+    nodelist: NodeList
+    """
+    The nodelist of the tag.
+
+    This is the text between the opening and closing tags, e.g.
+
+    ```django
+    {% slot "content" default required %}
+      <div>
+        ...
+      </div>
+    {% endslot %}
+    ```
+
+    The `nodelist` will contain the `<div> ... </div>` part.
+
+    Unlike [`contents`](../api#django_components.BaseNode.contents),
+    the `nodelist` contains the actual Nodes, not just the text.
+    """
+
+    contents: Optional[str]
+    """
+    The contents of the tag.
+
+    This is the text between the opening and closing tags, e.g.
+
+    ```django
+    {% slot "content" default required %}
+      <div>
+        ...
+      </div>
+    {% endslot %}
+    ```
+
+    The `contents` will be `"<div> ... </div>"`.
+    """
+
+    node_id: str
+    """
+    The unique ID of the node.
+
+    Extensions can use this ID to store additional information.
+    """
+
+    template_name: Optional[str]
+    """
+    The name of the [`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
+    that contains this node.
+
+    The template name is set by Django's
+    [template loaders](https://docs.djangoproject.com/en/5.2/topics/templates/#loaders).
+
+    For example, the filesystem template loader will set this to the absolute path of the template file.
+
+    ```
+    "/home/user/project/templates/my_template.html"
+    ```
+    """
+
+    template_component: Optional[Type["Component"]]
+    """
+    If the template that contains this node belongs to a [`Component`](../api#django_components.Component),
+    then this will be the [`Component`](../api#django_components.Component) class.
+    """
+
+    # #####################################
     # MISC
     # #####################################
 
@@ -314,12 +489,16 @@ class BaseNode(Node, metaclass=NodeMeta):
         nodelist: Optional[NodeList] = None,
         node_id: Optional[str] = None,
         contents: Optional[str] = None,
+        template_name: Optional[str] = None,
+        template_component: Optional[Type["Component"]] = None,
     ):
         self.params = params
         self.flags = flags or {flag: False for flag in self.allowed_flags or []}
         self.nodelist = nodelist or NodeList()
         self.node_id = node_id or gen_id()
         self.contents = contents
+        self.template_name = template_name
+        self.template_component = template_component
 
     def __repr__(self) -> str:
         return (
@@ -329,7 +508,21 @@ class BaseNode(Node, metaclass=NodeMeta):
 
     @property
     def active_flags(self) -> List[str]:
-        """Flags that were set for this specific instance."""
+        """
+        Flags that were set for this specific instance as a list of strings.
+
+        E.g. the following tag:
+
+        ```django
+        {% slot "content" default required / %}
+        ```
+
+        Will have the following flags:
+
+        ```python
+        ["default", "required"]
+        ```
+        """
         flags = []
         for flag, value in self.flags.items():
             if value:
@@ -347,6 +540,9 @@ class BaseNode(Node, metaclass=NodeMeta):
 
         To register the tag, you can use [`BaseNode.register()`](../api#django_components.BaseNode.register).
         """
+        # NOTE: Avoids circular import
+        from django_components.template import _get_origin_component
+
         tag_id = gen_id()
         tag = parse_template_tag(cls.tag, cls.end_tag, cls.allowed_flags, parser, token)
 
@@ -359,6 +555,8 @@ class BaseNode(Node, metaclass=NodeMeta):
             params=tag.params,
             flags=tag.flags,
             contents=contents,
+            template_name=parser.origin.name if parser.origin else None,
+            template_component=_get_origin_component(parser.origin) if parser.origin else None,
             **kwargs,
         )
 

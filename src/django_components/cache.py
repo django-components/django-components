@@ -6,13 +6,10 @@ from django.core.cache.backends.locmem import LocMemCache
 from django_components.app_settings import app_settings
 from django_components.util.cache import LRUCache
 
+# TODO_V1 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
+#
 # This stores the parsed Templates. This is strictly local for now, as it stores instances.
 # NOTE: Lazily initialized so it can be configured based on user-defined settings.
-#
-# TODO: Once we handle whole template parsing ourselves, this could store just
-#       the parsed template AST (+metadata) instead of Template instances. In that case
-#       we could open this up to be stored non-locally and shared across processes.
-#       This would also allow us to remove our custom `LRUCache` implementation.
 template_cache: Optional[LRUCache] = None
 
 # This stores the inlined component JS and CSS files (e.g. `Component.js` and `Component.css`).
@@ -20,6 +17,7 @@ template_cache: Optional[LRUCache] = None
 component_media_cache: Optional[BaseCache] = None
 
 
+# TODO_V1 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
 def get_template_cache() -> LRUCache:
     global template_cache
     if template_cache is None:

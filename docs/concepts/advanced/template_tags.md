@@ -153,12 +153,14 @@ GreetNode.register(library)
 
 When using [`BaseNode`](../../../reference/api#django_components.BaseNode), you have access to several useful properties:
 
-- `node_id`: A unique identifier for this node instance
-- `flags`: Dictionary of flag values (e.g. `{"required": True}`)
-- `params`: List of raw parameters passed to the tag
-- `nodelist`: The template nodes between the start and end tags
-- `contents`: The raw contents between the start and end tags
-- `active_flags`: List of flags that are currently set to True
+- [`node_id`](../../../reference/api#django_components.BaseNode.node_id): A unique identifier for this node instance
+- [`flags`](../../../reference/api#django_components.BaseNode.flags): Dictionary of flag values (e.g. `{"required": True}`)
+- [`params`](../../../reference/api#django_components.BaseNode.params): List of raw parameters passed to the tag
+- [`nodelist`](../../../reference/api#django_components.BaseNode.nodelist): The template nodes between the start and end tags
+- [`contents`](../../../reference/api#django_components.BaseNode.contents): The raw contents between the start and end tags
+- [`active_flags`](../../../reference/api#django_components.BaseNode.active_flags): List of flags that are currently set to True
+- [`template_name`](../../../reference/api#django_components.BaseNode.template_name): The name of the `Template` instance inside which the node was defined
+- [`template_component`](../../../reference/api#django_components.BaseNode.template_component): The component class that the `Template` belongs to
 
 This is what the `node` parameter in the [`@template_tag`](../../../reference/api#django_components.template_tag) decorator gives you access to - it's the instance of the node class that was automatically created for your template tag.
 

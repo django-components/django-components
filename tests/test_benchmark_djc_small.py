@@ -37,7 +37,6 @@ if not settings.configured:
             }
         ],
         COMPONENTS={
-            "template_cache_size": 128,
             "autodiscover": False,
             "context_behavior": CONTEXT_MODE,
         },

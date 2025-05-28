@@ -1605,7 +1605,7 @@ def _nodelist_to_slot(
         if index_of_last_component_layer is None:
             index_of_last_component_layer = 0
 
-        # TODO: Currently there's one more layer before the `_COMPONENT_CONTEXT_KEY` layer, which is
+        # TODO_V1: Currently there's one more layer before the `_COMPONENT_CONTEXT_KEY` layer, which is
         #       pushed in `_prepare_template()` in `component.py`.
         #       That layer should be removed when `Component.get_template()` is removed, after which
         #       the following line can be removed.

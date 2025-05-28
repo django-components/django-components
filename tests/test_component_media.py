@@ -210,17 +210,6 @@ class TestMainMedia:
         assert AppLvlCompComponent._component_media.js == 'console.log("JS file");\n'  # type: ignore[attr-defined]
         assert AppLvlCompComponent._component_media.js_file == "app_lvl_comp/app_lvl_comp.js"  # type: ignore[attr-defined]
 
-    def test_html_variable(self):
-        class VariableHTMLComponent(Component):
-            def get_template(self, context):
-                return Template("<div class='variable-html'>{{ variable }}</div>")
-
-        rendered = VariableHTMLComponent.render(context=Context({"variable": "Dynamic Content"}))
-        assertHTMLEqual(
-            rendered,
-            '<div class="variable-html" data-djc-id-ca1bc3e>Dynamic Content</div>',
-        )
-
     def test_html_variable_filtered(self):
         class FilteredComponent(Component):
             template: types.django_html = """
