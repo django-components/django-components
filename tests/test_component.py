@@ -8,7 +8,6 @@ from typing import Any, NamedTuple
 
 import pytest
 from django.conf import settings
-from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, HttpResponse
 from django.template import Context, RequestContext, Template
 from django.template.base import TextNode
@@ -26,6 +25,7 @@ from django_components import (
     register,
     types,
 )
+from django_components.template import _get_component_template
 from django_components.urls import urlpatterns as dc_urlpatterns
 
 from django_components.testing import djc_test
@@ -152,23 +152,43 @@ class TestComponentLegacyApi:
             """,
         )
 
-
-@djc_test
-class TestComponent:
+    # TODO_v1 - Remove
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_empty_component(self, components_settings):
-        class EmptyComponent(Component):
-            pass
+    def test_get_template_name(self, components_settings):
+        class SvgComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "name": kwargs.pop("name", None),
+                    "css_class": kwargs.pop("css_class", None),
+                    "title": kwargs.pop("title", None),
+                    **kwargs,
+                }
 
-        with pytest.raises(ImproperlyConfigured):
-            EmptyComponent.render(args=["123"])
+            def get_template_name(self, context):
+                return f"dynamic_{context['name']}.svg"
 
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_template_string_static_inlined(self, components_settings):
-        class SimpleComponent(Component):
-            template: types.django_html = """
-                Variable: <strong>{{ variable }}</strong>
+        assertHTMLEqual(
+            SvgComponent.render(kwargs={"name": "svg1"}),
             """
+            <svg data-djc-id-ca1bc3e>Dynamic1</svg>
+            """,
+        )
+        assertHTMLEqual(
+            SvgComponent.render(kwargs={"name": "svg2"}),
+            """
+            <svg data-djc-id-ca1bc3f>Dynamic2</svg>
+            """,
+        )
+
+    # TODO_v1 - Remove
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_get_template__string(self, components_settings):
+        class SimpleComponent(Component):
+            def get_template(self, context):
+                content: types.django_html = """
+                    Variable: <strong>{{ variable }}</strong>
+                """
+                return content
 
             def get_template_data(self, args, kwargs, slots, context):
                 return {
@@ -187,14 +207,64 @@ class TestComponent:
             """,
         )
 
+    # TODO_v1 - Remove
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_template_string_dynamic(self, components_settings):
+    def test_get_template__template(self, components_settings):
+        class TestComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "variable": kwargs.pop("variable", None),
+                }
+
+            def get_template(self, context):
+                template_str = "Variable: <strong>{{ variable }}</strong>"
+                return Template(template_str)
+
+        rendered = TestComponent.render(kwargs={"variable": "test"})
+        assertHTMLEqual(
+            rendered,
+            """
+            Variable: <strong data-djc-id-ca1bc3e>test</strong>
+            """,
+        )
+
+    # TODO_v1 - Remove
+    def test_get_template_is_cached(self):
         class SimpleComponent(Component):
             def get_template(self, context):
                 content: types.django_html = """
                     Variable: <strong>{{ variable }}</strong>
                 """
                 return content
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "variable": kwargs.get("variable", None),
+                }
+
+        comp = SimpleComponent()
+        template_1 = _get_component_template(comp)
+        template_1._test_id = "123"  # type: ignore[union-attr]
+
+        template_2 = _get_component_template(comp)
+        assert template_2._test_id == "123"  # type: ignore[union-attr]
+
+
+@djc_test
+class TestComponent:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_empty_component(self, components_settings):
+        class EmptyComponent(Component):
+            pass
+
+        EmptyComponent.render(args=["123"])
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_template_string_static_inlined(self, components_settings):
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                Variable: <strong>{{ variable }}</strong>
+            """
 
             def get_template_data(self, args, kwargs, slots, context):
                 return {
@@ -288,53 +358,6 @@ class TestComponent:
             """,
         )
 
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_template_file_dynamic(self, components_settings):
-        class SvgComponent(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "name": kwargs.pop("name", None),
-                    "css_class": kwargs.pop("css_class", None),
-                    "title": kwargs.pop("title", None),
-                    **kwargs,
-                }
-
-            def get_template_name(self, context):
-                return f"dynamic_{context['name']}.svg"
-
-        assertHTMLEqual(
-            SvgComponent.render(kwargs={"name": "svg1"}),
-            """
-            <svg data-djc-id-ca1bc3e>Dynamic1</svg>
-            """,
-        )
-        assertHTMLEqual(
-            SvgComponent.render(kwargs={"name": "svg2"}),
-            """
-            <svg data-djc-id-ca1bc3f>Dynamic2</svg>
-            """,
-        )
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_allows_to_return_template(self, components_settings):
-        class TestComponent(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "variable": kwargs.pop("variable", None),
-                }
-
-            def get_template(self, context):
-                template_str = "Variable: <strong>{{ variable }}</strong>"
-                return Template(template_str)
-
-        rendered = TestComponent.render(kwargs={"variable": "test"})
-        assertHTMLEqual(
-            rendered,
-            """
-            Variable: <strong data-djc-id-ca1bc3e>test</strong>
-            """,
-        )
-
     def test_get_component_by_id(self):
         class SimpleComponent(Component):
             pass
@@ -369,6 +392,12 @@ class TestComponentRenderAPI:
 
     def test_input(self):
         class TestComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                Variable: <strong>{{ variable }}</strong>
+                {% slot 'my_slot' / %}
+            """
+
             def get_template_data(self, args, kwargs, slots, context):
                 assert self.input.args == [123, "str"]
                 assert self.input.kwargs == {"variable": "test", "another": 1}
@@ -381,20 +410,13 @@ class TestComponentRenderAPI:
                     "variable": kwargs["variable"],
                 }
 
-            def get_template(self, context):
+            def on_render_before(self, context, template):
                 assert self.input.args == [123, "str"]
                 assert self.input.kwargs == {"variable": "test", "another": 1}
                 assert isinstance(self.input.context, Context)
                 assert list(self.input.slots.keys()) == ["my_slot"]
                 my_slot = self.input.slots["my_slot"]
                 assert my_slot() == "MY_SLOT"
-
-                template_str: types.django_html = """
-                    {% load component_tags %}
-                    Variable: <strong>{{ variable }}</strong>
-                    {% slot 'my_slot' / %}
-                """
-                return Template(template_str)
 
         rendered = TestComponent.render(
             kwargs={"variable": "test", "another": 1},

@@ -620,8 +620,11 @@ class ComponentsSettings(NamedTuple):
         ```
     """
 
+    # TODO_V1 - remove
     template_cache_size: Optional[int] = None
     """
+    DEPRECATED. Template caching will be removed in v1.
+
     Configure the maximum amount of Django templates to be cached.
 
     Defaults to `128`.

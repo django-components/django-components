@@ -1,7 +1,7 @@
-from typing import Any, Type
+from typing import Any, Optional, Type
 
 from django.template import Context, NodeList, Template
-from django.template.base import Parser
+from django.template.base import Origin, Parser
 
 from django_components.context import _COMPONENT_CONTEXT_KEY, _STRATEGY_CONTEXT_KEY
 from django_components.dependencies import COMPONENT_COMMENT_REGEX, render_dependencies
@@ -10,9 +10,46 @@ from django_components.util.template_parser import parse_template
 
 # In some cases we can't work around Django's design, and need to patch the template class.
 def monkeypatch_template_cls(template_cls: Type[Template]) -> None:
+    monkeypatch_template_init(template_cls)
     monkeypatch_template_compile_nodelist(template_cls)
     monkeypatch_template_render(template_cls)
     template_cls._djc_patched = True
+
+
+# Patch `Template.__init__` to apply `extensions.on_template_preprocess()` if the template
+# belongs to a Component.
+def monkeypatch_template_init(template_cls: Type[Template]) -> None:
+    original_init = template_cls.__init__
+
+    # NOTE: Function signature of Template.__init__ hasn't changed in 11 years, so we can safely patch it.
+    #       See https://github.com/django/django/blame/main/django/template/base.py#L139
+    def __init__(
+        self: Template,
+        template_string: Any,
+        origin: Optional[Origin] = None,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
+        # NOTE: Avoids circular import
+        from django_components.template import _get_origin_component
+
+        # NOTE: For template files, `Origin.component_cls` is set in `load_component_template()`
+        #       in `template_loader.py`. For inline templates, we create the `Origin` ourselves
+        #       in `template.py`.
+        #
+        # NOTE: For the plugin hooks to know which component is being rendered
+        #       when we hit hooks like `on_template_preprocess`, we need to pass down
+        #       thorough the template the info on the corresponding component.
+        #       We do this by setting the Component class on the template's Origin instance,
+        #       because that gets passed to the Parser.
+        if origin is not None and _get_origin_component(origin) is not None:
+            # TODO - Apply extensions.on_template_preprocess() here.
+            #        Then also test both cases when template as `template` or `template_file`.
+            template_string = str(template_string)
+
+        original_init(self, template_string, origin, *args, **kwargs)  # type: ignore[misc]
+
+    template_cls.__init__ = __init__
 
 
 # Patch `Template.compile_nodelist` to use our custom parser. Our parser makes it possible
@@ -94,6 +131,8 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
             # and `False` otherwise.
             isolated_context = not self._djc_is_component_nested
 
+        # This is original implementation, except we override `isolated_context`,
+        # and we post-process the result with `render_dependencies()`.
         with context.render_context.push_state(self, isolated_context=isolated_context):
             if context.template is None:
                 with context.bind_template(self):

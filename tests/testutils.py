@@ -42,7 +42,6 @@ def setup_test_config(
             }
         ],
         "COMPONENTS": {
-            "template_cache_size": 128,
             **(components or {}),
         },
         "MIDDLEWARE": [],

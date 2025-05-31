@@ -24,58 +24,61 @@ def dummy_context_processor(request):
 #########################
 
 
-class SimpleComponent(Component):
-    template: types.django_html = """
-        Variable: <strong>{{ variable }}</strong>
-    """
+def gen_simple_component():
+    class SimpleComponent(Component):
+        template: types.django_html = """
+            Variable: <strong>{{ variable }}</strong>
+        """
 
-    def get_template_data(self, args, kwargs, slots, context):
-        return {"variable": kwargs.get("variable", None)} if "variable" in kwargs else {}
+        def get_template_data(self, args, kwargs, slots, context):
+            return {"variable": kwargs.get("variable", None)} if "variable" in kwargs else {}
 
-
-class VariableDisplay(Component):
-    template: types.django_html = """
-        {% load component_tags %}
-        <h1>Shadowing variable = {{ shadowing_variable }}</h1>
-        <h1>Uniquely named variable = {{ unique_variable }}</h1>
-    """
-
-    def get_template_data(self, args, kwargs, slots, context):
-        context = {}
-        if kwargs["shadowing_variable"] is not None:
-            context["shadowing_variable"] = kwargs["shadowing_variable"]
-        if kwargs["new_variable"] is not None:
-            context["unique_variable"] = kwargs["new_variable"]
-        return context
+    return SimpleComponent
 
 
-class IncrementerComponent(Component):
-    template: types.django_html = """
-        {% load component_tags %}
-        <p class="incrementer">value={{ value }};calls={{ calls }}</p>
-        {% slot 'content' %}{% endslot %}
-    """
+def gen_variable_display_component():
+    class VariableDisplay(Component):
+        template: types.django_html = """
+            {% load component_tags %}
+            <h1>Shadowing variable = {{ shadowing_variable }}</h1>
+            <h1>Uniquely named variable = {{ unique_variable }}</h1>
+        """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.call_count = 0
+        def get_template_data(self, args, kwargs, slots, context):
+            context = {}
+            if kwargs["shadowing_variable"] is not None:
+                context["shadowing_variable"] = kwargs["shadowing_variable"]
+            if kwargs["new_variable"] is not None:
+                context["unique_variable"] = kwargs["new_variable"]
+            return context
 
-    def get_template_data(self, args, kwargs, slots, context):
-        value = int(kwargs.get("value", 0))
-        if hasattr(self, "call_count"):
-            self.call_count += 1
-        else:
-            self.call_count = 1
-        return {"value": value + 1, "calls": self.call_count}
-
-
-#########################
-# TESTS
-#########################
+    return VariableDisplay
 
 
-@djc_test
-class TestContext:
+def gen_incrementer_component():
+    class IncrementerComponent(Component):
+        template: types.django_html = """
+            {% load component_tags %}
+            <p class="incrementer">value={{ value }};calls={{ calls }}</p>
+            {% slot 'content' %}{% endslot %}
+        """
+
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.call_count = 0
+
+        def get_template_data(self, args, kwargs, slots, context):
+            value = int(kwargs.get("value", 0))
+            if hasattr(self, "call_count"):
+                self.call_count += 1
+            else:
+                self.call_count = 1
+            return {"value": value + 1, "calls": self.call_count}
+
+    return IncrementerComponent
+
+
+def gen_parent_component():
     class ParentComponent(Component):
         template: types.django_html = """
             {% load component_tags %}
@@ -96,129 +99,10 @@ class TestContext:
         def get_template_data(self, args, kwargs, slots, context):
             return {"shadowing_variable": "NOT SHADOWED"}
 
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_nested_component_context_shadows_parent_with_unfilled_slots_and_component_tag(
-        self, components_settings,
-    ):
-        registry.register(name="variable_display", component=VariableDisplay)
-        registry.register(name="parent_component", component=self.ParentComponent)
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% component 'parent_component' %}{% endcomponent %}
-        """
-        template = Template(template_str)
-        rendered = template.render(Context())
-
-        assertInHTML("<h1 data-djc-id-ca1bc43>Shadowing variable = override</h1>", rendered)
-        assertInHTML("<h1 data-djc-id-ca1bc44>Shadowing variable = slot_default_override</h1>", rendered)
-        assert "Shadowing variable = NOT SHADOWED" not in rendered
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_nested_component_instances_have_unique_context_with_unfilled_slots_and_component_tag(
-        self, components_settings,
-    ):
-        registry.register(name="variable_display", component=VariableDisplay)
-        registry.register(name="parent_component", component=self.ParentComponent)
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% component 'parent_component' %}{% endcomponent %}
-        """
-        template = Template(template_str)
-        rendered = template.render(Context())
-
-        assertInHTML("<h1 data-djc-id-ca1bc43>Uniquely named variable = unique_val</h1>", rendered)
-        assertInHTML(
-            "<h1 data-djc-id-ca1bc44>Uniquely named variable = slot_default_unique</h1>",
-            rendered,
-        )
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_nested_component_context_shadows_parent_with_filled_slots(self, components_settings):
-        registry.register(name="variable_display", component=VariableDisplay)
-        registry.register(name="parent_component", component=self.ParentComponent)
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% component 'parent_component' %}
-                {% fill 'content' %}
-                    {% component 'variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
-                    {% endcomponent %}
-                {% endfill %}
-            {% endcomponent %}
-        """  # NOQA
-        template = Template(template_str)
-        rendered = template.render(Context())
-
-        assertInHTML("<h1 data-djc-id-ca1bc45>Shadowing variable = override</h1>", rendered)
-        assertInHTML("<h1 data-djc-id-ca1bc46>Shadowing variable = shadow_from_slot</h1>", rendered)
-        assert "Shadowing variable = NOT SHADOWED" not in rendered
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_nested_component_instances_have_unique_context_with_filled_slots(self, components_settings):
-        registry.register(name="variable_display", component=VariableDisplay)
-        registry.register(name="parent_component", component=self.ParentComponent)
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% component 'parent_component' %}
-                {% fill 'content' %}
-                    {% component 'variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
-                    {% endcomponent %}
-                {% endfill %}
-            {% endcomponent %}
-        """  # NOQA
-        template = Template(template_str)
-        rendered = template.render(Context())
-
-        assertInHTML("<h1 data-djc-id-ca1bc45>Uniquely named variable = unique_val</h1>", rendered)
-        assertInHTML("<h1 data-djc-id-ca1bc46>Uniquely named variable = unique_from_slot</h1>", rendered)
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_nested_component_context_shadows_outer_context_with_unfilled_slots_and_component_tag(
-        self, components_settings,
-    ):
-        registry.register(name="variable_display", component=VariableDisplay)
-        registry.register(name="parent_component", component=self.ParentComponent)
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% component 'parent_component' %}{% endcomponent %}
-        """
-        template = Template(template_str)
-        rendered = template.render(Context({"shadowing_variable": "NOT SHADOWED"}))
-
-        assertInHTML("<h1 data-djc-id-ca1bc43>Shadowing variable = override</h1>", rendered)
-        assertInHTML("<h1 data-djc-id-ca1bc44>Shadowing variable = slot_default_override</h1>", rendered)
-        assert "Shadowing variable = NOT SHADOWED" not in rendered
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_nested_component_context_shadows_outer_context_with_filled_slots(
-        self, components_settings,
-    ):
-        registry.register(name="variable_display", component=VariableDisplay)
-        registry.register(name="parent_component", component=self.ParentComponent)
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% component 'parent_component' %}
-                {% fill 'content' %}
-                    {% component 'variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
-                    {% endcomponent %}
-                {% endfill %}
-            {% endcomponent %}
-        """  # NOQA
-        template = Template(template_str)
-        rendered = template.render(Context({"shadowing_variable": "NOT SHADOWED"}))
-
-        assertInHTML("<h1 data-djc-id-ca1bc45>Shadowing variable = override</h1>", rendered)
-        assertInHTML("<h1 data-djc-id-ca1bc46>Shadowing variable = shadow_from_slot</h1>", rendered)
-        assert "Shadowing variable = NOT SHADOWED" not in rendered
+    return ParentComponent
 
 
-@djc_test
-class TestParentArgs:
+def gen_parent_component_with_args():
     class ParentComponentWithArgs(Component):
         template: types.django_html = """
             {% load component_tags %}
@@ -239,11 +123,144 @@ class TestParentArgs:
         def get_template_data(self, args, kwargs, slots, context):
             return {"inner_parent_value": kwargs["parent_value"]}
 
+    return ParentComponentWithArgs
+
+
+#########################
+# TESTS
+#########################
+
+
+@djc_test
+class TestContext:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_component_context_shadows_parent_with_unfilled_slots_and_component_tag(
+        self, components_settings,
+    ):
+        registry.register(name="variable_display", component=gen_variable_display_component())
+        registry.register(name="parent_component", component=gen_parent_component())
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'parent_component' %}{% endcomponent %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context())
+
+        assertInHTML("<h1 data-djc-id-ca1bc43>Shadowing variable = override</h1>", rendered)
+        assertInHTML("<h1 data-djc-id-ca1bc44>Shadowing variable = slot_default_override</h1>", rendered)
+        assert "Shadowing variable = NOT SHADOWED" not in rendered
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_component_instances_have_unique_context_with_unfilled_slots_and_component_tag(
+        self, components_settings,
+    ):
+        registry.register(name="variable_display", component=gen_variable_display_component())
+        registry.register(name="parent_component", component=gen_parent_component())
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'parent_component' %}{% endcomponent %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context())
+
+        assertInHTML("<h1 data-djc-id-ca1bc43>Uniquely named variable = unique_val</h1>", rendered)
+        assertInHTML(
+            "<h1 data-djc-id-ca1bc44>Uniquely named variable = slot_default_unique</h1>",
+            rendered,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_component_context_shadows_parent_with_filled_slots(self, components_settings):
+        registry.register(name="variable_display", component=gen_variable_display_component())
+        registry.register(name="parent_component", component=gen_parent_component())
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'parent_component' %}
+                {% fill 'content' %}
+                    {% component 'variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
+                    {% endcomponent %}
+                {% endfill %}
+            {% endcomponent %}
+        """  # NOQA
+        template = Template(template_str)
+        rendered = template.render(Context())
+
+        assertInHTML("<h1 data-djc-id-ca1bc45>Shadowing variable = override</h1>", rendered)
+        assertInHTML("<h1 data-djc-id-ca1bc46>Shadowing variable = shadow_from_slot</h1>", rendered)
+        assert "Shadowing variable = NOT SHADOWED" not in rendered
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_component_instances_have_unique_context_with_filled_slots(self, components_settings):
+        registry.register(name="variable_display", component=gen_variable_display_component())
+        registry.register(name="parent_component", component=gen_parent_component())
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'parent_component' %}
+                {% fill 'content' %}
+                    {% component 'variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
+                    {% endcomponent %}
+                {% endfill %}
+            {% endcomponent %}
+        """  # NOQA
+        template = Template(template_str)
+        rendered = template.render(Context())
+
+        assertInHTML("<h1 data-djc-id-ca1bc45>Uniquely named variable = unique_val</h1>", rendered)
+        assertInHTML("<h1 data-djc-id-ca1bc46>Uniquely named variable = unique_from_slot</h1>", rendered)
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_component_context_shadows_outer_context_with_unfilled_slots_and_component_tag(
+        self, components_settings,
+    ):
+        registry.register(name="variable_display", component=gen_variable_display_component())
+        registry.register(name="parent_component", component=gen_parent_component())
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'parent_component' %}{% endcomponent %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({"shadowing_variable": "NOT SHADOWED"}))
+
+        assertInHTML("<h1 data-djc-id-ca1bc43>Shadowing variable = override</h1>", rendered)
+        assertInHTML("<h1 data-djc-id-ca1bc44>Shadowing variable = slot_default_override</h1>", rendered)
+        assert "Shadowing variable = NOT SHADOWED" not in rendered
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_component_context_shadows_outer_context_with_filled_slots(
+        self, components_settings,
+    ):
+        registry.register(name="variable_display", component=gen_variable_display_component())
+        registry.register(name="parent_component", component=gen_parent_component())
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'parent_component' %}
+                {% fill 'content' %}
+                    {% component 'variable_display' shadowing_variable='shadow_from_slot' new_variable='unique_from_slot' %}
+                    {% endcomponent %}
+                {% endfill %}
+            {% endcomponent %}
+        """  # NOQA
+        template = Template(template_str)
+        rendered = template.render(Context({"shadowing_variable": "NOT SHADOWED"}))
+
+        assertInHTML("<h1 data-djc-id-ca1bc45>Shadowing variable = override</h1>", rendered)
+        assertInHTML("<h1 data-djc-id-ca1bc46>Shadowing variable = shadow_from_slot</h1>", rendered)
+        assert "Shadowing variable = NOT SHADOWED" not in rendered
+
+
+@djc_test
+class TestParentArgs:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_parent_args_can_be_drawn_from_context(self, components_settings):
-        registry.register(name="incrementer", component=IncrementerComponent)
-        registry.register(name="parent_with_args", component=self.ParentComponentWithArgs)
-        registry.register(name="variable_display", component=VariableDisplay)
+        registry.register(name="incrementer", component=gen_incrementer_component())
+        registry.register(name="parent_with_args", component=gen_parent_component_with_args())
+        registry.register(name="variable_display", component=gen_variable_display_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -271,9 +288,9 @@ class TestParentArgs:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_parent_args_available_outside_slots(self, components_settings):
-        registry.register(name="incrementer", component=IncrementerComponent)
-        registry.register(name="parent_with_args", component=self.ParentComponentWithArgs)
-        registry.register(name="variable_display", component=VariableDisplay)
+        registry.register(name="incrementer", component=gen_incrementer_component())
+        registry.register(name="parent_with_args", component=gen_parent_component_with_args())
+        registry.register(name="variable_display", component=gen_variable_display_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -282,8 +299,21 @@ class TestParentArgs:
         template = Template(template_str)
         rendered = template.render(Context())
 
-        assertInHTML("<h1 data-djc-id-ca1bc43>Shadowing variable = passed_in</h1>", rendered)
-        assertInHTML("<h1 data-djc-id-ca1bc44>Uniquely named variable = passed_in</h1>", rendered)
+        assertHTMLEqual(
+            rendered,
+            """
+            <div data-djc-id-ca1bc3f>
+                <h1>Parent content</h1>
+                <h1 data-djc-id-ca1bc43>Shadowing variable = passed_in</h1>
+                <h1 data-djc-id-ca1bc43>Uniquely named variable = unique_val</h1>
+            </div>
+            <div data-djc-id-ca1bc3f>
+                <h2>Slot content</h2>
+                <h1 data-djc-id-ca1bc44>Shadowing variable = slot_default_override</h1>
+                <h1 data-djc-id-ca1bc44>Uniquely named variable = passed_in</h1>
+            </div>
+            """,
+        )
         assert "Shadowing variable = NOT SHADOWED" not in rendered
 
     @djc_test(
@@ -297,9 +327,9 @@ class TestParentArgs:
         )
     )
     def test_parent_args_available_in_slots(self, components_settings, first_val, second_val):
-        registry.register(name="incrementer", component=IncrementerComponent)
-        registry.register(name="parent_with_args", component=self.ParentComponentWithArgs)
-        registry.register(name="variable_display", component=VariableDisplay)
+        registry.register(name="incrementer", component=gen_incrementer_component())
+        registry.register(name="parent_with_args", component=gen_parent_component_with_args())
+        registry.register(name="variable_display", component=gen_variable_display_component())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -333,7 +363,7 @@ class TestParentArgs:
 class TestContextCalledOnce:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_one_context_call_with_simple_component(self, components_settings):
-        registry.register(name="incrementer", component=IncrementerComponent)
+        registry.register(name="incrementer", component=gen_incrementer_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'incrementer' %}{% endcomponent %}
@@ -347,7 +377,7 @@ class TestContextCalledOnce:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_one_context_call_with_simple_component_and_arg(self, components_settings):
-        registry.register(name="incrementer", component=IncrementerComponent)
+        registry.register(name="incrementer", component=gen_incrementer_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'incrementer' value='2' %}{% endcomponent %}
@@ -364,7 +394,7 @@ class TestContextCalledOnce:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_one_context_call_with_component(self, components_settings):
-        registry.register(name="incrementer", component=IncrementerComponent)
+        registry.register(name="incrementer", component=gen_incrementer_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'incrementer' %}{% endcomponent %}
@@ -376,7 +406,7 @@ class TestContextCalledOnce:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_one_context_call_with_component_and_arg(self, components_settings):
-        registry.register(name="incrementer", component=IncrementerComponent)
+        registry.register(name="incrementer", component=gen_incrementer_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'incrementer' value='3' %}{% endcomponent %}
@@ -388,7 +418,7 @@ class TestContextCalledOnce:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_one_context_call_with_slot(self, components_settings):
-        registry.register(name="incrementer", component=IncrementerComponent)
+        registry.register(name="incrementer", component=gen_incrementer_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'incrementer' %}
@@ -411,7 +441,7 @@ class TestContextCalledOnce:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_one_context_call_with_slot_and_arg(self, components_settings):
-        registry.register(name="incrementer", component=IncrementerComponent)
+        registry.register(name="incrementer", component=gen_incrementer_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'incrementer' value='3' %}
@@ -446,7 +476,7 @@ class TestComponentsCanAccessOuterContext:
         )
     )
     def test_simple_component_can_use_outer_context(self, components_settings, expected_value):
-        registry.register(name="simple_component", component=SimpleComponent)
+        registry.register(name="simple_component", component=gen_simple_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'simple_component' %}{% endcomponent %}
@@ -465,7 +495,7 @@ class TestComponentsCanAccessOuterContext:
 class TestIsolatedContext:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_simple_component_can_pass_outer_context_in_args(self, components_settings):
-        registry.register(name="simple_component", component=SimpleComponent)
+        registry.register(name="simple_component", component=gen_simple_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'simple_component' variable=variable only %}{% endcomponent %}
@@ -476,7 +506,7 @@ class TestIsolatedContext:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_simple_component_cannot_use_outer_context(self, components_settings):
-        registry.register(name="simple_component", component=SimpleComponent)
+        registry.register(name="simple_component", component=gen_simple_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'simple_component' only %}{% endcomponent %}
@@ -492,7 +522,7 @@ class TestIsolatedContextSetting:
     def test_component_tag_includes_variable_with_isolated_context_from_settings(
         self,
     ):
-        registry.register(name="simple_component", component=SimpleComponent)
+        registry.register(name="simple_component", component=gen_simple_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'simple_component' variable=variable %}{% endcomponent %}
@@ -505,7 +535,7 @@ class TestIsolatedContextSetting:
     def test_component_tag_excludes_variable_with_isolated_context_from_settings(
         self,
     ):
-        registry.register(name="simple_component", component=SimpleComponent)
+        registry.register(name="simple_component", component=gen_simple_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'simple_component' %}{% endcomponent %}
@@ -518,7 +548,7 @@ class TestIsolatedContextSetting:
     def test_component_includes_variable_with_isolated_context_from_settings(
         self,
     ):
-        registry.register(name="simple_component", component=SimpleComponent)
+        registry.register(name="simple_component", component=gen_simple_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'simple_component' variable=variable %}
@@ -532,7 +562,7 @@ class TestIsolatedContextSetting:
     def test_component_excludes_variable_with_isolated_context_from_settings(
         self,
     ):
-        registry.register(name="simple_component", component=SimpleComponent)
+        registry.register(name="simple_component", component=gen_simple_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'simple_component' %}

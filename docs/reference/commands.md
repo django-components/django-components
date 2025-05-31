@@ -461,8 +461,8 @@ ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAc
 ## `upgradecomponent`
 
 ```txt
-usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback] [--no-color]
-                        [--force-color] [--skip-checks]
+usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
+                        [--skip-checks]
 
 ```
 

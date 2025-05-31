@@ -12,22 +12,28 @@ from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 setup_test_config({"autodiscover": False})
 
 
-class SlottedComponent(Component):
-    template_file = "slotted_template.html"
+def gen_slotted_component():
+    class SlottedComponent(Component):
+        template_file = "slotted_template.html"
+
+    return SlottedComponent
 
 
-class SlottedComponentWithContext(Component):
-    template: types.django_html = """
-        {% load component_tags %}
-        <custom-template>
-            <header>{% slot "header" %}Default header{% endslot %}</header>
-            <main>{% slot "main" %}Default main{% endslot %}</main>
-            <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
-        </custom-template>
-    """
+def gen_slotted_component_with_context():
+    class SlottedComponentWithContext(Component):
+        template: types.django_html = """
+            {% load component_tags %}
+            <custom-template>
+                <header>{% slot "header" %}Default header{% endslot %}</header>
+                <main>{% slot "main" %}Default main{% endslot %}</main>
+                <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
+            </custom-template>
+        """
 
-    def get_template_data(self, args, kwargs, slots, context):
-        return {"variable": kwargs["variable"]}
+        def get_template_data(self, args, kwargs, slots, context):
+            return {"variable": kwargs["variable"]}
+
+    return SlottedComponentWithContext
 
 
 #######################
@@ -522,8 +528,8 @@ class TestDynamicComponentTemplateTag:
 class TestMultiComponent:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_both_components_render_correctly_with_no_slots(self, components_settings):
-        registry.register("first_component", SlottedComponent)
-        registry.register("second_component", SlottedComponentWithContext)
+        registry.register("first_component", gen_slotted_component())
+        registry.register("second_component", gen_slotted_component_with_context())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -545,7 +551,7 @@ class TestMultiComponent:
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-ca1bc47>
+            <custom-template data-djc-id-ca1bc44>
                 <header>
                     Default header
                 </header>
@@ -557,8 +563,8 @@ class TestMultiComponent:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_both_components_render_correctly_with_slots(self, components_settings):
-        registry.register("first_component", SlottedComponent)
-        registry.register("second_component", SlottedComponentWithContext)
+        registry.register("first_component", gen_slotted_component())
+        registry.register("second_component", gen_slotted_component_with_context())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -582,7 +588,7 @@ class TestMultiComponent:
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-ca1bc49>
+            <custom-template data-djc-id-ca1bc46>
                 <header>
                     <div>Slot #2</div>
                 </header>
@@ -594,8 +600,8 @@ class TestMultiComponent:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_both_components_render_correctly_when_only_first_has_slots(self, components_settings):
-        registry.register("first_component", SlottedComponent)
-        registry.register("second_component", SlottedComponentWithContext)
+        registry.register("first_component", gen_slotted_component())
+        registry.register("second_component", gen_slotted_component_with_context())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -618,7 +624,7 @@ class TestMultiComponent:
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-ca1bc48>
+            <custom-template data-djc-id-ca1bc45>
                 <header>
                     Default header
                 </header>
@@ -630,8 +636,8 @@ class TestMultiComponent:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_both_components_render_correctly_when_only_second_has_slots(self, components_settings):
-        registry.register("first_component", SlottedComponent)
-        registry.register("second_component", SlottedComponentWithContext)
+        registry.register("first_component", gen_slotted_component())
+        registry.register("second_component", gen_slotted_component_with_context())
 
         template_str: types.django_html = """
             {% load component_tags %}
@@ -654,7 +660,7 @@ class TestMultiComponent:
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-ca1bc48>
+            <custom-template data-djc-id-ca1bc45>
                 <header>
                     <div>Slot #2</div>
                 </header>
@@ -667,19 +673,19 @@ class TestMultiComponent:
 
 @djc_test
 class TestComponentIsolation:
-    class SlottedComponent(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            <custom-template>
-                <header>{% slot "header" %}Default header{% endslot %}</header>
-                <main>{% slot "main" %}Default main{% endslot %}</main>
-                <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
-            </custom-template>
-        """
-
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_instances_of_component_do_not_share_slots(self, components_settings):
-        registry.register("test", self.SlottedComponent)
+        @register("test")
+        class SlottedComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <custom-template>
+                    <header>{% slot "header" %}Default header{% endslot %}</header>
+                    <main>{% slot "main" %}Default main{% endslot %}</main>
+                    <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
+                </custom-template>
+            """
+
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -791,7 +797,7 @@ class TestRecursiveComponent:
 class TestComponentTemplateSyntaxError:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_variable_outside_fill_tag_compiles_w_out_error(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", gen_slotted_component())
         # As of v0.28 this is valid, provided the component registered under "test"
         # contains a slot tag marked as 'default'. This is verified outside
         # template compilation time.
@@ -805,7 +811,7 @@ class TestComponentTemplateSyntaxError:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_text_outside_fill_tag_is_not_error_when_no_fill_tags(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", gen_slotted_component())
         # As of v0.28 this is valid, provided the component registered under "test"
         # contains a slot tag marked as 'default'. This is verified outside
         # template compilation time.
@@ -819,7 +825,7 @@ class TestComponentTemplateSyntaxError:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_text_outside_fill_tag_is_error_when_fill_tags(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", gen_slotted_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "test" %}
@@ -837,7 +843,7 @@ class TestComponentTemplateSyntaxError:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_unclosed_component_is_error(self, components_settings):
-        registry.register("test", SlottedComponent)
+        registry.register("test", gen_slotted_component())
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Unclosed tag on line 3: 'component'"),

@@ -1,5 +1,4 @@
 import sys
-from contextlib import contextmanager
 from dataclasses import dataclass
 from types import MethodType
 from typing import (
@@ -7,7 +6,6 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
-    Generator,
     List,
     Mapping,
     NamedTuple,
@@ -19,12 +17,10 @@ from typing import (
 )
 from weakref import ReferenceType, WeakValueDictionary, finalize
 
-from django.core.exceptions import ImproperlyConfigured
 from django.forms.widgets import Media as MediaCls
 from django.http import HttpRequest, HttpResponse
-from django.template.base import NodeList, Origin, Parser, Template, Token
+from django.template.base import NodeList, Parser, Template, Token
 from django.template.context import Context, RequestContext
-from django.template.loader import get_template
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext
 from django.test.signals import template_rendered
 from django.views import View
@@ -72,12 +68,11 @@ from django_components.slots import (
     normalize_slot_fills,
     resolve_fills,
 )
-from django_components.template import cached_template
+from django_components.template import prepare_component_template
 from django_components.util.context import gen_context_processors_data, snapshot_context
-from django_components.util.django_monkeypatch import is_template_cls_patched
 from django_components.util.exception import component_error_message
 from django_components.util.logger import trace_component_msg
-from django_components.util.misc import default, gen_id, get_import_path, hash_comp_cls, to_dict
+from django_components.util.misc import default, gen_id, hash_comp_cls, to_dict
 from django_components.util.template_tag import TagAttr
 from django_components.util.weakref import cached_ref
 
@@ -412,7 +407,7 @@ class ComponentTemplateNameDescriptor:
 
 
 class ComponentMeta(ComponentMediaMeta):
-    def __new__(mcs, name: Any, bases: Tuple, attrs: Dict) -> Any:
+    def __new__(mcs, name: str, bases: Tuple[Type, ...], attrs: Dict) -> Type:
         # If user set `template_name` on the class, we instead set it to `template_file`,
         # because we want `template_name` to be the descriptor that proxies to `template_file`.
         if "template_name" in attrs:
@@ -646,25 +641,47 @@ class Component(metaclass=ComponentMeta):
 
     - Relative to the directory where the Component's Python file is defined.
     - Relative to one of the component directories, as set by
-      [`COMPONENTS.dirs`](../settings.md#django_components.app_settings.ComponentsSettings.dirs)
+      [`COMPONENTS.dirs`](../settings#django_components.app_settings.ComponentsSettings.dirs)
       or
-      [`COMPONENTS.app_dirs`](../settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+      [`COMPONENTS.app_dirs`](../settings#django_components.app_settings.ComponentsSettings.app_dirs)
       (e.g. `<root>/components/`).
     - Relative to the template directories, as set by Django's `TEMPLATES` setting (e.g. `<root>/templates/`).
 
-    Only one of [`template_file`](../api#django_components.Component.template_file),
-    [`get_template_name`](../api#django_components.Component.get_template_name),
-    [`template`](../api#django_components.Component.template)
-    or [`get_template`](../api#django_components.Component.get_template) must be defined.
+    !!! warning
+
+        Only one of [`template_file`](../api#django_components.Component.template_file),
+        [`get_template_name`](../api#django_components.Component.get_template_name),
+        [`template`](../api#django_components.Component.template)
+        or [`get_template`](../api#django_components.Component.get_template) must be defined.
 
     **Example:**
 
-    ```py
-    class MyComponent(Component):
-        template_file = "path/to/template.html"
+    Assuming this project layout:
 
-        def get_template_data(self, args, kwargs, slots, context):
-            return {"name": "World"}
+    ```txt
+    |- components/
+      |- table/
+        |- table.html
+        |- table.css
+        |- table.js
+    ```
+
+    Template name can be either relative to the python file (`components/table/table.py`):
+
+    ```python
+    class Table(Component):
+        template_file = "table.html"
+    ```
+
+    Or relative to one of the directories in
+    [`COMPONENTS.dirs`](../settings#django_components.app_settings.ComponentsSettings.dirs)
+    or
+    [`COMPONENTS.app_dirs`](../settings#django_components.app_settings.ComponentsSettings.app_dirs)
+    (`components/`):
+
+    ```python
+    class Table(Component):
+        template_file = "table/table.html"
     ```
     """
 
@@ -677,53 +694,142 @@ class Component(metaclass=ComponentMeta):
     For historical reasons, django-components used `template_name` to align with Django's
     [TemplateView](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.TemplateView).
 
-    `template_file` was introduced to align with `js/js_file` and `css/css_file`.
+    `template_file` was introduced to align with
+    [`js`](../api#django_components.Component.js)/[`js_file`](../api#django_components.Component.js_file)
+    and [`css`](../api#django_components.Component.css)/[`css_file`](../api#django_components.Component.css_file).
 
-    Setting and accessing this attribute is proxied to `template_file`.
+    Setting and accessing this attribute is proxied to
+    [`template_file`](../api#django_components.Component.template_file).
     """
 
+    # TODO_v1 - Remove
     def get_template_name(self, context: Context) -> Optional[str]:
         """
-        Filepath to the Django template associated with this component.
+        DEPRECATED: Use instead [`Component.template_file`](../api#django_components.Component.template_file),
+        [`Component.template`](../api#django_components.Component.template) or
+        [`Component.on_render()`](../api#django_components.Component.on_render).
+        Will be removed in v1.
 
-        The filepath must be relative to either the file where the component class was defined,
-        or one of the roots of `STATIFILES_DIRS`.
+        Same as [`Component.template_file`](../api#django_components.Component.template_file),
+        but allows to dynamically resolve the template name at render time.
 
-        Only one of [`template_file`](../api#django_components.Component.template_file),
-        [`get_template_name`](../api#django_components.Component.get_template_name),
-        [`template`](../api#django_components.Component.template)
-        or [`get_template`](../api#django_components.Component.get_template) must be defined.
+        See [`Component.template_file`](../api#django_components.Component.template_file)
+        for more info and examples.
+
+        !!! warning
+
+            The context is not fully populated at the point when this method is called.
+
+            If you need to access the context, either use
+            [`Component.on_render_before()`](../api#django_components.Component.on_render_before) or
+            [`Component.on_render()`](../api#django_components.Component.on_render).
+
+        !!! warning
+
+            Only one of
+            [`template_file`](../api#django_components.Component.template_file),
+            [`get_template_name()`](../api#django_components.Component.get_template_name),
+            [`template`](../api#django_components.Component.template)
+            or
+            [`get_template()`](../api#django_components.Component.get_template)
+            must be defined.
+
+        Args:
+            context (Context): The Django template\
+                [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)\
+                in which the component is rendered.
+
+        Returns:
+            Optional[str]: The filepath to the template.
         """
         return None
 
-    template: Optional[Union[str, Template]] = None
+    template: Optional[str] = None
     """
-    Inlined Django template associated with this component. Can be a plain string or a Template instance.
+    Inlined Django template (as a plain string) associated with this component.
 
-    Only one of [`template_file`](../api#django_components.Component.template_file),
-    [`get_template_name`](../api#django_components.Component.get_template_name),
-    [`template`](../api#django_components.Component.template)
-    or [`get_template`](../api#django_components.Component.get_template) must be defined.
+    !!! warning
+
+        Only one of
+        [`template_file`](../api#django_components.Component.template_file),
+        [`template`](../api#django_components.Component.template),
+        [`get_template_name()`](../api#django_components.Component.get_template_name),
+        or
+        [`get_template()`](../api#django_components.Component.get_template)
+        must be defined.
 
     **Example:**
 
-    ```py
-    class MyComponent(Component):
-        template = "Hello, {{ name }}!"
+    ```python
+    class Table(Component):
+        template = '''
+          <div>
+            {{ my_var }}
+          </div>
+        '''
+    ```
 
-        def get_template_data(self, args, kwargs, slots, context):
-            return {"name": "World"}
+    **Syntax highlighting**
+
+    When using the inlined template, you can enable syntax highlighting
+    with `django_components.types.django_html`.
+
+    Learn more about [syntax highlighting](../../concepts/fundamentals/single_file_components/#syntax-highlighting).
+
+    ```djc_py
+    from django_components import Component, types
+
+    class MyComponent(Component):
+        template: types.django_html = '''
+          <div>
+            {{ my_var }}
+          </div>
+        '''
     ```
     """
 
+    # TODO_v1 - Remove
     def get_template(self, context: Context) -> Optional[Union[str, Template]]:
         """
-        Inlined Django template associated with this component. Can be a plain string or a Template instance.
+        DEPRECATED: Use instead [`Component.template_file`](../api#django_components.Component.template_file),
+        [`Component.template`](../api#django_components.Component.template) or
+        [`Component.on_render()`](../api#django_components.Component.on_render).
+        Will be removed in v1.
 
-        Only one of [`template_file`](../api#django_components.Component.template_file),
-        [`get_template_name`](../api#django_components.Component.get_template_name),
-        [`template`](../api#django_components.Component.template)
-        or [`get_template`](../api#django_components.Component.get_template) must be defined.
+        Same as [`Component.template`](../api#django_components.Component.template),
+        but allows to dynamically resolve the template at render time.
+
+        The template can be either plain string or
+        a [`Template`](https://docs.djangoproject.com/en/5.1/topics/templates/#template) instance.
+
+        See [`Component.template`](../api#django_components.Component.template) for more info and examples.
+
+        !!! warning
+
+            Only one of
+            [`template`](../api#django_components.Component.template)
+            [`template_file`](../api#django_components.Component.template_file),
+            [`get_template_name()`](../api#django_components.Component.get_template_name),
+            or
+            [`get_template()`](../api#django_components.Component.get_template)
+            must be defined.
+
+        !!! warning
+
+            The context is not fully populated at the point when this method is called.
+
+            If you need to access the context, either use
+            [`Component.on_render_before()`](../api#django_components.Component.on_render_before) or
+            [`Component.on_render()`](../api#django_components.Component.on_render).
+
+        Args:
+            context (Context): The Django template\
+            [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)\
+            in which the component is rendered.
+
+        Returns:
+            Optional[Union[str, Template]]: The inlined Django template string or\
+            a [`Template`](https://docs.djangoproject.com/en/5.1/topics/templates/#template) instance.
         """
         return None
 
@@ -981,14 +1087,32 @@ class Component(metaclass=ComponentMeta):
     """
     Main JS associated with this component inlined as string.
 
-    Only one of [`js`](../api#django_components.Component.js) or
-    [`js_file`](../api#django_components.Component.js_file) must be defined.
+    !!! warning
+
+        Only one of [`js`](../api#django_components.Component.js) or
+        [`js_file`](../api#django_components.Component.js_file) must be defined.
 
     **Example:**
 
     ```py
     class MyComponent(Component):
         js = "console.log('Hello, World!');"
+    ```
+
+    **Syntax highlighting**
+
+    When using the inlined template, you can enable syntax highlighting
+    with `django_components.types.js`.
+
+    Learn more about [syntax highlighting](../../concepts/fundamentals/single_file_components/#syntax-highlighting).
+
+    ```djc_py
+    from django_components import Component, types
+
+    class MyComponent(Component):
+        js: types.js = '''
+          console.log('Hello, World!');
+        '''
     ```
     """
 
@@ -1000,9 +1124,9 @@ class Component(metaclass=ComponentMeta):
 
     - Relative to the directory where the Component's Python file is defined.
     - Relative to one of the component directories, as set by
-      [`COMPONENTS.dirs`](../settings.md#django_components.app_settings.ComponentsSettings.dirs)
+      [`COMPONENTS.dirs`](../settings#django_components.app_settings.ComponentsSettings.dirs)
       or
-      [`COMPONENTS.app_dirs`](../settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+      [`COMPONENTS.app_dirs`](../settings#django_components.app_settings.ComponentsSettings.app_dirs)
       (e.g. `<root>/components/`).
     - Relative to the staticfiles directories, as set by Django's `STATICFILES_DIRS` setting (e.g. `<root>/static/`).
 
@@ -1012,8 +1136,10 @@ class Component(metaclass=ComponentMeta):
        the path is resolved.
     2. The file is read and its contents is set to [`Component.js`](../api#django_components.Component.js).
 
-    Only one of [`js`](../api#django_components.Component.js) or
-    [`js_file`](../api#django_components.Component.js_file) must be defined.
+    !!! warning
+
+        Only one of [`js`](../api#django_components.Component.js) or
+        [`js_file`](../api#django_components.Component.js_file) must be defined.
 
     **Example:**
 
@@ -1244,18 +1370,38 @@ class Component(metaclass=ComponentMeta):
     """
     Main CSS associated with this component inlined as string.
 
-    Only one of [`css`](../api#django_components.Component.css) or
-    [`css_file`](../api#django_components.Component.css_file) must be defined.
+    !!! warning
+
+        Only one of [`css`](../api#django_components.Component.css) or
+        [`css_file`](../api#django_components.Component.css_file) must be defined.
 
     **Example:**
 
     ```py
     class MyComponent(Component):
         css = \"\"\"
-        .my-class {
-            color: red;
-        }
+            .my-class {
+                color: red;
+            }
         \"\"\"
+    ```
+
+    **Syntax highlighting**
+
+    When using the inlined template, you can enable syntax highlighting
+    with `django_components.types.css`.
+
+    Learn more about [syntax highlighting](../../concepts/fundamentals/single_file_components/#syntax-highlighting).
+
+    ```djc_py
+    from django_components import Component, types
+
+    class MyComponent(Component):
+        css: types.css = '''
+          .my-class {
+            color: red;
+          }
+        '''
     ```
     """
 
@@ -1267,9 +1413,9 @@ class Component(metaclass=ComponentMeta):
 
     - Relative to the directory where the Component's Python file is defined.
     - Relative to one of the component directories, as set by
-      [`COMPONENTS.dirs`](../settings.md#django_components.app_settings.ComponentsSettings.dirs)
+      [`COMPONENTS.dirs`](../settings#django_components.app_settings.ComponentsSettings.dirs)
       or
-      [`COMPONENTS.app_dirs`](../settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+      [`COMPONENTS.app_dirs`](../settings#django_components.app_settings.ComponentsSettings.app_dirs)
       (e.g. `<root>/components/`).
     - Relative to the staticfiles directories, as set by Django's `STATICFILES_DIRS` setting (e.g. `<root>/static/`).
 
@@ -1279,8 +1425,10 @@ class Component(metaclass=ComponentMeta):
        the path is resolved.
     2. The file is read and its contents is set to [`Component.css`](../api#django_components.Component.css).
 
-    Only one of [`css`](../api#django_components.Component.css) or
-    [`css_file`](../api#django_components.Component.css_file) must be defined.
+    !!! warning
+
+        Only one of [`css`](../api#django_components.Component.css) or
+        [`css_file`](../api#django_components.Component.css_file) must be defined.
 
     **Example:**
 
@@ -1632,7 +1780,7 @@ class Component(metaclass=ComponentMeta):
     # PUBLIC API - HOOKS (Configurable by users)
     # #####################################
 
-    def on_render_before(self, context: Context, template: Template) -> None:
+    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
         """
         Hook that runs just before the component's template is rendered.
 
@@ -1640,7 +1788,7 @@ class Component(metaclass=ComponentMeta):
         """
         pass
 
-    def on_render_after(self, context: Context, template: Template, content: str) -> Optional[SlotResult]:
+    def on_render_after(self, context: Context, template: Optional[Template], content: str) -> Optional[SlotResult]:
         """
         Hook that runs just after the component's template was rendered.
         It receives the rendered output as the last argument.
@@ -1753,6 +1901,15 @@ class Component(metaclass=ComponentMeta):
         """Deprecated. Use `Component.class_id` instead."""
         return self.class_id
 
+    _template: Optional[Template] = None
+    """
+    Cached [`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
+    instance for the [`Component`](../api#django_components.Component),
+    created from
+    [`Component.template`](#django_components.Component.template) or
+    [`Component.template_file`](#django_components.Component.template_file).
+    """
+
     # TODO_v3 - Django-specific property to prevent calling the instance as a function.
     do_not_call_in_templates: ClassVar[bool] = True
     """
@@ -1849,6 +2006,9 @@ class Component(metaclass=ComponentMeta):
     def __init_subclass__(cls, **kwargs: Any) -> None:
         cls.class_id = hash_comp_cls(cls)
         comp_cls_id_mapping[cls.class_id] = cls
+
+        # Make sure that subclassed component will store it's own template, not the parent's.
+        cls._template = None
 
         ALL_COMPONENTS.append(cached_ref(cls))  # type: ignore[arg-type]
         extensions._init_component_class(cls)
@@ -2275,64 +2435,6 @@ class Component(metaclass=ComponentMeta):
     # #####################################
     # MISC
     # #####################################
-
-    # NOTE: We cache the Template instance. When the template is taken from a file
-    #       via `get_template_name`, then we leverage Django's template caching with `get_template()`.
-    #       Otherwise, we use our own `cached_template()` to cache the template.
-    #
-    #       This is important to keep in mind, because the implication is that we should
-    #       treat Templates AND their nodelists as IMMUTABLE.
-    def _get_template(self, context: Context, component_id: str) -> Template:
-        template_name = self.get_template_name(context)
-        # TODO_REMOVE_IN_V1 - Remove `self.get_template_string` in v1
-        template_getter = getattr(self, "get_template_string", self.get_template)
-        template_body = template_getter(context)
-
-        # `get_template_name()`, `get_template()`, and `template` are mutually exclusive
-        #
-        # Note that `template` and `template_name` are also mutually exclusive, but this
-        # is checked when lazy-loading the template from `template_name`. So if user specified
-        # `template_name`, then `template` will be populated with the content of that file.
-        if self.template is not None and template_name is not None:
-            raise ImproperlyConfigured(
-                "Received non-null value from both 'template/template_name' and 'get_template_name' in"
-                f" Component {type(self).__name__}. Only one of the two must be set."
-            )
-        if self.template is not None and template_body is not None:
-            raise ImproperlyConfigured(
-                "Received non-null value from both 'template/template_name' and 'get_template' in"
-                f" Component {type(self).__name__}. Only one of the two must be set."
-            )
-        if template_name is not None and template_body is not None:
-            raise ImproperlyConfigured(
-                "Received non-null value from both 'get_template_name' and 'get_template' in"
-                f" Component {type(self).__name__}. Only one of the two must be set."
-            )
-
-        if template_name is not None:
-            return get_template(template_name).template
-
-        template_body = template_body if template_body is not None else self.template
-        if template_body is not None:
-            # We got template string, so we convert it to Template
-            if isinstance(template_body, str):
-                trace_component_msg("COMP_LOAD", component_name=self.name, component_id=component_id, slot_name=None)
-                template: Template = cached_template(
-                    template_string=template_body,
-                    name=self.template_file or self.name,
-                    origin=Origin(
-                        name=self.template_file or get_import_path(self.__class__),
-                        template_name=self.template_file or self.name,
-                    ),
-                )
-            else:
-                template = template_body
-
-            return template
-
-        raise ImproperlyConfigured(
-            f"Either 'template_file' or 'template' must be set for Component {type(self).__name__}."
-        )
 
     def inject(self, key: str, default: Optional[Any] = None) -> Any:
         """
@@ -2886,7 +2988,7 @@ class Component(metaclass=ComponentMeta):
             template_name=None,
             # This field will be modified from within `SlotNodes.render()`:
             # - The `default_slot` will be set to the first slot that has the `default` attribute set.
-            #   If multiple slots have the `default` attribute set, yet have different name, then
+            # - If multiple slots have the `default` attribute set, yet have different name, then
             #   we will raise an error.
             default_slot=None,
             # NOTE: This is only a SNAPSHOT of the outer context.
@@ -2937,8 +3039,30 @@ class Component(metaclass=ComponentMeta):
         #       but instead can render one component at a time.
         #############################################################################
 
-        with _prepare_template(component, template_data) as template:
-            component_ctx.template_name = template.name
+        # TODO_v1 - Currently we have to pass `template_data` to `prepare_component_template()`,
+        #     so that `get_template_string()`, `get_template_name()`, and `get_template()`
+        #     have access to the data from `get_template_data()`.
+        #
+        #     Because of that there is one layer of `Context.update()` called inside `prepare_component_template()`.
+        #
+        #     Once `get_template_string()`, `get_template_name()`, and `get_template()` are removed,
+        #     we can remove that layer of `Context.update()`, and NOT pass `template_data`
+        #     to `prepare_component_template()`.
+        #
+        #     Then we can simply apply `template_data` to the context in the same layer
+        #     where we apply `context_processor_data` and `component_vars`.
+        with prepare_component_template(component, template_data) as template:
+            # Set `Template._djc_is_component_nested` based on whether we're currently INSIDE
+            # the `{% extends %}` tag.
+            # Part of fix for https://github.com/django-components/django-components/issues/508
+            # See django_monkeypatch.py
+            if template is not None:
+                template._djc_is_component_nested = bool(  # type: ignore[union-attr]
+                    context.render_context.get(BLOCK_CONTEXT_KEY)
+                )
+
+            # Capture the template name so we can print better error messages (currently used in slots)
+            component_ctx.template_name = template.name if template else None
 
             with context.update(
                 {
@@ -3089,26 +3213,31 @@ class Component(metaclass=ComponentMeta):
 
             # Emit signal that the template is about to be rendered
             template_rendered.send(sender=template, template=template, context=context)
-            # Get the component's HTML
-            html_content = template.render(context)
 
-            # Add necessary HTML attributes to work with JS and CSS variables
-            updated_html, child_components = set_component_attrs_for_js_and_css(
-                html_content=html_content,
-                component_id=render_id,
-                css_input_hash=css_input_hash,
-                css_scope_id=css_scope_id,
-                root_attributes=root_attributes,
-            )
+            if template is not None:
+                # Get the component's HTML
+                html_content = template.render(context)
 
-            # Prepend an HTML comment to instructs how and what JS and CSS scripts are associated with it.
-            updated_html = insert_component_dependencies_comment(
-                updated_html,
-                component_cls=component_cls,
-                component_id=render_id,
-                js_input_hash=js_input_hash,
-                css_input_hash=css_input_hash,
-            )
+                # Add necessary HTML attributes to work with JS and CSS variables
+                updated_html, child_components = set_component_attrs_for_js_and_css(
+                    html_content=html_content,
+                    component_id=render_id,
+                    css_input_hash=css_input_hash,
+                    css_scope_id=css_scope_id,
+                    root_attributes=root_attributes,
+                )
+
+                # Prepend an HTML comment to instructs how and what JS and CSS scripts are associated with it.
+                updated_html = insert_component_dependencies_comment(
+                    updated_html,
+                    component_cls=component_cls,
+                    component_id=render_id,
+                    js_input_hash=js_input_hash,
+                    css_input_hash=css_input_hash,
+                )
+            else:
+                updated_html = ""
+                child_components = {}
 
             trace_component_msg(
                 "COMP_RENDER_END",
@@ -3277,8 +3406,18 @@ class ComponentNode(BaseNode):
         nodelist: Optional[NodeList] = None,
         node_id: Optional[str] = None,
         contents: Optional[str] = None,
+        template_name: Optional[str] = None,
+        template_component: Optional[Type["Component"]] = None,
     ) -> None:
-        super().__init__(params=params, flags=flags, nodelist=nodelist, node_id=node_id, contents=contents)
+        super().__init__(
+            params=params,
+            flags=flags,
+            nodelist=nodelist,
+            node_id=node_id,
+            contents=contents,
+            template_name=template_name,
+            template_component=template_component,
+        )
 
         self.name = name
         self.registry = registry
@@ -3370,43 +3509,3 @@ def _get_parent_component_context(context: Context) -> Union[Tuple[None, None], 
 
     parent_comp_ctx = component_context_cache[parent_id]
     return parent_id, parent_comp_ctx
-
-
-@contextmanager
-def _maybe_bind_template(context: Context, template: Template) -> Generator[None, Any, None]:
-    if context.template is None:
-        with context.bind_template(template):
-            yield
-    else:
-        yield
-
-
-@contextmanager
-def _prepare_template(
-    component: Component,
-    template_data: Any,
-) -> Generator[Template, Any, None]:
-    context = component.context
-    with context.update(template_data):
-        # Associate the newly-created Context with a Template, otherwise we get
-        # an error when we try to use `{% include %}` tag inside the template?
-        # See https://github.com/django-components/django-components/issues/580
-        # And https://github.com/django-components/django-components/issues/634
-        template = component._get_template(context, component_id=component.id)
-
-        if not is_template_cls_patched(template):
-            raise RuntimeError(
-                "Django-components received a Template instance which was not patched."
-                "If you are using Django's Template class, check if you added django-components"
-                "to INSTALLED_APPS. If you are using a custom template class, then you need to"
-                "manually patch the class."
-            )
-
-        # Set `Template._djc_is_component_nested` based on whether we're currently INSIDE
-        # the `{% extends %}` tag.
-        # Part of fix for https://github.com/django-components/django-components/issues/508
-        # See django_monkeypatch.py
-        template._djc_is_component_nested = bool(context.render_context.get(BLOCK_CONTEXT_KEY))
-
-        with _maybe_bind_template(context, template):
-            yield template
