@@ -64,8 +64,8 @@ class TestExtendsCompat:
                 <body>
                     <main role="main">
                         <div class='container main-container'>
-                            <div data-djc-id-ca1bc40>BLOCK OVERRIDEN</div>
-                            <custom-template data-djc-id-ca1bc40>
+                            <div data-djc-id-ca1bc43>BLOCK OVERRIDEN</div>
+                            <custom-template data-djc-id-ca1bc43>
                                 <header>SLOT OVERRIDEN</header>
                                 <main>Default main</main>
                                 <footer>Default footer</footer>
@@ -114,14 +114,14 @@ class TestExtendsCompat:
                 <body>
                     <main role="main">
                         <div class='container main-container'>
-                            <div data-djc-id-ca1bc42>BLOCK OVERRIDEN</div>
-                            <custom-template data-djc-id-ca1bc42>
+                            <div data-djc-id-ca1bc45>BLOCK OVERRIDEN</div>
+                            <custom-template data-djc-id-ca1bc45>
                                 <header>SLOT OVERRIDEN</header>
                                 <main>Default main</main>
                                 <footer>Default footer</footer>
                             </custom-template>
-                            <div data-djc-id-ca1bc46>BLOCK OVERRIDEN</div>
-                            <custom-template data-djc-id-ca1bc46>
+                            <div data-djc-id-ca1bc49>BLOCK OVERRIDEN</div>
+                            <custom-template data-djc-id-ca1bc49>
                                 <header>SLOT OVERRIDEN 2</header>
                                 <main>Default main</main>
                                 <footer>Default footer</footer>
@@ -181,14 +181,14 @@ class TestExtendsCompat:
                 <body>
                     <main role="main">
                         <div class='container main-container'>
-                            <div data-djc-id-ca1bc42>BLOCK OVERRIDEN</div>
-                            <custom-template data-djc-id-ca1bc42>
+                            <div data-djc-id-ca1bc45>BLOCK OVERRIDEN</div>
+                            <custom-template data-djc-id-ca1bc45>
                                 <header>SLOT OVERRIDEN</header>
                                 <main>Default main</main>
                                 <footer>Default footer</footer>
                             </custom-template>
-                            <div data-djc-id-ca1bc46>BLOCK OVERRIDEN</div>
-                            <custom-template data-djc-id-ca1bc46>
+                            <div data-djc-id-ca1bc49>BLOCK OVERRIDEN</div>
+                            <custom-template data-djc-id-ca1bc49>
                                 <header>SLOT OVERRIDEN 2</header>
                                 <main>Default main</main>
                                 <footer>Default footer</footer>
@@ -198,7 +198,6 @@ class TestExtendsCompat:
                 </body>
             </html>
         """
-
         assertHTMLEqual(rendered, expected)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -247,14 +246,14 @@ class TestExtendsCompat:
                 <body>
                     <main role="main">
                         <div class='container main-container'>
-                            <div data-djc-id-ca1bc42>BLOCK OVERRIDEN</div>
-                            <custom-template data-djc-id-ca1bc42>
+                            <div data-djc-id-ca1bc45>BLOCK OVERRIDEN</div>
+                            <custom-template data-djc-id-ca1bc45>
                                 <header>SLOT OVERRIDEN</header>
                                 <main>Default main</main>
                                 <footer>Default footer</footer>
                             </custom-template>
-                            <div data-djc-id-ca1bc46>BLOCK OVERRIDEN</div>
-                            <custom-template data-djc-id-ca1bc46>
+                            <div data-djc-id-ca1bc49>BLOCK OVERRIDEN</div>
+                            <custom-template data-djc-id-ca1bc49>
                                 <header>SLOT OVERRIDEN 2</header>
                                 <main>Default main</main>
                                 <footer>Default footer</footer>
@@ -352,8 +351,8 @@ class TestExtendsCompat:
                         <main>Default main</main>
                         <footer>Default footer</footer>
                     </custom-template>
-                    <div data-djc-id-ca1bc46>BLOCK OVERRIDEN</div>
-                    <custom-template data-djc-id-ca1bc46>
+                    <div data-djc-id-ca1bc49>BLOCK OVERRIDEN</div>
+                    <custom-template data-djc-id-ca1bc49>
                         <header>SLOT OVERRIDEN 2</header>
                         <main>Default main</main>
                         <footer>Default footer</footer>
@@ -400,11 +399,11 @@ class TestExtendsCompat:
                 <body>
                     <main role="main">
                         <div class='container main-container'>
-                            <custom-template data-djc-id-ca1bc42>
+                            <custom-template data-djc-id-ca1bc48>
                                 <header>Default header</header>
                                 <main>
-                                    <div data-djc-id-ca1bc46>BLOCK OVERRIDEN</div>
-                                    <custom-template data-djc-id-ca1bc46>
+                                    <div data-djc-id-ca1bc49>BLOCK OVERRIDEN</div>
+                                    <custom-template data-djc-id-ca1bc49>
                                         <header>SLOT OVERRIDEN</header>
                                         <main>Default main</main>
                                         <footer>Default footer</footer>
@@ -446,7 +445,7 @@ class TestExtendsCompat:
                     <main role="main">
                         <div class='container main-container'>
                             Variable: <strong></strong>
-                            Variable: <strong data-djc-id-ca1bc3f></strong>
+                            Variable: <strong data-djc-id-ca1bc45></strong>
                         </div>
                     </main>
                 </body>
@@ -456,7 +455,20 @@ class TestExtendsCompat:
 
         # second rendering after cache built
         rendered_2 = Template(template).render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
-        expected_2 = expected.replace("data-djc-id-ca1bc3f", "data-djc-id-ca1bc41")
+
+        expected_2 = """
+            <!DOCTYPE html>
+            <html lang="en">
+                <body>
+                    <main role="main">
+                        <div class='container main-container'>
+                            Variable: <strong></strong>
+                            Variable: <strong data-djc-id-ca1bc47></strong>
+                        </div>
+                    </main>
+                </body>
+            </html>
+        """
         assertHTMLEqual(rendered_2, expected_2)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -482,7 +494,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html data-djc-id-ca1bc40 lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc45>
+                <custom-template data-djc-id-ca1bc48>
                     <header></header>
                     <main>BODY_FROM_FILL</main>
                     <footer>Default footer</footer>
@@ -515,7 +527,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html data-djc-id-ca1bc40 lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc45>
+                <custom-template data-djc-id-ca1bc48>
                     <header></header>
                     <main>BODY_FROM_FILL</main>
                     <footer>Default footer</footer>
@@ -548,7 +560,7 @@ class TestExtendsCompat:
             <body>
                 <main role="main">
                     <div class='container main-container'>
-                        <custom-template data-djc-id-ca1bc42>
+                        <custom-template data-djc-id-ca1bc45>
                             <header></header>
                             <main>TEST</main>
                             <footer></footer>
@@ -577,7 +589,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc41>
+                <custom-template data-djc-id-ca1bc44>
                     <header></header>
                     <main>
                         <div> 58 giraffes and 2 pantaloons </div>
@@ -606,7 +618,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html data-djc-id-ca1bc3f lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc43>
+                <custom-template data-djc-id-ca1bc46>
                     <header></header>
                     <main>
                         <div> 58 giraffes and 2 pantaloons </div>
@@ -646,7 +658,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html data-djc-id-ca1bc40 lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc45>
+                <custom-template data-djc-id-ca1bc48>
                     <header></header>
                     <main>BODY_FROM_FILL</main>
                     <footer>Default footer</footer>
@@ -676,7 +688,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html data-djc-id-ca1bc3f lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc44>
+                <custom-template data-djc-id-ca1bc47>
                     <header></header>
                     <main>
                         Helloodiddoo
@@ -712,7 +724,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html data-djc-id-ca1bc3f lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc44>
+                <custom-template data-djc-id-ca1bc47>
                     <header></header>
                     <main>
                         Helloodiddoo
@@ -748,7 +760,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html data-djc-id-ca1bc40 lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc45>
+                <custom-template data-djc-id-ca1bc48>
                     <header></header>
                     <main>
                         Helloodiddoo
@@ -794,7 +806,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html data-djc-id-ca1bc41 lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc47>
+                <custom-template data-djc-id-ca1bc4a>
                     <header></header>
                     <main>
                         Helloodiddoo
@@ -834,7 +846,7 @@ class TestExtendsCompat:
             <!DOCTYPE html>
             <html lang="en">
             <body>
-                <custom-template data-djc-id-ca1bc44>
+                <custom-template data-djc-id-ca1bc47>
                     <header></header>
                     <main>
                         <div data-djc-id-ca1bc48> injected: DepInject(hello='from_block') </div>

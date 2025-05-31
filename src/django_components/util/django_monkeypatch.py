@@ -31,21 +31,24 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
         **kwargs: Any,
     ) -> None:
         # NOTE: Avoids circular import
-        from django_components.template import _get_origin_component
+        from django_components.template import get_component_by_template_file, set_origin_component
 
-        # NOTE: For template files, `Origin.component_cls` is set in `load_component_template()`
-        #       in `template_loader.py`. For inline templates, we create the `Origin` ourselves
-        #       in `template.py`.
+        # If this Template instance was created by us when loading a template file for a component
+        # with `load_component_template()`, then we do 2 things:
         #
-        # NOTE: For the plugin hooks to know which component is being rendered
-        #       when we hit hooks like `on_template_preprocess`, we need to pass down
-        #       thorough the template the info on the corresponding component.
-        #       We do this by setting the Component class on the template's Origin instance,
-        #       because that gets passed to the Parser.
-        if origin is not None and _get_origin_component(origin) is not None:
-            # TODO - Apply extensions.on_template_preprocess() here.
-            #        Then also test both cases when template as `template` or `template_file`.
-            template_string = str(template_string)
+        # 1. Associate the Component class with the template by setting it on the `Origin` instance
+        #    (`template.origin.component_cls`). This way the `{% component%}` and `{% slot %}` tags
+        #    will know inside which Component class they were defined.
+        #
+        # 2. Apply `extensions.on_template_preprocess()` to the template, so extensions can modify
+        #    the template string before it's compiled into a nodelist.
+        if origin is not None and origin.template_name is not None:
+            component_cls = get_component_by_template_file(origin.template_name)
+            if component_cls is not None:
+                set_origin_component(origin, component_cls)
+
+                # TODO - Apply extensions.on_template_preprocess() here.
+                #        Then also test both cases when template as `template` or `template_file`.
 
         original_init(self, template_string, origin, *args, **kwargs)  # type: ignore[misc]
 

@@ -68,7 +68,7 @@ from django_components.slots import (
     normalize_slot_fills,
     resolve_fills,
 )
-from django_components.template import prepare_component_template
+from django_components.template import cache_component_template_file, prepare_component_template
 from django_components.util.context import gen_context_processors_data, snapshot_context
 from django_components.util.exception import component_error_message
 from django_components.util.logger import trace_component_msg
@@ -414,7 +414,16 @@ class ComponentMeta(ComponentMediaMeta):
             attrs["template_file"] = attrs.pop("template_name")
         attrs["template_name"] = ComponentTemplateNameDescriptor()
 
-        return super().__new__(mcs, name, bases, attrs)
+        cls = super().__new__(mcs, name, bases, attrs)
+
+        # If the component defined `template_file`, then associate this Component class
+        # with that template file path.
+        # This way, when we will be instantiating `Template` in order to load the Component's template,
+        # and its template_name matches this path, then we know that the template belongs to this Component class.
+        if "template_file" in attrs and attrs["template_file"]:
+            cache_component_template_file(cls)
+
+        return cls
 
     # This runs when a Component class is being deleted
     def __del__(cls) -> None:

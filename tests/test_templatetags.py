@@ -10,10 +10,6 @@ from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 setup_test_config({"autodiscover": False})
 
 
-class SlottedComponent(Component):
-    template_file = "slotted_template.html"
-
-
 #######################
 # TESTS
 #######################

@@ -10,12 +10,14 @@ import django
 from django.conf import settings as _django_settings
 from django.core.cache import BaseCache, caches
 from django.template import engines
+from django.template.loaders.base import Loader
 from django.test import override_settings
 
 from django_components.component import ALL_COMPONENTS, Component, component_node_subclasses_by_name
 from django_components.component_media import ComponentMedia
 from django_components.component_registry import ALL_REGISTRIES, ComponentRegistry
 from django_components.extension import extensions
+from django_components.template import _reset_component_template_file_cache, loading_components
 
 # NOTE: `ReferenceType` is NOT a generic pre-3.9
 if sys.version_info >= (3, 9):
@@ -457,7 +459,9 @@ def _clear_djc_global_state(
     # beause the IDs count will reset to 0, but we won't generate IDs for the Nodes of the cached
     # templates. Thus, the IDs will be out of sync between the tests.
     for engine in engines.all():
-        engine.engine.template_loaders[0].reset()
+        for loader in engine.engine.template_loaders:
+            if isinstance(loader, Loader):
+                loader.reset()
 
     # NOTE: There are 1-2 tests which check Templates, so we need to clear the cache
     from django_components.cache import component_media_cache, template_cache
@@ -532,6 +536,10 @@ def _clear_djc_global_state(
 
     # Clear extensions caches
     extensions._route_to_url.clear()
+
+    # Clear other djc state
+    _reset_component_template_file_cache()
+    loading_components.clear()
 
     # Clear Django caches
     all_caches: List[BaseCache] = list(caches.all())

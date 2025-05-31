@@ -10,10 +10,6 @@ from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 setup_test_config({"autodiscover": False})
 
 
-class SlottedComponent(Component):
-    template_file = "slotted_template.html"
-
-
 def _get_templates_used_to_render(subject_template, render_context=None):
     """Emulate django.test.client.Client (see request method)."""
     from django.test.signals import template_rendered
@@ -48,24 +44,33 @@ def with_template_signal(func):
 
 @djc_test
 class TestTemplateSignal:
-    class InnerComponent(Component):
-        template_file = "simple_template.html"
+    def gen_slotted_component(self):
+        class SlottedComponent(Component):
+            template_file = "slotted_template.html"
 
-        def get_template_data(self, args, kwargs, slots, context):
-            return {
-                "variable": kwargs["variable"],
-                "variable2": kwargs.get("variable2", "default"),
-            }
+        return SlottedComponent
 
-        class Media:
-            css = "style.css"
-            js = "script.js"
+    def gen_inner_component(self):
+        class InnerComponent(Component):
+            template_file = "simple_template.html"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "variable": kwargs["variable"],
+                    "variable2": kwargs.get("variable2", "default"),
+                }
+
+            class Media:
+                css = "style.css"
+                js = "script.js"
+
+        return InnerComponent
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     @with_template_signal
     def test_template_rendered(self, components_settings):
-        registry.register("test_component", SlottedComponent)
-        registry.register("inner_component", self.InnerComponent)
+        registry.register("test_component", self.gen_slotted_component())
+        registry.register("inner_component", self.gen_inner_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test_component' %}{% endcomponent %}
@@ -77,8 +82,8 @@ class TestTemplateSignal:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     @with_template_signal
     def test_template_rendered_nested_components(self, components_settings):
-        registry.register("test_component", SlottedComponent)
-        registry.register("inner_component", self.InnerComponent)
+        registry.register("test_component", self.gen_slotted_component())
+        registry.register("inner_component", self.gen_inner_component())
         template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test_component' %}

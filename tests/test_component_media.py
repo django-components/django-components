@@ -840,40 +840,46 @@ class TestMediaStaticfiles:
 
 @djc_test
 class TestMediaRelativePath:
-    class ParentComponent(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            <div>
-                <h1>Parent content</h1>
-                {% component "variable_display" shadowing_variable='override' new_variable='unique_val' %}
-                {% endcomponent %}
-            </div>
-            <div>
-                {% slot 'content' %}
-                    <h2>Slot content</h2>
-                    {% component "variable_display" shadowing_variable='slot_default_override' new_variable='slot_default_unique' %}
+    def _gen_parent_component(self):
+        class ParentComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div>
+                    <h1>Parent content</h1>
+                    {% component "variable_display" shadowing_variable='override' new_variable='unique_val' %}
                     {% endcomponent %}
-                {% endslot %}
-            </div>
-        """  # noqa
+                </div>
+                <div>
+                    {% slot 'content' %}
+                        <h2>Slot content</h2>
+                        {% component "variable_display" shadowing_variable='slot_default_override' new_variable='slot_default_unique' %}
+                        {% endcomponent %}
+                    {% endslot %}
+                </div>
+            """  # noqa
 
-        def get_template_data(self, args, kwargs, slots, context):
-            return {"shadowing_variable": "NOT SHADOWED"}
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"shadowing_variable": "NOT SHADOWED"}
 
-    class VariableDisplay(Component):
-        template: types.django_html = """
-            {% load component_tags %}
-            <h1>Shadowing variable = {{ shadowing_variable }}</h1>
-            <h1>Uniquely named variable = {{ unique_variable }}</h1>
-        """
+        return ParentComponent
 
-        def get_template_data(self, args, kwargs, slots, context):
-            context = {}
-            if kwargs["shadowing_variable"] is not None:
-                context["shadowing_variable"] = kwargs["shadowing_variable"]
-            if kwargs["new_variable"] is not None:
-                context["unique_variable"] = kwargs["new_variable"]
-            return context
+    def _gen_variable_display_component(self):
+        class VariableDisplay(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <h1>Shadowing variable = {{ shadowing_variable }}</h1>
+                <h1>Uniquely named variable = {{ unique_variable }}</h1>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                context = {}
+                if kwargs["shadowing_variable"] is not None:
+                    context["shadowing_variable"] = kwargs["shadowing_variable"]
+                if kwargs["new_variable"] is not None:
+                    context["unique_variable"] = kwargs["new_variable"]
+                return context
+
+        return VariableDisplay
 
     # Settings required for autodiscover to work
     @djc_test(
@@ -885,8 +891,8 @@ class TestMediaRelativePath:
         }
     )
     def test_component_with_relative_media_paths(self):
-        registry.register(name="parent_component", component=self.ParentComponent)
-        registry.register(name="variable_display", component=self.VariableDisplay)
+        registry.register(name="parent_component", component=self._gen_parent_component())
+        registry.register(name="variable_display", component=self._gen_variable_display_component())
 
         # Ensure that the module is executed again after import in autodiscovery
         if "tests.components.relative_file.relative_file" in sys.modules:
@@ -937,8 +943,8 @@ class TestMediaRelativePath:
         }
     )
     def test_component_with_relative_media_paths_as_subcomponent(self):
-        registry.register(name="parent_component", component=self.ParentComponent)
-        registry.register(name="variable_display", component=self.VariableDisplay)
+        registry.register(name="parent_component", component=self._gen_parent_component())
+        registry.register(name="variable_display", component=self._gen_variable_display_component())
 
         # Ensure that the module is executed again after import in autodiscovery
         if "tests.components.relative_file.relative_file" in sys.modules:
@@ -984,8 +990,8 @@ class TestMediaRelativePath:
 
         https://github.com/django-components/django-components/issues/522#issuecomment-2173577094
         """
-        registry.register(name="parent_component", component=self.ParentComponent)
-        registry.register(name="variable_display", component=self.VariableDisplay)
+        registry.register(name="parent_component", component=self._gen_parent_component())
+        registry.register(name="variable_display", component=self._gen_variable_display_component())
 
         # Ensure that the module is executed again after import in autodiscovery
         if "tests.components.relative_file_pathobj.relative_file_pathobj" in sys.modules:

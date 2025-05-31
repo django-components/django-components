@@ -542,9 +542,13 @@ def _resolve_media(comp_cls: Type["Component"], comp_media: ComponentMedia) -> N
             assert isinstance(self.media, MyMedia)
     ```
     """
+    if comp_media.resolved:
+        return
+
+    comp_media.resolved = True
+
     # Do not resolve if this is a base class
-    if get_import_path(comp_cls) == "django_components.component.Component" or comp_media.resolved:
-        comp_media.resolved = True
+    if get_import_path(comp_cls) == "django_components.component.Component":
         return
 
     comp_dirs = get_component_dirs()
@@ -572,8 +576,6 @@ def _resolve_media(comp_cls: Type["Component"], comp_media: ComponentMedia) -> N
     comp_media.css = _get_asset(
         comp_cls, comp_media, inlined_attr="css", file_attr="css_file", comp_dirs=comp_dirs, type="static"
     )
-
-    comp_media.resolved = True
 
 
 def _normalize_media(media: Type[ComponentMediaInput]) -> None:

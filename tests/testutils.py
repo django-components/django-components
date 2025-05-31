@@ -37,7 +37,15 @@ def setup_test_config(
                 "OPTIONS": {
                     "builtins": [
                         "django_components.templatetags.component_tags",
-                    ]
+                    ],
+                    'loaders': [
+                        # Default Django loader
+                        'django.template.loaders.filesystem.Loader',
+                        # Including this is the same as APP_DIRS=True
+                        'django.template.loaders.app_directories.Loader',
+                        # Components loader
+                        'django_components.template_loader.Loader',
+                    ],
                 },
             }
         ],

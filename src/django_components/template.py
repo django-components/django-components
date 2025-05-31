@@ -1,12 +1,13 @@
+import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Type, Union, cast
+from weakref import ReferenceType, ref
 
 from django.core.exceptions import ImproperlyConfigured
-from django.template import Context, Origin, Template, TemplateDoesNotExist
+from django.template import Context, Origin, Template
 from django.template.loader import get_template as django_get_template
 
 from django_components.cache import get_template_cache
-from django_components.template_loader import DjcLoader
 from django_components.util.django_monkeypatch import is_template_cls_patched
 from django_components.util.logger import trace_component_msg
 from django_components.util.misc import get_import_path, get_module_info
@@ -76,6 +77,11 @@ def cached_template(
     return template
 
 
+########################################################
+# PREPARING COMPONENT TEMPLATES FOR RENDERING
+########################################################
+
+
 @contextmanager
 def prepare_component_template(
     component: "Component",
@@ -101,41 +107,6 @@ def prepare_component_template(
 
         with _maybe_bind_template(context, template):
             yield template
-
-
-def load_component_template(component_cls: Type["Component"], filepath: str) -> Template:
-    if component_cls._template is not None:
-        return component_cls._template
-
-    # First try to load the filepath using our `DjcLoader`,
-    # so we can pass in the component class to `DjcLoader` and so associate
-    # the template with the component class via the `Origin` instance.
-    #
-    # If the template is NOT found, then we assume that the template
-    # is to be loaded with other loaders, and hence we don't consider
-    # this template to belong to any component.
-    #
-    # NOTE: This practically means that for some extension hooks like `on_template_preprocess()`
-    #       to work, users MUST either:
-    #       - Inline the template within the component class as `Component.template`
-    #       - Set `Component.template_file` to filepath that is within our `COMPONENTS.dirs` / `COMPONENTS.app_dirs`
-    #         and is thus is loaded by DjcLoader.
-    #
-    #       If users don't do this, then we don't know if the given template does or does not
-    #       belong to a component, and thus we don't pre-process it.
-    djc_loader = DjcLoader(None)
-    try:
-        template = djc_loader.get_template(filepath, component_cls=component_cls)
-    except TemplateDoesNotExist:
-        template = None
-
-    # Otherwise, use Django's `get_template()` to load the template
-    if template is None:
-        template = _load_django_template(filepath)
-
-    component_cls._template = template
-
-    return template
 
 
 # `_maybe_bind_template()` handles two problems:
@@ -179,6 +150,39 @@ def _maybe_bind_template(context: Context, template: Template) -> Generator[None
         yield
     finally:
         context.template = None
+
+
+########################################################
+# LOADING TEMPLATES FROM FILEPATH
+########################################################
+
+
+# Remember which Component class is currently being loaded
+# This is important, because multiple Components may define the same `template_file`.
+# So we need this global state to help us decide which Component class of the list of components
+# that matched for the given `template_file` should be associated with the template.
+#
+# NOTE: Implemented as a list (stack) to handle the case when calling Django's `get_template()`
+#       could lead to more components being loaded at once.
+#       (For this to happen, user would have to define a Django template loader that renders other components
+#       while resolving the template file.)
+loading_components: List["ComponentRef"] = []
+
+
+def load_component_template(component_cls: Type["Component"], filepath: str) -> Template:
+    if component_cls._template is not None:
+        return component_cls._template
+
+    global loading_components
+    loading_components.append(ref(component_cls))
+
+    # Use Django's `get_template()` to load the template
+    template = _load_django_template(filepath)
+    component_cls._template = template
+
+    loading_components.pop()
+
+    return template
 
 
 def _get_component_template(component: "Component") -> Optional[Template]:
@@ -298,7 +302,7 @@ def _create_template_from_string(
         loader=None,
     )
 
-    _set_origin_component(origin, component.__class__)
+    set_origin_component(origin, component.__class__)
 
     if is_component_template:
         template = Template(template_string, name=origin.template_name, origin=origin)
@@ -333,9 +337,101 @@ def _load_django_template(template_name: str) -> Template:
     return django_get_template(template_name).template
 
 
-def _set_origin_component(origin: Origin, component_cls: Type["Component"]) -> None:
+########################################################
+# ASSOCIATING COMPONENT CLASSES WITH TEMPLATES
+########################################################
+
+# NOTE: `ReferenceType` is NOT a generic pre-3.9
+if sys.version_info >= (3, 9):
+    ComponentRef = ReferenceType[Type["Component"]]
+else:
+    ComponentRef = ReferenceType
+
+
+# Remember which Component classes defined `template_file`. Since multiple Components may
+# define the same `template_file`, we store a list of weak references to the Component classes.
+component_template_file_cache: Dict[str, List[ComponentRef]] = {}
+component_template_file_cache_initialized = False
+
+
+# Remember the mapping of `Component.template_file` -> `Component` class, so that we can associate
+# the `Template` instances with the correct Component class in our monkepatched `Template.__init__()`.
+def cache_component_template_file(component_cls: Type["Component"]) -> None:
+    # When a Component class is created before Django is set up,
+    # then `component_template_file_cache_initialized` is False and we leave it for later.
+    # This is necessary because:
+    # 1. We might need to resolve the template_file as relative to the file where the Component class is defined.
+    # 2. To be able to resolve the template_file, Django needs to be set up, because we need to access Django settings.
+    # 3. Django settings may not be available at the time of Component class creation.
+    if not component_template_file_cache_initialized:
+        return
+
+    if component_cls.template_file is None:
+        return
+
+    if component_cls.template_file not in component_template_file_cache:
+        component_template_file_cache[component_cls.template_file] = []
+
+    component_template_file_cache[component_cls.template_file].append(ref(component_cls))
+
+
+def get_component_by_template_file(template_file: str) -> Optional[Type["Component"]]:
+    # This function is called from within `Template.__init__()`. At that point, Django MUST be already set up,
+    # because Django's `Template.__init__()` accesses the templating engines.
+    #
+    # So at this point we want to call `cache_component_template_file()` for all Components for which
+    # we skipped it earlier.
+    global component_template_file_cache_initialized
+    if not component_template_file_cache_initialized:
+        component_template_file_cache_initialized = True
+
+        # NOTE: Avoids circular import
+        from django_components.component import all_components
+
+        components = all_components()
+        for component in components:
+            cache_component_template_file(component)
+
+    if template_file not in component_template_file_cache or not len(component_template_file_cache[template_file]):
+        return None
+
+    # There is at least one Component class that has this `template_file`.
+    matched_component_refs = component_template_file_cache[template_file]
+
+    # There may be multiple components that define the same `template_file`.
+    # So to find the correct one, we need to check if the currently loading component
+    # is one of the ones that define the `template_file`.
+    #
+    # If there are NO currently loading components, then `Template.__init__()` was NOT triggered by us,
+    # in which case we don't associate any Component class with this Template.
+    if not len(loading_components):
+        return None
+
+    loading_component = loading_components[-1]()
+    if loading_component is None:
+        return None
+
+    for component_ref in matched_component_refs:
+        comp_cls = component_ref()
+        if comp_cls is loading_component:
+            return comp_cls
+
+    return None
+
+
+# NOTE: Used by `@djc_test` to reset the component template file cache
+def _reset_component_template_file_cache() -> None:
+    global component_template_file_cache
+    component_template_file_cache = {}
+
+    global component_template_file_cache_initialized
+    component_template_file_cache_initialized = False
+
+
+# Helpers so we know where in the codebase we set / access the `Origin.component_cls` attribute
+def set_origin_component(origin: Origin, component_cls: Type["Component"]) -> None:
     origin.component_cls = component_cls
 
 
-def _get_origin_component(origin: Origin) -> Optional[Type["Component"]]:
+def get_origin_component(origin: Origin) -> Optional[Type["Component"]]:
     return getattr(origin, "component_cls", None)
