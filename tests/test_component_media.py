@@ -1061,7 +1061,7 @@ class TestSubclassingMedia:
                 js = "grandparent.js"
 
         class ParentComponent(GrandParentComponent):
-            Media = None
+            Media = None  # type: ignore[assignment]
 
         class ChildComponent(ParentComponent):
             class Media:
@@ -1144,7 +1144,7 @@ class TestSubclassingMedia:
                 js = "parent1.js"
 
         class Parent2Component(GrandParent3Component, GrandParent4Component):
-            Media = None
+            Media = None  # type: ignore[assignment]
 
         class ChildComponent(Parent1Component, Parent2Component):
             template: types.django_html = """

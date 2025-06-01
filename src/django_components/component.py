@@ -2907,12 +2907,12 @@ class Component(metaclass=ComponentMeta):
         )
         # Use RequestContext if request is provided, so that child non-component template tags
         # can access the request object too.
-        context = context or (RequestContext(request) if request else Context())
+        context = context if context is not None else (RequestContext(request) if request else Context())
 
         # Allow to provide a dict instead of Context
         # NOTE: This if/else is important to avoid nested Contexts,
         # See https://github.com/django-components/django-components/issues/414
-        if not isinstance(context, Context):
+        if not isinstance(context, (Context, RequestContext)):
             context = RequestContext(request, context) if request else Context(context)
 
         render_id = _gen_component_id()
