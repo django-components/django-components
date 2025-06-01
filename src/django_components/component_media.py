@@ -239,6 +239,7 @@ class ComponentMediaInput(Protocol):
 class ComponentMedia:
     comp_cls: Type["Component"]
     resolved: bool = False
+    resolved_relative_files: bool = False
     Media: Optional[Type[ComponentMediaInput]] = None
     template: Optional[str] = None
     template_file: Optional[str] = None
@@ -737,6 +738,11 @@ def _resolve_component_relative_files(
     as the component class. If so, modify the attributes so the class Django's rendering
     will pick up these files correctly.
     """
+    if comp_media.resolved_relative_files:
+        return
+
+    comp_media.resolved_relative_files = True
+
     # First check if we even need to resolve anything. If the class doesn't define any
     # HTML/JS/CSS files, just skip.
     will_resolve_files = False

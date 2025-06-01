@@ -9,6 +9,7 @@ from django.template.loader import get_template as django_get_template
 
 from django_components.cache import get_template_cache
 from django_components.util.django_monkeypatch import is_template_cls_patched
+from django_components.util.loader import get_component_dirs
 from django_components.util.logger import trace_component_msg
 from django_components.util.misc import get_import_path, get_module_info
 
@@ -178,6 +179,18 @@ def load_component_template(component_cls: Type["Component"], filepath: str) -> 
 
     # Use Django's `get_template()` to load the template
     template = _load_django_template(filepath)
+
+    # If template.origin.component_cls is already set, then this
+    # Template instance was cached by Django / template loaders.
+    # In that case we want to make a copy of the template which would
+    # be owned by the current Component class.
+    # Thus each Component has it's own Template instance with their own Origins
+    # pointing to the correct Component class.
+    if get_component_from_origin(template.origin) is not None:
+        origin_copy = Origin(template.origin.name, template.origin.template_name, template.origin.loader)
+        set_component_to_origin(origin_copy, component_cls)
+        template = Template(template.source, origin=origin_copy, name=template.name, engine=template.engine)
+
     component_cls._template = template
 
     loading_components.pop()
@@ -302,7 +315,7 @@ def _create_template_from_string(
         loader=None,
     )
 
-    set_origin_component(origin, component.__class__)
+    set_component_to_origin(origin, component.__class__)
 
     if is_component_template:
         template = Template(template_string, name=origin.template_name, origin=origin)
@@ -339,6 +352,8 @@ def _load_django_template(template_name: str) -> Template:
 
 ########################################################
 # ASSOCIATING COMPONENT CLASSES WITH TEMPLATES
+#
+# See https://github.com/django-components/django-components/pull/1222
 ########################################################
 
 # NOTE: `ReferenceType` is NOT a generic pre-3.9
@@ -366,13 +381,37 @@ def cache_component_template_file(component_cls: Type["Component"]) -> None:
     if not component_template_file_cache_initialized:
         return
 
-    if component_cls.template_file is None:
+    # NOTE: Avoids circular import
+    from django_components.component_media import ComponentMedia, _resolve_component_relative_files
+
+    # If we access the `Component.template_file` attribute, then this triggers media resolution if it was not done yet.
+    # The problem is that this also causes the loading of the Template, if Component has defined `template_file`.
+    # This triggers `Template.__init__()`, which then triggers another call to `cache_component_template_file()`.
+    #
+    # At the same time, at this point we don't need the media files to be loaded. But we DO need for the relative
+    # file path to be resolved.
+    #
+    # So for this reason, `ComponentMedia.resolved_relative_files` was added to track if the media files were resolved.
+    # Once relative files were resolved, we can safely access the template file from `ComponentMedia` instance
+    # directly, thus avoiding the triggering of the Template loading.
+    comp_media: ComponentMedia = component_cls._component_media  # type: ignore[attr-defined]
+    if comp_media.resolved and comp_media.resolved_relative_files:
+        template_file = component_cls.template_file
+    else:
+        # NOTE: This block of code is based on `_resolve_media()` in `component_media.py`
+        if not comp_media.resolved_relative_files:
+            comp_dirs = get_component_dirs()
+            _resolve_component_relative_files(component_cls, comp_media, comp_dirs=comp_dirs)
+
+        template_file = comp_media.template_file
+
+    if template_file is None:
         return
 
-    if component_cls.template_file not in component_template_file_cache:
-        component_template_file_cache[component_cls.template_file] = []
+    if template_file not in component_template_file_cache:
+        component_template_file_cache[template_file] = []
 
-    component_template_file_cache[component_cls.template_file].append(ref(component_cls))
+    component_template_file_cache[template_file].append(ref(component_cls))
 
 
 def get_component_by_template_file(template_file: str) -> Optional[Type["Component"]]:
@@ -429,9 +468,9 @@ def _reset_component_template_file_cache() -> None:
 
 
 # Helpers so we know where in the codebase we set / access the `Origin.component_cls` attribute
-def set_origin_component(origin: Origin, component_cls: Type["Component"]) -> None:
+def set_component_to_origin(origin: Origin, component_cls: Type["Component"]) -> None:
     origin.component_cls = component_cls
 
 
-def get_origin_component(origin: Origin) -> Optional[Type["Component"]]:
+def get_component_from_origin(origin: Origin) -> Optional[Type["Component"]]:
     return getattr(origin, "component_cls", None)

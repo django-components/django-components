@@ -541,7 +541,7 @@ class BaseNode(Node, metaclass=NodeMeta):
         To register the tag, you can use [`BaseNode.register()`](../api#django_components.BaseNode.register).
         """
         # NOTE: Avoids circular import
-        from django_components.template import get_origin_component
+        from django_components.template import get_component_from_origin
 
         tag_id = gen_id()
         tag = parse_template_tag(cls.tag, cls.end_tag, cls.allowed_flags, parser, token)
@@ -556,7 +556,7 @@ class BaseNode(Node, metaclass=NodeMeta):
             flags=tag.flags,
             contents=contents,
             template_name=parser.origin.name if parser.origin else None,
-            template_component=get_origin_component(parser.origin) if parser.origin else None,
+            template_component=get_component_from_origin(parser.origin) if parser.origin else None,
             **kwargs,
         )
 

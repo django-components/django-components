@@ -31,7 +31,11 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
         **kwargs: Any,
     ) -> None:
         # NOTE: Avoids circular import
-        from django_components.template import get_component_by_template_file, set_origin_component
+        from django_components.template import (
+            get_component_by_template_file,
+            get_component_from_origin,
+            set_component_to_origin,
+        )
 
         # If this Template instance was created by us when loading a template file for a component
         # with `load_component_template()`, then we do 2 things:
@@ -42,13 +46,19 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
         #
         # 2. Apply `extensions.on_template_preprocess()` to the template, so extensions can modify
         #    the template string before it's compiled into a nodelist.
-        if origin is not None and origin.template_name is not None:
+        if get_component_from_origin(origin) is not None:
+            component_cls = get_component_from_origin(origin)
+        elif origin is not None and origin.template_name is not None:
             component_cls = get_component_by_template_file(origin.template_name)
             if component_cls is not None:
-                set_origin_component(origin, component_cls)
+                set_component_to_origin(origin, component_cls)
+        else:
+            component_cls = None
 
-                # TODO - Apply extensions.on_template_preprocess() here.
-                #        Then also test both cases when template as `template` or `template_file`.
+        if component_cls is not None:
+            # TODO - Apply extensions.on_template_preprocess() here.
+            #        Then also test both cases when template as `template` or `template_file`.
+            pass
 
         original_init(self, template_string, origin, *args, **kwargs)  # type: ignore[misc]
 

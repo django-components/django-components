@@ -305,6 +305,90 @@ class TestComponent:
             """,
         )
 
+    # Test that even with cached template loaders, each Component has its own `Template`
+    # even when multiple components point to the same template file.
+    @djc_test(
+        parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR,
+        django_settings={
+            "TEMPLATES": [
+                {
+                    "BACKEND": "django.template.backends.django.DjangoTemplates",
+                    "DIRS": [
+                        "tests/templates/",
+                        "tests/components/",
+                    ],
+                    "OPTIONS": {
+                        "builtins": [
+                            "django_components.templatetags.component_tags",
+                        ],
+                        'loaders': [
+                            ('django.template.loaders.cached.Loader', [
+
+                                # Default Django loader
+                                'django.template.loaders.filesystem.Loader',
+                                # Including this is the same as APP_DIRS=True
+                                'django.template.loaders.app_directories.Loader',
+                                # Components loader
+                                'django_components.template_loader.Loader',
+                            ]),
+                        ],
+                    },
+                }
+            ],
+        },
+    )
+    def test_template_file_static__cached(self, components_settings):
+        class SimpleComponent1(Component):
+            template_file = "simple_template.html"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "variable": kwargs.get("variable", None),
+                }
+
+        class SimpleComponent2(Component):
+            template_file = "simple_template.html"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "variable": kwargs.get("variable", None),
+                }
+
+        SimpleComponent1.template  # Triggers template loading
+        SimpleComponent2.template  # Triggers template loading
+
+        # Both components have their own Template instance, but they point to the same template file.
+        assert isinstance(SimpleComponent1._template, Template)
+        assert isinstance(SimpleComponent2._template, Template)
+        assert SimpleComponent1._template is not SimpleComponent2._template
+        assert SimpleComponent1._template.source == SimpleComponent2._template.source
+
+        # The Template instances have different origins, but they point to the same template file.
+        assert SimpleComponent1._template.origin is not SimpleComponent2._template.origin
+        assert SimpleComponent1._template.origin.template_name == SimpleComponent2._template.origin.template_name
+        assert SimpleComponent1._template.origin.name == SimpleComponent2._template.origin.name
+        assert SimpleComponent1._template.origin.loader == SimpleComponent2._template.origin.loader
+
+        # The origins point to their respective Component classes.
+        assert SimpleComponent1._template.origin.component_cls == SimpleComponent1
+        assert SimpleComponent2._template.origin.component_cls == SimpleComponent2
+
+        rendered = SimpleComponent1.render(kwargs={"variable": "test"})
+        assertHTMLEqual(
+            rendered,
+            """
+            Variable: <strong data-djc-id-ca1bc3e>test</strong>
+            """,
+        )
+
+        rendered = SimpleComponent2.render(kwargs={"variable": "test"})
+        assertHTMLEqual(
+            rendered,
+            """
+            Variable: <strong data-djc-id-ca1bc3f>test</strong>
+            """,
+        )
+
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_template_file_static__compat(self, components_settings):
         class SimpleComponent(Component):
