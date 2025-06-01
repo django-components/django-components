@@ -6,7 +6,7 @@ from django.http import HttpRequest, HttpResponse
 from django.template import Context
 from django.test import Client
 
-from django_components import Component, Slot, register, registry
+from django_components import Component, Slot, SlotNode, register, registry
 from django_components.app_settings import app_settings
 from django_components.component_registry import ComponentRegistry
 from django_components.extension import (
@@ -138,6 +138,13 @@ class DummyNestedExtension(ComponentExtension):
 
 class RenderExtension(ComponentExtension):
     name = "render"
+
+
+class SlotOverrideExtension(ComponentExtension):
+    name = "slot_override"
+
+    def on_slot_rendered(self, ctx: OnSlotRenderedContext):
+        return "OVERRIDEN BY EXTENSION"
 
 
 def with_component_cls(on_created: Callable):
@@ -341,12 +348,14 @@ class TestExtensionHooks:
 
         # Render the component with some args and kwargs
         test_context = Context({"foo": "bar"})
-        TestComponent.render(
+        rendered = TestComponent.render(
             context=test_context,
             args=("arg1", "arg2"),
             kwargs={"name": "Test"},
             slots={"content": "Some content"},
         )
+
+        assert rendered == "Hello Some content!"
 
         extension = cast(DummyExtension, app_settings.EXTENSIONS[4])
 
@@ -359,9 +368,24 @@ class TestExtensionHooks:
         assert slot_call.component_id == "ca1bc3e"
         assert isinstance(slot_call.slot, Slot)
         assert slot_call.slot_name == "content"
+        assert isinstance(slot_call.slot_node, SlotNode)
+        assert slot_call.slot_node.template_name.endswith("tests/test_extension.py::TestComponent")  # type: ignore
+        assert slot_call.slot_node.template_component == TestComponent
         assert slot_call.slot_is_required is True
         assert slot_call.slot_is_default is True
         assert slot_call.result == "Some content"
+
+    @djc_test(components_settings={"extensions": [SlotOverrideExtension]})
+    def test_on_slot_rendered__override(self):
+        @register("test_comp")
+        class TestComponent(Component):
+            template = "Hello {% slot 'content' required default / %}!"
+
+        rendered = TestComponent.render(
+            slots={"content": "Some content"},
+        )
+
+        assert rendered == "Hello OVERRIDEN BY EXTENSION!"
 
 
 @djc_test

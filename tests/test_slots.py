@@ -12,7 +12,8 @@ from django.template.base import NodeList, TextNode
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
-from django_components.slots import Slot, SlotContext, SlotFallback
+from django_components.component import ComponentNode
+from django_components.slots import FillNode, Slot, SlotContext, SlotFallback
 
 from django_components.testing import djc_test
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
@@ -431,7 +432,7 @@ class TestSlot:
         assert isinstance(first_slot_func, Slot)
         assert first_slot_func.component_name == "SimpleComponent"
         assert first_slot_func.slot_name == "first"
-        assert first_slot_func.source == "python"
+        assert first_slot_func.fill_node is None
         assert first_slot_func.extra == {}
 
         first_nodelist: NodeList = first_slot_func.nodelist
@@ -465,7 +466,7 @@ class TestSlot:
         assert isinstance(first_slot_func, Slot)
         assert first_slot_func.component_name == "SimpleComponent"
         assert first_slot_func.slot_name == "first"
-        assert first_slot_func.source == "python"
+        assert first_slot_func.fill_node is None
         assert first_slot_func.extra == {}
         assert first_slot_func.nodelist is None
 
@@ -495,7 +496,7 @@ class TestSlot:
         assert isinstance(first_slot_func, Slot)
         assert first_slot_func.component_name == "SimpleComponent"
         assert first_slot_func.slot_name == "whoop"
-        assert first_slot_func.source == "python"
+        assert first_slot_func.fill_node is None
         assert first_slot_func.extra == {"foo": "bar"}
         assert first_slot_func.nodelist is None
 
@@ -530,7 +531,7 @@ class TestSlot:
         assert isinstance(first_slot_func, Slot)
         assert first_slot_func.component_name == "test"
         assert first_slot_func.slot_name == "default"
-        assert first_slot_func.source == "template"
+        assert isinstance(first_slot_func.fill_node, ComponentNode)
         assert first_slot_func.extra == {}
 
         first_nodelist: NodeList = first_slot_func.nodelist
@@ -571,7 +572,7 @@ class TestSlot:
         assert isinstance(first_slot_func, Slot)
         assert first_slot_func.component_name == "test"
         assert first_slot_func.slot_name == "first"
-        assert first_slot_func.source == "template"
+        assert isinstance(first_slot_func.fill_node, FillNode)
         assert first_slot_func.extra == {}
 
         first_nodelist: NodeList = first_slot_func.nodelist
@@ -616,7 +617,7 @@ class TestSlot:
         assert isinstance(first_slot_func, Slot)
         assert first_slot_func.component_name == "test"
         assert first_slot_func.slot_name == "whoop"
-        assert first_slot_func.source == "template"
+        assert isinstance(first_slot_func.fill_node, FillNode)
         assert first_slot_func.extra == {"foo": "bar"}
         assert first_slot_func.nodelist is None
 

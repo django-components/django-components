@@ -57,6 +57,7 @@ The Render API includes:
     - [`self.inject()`](../render_api/#provide-inject) - Inject data into the component
 
 - Template tag metadata:
+    - [`self.node`](../render_api/#template-tag-metadata) - The [`ComponentNode`](../../../reference/api/#django_components.ComponentNode) instance
     - [`self.registry`](../render_api/#template-tag-metadata) - The [`ComponentRegistry`](../../../reference/api/#django_components.ComponentRegistry) instance
     - [`self.registered_name`](../render_api/#template-tag-metadata) - The name under which the component was registered
     - [`self.outer_context`](../render_api/#template-tag-metadata) - The context outside of the [`{% component %}`](../../../reference/template_tags#component) tag
@@ -337,17 +338,18 @@ class Table(Component):
 If the component is rendered with [`{% component %}`](../../../reference/template_tags#component) template tag,
 the following metadata is available:
 
+- [`self.node`](../../../reference/api/#django_components.Component.node) - The [`ComponentNode`](../../../reference/api/#django_components.ComponentNode) instance
 - [`self.registry`](../../../reference/api/#django_components.Component.registry) - The [`ComponentRegistry`](../../../reference/api/#django_components.ComponentRegistry) instance
   that was used to render the component
 - [`self.registered_name`](../../../reference/api/#django_components.Component.registered_name) - The name under which the component was registered
 - [`self.outer_context`](../../../reference/api/#django_components.Component.outer_context) - The context outside of the [`{% component %}`](../../../reference/template_tags#component) tag
 
-```django
-{% with abc=123 %}
-    {{ abc }} {# <--- This is in outer context #}
-    {% component "my_component" / %}
-{% endwith %}
-```
+    ```django
+    {% with abc=123 %}
+        {{ abc }} {# <--- This is in outer context #}
+        {% component "my_component" / %}
+    {% endwith %}
+    ```
 
 You can use these to check whether the component was rendered inside a template with [`{% component %}`](../../../reference/template_tags#component) tag
 or in Python with [`Component.render()`](../../../reference/api/#django_components.Component.render).
@@ -360,3 +362,40 @@ class MyComponent(Component):
         else:
             # Do something for the {% component %} template tag
 ```
+
+You can access the [`ComponentNode`](../../../reference/api/#django_components.ComponentNode) under [`Component.node`](../../../reference/api/#django_components.Component.node):
+
+```py
+class MyComponent(Component):
+    def get_template_data(self, context, template):
+        if self.node is not None:
+            assert self.node.name == "my_component"
+```
+
+Accessing the [`ComponentNode`](../../../reference/api/#django_components.ComponentNode) is mostly useful for extensions, which can modify their behaviour based on the source of the Component.
+
+For example, if `MyComponent` was used in another component - that is,
+with a `{% component "my_component" %}` tag
+in a template that belongs to another component - then you can use
+[`self.node.template_component`](../../../reference/api/#django_components.ComponentNode.template_component)
+to access the owner [`Component`](../../../reference/api/#django_components.Component) class.
+
+```djc_py
+class Parent(Component):
+    template: types.django_html = """
+        <div>
+            {% component "my_component" / %}
+        </div>
+    """
+
+@register("my_component")
+class MyComponent(Component):
+    def get_template_data(self, context, template):
+        if self.node is not None:
+            assert self.node.template_component == Parent
+```
+
+!!! info
+
+    `Component.node` is `None` if the component is created by [`Component.render()`](../../../reference/api/#django_components.Component.render)
+    (but you can pass in the `node` kwarg yourself).

@@ -158,12 +158,17 @@ Summary:
     ```py
     def render_to_response(
         context: Optional[Union[Dict[str, Any], Context]] = None,
-        args: Optional[Tuple[Any, ...]] = None,
-        kwargs: Optional[Mapping] = None,
-        slots: Optional[Mapping] = None,
+        args: Optional[Any] = None,
+        kwargs: Optional[Any] = None,
+        slots: Optional[Any] = None,
         deps_strategy: DependenciesStrategy = "document",
-        render_dependencies: bool = True,
+        type: Optional[DependenciesStrategy] = None,  # Deprecated, use `deps_strategy`
+        render_dependencies: bool = True,  # Deprecated, use `deps_strategy="ignore"`
+        outer_context: Optional[Context] = None,
         request: Optional[HttpRequest] = None,
+        registry: Optional[ComponentRegistry] = None,
+        registered_name: Optional[str] = None,
+        node: Optional[ComponentNode] = None,
         **response_kwargs: Any,
     ) -> HttpResponse:
     ```
@@ -1008,6 +1013,13 @@ Summary:
 
     Then, the `contents` attribute of the `BaseNode` instance will contain the string `"Hello, world!"`.
 
+- The `BaseNode` class also has two new metadata attributes:
+
+    - `template_name` - the name of the template that rendered the node.
+    - `template_component` - the component class that the template belongs to.
+
+    This is useful for debugging purposes.
+
 - `Slot` class now has 3 new metadata fields:
 
     1. `Slot.contents` attribute contains the original contents:
@@ -1018,10 +1030,11 @@ Summary:
 
     2. `Slot.extra` attribute where you can put arbitrary metadata about the slot.
 
-    3. `Slot.source` attribute tells where the slot comes from:
+    3. `Slot.fill_node` attribute tells where the slot comes from:
 
-        - `'template'` if the slot was created from `{% fill %}` tag.
-        - `'python'` if the slot was created from string, function, or `Slot` instance.
+        - `FillNode` instance if the slot was created from `{% fill %}` tag.
+        - `ComponentNode` instance if the slot was created as a default slot from a `{% component %}` tag.
+        - `None` if the slot was created from a string, function, or `Slot` instance.
 
     See [Slot metadata](https://django-components.github.io/django-components/0.140/concepts/fundamentals/slots/#slot-metadata).
 
@@ -1046,6 +1059,46 @@ Summary:
     {% component "table" %}
       {% fill "pagination" body=my_slot / %}
     {% endcomponent %}
+    ```
+
+- You can now access the `{% component %}` tag (`ComponentNode` instance) from which a Component
+    was created. Use `Component.node` to access it.
+
+    This is mostly useful for extensions, which can use this to detect if the given Component
+    comes from a `{% component %}` tag or from a different source (such as `Component.render()`).
+    
+    `Component.node` is `None` if the component is created by `Component.render()` (but you
+    can pass in the `node` kwarg yourself).
+
+    ```py
+    class MyComponent(Component):
+        def get_template_data(self, context, template):
+            if self.node is not None:
+                assert self.node.name == "my_component"
+    ```
+
+- Node classes `ComponentNode`, `FillNode`, `ProvideNode`, and `SlotNode` are part of the public API.
+
+    These classes are what is instantiated when you use `{% component %}`, `{% fill %}`, `{% provide %}`, and `{% slot %}` tags.
+
+    You can for example use these for type hints:
+
+    ```py
+    from django_components import Component, ComponentNode
+
+    class MyTable(Component):
+        def get_template_data(self, args, kwargs, slots, context):
+            if kwargs.get("show_owner"):
+                node: Optional[ComponentNode] = self.node
+                owner: Optional[Component] = self.node.template_component
+            else:
+                node = None
+                owner = None
+
+            return {
+                "owner": owner,
+                "node": node,
+            }
     ```
 
 - Component caching can now take slots into account, by setting `Component.Cache.include_slots` to `True`.

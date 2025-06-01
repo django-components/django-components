@@ -1941,6 +1941,7 @@ class Component(metaclass=ComponentMeta):
         slots: Optional[Any] = None,
         deps_strategy: Optional[DependenciesStrategy] = None,
         request: Optional[HttpRequest] = None,
+        node: Optional["ComponentNode"] = None,
         id: Optional[str] = None,
     ):
         # TODO_v1 - Remove this whole block in v1. This is for backwards compatibility with pre-v0.140
@@ -2009,6 +2010,7 @@ class Component(metaclass=ComponentMeta):
         self.request = request
         self.outer_context: Optional[Context] = outer_context
         self.registry = default(registry, registry_)
+        self.node = node
 
         extensions._init_component_instance(self)
 
@@ -2346,6 +2348,51 @@ class Component(metaclass=ComponentMeta):
     that was used to render the component.
     """
 
+    node: Optional["ComponentNode"]
+    """
+    The [`ComponentNode`](../api/#django_components.ComponentNode) instance
+    that was used to render the component.
+
+    This will be set only if the component was rendered with the
+    [`{% component %}`](../template_tags#component) tag.
+
+    Accessing the [`ComponentNode`](../api/#django_components.ComponentNode) is mostly useful for extensions,
+    which can modify their behaviour based on the source of the Component.
+
+    ```py
+    class MyComponent(Component):
+        def get_template_data(self, context, template):
+            if self.node is not None:
+                assert self.node.name == "my_component"
+    ```
+
+    For example, if `MyComponent` was used in another component - that is,
+    with a `{% component "my_component" %}` tag
+    in a template that belongs to another component - then you can use
+    [`self.node.template_component`](../api/#django_components.ComponentNode.template_component)
+    to access the owner [`Component`](../api/#django_components.Component) class.
+
+    ```djc_py
+    class Parent(Component):
+        template: types.django_html = '''
+            <div>
+                {% component "my_component" / %}
+            </div>
+        '''
+
+    @register("my_component")
+    class MyComponent(Component):
+        def get_template_data(self, context, template):
+            if self.node is not None:
+                assert self.node.template_component == Parent
+    ```
+
+    !!! info
+
+        `Component.node` is `None` if the component is created by
+        [`Component.render()`](../api/#django_components.Component.render)
+        (but you can pass in the `node` kwarg yourself).
+    """
     # TODO_v1 - Remove, superseded by `Component.slots`
     is_filled: SlotIsFilled
     """
@@ -2535,6 +2582,7 @@ class Component(metaclass=ComponentMeta):
         # TODO_v2 - Remove `registered_name` and `registry`
         registry: Optional[ComponentRegistry] = None,
         registered_name: Optional[str] = None,
+        node: Optional["ComponentNode"] = None,
         **response_kwargs: Any,
     ) -> HttpResponse:
         """
@@ -2603,6 +2651,7 @@ class Component(metaclass=ComponentMeta):
             # TODO_v2 - Remove `registered_name` and `registry`
             registry=registry,
             registered_name=registered_name,
+            node=node,
         )
         return cls.response_class(content, **response_kwargs)
 
@@ -2623,6 +2672,7 @@ class Component(metaclass=ComponentMeta):
         # TODO_v2 - Remove `registered_name` and `registry`
         registry: Optional[ComponentRegistry] = None,
         registered_name: Optional[str] = None,
+        node: Optional["ComponentNode"] = None,
     ) -> str:
         """
         Render the component into a string. This is the equivalent of calling
@@ -2830,6 +2880,7 @@ class Component(metaclass=ComponentMeta):
             # TODO_v2 - Remove `registered_name` and `registry`
             registry=registry,
             registered_name=registered_name,
+            node=node,
         )
 
     # This is the internal entrypoint for the render function
@@ -2846,6 +2897,7 @@ class Component(metaclass=ComponentMeta):
         # TODO_v2 - Remove `registered_name` and `registry`
         registry: Optional[ComponentRegistry] = None,
         registered_name: Optional[str] = None,
+        node: Optional["ComponentNode"] = None,
     ) -> str:
         component_name = _get_component_name(cls, registered_name)
 
@@ -2862,6 +2914,7 @@ class Component(metaclass=ComponentMeta):
                 # TODO_v2 - Remove `registered_name` and `registry`
                 registry=registry,
                 registered_name=registered_name,
+                node=node,
             )
 
     @classmethod
@@ -2877,6 +2930,7 @@ class Component(metaclass=ComponentMeta):
         # TODO_v2 - Remove `registered_name` and `registry`
         registry: Optional[ComponentRegistry] = None,
         registered_name: Optional[str] = None,
+        node: Optional["ComponentNode"] = None,
     ) -> str:
         ######################################
         # 1. Handle inputs
@@ -2929,6 +2983,7 @@ class Component(metaclass=ComponentMeta):
             # TODO_v2 - Remove `registered_name` and `registry`
             registry=registry,
             registered_name=registered_name,
+            node=node,
         )
 
         # Allow plugins to modify or validate the inputs
@@ -3316,7 +3371,7 @@ class ComponentNode(BaseNode):
     [`@register()`](./api.md#django_components.register)
     decorator.
 
-    The `{% component %}` tag takes:
+    The [`{% component %}`](../template_tags#component) tag takes:
 
     - Component's registered name as the first positional argument,
     - Followed by any number of positional and keyword arguments.
@@ -3333,7 +3388,8 @@ class ComponentNode(BaseNode):
     ### Inserting slot fills
 
     If the component defined any [slots](../concepts/fundamentals/slots.md), you can
-    "fill" these slots by placing the [`{% fill %}`](#fill) tags within the `{% component %}` tag:
+    "fill" these slots by placing the [`{% fill %}`](../template_tags#fill) tags
+    within the [`{% component %}`](../template_tags#component) tag:
 
     ```django
     {% component "my_table" rows=rows headers=headers %}
@@ -3343,7 +3399,7 @@ class ComponentNode(BaseNode):
     {% endcomponent %}
     ```
 
-    You can even nest [`{% fill %}`](#fill) tags within
+    You can even nest [`{% fill %}`](../template_tags#fill) tags within
     [`{% if %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#if),
     [`{% for %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#for)
     and other tags:
@@ -3382,7 +3438,7 @@ class ComponentNode(BaseNode):
     }
     ```
 
-    ### Omitting the `component` keyword
+    ### Omitting the component keyword
 
     If you would like to omit the `component` keyword, and simply refer to your
     components by their registered names:
@@ -3417,6 +3473,8 @@ class ComponentNode(BaseNode):
         nodelist: Optional[NodeList] = None,
         node_id: Optional[str] = None,
         contents: Optional[str] = None,
+        template_name: Optional[str] = None,
+        template_component: Optional[Type["Component"]] = None,
     ) -> None:
         super().__init__(
             params=params,
@@ -3424,6 +3482,8 @@ class ComponentNode(BaseNode):
             nodelist=nodelist,
             node_id=node_id,
             contents=contents,
+            template_name=template_name,
+            template_component=template_component,
         )
 
         self.name = name
@@ -3499,6 +3559,7 @@ class ComponentNode(BaseNode):
             registered_name=self.name,
             outer_context=context,
             registry=self.registry,
+            node=self,
         )
 
         return output

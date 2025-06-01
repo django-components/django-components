@@ -18,6 +18,7 @@ from django_components.util.command import (
 from django_components.component import (
     Component,
     ComponentInput,
+    ComponentNode,
     ComponentVars,
     all_components,
     get_component_by_class_id,
@@ -52,13 +53,16 @@ from django_components.extensions.debug_highlight import ComponentDebugHighlight
 from django_components.extensions.view import ComponentView, get_component_url
 from django_components.library import TagProtectedError
 from django_components.node import BaseNode, template_tag
+from django_components.provide import ProvideNode
 from django_components.slots import (
+    FillNode,
     Slot,
     SlotContent,
     SlotContext,
     SlotFallback,
     SlotFunc,
     SlotInput,
+    SlotNode,
     SlotRef,
     SlotResult,
 )
@@ -103,6 +107,7 @@ __all__ = [
     "ComponentInput",
     "ComponentMediaInput",
     "ComponentMediaInputPath",
+    "ComponentNode",
     "ComponentRegistry",
     "ComponentVars",
     "ComponentView",
@@ -115,6 +120,7 @@ __all__ = [
     "DynamicComponent",
     "Empty",
     "ExtensionComponentConfig",
+    "FillNode",
     "format_attributes",
     "get_component_by_class_id",
     "get_component_dirs",
@@ -131,6 +137,7 @@ __all__ = [
     "OnComponentUnregisteredContext",
     "OnRegistryCreatedContext",
     "OnRegistryDeletedContext",
+    "ProvideNode",
     "register",
     "registry",
     "RegistrySettings",
@@ -142,6 +149,7 @@ __all__ = [
     "SlotFallback",
     "SlotFunc",
     "SlotInput",
+    "SlotNode",
     "SlotRef",
     "SlotResult",
     "TagFormatterABC",

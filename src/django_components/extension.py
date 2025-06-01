@@ -28,7 +28,7 @@ from django_components.util.routing import URLRoute
 if TYPE_CHECKING:
     from django_components import Component
     from django_components.component_registry import ComponentRegistry
-    from django_components.slots import Slot, SlotResult
+    from django_components.slots import Slot, SlotNode, SlotResult
 
 
 TCallable = TypeVar("TCallable", bound=Callable)
@@ -155,6 +155,8 @@ class OnSlotRenderedContext(NamedTuple):
     """The Slot instance that was rendered"""
     slot_name: str
     """The name of the `{% slot %}` tag"""
+    slot_node: "SlotNode"
+    """The node instance of the `{% slot %}` tag"""
     slot_is_required: bool
     """Whether the slot is required"""
     slot_is_default: bool
@@ -743,6 +745,26 @@ class ComponentExtension(metaclass=ExtensionMeta):
             def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
                 # Append a comment to the slot's rendered output
                 return ctx.result + "<!-- MyExtension comment -->"
+        ```
+
+        **Access slot metadata:**
+
+        You can access the [`{% slot %}` tag](../template_tags#slot)
+        node ([`SlotNode`](../api#django_components.SlotNode)) and its metadata using `ctx.slot_node`.
+
+        For example, to find the [`Component`](../api#django_components.Component) class to which
+        belongs the template where the [`{% slot %}`](../template_tags#slot) tag is defined, you can use
+        [`ctx.slot_node.template_component`](../api#django_components.SlotNode.template_component):
+
+        ```python
+        from django_components import ComponentExtension, OnSlotRenderedContext
+
+        class MyExtension(ComponentExtension):
+            def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
+                # Access slot metadata
+                slot_node = ctx.slot_node
+                slot_owner = slot_node.template_component
+                print(f"Slot owner: {slot_owner}")
         ```
         """
         pass

@@ -17,6 +17,7 @@ from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import (
     Component,
+    ComponentRegistry,
     ComponentView,
     Slot,
     SlotInput,
@@ -597,6 +598,106 @@ class TestComponentRenderAPI:
         assert comp.kwargs == {}  # type: ignore[attr-defined]
         assert comp.slots == {}  # type: ignore[attr-defined]
         assert comp.context == Context()  # type: ignore[attr-defined]
+
+    def test_metadata__template(self):
+        comp: Any = None
+
+        @register("test")
+        class TestComponent(Component):
+            template = "hello"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal comp
+                comp = self
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <div class="test-component">
+                {% component "test" / %}
+            </div>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context())
+
+        assertHTMLEqual(rendered, '<div class="test-component">hello</div>')
+
+        assert isinstance(comp, TestComponent)
+
+        assert isinstance(comp.outer_context, Context)
+        assert comp.outer_context == Context()
+
+        assert isinstance(comp.registry, ComponentRegistry)
+        assert comp.registered_name == "test"
+
+        assert comp.node is not None
+        assert comp.node.template_component is None
+        assert comp.node.template_name == "<unknown source>"
+
+    def test_metadata__component(self):
+        comp: Any = None
+
+        @register("test")
+        class TestComponent(Component):
+            template = "hello"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal comp
+                comp = self
+
+        class Outer(Component):
+            template = "{% component 'test' only / %}"
+
+        rendered = Outer.render()
+
+        assert rendered == 'hello'
+
+        assert isinstance(comp, TestComponent)
+
+        assert isinstance(comp.outer_context, Context)
+        assert comp.outer_context is not comp.context
+
+        assert isinstance(comp.registry, ComponentRegistry)
+        assert comp.registered_name == "test"
+
+        assert comp.node is not None
+        assert comp.node.template_component == Outer
+        assert comp.node.template_name.endswith("tests/test_component.py::Outer")  # type: ignore
+
+    def test_metadata__python(self):
+        comp: Any = None
+
+        @register("test")
+        class TestComponent(Component):
+            template = "hello"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal comp
+                comp = self
+
+        rendered = TestComponent.render(
+            context=Context(),
+            args=(),
+            kwargs={},
+            slots={},
+            deps_strategy="document",
+            render_dependencies=True,
+            request=None,
+            outer_context=Context(),
+            registry=ComponentRegistry(),
+            registered_name="test",
+        )
+
+        assert rendered == 'hello'
+
+        assert isinstance(comp, TestComponent)
+
+        assert isinstance(comp.outer_context, Context)
+        assert comp.outer_context == Context()
+
+        assert isinstance(comp.registry, ComponentRegistry)
+        assert comp.registered_name == "test"
+
+        assert comp.node is None
 
 
 @djc_test

@@ -728,7 +728,7 @@ with extra metadata:
 - [`component_name`](../../../reference/api#django_components.Slot.component_name)
 - [`slot_name`](../../../reference/api#django_components.Slot.slot_name)
 - [`nodelist`](../../../reference/api#django_components.Slot.nodelist)
-- [`source`](../../../reference/api#django_components.Slot.source)
+- [`fill_node`](../../../reference/api#django_components.Slot.fill_node)
 - [`extra`](../../../reference/api#django_components.Slot.extra)
 
 These are populated the first time a slot is passed to a component.
@@ -738,10 +738,33 @@ still point to the first component that received the slot.
 
 You can use these for debugging, such as printing out the slot's component name and slot name.
 
-Extensions can use [`Slot.source`](../../../reference/api#django_components.Slot.source)
+**Fill node**
+
+Components or extensions can use [`Slot.fill_node`](../../../reference/api#django_components.Slot.fill_node)
 to handle slots differently based on whether the slot
-was defined in the template with [`{% fill %}`](../../../reference/template_tags#fill) tag
-or in the component's Python code. See an example in [Pass slot metadata](../../advanced/extensions#pass-slot-metadata).
+was defined in the template with [`{% fill %}`](../../../reference/template_tags#fill) and
+[`{% component %}`](../../../reference/template_tags#component) tags,
+or in the component's Python code.
+
+If the slot was created from a [`{% fill %}`](../../../reference/template_tags#fill) tag,
+this will be the [`FillNode`](../../../reference/api#django_components.FillNode) instance.
+
+If the slot was a default slot created from a [`{% component %}`](../../../reference/template_tags#component) tag,
+this will be the [`ComponentNode`](../../../reference/api#django_components.ComponentNode) instance.
+
+You can use this to find the [`Component`](../../../reference/api#django_components.Component) in whose
+template the [`{% fill %}`](../../../reference/template_tags#fill) tag was defined:
+
+```python
+class MyTable(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        footer_slot = slots.get("footer")
+        if footer_slot is not None and footer_slot.fill_node is not None:
+            owner_component = footer_slot.fill_node.template_component
+            # ...
+```
+
+**Extra**
 
 You can also pass any additional data along with the slot by setting it in [`Slot.extra`](../../../reference/api#django_components.Slot.extra):
 
@@ -761,7 +784,6 @@ slot = Slot(
     # Optional
     component_name="table",
     slot_name="name",
-    source="python",
     extra={},
 )
 
@@ -770,6 +792,8 @@ slot.component_name = "table"
 slot.slot_name = "name"
 slot.extra["foo"] = "bar"
 ```
+
+Read more in [Pass slot metadata](../../advanced/extensions#pass-slot-metadata).
 
 ### Slot contents
 

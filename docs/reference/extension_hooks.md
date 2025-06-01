@@ -204,6 +204,7 @@ name | type | description
 `slot_is_default` | `bool` | Whether the slot is default
 `slot_is_required` | `bool` | Whether the slot is required
 `slot_name` | `str` | The name of the `{% slot %}` tag
+`slot_node` | `SlotNode` | The node instance of the `{% slot %}` tag
 
 ## Objects
 

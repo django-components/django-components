@@ -67,7 +67,7 @@ If you insert this tag multiple times, ALL JS scripts will be duplicately insert
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L3301" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L3350" target="_blank">See source code</a>
 
 
 
@@ -75,7 +75,7 @@ Renders one of the components that was previously registered with
 [`@register()`](./api.md#django_components.register)
 decorator.
 
-The `{% component %}` tag takes:
+The [`{% component %}`](../template_tags#component) tag takes:
 
 - Component's registered name as the first positional argument,
 - Followed by any number of positional and keyword arguments.
@@ -92,7 +92,8 @@ The component name must be a string literal.
 ### Inserting slot fills
 
 If the component defined any [slots](../concepts/fundamentals/slots.md), you can
-"fill" these slots by placing the [`{% fill %}`](#fill) tags within the `{% component %}` tag:
+"fill" these slots by placing the [`{% fill %}`](../template_tags#fill) tags
+within the [`{% component %}`](../template_tags#component) tag:
 
 ```django
 {% component "my_table" rows=rows headers=headers %}
@@ -102,7 +103,7 @@ If the component defined any [slots](../concepts/fundamentals/slots.md), you can
 {% endcomponent %}
 ```
 
-You can even nest [`{% fill %}`](#fill) tags within
+You can even nest [`{% fill %}`](../template_tags#fill) tags within
 [`{% if %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#if),
 [`{% for %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#for)
 and other tags:
@@ -141,7 +142,7 @@ COMPONENTS = {
 }
 ```
 
-### Omitting the `component` keyword
+### Omitting the component keyword
 
 If you would like to omit the `component` keyword, and simply refer to your
 components by their registered names:
@@ -169,19 +170,20 @@ COMPONENTS = {
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L948" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L988" target="_blank">See source code</a>
 
 
 
-Use this tag to insert content into component's slots.
+Use [`{% fill %}`](../template_tags#fill) tag to insert content into component's
+[slots](../../concepts/fundamentals/slots).
 
-`{% fill %}` tag may be used only within a `{% component %}..{% endcomponent %}` block,
+[`{% fill %}`](../template_tags#fill) tag may be used only within a `{% component %}..{% endcomponent %}` block,
 and raises a `TemplateSyntaxError` if used outside of a component.
 
 **Args:**
 
 - `name` (str, required): Name of the slot to insert this content into. Use `"default"` for
-    the default slot.
+    the [default slot](../../concepts/fundamentals/slots#default-slot).
 - `data` (str, optional): This argument allows you to access the data passed to the slot
     under the specified variable name. See [Slot data](../../concepts/fundamentals/slots#slot-data).
 - `fallback` (str, optional): This argument allows you to access the original content of the slot
@@ -266,7 +268,7 @@ Fill:
 ### Using default slot
 
 To access slot data and the fallback slot content on the default slot,
-use `{% fill %}` with `name` set to `"default"`:
+use [`{% fill %}`](../template_tags#fill) with `name` set to `"default"`:
 
 ```django
 {% component "button" %}
@@ -280,7 +282,7 @@ use `{% fill %}` with `name` set to `"default"`:
 ### Slot fills from Python
 
 You can pass a slot fill from Python to a component by setting the `body` kwarg
-on the `{% fill %}` tag.
+on the [`{% fill %}`](../template_tags#fill) tag.
 
 First pass a [`Slot`](../api#django_components.Slot) instance to the template
 with the [`get_template_data()`](../api#django_components.Component.get_template_data)
@@ -296,7 +298,7 @@ class Table(Component):
     }
 ```
 
-Then pass the slot to the `{% fill %}` tag:
+Then pass the slot to the [`{% fill %}`](../template_tags#fill) tag:
 
 ```django
 {% component "table" %}
@@ -306,7 +308,7 @@ Then pass the slot to the `{% fill %}` tag:
 
 !!! warning
 
-    If you define both the `body` kwarg and the `{% fill %}` tag's body,
+    If you define both the `body` kwarg and the [`{% fill %}`](../template_tags#fill) tag's body,
     an error will be raised.
 
     ```django
@@ -391,8 +393,11 @@ See more usage examples in
 
 
 
-The "provider" part of the [provide / inject feature](../../concepts/advanced/provide_inject).
+The [`{% provide %}`](../template_tags#provide) tag is part of the "provider" part of
+the [provide / inject feature](../../concepts/advanced/provide_inject).
+
 Pass kwargs to this tag to define the provider's data.
+
 Any components defined within the `{% provide %}..{% endprovide %}` tags will be able to access this data
 with [`Component.inject()`](../api#django_components.Component.inject).
 
@@ -445,7 +450,7 @@ class Child(Component):
         }
 ```
 
-Notice that the keys defined on the `{% provide %}` tag are then accessed as attributes
+Notice that the keys defined on the [`{% provide %}`](../template_tags#provide) tag are then accessed as attributes
 when accessing them with [`Component.inject()`](../api#django_components.Component.inject).
 
 ✅ Do this
@@ -467,11 +472,11 @@ user = self.inject("user_data")["user"]
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L474" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L513" target="_blank">See source code</a>
 
 
 
-Slot tag marks a place inside a component where content can be inserted
+[`{% slot %}`](../template_tags#slot) tag marks a place inside a component where content can be inserted
 from outside.
 
 [Learn more](../../concepts/fundamentals/slots) about using slots.
@@ -485,7 +490,7 @@ or [React's `children`](https://react.dev/learn/passing-props-to-a-component#pas
 
 - `name` (str, required): Registered name of the component to render
 - `default`: Optional flag. If there is a default slot, you can pass the component slot content
-    without using the [`{% fill %}`](#fill) tag. See
+    without using the [`{% fill %}`](../template_tags#fill) tag. See
     [Default slot](../../concepts/fundamentals/slots#default-slot)
 - `required`: Optional flag. Will raise an error if a slot is required but not given.
 - `**kwargs`: Any extra kwargs will be passed as the slot data.
@@ -527,8 +532,8 @@ class Parent(Component):
 
 ### Slot data
 
-Any extra kwargs will be considered as slot data, and will be accessible in the [`{% fill %}`](#fill)
-tag via fill's `data` kwarg:
+Any extra kwargs will be considered as slot data, and will be accessible
+in the [`{% fill %}`](../template_tags#fill) tag via fill's `data` kwarg:
 
 Read more about [Slot data](../../concepts/fundamentals/slots#slot-data).
 
@@ -565,8 +570,8 @@ class Parent(Component):
 The content between the `{% slot %}..{% endslot %}` tags is the fallback content that
 will be rendered if no fill is given for the slot.
 
-This fallback content can then be accessed from within the [`{% fill %}`](#fill) tag using
-the fill's `fallback` kwarg.
+This fallback content can then be accessed from within the [`{% fill %}`](../template_tags#fill) tag
+using the fill's `fallback` kwarg.
 This is useful if you need to wrap / prepend / append the original slot's content.
 
 ```djc_py

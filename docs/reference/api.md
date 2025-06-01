@@ -47,6 +47,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.ComponentNode
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.ComponentRegistry
     options:
       show_if_no_docstring: true
@@ -83,6 +87,14 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.FillNode
+    options:
+      show_if_no_docstring: true
+
+::: django_components.ProvideNode
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.RegistrySettings
     options:
       show_if_no_docstring: true
@@ -108,6 +120,10 @@
       show_if_no_docstring: true
 
 ::: django_components.SlotInput
+    options:
+      show_if_no_docstring: true
+
+::: django_components.SlotNode
     options:
       show_if_no_docstring: true
 

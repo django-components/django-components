@@ -12,8 +12,11 @@ from django_components.util.misc import gen_id
 
 class ProvideNode(BaseNode):
     """
-    The "provider" part of the [provide / inject feature](../../concepts/advanced/provide_inject).
+    The [`{% provide %}`](../template_tags#provide) tag is part of the "provider" part of
+    the [provide / inject feature](../../concepts/advanced/provide_inject).
+
     Pass kwargs to this tag to define the provider's data.
+
     Any components defined within the `{% provide %}..{% endprovide %}` tags will be able to access this data
     with [`Component.inject()`](../api#django_components.Component.inject).
 
@@ -66,7 +69,7 @@ class ProvideNode(BaseNode):
             }
     ```
 
-    Notice that the keys defined on the `{% provide %}` tag are then accessed as attributes
+    Notice that the keys defined on the [`{% provide %}`](../template_tags#provide) tag are then accessed as attributes
     when accessing them with [`Component.inject()`](../api#django_components.Component.inject).
 
     ✅ Do this
