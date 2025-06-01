@@ -3417,8 +3417,6 @@ class ComponentNode(BaseNode):
         nodelist: Optional[NodeList] = None,
         node_id: Optional[str] = None,
         contents: Optional[str] = None,
-        template_name: Optional[str] = None,
-        template_component: Optional[Type["Component"]] = None,
     ) -> None:
         super().__init__(
             params=params,
@@ -3426,8 +3424,6 @@ class ComponentNode(BaseNode):
             nodelist=nodelist,
             node_id=node_id,
             contents=contents,
-            template_name=template_name,
-            template_component=template_component,
         )
 
         self.name = name

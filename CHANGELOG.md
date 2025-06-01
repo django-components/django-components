@@ -970,13 +970,6 @@ Summary:
 
     Then, the `contents` attribute of the `BaseNode` instance will contain the string `"Hello, world!"`.
 
-- The `BaseNode` class also has two new metadata attributes:
-
-    - `template_name` - the name of the template that rendered the node.
-    - `template_component` - the component class that the template belongs to.
-
-    This is useful for debugging purposes.
-
 - `Slot` class now has 3 new metadata fields:
 
     1. `Slot.contents` attribute contains the original contents:
