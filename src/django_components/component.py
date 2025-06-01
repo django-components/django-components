@@ -2915,9 +2915,6 @@ class Component(metaclass=ComponentMeta):
         if not isinstance(context, (Context, RequestContext)):
             context = RequestContext(request, context) if request else Context(context)
 
-        # NOTE: Re-cast to fix type errors
-        context: Union[Context, RequestContext] = context  # type: ignore[no-redef]
-
         render_id = _gen_component_id()
 
         component = comp_cls(
@@ -2964,7 +2961,9 @@ class Component(metaclass=ComponentMeta):
 
         # Required for compatibility with Django's {% extends %} tag
         # See https://github.com/django-components/django-components/pull/859
-        context.render_context.push({BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())})
+        context.render_context.push({  # type: ignore[union-attr]
+            BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())  # type: ignore[union-attr]
+        })
 
         # We pass down the components the info about the component's parent.
         # This is used for correctly resolving slot fills, correct rendering order,
@@ -3069,14 +3068,14 @@ class Component(metaclass=ComponentMeta):
             # Part of fix for https://github.com/django-components/django-components/issues/508
             # See django_monkeypatch.py
             if template is not None:
-                template._djc_is_component_nested = bool(  # type: ignore[union-attr]
-                    context.render_context.get(BLOCK_CONTEXT_KEY)
+                template._djc_is_component_nested = bool(
+                    context.render_context.get(BLOCK_CONTEXT_KEY)  # type: ignore[union-attr]
                 )
 
             # Capture the template name so we can print better error messages (currently used in slots)
             component_ctx.template_name = template.name if template else None
 
-            with context.update(
+            with context.update(  # type: ignore[union-attr]
                 {
                     # Make data from context processors available inside templates
                     **component.context_processors_data,
@@ -3109,7 +3108,7 @@ class Component(metaclass=ComponentMeta):
                 context_snapshot = snapshot_context(context)
 
         # Cleanup
-        context.render_context.pop()
+        context.render_context.pop()  # type: ignore[union-attr]
 
         ######################################
         # 5. Render component
