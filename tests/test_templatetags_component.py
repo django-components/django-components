@@ -551,7 +551,7 @@ class TestMultiComponent:
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-ca1bc44>
+            <custom-template data-djc-id-ca1bc47>
                 <header>
                     Default header
                 </header>
@@ -588,7 +588,7 @@ class TestMultiComponent:
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-ca1bc46>
+            <custom-template data-djc-id-ca1bc49>
                 <header>
                     <div>Slot #2</div>
                 </header>
@@ -624,7 +624,7 @@ class TestMultiComponent:
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-ca1bc45>
+            <custom-template data-djc-id-ca1bc48>
                 <header>
                     Default header
                 </header>
@@ -660,7 +660,7 @@ class TestMultiComponent:
                 <main>Default main</main>
                 <footer>Default footer</footer>
             </custom-template>
-            <custom-template data-djc-id-ca1bc45>
+            <custom-template data-djc-id-ca1bc48>
                 <header>
                     <div>Slot #2</div>
                 </header>
