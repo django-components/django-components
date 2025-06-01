@@ -174,7 +174,6 @@ def load_component_template(component_cls: Type["Component"], filepath: str) -> 
     if component_cls._template is not None:
         return component_cls._template
 
-    global loading_components
     loading_components.append(ref(component_cls))
 
     # Use Django's `get_template()` to load the template
