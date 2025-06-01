@@ -2961,9 +2961,9 @@ class Component(metaclass=ComponentMeta):
 
         # Required for compatibility with Django's {% extends %} tag
         # See https://github.com/django-components/django-components/pull/859
-        context.render_context.push({  # type: ignore[union-attr]
-            BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())  # type: ignore
-        })
+        context.render_context.push(  # type: ignore[union-attr]
+            {BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())}  # type: ignore
+        )
 
         # We pass down the components the info about the component's parent.
         # This is used for correctly resolving slot fills, correct rendering order,
