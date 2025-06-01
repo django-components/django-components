@@ -1,8 +1,9 @@
 import inspect
+import os
 import re
-import pytest
 from typing import cast
 
+import pytest
 from django.template import Context, Template
 from django.template.base import TextNode, VariableNode
 from django.template.defaulttags import IfNode, LoremNode
@@ -955,7 +956,12 @@ class TestSignatureBasedValidation:
         assert len(nodelist4) == 0
         assert contents4 is None
         assert node_id4 == "a1bc42"
-        assert cast(str, template_name4).endswith("/tests/test_node.py::TestComponent")
+
+        if os.name == 'nt':
+            assert cast(str, template_name4).endswith("\\tests\\test_node.py::TestComponent")
+        else:
+            assert cast(str, template_name4).endswith("/tests/test_node.py::TestComponent")
+
         assert template_name4 == f"{__file__}::TestComponent"
         assert template_component4 is TestComponent
 
