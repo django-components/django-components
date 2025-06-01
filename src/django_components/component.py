@@ -2915,6 +2915,9 @@ class Component(metaclass=ComponentMeta):
         if not isinstance(context, (Context, RequestContext)):
             context = RequestContext(request, context) if request else Context(context)
 
+        # NOTE: Re-cast to fix type errors
+        context: Union[Context, RequestContext] = context  # type: ignore[no-redef]
+
         render_id = _gen_component_id()
 
         component = comp_cls(
