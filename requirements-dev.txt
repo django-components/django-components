@@ -64,7 +64,7 @@ json5==0.10.0
     # via asv
 mccabe==0.7.0
     # via flake8
-mypy==1.15.0
+mypy==1.16.0
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via
@@ -83,6 +83,7 @@ pathspec==0.12.1
     # via
     #   -r requirements-dev.in
     #   black
+    #   mypy
 platformdirs==4.3.6
     # via
     #   black
