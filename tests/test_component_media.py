@@ -1239,7 +1239,7 @@ class TestSubclassingMedia:
 
         # `None` means that we will NOT inherit `Media` from `GrandParentComponent`
         class ParentComponent(GrandParentComponent):
-            Media = None
+            Media = None  # type: ignore[assignment]
 
         class ChildComponent(ParentComponent):
             class Media:
@@ -1384,7 +1384,7 @@ class TestSubclassingMedia:
 
         # `None` means that we will NOT inherit `Media` from `GrandParent3Component` and `GrandParent4Component`
         class Parent2Component(GrandParent3Component, GrandParent4Component):
-            Media = None
+            Media = None  # type: ignore[assignment]
 
         class ChildComponent(Parent1Component, Parent2Component):
             template: types.django_html = """
