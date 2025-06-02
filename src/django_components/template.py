@@ -381,7 +381,7 @@ def cache_component_template_file(component_cls: Type["Component"]) -> None:
         return
 
     # NOTE: Avoids circular import
-    from django_components.component_media import ComponentMedia, _resolve_component_relative_files
+    from django_components.component_media import ComponentMedia, Unset, _resolve_component_relative_files, is_set
 
     # If we access the `Component.template_file` attribute, then this triggers media resolution if it was not done yet.
     # The problem is that this also causes the loading of the Template, if Component has defined `template_file`.
@@ -395,7 +395,7 @@ def cache_component_template_file(component_cls: Type["Component"]) -> None:
     # directly, thus avoiding the triggering of the Template loading.
     comp_media: ComponentMedia = component_cls._component_media  # type: ignore[attr-defined]
     if comp_media.resolved and comp_media.resolved_relative_files:
-        template_file = component_cls.template_file
+        template_file: Union[str, Unset, None] = component_cls.template_file
     else:
         # NOTE: This block of code is based on `_resolve_media()` in `component_media.py`
         if not comp_media.resolved_relative_files:
@@ -404,7 +404,7 @@ def cache_component_template_file(component_cls: Type["Component"]) -> None:
 
         template_file = comp_media.template_file
 
-    if template_file is None:
+    if not is_set(template_file):
         return
 
     if template_file not in component_template_file_cache:

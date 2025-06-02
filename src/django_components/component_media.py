@@ -18,6 +18,7 @@ from typing import (
     Sequence,
     Tuple,
     Type,
+    TypeVar,
     Union,
     cast,
 )
@@ -27,6 +28,7 @@ from django.contrib.staticfiles import finders
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.widgets import Media as MediaCls
 from django.utils.safestring import SafeData
+from typing_extensions import TypeGuard
 
 from django_components.template import load_component_template
 from django_components.util.loader import get_component_dirs, resolve_file
@@ -37,6 +39,9 @@ if TYPE_CHECKING:
     from django_components.component import Component
 
 
+T = TypeVar("T")
+
+
 # These are all the attributes that are handled by ComponentMedia and lazily-resolved
 COMP_MEDIA_LAZY_ATTRS = ("media", "template", "template_file", "js", "js_file", "css", "css_file")
 
@@ -44,7 +49,7 @@ COMP_MEDIA_LAZY_ATTRS = ("media", "template", "template_file", "js", "js_file", 
 # Sentinel value to indicate that a media attribute is not set.
 # We use this to differntiate between setting template to `None` and not setting it at all.
 # If not set, we will use the template from the parent component.
-# If set to `None`, then this compoenent has no template.
+# If set to `None`, then this component has no template.
 class Unset:
     def __bool__(self) -> bool:
         return False
@@ -789,9 +794,9 @@ def _resolve_component_relative_files(
     # First check if we even need to resolve anything. If the class doesn't define any
     # HTML/JS/CSS files, just skip.
     will_resolve_files = False
-    if _is_set(comp_media.template_file) or _is_set(comp_media.js_file) or _is_set(comp_media.css_file):
+    if is_set(comp_media.template_file) or is_set(comp_media.js_file) or is_set(comp_media.css_file):
         will_resolve_files = True
-    elif not will_resolve_files and _is_set(comp_media.Media) and comp_media.Media:
+    elif not will_resolve_files and is_set(comp_media.Media):
         if getattr(comp_media.Media, "css", None) or getattr(comp_media.Media, "js", None):
             will_resolve_files = True
 
@@ -870,14 +875,14 @@ def _resolve_component_relative_files(
         return resolved_filepaths
 
     # Check if template name is a local file or not
-    if _is_set(comp_media.template_file):
+    if is_set(comp_media.template_file):
         comp_media.template_file = resolve_relative_media_file(comp_media.template_file, False)[0]
-    if _is_set(comp_media.js_file):
+    if is_set(comp_media.js_file):
         comp_media.js_file = resolve_relative_media_file(comp_media.js_file, False)[0]
-    if _is_set(comp_media.css_file):
+    if is_set(comp_media.css_file):
         comp_media.css_file = resolve_relative_media_file(comp_media.css_file, False)[0]
 
-    if comp_media.Media is not None and not isinstance(comp_media.Media, Unset):
+    if is_set(comp_media.Media):
         _map_media_filepaths(
             comp_media.Media,
             # Media files can be defined as a glob patterns that match multiple files.
@@ -1053,7 +1058,7 @@ def _get_asset(
             " Only one of the two must be set."
         )
 
-    # At this point we can tall that only EITHER `asset_content` OR `asset_file` is set.
+    # At this point we can tell that only EITHER `asset_content` OR `asset_file` is set.
 
     # If the content was inlined into the component (e.g. `Component.template = "..."`)
     # then there's nothing to resolve. Return as is.
@@ -1094,5 +1099,5 @@ def _get_asset(
     return asset_content
 
 
-def _is_set(value: Any) -> bool:
+def is_set(value: Union[T, Unset, None]) -> TypeGuard[T]:
     return value is not None and value is not UNSET
