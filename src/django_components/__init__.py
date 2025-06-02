@@ -20,6 +20,7 @@ from django_components.component import (
     ComponentInput,
     ComponentNode,
     ComponentVars,
+    OnRenderGenerator,
     all_components,
     get_component_by_class_id,
 )
@@ -137,6 +138,7 @@ __all__ = [
     "OnComponentUnregisteredContext",
     "OnRegistryCreatedContext",
     "OnRegistryDeletedContext",
+    "OnRenderGenerator",
     "ProvideNode",
     "register",
     "registry",

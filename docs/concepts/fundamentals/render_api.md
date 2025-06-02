@@ -10,6 +10,7 @@ Render API is available inside these [`Component`](../../../reference/api#django
 - [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data)
 - [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)
 - [`on_render_before()`](../../../reference/api#django_components.Component.on_render_before)
+- [`on_render()`](../../../reference/api#django_components.Component.on_render)
 - [`on_render_after()`](../../../reference/api#django_components.Component.on_render_after)
 
 Example:
@@ -89,7 +90,7 @@ class Table(Component):
         page: int
         per_page: int
 
-    def on_render_before(self, context: Context, template: Template) -> None:
+    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
         assert self.args.page == 123
         assert self.args.per_page == 10
 
@@ -104,7 +105,7 @@ Without `Args` class:
 from django_components import Component
 
 class Table(Component):
-    def on_render_before(self, context: Context, template: Template) -> None:
+    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
         assert self.args[0] == 123
         assert self.args[1] == 10
 ```
@@ -131,7 +132,7 @@ class Table(Component):
         page: int
         per_page: int
 
-    def on_render_before(self, context: Context, template: Template) -> None:
+    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
         assert self.kwargs.page == 123
         assert self.kwargs.per_page == 10
 
@@ -146,7 +147,7 @@ Without `Kwargs` class:
 from django_components import Component
 
 class Table(Component):
-    def on_render_before(self, context: Context, template: Template) -> None:
+    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
         assert self.kwargs["page"] == 123
         assert self.kwargs["per_page"] == 10
 ```
@@ -173,7 +174,7 @@ class Table(Component):
         header: SlotInput
         footer: SlotInput
 
-    def on_render_before(self, context: Context, template: Template) -> None:
+    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
         assert isinstance(self.slots.header, Slot)
         assert isinstance(self.slots.footer, Slot)
 
@@ -191,7 +192,7 @@ Without `Slots` class:
 from django_components import Component, Slot, SlotInput
 
 class Table(Component):
-    def on_render_before(self, context: Context, template: Template) -> None:
+    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
         assert isinstance(self.slots["header"], Slot)
         assert isinstance(self.slots["footer"], Slot)
 ```

@@ -1218,11 +1218,17 @@ class TestContextVarsIsFilled:
 
         @register("is_filled_vars")
         class IsFilledVarsComponent(self.IsFilledVarsComponent):  # type: ignore[name-defined]
-            def on_render_before(self, context: Context, template: Template) -> None:
+            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
                 nonlocal captured_before
                 captured_before = self.is_filled.copy()
 
-            def on_render_after(self, context: Context, template: Template, content: str) -> None:
+            def on_render_after(
+                self,
+                context: Context,
+                template: Optional[Template],
+                content: Optional[str],
+                error: Optional[Exception],
+            ) -> None:
                 nonlocal captured_after
                 captured_after = self.is_filled.copy()
 

@@ -91,6 +91,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.OnRenderGenerator
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.ProvideNode
     options:
       show_if_no_docstring: true

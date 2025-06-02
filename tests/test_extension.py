@@ -21,6 +21,7 @@ from django_components.extension import (
     OnComponentUnregisteredContext,
     OnComponentInputContext,
     OnComponentDataContext,
+    OnComponentRenderedContext,
     OnSlotRenderedContext,
 )
 from django_components.extensions.cache import CacheExtension
@@ -82,6 +83,7 @@ class DummyExtension(ComponentExtension):
             "on_component_unregistered": [],
             "on_component_input": [],
             "on_component_data": [],
+            "on_component_rendered": [],
             "on_slot_rendered": [],
         }
 
@@ -118,6 +120,9 @@ class DummyExtension(ComponentExtension):
     def on_component_data(self, ctx: OnComponentDataContext) -> None:
         self.calls["on_component_data"].append(ctx)
 
+    def on_component_rendered(self, ctx: OnComponentRenderedContext) -> None:
+        self.calls["on_component_rendered"].append(ctx)
+
     def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> None:
         self.calls["on_slot_rendered"].append(ctx)
 
@@ -145,6 +150,20 @@ class SlotOverrideExtension(ComponentExtension):
 
     def on_slot_rendered(self, ctx: OnSlotRenderedContext):
         return "OVERRIDEN BY EXTENSION"
+
+
+class ErrorOnComponentRenderedExtension(ComponentExtension):
+    name = "error_on_component_rendered"
+
+    def on_component_rendered(self, ctx: OnComponentRenderedContext):
+        raise RuntimeError("Custom error from extension")
+
+
+class ReturnHtmlOnComponentRenderedExtension(ComponentExtension):
+    name = "return_html_on_component_rendered"
+
+    def on_component_rendered(self, ctx: OnComponentRenderedContext):
+        return f"<div>OVERRIDDEN: {ctx.result}</div>"
 
 
 def with_component_cls(on_created: Callable):
@@ -340,6 +359,45 @@ class TestExtensionHooks:
         assert data_call.js_data == {"script": "console.log('Hello!')"}
         assert data_call.css_data == {"style": "body { color: blue; }"}
 
+        # Verify on_component_rendered was called with correct args
+        assert len(extension.calls["on_component_rendered"]) == 1
+        rendered_call: OnComponentRenderedContext = extension.calls["on_component_rendered"][0]
+        assert rendered_call.component_cls == TestComponent
+        assert isinstance(rendered_call.component, TestComponent)
+        assert isinstance(rendered_call.component_id, str)
+        assert rendered_call.result == "<!-- _RENDERED TestComponent_f4a4f0,ca1bc3e,, -->Hello Test!"
+        assert rendered_call.error is None
+
+    @djc_test(components_settings={"extensions": [DummyExtension]})
+    def test_component_render_hooks__error(self):
+        @register("test_comp")
+        class TestComponent(Component):
+            template = "Hello {{ name }}!"
+
+            def on_render_after(self, context, template, result, error):
+                raise Exception("Oopsie woopsie")
+
+        with pytest.raises(Exception, match="Oopsie woopsie"):
+            # Render the component with some args and kwargs
+            TestComponent.render(
+                context=Context({"foo": "bar"}),
+                args=("arg1", "arg2"),
+                kwargs={"name": "Test"},
+                slots={"content": "Some content"},
+            )
+
+        extension = cast(DummyExtension, app_settings.EXTENSIONS[4])
+
+        # Verify on_component_rendered was called with correct args
+        assert len(extension.calls["on_component_rendered"]) == 1
+        rendered_call: OnComponentRenderedContext = extension.calls["on_component_rendered"][0]
+        assert rendered_call.component_cls == TestComponent
+        assert isinstance(rendered_call.component, TestComponent)
+        assert isinstance(rendered_call.component_id, str)
+        assert rendered_call.result is None
+        assert isinstance(rendered_call.error, Exception)
+        assert str(rendered_call.error) == "An error occured while rendering components TestComponent:\nOopsie woopsie"
+
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_on_slot_rendered(self):
         @register("test_comp")
@@ -386,6 +444,30 @@ class TestExtensionHooks:
         )
 
         assert rendered == "Hello OVERRIDEN BY EXTENSION!"
+
+    @djc_test(components_settings={"extensions": [ErrorOnComponentRenderedExtension]})
+    def test_on_component_rendered__error_from_extension(self):
+        @register("test_comp_error_ext")
+        class TestComponent(Component):
+            template = "Hello {{ name }}!"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "World")}
+
+        with pytest.raises(RuntimeError, match="Custom error from extension"):
+            TestComponent.render(args=(), kwargs={"name": "Test"})
+
+    @djc_test(components_settings={"extensions": [ReturnHtmlOnComponentRenderedExtension]})
+    def test_on_component_rendered__return_html_from_extension(self):
+        @register("test_comp_html_ext")
+        class TestComponent(Component):
+            template = "Hello {{ name }}!"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "World")}
+
+        rendered = TestComponent.render(args=(), kwargs={"name": "Test"})
+        assert rendered == "<div>OVERRIDDEN: Hello Test!</div>"
 
 
 @djc_test
