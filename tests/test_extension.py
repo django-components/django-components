@@ -369,7 +369,7 @@ class TestExtensionHooks:
         assert isinstance(slot_call.slot, Slot)
         assert slot_call.slot_name == "content"
         assert isinstance(slot_call.slot_node, SlotNode)
-        assert slot_call.slot_node.template_name.endswith("tests/test_extension.py::TestComponent")  # type: ignore
+        assert slot_call.slot_node.template_name.endswith("test_extension.py::TestComponent")  # type: ignore
         assert slot_call.slot_node.template_component == TestComponent
         assert slot_call.slot_is_required is True
         assert slot_call.slot_is_default is True

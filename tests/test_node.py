@@ -957,7 +957,7 @@ class TestSignatureBasedValidation:
         assert contents4 is None  # type: ignore
         assert node_id4 == "a1bc42"  # type: ignore
 
-        if os.name == 'nt':
+        if os.name == "nt":
             assert cast(str, template_name4).endswith("\\tests\\test_node.py::TestComponent")  # type: ignore
         else:
             assert cast(str, template_name4).endswith("/tests/test_node.py::TestComponent")  # type: ignore

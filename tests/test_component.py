@@ -3,6 +3,7 @@ Tests focusing on the Component class.
 For tests focusing on the `component` tag, see `test_templatetags_component.py`
 """
 
+import os
 import re
 from typing import Any, NamedTuple
 
@@ -661,7 +662,11 @@ class TestComponentRenderAPI:
 
         assert comp.node is not None
         assert comp.node.template_component == Outer
-        assert comp.node.template_name.endswith("tests/test_component.py::Outer")  # type: ignore
+
+        if os.name == "nt":
+            assert comp.node.template_name.endswith("tests\\test_component.py::Outer")  # type: ignore
+        else:
+            assert comp.node.template_name.endswith("tests/test_component.py::Outer")  # type: ignore
 
     def test_metadata__python(self):
         comp: Any = None
