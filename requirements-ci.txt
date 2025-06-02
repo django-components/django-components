@@ -93,7 +93,7 @@ tox==4.25.0
     #   tox-gh-actions
 tox-gh-actions==3.3.0
     # via -r requirements-ci.in
-types-requests==2.32.0.20241016
+types-requests==2.32.0.20250602
     # via -r requirements-ci.in
 typing-extensions==4.13.2
     # via
