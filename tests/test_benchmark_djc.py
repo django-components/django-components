@@ -4477,7 +4477,7 @@ class Tabs(Component):
             "tabs_data": {"name": name},
         }
 
-    def on_render_after(self, context, template, rendered, error = None) -> str:
+    def on_render_after(self, context, template, rendered, error=None) -> str:
         # By the time we get here, all child TabItem components should have been
         # rendered, and they should've populated the tabs list.
         tabs: List[TabEntry] = context["tabs"]
@@ -4530,7 +4530,7 @@ class TabItem(Component):
             "disabled": disabled,
         }
 
-    def on_render_after(self, context, template, content, error = None) -> None:
+    def on_render_after(self, context, template, content, error=None) -> None:
         parent_tabs: List[dict] = context["parent_tabs"]
         parent_tabs.append({
             "header": context["header"],
