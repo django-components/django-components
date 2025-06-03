@@ -5,7 +5,7 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 
 import os
 import re
-from typing import Any, List, Literal, NamedTuple, Optional, Tuple, cast
+from typing import Any, List, Literal, NamedTuple, Optional
 
 import pytest
 from django.conf import settings
