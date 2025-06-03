@@ -326,7 +326,7 @@ def component_post_render(
     while len(process_queue):
         curr_item = process_queue.popleft()
 
-        # NOTE: When an error is bubbling up, when the flow goes between `handle_error()`, `finalize_component()`,
+        # NOTE: When an error is bubbling up, then the flow goes between `handle_error()`, `finalize_component()`,
         # and this branch, until we reach the root component, where the error is finally raised.
         #
         # Any ancestor component of the one that raised can intercept the error and instead return a new string

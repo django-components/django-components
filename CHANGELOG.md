@@ -1277,8 +1277,7 @@ Summary:
         component: "Component"
         component_cls: Type["Component"]
         component_id: str
-        result: Optional[str]
-        error: Optional[Exception]
+        result: str
     ```
 
     After:
@@ -1288,7 +1287,8 @@ Summary:
         component: "Component"
         component_cls: Type["Component"]
         component_id: str
-        result: str
+        result: Optional[str]
+        error: Optional[Exception]
     ```
 
 #### Fix
