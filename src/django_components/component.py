@@ -2027,11 +2027,7 @@ class Component(metaclass=ComponentMeta):
             return template.render(context)
 
     def on_render_after(
-        self,
-        context: Context,
-        template: Optional[Template],
-        result: Optional[str],
-        error: Optional[Exception]
+        self, context: Context, template: Optional[Template], result: Optional[str], error: Optional[Exception]
     ) -> Optional[SlotResult]:
         """
         Hook that runs when the component was fully rendered,
