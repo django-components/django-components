@@ -2031,7 +2031,7 @@ class Component(metaclass=ComponentMeta):
         context: Context,
         template: Optional[Template],
         result: Optional[str],
-        error: Optional[Exception] = None,
+        error: Optional[Exception]
     ) -> Optional[SlotResult]:
         """
         Hook that runs when the component was fully rendered,
