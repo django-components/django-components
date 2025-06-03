@@ -2115,7 +2115,7 @@ class HeroIcon(Component):
         viewbox: Optional[str] = None,
         attrs: Optional[Dict] = None,
     ) -> Dict:
-        kwargs = IconDefaults(**self.input.kwargs)
+        kwargs = IconDefaults(**self.kwargs)
 
         if kwargs.variant not in ["outline", "solid"]:
             raise ValueError(f"Invalid variant: {kwargs.variant}. Must be either 'outline' or 'solid'")

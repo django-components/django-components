@@ -729,7 +729,7 @@ class TestSlot:
             template = "CAPTURER"
 
             def get_template_data(self, args, kwargs, slots, context):
-                seen_slots.append(self.input.slots["my_slot"])
+                seen_slots.append(self.slots["my_slot"])
 
         MyTopLevelComponent.render()
 

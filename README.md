@@ -240,7 +240,7 @@ class Table(Component):
         assert self.args == [123, "str"]
         assert self.kwargs == {"variable": "test", "another": 1}
         footer_slot = self.slots["footer"]
-        some_var = self.input.context["some_var"]
+        some_var = self.context["some_var"]
 
         # Access the request object and Django's context processors, if available
         assert self.request.GET == {"query": "something"}

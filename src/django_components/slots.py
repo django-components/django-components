@@ -688,7 +688,7 @@ class SlotNode(BaseNode):
         outer_context = component_ctx.outer_context
 
         # Slot info
-        slot_fills = component.input.slots
+        slot_fills = component.raw_slots
         slot_name = name
         is_default = self.flags[SLOT_DEFAULT_FLAG]
         is_required = self.flags[SLOT_REQUIRED_FLAG]

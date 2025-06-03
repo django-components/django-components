@@ -80,7 +80,7 @@ and so `selected_items` will be set to `[1, 2, 3]`.
 
     This is **NOT recommended**, because:
 
-    - The defaults will NOT be applied to inputs when using [`self.input`](../../../reference/api/#django_components.Component.input) property.
+    - The defaults will NOT be applied to inputs when using [`self.raw_kwargs`](../../../reference/api/#django_components.Component.raw_kwargs) property.
     - The defaults will NOT be applied when a field is given but set to `None`.
 
     Instead, define the defaults in the [`Defaults`](../../../reference/api/#django_components.Component.Defaults) class.

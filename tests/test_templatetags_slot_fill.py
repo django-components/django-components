@@ -1066,7 +1066,7 @@ class TestPassthroughSlots:
         class OuterComp(Component):
             def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "slots": self.input.slots,
+                    "slots": self.slots,
                 }
 
             template: types.django_html = """
@@ -1117,7 +1117,7 @@ class TestPassthroughSlots:
         class OuterComp(Component):
             def get_template_data(self, args, kwargs, slots, context):
                 return {
-                    "slots": self.input.slots,
+                    "slots": self.slots,
                 }
 
             template: types.django_html = """

@@ -241,7 +241,23 @@ class ProfileCard(Component):
             }
     ```
 
+<!-- TODO_v1 - Remove -->
+
 ### `input` property (low-level)
+
+!!! warning
+
+    The `input` property is deprecated and will be removed in v1.
+
+    Instead, use properties defined on the
+    [`Component`](../../../reference/api/#django_components.Component) class
+    directly like
+    [`self.context`](../../../reference/api/#django_components.Component.context).
+
+    To access the unmodified inputs, use
+    [`self.raw_args`](../../../reference/api/#django_components.Component.raw_args),
+    [`self.raw_kwargs`](../../../reference/api/#django_components.Component.raw_kwargs),
+    and [`self.raw_slots`](../../../reference/api/#django_components.Component.raw_slots) properties.
 
 The previous two approaches allow you to access only the most important inputs.
 
@@ -259,8 +275,6 @@ This includes:
 - [`input.context`](../../../reference/api/#django_components.ComponentInput.context) - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
 - [`input.type`](../../../reference/api/#django_components.ComponentInput.type) - The type of the component (document, fragment)
 - [`input.render_dependencies`](../../../reference/api/#django_components.ComponentInput.render_dependencies) - Whether to render dependencies (CSS, JS)
-
-For more details, see [Component inputs](../render_api/#other-inputs).
 
 ```python
 class ProfileCard(Component):
@@ -336,7 +350,7 @@ class ProfileCard(Component):
 
     This is **NOT recommended**, because:
 
-    - The defaults will NOT be applied to inputs when using [`self.input`](../../../reference/api/#django_components.Component.input) property.
+    - The defaults will NOT be applied to inputs when using [`self.raw_kwargs`](../../../reference/api/#django_components.Component.raw_kwargs) property.
     - The defaults will NOT be applied when a field is given but set to `None`.
 
     Instead, define the defaults in the [`Defaults`](../../../reference/api/#django_components.Component.Defaults) class.
@@ -348,8 +362,10 @@ All three data methods have access to the Component's [Render API](../render_api
 - [`self.args`](../render_api/#args) - The positional arguments for the current render call
 - [`self.kwargs`](../render_api/#kwargs) - The keyword arguments for the current render call
 - [`self.slots`](../render_api/#slots) - The slots for the current render call
+- [`self.raw_args`](../render_api/#args) - Unmodified positional arguments for the current render call
+- [`self.raw_kwargs`](../render_api/#kwargs) - Unmodified keyword arguments for the current render call
+- [`self.raw_slots`](../render_api/#slots) - Unmodified slots for the current render call
 - [`self.context`](../render_api/#context) - The context for the current render call
-- [`self.input`](../render_api/#other-inputs) - All the component inputs
 - [`self.id`](../render_api/#component-id) - The unique ID for the current render call
 - [`self.request`](../render_api/#request-and-context-processors) - The request object
 - [`self.context_processors_data`](../render_api/#request-and-context-processors) - Data from Django's context processors
@@ -357,6 +373,7 @@ All three data methods have access to the Component's [Render API](../render_api
 - [`self.registry`](../render_api/#template-tag-metadata) - The [`ComponentRegistry`](../../../reference/api/#django_components.ComponentRegistry) instance
 - [`self.registered_name`](../render_api/#template-tag-metadata) - The name under which the component was registered
 - [`self.outer_context`](../render_api/#template-tag-metadata) - The context outside of the [`{% component %}`](../../../reference/template_tags#component) tag
+- `self.deps_strategy` - The strategy for rendering dependencies
 
 ## Type hints
 
@@ -399,7 +416,11 @@ class Button(Component):
 
 !!! note
 
-    The data available via [`self.input`](../../../reference/api/#django_components.Component.input) property is NOT typed.
+    To access "untyped" inputs, use [`self.raw_args`](../../../reference/api/#django_components.Component.raw_args),
+    [`self.raw_kwargs`](../../../reference/api/#django_components.Component.raw_kwargs),
+    and [`self.raw_slots`](../../../reference/api/#django_components.Component.raw_slots) properties.
+
+    These are plain lists and dictionaries, even when you added typing to your component.
 
 ### Typing data
 

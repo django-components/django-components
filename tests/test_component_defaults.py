@@ -34,7 +34,7 @@ class TestComponentDefaults:
                     "extra": "extra",  # Default because `None` was given
                     "fn": self.Defaults.fn,  # Default because missing
                 }
-                assert self.input.kwargs == {
+                assert self.raw_kwargs == {
                     "variable": "test",  # User-given
                     "another": 1,  # Default because missing
                     "extra": "extra",  # Default because `None` was given
@@ -46,11 +46,11 @@ class TestComponentDefaults:
                 assert [*slots.keys()] == ["my_slot"]
                 assert slots["my_slot"](Context(), None, None) == "MY_SLOT"  # type: ignore[arg-type]
 
-                assert self.input.args == [123]
-                assert [*self.input.slots.keys()] == ["my_slot"]
-                assert self.input.slots["my_slot"](Context(), None, None) == "MY_SLOT"  # type: ignore[arg-type]
+                assert self.raw_args == [123]
+                assert [*self.raw_slots.keys()] == ["my_slot"]
+                assert self.raw_slots["my_slot"](Context(), None, None) == "MY_SLOT"  # type: ignore[arg-type]
 
-                assert isinstance(self.input.context, Context)
+                assert isinstance(self.context, Context)
 
                 return {
                     "variable": kwargs["variable"],
@@ -82,11 +82,11 @@ class TestComponentDefaults:
                     "variable": "test",  # User-given
                     "fn": "fn_as_factory",  # Default because missing
                 }
-                assert self.input.kwargs == {
+                assert self.raw_kwargs == {
                     "variable": "test",  # User-given
                     "fn": "fn_as_factory",  # Default because missing
                 }
-                assert isinstance(self.input.context, Context)
+                assert isinstance(self.context, Context)
 
                 return {
                     "variable": kwargs["variable"],
@@ -117,12 +117,12 @@ class TestComponentDefaults:
                     # NOTE: NOT a factory, because it was set as `field(default=...)`
                     "fn": self.Defaults.fn.default,  # type: ignore[attr-defined]
                 }
-                assert self.input.kwargs == {
+                assert self.raw_kwargs == {
                     "variable": "test",  # User-given
                     # NOTE: NOT a factory, because it was set as `field(default=...)`
                     "fn": self.Defaults.fn.default,  # type: ignore[attr-defined]
                 }
-                assert isinstance(self.input.context, Context)
+                assert isinstance(self.context, Context)
 
                 return {
                     "variable": kwargs["variable"],
@@ -153,12 +153,12 @@ class TestComponentDefaults:
                     # NOTE: IS a factory, because it was set as `field(default_factory=...)`
                     "fn": "fn_as_factory",  # Default because missing
                 }
-                assert self.input.kwargs == {
+                assert self.raw_kwargs == {
                     "variable": "test",  # User-given
                     # NOTE: IS a factory, because it was set as `field(default_factory=...)`
                     "fn": "fn_as_factory",  # Default because missing
                 }
-                assert isinstance(self.input.context, Context)
+                assert isinstance(self.context, Context)
 
                 return {
                     "variable": kwargs["variable"],

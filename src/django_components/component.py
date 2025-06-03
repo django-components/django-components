@@ -153,9 +153,12 @@ def get_component_by_class_id(comp_cls_id: str) -> Type["Component"]:
     return comp_cls_id_mapping[comp_cls_id]
 
 
+# TODO_v1 - Remove with `Component.input`
 @dataclass(frozen=True)
 class ComponentInput:
     """
+    Deprecated. Will be removed in v1.
+
     Object holding the inputs that were passed to [`Component.render()`](../api#django_components.Component.render)
     or the [`{% component %}`](../template_tags#component) template tag.
 
@@ -1992,9 +1995,13 @@ class Component(metaclass=ComponentMeta):
         self.args = default(args, [])
         self.kwargs = default(kwargs, {})
         self.slots = default(slots, {})
+        self.raw_args: List[Any] = self.args if isinstance(self.args, list) else list(self.args)
+        self.raw_kwargs: Dict[str, Any] = self.kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)
+        self.raw_slots: Dict[str, Slot] = self.slots if isinstance(self.slots, dict) else to_dict(self.slots)
         self.context = default(context, Context())
         # TODO_v1 - Remove `is_filled`, superseded by `Component.slots`
         self.is_filled = SlotIsFilled(to_dict(self.slots))
+        # TODO_v1 - Remove `Component.input`
         self.input = ComponentInput(
             context=self.context,
             # NOTE: Convert args / kwargs / slots to plain lists / dicts
@@ -2007,6 +2014,7 @@ class Component(metaclass=ComponentMeta):
             # TODO_v1 - Remove, superseded by `deps_strategy`
             render_dependencies=deps_strategy != "ignore",
         )
+        self.deps_strategy = deps_strategy
         self.request = request
         self.outer_context: Optional[Context] = outer_context
         self.registry = default(registry, registry_)
@@ -2122,8 +2130,11 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
+    # TODO_v1 - Remove `Component.input`
     input: ComponentInput
     """
+    Deprecated. Will be removed in v1.
+
     Input holds the data that were passed to the current component at render time.
 
     This includes:
@@ -2137,8 +2148,6 @@ class Component(metaclass=ComponentMeta):
         object that should be used to render the component
     - And other kwargs passed to [`Component.render()`](../api/#django_components.Component.render)
         like `deps_strategy`
-
-    Read more on [Component inputs](../../concepts/fundamentals/render_api/#other-inputs).
 
     **Example:**
 
@@ -2161,15 +2170,16 @@ class Component(metaclass=ComponentMeta):
 
     args: Any
     """
-    The `args` argument as passed to
-    [`Component.get_template_data()`](../api/#django_components.Component.get_template_data).
+    Positional arguments passed to the component.
 
     This is part of the [Render API](../../concepts/fundamentals/render_api).
 
-    If you defined the [`Component.Args`](../api/#django_components.Component.Args) class,
-    then the `args` property will return an instance of that class.
+    `args` has the same behavior as the `args` argument of
+    [`Component.get_template_data()`](../api/#django_components.Component.get_template_data):
 
-    Otherwise, `args` will be a plain list.
+    - If you defined the [`Component.Args`](../api/#django_components.Component.Args) class,
+        then the `args` property will return an instance of that `Args` class.
+    - Otherwise, `args` will be a plain list.
 
     **Example:**
 
@@ -2204,17 +2214,40 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
-    kwargs: Any
+    raw_args: List[Any]
     """
-    The `kwargs` argument as passed to
-    [`Component.get_template_data()`](../api/#django_components.Component.get_template_data).
+    Positional arguments passed to the component.
 
     This is part of the [Render API](../../concepts/fundamentals/render_api).
 
-    If you defined the [`Component.Kwargs`](../api/#django_components.Component.Kwargs) class,
-    then the `kwargs` property will return an instance of that class.
+    Unlike [`Component.args`](../api/#django_components.Component.args), this attribute
+    is not typed and will remain as plain list even if you define the
+    [`Component.Args`](../api/#django_components.Component.Args) class.
 
-    Otherwise, `kwargs` will be a plain dict.
+    **Example:**
+
+    ```python
+    from django_components import Component
+
+    class Table(Component):
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+            assert self.raw_args[0] == 123
+            assert self.raw_args[1] == 10
+    ```
+    """
+
+    kwargs: Any
+    """
+    Keyword arguments passed to the component.
+
+    This is part of the [Render API](../../concepts/fundamentals/render_api).
+
+    `kwargs` has the same behavior as the `kwargs` argument of
+    [`Component.get_template_data()`](../api/#django_components.Component.get_template_data):
+
+    - If you defined the [`Component.Kwargs`](../api/#django_components.Component.Kwargs) class,
+        then the `kwargs` property will return an instance of that `Kwargs` class.
+    - Otherwise, `kwargs` will be a plain dict.
 
     **Example:**
 
@@ -2252,17 +2285,40 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
-    slots: Any
+    raw_kwargs: Dict[str, Any]
     """
-    The `slots` argument as passed to
-    [`Component.get_template_data()`](../api/#django_components.Component.get_template_data).
+    Keyword arguments passed to the component.
 
     This is part of the [Render API](../../concepts/fundamentals/render_api).
 
-    If you defined the [`Component.Slots`](../api/#django_components.Component.Slots) class,
-    then the `slots` property will return an instance of that class.
+    Unlike [`Component.kwargs`](../api/#django_components.Component.kwargs), this attribute
+    is not typed and will remain as plain dict even if you define the
+    [`Component.Kwargs`](../api/#django_components.Component.Kwargs) class.
 
-    Otherwise, `slots` will be a plain dict.
+    **Example:**
+
+    ```python
+    from django_components import Component
+
+    class Table(Component):
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+            assert self.raw_kwargs["page"] == 123
+            assert self.raw_kwargs["per_page"] == 10
+    ```
+    """
+
+    slots: Any
+    """
+    Slots passed to the component.
+
+    This is part of the [Render API](../../concepts/fundamentals/render_api).
+
+    `slots` has the same behavior as the `slots` argument of
+    [`Component.get_template_data()`](../api/#django_components.Component.get_template_data):
+
+    - If you defined the [`Component.Slots`](../api/#django_components.Component.Slots) class,
+        then the `slots` property will return an instance of that class.
+    - Otherwise, `slots` will be a plain dict.
 
     **Example:**
 
@@ -2300,6 +2356,28 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
+    raw_slots: Dict[str, Slot]
+    """
+    Slots passed to the component.
+
+    This is part of the [Render API](../../concepts/fundamentals/render_api).
+
+    Unlike [`Component.slots`](../api/#django_components.Component.slots), this attribute
+    is not typed and will remain as plain dict even if you define the
+    [`Component.Slots`](../api/#django_components.Component.Slots) class.
+
+    **Example:**
+
+    ```python
+    from django_components import Component
+
+    class Table(Component):
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+            assert self.raw_slots["header"] == "MY_HEADER"
+            assert self.raw_slots["footer"] == "FOOTER: " + ctx.data["user_id"]
+    ```
+    """
+
     context: Context
     """
     The `context` argument as passed to
@@ -2319,6 +2397,39 @@ class Component(metaclass=ComponentMeta):
 
     - In `"isolated"` context behavior mode, the template will NOT have access to this context,
         and data MUST be passed via component's args and kwargs.
+    """
+
+    deps_strategy: DependenciesStrategy
+    """
+    Dependencies strategy defines how to handle JS and CSS dependencies of this and child components.
+
+    Read more about
+    [Dependencies rendering](../../concepts/fundamentals/rendering_components#dependencies-rendering).
+
+    This is part of the [Render API](../../concepts/fundamentals/render_api).
+
+    There are six strategies:
+
+    - [`"document"`](../../concepts/advanced/rendering_js_css#document) (default)
+        - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
+        - Inserts extra script to allow `fragment` types to work.
+        - Assumes the HTML will be rendered in a JS-enabled browser.
+    - [`"fragment"`](../../concepts/advanced/rendering_js_css#fragment)
+        - A lightweight HTML fragment to be inserted into a document with AJAX.
+        - No JS / CSS included.
+    - [`"simple"`](../../concepts/advanced/rendering_js_css#simple)
+        - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
+        - No extra script loaded.
+    - [`"prepend"`](../../concepts/advanced/rendering_js_css#prepend)
+        - Insert JS / CSS before the rendered HTML.
+        - No extra script loaded.
+    - [`"append"`](../../concepts/advanced/rendering_js_css#append)
+        - Insert JS / CSS after the rendered HTML.
+        - No extra script loaded.
+    - [`"ignore"`](../../concepts/advanced/rendering_js_css#ignore)
+        - HTML is left as-is. You can still process it with a different strategy later with
+            [`render_dependencies()`](../api/#django_components.render_dependencies).
+        - Used for inserting rendered HTML into other components.
     """
 
     outer_context: Optional[Context]
@@ -2538,7 +2649,7 @@ class Component(metaclass=ComponentMeta):
 
         As the `{{ message }}` is taken from the "my_provide" provider.
         """
-        return get_injected_context_var(self.name, self.input.context, key, default)
+        return get_injected_context_var(self.name, self.context, key, default)
 
     @classmethod
     def as_view(cls, **initkwargs: Any) -> ViewFn:

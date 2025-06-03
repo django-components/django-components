@@ -24,7 +24,7 @@ class Table(Component):
         assert self.args == [123, "str"]
         assert self.kwargs == {"variable": "test", "another": 1}
         footer_slot = self.slots["footer"]
-        some_var = self.input.context["some_var"]
+        some_var = self.context["some_var"]
 
     def get_template_data(self, args, kwargs, slots, context):
         # Access the request object and Django's context processors, if available
@@ -46,8 +46,11 @@ The Render API includes:
     - [`self.args`](../render_api/#args) - The positional arguments for the current render call
     - [`self.kwargs`](../render_api/#kwargs) - The keyword arguments for the current render call
     - [`self.slots`](../render_api/#slots) - The slots for the current render call
+    - [`self.raw_args`](../render_api/#args) - Unmodified positional arguments for the current render call
+    - [`self.raw_kwargs`](../render_api/#kwargs) - Unmodified keyword arguments for the current render call
+    - [`self.raw_slots`](../render_api/#slots) - Unmodified slots for the current render call
     - [`self.context`](../render_api/#context) - The context for the current render call
-    - [`self.input`](../render_api/#other-inputs) - All the component inputs
+    - [`self.deps_strategy`](../../advanced/rendering_js_css#dependencies-strategies) - The strategy for rendering dependencies
 
 - Request-related:
     - [`self.request`](../render_api/#request-and-context-processors) - The request object (if available)
@@ -76,6 +79,9 @@ If you defined the [`Component.Args`](../../../reference/api/#django_components.
 then the [`Component.args`](../../../reference/api/#django_components.Component.args) property will return an instance of that class.
 
 Otherwise, `args` will be a plain list.
+
+Use [`self.raw_args`](../../../reference/api/#django_components.Component.raw_args)
+to access the positional arguments as a plain list irrespective of [`Component.Args`](../../../reference/api/#django_components.Component.Args).
 
 **Example:**
 
@@ -119,6 +125,9 @@ then the [`Component.kwargs`](../../../reference/api/#django_components.Componen
 
 Otherwise, `kwargs` will be a plain dictionary.
 
+Use [`self.raw_kwargs`](../../../reference/api/#django_components.Component.raw_kwargs)
+to access the keyword arguments as a plain dictionary irrespective of [`Component.Kwargs`](../../../reference/api/#django_components.Component.Kwargs).
+
 **Example:**
 
 With `Kwargs` class:
@@ -160,6 +169,9 @@ If you defined the [`Component.Slots`](../../../reference/api/#django_components
 then the [`Component.slots`](../../../reference/api/#django_components.Component.slots) property will return an instance of that class.
 
 Otherwise, `slots` will be a plain dictionary.
+
+Use [`self.raw_slots`](../../../reference/api/#django_components.Component.raw_slots)
+to access the slots as a plain dictionary irrespective of [`Component.Slots`](../../../reference/api/#django_components.Component.Slots).
 
 **Example:**
 
@@ -215,44 +227,6 @@ Whether the context variables defined in `context` are available to the template
 
 - In `"isolated"` context behavior mode, the template will NOT have access to this context,
     and data MUST be passed via component's args and kwargs.
-
-### Other inputs
-
-You can access the most important inputs via [`self.args`](../render_api/#args),
-[`self.kwargs`](../render_api/#kwargs),
-and [`self.slots`](../render_api/#slots) properties.
-
-There are additional settings that may be passed to components.
-If you need to access these, you can use [`self.input`](../../../reference/api/#django_components.Component.input) property
-for a low-level access to all the inputs passed to the component.
-
-[`self.input`](../../../reference/api/#django_components.Component.input) ([`ComponentInput`](../../../reference/api/#django_components.ComponentInput)) has the mostly the same fields as the input to [`Component.render()`](../../../reference/api/#django_components.Component.render). This includes:
-
-- `args` - List of positional arguments
-- `kwargs` - Dictionary of keyword arguments
-- `slots` - Dictionary of slots. Values are normalized to [`Slot`](../../../reference/api/#django_components.Slot) instances
-- `context` - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
-- And other kwargs passed to [`Component.render()`](../../../reference/api/#django_components.Component.render) like `type` and `render_dependencies`
-
-For example, you can use [`self.input.args`](../../../reference/api/#django_components.ComponentInput.args)
-and [`self.input.kwargs`](../../../reference/api/#django_components.ComponentInput.kwargs)
-to access the positional and keyword arguments passed to [`Component.render()`](../../../reference/api/#django_components.Component.render).
-
-```python
-class Table(Component):
-    def get_template_data(self, args, kwargs, slots, context):
-        # Access component's inputs, slots and context
-        assert self.input.args == [123, "str"]
-        assert self.input.kwargs == {"variable": "test", "another": 1}
-        footer_slot = self.input.slots["footer"]
-        some_var = self.input.context["some_var"]
-
-rendered = TestComponent.render(
-    kwargs={"variable": "test", "another": 1},
-    args=(123, "str"),
-    slots={"footer": "MY_SLOT"},
-)
-```
 
 ## Component ID
 

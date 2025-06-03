@@ -251,6 +251,47 @@ class TestComponentLegacyApi:
         template_2 = _get_component_template(comp)
         assert template_2._test_id == "123"  # type: ignore[union-attr]
 
+    # TODO_v1 - Remove
+    def test_input(self):
+        class TestComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                Variable: <strong>{{ variable }}</strong>
+                {% slot 'my_slot' / %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                assert self.input.args == [123, "str"]
+                assert self.input.kwargs == {"variable": "test", "another": 1}
+                assert isinstance(self.input.context, Context)
+                assert list(self.input.slots.keys()) == ["my_slot"]
+                my_slot = self.input.slots["my_slot"]
+                assert my_slot() == "MY_SLOT"
+
+                return {
+                    "variable": kwargs["variable"],
+                }
+
+            def on_render_before(self, context, template):
+                assert self.input.args == [123, "str"]
+                assert self.input.kwargs == {"variable": "test", "another": 1}
+                assert isinstance(self.input.context, Context)
+                assert list(self.input.slots.keys()) == ["my_slot"]
+                my_slot = self.input.slots["my_slot"]
+                assert my_slot() == "MY_SLOT"
+
+        rendered = TestComponent.render(
+            kwargs={"variable": "test", "another": 1},
+            args=(123, "str"),
+            slots={"my_slot": "MY_SLOT"},
+        )
+
+        assertHTMLEqual(
+            rendered,
+            """
+            Variable: <strong data-djc-id-ca1bc3e>test</strong> MY_SLOT
+            """,
+        )
 
 @djc_test
 class TestComponent:
@@ -476,7 +517,7 @@ class TestComponentRenderAPI:
         rendered = SimpleComponent.render()
         assert rendered == "render_id: ca1bc3e"
 
-    def test_input(self):
+    def test_raw_input(self):
         class TestComponent(Component):
             template: types.django_html = """
                 {% load component_tags %}
@@ -485,11 +526,11 @@ class TestComponentRenderAPI:
             """
 
             def get_template_data(self, args, kwargs, slots, context):
-                assert self.input.args == [123, "str"]
-                assert self.input.kwargs == {"variable": "test", "another": 1}
-                assert isinstance(self.input.context, Context)
-                assert list(self.input.slots.keys()) == ["my_slot"]
-                my_slot = self.input.slots["my_slot"]
+                assert self.raw_args == [123, "str"]
+                assert self.raw_kwargs == {"variable": "test", "another": 1}
+                assert isinstance(self.context, Context)
+                assert list(self.raw_slots.keys()) == ["my_slot"]
+                my_slot = self.raw_slots["my_slot"]
                 assert my_slot() == "MY_SLOT"
 
                 return {
@@ -497,11 +538,11 @@ class TestComponentRenderAPI:
                 }
 
             def on_render_before(self, context, template):
-                assert self.input.args == [123, "str"]
-                assert self.input.kwargs == {"variable": "test", "another": 1}
-                assert isinstance(self.input.context, Context)
-                assert list(self.input.slots.keys()) == ["my_slot"]
-                my_slot = self.input.slots["my_slot"]
+                assert self.raw_args == [123, "str"]
+                assert self.raw_kwargs == {"variable": "test", "another": 1}
+                assert isinstance(self.context, Context)
+                assert list(self.raw_slots.keys()) == ["my_slot"]
+                my_slot = self.raw_slots["my_slot"]
                 assert my_slot() == "MY_SLOT"
 
         rendered = TestComponent.render(
