@@ -205,7 +205,7 @@ and [`self.slots`](../../../reference/api/#django_components.Component.slots) pr
 
 ```py
 class ProfileCard(Component):
-    def on_render_before(self, *args, **kwargs):
+    def on_render_before(self, context: Context, template: Optional[Template]):
         # Access inputs via self.args, self.kwargs, self.slots
         self.args[0]
         self.kwargs.get("show_details", False)

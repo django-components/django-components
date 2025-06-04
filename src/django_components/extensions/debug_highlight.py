@@ -134,7 +134,7 @@ class DebugHighlightExtension(ComponentExtension):
     # Apply highlight to the rendered component
     def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
         debug_cls: Optional[ComponentDebugHighlight] = getattr(ctx.component_cls, "DebugHighlight", None)
-        if not debug_cls or not debug_cls.highlight_components:
+        if not debug_cls or not debug_cls.highlight_components or ctx.result is None:
             return None
 
         return apply_component_highlight("component", ctx.result, f"{ctx.component.name} ({ctx.component_id})")

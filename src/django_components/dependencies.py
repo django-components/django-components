@@ -229,7 +229,6 @@ def set_component_attrs_for_js_and_css(
     html_content: Union[str, SafeString],
     component_id: Optional[str],
     css_input_hash: Optional[str],
-    css_scope_id: Optional[str],
     root_attributes: Optional[List[str]] = None,
 ) -> Tuple[Union[str, SafeString], Dict[str, List[str]]]:
     # These are the attributes that we want to set on the root element.
@@ -249,22 +248,11 @@ def set_component_attrs_for_js_and_css(
     if css_input_hash:
         all_root_attributes.append(f"data-djc-css-{css_input_hash}")
 
-    # These attributes are set on all tags
-    all_attributes = []
-
-    # We apply the CSS scoping attribute to both root and non-root tags.
-    #
-    # This is the HTML part of Vue-like CSS scoping.
-    # That is, for each HTML element that the component renders, we add a `data-djc-scope-a1b2c3` attribute.
-    # And we stop when we come across a nested components.
-    if css_scope_id:
-        all_attributes.append(f"data-djc-scope-{css_scope_id}")
-
     is_safestring = isinstance(html_content, SafeString)
     updated_html, child_components = set_html_attributes(
         html_content,
         root_attributes=all_root_attributes,
-        all_attributes=all_attributes,
+        all_attributes=[],
         # Setting this means that set_html_attributes will check for HTML elemetnts with this
         # attribute, and return a dictionary of {attribute_value: [attributes_set_on_this_tag]}.
         #

@@ -118,6 +118,92 @@ class Button(Component):
 </button>
 ```
 
+### Dynamic templates
+
+Each component has only a single template associated with it.
+
+However, whether it's for A/B testing or for preserving public API
+when sharing your components, sometimes you may need to render different templates
+based on the input to your component.
+
+You can use [`Component.on_render()`](../../reference/api.md#django_components.Component.on_render)
+to dynamically override what template gets rendered.
+
+By default, the component's template is rendered as-is.
+
+```py
+class Table(Component):
+    def on_render(self, context: Context, template: Optional[Template]):
+        if template is not None:
+            return template.render(context)
+```
+
+If you want to render a different template in its place,
+we recommended you to:
+
+1. Wrap the substitute templates as new Components
+2. Then render those Components inside [`Component.on_render()`](../../reference/api.md#django_components.Component.on_render):
+
+```py
+class TableNew(Component):
+    template_file = "table_new.html"
+
+class TableOld(Component):
+    template_file = "table_old.html"
+
+class Table(Component):
+    def on_render(self, context, template):
+        if self.kwargs.get("feat_table_new_ui"):
+            return TableNew.render(
+                args=self.args,
+                kwargs=self.kwargs,
+                slots=self.slots,
+            )
+        else:
+            return TableOld.render(
+                args=self.args,
+                kwargs=self.kwargs,
+                slots=self.slots,
+            )
+```
+
+!!! warning
+
+    If you do not wrap the templates as Components,
+    there is a risk that some [extensions](../../advanced/extensions) will not work as expected.
+
+    ```py
+    new_template = Template("""
+        {% load django_components %}
+        <div>
+            {% slot "content" %}
+                Other template
+            {% endslot %}
+        </div>
+    """)
+
+    class Table(Component):
+        def on_render(self, context, template):
+            if self.kwargs.get("feat_table_new_ui"):
+                return new_template.render(context)
+            else:
+                return template.render(context)
+    ```
+
+### Template-less components
+
+Since you can use [`Component.on_render()`](../../reference/api.md#django_components.Component.on_render)
+to render *other* components, there is no need to define a template for the component.
+
+So even an empty component like this is valid:
+
+```py
+class MyComponent(Component):
+    pass
+```
+
+These "template-less" components can be useful as base classes for other components, or as mixins.
+
 ### HTML processing
 
 Django Components expects the rendered template to be a valid HTML. This is needed to enable features like [CSS / JS variables](../html_js_css_variables).

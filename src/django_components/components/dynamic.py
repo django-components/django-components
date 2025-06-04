@@ -3,7 +3,7 @@ from typing import Any, Optional, Type, Union, cast
 
 from django.template import Context, Template
 
-from django_components import Component, ComponentRegistry, NotRegistered, types
+from django_components import Component, ComponentRegistry, NotRegistered
 from django_components.component_registry import ALL_REGISTRIES
 
 
@@ -99,23 +99,25 @@ class DynamicComponent(Component):
 
     _is_dynamic_component = True
 
-    # TODO: Replace combination of `on_render_before()` + `template` with single `on_render()`
-    #
-    # NOTE: The inner component is rendered in `on_render_before`, so that the `Context` object
+    # NOTE: The inner component is rendered in `on_render`, so that the `Context` object
     # is already configured as if the inner component was rendered inside the template.
     # E.g. the `_COMPONENT_CONTEXT_KEY` is set, which means that the child component
     # will know that it's a child of this component.
-    def on_render_before(self, context: Context, template: Template) -> Context:
+    def on_render(
+        self,
+        context: Context,
+        template: Optional[Template],
+    ) -> str:
         # Make a copy of kwargs so we pass to the child only the kwargs that are
         # actually used by the child component.
         cleared_kwargs = self.raw_kwargs.copy()
 
-        # Resolve the component class
         registry: Optional[ComponentRegistry] = cleared_kwargs.pop("registry", None)
         comp_name_or_class: Union[str, Type[Component]] = cleared_kwargs.pop("is", None)
         if not comp_name_or_class:
             raise TypeError(f"Component '{self.name}' is missing a required argument 'is'")
 
+        # Resolve the component class
         comp_class = self._resolve_component(comp_name_or_class, registry)
 
         output = comp_class.render(
@@ -128,12 +130,7 @@ class DynamicComponent(Component):
             outer_context=self.outer_context,
             registry=self.registry,
         )
-
-        # Set the output to the context so it can be accessed from within the template.
-        context["output"] = output
-        return context
-
-    template: types.django_html = """{{ output|safe }}"""
+        return output
 
     def _resolve_component(
         self,

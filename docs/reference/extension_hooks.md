@@ -126,7 +126,8 @@ name | type | description
 `component` | [`Component`](../api#django_components.Component) | The Component instance that is being rendered
 `component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class
 `component_id` | `str` | The unique identifier for this component instance
-`result` | `str` | The rendered component
+`error` | `Optional[Exception]` | The error that occurred during rendering, or `None` if rendering was successful
+`result` | `Optional[str]` | The rendered component, or `None` if rendering failed
 
 ::: django_components.extension.ComponentExtension.on_component_unregistered
     options:

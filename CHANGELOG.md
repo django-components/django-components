@@ -698,7 +698,7 @@ Summary:
     from django_components import ComponentExtension
 
     class MyExtension(ComponentExtension):
-        class ExtensionClass(ComponentExtension.ComponentConfig):
+        class ExtensionClass(ComponentExtension.ExtensionClass):
             pass
     ```
 
@@ -998,7 +998,7 @@ Summary:
         class Slots(NamedTuple):
             content: SlotInput
 
-        def on_render_before(self, context: Context, template: Template) -> None:
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
             assert self.args.page == 123
             assert self.kwargs.per_page == 10
             content_html = self.slots.content()
@@ -1045,6 +1045,19 @@ Summary:
 
     Same as with the parameters in `Component.get_template_data()`, they will be instances of the `Args`, `Kwargs`, `Slots` classes
     if defined, or plain lists / dictionaries otherwise.
+
+- New component lifecycle hook `Component.on_render()`.
+
+    This hook is called when the component is being rendered.
+
+    You can override this method to:
+
+    - Change what template gets rendered
+    - Modify the context
+    - Modify the rendered output after it has been rendered
+    - Handle errors
+
+    See [on_render](https://django-components.github.io/django-components/0.140/concepts/advanced/hooks/#on_render) for more info.
 
 - `get_component_url()` now optionally accepts `query` and `fragment` arguments.
 
@@ -1240,7 +1253,7 @@ Summary:
     from django_components import ComponentExtension
 
     class MyExtension(ComponentExtension):
-        class ExtensionClass(ComponentExtension.ComponentConfig):  # Error!
+        class ExtensionClass(ComponentExtension.ExtensionClass):  # Error!
             pass
     ```
 
@@ -1296,6 +1309,34 @@ Summary:
     "Template-less" components can be also used as a base class for other components, or as mixins.
 
 - Passing `Slot` instance to `Slot` constructor raises an error.
+
+- Extension hook `on_component_rendered` now receives `error` field.
+
+    `on_component_rendered` now behaves similar to `Component.on_render_after`:
+
+    - Raising error in this hook overrides what error will be returned from `Component.render()`.
+    - Returning new string overrides what will be returned from `Component.render()`.
+
+    Before:
+
+    ```py
+    class OnComponentRenderedContext(NamedTuple):
+        component: "Component"
+        component_cls: Type["Component"]
+        component_id: str
+        result: str
+    ```
+
+    After:
+
+    ```py
+    class OnComponentRenderedContext(NamedTuple):
+        component: "Component"
+        component_cls: Type["Component"]
+        component_id: str
+        result: Optional[str]
+        error: Optional[Exception]
+    ```
 
 #### Fix
 

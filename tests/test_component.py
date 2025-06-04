@@ -5,7 +5,7 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 
 import os
 import re
-from typing import Any, NamedTuple
+from typing import Any, List, Literal, NamedTuple, Optional
 
 import pytest
 from django.conf import settings
@@ -25,6 +25,7 @@ from django_components import (
     all_components,
     get_component_by_class_id,
     register,
+    registry,
     types,
 )
 from django_components.template import _get_component_template
@@ -1470,260 +1471,555 @@ class TestComponentRender:
 
 @djc_test
 class TestComponentHook:
-    def test_on_render_before(self):
-        @register("nested")
-        class NestedComponent(Component):
+    def _gen_slotted_component(self, calls: List[str]):
+        class Slotted(Component):
+            template = "Hello from slotted"
+
+            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+                calls.append("slotted__on_render_before")
+
+            def on_render(self, context: Context, template: Optional[Template]):
+                calls.append("slotted__on_render_pre")
+                html, error = yield template.render(context)  # type: ignore[union-attr]
+
+                calls.append("slotted__on_render_post")
+
+            # Check that modifying the context or template does nothing
+            def on_render_after(
+                self,
+                context: Context,
+                template: Optional[Template],
+                html: Optional[str],
+                error: Optional[Exception],
+            ) -> None:
+                calls.append("slotted__on_render_after")
+
+        return Slotted
+
+    def _gen_inner_component(self, calls: List[str]):
+        class Inner(Component):
             template: types.django_html = """
                 {% load component_tags %}
-                Hello from nested
-                <div>
-                    {% slot "content" default / %}
-                </div>
+                Inner start
+                {% slot "content" default / %}
+                Inner end
             """
 
+            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+                calls.append("inner__on_render_before")
+
+            def on_render(self, context: Context, template: Optional[Template]):
+                calls.append("inner__on_render_pre")
+                if template is None:
+                    yield None
+                else:
+                    html, error = yield template.render(context)
+
+                calls.append("inner__on_render_post")
+
+            # Check that modifying the context or template does nothing
+            def on_render_after(
+                self,
+                context: Context,
+                template: Optional[Template],
+                html: Optional[str],
+                error: Optional[Exception],
+            ) -> None:
+                calls.append("inner__on_render_after")
+
+        return Inner
+
+    def _gen_middle_component(self, calls: List[str]):
+        class Middle(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                Middle start
+                {% component "inner" %}
+                    {% component "slotted" / %}
+                {% endcomponent %}
+                Middle text
+                {% component "inner" / %}
+                Middle end
+            """
+
+            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+                calls.append("middle__on_render_before")
+
+            def on_render(self, context: Context, template: Optional[Template]):
+                calls.append("middle__on_render_pre")
+                html, error = yield template.render(context)  # type: ignore[union-attr]
+
+                calls.append("middle__on_render_post")
+
+            # Check that modifying the context or template does nothing
+            def on_render_after(
+                self,
+                context: Context,
+                template: Optional[Template],
+                html: Optional[str],
+                error: Optional[Exception],
+            ) -> None:
+                calls.append("middle__on_render_after")
+
+        return Middle
+
+    def _gen_outer_component(self, calls: List[str]):
+        class Outer(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                Outer start
+                {% component "middle" / %}
+                Outer text
+                {% component "middle" / %}
+                Outer end
+            """
+
+            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+                calls.append("outer__on_render_before")
+
+            def on_render(self, context: Context, template: Optional[Template]):
+                calls.append("outer__on_render_pre")
+                html, error = yield template.render(context)  # type: ignore[union-attr]
+
+                calls.append("outer__on_render_post")
+
+            # Check that modifying the context or template does nothing
+            def on_render_after(
+                self,
+                context: Context,
+                template: Optional[Template],
+                html: Optional[str],
+                error: Optional[Exception],
+            ) -> None:
+                calls.append("outer__on_render_after")
+
+        return Outer
+
+    def _gen_broken_component(self):
+        class BrokenComponent(Component):
+            def on_render(self, context: Context, template: Template):
+                raise ValueError("BROKEN")
+
+        return BrokenComponent
+
+    def test_order(self):
+        calls: List[str] = []
+
+        registry.register("slotted", self._gen_slotted_component(calls))
+        registry.register("inner", self._gen_inner_component(calls))
+        registry.register("middle", self._gen_middle_component(calls))
+        Outer = self._gen_outer_component(calls)
+
+        result = Outer.render()
+
+        assertHTMLEqual(
+            result,
+            """
+            Outer start
+                Middle start
+                    Inner start
+                        Hello from slotted
+                    Inner end
+                    Middle text
+                    Inner start
+                    Inner end
+                Middle end
+                Outer text
+                Middle start
+                    Inner start
+                        Hello from slotted
+                    Inner end
+                    Middle text
+                    Inner start
+                    Inner end
+                Middle end
+            Outer end
+            """,
+        )
+
+        assert calls == [
+            "outer__on_render_before",
+            "outer__on_render_pre",
+            "middle__on_render_before",
+            "middle__on_render_pre",
+            "inner__on_render_before",
+            "inner__on_render_pre",
+            "slotted__on_render_before",
+            "slotted__on_render_pre",
+            "slotted__on_render_post",
+            "slotted__on_render_after",
+            "inner__on_render_post",
+            "inner__on_render_after",
+            "inner__on_render_before",
+            "inner__on_render_pre",
+            "inner__on_render_post",
+            "inner__on_render_after",
+            "middle__on_render_post",
+            "middle__on_render_after",
+            "middle__on_render_before",
+            "middle__on_render_pre",
+            "inner__on_render_before",
+            "inner__on_render_pre",
+            "slotted__on_render_before",
+            "slotted__on_render_pre",
+            "slotted__on_render_post",
+            "slotted__on_render_after",
+            "inner__on_render_post",
+            "inner__on_render_after",
+            "inner__on_render_before",
+            "inner__on_render_pre",
+            "inner__on_render_post",
+            "inner__on_render_after",
+            "middle__on_render_post",
+            "middle__on_render_after",
+            "outer__on_render_post",
+            "outer__on_render_after",
+        ]
+
+    def test_context(self):
         class SimpleComponent(Component):
             template: types.django_html = """
                 {% load component_tags %}
-                args: {{ args|safe }}
-                kwargs: {{ kwargs|safe }}
-                ---
                 from_on_before: {{ from_on_before }}
-                ---
-                {% component "nested" %}
-                    Hello from simple
-                {% endcomponent %}
+                from_on_before__edited1: {{ from_on_before__edited1 }}
+                from_on_before__edited2: {{ from_on_before__edited2 }}
+                from_on_render_pre: {{ from_on_render_pre }}
+                from_on_render_post: {{ from_on_render_post }}
+                from_on_render_pre__edited2: {{ from_on_render_pre__edited2 }}
+                from_on_render_post__edited2: {{ from_on_render_post__edited2 }}
+                from_on_after: {{ from_on_after }}
             """
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "args": args,
-                    "kwargs": kwargs,
-                }
 
             def on_render_before(self, context: Context, template: Template) -> None:
                 # Insert value into the Context
-                context["from_on_before"] = ":)"
+                context["from_on_before"] = "1"
 
+            def on_render(self, context: Context, template: Template):
+                context["from_on_render_pre"] = "2"
+                # Check we can modify entries set by other methods
+                context["from_on_before__edited1"] = context["from_on_before"] + " (on_render)"
+
+                html, error = yield template.render(context)
+
+                context["from_on_render_post"] = "3"
+
+            # NOTE: Since this is called AFTER the render, the values set here should NOT
+            #       make it to the rendered output.
+            def on_render_after(
+                self,
+                context: Context,
+                template: Template,
+                html: Optional[str],
+                error: Optional[Exception],
+            ) -> None:
+                context["from_on_after"] = "4"
+                # Check we can modify entries set by other methods
+                # NOTE: These also check that the previous values are available
+                context["from_on_before__edited2"] = context["from_on_before"] + " (on_render_after)"
+                context["from_on_render_pre__edited2"] = context["from_on_render_pre"] + " (on_render_after)"
+                context["from_on_render_post__edited2"] = context["from_on_render_post"] + " (on_render_after)"
+
+        rendered = SimpleComponent.render()
+
+        assertHTMLEqual(
+            rendered,
+            """
+            from_on_before: 1
+            from_on_before__edited1: 1 (on_render)
+            from_on_before__edited2:
+            from_on_render_pre: 2
+            from_on_render_post:
+            from_on_render_pre__edited2:
+            from_on_render_post__edited2:
+            from_on_after:
+            """,
+        )
+
+    def test_template(self):
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                text
+            """
+
+            def on_render_before(self, context: Context, template: Template) -> None:
                 # Insert text into the Template
                 #
                 # NOTE: Users should NOT do this, because this will insert the text every time
                 #       the component is rendered.
                 template.nodelist.append(TextNode("\n---\nFROM_ON_BEFORE"))
 
-        rendered = SimpleComponent.render()
-        assertHTMLEqual(
-            rendered,
-            """
-            args: []
-            kwargs: {}
-            ---
-            from_on_before: :)
-            ---
-            Hello from nested
-            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
-                Hello from simple
-            </div>
-            ---
-            FROM_ON_BEFORE
-            """,
-        )
+            def on_render(self, context: Context, template: Template):
+                template.nodelist.append(TextNode("\n---\nFROM_ON_RENDER_PRE"))
 
-    # Check that modifying the context or template does nothing
-    def test_on_render_after(self):
-        captured_content = None
+                html, error = yield template.render(context)
 
-        @register("nested")
-        class NestedComponent(Component):
-            template: types.django_html = """
-                {% load component_tags %}
-                Hello from nested
-                <div>
-                    {% slot "content" default / %}
-                </div>
-            """
+                template.nodelist.append(TextNode("\n---\nFROM_ON_RENDER_POST"))
 
-        class SimpleComponent(Component):
-            template: types.django_html = """
-                {% load component_tags %}
-                args: {{ args|safe }}
-                kwargs: {{ kwargs|safe }}
-                ---
-                from_on_after: {{ from_on_after }}
-                ---
-                {% component "nested" %}
-                    Hello from simple
-                {% endcomponent %}
-            """
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "args": args,
-                    "kwargs": kwargs,
-                }
-
-            # Check that modifying the context or template does nothing
-            def on_render_after(self, context: Context, template: Template, content: str) -> None:
-                # Insert value into the Context
-                context["from_on_after"] = ":)"
-
-                # Insert text into the Template
+            # NOTE: Since this is called AFTER the render, the values set here should NOT
+            #       make it to the rendered output.
+            def on_render_after(
+                self,
+                context: Context,
+                template: Template,
+                html: Optional[str],
+                error: Optional[Exception],
+            ) -> None:
                 template.nodelist.append(TextNode("\n---\nFROM_ON_AFTER"))
 
-                nonlocal captured_content
-                captured_content = content
-
         rendered = SimpleComponent.render()
-
-        assertHTMLEqual(
-            captured_content,
-            """
-            args: []
-            kwargs: {}
-            ---
-            from_on_after:
-            ---
-            Hello from nested
-            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
-                Hello from simple
-            </div>
-            """,
-        )
         assertHTMLEqual(
             rendered,
             """
-            args: []
-            kwargs: {}
+            text
             ---
-            from_on_after:
+            FROM_ON_BEFORE
             ---
-            Hello from nested
-            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
-                Hello from simple
-            </div>
+            FROM_ON_RENDER_PRE
             """,
         )
 
-    # Check that modifying the context or template does nothing
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_on_render_after_override_output(self, components_settings):
-        captured_content = None
-
-        @register("nested")
-        class NestedComponent(Component):
-            template: types.django_html = """
-                {% load component_tags %}
-                Hello from nested
-                <div>
-                    {% slot "content" default / %}
-                </div>
-            """
-
+    def test_on_render_no_yield(self):
         class SimpleComponent(Component):
             template: types.django_html = """
-                {% load component_tags %}
-                args: {{ args|safe }}
-                kwargs: {{ kwargs|safe }}
-                ---
-                from_on_before: {{ from_on_before }}
-                ---
-                {% component "nested" %}
-                    Hello from simple
-                {% endcomponent %}
+                text
             """
 
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "args": args,
-                    "kwargs": kwargs,
-                }
-
-            def on_render_after(self, context: Context, template: Template, content: str) -> str:
-                nonlocal captured_content
-                captured_content = content
-
-                return "Chocolate cookie recipe: " + content
+            def on_render(self, context: Context, template: Template):
+                return "OVERRIDDEN"
 
         rendered = SimpleComponent.render()
+        assert rendered == "OVERRIDDEN"
 
-        assertHTMLEqual(
-            captured_content,
-            """
-            args: []
-            kwargs: {}
-            ---
-            from_on_before:
-            ---
-            Hello from nested
-            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
-                Hello from simple
-            </div>
-            """,
-        )
-        assertHTMLEqual(
-            rendered,
-            """
-            Chocolate cookie recipe:
-            args: []
-            kwargs: {}
-            ---
-            from_on_before:
-            ---
-            Hello from nested
-            <div data-djc-id-ca1bc3e data-djc-id-ca1bc40>
-                Hello from simple
-            </div>
-            """,
-        )
-
-    def test_on_render_before_after_same_context(self):
-        context_in_before = None
-        context_in_after = None
-
-        @register("nested")
-        class NestedComponent(Component):
-            template: types.django_html = """
-                {% load component_tags %}
-                Hello from nested
-                <div>
-                    {% slot "content" default / %}
-                </div>
-            """
+    def test_on_render_reraise_error(self):
+        registry.register("broken", self._gen_broken_component())
 
         class SimpleComponent(Component):
             template: types.django_html = """
-                {% load component_tags %}
-                args: {{ args|safe }}
-                kwargs: {{ kwargs|safe }}
-                ---
-                from_on_after: {{ from_on_after }}
-                ---
-                {% component "nested" %}
-                    Hello from simple
-                {% endcomponent %}
+                {% component "broken" / %}
             """
 
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "args": args,
-                    "kwargs": kwargs,
-                }
+            def on_render(self, context: Context, template: Template):
+                html, error = yield template.render(context)
 
-            def on_render_before(self, context: Context, template: Template) -> None:
-                context["from_on_before"] = ":)"
-                nonlocal context_in_before
-                context_in_before = context
+                raise error from None  # Re-raise original error
 
-            # Check that modifying the context or template does nothing
-            def on_render_after(self, context: Context, template: Template, html: str) -> None:
-                context["from_on_after"] = ":)"
-                nonlocal context_in_after
-                context_in_after = context
+        with pytest.raises(ValueError, match=re.escape("BROKEN")):
+            SimpleComponent.render()
 
-        SimpleComponent.render()
+    @djc_test(
+        parametrize=(
+            ["template", "action", "method"],
+            [
+                ["simple", "return_none", "on_render"],
+                ["broken", "return_none", "on_render"],
+                [None, "return_none", "on_render"],
 
-        assert context_in_before == context_in_after
-        assert "from_on_before" in context_in_before  # type: ignore[operator]
-        assert "from_on_after" in context_in_after  # type: ignore[operator]
+                ["simple", "return_none", "on_render_after"],
+                ["broken", "return_none", "on_render_after"],
+                [None, "return_none", "on_render_after"],
+
+                ["simple", "no_return", "on_render"],
+                ["broken", "no_return", "on_render"],
+                [None, "no_return", "on_render"],
+
+                ["simple", "no_return", "on_render_after"],
+                ["broken", "no_return", "on_render_after"],
+                [None, "no_return", "on_render_after"],
+
+                ["simple", "raise_error", "on_render"],
+                ["broken", "raise_error", "on_render"],
+                [None, "raise_error", "on_render"],
+
+                ["simple", "raise_error", "on_render_after"],
+                ["broken", "raise_error", "on_render_after"],
+                [None, "raise_error", "on_render_after"],
+
+                ["simple", "return_html", "on_render"],
+                ["broken", "return_html", "on_render"],
+                [None, "return_html", "on_render"],
+
+                ["simple", "return_html", "on_render_after"],
+                ["broken", "return_html", "on_render_after"],
+                [None, "return_html", "on_render_after"],
+            ],
+            None
+        )
+    )
+    def test_result_interception(
+        self,
+        template: Literal["simple", "broken", None],
+        action: Literal["return_none", "no_return", "raise_error", "return_html"],
+        method: Literal["on_render", "on_render_after"],
+    ):
+        calls: List[str] = []
+
+        Broken = self._gen_broken_component()
+        Slotted = self._gen_slotted_component(calls)
+        Inner = self._gen_inner_component(calls)
+        Middle = self._gen_middle_component(calls)
+        Outer = self._gen_outer_component(calls)
+
+        # Make modifications to the components based on the parameters
+
+        # Set template
+        if template is None:
+            class Inner(Inner):  # type: ignore
+                template = None
+
+        elif template == "broken":
+            class Inner(Inner):  # type: ignore
+                template = "{% component 'broken' / %}"
+
+        elif template == "simple":
+            pass
+
+        # Set `on_render` behavior
+        if method == "on_render":
+            if action == "return_none":
+                class Inner(Inner):  # type: ignore
+                    def on_render(self, context: Context, template: Optional[Template]):
+                        if template is None:
+                            yield None
+                        else:
+                            html, error = yield template.render(context)
+                        return None
+
+            elif action == "no_return":
+                class Inner(Inner):  # type: ignore
+                    def on_render(self, context: Context, template: Optional[Template]):
+                        if template is None:
+                            yield None
+                        else:
+                            html, error = yield template.render(context)
+
+            elif action == "raise_error":
+                class Inner(Inner):  # type: ignore
+                    def on_render(self, context: Context, template: Optional[Template]):
+                        if template is None:
+                            yield None
+                        else:
+                            html, error = yield template.render(context)
+                        raise ValueError("ERROR_FROM_ON_RENDER")
+
+            elif action == "return_html":
+                class Inner(Inner):  # type: ignore
+                    def on_render(self, context: Context, template: Optional[Template]):
+                        if template is None:
+                            yield None
+                        else:
+                            html, error = yield template.render(context)
+                        return "HTML_FROM_ON_RENDER"
+            else:
+                raise pytest.fail(f"Unknown action: {action}")
+
+        # Set `on_render_after` behavior
+        elif method == "on_render_after":
+            if action == "return_none":
+                class Inner(Inner):  # type: ignore
+                    def on_render_after(self, context: Context, template: Template, html: Optional[str], error: Optional[Exception]):  # noqa: E501
+                        return None
+
+            elif action == "no_return":
+                class Inner(Inner):  # type: ignore
+                    def on_render_after(self, context: Context, template: Template, html: Optional[str], error: Optional[Exception]):  # noqa: E501
+                        pass
+
+            elif action == "raise_error":
+                class Inner(Inner):  # type: ignore
+                    def on_render_after(self, context: Context, template: Template, html: Optional[str], error: Optional[Exception]):  # noqa: E501
+                        raise ValueError("ERROR_FROM_ON_RENDER")
+
+            elif action == "return_html":
+                class Inner(Inner):  # type: ignore
+                    def on_render_after(self, context: Context, template: Template, html: Optional[str], error: Optional[Exception]):  # noqa: E501
+                        return "HTML_FROM_ON_RENDER"
+            else:
+                raise pytest.fail(f"Unknown action: {action}")
+        else:
+            raise pytest.fail(f"Unknown method: {method}")
+
+        registry.register("broken", Broken)
+        registry.register("slotted", Slotted)
+        registry.register("inner", Inner)
+        registry.register("middle", Middle)
+        registry.register("outer", Outer)
+
+        def _gen_expected_output(inner1: str, inner2: str):
+            return f"""
+                Outer start
+                Middle start
+                {inner1}
+                Middle text
+                {inner2}
+                Middle end
+                Outer text
+                Middle start
+                {inner1}
+                Middle text
+                {inner2}
+                Middle end
+                Outer end
+            """
+
+        # Assert based on the behavior
+        if template is None:
+            # Overriden HTML
+            if action == "return_html":
+                expected = _gen_expected_output(inner1="HTML_FROM_ON_RENDER", inner2="HTML_FROM_ON_RENDER")
+                result = Outer.render()
+                assertHTMLEqual(result, expected)
+            # Overriden error
+            elif action == "raise_error":
+                with pytest.raises(ValueError, match="ERROR_FROM_ON_RENDER"):
+                    Outer.render()
+            # Original output
+            elif action in ["return_none", "no_return"]:
+                expected = _gen_expected_output(inner1="", inner2="")
+                result = Outer.render()
+                assertHTMLEqual(result, expected)
+            else:
+                raise pytest.fail(f"Unknown action: {action}")
+
+        elif template == "simple":
+            # Overriden HTML
+            if action == "return_html":
+                expected = _gen_expected_output(inner1="HTML_FROM_ON_RENDER", inner2="HTML_FROM_ON_RENDER")
+                result = Outer.render()
+                assertHTMLEqual(result, expected)
+            # Overriden error
+            elif action == "raise_error":
+                with pytest.raises(ValueError, match="ERROR_FROM_ON_RENDER"):
+                    Outer.render()
+            # Original output
+            elif action in ["return_none", "no_return"]:
+                expected = _gen_expected_output(
+                    inner1="Inner start Hello from slotted Inner end",
+                    inner2="Inner start Inner end",
+                )
+                result = Outer.render()
+                assertHTMLEqual(result, expected)
+            else:
+                raise pytest.fail(f"Unknown action: {action}")
+
+        elif template == "broken":
+            # Overriden HTML
+            if action == "return_html":
+                expected = _gen_expected_output(inner1="HTML_FROM_ON_RENDER", inner2="HTML_FROM_ON_RENDER")
+                result = Outer.render()
+                assertHTMLEqual(result, expected)
+            # Overriden error
+            elif action == "raise_error":
+                with pytest.raises(ValueError, match="ERROR_FROM_ON_RENDER"):
+                    Outer.render()
+            # Original output
+            elif action in ["return_none", "no_return"]:
+                with pytest.raises(ValueError, match="broken"):
+                    Outer.render()
+            else:
+                raise pytest.fail(f"Unknown action: {action}")
+
+        else:
+            raise pytest.fail(f"Unknown template: {template}")
 
 
 @djc_test

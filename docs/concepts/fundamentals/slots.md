@@ -305,8 +305,8 @@ class Calendar(Component):
             "my_slot": content,
         }
 
-    # But in other methods you can still access the slots with `Component.slots`
-    def on_render_before(self, *args, **kwargs):
+    # In other methods you can still access the slots with `Component.slots`
+    def on_render_before(self, context, template):
         if "my_slot" in self.slots:
             # Do something
 ```

@@ -1,11 +1,13 @@
 import sys
 from dataclasses import dataclass
+from inspect import signature
 from types import MethodType
 from typing import (
     Any,
     Callable,
     ClassVar,
     Dict,
+    Generator,
     List,
     Mapping,
     NamedTuple,
@@ -56,7 +58,12 @@ from django_components.extensions.debug_highlight import ComponentDebugHighlight
 from django_components.extensions.defaults import ComponentDefaults
 from django_components.extensions.view import ComponentView, ViewFn
 from django_components.node import BaseNode
-from django_components.perfutil.component import ComponentRenderer, component_context_cache, component_post_render
+from django_components.perfutil.component import (
+    ComponentRenderer,
+    OnComponentRenderedResult,
+    component_context_cache,
+    component_post_render,
+)
 from django_components.perfutil.provide import register_provide_reference, unregister_provide_reference
 from django_components.provide import get_injected_context_var
 from django_components.slots import (
@@ -96,6 +103,55 @@ if sys.version_info >= (3, 9):
 else:
     AllComponents = List[ReferenceType]
     CompHashMapping = WeakValueDictionary
+
+
+OnRenderGenerator = Generator[
+    Optional[SlotResult],
+    Tuple[Optional[SlotResult], Optional[Exception]],
+    Optional[SlotResult],
+]
+"""
+This is the signature of the [`Component.on_render()`](../api/#django_components.Component.on_render)
+method if it yields (and thus returns a generator).
+
+When `on_render()` is a generator then it:
+
+- Yields a rendered template (string or `None`)
+
+- Receives back a tuple of `(final_output, error)`.
+
+    The final output is the rendered template that now has all its children rendered too.
+    May be `None` if you yielded `None` earlier.
+
+    The error is `None` if the rendering was successful. Otherwise the error is set
+    and the output is `None`.
+
+- At the end it may return a new string to override the final rendered output.
+
+**Example:**
+
+```py
+from django_components import Component, OnRenderGenerator
+
+class MyTable(Component):
+    def on_render(
+        self,
+        context: Context,
+        template: Optional[Template],
+    ) -> OnRenderGenerator:
+        # Do something BEFORE rendering template
+        # Same as `Component.on_render_before()`
+        context["hello"] = "world"
+
+        # Yield rendered template to receive fully-rendered template or error
+        html, error = yield template.render(context)
+
+        # Do something AFTER rendering template, or post-process
+        # the rendered template.
+        # Same as `Component.on_render_after()`
+        return html + "<p>Hello</p>"
+```
+"""
 
 
 # Keep track of all the Component classes created, so we can clean up after tests
@@ -417,7 +473,7 @@ class ComponentMeta(ComponentMediaMeta):
             attrs["template_file"] = attrs.pop("template_name")
         attrs["template_name"] = ComponentTemplateNameDescriptor()
 
-        cls = super().__new__(mcs, name, bases, attrs)
+        cls = cast(Type["Component"], super().__new__(mcs, name, bases, attrs))
 
         # If the component defined `template_file`, then associate this Component class
         # with that template file path.
@@ -425,6 +481,23 @@ class ComponentMeta(ComponentMediaMeta):
         # and its template_name matches this path, then we know that the template belongs to this Component class.
         if "template_file" in attrs and attrs["template_file"]:
             cache_component_template_file(cls)
+
+        # TODO_V1 - Remove. This is only for backwards compatibility with v0.139 and earlier,
+        #           where `on_render_after` had 4 parameters.
+        on_render_after_sig = signature(cls.on_render_after)
+        if len(on_render_after_sig.parameters) == 4:
+            orig_on_render_after = cls.on_render_after
+
+            def on_render_after_wrapper(
+                self: Component,
+                context: Context,
+                template: Template,
+                result: str,
+                error: Optional[Exception],
+            ) -> Optional[SlotResult]:
+                return orig_on_render_after(self, context, template, result)  # type: ignore[call-arg]
+
+            cls.on_render_after = on_render_after_wrapper  # type: ignore[assignment]
 
         return cls
 
@@ -449,7 +522,7 @@ class ComponentContext:
     # When we render a component, the root component, together with all the nested Components,
     # shares this dictionary for storing callbacks that are called from within `component_post_render`.
     # This is so that we can pass them all in when the root component is passed to `component_post_render`.
-    post_render_callbacks: Dict[str, Callable[[str], str]]
+    post_render_callbacks: Dict[str, Callable[[Optional[str], Optional[Exception]], OnComponentRenderedResult]]
 
 
 class Component(metaclass=ComponentMeta):
@@ -1794,22 +1867,237 @@ class Component(metaclass=ComponentMeta):
 
     def on_render_before(self, context: Context, template: Optional[Template]) -> None:
         """
-        Hook that runs just before the component's template is rendered.
+        Runs just before the component's template is rendered.
 
-        You can use this hook to access or modify the context or the template.
+        It is called for every component, including nested ones, as part of
+        the component render lifecycle.
+
+        Args:
+            context (Context): The Django
+                [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
+                that will be used to render the component's template.
+            template (Optional[Template]): The Django
+                [Template](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
+                instance that will be rendered, or `None` if no template.
+
+        Returns:
+            None. This hook is for side effects only.
+
+        **Example:**
+
+        You can use this hook to access the context or the template:
+
+        ```py
+        from django.template import Context, Template
+        from django_components import Component
+
+        class MyTable(Component):
+            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+                # Insert value into the Context
+                context["from_on_before"] = ":)"
+
+                assert isinstance(template, Template)
+        ```
+
+        !!! warning
+
+            If you want to pass data to the template, prefer using
+            [`get_template_data()`](../api#django_components.Component.get_template_data)
+            instead of this hook.
+
+        !!! warning
+
+            Do NOT modify the template in this hook. The template is reused across renders.
+
+            Since this hook is called for every component, this means that the template would be modified
+            every time a component is rendered.
         """
         pass
 
-    def on_render_after(self, context: Context, template: Optional[Template], content: str) -> Optional[SlotResult]:
+    def on_render(self, context: Context, template: Optional[Template]) -> Union[SlotResult, OnRenderGenerator, None]:
         """
-        Hook that runs just after the component's template was rendered.
-        It receives the rendered output as the last argument.
+        This method does the actual rendering.
 
-        You can use this hook to access the context or the template, but modifying
-        them won't have any effect.
+        Read more about this hook in [Component hooks](../../concepts/advanced/hooks/#on_render).
 
-        To override the content that gets rendered, you can return a string or SafeString
-        from this hook.
+        You can override this method to:
+
+        - Change what template gets rendered
+        - Modify the context
+        - Modify the rendered output after it has been rendered
+        - Handle errors
+
+        The default implementation renders the component's
+        [Template](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
+        with the given
+        [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context).
+
+        ```py
+        class MyTable(Component):
+            def on_render(self, context, template):
+                if template is None:
+                    return None
+                else:
+                    return template.render(context)
+        ```
+
+        The `template` argument is `None` if the component has no template.
+
+        **Modifying rendered template**
+
+        To change what gets rendered, you can:
+
+        - Render a different template
+        - Render a component
+        - Return a different string or SafeString
+
+        ```py
+        class MyTable(Component):
+            def on_render(self, context, template):
+                return "Hello"
+        ```
+
+        **Post-processing rendered template**
+
+        To access the final output, you can `yield` the result instead of returning it.
+
+        This will return a tuple of (rendered HTML, error). The error is `None` if the rendering succeeded.
+
+        ```py
+        class MyTable(Component):
+            def on_render(self, context, template):
+                html, error = yield template.render(context)
+
+                if error is None:
+                    # The rendering succeeded
+                    return html
+                else:
+                    # The rendering failed
+                    print(f"Error: {error}")
+        ```
+
+        At this point you can do 3 things:
+
+        1. Return a new HTML
+
+            The new HTML will be used as the final output.
+
+            If the original template raised an error, it will be ignored.
+
+            ```py
+            class MyTable(Component):
+                def on_render(self, context, template):
+                    html, error = yield template.render(context)
+
+                    return "NEW HTML"
+            ```
+
+        2. Raise a new exception
+
+            The new exception is what will bubble up from the component.
+
+            The original HTML and original error will be ignored.
+
+            ```py
+            class MyTable(Component):
+                def on_render(self, context, template):
+                    html, error = yield template.render(context)
+
+                    raise Exception("Error message")
+            ```
+
+        3. Return nothing (or `None`) to handle the result as usual
+
+            If you don't raise an exception, and neither return a new HTML,
+            then original HTML / error will be used:
+
+            - If rendering succeeded, the original HTML will be used as the final output.
+            - If rendering failed, the original error will be propagated.
+
+            ```py
+            class MyTable(Component):
+                def on_render(self, context, template):
+                    html, error = yield template.render(context)
+
+                    if error is not None:
+                        # The rendering failed
+                        print(f"Error: {error}")
+            ```
+        """
+        if template is None:
+            return None
+        else:
+            return template.render(context)
+
+    def on_render_after(
+        self, context: Context, template: Optional[Template], result: Optional[str], error: Optional[Exception]
+    ) -> Optional[SlotResult]:
+        """
+        Hook that runs when the component was fully rendered,
+        including all its children.
+
+        It receives the same arguments as [`on_render_before()`](../api#django_components.Component.on_render_before),
+        plus the outcome of the rendering:
+
+        - `result`: The rendered output of the component. `None` if the rendering failed.
+        - `error`: The error that occurred during the rendering, or `None` if the rendering succeeded.
+
+        [`on_render_after()`](../api#django_components.Component.on_render_after) behaves the same way
+        as the second part of [`on_render()`](../api#django_components.Component.on_render) (after the `yield`).
+
+        ```py
+        class MyTable(Component):
+            def on_render_after(self, context, template, result, error):
+                if error is None:
+                    # The rendering succeeded
+                    return result
+                else:
+                    # The rendering failed
+                    print(f"Error: {error}")
+        ```
+
+        Same as [`on_render()`](../api#django_components.Component.on_render),
+        you can return a new HTML, raise a new exception, or return nothing:
+
+        1. Return a new HTML
+
+            The new HTML will be used as the final output.
+
+            If the original template raised an error, it will be ignored.
+
+            ```py
+            class MyTable(Component):
+                def on_render_after(self, context, template, result, error):
+                    return "NEW HTML"
+            ```
+
+        2. Raise a new exception
+
+            The new exception is what will bubble up from the component.
+
+            The original HTML and original error will be ignored.
+
+            ```py
+            class MyTable(Component):
+                def on_render_after(self, context, template, result, error):
+                    raise Exception("Error message")
+            ```
+
+        3. Return nothing (or `None`) to handle the result as usual
+
+            If you don't raise an exception, and neither return a new HTML,
+            then original HTML / error will be used:
+
+            - If rendering succeeded, the original HTML will be used as the final output.
+            - If rendering failed, the original error will be propagated.
+
+            ```py
+            class MyTable(Component):
+                def on_render_after(self, context, template, result, error):
+                    if error is not None:
+                        # The rendering failed
+                        print(f"Error: {error}")
+            ```
         """
         pass
 
@@ -2193,7 +2481,7 @@ class Component(metaclass=ComponentMeta):
             page: int
             per_page: int
 
-        def on_render_before(self, context: Context, template: Template) -> None:
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
             assert self.args.page == 123
             assert self.args.per_page == 10
 
@@ -2208,7 +2496,7 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component
 
     class Table(Component):
-        def on_render_before(self, context: Context, template: Template) -> None:
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
             assert self.args[0] == 123
             assert self.args[1] == 10
     ```
@@ -2261,7 +2549,7 @@ class Component(metaclass=ComponentMeta):
             page: int
             per_page: int
 
-        def on_render_before(self, context: Context, template: Template) -> None:
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
             assert self.kwargs.page == 123
             assert self.kwargs.per_page == 10
 
@@ -2279,7 +2567,7 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component
 
     class Table(Component):
-        def on_render_before(self, context: Context, template: Template) -> None:
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
             assert self.kwargs["page"] == 123
             assert self.kwargs["per_page"] == 10
     ```
@@ -2332,7 +2620,7 @@ class Component(metaclass=ComponentMeta):
             header: SlotInput
             footer: SlotInput
 
-        def on_render_before(self, context: Context, template: Template) -> None:
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
             assert isinstance(self.slots.header, Slot)
             assert isinstance(self.slots.footer, Slot)
 
@@ -2350,7 +2638,7 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component, Slot, SlotInput
 
     class Table(Component):
-        def on_render_before(self, context: Context, template: Template) -> None:
+        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
             assert isinstance(self.slots["header"], Slot)
             assert isinstance(self.slots["footer"], Slot)
     ```
@@ -3294,30 +3582,49 @@ class Component(metaclass=ComponentMeta):
             component_path=component_path,
             css_input_hash=css_input_hash,
             js_input_hash=js_input_hash,
-            css_scope_id=None,  # TODO - Implement CSS scoping
         )
 
         # This is triggered when a component is rendered, but the component's parents
         # may not have been rendered yet.
-        def on_component_rendered(html: str) -> str:
-            # Allow to optionally override/modify the rendered content
-            new_output = component.on_render_after(context_snapshot, template, html)
-            html = default(new_output, html)
+        def on_component_rendered(
+            html: Optional[str],
+            error: Optional[Exception],
+        ) -> OnComponentRenderedResult:
+            # Allow the user to either:
+            # - Override/modify the rendered HTML by returning new value
+            # - Raise an exception to discard the HTML and bubble up error
+            # - Or don't return anything (or return `None`) to use the original HTML / error
+            try:
+                maybe_output = component.on_render_after(context_snapshot, template, html, error)
+                if maybe_output is not None:
+                    html = maybe_output
+                    error = None
+            except Exception as new_error:
+                error = new_error
+                html = None
 
             # Remove component from caches
             del component_context_cache[render_id]  # type: ignore[arg-type]
             unregister_provide_reference(render_id)  # type: ignore[arg-type]
 
-            html = extensions.on_component_rendered(
+            # Allow extensions to either:
+            # - Override/modify the rendered HTML by returning new value
+            # - Raise an exception to discard the HTML and bubble up error
+            # - Or don't return anything (or return `None`) to use the original HTML / error
+            result = extensions.on_component_rendered(
                 OnComponentRenderedContext(
                     component=component,
                     component_cls=comp_cls,
                     component_id=render_id,
                     result=html,
+                    error=error,
                 )
             )
 
-            return html
+            if result is not None:
+                html, error = result
+
+            return html, error
 
         post_render_callbacks[render_id] = on_component_rendered
 
@@ -3370,14 +3677,15 @@ class Component(metaclass=ComponentMeta):
         component_path: List[str],
         css_input_hash: Optional[str],
         js_input_hash: Optional[str],
-        css_scope_id: Optional[str],
     ) -> ComponentRenderer:
         component = self
         render_id = component.id
         component_name = component.name
         component_cls = component.__class__
 
-        def renderer(root_attributes: Optional[List[str]] = None) -> Tuple[str, Dict[str, List[str]]]:
+        def renderer(
+            root_attributes: Optional[List[str]] = None,
+        ) -> Tuple[str, Dict[str, List[str]], Optional[OnRenderGenerator]]:
             trace_component_msg(
                 "COMP_RENDER_START",
                 component_name=component_name,
@@ -3391,16 +3699,31 @@ class Component(metaclass=ComponentMeta):
             # Emit signal that the template is about to be rendered
             template_rendered.send(sender=template, template=template, context=context)
 
-            if template is not None:
-                # Get the component's HTML
-                html_content = template.render(context)
+            # Get the component's HTML
+            # To access the *final* output (with all its children rendered) from within `Component.on_render()`,
+            # users may convert it to a generator by including a `yield` keyword. If they do so, the part of code
+            # AFTER the yield will be called once, when the component's HTML is fully rendered.
+            #
+            # Hence we have to distinguish between the two, and pass the generator with the HTML content
+            html_content_or_generator = component.on_render(context, template)
 
+            if html_content_or_generator is None:
+                html_content: Optional[str] = None
+                on_render_generator: Optional[OnRenderGenerator] = None
+            elif isinstance(html_content_or_generator, str):
+                html_content = html_content_or_generator
+                on_render_generator = None
+            else:
+                # Move generator to the first yield
+                html_content = next(html_content_or_generator)
+                on_render_generator = html_content_or_generator
+
+            if html_content is not None:
                 # Add necessary HTML attributes to work with JS and CSS variables
                 updated_html, child_components = set_component_attrs_for_js_and_css(
                     html_content=html_content,
                     component_id=render_id,
                     css_input_hash=css_input_hash,
-                    css_scope_id=css_scope_id,
                     root_attributes=root_attributes,
                 )
 
@@ -3424,7 +3747,7 @@ class Component(metaclass=ComponentMeta):
                 component_path=component_path,
             )
 
-            return updated_html, child_components
+            return updated_html, child_components, on_render_generator
 
         return renderer
 

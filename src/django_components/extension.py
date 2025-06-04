@@ -28,6 +28,7 @@ from django_components.util.routing import URLRoute
 if TYPE_CHECKING:
     from django_components import Component
     from django_components.component_registry import ComponentRegistry
+    from django_components.perfutil.component import OnComponentRenderedResult
     from django_components.slots import Slot, SlotNode, SlotResult
 
 
@@ -139,8 +140,10 @@ class OnComponentRenderedContext(NamedTuple):
     """The Component class"""
     component_id: str
     """The unique identifier for this component instance"""
-    result: str
-    """The rendered component"""
+    result: Optional[str]
+    """The rendered component, or `None` if rendering failed"""
+    error: Optional[Exception]
+    """The error that occurred during rendering, or `None` if rendering was successful"""
 
 
 @mark_extension_hook_api
@@ -709,9 +712,19 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         Use this hook to access or post-process the component's rendered output.
 
-        To modify the output, return a new string from this hook.
+        This hook works similarly to
+        [`Component.on_render_after()`](../api#django_components.Component.on_render_after):
 
-        **Example:**
+        1. To modify the output, return a new string from this hook. The original output or error will be ignored.
+
+        2. To cause this component to return a new error, raise that error. The original output and error
+            will be ignored.
+
+        3. If you neither raise nor return string, the original output or error will be used.
+
+        **Examples:**
+
+        Change the final output of a component:
 
         ```python
         from django_components import ComponentExtension, OnComponentRenderedContext
@@ -720,6 +733,32 @@ class ComponentExtension(metaclass=ExtensionMeta):
             def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
                 # Append a comment to the component's rendered output
                 return ctx.result + "<!-- MyExtension comment -->"
+        ```
+
+        Cause the component to raise a new exception:
+
+        ```python
+        from django_components import ComponentExtension, OnComponentRenderedContext
+
+        class MyExtension(ComponentExtension):
+            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
+                # Raise a new exception
+                raise Exception("Error message")
+        ```
+
+        Return nothing (or `None`) to handle the result as usual:
+
+        ```python
+        from django_components import ComponentExtension, OnComponentRenderedContext
+
+        class MyExtension(ComponentExtension):
+            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
+                if ctx.error is not None:
+                    # The component raised an exception
+                    print(f"Error: {ctx.error}")
+                else:
+                    # The component rendered successfully
+                    print(f"Result: {ctx.result}")
         ```
         """
         pass
@@ -1113,12 +1152,21 @@ class ExtensionManager:
         for extension in self.extensions:
             extension.on_component_data(ctx)
 
-    def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str:
+    def on_component_rendered(
+        self,
+        ctx: OnComponentRenderedContext,
+    ) -> Optional["OnComponentRenderedResult"]:
         for extension in self.extensions:
-            result = extension.on_component_rendered(ctx)
-            if result is not None:
-                ctx = ctx._replace(result=result)
-        return ctx.result
+            try:
+                result = extension.on_component_rendered(ctx)
+            except Exception as error:
+                # Error from `on_component_rendered()` - clear HTML and set error
+                ctx = ctx._replace(result=None, error=error)
+            else:
+                # No error from `on_component_rendered()` - set HTML and clear error
+                if result is not None:
+                    ctx = ctx._replace(result=result, error=None)
+        return ctx.result, ctx.error
 
     ##########################
     # Tags lifecycle hooks
