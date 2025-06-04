@@ -742,7 +742,7 @@ class SlotNode(BaseNode):
         # 1. Using the "django" context behavior
         # 2. AND the slot fill is defined in the root template
         #
-        # Then `ctx_with_fills.fills` does NOT contain any fills (`{% fill %}`). So in this case,
+        # Then `ctx_with_fills.component.raw_slots` does NOT contain any fills (`{% fill %}`). So in this case,
         # we need to use a different strategy to find the fills Context layer that contains the fills.
         #
         # ------------------------------------------------------------------------------------------
@@ -825,7 +825,7 @@ class SlotNode(BaseNode):
             if parent_index is not None:
                 ctx_id_with_fills = context.dicts[parent_index][_COMPONENT_CONTEXT_KEY]
                 ctx_with_fills = component_context_cache[ctx_id_with_fills]
-                slot_fills = ctx_with_fills.fills
+                slot_fills = ctx_with_fills.component.raw_slots
 
                 # Add trace message when slot_fills are overwritten
                 trace_component_msg(
