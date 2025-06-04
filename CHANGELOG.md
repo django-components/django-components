@@ -1,5 +1,11 @@
 # Release notes
 
+## v0.140.1
+
+#### Fix
+
+- Fix typo preventing benchmarking ([#1235](https://github.com/django-components/django-components/pull/1235))
+
 ## 🚨📢 v0.140.0
 
 ⚠️ Major release ⚠️ - Please test thoroughly before / after upgrading.
