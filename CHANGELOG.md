@@ -609,9 +609,9 @@ Summary:
     ```py
     class MyComponent(Component):
         def on_render(self, context, template):
-            assert self.raw_args == [1, 2, 3]
-            assert self.raw_kwargs == {"a": 1, "b": 2}
-            assert self.raw_slots == {"my_slot": "CONTENT"}
+            assert self.args == [1, 2, 3]
+            assert self.kwargs == {"a": 1, "b": 2}
+            assert self.slots == {"my_slot": "CONTENT"}
             assert self.context == {"my_slot": "CONTENT"}
             assert self.deps_strategy == "document"
             assert (self.deps_strategy != "ignore") is True
