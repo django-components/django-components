@@ -70,7 +70,7 @@ Summary:
     - `"append"`
     - `"ignore"`
 
-    See [Dependencies rendering](https://django-components.github.io/django-components/0.140/concepts/advanced/rendering_js_css/) for more info.
+    See [Dependencies rendering](https://django-components.github.io/django-components/0.140.1/concepts/advanced/rendering_js_css/) for more info.
 
 **Typing**
 
@@ -94,8 +94,8 @@ Summary:
             text: str
     ```
 
-    See [Migrating from generics to class attributes](https://django-components.github.io/django-components/0.140/concepts/fundamentals/typing_and_validation/#migrating-from-generics-to-class-attributes) for more info.
 
+    See [Migrating from generics to class attributes](https://django-components.github.io/django-components/0.140.1/concepts/fundamentals/typing_and_validation/#migrating-from-generics-to-class-attributes) for more info.
 - Removed `EmptyTuple` and `EmptyDict` types. Instead, there is now a single `Empty` type.
 
     ```py
@@ -983,7 +983,7 @@ Summary:
         - Rendered HTML is left as-is. You can still process it with a different strategy later with `render_dependencies()`.
         - Used for inserting rendered HTML into other components.
 
-    See [Dependencies rendering](https://django-components.github.io/django-components/0.140/concepts/advanced/rendering_js_css/) for more info.
+    See [Dependencies rendering](https://django-components.github.io/django-components/0.140.1/concepts/advanced/rendering_js_css/) for more info.
 
 - New `Component.args`, `Component.kwargs`, `Component.slots` attributes available on the component class itself.
 
@@ -1063,7 +1063,7 @@ Summary:
     - Modify the rendered output after it has been rendered
     - Handle errors
 
-    See [on_render](https://django-components.github.io/django-components/0.140/concepts/advanced/hooks/#on_render) for more info.
+    See [on_render](https://django-components.github.io/django-components/0.140.1/concepts/advanced/hooks/#on_render) for more info.
 
 - `get_component_url()` now optionally accepts `query` and `fragment` arguments.
 
@@ -1131,7 +1131,7 @@ Summary:
         - `ComponentNode` instance if the slot was created as a default slot from a `{% component %}` tag.
         - `None` if the slot was created from a string, function, or `Slot` instance.
 
-    See [Slot metadata](https://django-components.github.io/django-components/0.140/concepts/fundamentals/slots/#slot-metadata).
+    See [Slot metadata](https://django-components.github.io/django-components/0.140.1/concepts/fundamentals/slots/#slot-metadata).
 
 - `{% fill %}` tag now accepts `body` kwarg to pass a Slot instance to fill.
 
@@ -1230,13 +1230,13 @@ Summary:
     )
     ```
 
-    Read more on [Component caching](https://django-components.github.io/django-components/0.140/concepts/advanced/component_caching/).
+    Read more on [Component caching](https://django-components.github.io/django-components/0.140.1/concepts/advanced/component_caching/).
 
 - New extension hook `on_slot_rendered()`
 
     This hook is called when a slot is rendered, and allows you to access and/or modify the rendered result.
 
-    This is used by the ["debug highlight" feature](https://django-components.github.io/django-components/0.140/guides/other/troubleshooting/#component-and-slot-highlighting).
+    This is used by the ["debug highlight" feature](https://django-components.github.io/django-components/0.140.1/guides/other/troubleshooting/#component-and-slot-highlighting).
 
     To modify the rendered result, return the new value:
 
@@ -1248,7 +1248,7 @@ Summary:
 
     If you don't want to modify the rendered result, return `None`.
 
-    See all [Extension hooks](https://django-components.github.io/django-components/0.140/reference/extension_hooks/).
+    See all [Extension hooks](https://django-components.github.io/django-components/0.140.1/reference/extension_hooks/).
 
 - When creating extensions, the previous syntax with `ComponentExtension.ExtensionClass` was causing
   Mypy errors, because Mypy doesn't allow using class attributes as bases:
