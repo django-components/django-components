@@ -28,7 +28,7 @@ from django.utils.html import conditional_escape
 from django.utils.safestring import SafeString, mark_safe
 
 from django_components.app_settings import ContextBehavior
-from django_components.context import _COMPONENT_CONTEXT_KEY, _INJECT_CONTEXT_KEY_PREFIX
+from django_components.context import _COMPONENT_CONTEXT_KEY, _INJECT_CONTEXT_KEY_PREFIX, COMPONENT_IS_NESTED_KEY
 from django_components.extension import OnSlotRenderedContext, extensions
 from django_components.node import BaseNode
 from django_components.perfutil.component import component_context_cache
@@ -1585,8 +1585,6 @@ def _nodelist_to_slot(
     # and binds the context.
     template = Template("")
     template.nodelist = nodelist
-    # This allows the template to access current RenderContext layer.
-    template._djc_is_component_nested = True
 
     def render_func(ctx: SlotContext) -> SlotResult:
         context = ctx.context or Context()
@@ -1639,10 +1637,12 @@ def _nodelist_to_slot(
 
         trace_component_msg("RENDER_NODELIST", component_name, component_id=None, slot_name=slot_name)
 
-        # We wrap the slot nodelist in Template. However, we also override Django's `Template.render()`
-        # to call `render_dependencies()` on the results. So we need to set the strategy to `ignore`
-        # so that the dependencies are processed only once the whole component tree is rendered.
-        with context.push({"DJC_DEPS_STRATEGY": "ignore"}):
+        # NOTE 1: We wrap the slot nodelist in Template. However, we also override Django's `Template.render()`
+        #     to call `render_dependencies()` on the results. So we need to set the strategy to `ignore`
+        #     so that the dependencies are processed only once the whole component tree is rendered.
+        # NOTE 2: We also set `_DJC_COMPONENT_IS_NESTED` to `True` so that the template can access
+        #     current RenderContext layer.
+        with context.push({"DJC_DEPS_STRATEGY": "ignore", COMPONENT_IS_NESTED_KEY: True}):
             rendered = template.render(context)
 
         # After the rendering is done, remove the `extra_context` from the context stack

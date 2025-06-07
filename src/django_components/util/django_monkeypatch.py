@@ -3,8 +3,9 @@ from typing import Any, Optional, Type
 from django.template import Context, NodeList, Template
 from django.template.base import Origin, Parser
 
-from django_components.context import _COMPONENT_CONTEXT_KEY, _STRATEGY_CONTEXT_KEY
+from django_components.context import _COMPONENT_CONTEXT_KEY, _STRATEGY_CONTEXT_KEY, COMPONENT_IS_NESTED_KEY
 from django_components.dependencies import COMPONENT_COMMENT_REGEX, render_dependencies
+from django_components.extension import OnTemplateCompiledContext, OnTemplateLoadedContext, extensions
 from django_components.util.template_parser import parse_template
 
 
@@ -16,8 +17,8 @@ def monkeypatch_template_cls(template_cls: Type[Template]) -> None:
     template_cls._djc_patched = True
 
 
-# Patch `Template.__init__` to apply `extensions.on_template_preprocess()` if the template
-# belongs to a Component.
+# Patch `Template.__init__` to apply `on_template_loaded()` and `on_template_compiled()`
+# extension hooks if the template belongs to a Component.
 def monkeypatch_template_init(template_cls: Type[Template]) -> None:
     original_init = template_cls.__init__
 
@@ -27,6 +28,7 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
         self: Template,
         template_string: Any,
         origin: Optional[Origin] = None,
+        name: Optional[str] = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -56,11 +58,27 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
             component_cls = None
 
         if component_cls is not None:
-            # TODO - Apply extensions.on_template_preprocess() here.
-            #        Then also test both cases when template as `template` or `template_file`.
-            pass
+            template_string = str(template_string)
+            template_string = extensions.on_template_loaded(
+                OnTemplateLoadedContext(
+                    component_cls=component_cls,
+                    content=template_string,
+                    origin=origin,
+                    name=name,
+                )
+            )
 
-        original_init(self, template_string, origin, *args, **kwargs)  # type: ignore[misc]
+        # Calling original `Template.__init__` should also compile the template into a Nodelist
+        # via `Template.compile_nodelist()`.
+        original_init(self, template_string, origin, name, *args, **kwargs)  # type: ignore[misc]
+
+        if component_cls is not None:
+            extensions.on_template_compiled(
+                OnTemplateCompiledContext(
+                    component_cls=component_cls,
+                    template=self,
+                )
+            )
 
     template_cls.__init__ = __init__
 
@@ -110,7 +128,7 @@ def monkeypatch_template_compile_nodelist(template_cls: Type[Template]) -> None:
 
 def monkeypatch_template_render(template_cls: Type[Template]) -> None:
     # Modify `Template.render` to set `isolated_context` kwarg of `push_state`
-    # based on our custom `Template._djc_is_component_nested`.
+    # based on our custom `_DJC_COMPONENT_IS_NESTED`.
     #
     # Part of fix for https://github.com/django-components/django-components/issues/508
     #
@@ -125,7 +143,7 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
     # doesn't require the source to be parsed multiple times. User can pass extra args/kwargs,
     # and can modify the rendering behavior by overriding the `_render` method.
     #
-    # NOTE 2: Instead of setting `Template._djc_is_component_nested`, alternatively we could
+    # NOTE 2: Instead of setting `_DJC_COMPONENT_IS_NESTED` context key, alternatively we could
     # have passed the value to `monkeypatch_template_render` directly. However, we intentionally
     # did NOT do that, so the monkey-patched method is more robust, and can be e.g. copied
     # to other.
@@ -137,12 +155,12 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
     def _template_render(self: Template, context: Context, *args: Any, **kwargs: Any) -> str:
         "Display stage -- can be called many times"
         # We parametrized `isolated_context`, which was `True` in the original method.
-        if not hasattr(self, "_djc_is_component_nested"):
+        if COMPONENT_IS_NESTED_KEY not in context:
             isolated_context = True
         else:
             # MUST be `True` for templates that are NOT import with `{% extends %}` tag,
             # and `False` otherwise.
-            isolated_context = not self._djc_is_component_nested
+            isolated_context = not context[COMPONENT_IS_NESTED_KEY]
 
         # This is original implementation, except we override `isolated_context`,
         # and we post-process the result with `render_dependencies()`.

@@ -46,7 +46,7 @@ class TestMainMedia:
         rendered = TestComponent.render()
 
         assertInHTML(
-            '<div class="html-css-only" data-djc-id-ca1bc3e>Content</div>',
+            '<div class="html-css-only" data-djc-id-ca1bc40>Content</div>',
             rendered,
         )
         assertInHTML(
@@ -69,6 +69,9 @@ class TestMainMedia:
         )
         assert TestComponent.css == ".html-css-only { color: blue; }"
         assert TestComponent.js == "console.log('HTML and JS only');"
+
+        assert isinstance(TestComponent._template, Template)
+        assert TestComponent._template.origin.component_cls is TestComponent
 
     @djc_test(
         django_settings={
@@ -127,6 +130,9 @@ class TestMainMedia:
         assert TestComponent.css == ".html-css-only {\n  color: blue;\n}\n"
         assert TestComponent.js == 'console.log("JS file");\n'
 
+        assert isinstance(TestComponent._template, Template)
+        assert TestComponent._template.origin.component_cls is TestComponent
+
     @djc_test(
         django_settings={
             "STATICFILES_DIRS": [
@@ -150,6 +156,9 @@ class TestMainMedia:
         assert "Variable: <strong>{{ variable }}</strong>" in TestComponent.template  # type: ignore[operator]
         assert ".html-css-only {\n    color: blue;\n}" in TestComponent.css  # type: ignore[operator]
         assert 'console.log("HTML and JS only");' in TestComponent.js  # type: ignore[operator]
+
+        assert isinstance(TestComponent._template, Template)
+        assert TestComponent._template.origin.component_cls is TestComponent
 
         rendered = Template(
             """
@@ -199,6 +208,7 @@ class TestMainMedia:
         # the corresponding ComponentMedia instance is also on the parent class.
         assert AppLvlCompComponent._component_media.css is UNSET  # type: ignore[attr-defined]
         assert AppLvlCompComponent._component_media.css_file == "app_lvl_comp.css"  # type: ignore[attr-defined]
+        assert AppLvlCompComponent._component_media._template is UNSET  # type: ignore[attr-defined]
 
         # Access the property to load the CSS
         _ = TestComponent.css
@@ -217,6 +227,9 @@ class TestMainMedia:
         assert AppLvlCompComponent._component_media.template_file == "app_lvl_comp/app_lvl_comp.html"  # type: ignore[attr-defined]
         assert AppLvlCompComponent._component_media.js == 'console.log("JS file");\n'  # type: ignore[attr-defined]
         assert AppLvlCompComponent._component_media.js_file == "app_lvl_comp/app_lvl_comp.js"  # type: ignore[attr-defined]
+
+        assert isinstance(AppLvlCompComponent._component_media._template, Template)  # type: ignore[attr-defined]
+        assert AppLvlCompComponent._component_media._template.origin.component_cls is AppLvlCompComponent  # type: ignore[attr-defined]
 
     def test_html_variable_filtered(self):
         class FilteredComponent(Component):
@@ -1037,73 +1050,121 @@ class TestSubclassingAttributes:
         class TestComp(Component):
             js = None
             js_file = None
+            template = None
+            template_file = None
 
         assert TestComp.js is None
         assert TestComp.js_file is None
+        assert TestComp.template is None
+        assert TestComp.template_file is None
 
     def test_mixing_none_and_non_none_raises(self):
         with pytest.raises(
             ImproperlyConfigured,
-            match=re.escape("Received non-empty value from both 'js' and 'js_file' in Component TestComp"),
+            match=re.escape("Received non-empty value from both 'template' and 'template_file' in Component TestComp"),
         ):
 
             class TestComp(Component):
                 js = "console.log('hi')"
                 js_file = None
+                template = "<h1>hi</h1>"
+                template_file = None
 
     def test_both_non_none_raises(self):
         with pytest.raises(
             ImproperlyConfigured,
-            match=re.escape("Received non-empty value from both 'js' and 'js_file' in Component TestComp"),
+            match=re.escape("Received non-empty value from both 'template' and 'template_file' in Component TestComp"),
         ):
 
             class TestComp(Component):
                 js = "console.log('hi')"
                 js_file = "file.js"
+                template = "<h1>hi</h1>"
+                template_file = "file.html"
 
     def test_parent_non_null_child_non_null(self):
         class ParentComp(Component):
             js = "console.log('parent')"
+            template = "<h1>parent</h1>"
 
         class TestComp(ParentComp):
             js = "console.log('child')"
+            template = "<h1>child</h1>"
 
         assert TestComp.js == "console.log('child')"
         assert TestComp.js_file is None
+        assert TestComp.template == "<h1>child</h1>"
+        assert TestComp.template_file is None
+
+        assert isinstance(ParentComp._template, Template)
+        assert ParentComp._template.source == "<h1>parent</h1>"
+        assert ParentComp._template.origin.component_cls == ParentComp
+
+        assert isinstance(TestComp._template, Template)
+        assert TestComp._template.source == "<h1>child</h1>"
+        assert TestComp._template.origin.component_cls == TestComp
 
     def test_parent_null_child_non_null(self):
         class ParentComp(Component):
             js = None
+            template = None
 
         class TestComp(ParentComp):
             js = "console.log('child')"
+            template = "<h1>child</h1>"
 
         assert TestComp.js == "console.log('child')"
         assert TestComp.js_file is None
+        assert TestComp.template == "<h1>child</h1>"
+        assert TestComp.template_file is None
+
+        assert ParentComp._template is None
+
+        assert isinstance(TestComp._template, Template)
+        assert TestComp._template.source == "<h1>child</h1>"
+        assert TestComp._template.origin.component_cls == TestComp
 
     def test_parent_non_null_child_null(self):
         class ParentComp(Component):
             js: Optional[str] = "console.log('parent')"
+            template: Optional[str] = "<h1>parent</h1>"
 
         class TestComp(ParentComp):
             js = None
+            template = None
 
         assert TestComp.js is None
         assert TestComp.js_file is None
+        assert TestComp.template is None
+        assert TestComp.template_file is None
+
+        assert TestComp._template is None
+
+        assert isinstance(ParentComp._template, Template)
+        assert ParentComp._template.source == "<h1>parent</h1>"
+        assert ParentComp._template.origin.component_cls == ParentComp
 
     def test_parent_null_child_null(self):
         class ParentComp(Component):
             js = None
+            template = None
 
         class TestComp(ParentComp):
             js = None
+            template = None
 
         assert TestComp.js is None
         assert TestComp.js_file is None
+        assert TestComp.template is None
+        assert TestComp.template_file is None
+
+        assert TestComp._template is None
+        assert ParentComp._template is None
 
     def test_grandparent_non_null_parent_pass_child_pass(self):
         class GrandParentComp(Component):
             js = "console.log('grandparent')"
+            template = "<h1>grandparent</h1>"
 
         class ParentComp(GrandParentComp):
             pass
@@ -1113,45 +1174,97 @@ class TestSubclassingAttributes:
 
         assert TestComp.js == "console.log('grandparent')"
         assert TestComp.js_file is None
+        assert TestComp.template == "<h1>grandparent</h1>"
+        assert TestComp.template_file is None
+
+        assert isinstance(GrandParentComp._template, Template)
+        assert GrandParentComp._template.source == "<h1>grandparent</h1>"
+        assert GrandParentComp._template.origin.component_cls == GrandParentComp
+
+        assert isinstance(ParentComp._template, Template)
+        assert ParentComp._template.source == "<h1>grandparent</h1>"
+        assert ParentComp._template.origin.component_cls == ParentComp
+
+        assert isinstance(TestComp._template, Template)
+        assert TestComp._template.source == "<h1>grandparent</h1>"
+        assert TestComp._template.origin.component_cls == TestComp
 
     def test_grandparent_non_null_parent_null_child_pass(self):
         class GrandParentComp(Component):
             js: Optional[str] = "console.log('grandparent')"
+            template: Optional[str] = "<h1>grandparent</h1>"
 
         class ParentComp(GrandParentComp):
             js = None
+            template = None
 
         class TestComp(ParentComp):
             pass
 
         assert TestComp.js is None
         assert TestComp.js_file is None
+        assert TestComp.template is None
+        assert TestComp.template_file is None
+
+        assert isinstance(GrandParentComp._template, Template)
+        assert GrandParentComp._template.source == "<h1>grandparent</h1>"
+        assert GrandParentComp._template.origin.component_cls == GrandParentComp
+
+        assert ParentComp._template is None
+        assert TestComp._template is None
 
     def test_grandparent_non_null_parent_pass_child_non_null(self):
         class GrandParentComp(Component):
             js = "console.log('grandparent')"
+            template = "<h1>grandparent</h1>"
 
         class ParentComp(GrandParentComp):
             pass
 
         class TestComp(ParentComp):
             js = "console.log('child')"
+            template = "<h1>child</h1>"
 
         assert TestComp.js == "console.log('child')"
         assert TestComp.js_file is None
+        assert TestComp.template == "<h1>child</h1>"
+        assert TestComp.template_file is None
+
+        assert isinstance(GrandParentComp._template, Template)
+        assert GrandParentComp._template.source == "<h1>grandparent</h1>"
+        assert GrandParentComp._template.origin.component_cls == GrandParentComp
+
+        assert isinstance(ParentComp._template, Template)
+        assert ParentComp._template.source == "<h1>grandparent</h1>"
+        assert ParentComp._template.origin.component_cls == ParentComp
+
+        assert isinstance(TestComp._template, Template)
+        assert TestComp._template.source == "<h1>child</h1>"
+        assert TestComp._template.origin.component_cls == TestComp
 
     def test_grandparent_null_parent_pass_child_non_null(self):
         class GrandParentComp(Component):
             js = None
+            template = None
 
         class ParentComp(GrandParentComp):
             pass
 
         class TestComp(ParentComp):
             js = "console.log('child')"
+            template = "<h1>child</h1>"
 
         assert TestComp.js == "console.log('child')"
         assert TestComp.js_file is None
+        assert TestComp.template == "<h1>child</h1>"
+        assert TestComp.template_file is None
+
+        assert GrandParentComp._template is None
+        assert ParentComp._template is None
+
+        assert isinstance(TestComp._template, Template)
+        assert TestComp._template.source == "<h1>child</h1>"
+        assert TestComp._template.origin.component_cls == TestComp
 
 
 @djc_test

@@ -1,6 +1,6 @@
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Type, Union
 from weakref import ReferenceType, ref
 
 from django.core.exceptions import ImproperlyConfigured
@@ -170,29 +170,44 @@ def _maybe_bind_template(context: Context, template: Template) -> Generator[None
 loading_components: List["ComponentRef"] = []
 
 
-def load_component_template(component_cls: Type["Component"], filepath: str) -> Template:
-    if component_cls._template is not None:
-        return component_cls._template
+def load_component_template(
+    component_cls: Type["Component"],
+    filepath: Optional[str] = None,
+    content: Optional[str] = None,
+) -> Template:
+    if filepath is None and content is None:
+        raise ValueError("Either `filepath` or `content` must be provided.")
 
     loading_components.append(ref(component_cls))
 
-    # Use Django's `get_template()` to load the template
-    template = _load_django_template(filepath)
+    if filepath is not None:
+        # Use Django's `get_template()` to load the template file
+        template = _load_django_template(filepath)
+        template = ensure_unique_template(component_cls, template)
 
-    # If template.origin.component_cls is already set, then this
-    # Template instance was cached by Django / template loaders.
-    # In that case we want to make a copy of the template which would
-    # be owned by the current Component class.
-    # Thus each Component has it's own Template instance with their own Origins
-    # pointing to the correct Component class.
-    if get_component_from_origin(template.origin) is not None:
+    elif content is not None:
+        template = _create_template_from_string(component_cls, content, is_component_template=True)
+    else:
+        raise ValueError("Received both `filepath` and `content`. These are mutually exclusive.")
+
+    loading_components.pop()
+
+    return template
+
+
+# When loading a Template instance, it may be cached by Django / template loaders.
+# In that case we want to make a copy of the template which would
+# be owned by the current Component class.
+# Thus each Component has it's own Template instance with their own Origins
+# pointing to the correct Component class.
+def ensure_unique_template(component_cls: Type["Component"], template: Template) -> Template:
+    # Use `template.origin.component_cls` to check if the template was cached by Django / template loaders.
+    if get_component_from_origin(template.origin) is None:
+        set_component_to_origin(template.origin, component_cls)
+    else:
         origin_copy = Origin(template.origin.name, template.origin.template_name, template.origin.loader)
         set_component_to_origin(origin_copy, component_cls)
         template = Template(template.source, origin=origin_copy, name=template.name, engine=template.engine)
-
-    component_cls._template = template
-
-    loading_components.pop()
 
     return template
 
@@ -250,24 +265,13 @@ def _get_component_template(component: "Component") -> Optional[Template]:
             template = None
             template_string = template_sources["get_template"]
     elif component.template or component.template_file:
-        # If the template was loaded from `Component.template_file`, then the Template
-        # instance was already created and cached in `Component._template`.
+        # If the template was loaded from `Component.template` or `Component.template_file`,
+        # then the Template instance was already created and cached in `Component._template`.
         #
         # NOTE: This is important to keep in mind, because the implication is that we should
         # treat Templates AND their nodelists as IMMUTABLE.
-        if component.__class__._template is not None:
-            template = component.__class__._template
-            template_string = None
-        # Otherwise user have set `Component.template` as string and we still need to
-        # create the instance.
-        else:
-            template = _create_template_from_string(
-                component,
-                # NOTE: We can't reach this branch if `Component.template` is None
-                cast(str, component.template),
-                is_component_template=True,
-            )
-            template_string = None
+        template = component.__class__._component_media._template  # type: ignore[attr-defined]
+        template_string = None
     # No template
     else:
         template = None
@@ -278,7 +282,7 @@ def _get_component_template(component: "Component") -> Optional[Template]:
         return template
     # Create the template from the string
     elif template_string is not None:
-        return _create_template_from_string(component, template_string)
+        return _create_template_from_string(component.__class__, template_string)
 
     # Otherwise, Component has no template - this is valid, as it may be instead rendered
     # via `Component.on_render()`
@@ -286,7 +290,7 @@ def _get_component_template(component: "Component") -> Optional[Template]:
 
 
 def _create_template_from_string(
-    component: "Component",
+    component: Type["Component"],
     template_string: str,
     is_component_template: bool = False,
 ) -> Template:
@@ -307,18 +311,17 @@ def _create_template_from_string(
     # ```
     #
     # See https://docs.djangoproject.com/en/5.2/howto/custom-template-backend/#template-origin-api
-    _, _, module_filepath = get_module_info(component.__class__)
+    _, _, module_filepath = get_module_info(component)
     origin = Origin(
-        name=f"{module_filepath}::{component.__class__.__name__}",
+        name=f"{module_filepath}::{component.__name__}",
         template_name=None,
         loader=None,
     )
 
-    set_component_to_origin(origin, component.__class__)
+    set_component_to_origin(origin, component)
 
     if is_component_template:
         template = Template(template_string, name=origin.template_name, origin=origin)
-        component.__class__._template = template
     else:
         # TODO_V1 - `cached_template()` won't be needed as there will be only 1 template per component
         #           so we will be able to instead use `template_cache` to store the template

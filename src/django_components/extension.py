@@ -16,7 +16,7 @@ from typing import (
 )
 
 import django.urls
-from django.template import Context
+from django.template import Context, Origin, Template
 from django.urls import URLPattern, URLResolver, get_resolver, get_urlconf
 
 from django_components.app_settings import app_settings
@@ -166,6 +166,42 @@ class OnSlotRenderedContext(NamedTuple):
     """Whether the slot is default"""
     result: "SlotResult"
     """The rendered result of the slot"""
+
+
+@mark_extension_hook_api
+class OnTemplateLoadedContext(NamedTuple):
+    component_cls: Type["Component"]
+    """The Component class whose template was loaded"""
+    content: str
+    """The template string"""
+    origin: Optional[Origin]
+    """The origin of the template"""
+    name: Optional[str]
+    """The name of the template"""
+
+
+@mark_extension_hook_api
+class OnTemplateCompiledContext(NamedTuple):
+    component_cls: Type["Component"]
+    """The Component class whose template was loaded"""
+    template: Template
+    """The compiled template object"""
+
+
+@mark_extension_hook_api
+class OnCssLoadedContext(NamedTuple):
+    component_cls: Type["Component"]
+    """The Component class whose CSS was loaded"""
+    content: str
+    """The CSS content (string)"""
+
+
+@mark_extension_hook_api
+class OnJsLoadedContext(NamedTuple):
+    component_cls: Type["Component"]
+    """The Component class whose JS was loaded"""
+    content: str
+    """The JS content (string)"""
 
 
 ################################################
@@ -764,6 +800,108 @@ class ComponentExtension(metaclass=ExtensionMeta):
         pass
 
     ##########################
+    # Template / JS / CSS hooks
+    ##########################
+
+    def on_template_loaded(self, ctx: OnTemplateLoadedContext) -> Optional[str]:
+        """
+        Called when a Component's template is loaded as a string.
+
+        This hook runs only once per [`Component`](../api#django_components.Component) class and works for both
+        [`Component.template`](../api#django_components.Component.template) and
+        [`Component.template_file`](../api#django_components.Component.template_file).
+
+        Use this hook to read or modify the template before it's compiled.
+
+        To modify the template, return a new string from this hook.
+
+        **Example:**
+
+        ```python
+        from django_components import ComponentExtension, OnTemplateLoadedContext
+
+        class MyExtension(ComponentExtension):
+            def on_template_loaded(self, ctx: OnTemplateLoadedContext) -> Optional[str]:
+                # Modify the template
+                return ctx.content.replace("Hello", "Hi")
+        ```
+        """
+        pass
+
+    def on_template_compiled(self, ctx: OnTemplateCompiledContext) -> None:
+        """
+        Called when a Component's template is compiled
+        into a [`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template) object.
+
+        This hook runs only once per [`Component`](../api#django_components.Component) class and works for both
+        [`Component.template`](../api#django_components.Component.template) and
+        [`Component.template_file`](../api#django_components.Component.template_file).
+
+        Use this hook to read or modify the template (in-place) after it's compiled.
+
+        **Example:**
+
+        ```python
+        from django_components import ComponentExtension, OnTemplateCompiledContext
+
+        class MyExtension(ComponentExtension):
+            def on_template_compiled(self, ctx: OnTemplateCompiledContext) -> None:
+                print(f"Template origin: {ctx.template.origin.name}")
+        ```
+        """
+        pass
+
+    def on_css_loaded(self, ctx: OnCssLoadedContext) -> Optional[str]:
+        """
+        Called when a Component's CSS is loaded as a string.
+
+        This hook runs only once per [`Component`](../api#django_components.Component) class and works for both
+        [`Component.css`](../api#django_components.Component.css) and
+        [`Component.css_file`](../api#django_components.Component.css_file).
+
+        Use this hook to read or modify the CSS.
+
+        To modify the CSS, return a new string from this hook.
+
+        **Example:**
+
+        ```python
+        from django_components import ComponentExtension, OnCssLoadedContext
+
+        class MyExtension(ComponentExtension):
+            def on_css_loaded(self, ctx: OnCssLoadedContext) -> Optional[str]:
+                # Modify the CSS
+                return ctx.content.replace("Hello", "Hi")
+        ```
+        """
+        pass
+
+    def on_js_loaded(self, ctx: OnJsLoadedContext) -> Optional[str]:
+        """
+        Called when a Component's JS is loaded as a string.
+
+        This hook runs only once per [`Component`](../api#django_components.Component) class and works for both
+        [`Component.js`](../api#django_components.Component.js) and
+        [`Component.js_file`](../api#django_components.Component.js_file).
+
+        Use this hook to read or modify the JS.
+
+        To modify the JS, return a new string from this hook.
+
+        **Example:**
+
+        ```python
+        from django_components import ComponentExtension, OnCssLoadedContext
+
+        class MyExtension(ComponentExtension):
+            def on_js_loaded(self, ctx: OnJsLoadedContext) -> Optional[str]:
+                # Modify the JS
+                return ctx.content.replace("Hello", "Hi")
+        ```
+        """
+        pass
+
+    ##########################
     # Tags lifecycle hooks
     ##########################
 
@@ -1169,8 +1307,33 @@ class ExtensionManager:
         return ctx.result, ctx.error
 
     ##########################
-    # Tags lifecycle hooks
+    # Template / JS / CSS hooks
     ##########################
+
+    def on_template_loaded(self, ctx: OnTemplateLoadedContext) -> str:
+        for extension in self.extensions:
+            content = extension.on_template_loaded(ctx)
+            if content is not None:
+                ctx = ctx._replace(content=content)
+        return ctx.content
+
+    def on_template_compiled(self, ctx: OnTemplateCompiledContext) -> None:
+        for extension in self.extensions:
+            extension.on_template_compiled(ctx)
+
+    def on_css_loaded(self, ctx: OnCssLoadedContext) -> str:
+        for extension in self.extensions:
+            content = extension.on_css_loaded(ctx)
+            if content is not None:
+                ctx = ctx._replace(content=content)
+        return ctx.content
+
+    def on_js_loaded(self, ctx: OnJsLoadedContext) -> str:
+        for extension in self.extensions:
+            content = extension.on_js_loaded(ctx)
+            if content is not None:
+                ctx = ctx._replace(content=content)
+        return ctx.content
 
     def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
         for extension in self.extensions:

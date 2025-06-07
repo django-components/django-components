@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, List, cast
 
 import pytest
 from django.http import HttpRequest, HttpResponse
-from django.template import Context
+from django.template import Context, Origin, Template
 from django.test import Client
 
 from django_components import Component, Slot, SlotNode, register, registry
@@ -23,6 +23,10 @@ from django_components.extension import (
     OnComponentDataContext,
     OnComponentRenderedContext,
     OnSlotRenderedContext,
+    OnTemplateLoadedContext,
+    OnTemplateCompiledContext,
+    OnJsLoadedContext,
+    OnCssLoadedContext,
 )
 from django_components.extensions.cache import CacheExtension
 from django_components.extensions.debug_highlight import DebugHighlightExtension
@@ -85,6 +89,10 @@ class DummyExtension(ComponentExtension):
             "on_component_data": [],
             "on_component_rendered": [],
             "on_slot_rendered": [],
+            "on_template_loaded": [],
+            "on_template_compiled": [],
+            "on_js_loaded": [],
+            "on_css_loaded": [],
         }
 
     urls = [
@@ -125,6 +133,18 @@ class DummyExtension(ComponentExtension):
 
     def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> None:
         self.calls["on_slot_rendered"].append(ctx)
+
+    def on_template_loaded(self, ctx):
+        self.calls["on_template_loaded"].append(ctx)
+
+    def on_template_compiled(self, ctx):
+        self.calls["on_template_compiled"].append(ctx)
+
+    def on_js_loaded(self, ctx):
+        self.calls["on_js_loaded"].append(ctx)
+
+    def on_css_loaded(self, ctx):
+        self.calls["on_css_loaded"].append(ctx)
 
 
 class DummyNestedExtension(ComponentExtension):
@@ -180,6 +200,19 @@ def with_registry(on_created: Callable):
     registry = ComponentRegistry()
 
     on_created(registry)
+
+
+class OverrideAssetExtension(ComponentExtension):
+    name = "override_asset_extension"
+
+    def on_template_loaded(self, ctx):
+        return "OVERRIDDEN TEMPLATE"
+
+    def on_js_loaded(self, ctx):
+        return "OVERRIDDEN JS"
+
+    def on_css_loaded(self, ctx):
+        return "OVERRIDDEN CSS"
 
 
 @djc_test
@@ -468,6 +501,120 @@ class TestExtensionHooks:
 
         rendered = TestComponent.render(args=(), kwargs={"name": "Test"})
         assert rendered == "<div>OVERRIDDEN: Hello Test!</div>"
+
+    @djc_test(components_settings={"extensions": [DummyExtension]})
+    def test_asset_hooks__inlined(self):
+        @register("test_comp_hooks")
+        class TestComponent(Component):
+            template = "Hello {{ name }}!"
+            js = "console.log('hi');"
+            css = "body { color: red; }"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "World")}
+
+        # Render the component to trigger all hooks
+        TestComponent.render(args=(), kwargs={"name": "Test"})
+
+        extension = cast(DummyExtension, app_settings.EXTENSIONS[4])
+
+        # on_template_loaded
+        assert len(extension.calls["on_template_loaded"]) == 1
+        ctx1: OnTemplateLoadedContext = extension.calls["on_template_loaded"][0]
+        assert ctx1.component_cls == TestComponent
+        assert ctx1.content == "Hello {{ name }}!"
+        assert isinstance(ctx1.origin, Origin)
+        assert ctx1.origin.name.endswith("test_extension.py::TestComponent")
+        assert ctx1.name is None
+
+        # on_template_compiled
+        assert len(extension.calls["on_template_compiled"]) == 1
+        ctx2: OnTemplateCompiledContext = extension.calls["on_template_compiled"][0]
+        assert ctx2.component_cls == TestComponent
+        assert isinstance(ctx2.template, Template)
+
+        # on_js_loaded
+        assert len(extension.calls["on_js_loaded"]) == 1
+        ctx3: OnJsLoadedContext = extension.calls["on_js_loaded"][0]
+        assert ctx3.component_cls == TestComponent
+        assert ctx3.content == "console.log('hi');"
+
+        # on_css_loaded
+        assert len(extension.calls["on_css_loaded"]) == 1
+        ctx4: OnCssLoadedContext = extension.calls["on_css_loaded"][0]
+        assert ctx4.component_cls == TestComponent
+        assert ctx4.content == "body { color: red; }"
+
+    @djc_test(components_settings={"extensions": [DummyExtension]})
+    def test_asset_hooks__file(self):
+        @register("test_comp_hooks")
+        class TestComponent(Component):
+            template_file = "relative_file/relative_file.html"
+            js_file = "relative_file/relative_file.js"
+            css_file = "relative_file/relative_file.css"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "World")}
+
+        # Render the component to trigger all hooks
+        TestComponent.render(args=(), kwargs={"name": "Test"})
+
+        extension = cast(DummyExtension, app_settings.EXTENSIONS[4])
+
+        # on_template_loaded
+        # NOTE: The template file gets picked up by 'django.template.loaders.filesystem.Loader',
+        #       as well as our own loader, so we get two calls here.
+        assert len(extension.calls["on_template_loaded"]) == 2
+        ctx1: OnTemplateLoadedContext = extension.calls["on_template_loaded"][0]
+        assert ctx1.component_cls == TestComponent
+        assert ctx1.content == (
+            '<form method="post">\n'
+            '  {% csrf_token %}\n'
+            '  <input type="text" name="variable" value="{{ variable }}">\n'
+            '  <input type="submit">\n'
+            '</form>\n'
+        )
+        assert isinstance(ctx1.origin, Origin)
+        assert ctx1.origin.name.endswith("relative_file.html")
+        assert ctx1.name == "relative_file/relative_file.html"
+
+        # on_template_compiled
+        assert len(extension.calls["on_template_compiled"]) == 2
+        ctx2: OnTemplateCompiledContext = extension.calls["on_template_compiled"][0]
+        assert ctx2.component_cls == TestComponent
+        assert isinstance(ctx2.template, Template)
+
+        # on_js_loaded
+        assert len(extension.calls["on_js_loaded"]) == 1
+        ctx3: OnJsLoadedContext = extension.calls["on_js_loaded"][0]
+        assert ctx3.component_cls == TestComponent
+        assert ctx3.content == 'console.log("JS file");\n'
+
+        # on_css_loaded
+        assert len(extension.calls["on_css_loaded"]) == 1
+        ctx4: OnCssLoadedContext = extension.calls["on_css_loaded"][0]
+        assert ctx4.component_cls == TestComponent
+        assert ctx4.content == (
+            '.html-css-only {\n'
+            '  color: blue;\n'
+            '}\n'
+        )
+
+    @djc_test(components_settings={"extensions": [OverrideAssetExtension]})
+    def test_asset_hooks_override(self):
+        @register("test_comp_override")
+        class TestComponent(Component):
+            template = "Hello {{ name }}!"
+            js = "console.log('hi');"
+            css = "body { color: red; }"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "World")}
+
+        # No need to render, accessing the attributes should trigger the hooks
+        assert TestComponent.template == "OVERRIDDEN TEMPLATE"
+        assert TestComponent.js == "OVERRIDDEN JS"
+        assert TestComponent.css == "OVERRIDDEN CSS"
 
 
 @djc_test
