@@ -11,6 +11,9 @@ from django_components.util.template_parser import parse_template
 
 # In some cases we can't work around Django's design, and need to patch the template class.
 def monkeypatch_template_cls(template_cls: Type[Template]) -> None:
+    if is_template_cls_patched(template_cls):
+        return
+
     monkeypatch_template_init(template_cls)
     monkeypatch_template_compile_nodelist(template_cls)
     monkeypatch_template_render(template_cls)
