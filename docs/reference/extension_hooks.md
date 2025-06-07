@@ -148,6 +148,42 @@ name | type | description
 `name` | `str` | The name the component was registered under
 `registry` | [`ComponentRegistry`](../api#django_components.ComponentRegistry) | The registry the component was unregistered from
 
+::: django_components.extension.ComponentExtension.on_css_loaded
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_signature: true
+      separate_signature: true
+      show_symbol_type_heading: false
+      show_symbol_type_toc: false
+      show_if_no_docstring: true
+      show_labels: false
+
+**Available data:**
+
+name | type | description
+--|--|--
+`component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class whose CSS was loaded
+`content` | `str` | The CSS content (string)
+
+::: django_components.extension.ComponentExtension.on_js_loaded
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_signature: true
+      separate_signature: true
+      show_symbol_type_heading: false
+      show_symbol_type_toc: false
+      show_if_no_docstring: true
+      show_labels: false
+
+**Available data:**
+
+name | type | description
+--|--|--
+`component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class whose JS was loaded
+`content` | `str` | The JS content (string)
+
 ::: django_components.extension.ComponentExtension.on_registry_created
     options:
       heading_level: 3
@@ -206,6 +242,44 @@ name | type | description
 `slot_is_required` | `bool` | Whether the slot is required
 `slot_name` | `str` | The name of the `{% slot %}` tag
 `slot_node` | `SlotNode` | The node instance of the `{% slot %}` tag
+
+::: django_components.extension.ComponentExtension.on_template_compiled
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_signature: true
+      separate_signature: true
+      show_symbol_type_heading: false
+      show_symbol_type_toc: false
+      show_if_no_docstring: true
+      show_labels: false
+
+**Available data:**
+
+name | type | description
+--|--|--
+`component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class whose template was loaded
+`template` | `django.template.base.Template` | The compiled template object
+
+::: django_components.extension.ComponentExtension.on_template_loaded
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_signature: true
+      separate_signature: true
+      show_symbol_type_heading: false
+      show_symbol_type_toc: false
+      show_if_no_docstring: true
+      show_labels: false
+
+**Available data:**
+
+name | type | description
+--|--|--
+`component_cls` | [`Type[Component]`](../api#django_components.Component) | The Component class whose template was loaded
+`content` | `str` | The template string
+`name` | `Optional[str]` | The name of the template
+`origin` | `Optional[django.template.base.Origin]` | The origin of the template
 
 ## Objects
 

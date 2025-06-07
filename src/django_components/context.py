@@ -11,6 +11,7 @@ from django.template import Context
 from django_components.util.misc import get_last_index
 
 _COMPONENT_CONTEXT_KEY = "_DJC_COMPONENT_CTX"
+COMPONENT_IS_NESTED_KEY = "_DJC_COMPONENT_IS_NESTED"
 _STRATEGY_CONTEXT_KEY = "DJC_DEPS_STRATEGY"
 _INJECT_CONTEXT_KEY_PREFIX = "_DJC_INJECT__"
 

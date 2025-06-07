@@ -32,7 +32,7 @@ from django_components.component_media import ComponentMediaInput, ComponentMedi
 from django_components.component_registry import ComponentRegistry
 from django_components.component_registry import registry as registry_
 from django_components.constants import COMP_ID_PREFIX
-from django_components.context import _COMPONENT_CONTEXT_KEY, make_isolated_context_copy
+from django_components.context import _COMPONENT_CONTEXT_KEY, COMPONENT_IS_NESTED_KEY, make_isolated_context_copy
 from django_components.dependencies import (
     DependenciesStrategy,
     cache_component_css,
@@ -2314,9 +2314,6 @@ class Component(metaclass=ComponentMeta):
         cls.class_id = hash_comp_cls(cls)
         comp_cls_id_mapping[cls.class_id] = cls
 
-        # Make sure that subclassed component will store it's own template, not the parent's.
-        cls._template = None
-
         ALL_COMPONENTS.append(cached_ref(cls))  # type: ignore[arg-type]
         extensions._init_component_class(cls)
         extensions.on_component_class_created(OnComponentClassCreatedContext(cls))
@@ -3517,14 +3514,14 @@ class Component(metaclass=ComponentMeta):
         #     Then we can simply apply `template_data` to the context in the same layer
         #     where we apply `context_processor_data` and `component_vars`.
         with prepare_component_template(component, template_data) as template:
-            # Set `Template._djc_is_component_nested` based on whether we're currently INSIDE
+            # Set `_DJC_COMPONENT_IS_NESTED` based on whether we're currently INSIDE
             # the `{% extends %}` tag.
             # Part of fix for https://github.com/django-components/django-components/issues/508
             # See django_monkeypatch.py
             if template is not None:
-                template._djc_is_component_nested = bool(
-                    context.render_context.get(BLOCK_CONTEXT_KEY)  # type: ignore[union-attr]
-                )
+                comp_is_nested = bool(context.render_context.get(BLOCK_CONTEXT_KEY))  # type: ignore[union-attr]
+            else:
+                comp_is_nested = False
 
             # Capture the template name so we can print better error messages (currently used in slots)
             component_ctx.template_name = template.name if template else None
@@ -3535,6 +3532,7 @@ class Component(metaclass=ComponentMeta):
                     **component.context_processors_data,
                     # Private context fields
                     _COMPONENT_CONTEXT_KEY: render_id,
+                    COMPONENT_IS_NESTED_KEY: comp_is_nested,
                     # NOTE: Public API for variables accessible from within a component's template
                     # See https://github.com/django-components/django-components/issues/280#issuecomment-2081180940
                     "component_vars": ComponentVars(

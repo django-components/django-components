@@ -27,10 +27,12 @@ from weakref import WeakKeyDictionary
 from django.contrib.staticfiles import finders
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.widgets import Media as MediaCls
+from django.template import Template
 from django.utils.safestring import SafeData
 from typing_extensions import TypeGuard
 
-from django_components.template import load_component_template
+from django_components.extension import OnCssLoadedContext, OnJsLoadedContext, extensions
+from django_components.template import ensure_unique_template, load_component_template
 from django_components.util.loader import get_component_dirs, resolve_file
 from django_components.util.logger import logger
 from django_components.util.misc import flatten, get_import_path, get_module_info, is_glob
@@ -43,7 +45,7 @@ T = TypeVar("T")
 
 
 # These are all the attributes that are handled by ComponentMedia and lazily-resolved
-COMP_MEDIA_LAZY_ATTRS = ("media", "template", "template_file", "js", "js_file", "css", "css_file")
+COMP_MEDIA_LAZY_ATTRS = ("media", "template", "template_file", "js", "js_file", "css", "css_file", "_template")
 
 
 # Sentinel value to indicate that a media attribute is not set.
@@ -267,6 +269,8 @@ class ComponentMedia:
     js_file: Union[str, Unset, None] = UNSET
     css: Union[str, Unset, None] = UNSET
     css_file: Union[str, Unset, None] = UNSET
+    # Template instance that was loaded for this component
+    _template: Union[Template, Unset, None] = UNSET
 
     def __post_init__(self) -> None:
         for inlined_attr in ("template", "js", "css"):
@@ -299,6 +303,7 @@ class ComponentMedia:
     def reset(self) -> None:
         self.__dict__.update(self._original.__dict__)
         self.resolved = False
+        self.resolved_relative_files = False
 
 
 # This metaclass is all about one thing - lazily resolving the media files.
@@ -487,6 +492,10 @@ def _get_comp_cls_media(comp_cls: Type["Component"]) -> Any:
         if curr_cls in media_cache:
             continue
 
+        comp_media: Optional[ComponentMedia] = getattr(curr_cls, "_component_media", None)
+        if comp_media is not None and not comp_media.resolved:
+            _resolve_media(curr_cls, comp_media)
+
         # Prepare base classes
         # NOTE: If the `Component.Media` class is explicitly set to `None`, then we should not inherit
         #       from any parent classes.
@@ -611,20 +620,39 @@ def _resolve_media(comp_cls: Type["Component"], comp_media: ComponentMedia) -> N
     # Effectively, even if the Component class defined `js_file` (or others), at "runtime" the `js` attribute
     # will be set to the content of the file.
     # So users can access `Component.js` even if they defined `Component.js_file`.
-    comp_media.template = _get_asset(
+    template_str, template_obj = _get_asset(
         comp_cls,
         comp_media,
         inlined_attr="template",
         file_attr="template_file",
         comp_dirs=comp_dirs,
-        type="template",
     )
-    comp_media.js = _get_asset(
-        comp_cls, comp_media, inlined_attr="js", file_attr="js_file", comp_dirs=comp_dirs, type="static"
-    )
-    comp_media.css = _get_asset(
-        comp_cls, comp_media, inlined_attr="css", file_attr="css_file", comp_dirs=comp_dirs, type="static"
-    )
+    comp_media.template = template_str
+
+    js_str, _ = _get_asset(comp_cls, comp_media, inlined_attr="js", file_attr="js_file", comp_dirs=comp_dirs)
+    comp_media.js = js_str
+
+    css_str, _ = _get_asset(comp_cls, comp_media, inlined_attr="css", file_attr="css_file", comp_dirs=comp_dirs)
+    comp_media.css = css_str
+
+    # If `Component.template` or `Component.template_file` were explicitly set on this class,
+    # then Template instance was already created.
+    #
+    # Otherwise, search for Template instance in parent classes, and make a copy of it.
+    if not isinstance(template_obj, Unset):
+        comp_media._template = template_obj
+    else:
+        parent_template = _get_comp_cls_attr(comp_cls, "_template")
+
+        # One of base classes has set `template` or `template_file` to `None`,
+        # or none of the base classes had set `template` or `template_file`
+        if parent_template is None:
+            comp_media._template = parent_template
+
+        # One of base classes has set `template` or `template_file` to string.
+        # Make a copy of the Template instance.
+        else:
+            comp_media._template = ensure_unique_template(comp_cls, parent_template)
 
 
 def _normalize_media(media: Type[ComponentMediaInput]) -> None:
@@ -973,11 +1001,10 @@ def _find_component_dir_containing_file(
 def _get_asset(
     comp_cls: Type["Component"],
     comp_media: ComponentMedia,
-    inlined_attr: str,
-    file_attr: str,
+    inlined_attr: Literal["template", "js", "css"],
+    file_attr: Literal["template_file", "js_file", "css_file"],
     comp_dirs: List[Path],
-    type: Literal["template", "static"],
-) -> Union[str, Unset, None]:
+) -> Tuple[Union[str, Unset, None], Union[Template, Unset, None]]:  # Tuple of (content, Template)
     """
     In case of Component's JS or CSS, one can either define that as "inlined" or as a file.
 
@@ -1010,7 +1037,7 @@ def _get_asset(
     #     pass
     # ```
     if asset_content is UNSET and asset_file is UNSET:
-        return UNSET
+        return UNSET, UNSET
 
     # Either file or content attr was set to `None`
     # ```py
@@ -1031,7 +1058,7 @@ def _get_asset(
     if (asset_content in (UNSET, None) and asset_file is None) or (
         asset_content is None and asset_file in (UNSET, None)
     ):
-        return None
+        return None, None
 
     # Received both inlined content and file name
     # ```py
@@ -1061,42 +1088,68 @@ def _get_asset(
     # At this point we can tell that only EITHER `asset_content` OR `asset_file` is set.
 
     # If the content was inlined into the component (e.g. `Component.template = "..."`)
-    # then there's nothing to resolve. Return as is.
-    if asset_content is not UNSET:
-        return asset_content
+    # then there's nothing to resolve. Use it as is.
+    if not isinstance(asset_content, Unset):
+        if asset_content is None:
+            return None, None
 
-    if asset_file is None:
-        return None
+        content: str = asset_content
 
-    # The rest of the code assumes that we were given only a file name
-    asset_file = cast(str, asset_file)
+        # If we got inlined `Component.template`, then create a Template instance from it
+        # to trigger the extension hooks that may modify the template string.
+        if inlined_attr == "template":
+            # NOTE: `load_component_template()` applies `on_template_loaded()` and `on_template_compiled()` hooks.
+            template = load_component_template(comp_cls, filepath=None, content=content)
+            return template.source, template
 
-    if type == "template":
-        # NOTE: While we return on the "source" (plain string) of the template,
-        #       by calling `load_component_template()`, we also cache the Template instance.
-        #       So later in Component's `render_impl()`, we don't have to re-compile the Template.
-        template = load_component_template(comp_cls, asset_file)
-        return template.source
+    # This else branch assumes that we were given a file name (possibly None)
+    # Load the contents of the file.
+    else:
+        if asset_file is None:
+            return None, None
 
-    # For static files, we have a few options:
-    # 1. Check if the file is in one of the components' directories
-    full_path = resolve_file(asset_file, comp_dirs)
+        asset_file = cast(str, asset_file)
 
-    # 2. If not, check if it's in the static files
-    if full_path is None:
-        full_path = finders.find(asset_file)
+        if inlined_attr == "template":
+            # NOTE: `load_component_template()` applies `on_template_loaded()` and `on_template_compiled()` hooks.
+            template = load_component_template(comp_cls, filepath=asset_file, content=None)
+            return template.source, template
 
-    if full_path is None:
-        # NOTE: The short name, e.g. `js` or `css` is used in the error message for convenience
-        raise ValueError(f"Could not find {inlined_attr} file {asset_file}")
+        # Following code concerns with loading JS / CSS files.
+        # Here we have a few options:
+        #
+        # 1. Check if the file is in one of the components' directories
+        full_path = resolve_file(asset_file, comp_dirs)
 
-    # NOTE: Use explicit encoding for compat with Windows, see #1074
-    asset_content = Path(full_path).read_text(encoding="utf8")
+        # 2. If not, check if it's in the static files
+        if full_path is None:
+            full_path = finders.find(asset_file)
 
-    # TODO: Apply `extensions.on_js_preprocess()` and `extensions.on_css_preprocess()`
-    # NOTE: `on_template_preprocess()` is already applied inside `load_component_template()`
+        if full_path is None:
+            # NOTE: The short name, e.g. `js` or `css` is used in the error message for convenience
+            raise ValueError(f"Could not find {inlined_attr} file {asset_file}")
 
-    return asset_content
+        # NOTE: Use explicit encoding for compat with Windows, see #1074
+        content = Path(full_path).read_text(encoding="utf8")
+
+    # NOTE: `on_template_loaded()` is already applied inside `load_component_template()`
+    #       but we still need to call extension hooks for JS / CSS content (whether inlined or not).
+    if inlined_attr == "js":
+        content = extensions.on_js_loaded(
+            OnJsLoadedContext(
+                component_cls=comp_cls,
+                content=content,
+            )
+        )
+    elif inlined_attr == "css":
+        content = extensions.on_css_loaded(
+            OnCssLoadedContext(
+                component_cls=comp_cls,
+                content=content,
+            )
+        )
+
+    return content, None
 
 
 def is_set(value: Union[T, Unset, None]) -> TypeGuard[T]:
