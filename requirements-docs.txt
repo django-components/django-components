@@ -58,7 +58,7 @@ cssselect2==0.8.0
     # via cairosvg
 defusedxml==0.7.1
     # via cairosvg
-django==4.2.21
+django==4.2.22
     # via hatch.envs.docs
 djc-core-html-parser==1.0.2
     # via hatch.envs.docs
