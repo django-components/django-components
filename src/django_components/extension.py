@@ -1047,7 +1047,7 @@ class ExtensionManager:
             # - `MyExtensionBase` is the base class that the extension class inherits from.
             bases_list = [ext_base_class]
 
-            all_extensions_defaults = app_settings._settings.extensions_defaults or {}
+            all_extensions_defaults = app_settings.EXTENSIONS_DEFAULTS or {}
             extension_defaults = all_extensions_defaults.get(extension.name, None)
             if extension_defaults:
                 # Create dummy class that holds the extension defaults
