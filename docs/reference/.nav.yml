@@ -1,16 +1,16 @@
 # `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
 nav:
   - API: api.md
-  - Commands: commands.md
+  - CLI commands: commands.md
   - Components: components.md
   - Exceptions: exceptions.md
-  - Extension commands: extension_commands.md
-  - Extension hooks: extension_hooks.md
-  - Extension URLs: extension_urls.md
+  - Extension commands API: extension_commands.md
+  - Extension hooks API: extension_hooks.md
+  - Extension URLs API: extension_urls.md
   - Settings: settings.md
   - Signals: signals.md
   - Tag formatters: tag_formatters.md
   - Template tags: template_tags.md
-  - Template vars: template_vars.md
+  - Template variables: template_vars.md
   - URLs: urls.md
   - Testing API: testing_api.md

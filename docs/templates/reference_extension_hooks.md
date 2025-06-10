@@ -1,4 +1,4 @@
-# Extension hooks
+# Extension hooks API
 
 Overview of all the extension hooks available in Django Components.
 

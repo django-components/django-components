@@ -1,4 +1,4 @@
-# Extension commands
+# Extension commands API
 
 Overview of all classes, functions, and other objects related to defining extension commands.
 
