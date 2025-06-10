@@ -25,7 +25,7 @@ def component_error_message(component_path: List[str]) -> Generator[None, None, 
             if not components:
                 orig_msg = str(err.args[0])
             else:
-                orig_msg = err.args[0].split("\n", 1)[-1]
+                orig_msg = str(err.args[0]).split("\n", 1)[-1]
         else:
             orig_msg = str(err)
 

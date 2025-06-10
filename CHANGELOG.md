@@ -34,6 +34,10 @@
 
     Now, each subclass has it's own `Template` instance, and changes to the template of the subclass do not affect the template of the parent class.
 
+- Fix Django failing to restart due to "TypeError: 'Dynamic' object is not iterable" ([#1232](https://github.com/django-components/django-components/issues/1232))
+
+- Fix bug when error formatting failed when error value was not a string.
+
 ## v0.140.1
 
 #### Fix

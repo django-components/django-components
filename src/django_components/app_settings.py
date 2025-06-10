@@ -746,8 +746,8 @@ defaults = ComponentsSettings(
 #
 # Settings are loaded from Django settings only once, at `apps.py` in `ready()`.
 class InternalSettings:
-    def __init__(self, settings: Optional[Dict[str, Any]] = None):
-        self._settings = ComponentsSettings(**settings) if settings else defaults
+    def __init__(self) -> None:
+        self._settings: Optional[ComponentsSettings] = None
 
     def _load_settings(self) -> None:
         data = getattr(settings, "COMPONENTS", {})
@@ -785,6 +785,11 @@ class InternalSettings:
             context_behavior=self._prepare_context_behavior(components_settings),
             tag_formatter=default(components_settings.tag_formatter, defaults.tag_formatter),  # type: ignore[arg-type]
         )
+
+    def _get_settings(self) -> ComponentsSettings:
+        if self._settings is None:
+            self._load_settings()
+        return cast(ComponentsSettings, self._settings)
 
     def _prepare_extensions(self, new_settings: ComponentsSettings) -> List["ComponentExtension"]:
         extensions: Sequence[Union[Type["ComponentExtension"], str]] = default(
@@ -853,70 +858,73 @@ class InternalSettings:
 
         return raw_value
 
-    # TODO REMOVE THE PROPERTIES BELOW? THEY NO LONGER SERVE ANY PURPOSE
     @property
     def AUTODISCOVER(self) -> bool:
-        return self._settings.autodiscover  # type: ignore[return-value]
+        return self._get_settings().autodiscover  # type: ignore[return-value]
 
     @property
     def CACHE(self) -> Optional[str]:
-        return self._settings.cache
+        return self._get_settings().cache
 
     @property
     def DIRS(self) -> Sequence[Union[str, PathLike, Tuple[str, str], Tuple[str, PathLike]]]:
-        return self._settings.dirs  # type: ignore[return-value]
+        return self._get_settings().dirs  # type: ignore[return-value]
 
     @property
     def APP_DIRS(self) -> Sequence[str]:
-        return self._settings.app_dirs  # type: ignore[return-value]
+        return self._get_settings().app_dirs  # type: ignore[return-value]
 
     @property
     def DEBUG_HIGHLIGHT_COMPONENTS(self) -> bool:
-        return self._settings.debug_highlight_components  # type: ignore[return-value]
+        return self._get_settings().debug_highlight_components  # type: ignore[return-value]
 
     @property
     def DEBUG_HIGHLIGHT_SLOTS(self) -> bool:
-        return self._settings.debug_highlight_slots  # type: ignore[return-value]
+        return self._get_settings().debug_highlight_slots  # type: ignore[return-value]
 
     @property
     def DYNAMIC_COMPONENT_NAME(self) -> str:
-        return self._settings.dynamic_component_name  # type: ignore[return-value]
+        return self._get_settings().dynamic_component_name  # type: ignore[return-value]
 
     @property
     def LIBRARIES(self) -> List[str]:
-        return self._settings.libraries  # type: ignore[return-value]
+        return self._get_settings().libraries  # type: ignore[return-value]
 
     @property
     def EXTENSIONS(self) -> List["ComponentExtension"]:
-        return self._settings.extensions  # type: ignore[return-value]
+        return self._get_settings().extensions  # type: ignore[return-value]
+
+    @property
+    def EXTENSIONS_DEFAULTS(self) -> Dict[str, Any]:
+        return self._get_settings().extensions_defaults  # type: ignore[return-value]
 
     @property
     def MULTILINE_TAGS(self) -> bool:
-        return self._settings.multiline_tags  # type: ignore[return-value]
+        return self._get_settings().multiline_tags  # type: ignore[return-value]
 
     @property
     def RELOAD_ON_FILE_CHANGE(self) -> bool:
-        return self._settings.reload_on_file_change  # type: ignore[return-value]
+        return self._get_settings().reload_on_file_change  # type: ignore[return-value]
 
     @property
     def TEMPLATE_CACHE_SIZE(self) -> int:
-        return self._settings.template_cache_size  # type: ignore[return-value]
+        return self._get_settings().template_cache_size  # type: ignore[return-value]
 
     @property
     def STATIC_FILES_ALLOWED(self) -> Sequence[Union[str, re.Pattern]]:
-        return self._settings.static_files_allowed  # type: ignore[return-value]
+        return self._get_settings().static_files_allowed  # type: ignore[return-value]
 
     @property
     def STATIC_FILES_FORBIDDEN(self) -> Sequence[Union[str, re.Pattern]]:
-        return self._settings.static_files_forbidden  # type: ignore[return-value]
+        return self._get_settings().static_files_forbidden  # type: ignore[return-value]
 
     @property
     def CONTEXT_BEHAVIOR(self) -> ContextBehavior:
-        return ContextBehavior(self._settings.context_behavior)
+        return ContextBehavior(self._get_settings().context_behavior)
 
     @property
     def TAG_FORMATTER(self) -> Union["TagFormatterABC", str]:
-        return self._settings.tag_formatter  # type: ignore[return-value]
+        return self._get_settings().tag_formatter  # type: ignore[return-value]
 
 
 app_settings = InternalSettings()
