@@ -20,7 +20,7 @@ def _gen_subcommands() -> List[Type[ComponentCommand]]:
     commands: List[Type[ComponentCommand]] = []
     for extension in extensions.extensions:
         ExtCommand = type(
-            "ExtCommand",
+            "ExtRunSubcommand_" + extension.name,
             (ComponentCommand,),
             {
                 "name": extension.name,

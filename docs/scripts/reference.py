@@ -466,7 +466,13 @@ def gen_reference_commands():
             # Add link to source code
             module_abs_path = import_module(cmd_def_cls.__module__).__file__
             module_rel_path = Path(module_abs_path).relative_to(Path.cwd()).as_posix()  # type: ignore[arg-type]
-            obj_lineno = inspect.findsource(cmd_def_cls)[1]
+
+            # NOTE: Raises `OSError` if the file is not found.
+            try:
+                obj_lineno = inspect.findsource(cmd_def_cls)[1]
+            except Exception:
+                obj_lineno = None
+
             source_code_link = _format_source_code_html(module_rel_path, obj_lineno)
 
             # NOTE: For the commands we have to generate the markdown entries ourselves,
