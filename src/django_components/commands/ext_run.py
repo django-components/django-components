@@ -19,6 +19,9 @@ from django_components.util.command import ComponentCommand
 def _gen_subcommands() -> List[Type[ComponentCommand]]:
     commands: List[Type[ComponentCommand]] = []
     for extension in extensions.extensions:
+        if not extension.commands:
+            continue
+
         ExtCommand = type(
             "ExtRunSubcommand_" + extension.name,
             (ComponentCommand,),

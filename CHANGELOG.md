@@ -38,6 +38,10 @@
 
 - Fix bug when error formatting failed when error value was not a string.
 
+#### Refactor
+
+- `components ext run` CLI command now allows to call only those extensions that actually have subcommands.
+
 ## v0.140.1
 
 #### Fix

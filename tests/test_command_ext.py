@@ -206,21 +206,16 @@ class TestExtensionsRunCommand:
             output
             == dedent(
                 f"""
-                usage: components ext run [-h] {{cache,defaults,view,debug_highlight,empty,dummy}} ...
+                usage: components ext run [-h] {{dummy}} ...
 
                 Run a command added by an extension.
 
                 {OPTIONS_TITLE}:
-                  -h, --help            show this help message and exit
+                  -h, --help  show this help message and exit
 
                 subcommands:
-                  {{cache,defaults,view,debug_highlight,empty,dummy}}
-                    cache               Run commands added by the 'cache' extension.
-                    defaults            Run commands added by the 'defaults' extension.
-                    view                Run commands added by the 'view' extension.
-                    debug_highlight     Run commands added by the 'debug_highlight' extension.
-                    empty               Run commands added by the 'empty' extension.
-                    dummy               Run commands added by the 'dummy' extension.
+                  {{dummy}}
+                    dummy     Run commands added by the 'dummy' extension.
                 """
             ).lstrip()
         )
@@ -231,19 +226,23 @@ class TestExtensionsRunCommand:
     def test_run_command_ext_empty(self):
         out = StringIO()
         with patch("sys.stdout", new=out):
-            call_command("components", "ext", "run", "empty")
+            call_command("components", "ext", "run", "dummy")
         output = out.getvalue()
 
         assert (
             output
             == dedent(
                 f"""
-                usage: components ext run empty [-h]
+                usage: components ext run dummy [-h] {{dummy_cmd}} ...
 
-                Run commands added by the 'empty' extension.
+                Run commands added by the 'dummy' extension.
 
                 {OPTIONS_TITLE}:
-                  -h, --help  show this help message and exit
+                  -h, --help   show this help message and exit
+
+                subcommands:
+                  {{dummy_cmd}}
+                    dummy_cmd  Dummy command description.
                 """
             ).lstrip()
         )
