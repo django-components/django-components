@@ -4,8 +4,8 @@ nav:
   - CLI commands: commands.md
   - Components: components.md
   - Exceptions: exceptions.md
+  - Extension hooks: extension_hooks.md
   - Extension commands API: extension_commands.md
-  - Extension hooks API: extension_hooks.md
   - Extension URLs API: extension_urls.md
   - Settings: settings.md
   - Signals: signals.md
