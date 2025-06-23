@@ -176,7 +176,7 @@ platformdirs==4.3.8
     #   mkdocs-get-deps
 pycparser==2.22
     # via cffi
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   hatch.envs.docs
     #   mkdocs-material
