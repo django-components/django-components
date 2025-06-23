@@ -87,7 +87,7 @@ tomli==2.2.1
     #   pyproject-api
     #   pytest
     #   tox
-tox==4.25.0
+tox==4.27.0
     # via
     #   -r requirements-ci.in
     #   tox-gh-actions
