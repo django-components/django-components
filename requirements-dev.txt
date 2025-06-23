@@ -107,6 +107,7 @@ pygments==2.19.1
     # via
     #   -r requirements-dev.in
     #   pygments-djc
+    #   pytest
 pygments-djc==1.0.1
     # via -r requirements-dev.in
 pympler==1.1
@@ -115,7 +116,7 @@ pyproject-api==1.8.0
     # via tox
 pyproject-hooks==1.2.0
     # via build
-pytest==8.3.5
+pytest==8.4.1
     # via
     #   -r requirements-dev.in
     #   pytest-asyncio
