@@ -32,7 +32,7 @@ babel==2.17.0
     #   mkdocs-material
 black==25.1.0
     # via hatch.envs.docs
-bracex==2.5.post1
+bracex==2.6
     # via wcmatch
 cairocffi==1.7.1
     # via cairosvg
