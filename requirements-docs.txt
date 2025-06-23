@@ -226,7 +226,7 @@ verspec==0.1.0
     # via mike
 watchdog==6.0.0
     # via mkdocs
-wcmatch==10.0
+wcmatch==10.1
     # via mkdocs-include-markdown-plugin
 webencodings==0.5.1
     # via
