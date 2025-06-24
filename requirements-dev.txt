@@ -40,7 +40,7 @@ filelock==3.16.1
     # via
     #   tox
     #   virtualenv
-flake8==7.2.0
+flake8==7.3.0
     # via
     #   -r requirements-dev.in
     #   flake8-pyproject
@@ -97,11 +97,11 @@ pluggy==1.5.0
     #   tox
 pre-commit==4.2.0
     # via -r requirements-dev.in
-pycodestyle==2.13.0
+pycodestyle==2.14.0
     # via flake8
 pyee==12.0.0
     # via playwright
-pyflakes==3.3.2
+pyflakes==3.4.0
     # via flake8
 pygments==2.19.1
     # via
