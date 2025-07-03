@@ -32,13 +32,13 @@ babel==2.17.0
     #   mkdocs-material
 black==25.1.0
     # via hatch.envs.docs
-bracex==2.5.post1
+bracex==2.6
     # via wcmatch
 cairocffi==1.7.1
     # via cairosvg
 cairosvg==2.8.2
     # via mkdocs-material
-certifi==2025.4.26
+certifi==2025.6.15
     # via requests
 cffi==1.17.1
     # via cairocffi
@@ -58,7 +58,7 @@ cssselect2==0.8.0
     # via cairosvg
 defusedxml==0.7.1
     # via cairosvg
-django==4.2.22
+django==4.2.23
     # via hatch.envs.docs
 djc-core-html-parser==1.0.2
     # via hatch.envs.docs
@@ -86,14 +86,14 @@ jinja2==3.1.6
     #   mkdocstrings
 jsmin==3.0.1
     # via mkdocs-minify-plugin
-markdown==3.8
+markdown==3.8.2
     # via
     #   mkdocs
     #   mkdocs-autorefs
     #   mkdocs-material
     #   mkdocstrings
     #   pymdown-extensions
-markdown-exec==1.10.3
+markdown-exec==1.11.0
     # via hatch.envs.docs
 markupsafe==3.0.2
     # via
@@ -134,11 +134,11 @@ mkdocs-get-deps==0.2.0
     # via
     #   mkdocs
     #   mkdocstrings
-mkdocs-git-authors-plugin==0.9.6
+mkdocs-git-authors-plugin==0.10.0
     # via hatch.envs.docs
 mkdocs-git-revision-date-localized-plugin==1.4.7
     # via hatch.envs.docs
-mkdocs-include-markdown-plugin==7.1.5
+mkdocs-include-markdown-plugin==7.1.6
     # via hatch.envs.docs
 mkdocs-material==9.6.14
     # via hatch.envs.docs
@@ -166,7 +166,7 @@ pathspec==0.12.1
     # via
     #   black
     #   mkdocs
-pillow==11.2.1
+pillow==11.3.0
     # via
     #   cairosvg
     #   mkdocs-material
@@ -176,14 +176,14 @@ platformdirs==4.3.8
     #   mkdocs-get-deps
 pycparser==2.22
     # via cffi
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   hatch.envs.docs
     #   mkdocs-material
     #   pygments-djc
 pygments-djc==1.0.1
     # via hatch.envs.docs
-pymdown-extensions==10.15
+pymdown-extensions==10.16
     # via
     #   hatch.envs.docs
     #   markdown-exec
@@ -220,13 +220,13 @@ tinycss2==1.4.0
     # via
     #   cairosvg
     #   cssselect2
-urllib3==2.4.0
+urllib3==2.5.0
     # via requests
 verspec==0.1.0
     # via mike
 watchdog==6.0.0
     # via mkdocs
-wcmatch==10.0
+wcmatch==10.1
     # via mkdocs-include-markdown-plugin
 webencodings==0.5.1
     # via
