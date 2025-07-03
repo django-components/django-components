@@ -35,8 +35,9 @@ document.querySelector(".calendar").onclick = function () {
 ```
 
 ```py title="calendar.py"
-from django_components import Component
+from django_components import Component, register
 
+@register("calendar")
 class Calendar(Component):
     template_file = "calendar.html"
     js_file = "calendar.js"
