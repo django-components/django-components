@@ -18,8 +18,9 @@ A component in django-components can be as simple as a Django template and Pytho
 ```
 
 ```py title="components/calendar/calendar.py"
-from django_components import Component
+from django_components import Component, register
 
+@register("calendar")
 class Calendar(Component):
     template_file = "calendar.html"
 ```
@@ -46,8 +47,9 @@ document.querySelector(".calendar").onclick = () => {
 ```
 
 ```py title="components/calendar/calendar.py"
-from django_components import Component
+from django_components import Component, register
 
+@register("calendar")
 class Calendar(Component):
     template_file = "calendar.html"
     js_file = "calendar.js"
