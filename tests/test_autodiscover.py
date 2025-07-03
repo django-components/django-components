@@ -50,8 +50,6 @@ class TestImportLibraries:
         }
     )
     def test_import_libraries(self):
-        # Ensure we start with a clean state
-        registry.clear()
         all_components = registry.all().copy()
         assert "single_file_component" not in all_components
         assert "multi_file_component" not in all_components
@@ -80,8 +78,6 @@ class TestImportLibraries:
         }
     )
     def test_import_libraries_map_modules(self):
-        # Ensure we start with a clean state
-        registry.clear()
         all_components = registry.all().copy()
         assert "single_file_component" not in all_components
         assert "multi_file_component" not in all_components

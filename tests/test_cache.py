@@ -1,5 +1,3 @@
-from django.core.cache.backends.locmem import LocMemCache
-
 from django_components import Component, register
 from django_components.testing import djc_test
 from django_components.util.cache import LRUCache
@@ -68,16 +66,26 @@ class TestCache:
 
 @djc_test
 class TestComponentMediaCache:
-    @djc_test(components_settings={"cache": "test-cache"})
-    def test_component_media_caching(self):
-        test_cache = LocMemCache(
-            "test-cache",
-            {
-                "TIMEOUT": None,  # No timeout
-                "MAX_ENTRIES": None,  # No max size
-                "CULL_FREQUENCY": 3,
+    @djc_test(
+        components_settings={"cache": "test-cache"},
+        django_settings={
+            "CACHES": {
+                # See https://docs.djangoproject.com/en/5.2/topics/cache/#local-memory-caching
+                "test-cache": {
+                    "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+                    "LOCATION": "test-cache",
+                    "TIMEOUT": None,  # No timeout
+                    "OPTIONS": {
+                        "MAX_ENTRIES": 10_000,
+                    },
+                },
             },
-        )
+        },
+    )
+    def test_component_media_caching(self):
+        from django.core.cache import caches
+
+        test_cache = caches["test-cache"]
 
         @register("test_simple")
         class TestSimpleComponent(Component):
@@ -108,14 +116,6 @@ class TestComponentMediaCache:
             def get_css_data(self, args, kwargs, slots, context):
                 return {"color": "blue"}
 
-        # Register our test cache
-        from django.core.cache import caches
-
-        caches["test-cache"] = test_cache
-
-        # Render the components to trigger caching
-        TestMediaAndVarsComponent.render()
-
         # Check that JS/CSS is cached for components that have them
         assert test_cache.has_key(f"__components:{TestMediaAndVarsComponent.class_id}:js")
         assert test_cache.has_key(f"__components:{TestMediaAndVarsComponent.class_id}:css")
@@ -127,6 +127,9 @@ class TestComponentMediaCache:
         # Check that we cache `Component.js` / `Component.css`
         assert test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:js").strip() == "console.log('Hello from JS');"  # noqa: E501
         assert test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:css").strip() == ".novars-component { color: blue; }"  # noqa: E501
+
+        # Render the components to trigger caching of JS/CSS variables from `get_js_data` / `get_css_data`
+        TestMediaAndVarsComponent.render()
 
         # Check that we cache JS / CSS scripts generated from `get_js_data` / `get_css_data`
         # NOTE: The hashes is generated from the data.

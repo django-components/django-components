@@ -107,13 +107,16 @@ def _cache_script(
     cache.set(cache_key, script.strip())
 
 
-def cache_component_js(comp_cls: Type["Component"]) -> None:
+def cache_component_js(comp_cls: Type["Component"], force: bool) -> None:
     """
     Cache the content from `Component.js`. This is the common JS that's shared
     among all instances of the same component. So even if the component is rendered multiple
     times, this JS is loaded only once.
     """
-    if not comp_cls.js or not is_nonempty_str(comp_cls.js) or _is_script_in_cache(comp_cls, "js", None):
+    if not comp_cls.js or not is_nonempty_str(comp_cls.js):
+        return None
+
+    if not force and _is_script_in_cache(comp_cls, "js", None):
         return None
 
     _cache_script(
@@ -167,13 +170,16 @@ def wrap_component_js(comp_cls: Type["Component"], content: str) -> str:
     return f"<script>{content}</script>"
 
 
-def cache_component_css(comp_cls: Type["Component"]) -> None:
+def cache_component_css(comp_cls: Type["Component"], force: bool) -> None:
     """
     Cache the content from `Component.css`. This is the common CSS that's shared
     among all instances of the same component. So even if the component is rendered multiple
     times, this CSS is loaded only once.
     """
-    if not comp_cls.css or not is_nonempty_str(comp_cls.css) or _is_script_in_cache(comp_cls, "css", None):
+    if not comp_cls.css or not is_nonempty_str(comp_cls.css):
+        return None
+
+    if not force and _is_script_in_cache(comp_cls, "css", None):
         return None
 
     _cache_script(

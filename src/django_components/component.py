@@ -3486,11 +3486,12 @@ class Component(metaclass=ComponentMeta):
             )
         )
 
-        # Process Component's JS and CSS
-        cache_component_js(comp_cls)
-        js_input_hash = cache_component_js_vars(comp_cls, js_data) if js_data else None
+        # Cache component's JS and CSS scripts, in case they have been evicted from the cache.
+        cache_component_js(comp_cls, force=False)
+        cache_component_css(comp_cls, force=False)
 
-        cache_component_css(comp_cls)
+        # Create JS/CSS scripts that will load the JS/CSS variables into the page.
+        js_input_hash = cache_component_js_vars(comp_cls, js_data) if js_data else None
         css_input_hash = cache_component_css_vars(comp_cls, css_data) if css_data else None
 
         #############################################################################
@@ -3670,7 +3671,7 @@ class Component(metaclass=ComponentMeta):
     # ```
     def _gen_component_renderer(
         self,
-        template: Template,
+        template: Optional[Template],
         context: Context,
         component_path: List[str],
         css_input_hash: Optional[str],
@@ -3695,7 +3696,8 @@ class Component(metaclass=ComponentMeta):
             component.on_render_before(context, template)
 
             # Emit signal that the template is about to be rendered
-            template_rendered.send(sender=template, template=template, context=context)
+            if template is not None:
+                template_rendered.send(sender=template, template=template, context=context)
 
             # Get the component's HTML
             # To access the *final* output (with all its children rendered) from within `Component.on_render()`,

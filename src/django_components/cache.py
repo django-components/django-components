@@ -1,3 +1,4 @@
+import sys
 from typing import Optional
 
 from django.core.cache import BaseCache, caches
@@ -36,9 +37,14 @@ def get_component_media_cache() -> BaseCache:
         component_media_cache = LocMemCache(
             "django-components-media",
             {
-                "TIMEOUT": None,  # No timeout
-                "MAX_ENTRIES": None,  # No max size
-                "CULL_FREQUENCY": 3,
+                # No max size nor timeout
+                # NOTE: Implementation of `BaseCache` coerces the `MAX_ENTRIES` value
+                #       to `int()` so we use exact max size instead of `inf` or `None`.
+                #       See https://github.com/django/django/blob/94ebcf8366d62f6360851b40e9c4dfe3f71d202f/django/core/cache/backends/base.py#L73  # noqa: E501
+                "TIMEOUT": None,
+                "OPTIONS": {
+                    "MAX_ENTRIES": sys.maxsize,
+                },
             },
         )
 

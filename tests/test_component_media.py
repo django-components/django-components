@@ -15,7 +15,6 @@ from django.utils.safestring import mark_safe
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, autodiscover, registry, render_dependencies, types
-from django_components.component_media import UNSET
 
 from django_components.testing import djc_test
 from .testutils import setup_test_config
@@ -204,14 +203,18 @@ class TestMainMedia:
         class TestComponent(AppLvlCompComponent):
             pass
 
-        # NOTE: Since this is a subclass, actual CSS is defined on the parent class, and thus
-        # the corresponding ComponentMedia instance is also on the parent class.
-        assert AppLvlCompComponent._component_media.css is UNSET  # type: ignore[attr-defined]
-        assert AppLvlCompComponent._component_media.css_file == "app_lvl_comp.css"  # type: ignore[attr-defined]
-        assert AppLvlCompComponent._component_media._template is UNSET  # type: ignore[attr-defined]
-
-        # Access the property to load the CSS
-        _ = TestComponent.css
+        # NOTE: Currently the components' JS/CSS are loaded eagerly, to make the JS/CSS
+        #       files available via endpoints. If that is no longer true, uncomment the
+        #       following lines to test the lazy loading of the CSS.
+        #
+        # # Since this is a subclass, actual CSS is defined on the parent class, and thus
+        # # the corresponding ComponentMedia instance is also on the parent class.
+        # assert AppLvlCompComponent._component_media.css is UNSET  # type: ignore[attr-defined]
+        # assert AppLvlCompComponent._component_media.css_file == "app_lvl_comp.css"  # type: ignore[attr-defined]
+        # assert AppLvlCompComponent._component_media._template is UNSET  # type: ignore[attr-defined]
+        #
+        # # Access the property to load the CSS
+        # _ = TestComponent.css
 
         assert AppLvlCompComponent._component_media.css == (".html-css-only {\n" "  color: blue;\n" "}\n")  # type: ignore[attr-defined]
         assert AppLvlCompComponent._component_media.css_file == "app_lvl_comp/app_lvl_comp.css"  # type: ignore[attr-defined]

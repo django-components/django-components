@@ -1,5 +1,23 @@
 # Release notes
 
+## v0.141.1
+
+#### Fix
+
+- Components' JS and CSS scripts (e.g. from `Component.js` or `Component.js_file`) are now cached at class creation time.
+
+    This means that when you now restart the server while having a page opened in the browser,
+    the JS / CSS files are immediately available.
+
+    Previously, the JS/CSS were cached only after the components were rendered. So you had to reload
+    the page to trigger the rendering, in order to make the JS/CSS files available.
+
+- Fix the default cache for JS / CSS scripts to be unbounded.
+
+    Previously, the default cache for the JS/CSS scripts (`LocMemCache`) was accidentally limited to 300 entries (~150 components).
+
+- Do not send `template_rendered` signal when rendering a component with no template. ([#1277](https://github.com/django-components/django-components/issues/1277))
+
 ## v0.141.0
 
 #### Feat

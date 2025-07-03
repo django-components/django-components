@@ -800,6 +800,7 @@ class InternalSettings:
         from django_components.extensions.cache import CacheExtension
         from django_components.extensions.debug_highlight import DebugHighlightExtension
         from django_components.extensions.defaults import DefaultsExtension
+        from django_components.extensions.dependencies import DependenciesExtension
         from django_components.extensions.view import ViewExtension
 
         extensions = cast(
@@ -807,6 +808,7 @@ class InternalSettings:
             [
                 CacheExtension,
                 DefaultsExtension,
+                DependenciesExtension,
                 ViewExtension,
                 DebugHighlightExtension,
             ],
