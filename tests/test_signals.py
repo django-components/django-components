@@ -96,3 +96,19 @@ class TestTemplateSignal:
         templates_used = _get_templates_used_to_render(template)
         assert "slotted_template.html" in templates_used
         assert "simple_template.html" in templates_used
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    @with_template_signal
+    def test_template_rendered_skipped_when_no_template(self, components_settings):
+        class EmptyComponent(Component):
+            pass
+
+        registry.register("empty", EmptyComponent)
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'empty' / %}
+        """
+        template = Template(template_str, name="root")
+        templates_used = _get_templates_used_to_render(template)
+        assert templates_used == ["root"]
