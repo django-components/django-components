@@ -55,7 +55,7 @@ by calling `{% load component_tags %}` inside the template.
     like `{% component "calendar" / %}`.
 
     `ComponentRegistries` also make it possible to group and share components as standalone packages.
-    [Learn more here](../../concepts/advanced/authoring_component_libraries).
+    [Learn more here](../../concepts/advanced/component_libraries).
 
 !!! note
 
