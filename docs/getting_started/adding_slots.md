@@ -289,3 +289,8 @@ each time:
 
     Moreover, slots are treated as part of the template - for example the CSS scoping (work in progress)
     is applied to the slot content too.
+
+---
+
+So far we've rendered components using template tag. [Next, let’s explore other ways to render components ➡️]
+(./rendering_components.md)
