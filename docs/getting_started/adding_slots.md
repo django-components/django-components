@@ -134,7 +134,7 @@ Which will render as:
         {% endcomponent %}
         ```
 
-### 5. Wait, there's a bug
+### 4. Wait, there's a bug
 
 There is a mistake in our code! `2024-12-13` is Friday, so that's fine. But if we updated
 the to `2024-12-14`, which is Saturday, our template from previous step would render this:
