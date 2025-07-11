@@ -11,6 +11,6 @@ nav:
   - Signals: signals.md
   - Tag formatters: tag_formatters.md
   - Template tags: template_tags.md
-  - Template variables: template_vars.md
+  - Template variables: template_variables.md
   - URLs: urls.md
   - Testing API: testing_api.md
