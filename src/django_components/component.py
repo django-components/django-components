@@ -2277,7 +2277,7 @@ class Component(metaclass=ComponentMeta):
 
         deps_strategy = cast(DependenciesStrategy, default(deps_strategy, "document"))
 
-        self.id = default(id, _gen_component_id, factory=True)
+        self.id = default(id, _gen_component_id, factory=True)  # type: ignore[arg-type]
         self.name = _get_component_name(self.__class__, registered_name)
         self.registered_name: Optional[str] = registered_name
         self.args = default(args, [])
