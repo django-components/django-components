@@ -160,7 +160,7 @@ def my_view(request):
         response_class = MyCustomResponse
     ```
 
-### Rendering slots
+### 4. Rendering slots
 
 Slots content are automatically escaped by default to prevent XSS attacks.
 
@@ -203,7 +203,7 @@ Calendar.render(
     [`format_html`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.html.format_html)
     and [`mark_safe`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe).
 
-### Component views and URLs
+### 5. Component views and URLs
 
 For web applications, it's common to define endpoints that serve HTML content (AKA views).
 

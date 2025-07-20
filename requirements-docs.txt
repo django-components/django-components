@@ -24,7 +24,7 @@
 # - djc-core-html-parser>=1.0
 #
 
-asgiref==3.8.1
+asgiref==3.9.0
     # via django
 babel==2.17.0
     # via
@@ -140,7 +140,7 @@ mkdocs-git-revision-date-localized-plugin==1.4.7
     # via hatch.envs.docs
 mkdocs-include-markdown-plugin==7.1.6
     # via hatch.envs.docs
-mkdocs-material==9.6.14
+mkdocs-material==9.6.15
     # via hatch.envs.docs
 mkdocs-material-extensions==1.3.1
     # via mkdocs-material

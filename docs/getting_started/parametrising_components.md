@@ -220,10 +220,6 @@ the parametrized version of the component:
 </div>
 ```
 
----
-
-Next, you will learn [how to use slots give your components even more flexibility ➡️](./adding_slots.md)
-
 ### 5. Add defaults
 
 In our example, we've set the `extra_class` to default to `"text-blue"` by setting it in the
@@ -258,3 +254,7 @@ class Calendar(Component):
             "extra_class": kwargs["extra_class"],  # <--- changed
         }
 ```
+
+---
+
+Next, you will learn [how to use slots give your components even more flexibility ➡️](./adding_slots.md)
