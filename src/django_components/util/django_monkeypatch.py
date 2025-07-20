@@ -1,7 +1,8 @@
 from typing import Any, Optional, Type
 
 from django.template import Context, NodeList, Template
-from django.template.base import Origin, Parser
+from django.template.base import Node, Origin, Parser
+from django.template.loader_tags import IncludeNode
 
 from django_components.context import _COMPONENT_CONTEXT_KEY, _STRATEGY_CONTEXT_KEY, COMPONENT_IS_NESTED_KEY
 from django_components.dependencies import COMPONENT_COMMENT_REGEX, render_dependencies
@@ -11,7 +12,7 @@ from django_components.util.template_parser import parse_template
 
 # In some cases we can't work around Django's design, and need to patch the template class.
 def monkeypatch_template_cls(template_cls: Type[Template]) -> None:
-    if is_template_cls_patched(template_cls):
+    if is_cls_patched(template_cls):
         return
 
     monkeypatch_template_init(template_cls)
@@ -150,7 +151,7 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
     # have passed the value to `monkeypatch_template_render` directly. However, we intentionally
     # did NOT do that, so the monkey-patched method is more robust, and can be e.g. copied
     # to other.
-    if is_template_cls_patched(template_cls):
+    if is_cls_patched(template_cls):
         # Do not patch if done so already. This helps us avoid RecursionError
         return
 
@@ -210,5 +211,37 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
     template_cls.render = _template_render
 
 
-def is_template_cls_patched(template_cls: Type[Template]) -> bool:
-    return getattr(template_cls, "_djc_patched", False)
+def monkeypatch_include_node(include_node_cls: Type[Node]) -> None:
+    if is_cls_patched(include_node_cls):
+        return
+
+    monkeypatch_include_render(include_node_cls)
+    include_node_cls._djc_patched = True
+
+
+def monkeypatch_include_render(include_node_cls: Type[Node]) -> None:
+    # Modify `IncludeNode.render()` (what renders `{% include %}` tag) so that the included
+    # template does NOT render the JS/CSS by itself.
+    #
+    # Instead, we want the parent template
+    # (which contains the `{% component %}` tag) to decide whether to render the JS/CSS.
+    #
+    # We achieve this by setting `DJC_DEPS_STRATEGY` to `ignore` in the context.
+    #
+    # Fix for https://github.com/django-components/django-components/issues/1296
+    if is_cls_patched(include_node_cls):
+        # Do not patch if done so already. This helps us avoid RecursionError
+        return
+
+    orig_include_render = include_node_cls.render
+
+    # NOTE: This implementation is based on Django v5.1.3)
+    def _include_render(self: IncludeNode, context: Context, *args: Any, **kwargs: Any) -> str:
+        with context.update({_STRATEGY_CONTEXT_KEY: "ignore"}):
+            return orig_include_render(self, context, *args, **kwargs)
+
+    include_node_cls.render = _include_render
+
+
+def is_cls_patched(cls: Type[Any]) -> bool:
+    return getattr(cls, "_djc_patched", False)

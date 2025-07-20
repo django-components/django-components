@@ -219,7 +219,7 @@ class TestComponentCache:
 
         template = Template(
             """
-            {% extends "test_cached_component_inside_include_base.html" %}
+            {% extends "component_inside_include_base.html" %}
             {% block content %}
                 THIS_IS_IN_ACTUAL_TEMPLATE_SO_SHOULD_NOT_BE_OVERRIDDEN
             {% endblock %}

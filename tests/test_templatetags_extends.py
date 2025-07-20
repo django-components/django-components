@@ -25,6 +25,17 @@ def gen_blocked_and_slotted_component():
     return BlockedAndSlottedComponent
 
 
+def gen_component_inside_include():
+    class ComponentInsideInclude(Component):
+        template: types.django_html = """<div>Hello</div>"""
+
+        class Media:
+            css = "style.css"
+            js = "script.js"
+
+    return ComponentInsideInclude
+
+
 #######################
 # TESTS
 #######################
@@ -532,6 +543,112 @@ class TestExtendsCompat:
                     <footer>Default footer</footer>
                 </custom-template>
             </body>
+            </html>
+        """
+        assertHTMLEqual(rendered, expected)
+
+    # In this case, `{% include %}` is NOT nested inside a `{% component %}` tag.
+    # We need to ensure that the component inside the `{% include %}` is rendered as if with deps_strategy="ignore",
+    # so the parent template decides how to render the JS/CSS.
+    # See https://github.com/django-components/django-components/issues/1296
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_with_media_inside_include(self, components_settings):
+        registry.register("test_component", gen_component_inside_include())
+
+        template: types.django_html = """
+            {% load component_tags %}
+            <body>
+                <outer>
+                    {% include "component_inside_include_sub.html" %}
+                </outer>
+            </body>
+        """
+
+        rendered_raw = Template(template).render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
+        expected_raw = """
+            <body>
+                <outer>
+                    <div data-djc-id-ca1bc3f>Hello</div>
+                </outer>
+            </body>
+        """
+        assertHTMLEqual(rendered_raw, expected_raw)
+
+        template_obj = Template(template)
+        context = Context()
+        rendered = template_obj.render(context)
+
+        # NOTE: It's important that the <script> tags are rendered outside of <div> and <outer> tags,
+        # because that tells us that the JS/CSS is rendered by the parent template, not the component
+        # inside the include.
+        expected = """
+            <body>
+                <outer>
+                    <div data-djc-id-ca1bc41>Hello</div>
+                </outer>
+                <script src="django_components/django_components.min.js"></script>
+                <script type="application/json" data-djc>{"loadedCssUrls": ["c3R5bGUuY3Nz"],
+                    "loadedJsUrls": ["c2NyaXB0Lmpz"],
+                    "toLoadCssTags": [],
+                    "toLoadJsTags": []}</script>
+                <script src="script.js"></script>
+            </body>
+        """
+        assertHTMLEqual(rendered, expected)
+
+    # In this case, because `{% include %}` is rendered inside a `{% component %}` tag,
+    # then the component inside the `{% include %}` knows it's inside another component.
+    # So it's always rendered as if with deps_strategy="ignore".
+    # See https://github.com/django-components/django-components/issues/1296
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_component_with_media_inside_include_inside_component(self, components_settings):
+        registry.register("test_component", gen_component_inside_include())
+
+        @register("component_inside_include")
+        class CompInsideIncludeComponent(Component):
+            template: types.django_html = """
+                <body>
+                    <outer>
+                        {% include "component_inside_include_sub.html" %}
+                    </outer>
+                </body>
+            """
+
+        template: types.django_html = """
+            {% load component_tags %}
+            <html>
+                {% component "component_inside_include" / %}
+            </html>
+        """
+
+        rendered_raw = Template(template).render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
+        expected_raw = """
+            <html>
+                <body data-djc-id-ca1bc3f>
+                    <outer>
+                        <div data-djc-id-ca1bc41>Hello</div>
+                    </outer>
+                </body>
+            </html>
+        """
+        assertHTMLEqual(rendered_raw, expected_raw)
+
+        template_obj = Template(template)
+        context = Context()
+        rendered = template_obj.render(context)
+        expected = """
+            <html>
+                <body data-djc-id-ca1bc43>
+                    <outer>
+                        <div data-djc-id-ca1bc45>Hello</div>
+                    </outer>
+                    <script src="django_components/django_components.min.js"></script>
+                    <script type="application/json" data-djc>{"loadedCssUrls": ["c3R5bGUuY3Nz"],
+                        "loadedJsUrls": ["c2NyaXB0Lmpz"],
+                        "toLoadCssTags": [],
+                        "toLoadJsTags": []}</script>
+                    <script src="script.js"></script>
+                </body>
             </html>
         """
         assertHTMLEqual(rendered, expected)

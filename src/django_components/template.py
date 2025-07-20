@@ -8,7 +8,7 @@ from django.template import Context, Origin, Template
 from django.template.loader import get_template as django_get_template
 
 from django_components.cache import get_template_cache
-from django_components.util.django_monkeypatch import is_template_cls_patched
+from django_components.util.django_monkeypatch import is_cls_patched
 from django_components.util.loader import get_component_dirs
 from django_components.util.logger import trace_component_msg
 from django_components.util.misc import get_import_path, get_module_info
@@ -98,7 +98,7 @@ def prepare_component_template(
             yield template
             return
 
-        if not is_template_cls_patched(template):
+        if not is_cls_patched(template):
             raise RuntimeError(
                 "Django-components received a Template instance which was not patched."
                 "If you are using Django's Template class, check if you added django-components"
