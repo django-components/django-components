@@ -14,7 +14,7 @@ black==25.1.0
     # via -r requirements-dev.in
 build==1.2.2.post1
     # via asv
-cachetools==5.5.2
+cachetools==6.1.0
     # via tox
 certifi==2025.1.31
     # via requests
@@ -36,7 +36,7 @@ djc-core-html-parser==1.0.2
     # via -r requirements-dev.in
 exceptiongroup==1.2.2
     # via pytest
-filelock==3.16.1
+filelock==3.18.0
     # via
     #   tox
     #   virtualenv
@@ -72,7 +72,7 @@ mypy-extensions==1.0.0
     #   mypy
 nodeenv==1.9.1
     # via pre-commit
-packaging==24.2
+packaging==25.0
     # via
     #   black
     #   build
@@ -84,14 +84,14 @@ pathspec==0.12.1
     #   -r requirements-dev.in
     #   black
     #   mypy
-platformdirs==4.3.6
+platformdirs==4.3.8
     # via
     #   black
     #   tox
     #   virtualenv
 playwright==1.48.0
     # via -r requirements-dev.in
-pluggy==1.5.0
+pluggy==1.6.0
     # via
     #   pytest
     #   tox
@@ -111,7 +111,7 @@ pygments-djc==1.0.1
     # via -r requirements-dev.in
 pympler==1.1
     # via asv
-pyproject-api==1.8.0
+pyproject-api==1.9.1
     # via tox
 pyproject-hooks==1.2.0
     # via build
@@ -147,11 +147,11 @@ tomli==2.2.1
     #   pyproject-api
     #   pytest
     #   tox
-tox==4.25.0
+tox==4.28.0
     # via -r requirements-dev.in
 types-requests==2.32.0.20241016
     # via -r requirements-dev.in
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   -r requirements-dev.in
     #   asgiref
