@@ -8,8 +8,6 @@ asv==0.6.4
     # via -r requirements-ci.in
 asv-runner==0.2.1
     # via asv
-backports-asyncio-runner==1.2.0
-    # via pytest-asyncio
 build==1.2.2.post1
     # via asv
 cachetools==5.5.2
