@@ -10,8 +10,6 @@ asv==0.6.4
     # via -r requirements-dev.in
 asv-runner==0.2.1
     # via asv
-backports-asyncio-runner==1.2.0
-    # via pytest-asyncio
 black==25.1.0
     # via -r requirements-dev.in
 build==1.2.2.post1
