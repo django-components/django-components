@@ -64,7 +64,7 @@ json5==0.10.0
     # via asv
 mccabe==0.7.0
     # via flake8
-mypy==1.17.0
+mypy==1.17.1
     # via -r requirements-dev.in
 mypy-extensions==1.0.0
     # via
