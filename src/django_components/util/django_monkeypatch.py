@@ -243,5 +243,81 @@ def monkeypatch_include_render(include_node_cls: Type[Node]) -> None:
     include_node_cls.render = _include_render
 
 
+def monkeypatch_template_proxy_cls(template_proxy_cls: Type[Any]) -> None:
+    """Patch template_partials.TemplateProxy to work with django-components."""
+    if is_cls_patched(template_proxy_cls):
+        return
+
+    monkeypatch_template_proxy_render(template_proxy_cls)
+    template_proxy_cls._djc_patched = True
+
+
+def monkeypatch_template_proxy_render(template_proxy_cls: Type[Any]) -> None:
+    """
+    Patch TemplateProxy.render() to work with django-components dependencies and context handling.
+    
+    This applies similar changes as monkeypatch_template_render but for template_partials.TemplateProxy
+    which has a simpler structure.
+    """
+    if is_cls_patched(template_proxy_cls):
+        # Do not patch if done so already. This helps us avoid RecursionError
+        return
+
+    original_render = template_proxy_cls.render
+
+    def _template_proxy_render(self: Any, context: Context, *args: Any, **kwargs: Any) -> str:
+        "Display stage -- can be called many times"
+        # We parametrized `isolated_context`, which was `True` in the original method.
+        if COMPONENT_IS_NESTED_KEY not in context:
+            isolated_context = True
+        else:
+            # MUST be `True` for templates that are NOT import with `{% extends %}` tag,
+            # and `False` otherwise.
+            isolated_context = not context[COMPONENT_IS_NESTED_KEY]
+
+        # Similar to Template.render but adapted for TemplateProxy structure
+        with context.render_context.push_state(self, isolated_context=isolated_context):
+            if context.template is None:
+                with context.bind_template(self):
+                    context.template_name = self.name
+                    result: str = self._render(context, *args, **kwargs)
+            else:
+                result = self._render(context, *args, **kwargs)
+
+        # If the key is present, that means this TemplateProxy is rendered as part of `Component.render()`
+        # or `{% component %}`. In that case the parent component will take care of rendering the
+        # dependencies, so we don't need to do that here.
+        if _COMPONENT_CONTEXT_KEY in context:
+            return result
+
+        # NOTE: Only process dependencies if the rendered result contains AT LEAST ONE rendered component.
+        #       This has two reasons:
+        #       1. To keep the behavior consistent with the previous implementation, when `TemplateProxy.render()`
+        #          didn't call `render_dependencies()`.
+        #       2. To avoid unnecessary processing which otherwise has a considerable perf overhead.
+        #          See https://github.com/django-components/django-components/pull/1166#issuecomment-2850899765
+        if not COMPONENT_COMMENT_REGEX.search(result.encode("utf-8")):
+            return result
+
+        # Allow users to configure the `deps_strategy` kwarg of `render_dependencies()`, even if
+        # they render a TemplateProxy directly.
+        #
+        # Example:
+        # ```
+        # result = render_dependencies(
+        #     result,
+        #     Context({ "DJC_DEPS_STRATEGY": "fragment" }),
+        # )
+        # ```
+        if _STRATEGY_CONTEXT_KEY in context and context[_STRATEGY_CONTEXT_KEY] is not None:
+            strategy = context[_STRATEGY_CONTEXT_KEY]
+            result = render_dependencies(result, strategy)
+        else:
+            result = render_dependencies(result)
+        return result
+
+    template_proxy_cls.render = _template_proxy_render
+
+
 def is_cls_patched(cls: Type[Any]) -> bool:
     return getattr(cls, "_djc_patched", False)
