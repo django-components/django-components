@@ -14,18 +14,36 @@ class ComponentsConfig(AppConfig):
     # This is the code that gets run when user adds django_components
     # to Django's INSTALLED_APPS
     def ready(self) -> None:
+        from django.conf import settings
+
         from django_components.app_settings import app_settings
         from django_components.autodiscovery import autodiscover, import_libraries
         from django_components.component_registry import registry
         from django_components.components.dynamic import DynamicComponent
         from django_components.extension import extensions
-        from django_components.util.django_monkeypatch import monkeypatch_include_node, monkeypatch_template_cls
+        from django_components.util.django_monkeypatch import (
+            monkeypatch_include_node,
+            monkeypatch_template_cls,
+            monkeypatch_template_proxy_cls,
+        )
 
         # NOTE: This monkeypatch is applied here, before Django processes any requests.
         #       To make django-components work with django-debug-toolbar-template-profiler
         #       See https://github.com/django-components/django-components/discussions/819
         monkeypatch_template_cls(Template)
         monkeypatch_include_node(IncludeNode)
+
+        # Patch TemplateProxy if template_partials is installed
+        # See https://github.com/django-components/django-components/issues/1323#issuecomment-3164224042
+        if "template_partials" in settings.INSTALLED_APPS:
+            try:
+                from template_partials.templatetags.partials import TemplateProxy
+
+                monkeypatch_template_proxy_cls(TemplateProxy)
+            except ImportError:
+                # template_partials is in INSTALLED_APPS but not actually installed
+                # This is fine, just skip the patching
+                pass
 
         # Import modules set in `COMPONENTS.libraries` setting
         import_libraries()
