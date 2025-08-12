@@ -163,7 +163,7 @@ urllib3==2.2.3
     # via
     #   requests
     #   types-requests
-virtualenv==20.33.0
+virtualenv==20.33.1
     # via
     #   -r requirements-dev.in
     #   asv
