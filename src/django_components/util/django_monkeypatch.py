@@ -243,5 +243,33 @@ def monkeypatch_include_render(include_node_cls: Type[Node]) -> None:
     include_node_cls.render = _include_render
 
 
+# NOTE: Remove once Django v5.2 reaches end of life
+#       See https://github.com/django-components/django-components/issues/1323#issuecomment-3163478287
+def monkeypatch_template_proxy_cls() -> None:
+    # Patch TemplateProxy if template_partials is installed
+    # See https://github.com/django-components/django-components/issues/1323#issuecomment-3164224042
+    try:
+        from template_partials.templatetags.partials import TemplateProxy
+    except ImportError:
+        # template_partials is in INSTALLED_APPS but not actually installed
+        # This is fine, just skip the patching
+        return
+
+    if is_cls_patched(TemplateProxy):
+        return
+
+    monkeypatch_template_proxy_render(TemplateProxy)
+    TemplateProxy._djc_patched = True
+
+
+def monkeypatch_template_proxy_render(template_proxy_cls: Type[Any]) -> None:
+    # NOTE: TemplateProxy.render() is same logic as Template.render(), just duplicated.
+    # So we can instead reuse Template.render()
+    def _template_proxy_render(self: Any, context: Context, *args: Any, **kwargs: Any) -> str:
+        return Template.render(self, context)
+
+    template_proxy_cls.render = _template_proxy_render
+
+
 def is_cls_patched(cls: Type[Any]) -> bool:
     return getattr(cls, "_djc_patched", False)

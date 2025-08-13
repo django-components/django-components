@@ -19,13 +19,21 @@ class ComponentsConfig(AppConfig):
         from django_components.component_registry import registry
         from django_components.components.dynamic import DynamicComponent
         from django_components.extension import extensions
-        from django_components.util.django_monkeypatch import monkeypatch_include_node, monkeypatch_template_cls
+        from django_components.util.django_monkeypatch import (
+            monkeypatch_include_node,
+            monkeypatch_template_cls,
+            monkeypatch_template_proxy_cls,
+        )
 
         # NOTE: This monkeypatch is applied here, before Django processes any requests.
         #       To make django-components work with django-debug-toolbar-template-profiler
         #       See https://github.com/django-components/django-components/discussions/819
         monkeypatch_template_cls(Template)
         monkeypatch_include_node(IncludeNode)
+
+        # This makes django-components work with django-template-partials
+        # NOTE: Delete when Django 5.2 reaches end of life
+        monkeypatch_template_proxy_cls()
 
         # Import modules set in `COMPONENTS.libraries` setting
         import_libraries()
