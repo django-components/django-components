@@ -218,7 +218,7 @@ class ComponentsSettings(NamedTuple):
     [STATICFILES_DIRS](https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-STATICFILES_DIRS).
 
     These locations are searched during [autodiscovery](../../concepts/fundamentals/autodiscovery),
-    or when you [define HTML, JS, or CSS as separate files](../../concepts/fundamentals/defining_js_css_html_files).
+    or when you [define HTML, JS, or CSS as separate files](../../concepts/fundamentals/html_js_css_files).
 
     ```python
     COMPONENTS = ComponentsSettings(
@@ -252,7 +252,7 @@ class ComponentsSettings(NamedTuple):
     To search for `<app>/my_comps/`.
 
     These locations are searched during [autodiscovery](../../concepts/fundamentals/autodiscovery),
-    or when you [define HTML, JS, or CSS as separate files](../../concepts/fundamentals/defining_js_css_html_files).
+    or when you [define HTML, JS, or CSS as separate files](../../concepts/fundamentals/html_js_css_files).
 
     Set to empty list to disable app-level components:
 
