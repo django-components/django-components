@@ -2697,11 +2697,12 @@ class Component(metaclass=ComponentMeta):
 
     - [`"document"`](../../concepts/advanced/rendering_js_css#document) (default)
         - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
-        - Inserts extra script to allow `fragment` types to work.
-        - Assumes the HTML will be rendered in a JS-enabled browser.
+        - Requires the HTML to be rendered in a JS-enabled browser.
+        - Inserts extra script for managing fragments.
     - [`"fragment"`](../../concepts/advanced/rendering_js_css#fragment)
         - A lightweight HTML fragment to be inserted into a document with AJAX.
-        - No JS / CSS included.
+        - Fragment will fetch its own JS / CSS dependencies when inserted into the page.
+        - Requires the HTML to be rendered in a JS-enabled browser.
     - [`"simple"`](../../concepts/advanced/rendering_js_css#simple)
         - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
         - No extra script loaded.
@@ -3186,11 +3187,12 @@ class Component(metaclass=ComponentMeta):
 
             - [`"document"`](../../concepts/advanced/rendering_js_css#document) (default)
                 - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
-                - Inserts extra script to allow `fragment` types to work.
-                - Assumes the HTML will be rendered in a JS-enabled browser.
+                - Requires the HTML to be rendered in a JS-enabled browser.
+                - Inserts extra script for managing fragments.
             - [`"fragment"`](../../concepts/advanced/rendering_js_css#fragment)
                 - A lightweight HTML fragment to be inserted into a document with AJAX.
-                - No JS / CSS included.
+                - Fragment will fetch its own JS / CSS dependencies when inserted into the page.
+                - Requires the HTML to be rendered in a JS-enabled browser.
             - [`"simple"`](../../concepts/advanced/rendering_js_css#simple)
                 - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
                 - No extra script loaded.

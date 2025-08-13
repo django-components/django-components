@@ -539,6 +539,58 @@ class TestE2eDependencyRendering:
 
         await page.close()
 
+    # Fragment where the page wasn't rendered with the "document" strategy
+    @with_playwright
+    async def test_fragment_without_document(self):
+        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        await page.goto(f"{TEST_SERVER_URL}/fragment/base/htmx_raw?frag=comp")
+
+        test_before_js: types.js = """() => {
+            const targetEl = document.querySelector("#target");
+            const targetHtml = targetEl ? targetEl.outerHTML : null;
+            const fragEl = document.querySelector(".frag");
+            const fragHtml = fragEl ? fragEl.outerHTML : null;
+
+            return { targetHtml, fragHtml };
+        }"""
+
+        data_before = await page.evaluate(test_before_js)
+
+        assert data_before["targetHtml"] == '<div id="target">OLD</div>'
+        assert data_before["fragHtml"] is None
+
+        # Clicking button should load and insert the fragment
+        await page.locator("button").click()
+
+        # Wait until both JS and CSS are loaded
+        await page.locator(".frag").wait_for(state="visible")
+        await page.wait_for_function(
+            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')"
+        )
+        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+
+        test_js: types.js = """() => {
+            const targetEl = document.querySelector("#target");
+            const targetHtml = targetEl ? targetEl.outerHTML : null;
+            const fragEl = document.querySelector(".frag");
+            const fragHtml = fragEl ? fragEl.outerHTML : null;
+
+            // Get the stylings defined via CSS
+            const fragBg = fragEl ? globalThis.getComputedStyle(fragEl).getPropertyValue('background') : null;
+
+            return { targetHtml, fragHtml, fragBg };
+        }"""
+
+        data = await page.evaluate(test_js)
+
+        assert data["targetHtml"] is None
+        assert re.compile(
+            r'<div class="frag" data-djc-id-\w{7}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
+        ).search(data["fragHtml"]) is not None
+        assert "rgb(0, 0, 255)" in data["fragBg"]  # AKA 'background: blue'
+
+        await page.close()
+
     @with_playwright
     async def test_alpine__head(self):
         single_comp_url = TEST_SERVER_URL + "/alpine/head"

@@ -258,11 +258,17 @@ export const createComponentsManager = () => {
         .catch(console.error);
   };
 
-  // Initialise the MutationObserver that watches for `<script>` tags with `data-djc` attribute
-  observeScriptTag((script) => {
+  const onDjcScript = (script: HTMLScriptElement) => {
     const data = JSON.parse(script.text);
     _loadComponentScripts(data);
-  });
+  };
+  
+  // Initialise the MutationObserver that watches for `<script>` tags with `data-djc` attribute
+  observeScriptTag(onDjcScript);
+
+  // Also consider any embedded scripts at the moment the file is loaded.
+  const existingScripts = document.querySelectorAll<HTMLScriptElement>('script[data-djc]');
+  existingScripts.forEach(onDjcScript);
 
   return {
     callComponent,

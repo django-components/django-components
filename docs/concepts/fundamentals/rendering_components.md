@@ -349,12 +349,12 @@ There are six dependencies rendering strategies:
 
 - [`document`](../../advanced/rendering_js_css#document) (default)
     - Smartly inserts JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) or into `<head>` and `<body>` tags.
-    - Inserts extra script to allow `fragment` components to work.
-    - Assumes the HTML will be rendered in a JS-enabled browser.
+    - Requires the HTML to be rendered in a JS-enabled browser.
+    - Inserts extra script for managing fragments.
 - [`fragment`](../../advanced/rendering_js_css#fragment)
     - A lightweight HTML fragment to be inserted into a document with AJAX.
-    - Assumes the page was already rendered with `"document"` strategy.
-    - No JS / CSS included.
+    - Fragment will fetch its own JS / CSS dependencies when inserted into the page.
+    - Requires the HTML to be rendered in a JS-enabled browser.
 - [`simple`](../../advanced/rendering_js_css#simple)
     - Smartly insert JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) or into `<head>` and `<body>` tags.
     - No extra script loaded.

@@ -142,11 +142,12 @@ There are six dependencies strategies:
 
 - [`document`](../../advanced/rendering_js_css#document) (default)
     - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
-    - Inserts extra script to allow `fragment` strategy to work.
-    - Assumes the HTML will be rendered in a JS-enabled browser.
+    - Requires the HTML to be rendered in a JS-enabled browser.
+    - Inserts extra script for managing fragments.
 - [`fragment`](../../advanced/rendering_js_css#fragment)
     - A lightweight HTML fragment to be inserted into a document with AJAX.
-    - No JS / CSS included.
+    - Fragment will fetch its own JS / CSS dependencies when inserted into the page.
+    - Requires the HTML to be rendered in a JS-enabled browser.
 - [`simple`](../../advanced/rendering_js_css#simple)
     - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
     - No extra script loaded.
@@ -212,10 +213,6 @@ the page in the browser:
 - A JS script is injected to manage component dependencies, enabling lazy loading of JS and CSS
   for HTML fragments.
 
-!!! info
-
-    This strategy is required for fragments to work properly, as it sets up the dependency manager that fragments rely on.
-
 !!! note "How the dependency manager works"
 
     The dependency manager is a JS script that keeps track of all the JS and CSS dependencies that have already been loaded.
@@ -228,8 +225,7 @@ the page in the browser:
 
 ### `fragment`
 
-`deps_strategy="fragment"` is used when rendering a piece of HTML that will be inserted into a page
-that has already been rendered with the [`"document"`](#document) strategy:
+`deps_strategy="fragment"` is used when rendering a piece of HTML that will be inserted into a page:
 
 ```python
 fragment = MyComponent.render(deps_strategy="fragment")
@@ -426,6 +422,6 @@ assert html == html2
 Django-components provides a seamless integration with HTML fragments with AJAX ([HTML over the wire](https://hotwired.dev/)),
 whether you're using jQuery, HTMX, AlpineJS, vanilla JavaScript, or other.
 
-This is achieved by the combination of the [`"document"`](#document) and [`"fragment"`](#fragment) strategies.
+This is achieved by the [`"fragment"`](#fragment) strategy.
 
 Read more about [HTML fragments](../../advanced/html_fragments).

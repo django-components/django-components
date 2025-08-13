@@ -146,7 +146,15 @@ def fragment_base_js_view(request):
                             .then(response => response.text())
                             .then(html => {
                                 console.log({ fragment: html })
-                                document.querySelector('#target').outerHTML = html;
+                                const target = document.querySelector('#target');
+                                const a = new DOMParser().parseFromString(html, "text/html");
+                                target.replaceWith(...a.body.childNodes);
+                                for (const script of a.querySelectorAll('script')) {
+                                    const newScript = document.createElement('script');
+                                    newScript.textContent = script.textContent;
+                                    newScript.async = false;
+                                    document.body.appendChild(newScript);
+                                }
                             });
                     });
                 </script>
@@ -236,6 +244,39 @@ def fragment_base_htmx_view(request):
 
     frag = request.GET["frag"]
     rendered = template.render(Context({"frag": frag}))
+    return HttpResponse(rendered)
+
+
+
+# HTML into which a fragment will be loaded using HTMX
+# This variant doesn't include the component manager script, so that we can test
+# that the fragment can be rendered even when the page wasn't rendered with the "document" strategy.
+def fragment_base_htmx_view__raw(request):
+    template_str: types.django_html = """
+        {% load component_tags %}
+        <!DOCTYPE html>
+        <html>
+            <head>
+                {% component_css_dependencies %}
+                <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+            </head>
+            <body>
+                {% component 'inner' variable='foo' / %}
+
+                <div id="target">OLD</div>
+
+                <button id="loader" hx-get="/fragment/frag?frag={{ frag }}" hx-swap="outerHTML" hx-target="#target">
+                  Click me!
+                </button>
+
+                {% component_js_dependencies %}
+            </body>
+        </html>
+    """
+    template = Template(template_str)
+
+    frag = request.GET["frag"]
+    rendered = template.render(Context({"frag": frag, "DJC_DEPS_STRATEGY": "ignore"}))
     return HttpResponse(rendered)
 
 

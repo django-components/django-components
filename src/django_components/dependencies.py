@@ -476,6 +476,28 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
 _render_dependencies = render_dependencies
 
 
+def _pre_loader_js() -> str:
+    """
+    This script checks if our dependency manager script is already loaded on the page,
+    and loads the manager if not yet.
+
+    This script is included with every "fragment", so that the "fragments" can be rendered
+    even on pages that weren't rendered with the "document" strategy.
+    """
+    manager_url = static("django_components/django_components.min.js")
+    return f"""
+        (() => {{
+            if (!globalThis.Components) {{
+                const s = document.createElement('script');
+                s.src = "{manager_url}";
+                document.head.appendChild(s);
+            }}
+            // Remove this loader script
+            if (document.currentScript) document.currentScript.remove();
+        }})();
+    """
+
+
 # Overview of this function:
 # 1. We extract all HTML comments like `<!-- _RENDERED table_10bac31,1234-->`.
 # 2. We look up the corresponding component classes
@@ -646,6 +668,22 @@ def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) ->
         # NOTE: When rendering a document, the initial JS is inserted directly into the HTML
         js=[static("django_components/django_components.min.js")] if strategy == "document" else [],
     ).render_js()
+
+    # Core scripts without which the rest wouldn't work
+    core_script_tags = []
+    if strategy == "document":
+        # For full documents, load manager as a normal external <script src="...">
+        core_script_tags = Media(
+            js=[static("django_components/django_components.min.js")]
+        ).render_js()
+    elif strategy == "fragment":
+        # For fragments, inline a script that conditionally injects the dependency manager
+        # if it's not already loaded.
+        #
+        # TODO: Eventually we want to parametrize how the `<script>` tag is rendered
+        # (e.g. to use `type="module"`, `defer`, or csp nonce) based on which component
+        # it was defined in.
+        core_script_tags = [mark_safe(f"<script>{_pre_loader_js()}</script>")]
 
     final_script_tags = "".join(
         [
