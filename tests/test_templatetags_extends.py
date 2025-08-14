@@ -584,7 +584,7 @@ class TestExtendsCompat:
         expected = """
             <body>
                 <outer>
-                    <div data-djc-id-ca1bc41>Hello</div>
+                    <div data-djc-id-ca1bc40>Hello</div>
                 </outer>
                 <script src="django_components/django_components.min.js"></script>
                 <script type="application/json" data-djc>{"loadedCssUrls": ["c3R5bGUuY3Nz"],
@@ -640,7 +640,7 @@ class TestExtendsCompat:
             <html>
                 <body data-djc-id-ca1bc43>
                     <outer>
-                        <div data-djc-id-ca1bc45>Hello</div>
+                        <div data-djc-id-ca1bc44>Hello</div>
                     </outer>
                     <script src="django_components/django_components.min.js"></script>
                     <script type="application/json" data-djc>{"loadedCssUrls": ["c3R5bGUuY3Nz"],

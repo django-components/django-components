@@ -3250,7 +3250,7 @@ class Component(metaclass=ComponentMeta):
             ),
         )
         ```
-        """  # noqa: 501
+        """  # noqa: E501
 
         # TODO_v1 - Remove, superseded by `deps_strategy`
         if type is not None:
