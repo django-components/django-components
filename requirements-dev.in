@@ -21,6 +21,6 @@ pygments-djc
 asv
 # NOTE: pin virtualenv to <20.31 until asv fixes integration
 # See https://github.com/airspeed-velocity/asv/issues/1484
-virtualenv==20.33.0
+virtualenv==20.33.1
 typing-extensions>=4.12.2
 pathspec

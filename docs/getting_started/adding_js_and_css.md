@@ -235,7 +235,7 @@ with a few differences:
 4. If you set [`Media.extend`](../../reference/api/#django_components.ComponentMediaInput.extend) to a list,
    it should be a list of [`Component`](../../reference/api/#django_components.Component) classes.
 
-[Learn more](../../concepts/fundamentals/defining_js_css_html_files) about using Media.
+[Learn more](../concepts/fundamentals/secondary_js_css_files.md) about using Media.
 
 ```python title="[project root]/components/calendar/calendar.py"
 from django_components import Component
