@@ -24,16 +24,13 @@ except ImportError:
     TemplateProxy = None
 
 
-setup_test_config(
-    components={"autodiscover": False},
-    extra_settings={
-        "INSTALLED_APPS": ("template_partials", "django_components", "tests.test_app"),
-    }
-)
+setup_test_config(components={"autodiscover": False})
 
 
 # See https://github.com/django-components/django-components/issues/1323#issuecomment-3156654329
-@djc_test
+@djc_test(
+    django_settings={"INSTALLED_APPS": ("template_partials", "django_components", "tests.test_app")}
+)
 class TestTemplatePartialsIntegration:
     @pytest.mark.skipif(TemplateProxy is None, reason="template_partials not available")
     def test_render_partial(self):
