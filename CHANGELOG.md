@@ -4,12 +4,16 @@
 
 #### Feat
 
-- You don't need to render the whole page with the `document` strategy to use HTML fragments.
+- You no longer need to render the whole page with the `document` strategy to use HTML fragments.
 
     Previously, if you wanted to insert rendered components as HTML fragments, you had to ensure
     that the HTML document it was being inserted into was rendered with the `document` strategy.
 
     Now, when you render components with `fragment` strategy, they know how to fetch their own JS / CSS dependencies.
+
+#### Fix
+
+- Fix compatibility with django-template-partials ([#1322](https://github.com/django-components/django-components/issues/1322))
 
 ## v0.141.2
 
