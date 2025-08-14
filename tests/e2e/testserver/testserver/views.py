@@ -247,7 +247,6 @@ def fragment_base_htmx_view(request):
     return HttpResponse(rendered)
 
 
-
 # HTML into which a fragment will be loaded using HTMX
 # This variant doesn't include the component manager script, so that we can test
 # that the fragment can be rendered even when the page wasn't rendered with the "document" strategy.

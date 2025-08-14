@@ -673,9 +673,7 @@ def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) ->
     core_script_tags = []
     if strategy == "document":
         # For full documents, load manager as a normal external <script src="...">
-        core_script_tags = Media(
-            js=[static("django_components/django_components.min.js")]
-        ).render_js()
+        core_script_tags = Media(js=[static("django_components/django_components.min.js")]).render_js()
     elif strategy == "fragment":
         # For fragments, inline a script that conditionally injects the dependency manager
         # if it's not already loaded.
