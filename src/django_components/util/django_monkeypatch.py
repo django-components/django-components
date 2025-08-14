@@ -1,5 +1,6 @@
 from typing import Any, Optional, Type
 
+from django import VERSION as DJANGO_VERSION
 from django.template import Context, NodeList, Template
 from django.template.base import Node, Origin, Parser
 from django.template.loader_tags import IncludeNode
@@ -117,10 +118,14 @@ def monkeypatch_template_compile_nodelist(template_cls: Type[Template]) -> None:
         )
 
         try:
-            #  ---------------- ADDED IN Django v5.1 - See https://github.com/django/django/commit/35bbb2c9c01882b1d77b0b8c737ac646144833d4  # noqa: E501
             nodelist = parser.parse()
-            self.extra_data = getattr(parser, "extra_data", {})
-            #  ---------------- END OF ADDED IN Django v5.1 ----------------
+            if DJANGO_VERSION >= (5, 1):
+                #  ---------------- ADDED IN Django v5.1 - See https://github.com/django/django/commit/35bbb2c9c01882b1d77b0b8c737ac646144833d4  # noqa: E501
+                # NOTE: This must be enabled ONLY for 5.1 and later. Previously it was also for older
+                #       Django versions, and this led to compatibility issue with django-template-partials.
+                #       See https://github.com/carltongibson/django-template-partials/pull/85#issuecomment-3187354790
+                self.extra_data = getattr(parser, "extra_data", {})
+                #  ---------------- END OF ADDED IN Django v5.1 ----------------
             return nodelist
         except Exception as e:
             if self.engine.debug:
