@@ -581,16 +581,18 @@ class TestExtendsCompat:
         # NOTE: It's important that the <script> tags are rendered outside of <div> and <outer> tags,
         # because that tells us that the JS/CSS is rendered by the parent template, not the component
         # inside the include.
-        expected = """
+        # NOTE 2: The IDs differ when rendered as part of whole test suite vs as a single test.
+        comp_id = "ca1bc41" if "ca1bc41" in rendered else "ca1bc40"
+        expected = f"""
             <body>
                 <outer>
-                    <div data-djc-id-ca1bc41>Hello</div>
+                    <div data-djc-id-{comp_id}>Hello</div>
                 </outer>
                 <script src="django_components/django_components.min.js"></script>
-                <script type="application/json" data-djc>{"loadedCssUrls": ["c3R5bGUuY3Nz"],
+                <script type="application/json" data-djc>{{"loadedCssUrls": ["c3R5bGUuY3Nz"],
                     "loadedJsUrls": ["c2NyaXB0Lmpz"],
                     "toLoadCssTags": [],
-                    "toLoadJsTags": []}</script>
+                    "toLoadJsTags": []}}</script>
                 <script src="script.js"></script>
             </body>
         """
@@ -636,17 +638,20 @@ class TestExtendsCompat:
         template_obj = Template(template)
         context = Context()
         rendered = template_obj.render(context)
-        expected = """
+
+        # NOTE: The IDs differ when rendered as part of whole test suite vs as a single test.
+        comp_id = "ca1bc45" if "ca1bc45" in rendered else "ca1bc44"
+        expected = f"""
             <html>
                 <body data-djc-id-ca1bc43>
                     <outer>
-                        <div data-djc-id-ca1bc45>Hello</div>
+                        <div data-djc-id-{comp_id}>Hello</div>
                     </outer>
                     <script src="django_components/django_components.min.js"></script>
-                    <script type="application/json" data-djc>{"loadedCssUrls": ["c3R5bGUuY3Nz"],
+                    <script type="application/json" data-djc>{{"loadedCssUrls": ["c3R5bGUuY3Nz"],
                         "loadedJsUrls": ["c2NyaXB0Lmpz"],
                         "toLoadCssTags": [],
-                        "toLoadJsTags": []}</script>
+                        "toLoadJsTags": []}}</script>
                     <script src="script.js"></script>
                 </body>
             </html>

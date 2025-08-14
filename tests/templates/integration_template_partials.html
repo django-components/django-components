@@ -1,0 +1,13 @@
+<!-- TODO: Delete after Django 5.2 reaches end of life -->
+{% load component_tags %}
+{% load partials %}
+
+{% partialdef test___partial inline %}
+
+{% component_css_dependencies %}
+
+{% component "calendar" date=date / %}
+
+{% component_js_dependencies %}
+
+{% endpartialdef %}
