@@ -10,5 +10,6 @@ asv
 virtualenv==20.33.1
 pytest-asyncio
 pytest-django
+django-template-partials
 typing-extensions>=4.12.2
 pathspec
