@@ -1,11 +1,13 @@
 import difflib
 import re
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    Generator,
     Generic,
     List,
     Literal,
@@ -1460,8 +1462,10 @@ def _extract_fill_content(
     # When, during rendering of this tree, we encounter a {% fill %} node, instead of rendering content,
     # it will add itself into captured_fills, because `FILL_GEN_CONTEXT_KEY` is defined.
     captured_fills: List[FillWithData] = []
-    with context.update({FILL_GEN_CONTEXT_KEY: captured_fills}):
-        content = mark_safe(nodes.render(context).strip())
+
+    with _extends_context_reset(context):
+        with context.update({FILL_GEN_CONTEXT_KEY: captured_fills}):
+            content = mark_safe(nodes.render(context).strip())
 
     # If we did not encounter any fills (not accounting for those nested in other
     # {% componenet %} tags), then we treat the content as default slot.
@@ -1667,3 +1671,24 @@ def _nodelist_to_slot(
 
 def _is_extracting_fill(context: Context) -> bool:
     return context.get(FILL_GEN_CONTEXT_KEY, None) is not None
+
+
+# Fix for compatibility with Django's `{% include %}` and `{% extends %}` tags.
+# See https://github.com/django-components/django-components/issues/1325
+#
+# When we search for `{% fill %}` tags, we also evaluate `{% include %}` and `{% extends %}`
+# tags if they are within component body (between `{% component %}` / `{% endcomponent %}` tags).
+# But by doing so, we trigger Django's block/extends logic to remember that this extended file
+# was already walked.
+# (See https://github.com/django/django/blob/0bff53b4138d8c6009e9040dbb8916a1271a68d7/django/template/loader_tags.py#L114)  # noqa: E501
+#
+# We need to clear that state, otherwise Django won't render the extended template the second time
+# (when we actually render it).
+@contextmanager
+def _extends_context_reset(context: Context) -> Generator[None, None, None]:
+    b4_ctx_extends = context.render_context.setdefault("extends_context", []).copy()
+
+    yield
+
+    # Reset the state of what extends have been seen.
+    context.render_context["extends_context"] = b4_ctx_extends

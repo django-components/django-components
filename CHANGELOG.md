@@ -1,5 +1,12 @@
 # Release notes
 
+## v0.141.4
+
+#### Fix
+
+- Fix compatibility with Django's `{% include %}` and `{% extends %}` tags.
+  See https://github.com/django-components/django-components/issues/1325
+
 ## v0.141.3
 
 #### Feat

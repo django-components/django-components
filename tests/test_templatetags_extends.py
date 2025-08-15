@@ -145,7 +145,9 @@ class TestExtendsCompat:
         assertHTMLEqual(rendered, expected)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_double_extends_on_main_template_and_component_two_different_components_same_parent(self, components_settings):  # noqa: E501
+    def test_double_extends_on_main_template_and_component_two_different_components_same_parent(
+        self, components_settings
+    ):
         registry.register("blocked_and_slotted_component", gen_blocked_and_slotted_component())
 
         @register("extended_component")
@@ -211,7 +213,9 @@ class TestExtendsCompat:
         assertHTMLEqual(rendered, expected)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_double_extends_on_main_template_and_component_two_different_components_different_parent(self, components_settings):  # noqa: E501
+    def test_double_extends_on_main_template_and_component_two_different_components_different_parent(
+        self, components_settings
+    ):
         registry.register("blocked_and_slotted_component", gen_blocked_and_slotted_component())
 
         @register("extended_component")
@@ -1029,3 +1033,43 @@ class TestExtendsCompat:
             </html>
         """
         assertHTMLEqual(rendered, expected)
+
+    # Fix for compatibility with Django's `{% include %}` and `{% extends %}` tags.
+    # See https://github.com/django-components/django-components/issues/1325
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_nested_component_with_include_and_extends_in_slot(self, components_settings):
+        @register("a_outer")
+        class AOuterComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <p>This is the outer component.</p>
+                {% slot "a" default / %}
+            """
+
+        @register("b_inner")
+        class BInnerComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <p>This is the inner component.</p>
+                {% slot "b" default / %}
+            """
+
+        template: types.django_html = """
+            {% load component_tags %}
+            {% component "a_outer" %}
+                {% component "b_inner" %}
+                    {% include "extends_compat_c_include.html" %}
+                {% endcomponent %}
+            {% endcomponent %}
+        """
+        rendered = Template(template).render(Context({}))
+
+        assertHTMLEqual(
+            rendered,
+            """
+            <p data-djc-id-ca1bc40>This is the outer component.</p>
+            <p data-djc-id-ca1bc40 data-djc-id-ca1bc42>This is the inner component.</p>
+            <p data-djc-id-ca1bc40 data-djc-id-ca1bc42>This template gets extended.</p>
+            <p data-djc-id-ca1bc40 data-djc-id-ca1bc42>This template extends another template.</p>
+        """,
+        )
