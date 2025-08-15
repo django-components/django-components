@@ -40,9 +40,9 @@ ContextBehaviorType = Literal["django", "isolated"]
 class ContextBehavior(str, Enum):
     """
     Configure how (and whether) the context is passed to the component fills
-    and what variables are available inside the [`{% fill %}`](../template_tags#fill) tags.
+    and what variables are available inside the [`{% fill %}`](./template_tags.md#fill) tags.
 
-    Also see [Component context and scope](../../concepts/fundamentals/component_context_scope#context-behavior).
+    Also see [Component context and scope](../concepts/advanced/component_context_scope.md#context-behavior).
 
     **Options:**
 
@@ -56,7 +56,7 @@ class ContextBehavior(str, Enum):
     That is, they enrich the context, and pass it along.
 
     1. Component fills use the context of the component they are within.
-    2. Variables from [`Component.get_template_data()`](../api#django_components.Component.get_template_data)
+    2. Variables from [`Component.get_template_data()`](./api.md#django_components.Component.get_template_data)
     are available to the component fill.
 
     **Example:**
@@ -98,7 +98,7 @@ class ContextBehavior(str, Enum):
     """
     This setting makes the component fills behave similar to Vue or React, where
     the fills use EXCLUSIVELY the context variables defined in
-    [`Component.get_template_data()`](../api#django_components.Component.get_template_data).
+    [`Component.get_template_data()`](./api.md#django_components.Component.get_template_data).
 
     **Example:**
 
@@ -151,14 +151,14 @@ class ComponentsSettings(NamedTuple):
 
     extensions: Optional[Sequence[Union[Type["ComponentExtension"], str]]] = None
     """
-    List of [extensions](../../concepts/advanced/extensions) to be loaded.
+    List of [extensions](../concepts/advanced/extensions.md) to be loaded.
 
     The extensions can be specified as:
 
     - Python import path, e.g. `"path.to.my_extension.MyExtension"`.
     - Extension class, e.g. `my_extension.MyExtension`.
 
-    Read more about [extensions](../../concepts/advanced/extensions).
+    Read more about [extensions](../concepts/advanced/extensions.md).
 
     **Example:**
 
@@ -176,7 +176,7 @@ class ComponentsSettings(NamedTuple):
     """
     Global defaults for the extension classes.
 
-    Read more about [Extension defaults](../../concepts/advanced/extensions#extension-defaults).
+    Read more about [Extension defaults](../concepts/advanced/extensions.md#extension-defaults).
 
     **Example:**
 
@@ -197,7 +197,7 @@ class ComponentsSettings(NamedTuple):
 
     autodiscover: Optional[bool] = None
     """
-    Toggle whether to run [autodiscovery](../../concepts/fundamentals/autodiscovery) at the Django server startup.
+    Toggle whether to run [autodiscovery](../concepts/fundamentals/autodiscovery.md) at the Django server startup.
 
     Defaults to `True`
 
@@ -217,8 +217,8 @@ class ComponentsSettings(NamedTuple):
     Directories must be full paths, same as with
     [STATICFILES_DIRS](https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-STATICFILES_DIRS).
 
-    These locations are searched during [autodiscovery](../../concepts/fundamentals/autodiscovery),
-    or when you [define HTML, JS, or CSS as separate files](../../concepts/fundamentals/html_js_css_files).
+    These locations are searched during [autodiscovery](../concepts/fundamentals/autodiscovery.md),
+    or when you [define HTML, JS, or CSS as separate files](../concepts/fundamentals/html_js_css_files.md).
 
     ```python
     COMPONENTS = ComponentsSettings(
@@ -251,8 +251,8 @@ class ComponentsSettings(NamedTuple):
 
     To search for `<app>/my_comps/`.
 
-    These locations are searched during [autodiscovery](../../concepts/fundamentals/autodiscovery),
-    or when you [define HTML, JS, or CSS as separate files](../../concepts/fundamentals/html_js_css_files).
+    These locations are searched during [autodiscovery](../concepts/fundamentals/autodiscovery.md),
+    or when you [define HTML, JS, or CSS as separate files](../concepts/fundamentals/html_js_css_files.md).
 
     Set to empty list to disable app-level components:
 
@@ -273,7 +273,7 @@ class ComponentsSettings(NamedTuple):
 
     Defaults to `None`.
 
-    Read more about [caching](../../guides/setup/caching).
+    Read more about [caching](../guides/setup/caching.md).
 
     ```python
     COMPONENTS = ComponentsSettings(
@@ -285,12 +285,12 @@ class ComponentsSettings(NamedTuple):
     context_behavior: Optional[ContextBehaviorType] = None
     """
     Configure whether, inside a component template, you can use variables from the outside
-    ([`"django"`](../api#django_components.ContextBehavior.DJANGO))
-    or not ([`"isolated"`](../api#django_components.ContextBehavior.ISOLATED)).
-    This also affects what variables are available inside the [`{% fill %}`](../template_tags#fill)
+    ([`"django"`](./api.md#django_components.ContextBehavior.DJANGO))
+    or not ([`"isolated"`](./api.md#django_components.ContextBehavior.ISOLATED)).
+    This also affects what variables are available inside the [`{% fill %}`](./template_tags.md#fill)
     tags.
 
-    Also see [Component context and scope](../../concepts/fundamentals/component_context_scope#context-behavior).
+    Also see [Component context and scope](../concepts/advanced/component_context_scope.md#context-behavior).
 
     Defaults to `"django"`.
 
@@ -313,11 +313,11 @@ class ComponentsSettings(NamedTuple):
     debug_highlight_components: Optional[bool] = None
     """
     DEPRECATED. Use
-    [`extensions_defaults`](../settings/#django_components.app_settings.ComponentsSettings.extensions_defaults)
+    [`extensions_defaults`](./settings.md#django_components.app_settings.ComponentsSettings.extensions_defaults)
     instead. Will be removed in v1.
 
     Enable / disable component highlighting.
-    See [Troubleshooting](../../guides/other/troubleshooting#component-highlighting) for more details.
+    See [Troubleshooting](../guides/other/troubleshooting.md#component-and-slot-highlighting) for more details.
 
     Defaults to `False`.
 
@@ -332,11 +332,11 @@ class ComponentsSettings(NamedTuple):
     debug_highlight_slots: Optional[bool] = None
     """
     DEPRECATED. Use
-    [`extensions_defaults`](../settings/#django_components.app_settings.ComponentsSettings.extensions_defaults)
+    [`extensions_defaults`](./settings.md#django_components.app_settings.ComponentsSettings.extensions_defaults)
     instead. Will be removed in v1.
 
     Enable / disable slot highlighting.
-    See [Troubleshooting](../../guides/other/troubleshooting#slot-highlighting) for more details.
+    See [Troubleshooting](../guides/other/troubleshooting.md#component-and-slot-highlighting) for more details.
 
     Defaults to `False`.
 
@@ -349,7 +349,7 @@ class ComponentsSettings(NamedTuple):
 
     dynamic_component_name: Optional[str] = None
     """
-    By default, the [dynamic component](../components#django_components.components.dynamic.DynamicComponent)
+    By default, the [dynamic component](./components.md#django_components.components.dynamic.DynamicComponent)
     is registered under the name `"dynamic"`.
 
     In case of a conflict, you can use this setting to change the component name used for
@@ -377,7 +377,7 @@ class ComponentsSettings(NamedTuple):
     """
     Configure extra python modules that should be loaded.
 
-    This may be useful if you are not using the [autodiscovery feature](../../concepts/fundamentals/autodiscovery),
+    This may be useful if you are not using the [autodiscovery feature](../concepts/fundamentals/autodiscovery.md),
     or you need to load components from non-standard locations. Thus you can have
     a structure of components that is independent from your apps.
 
@@ -409,7 +409,7 @@ class ComponentsSettings(NamedTuple):
     # Manually loading libraries
 
     In the rare case that you need to manually trigger the import of libraries, you can use
-    the [`import_libraries()`](../api/#django_components.import_libraries) function:
+    the [`import_libraries()`](./api.md#django_components.import_libraries) function:
 
     ```python
     from django_components import import_libraries
@@ -421,7 +421,7 @@ class ComponentsSettings(NamedTuple):
     multiline_tags: Optional[bool] = None
     """
     Enable / disable
-    [multiline support for template tags](../../concepts/fundamentals/template_tag_syntax#multiline-tags).
+    [multiline support for template tags](../concepts/fundamentals/template_tag_syntax.md#multiline-tags).
     If `True`, template tags like `{% component %}` or `{{ my_var }}` can span multiple lines.
 
     Defaults to `True`.
@@ -439,7 +439,7 @@ class ComponentsSettings(NamedTuple):
     # TODO_REMOVE_IN_V1
     reload_on_template_change: Optional[bool] = None
     """Deprecated. Use
-    [`COMPONENTS.reload_on_file_change`](../settings/#django_components.app_settings.ComponentsSettings.reload_on_file_change)
+    [`COMPONENTS.reload_on_file_change`](./settings.md#django_components.app_settings.ComponentsSettings.reload_on_file_change)
     instead."""  # noqa: E501
 
     reload_on_file_change: Optional[bool] = None
@@ -458,12 +458,12 @@ class ComponentsSettings(NamedTuple):
     HTML, JS, or CSS changes.
 
     If `True`, django_components configures Django to reload when files inside
-    [`COMPONENTS.dirs`](../settings/#django_components.app_settings.ComponentsSettings.dirs)
+    [`COMPONENTS.dirs`](./settings.md#django_components.app_settings.ComponentsSettings.dirs)
     or
-    [`COMPONENTS.app_dirs`](../settings/#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.app_dirs`](./settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
     change.
 
-    See [Reload dev server on component file changes](../../guides/setup/development_server/#reload-dev-server-on-component-file-changes).
+    See [Reload dev server on component file changes](../guides/setup/development_server.md#reload-dev-server-on-component-file-changes).
 
     Defaults to `False`.
 
@@ -475,9 +475,9 @@ class ComponentsSettings(NamedTuple):
     static_files_allowed: Optional[List[Union[str, re.Pattern]]] = None
     """
     A list of file extensions (including the leading dot) that define which files within
-    [`COMPONENTS.dirs`](../settings/#django_components.app_settings.ComponentsSettings.dirs)
+    [`COMPONENTS.dirs`](./settings.md#django_components.app_settings.ComponentsSettings.dirs)
     or
-    [`COMPONENTS.app_dirs`](../settings/#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.app_dirs`](./settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
     are treated as [static files](https://docs.djangoproject.com/en/5.2/howto/static-files/).
 
     If a file is matched against any of the patterns, it's considered a static file. Such files are collected
@@ -508,29 +508,29 @@ class ComponentsSettings(NamedTuple):
     !!! warning
 
         Exposing your Python files can be a security vulnerability.
-        See [Security notes](../../overview/security_notes).
+        See [Security notes](../overview/security_notes.md).
     """
 
     # TODO_REMOVE_IN_V1
     forbidden_static_files: Optional[List[Union[str, re.Pattern]]] = None
     """Deprecated. Use
-    [`COMPONENTS.static_files_forbidden`](../settings/#django_components.app_settings.ComponentsSettings.static_files_forbidden)
+    [`COMPONENTS.static_files_forbidden`](./settings.md#django_components.app_settings.ComponentsSettings.static_files_forbidden)
     instead."""  # noqa: E501
 
     static_files_forbidden: Optional[List[Union[str, re.Pattern]]] = None
     """
     A list of file extensions (including the leading dot) that define which files within
-    [`COMPONENTS.dirs`](../settings/#django_components.app_settings.ComponentsSettings.dirs)
+    [`COMPONENTS.dirs`](./settings.md#django_components.app_settings.ComponentsSettings.dirs)
     or
-    [`COMPONENTS.app_dirs`](../settings/#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.app_dirs`](./settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
     will NEVER be treated as [static files](https://docs.djangoproject.com/en/5.2/howto/static-files/).
 
     If a file is matched against any of the patterns, it will never be considered a static file,
     even if the file matches a pattern in
-    [`static_files_allowed`](../settings/#django_components.app_settings.ComponentsSettings.static_files_allowed).
+    [`static_files_allowed`](./settings.md#django_components.app_settings.ComponentsSettings.static_files_allowed).
 
     Use this setting together with
-    [`static_files_allowed`](../settings/#django_components.app_settings.ComponentsSettings.static_files_allowed)
+    [`static_files_allowed`](./settings.md#django_components.app_settings.ComponentsSettings.static_files_allowed)
     for a fine control over what file types will be exposed.
 
     You can also pass in compiled regexes ([`re.Pattern`](https://docs.python.org/3/library/re.html#re.Pattern))
@@ -551,17 +551,17 @@ class ComponentsSettings(NamedTuple):
     !!! warning
 
         Exposing your Python files can be a security vulnerability.
-        See [Security notes](../../overview/security_notes).
+        See [Security notes](../overview/security_notes.md).
     """
 
     tag_formatter: Optional[Union["TagFormatterABC", str]] = None
     """
     Configure what syntax is used inside Django templates to render components.
-    See the [available tag formatters](../tag_formatters).
+    See the [available tag formatters](./tag_formatters.md).
 
     Defaults to `"django_components.component_formatter"`.
 
-    Learn more about [Customizing component tags with TagFormatter](../../concepts/advanced/tag_formatter).
+    Learn more about [Customizing component tags with TagFormatter](../concepts/advanced/tag_formatters.md).
 
     Can be set either as direct reference:
 
@@ -637,7 +637,7 @@ class ComponentsSettings(NamedTuple):
 
     By default the cache holds 128 component templates in memory, which should be enough for most sites.
     But if you have a lot of components, or if you are overriding
-    [`Component.get_template()`](../api#django_components.Component.get_template)
+    [`Component.get_template()`](./api.md#django_components.Component.get_template)
     to render many dynamic templates, you can increase this number.
 
     ```python
@@ -655,7 +655,7 @@ class ComponentsSettings(NamedTuple):
     ```
 
     If you want to add templates to the cache yourself, you can use
-    [`cached_template()`](../api/#django_components.cached_template):
+    [`cached_template()`](./api.md#django_components.cached_template):
 
     ```python
     from django_components import cached_template

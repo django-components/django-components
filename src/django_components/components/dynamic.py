@@ -16,8 +16,8 @@ class DynamicComponent(Component):
 
     Args:
         is (str | Type[Component]): Component that should be rendered. Either a registered name of a component,
-            or a [Component](../api#django_components.Component) class directly. Required.
-        registry (ComponentRegistry, optional): Specify the [registry](../api#django_components.ComponentRegistry)\
+            or a [Component](./api.md#django_components.Component) class directly. Required.
+        registry (ComponentRegistry, optional): Specify the [registry](./api.md#django_components.ComponentRegistry)\
             to search for the registered name. If omitted, all registries are searched until the first match.
         *args: Additional data passed to the component.
         **kwargs: Additional data passed to the component.
@@ -77,7 +77,7 @@ class DynamicComponent(Component):
 
     By default, the dynamic component is registered under the name `"dynamic"`. In case of a conflict,
     you can set the
-    [`COMPONENTS.dynamic_component_name`](../settings#django_components.app_settings.ComponentsSettings.dynamic_component_name)
+    [`COMPONENTS.dynamic_component_name`](./settings.md#django_components.app_settings.ComponentsSettings.dynamic_component_name)
     setting to change the name used for the dynamic components.
 
     ```py

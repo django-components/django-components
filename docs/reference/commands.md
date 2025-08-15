@@ -54,7 +54,8 @@ python manage.py components ext run <extension> <command>
 ## `components create`
 
 ```txt
-usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run] name
+usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run]
+              name
 
 ```
 
@@ -301,7 +302,7 @@ usage: python manage.py components ext run [-h]
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/ext_run.py#L48" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/ext_run.py#L51" target="_blank">See source code</a>
 
 
 
@@ -461,8 +462,8 @@ ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAc
 ## `upgradecomponent`
 
 ```txt
-usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
-                        [--skip-checks]
+usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
+                        [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color] [--skip-checks]
 
 ```
 
@@ -506,8 +507,9 @@ Deprecated. Use `components upgrade` instead.
 ## `startcomponent`
 
 ```txt
-usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run] [--version] [-v {0,1,2,3}]
-                      [--settings SETTINGS] [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color] [--skip-checks]
+usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose]
+                      [--dry-run] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH]
+                      [--traceback] [--no-color] [--force-color] [--skip-checks]
                       name
 
 ```
