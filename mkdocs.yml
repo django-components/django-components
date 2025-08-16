@@ -68,7 +68,6 @@ theme:
 
 extra_css:
   - css/style.css
-  - css/custom.css
 
 extra:
   version:
