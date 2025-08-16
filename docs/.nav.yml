@@ -4,7 +4,11 @@
 nav:
   - overview
   - Getting Started: getting_started
-  - concepts
-  - guides
-  - API Documentation: reference
-  - Release Notes: release_notes.md
+  - "Documentation: Concepts": concepts
+  - "Documentation: API Reference": reference
+  - "Documentation: Guides": guides
+  - "Documentation: Upgrading": upgrading
+  - plugins
+  - examples
+  - community
+  - Release Notes: releases

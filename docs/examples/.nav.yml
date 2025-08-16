@@ -1,4 +1,5 @@
 # `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
 nav:
-  - setup
-  - other
+  - Examples: overview.md
+  - icons
+  - HTMX: htmx

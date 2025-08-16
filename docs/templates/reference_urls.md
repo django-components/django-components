@@ -2,7 +2,7 @@
 
 Below are all the URL patterns that will be added by adding `django_components.urls`.
 
-See [Installation](../overview/installation.md#adding-support-for-js-and-css)
+See [Installation](../getting_started/installation.md#adding-support-for-js-and-css)
 on how to add these URLs to your Django project.
 
 Django components already prefixes all URLs with `components/`. So when you are

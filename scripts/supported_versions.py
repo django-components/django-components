@@ -270,7 +270,7 @@ def main():
     print()
     print()
 
-    print("Add this to docs/overview/development.md:\n")
+    print("Add this to docs/community/development.md:\n")
     pyenv = build_pyenv(python_to_django)
     print(pyenv)
     print()

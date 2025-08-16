@@ -189,4 +189,4 @@ python scripts/validate_links.py --rewrite
 
 ## Development guides
 
-Head over to [Dev guides](../guides/devguides/dependency_mgmt.md) for a deep dive into how django_components' features are implemented.
+Head over to [Dev guides](./devguides/dependency_mgmt.md) for a deep dive into how django_components' features are implemented.

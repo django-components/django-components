@@ -1,5 +1,6 @@
 # `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
 nav:
+  - Installation: installation.md
   - Create your first component: your_first_component.md
   - Adding JS and CSS: adding_js_and_css.md
   - Components in templates: components_in_templates.md
