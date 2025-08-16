@@ -515,31 +515,3 @@ def test_my_table():
     {% calendar date="2024-11-06" %}
     {% endcalendar %}
     ```
-
-## Performance
-
-Our aim is to be at least as fast as Django templates.
-
-As of `0.130`, `django-components` is ~4x slower than Django templates.
-
-| | Render time|
-|----------|----------------------|
-| django | 68.9±0.6ms |
-| django-components | 259±4ms |
-
-See the [full performance breakdown](https://django-components.github.io/django-components/latest/benchmarks/) for more information.
-
-## Release notes
-
-Read the [Release Notes](../release_notes.md)
-to see the latest features and fixes.
-
-## Community examples
-
-One of our goals with `django-components` is to make it easy to share components between projects. Head over to the [Community examples](./community.md#community-examples) to see some examples.
-
-## Contributing and development
-
-Get involved or sponsor this project - [See here](./contributing.md)
-
-Running django-components locally for development - [See here](./development.md)

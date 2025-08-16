@@ -11,12 +11,12 @@ you out with the rest!
 
 For feature requests or suggestions, please open either a discussion or an issue.
 
-## Getting involved
+### Getting involved
 
 django_components is still under active development, and there's much to build,
 so come aboard!
 
-## Sponsoring
+### Sponsoring
 
 Another way you can get involved is by [donating](https://github.com/django-components/django-components)
 to the development of django_components.
