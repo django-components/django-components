@@ -1,3 +1,0 @@
-# `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
-nav:
-  - django-htmx-components: django-htmx-components.md
