@@ -58,8 +58,8 @@ jobs:
             python -m pip install --upgrade pip wheel
             # NOTE: pin virtualenv to <20.31 until asv fixes it.
             # See https://github.com/airspeed-velocity/asv/issues/1484
-            python -m pip install -q hatch pre-commit asv virtualenv==20.30
-            hatch --version
+            python -m pip install -q pre-commit asv virtualenv==20.30
+            python -m pip install -r requirements-docs.txt
 
       ###########################################
       # RECORD BENCHMARK - ONLY ON PUSH TO MASTER
@@ -166,9 +166,9 @@ jobs:
       - name: Check docs in pull requests with strict mode
         if: github.event_name == 'pull_request'
         run: |
-          # XXX Enable strict mode once docs are clean
+          # TODO: Enable strict mode once docs are clean
           echo "Strict check of docs disabled."
-          # hatch run docs:build --strict
+          # python -m mkdocs build --strict
 
       - name: Build & deploy "dev" docs for a new commit to master
         if: github.event_name == 'push' && github.ref_type != 'tag'
@@ -180,7 +180,7 @@ jobs:
           git checkout master
 
           export SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          hatch run docs:mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
+          python -m mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
 
       - name: Build & deploy docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
@@ -191,5 +191,5 @@ jobs:
           git pull origin gh-pages
           git checkout master
 
-          hatch run docs:mike deploy --push --update-aliases ${{ github.ref_name }} latest
-          hatch run docs:mike set-default latest --push
+          python -m mike deploy --push --update-aliases ${{ github.ref_name }} latest
+          python -m mike set-default latest --push
