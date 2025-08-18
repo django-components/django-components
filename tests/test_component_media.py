@@ -4,7 +4,7 @@ import re
 import sys
 from pathlib import Path
 from textwrap import dedent
-from typing import Optional
+from typing import List, Optional
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -344,7 +344,7 @@ class TestComponentMedia:
     def test_media_custom_render_js(self):
         class MyMedia(Media):
             def render_js(self):
-                tags: list[str] = []
+                tags: List[str] = []
                 for path in self._js:  # type: ignore[attr-defined]
                     abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
                     tags.append(f'<script defer src="{abs_path}"></script>')
@@ -370,7 +370,7 @@ class TestComponentMedia:
     def test_media_custom_render_css(self):
         class MyMedia(Media):
             def render_css(self):
-                tags: list[str] = []
+                tags: List[str] = []
                 media = sorted(self._css)  # type: ignore[attr-defined]
                 for medium in media:
                     for path in self._css[medium]:  # type: ignore[attr-defined]
@@ -789,7 +789,7 @@ class TestMediaStaticfiles:
 
         class MyMedia(Media):
             def render_js(self):
-                tags: list[str] = []
+                tags: List[str] = []
                 for path in self._js:  # type: ignore[attr-defined]
                     abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
                     tags.append(f'<script defer src="{abs_path}"></script>')
@@ -849,7 +849,7 @@ class TestMediaStaticfiles:
 
         class MyMedia(Media):
             def render_js(self):
-                tags: list[str] = []
+                tags: List[str] = []
                 for path in self._js:  # type: ignore[attr-defined]
                     abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
                     tags.append(f'<script defer src="{abs_path}"></script>')

@@ -36,13 +36,13 @@ def apply_component_highlight(highlight_type: Literal["component", "slot"], outp
 
     output = f"""
         <style>
-        .{type}-highlight-{highlight_id}::before {{
+        .{highlight_type}-highlight-{highlight_id}::before {{
             content: "{name}: ";
             font-weight: bold;
             color: {color.text_color};
         }}
         </style>
-        <div class="{type}-highlight-{highlight_id}" style="border: 1px solid {color.border_color}">
+        <div class="{highlight_type}-highlight-{highlight_id}" style="border: 1px solid {color.border_color}">
             {output}
         </div>
     """

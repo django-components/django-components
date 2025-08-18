@@ -338,7 +338,7 @@ class TestComponentCache:
                 return {"input": kwargs["input"]}
 
         with pytest.raises(
-            ValueError,
+            TypeError,
             match=re.escape(
                 "Cannot hash slot 'content' of component 'TestComponent' - Slot functions are unhashable.",
             ),

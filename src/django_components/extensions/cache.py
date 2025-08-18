@@ -176,7 +176,7 @@ class CacheExtension(ComponentExtension):
     ComponentConfig = ComponentCache
 
     def __init__(self, *_args: Any, **_kwargs: Any) -> None:
-        self.render_id_to_cache_key: dict[str, str] = {}
+        self.render_id_to_cache_key: Dict[str, str] = {}
 
     def on_component_input(self, ctx: OnComponentInputContext) -> Optional[Any]:
         cache_instance = ctx.component.cache

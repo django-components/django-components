@@ -2434,7 +2434,7 @@ class TestSlotInput:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_slots_normalized_as_slot_instances(self, components_settings):
-        seen_slots: dict[str, Slot] = {}
+        seen_slots: Dict[str, Slot] = {}
 
         @register("test")
         class SlottedComponent(Component):

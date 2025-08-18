@@ -758,20 +758,23 @@ def _map_media_filepaths(media: Type[ComponentMediaInput], map_fn: Callable[[Seq
 
 
 def _is_media_filepath(filepath: Any) -> bool:
+    # Case callable
     if callable(filepath):
         return True
 
-    if (
-        isinstance(filepath, SafeData)
-        or hasattr(filepath, "__html__")
-        or isinstance(filepath, (Path, os.PathLike))
-        or hasattr(filepath, "__fspath__")
-    ):
+    # Case SafeString
+    if isinstance(filepath, SafeData) or hasattr(filepath, "__html__"):
         return True
 
+    # Case PathLike
+    if isinstance(filepath, (Path, os.PathLike)) or hasattr(filepath, "__fspath__"):
+        return True
+
+    # Case bytes
     if isinstance(filepath, bytes):
         return True
 
+    # Case str
     return isinstance(filepath, str)
 
 

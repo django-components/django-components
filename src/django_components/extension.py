@@ -1043,7 +1043,7 @@ class ExtensionManager:
             if component_ext_subclass:
                 bases_list.insert(0, component_ext_subclass)
 
-            bases: tuple[Type, ...] = tuple(bases_list)
+            bases: Tuple[Type, ...] = tuple(bases_list)
 
             # Allow component-level extension class to access the owner `Component` class that via
             # `component_cls`.

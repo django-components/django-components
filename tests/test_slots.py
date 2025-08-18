@@ -121,7 +121,7 @@ class TestSlot:
         slot: Slot = Slot(lambda _ctx: "SLOT_FN")
 
         with pytest.raises(
-            ValueError,
+            TypeError,
             match=re.escape("Slot received another Slot instance as `contents`"),
         ):
             Slot(slot)

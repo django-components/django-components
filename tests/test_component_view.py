@@ -201,7 +201,10 @@ class TestComponentAsView:
         client = CustomClient(urlpatterns=[path("test/", view)])
         response = client.get("/test/")
         assert response.status_code == 200
-        assert b'<input type="text" name="variable" value="MockComponentRequest">' in response.content
+        assertInHTML(
+            '<input type="text" name="variable" value="MockComponentRequest">',
+            response.content.decode(),
+        )
 
     def test_replace_slot_in_view(self):
         class MockComponentSlot(Component):
