@@ -949,13 +949,13 @@ class TestSignatureBasedValidation:
         template3.render(Context({}))
 
         params3, nodelist3, node_id3, contents3, template_name3, template_component3 = captured  # type: ignore[misc]
-        assert len(params3) == 1
-        assert isinstance(params3[0], TagAttr)
-        assert len(nodelist3) == 0
-        assert contents3 is None
-        assert node_id3 == "a1bc40"
-        assert template_name3 == "<unknown source>"
-        assert template_component3 is None
+        assert len(params3) == 1  # type: ignore[has-type]
+        assert isinstance(params3[0], TagAttr)  # type: ignore[has-type]
+        assert len(nodelist3) == 0  # type: ignore[has-type]
+        assert contents3 is None  # type: ignore[has-type]
+        assert node_id3 == "a1bc40"  # type: ignore[has-type]
+        assert template_name3 == "<unknown source>"  # type: ignore[has-type]
+        assert template_component3 is None  # type: ignore[has-type]
 
         # Case 4 - Node nested in Component end tag
         class TestComponent(Component):
@@ -967,19 +967,19 @@ class TestSignatureBasedValidation:
         TestComponent.render(Context({}))
 
         params4, nodelist4, node_id4, contents4, template_name4, template_component4 = captured  # type: ignore[misc]
-        assert len(params4) == 1
-        assert isinstance(params4[0], TagAttr)
-        assert len(nodelist4) == 0
-        assert contents4 is None
-        assert node_id4 == "a1bc42"
+        assert len(params4) == 1  # type: ignore[has-type]
+        assert isinstance(params4[0], TagAttr)  # type: ignore[has-type]
+        assert len(nodelist4) == 0  # type: ignore[has-type]
+        assert contents4 is None  # type: ignore[has-type]
+        assert node_id4 == "a1bc42"  # type: ignore[has-type]
 
         if os.name == "nt":
-            assert cast("str", template_name4).endswith("\\tests\\test_node.py::TestComponent")
+            assert cast("str", template_name4).endswith("\\tests\\test_node.py::TestComponent")  # type: ignore[has-type]
         else:
-            assert cast("str", template_name4).endswith("/tests/test_node.py::TestComponent")
+            assert cast("str", template_name4).endswith("/tests/test_node.py::TestComponent")  # type: ignore[has-type]
 
-        assert template_name4 == f"{__file__}::TestComponent"
-        assert template_component4 is TestComponent
+        assert template_name4 == f"{__file__}::TestComponent"  # type: ignore[has-type]
+        assert template_component4 is TestComponent  # type: ignore[has-type]
 
         # Cleanup
         TestNodeWithEndTag.unregister(component_tags.register)
