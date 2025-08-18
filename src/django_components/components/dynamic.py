@@ -95,6 +95,7 @@ class DynamicComponent(Component):
         {% endfill %}
     {% endcomponent %}
     ```
+
     """
 
     _is_dynamic_component = True
@@ -105,8 +106,8 @@ class DynamicComponent(Component):
     # will know that it's a child of this component.
     def on_render(
         self,
-        context: Context,
-        template: Optional[Template],
+        context: Context,  # noqa: ARG002
+        template: Optional[Template],  # noqa: ARG002
     ) -> str:
         # Make a copy of kwargs so we pass to the child only the kwargs that are
         # actually used by the child component.
@@ -146,23 +147,22 @@ class DynamicComponent(Component):
             if inspect.isclass(comp_name_or_class):
                 component_cls = comp_name_or_class
             else:
-                component_cls = cast(Type[Component], comp_name_or_class.__class__)
+                component_cls = cast("Type[Component]", comp_name_or_class.__class__)
 
+        elif registry:
+            component_cls = registry.get(comp_name_or_class)
         else:
-            if registry:
-                component_cls = registry.get(comp_name_or_class)
-            else:
-                # Search all registries for the first match
-                for reg_ref in ALL_REGISTRIES:
-                    reg = reg_ref()
-                    if not reg:
-                        continue
+            # Search all registries for the first match
+            for reg_ref in ALL_REGISTRIES:
+                reg = reg_ref()
+                if not reg:
+                    continue
 
-                    try:
-                        component_cls = reg.get(comp_name_or_class)
-                        break
-                    except NotRegistered:
-                        continue
+                try:
+                    component_cls = reg.get(comp_name_or_class)
+                    break
+                except NotRegistered:
+                    continue
 
         # Raise if none found
         if not component_cls:

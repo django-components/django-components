@@ -10,7 +10,7 @@ urlpatterns = [
             [
                 *dependencies_urlpatterns,
                 *extension_urlpatterns,
-            ]
+            ],
         ),
     ),
 ]

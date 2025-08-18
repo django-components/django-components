@@ -1,6 +1,8 @@
 import time
 from typing import NamedTuple
 
+from django.http import HttpRequest, HttpResponse
+
 from django_components import Component, register, types
 
 
@@ -26,7 +28,7 @@ class Recursive(Component):
         return {"depth": kwargs.depth + 1}
 
     class View:
-        def get(self, request):
+        def get(self, request: HttpRequest) -> HttpResponse:
             time_before = time.time()
             output = Recursive.render_to_response(
                 request=request,

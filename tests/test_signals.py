@@ -3,8 +3,8 @@ from functools import wraps
 from django.template import Context, Template
 
 from django_components import Component, registry, types
-
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -16,7 +16,7 @@ def _get_templates_used_to_render(subject_template, render_context=None):
 
     templates_used = []
 
-    def receive_template_signal(sender, template, context, **_kwargs):
+    def receive_template_signal(sender, template, context, **_kwargs):  # noqa: ARG001
         templates_used.append(template.name)
 
     template_rendered.connect(receive_template_signal, dispatch_uid="test_method")
@@ -29,8 +29,8 @@ def with_template_signal(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Emulate Django test instrumentation for TestCase (see setup_test_environment)
-        from django.test.utils import instrumented_test_render
         from django.template import Template
+        from django.test.utils import instrumented_test_render
 
         original_template_render = Template._render
         Template._render = instrumented_test_render

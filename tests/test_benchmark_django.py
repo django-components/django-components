@@ -5,8 +5,8 @@
 
 import difflib
 import json
+from dataclasses import MISSING, dataclass, field
 from datetime import date, datetime, timedelta
-from dataclasses import dataclass, field, MISSING
 from enum import Enum
 from inspect import signature
 from pathlib import Path
@@ -30,16 +30,16 @@ from typing import (
 import django
 from django import forms
 from django.conf import settings
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.http import HttpRequest
 from django.middleware import csrf
 from django.template import Context, Template
 from django.template.defaultfilters import title
+from django.template.defaulttags import register as default_library
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
-from django.contrib.humanize.templatetags.humanize import naturaltime
-from django.template.defaulttags import register as default_library
 
-from django_components import types, registry
+from django_components import registry, types
 
 # DO NOT REMOVE - See https://github.com/django-components/django-components/pull/999
 # ----------- IMPORTS END ------------ #
@@ -61,9 +61,9 @@ if not settings.configured:
                 "OPTIONS": {
                     "builtins": [
                         "django_components.templatetags.component_tags",
-                    ]
+                    ],
                 },
-            }
+            },
         ],
         COMPONENTS={
             "autodiscover": False,
@@ -74,9 +74,9 @@ if not settings.configured:
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
                 "NAME": ":memory:",
-            }
+            },
         },
-        SECRET_KEY="secret",
+        SECRET_KEY="secret",  # noqa: S106
         ROOT_URLCONF="django_components.urls",
     )
     django.setup()
@@ -91,18 +91,20 @@ else:
 
 templates_cache: Dict[int, Template] = {}
 
+
 def lazy_load_template(template: str) -> Template:
     template_hash = hash(template)
     if template_hash in templates_cache:
         return templates_cache[template_hash]
-    else:
-        template_instance = Template(template)
-        templates_cache[template_hash] = template_instance
-        return template_instance
+    template_instance = Template(template)
+    templates_cache[template_hash] = template_instance
+    return template_instance
+
 
 #####################################
 # RENDER ENTRYPOINT
 #####################################
+
 
 def gen_render_data():
     data = load_project_data_from_json(data_json)
@@ -118,7 +120,7 @@ def gen_render_data():
             "text": "Test bookmark",
             "url": "http://localhost:8000/bookmarks/9/create",
             "attachment": None,
-        }
+        },
     ]
 
     request = HttpRequest()
@@ -140,7 +142,7 @@ def render(data):
     # Render
     result = project_page(
         Context(),
-        ProjectPageData(**data)
+        ProjectPageData(**data),
     )
 
     return result
@@ -669,7 +671,7 @@ data_json = """
 
 def load_project_data_from_json(contents: str) -> dict:
     """
-    Loads project data from JSON and resolves references between objects.
+    Load project data from JSON and resolves references between objects.
     Returns the data with all resolvable references replaced with actual object references.
     """
     data = json.loads(contents)
@@ -1003,7 +1005,7 @@ TAG_TYPE_META = MappingProxyType(
             ),
         ),
         TagResourceType.PROJECT_OUTPUT: TagTypeMeta(
-            allowed_values=tuple(),
+            allowed_values=(),
         ),
         TagResourceType.PROJECT_OUTPUT_ATTACHMENT: TagTypeMeta(
             allowed_values=(
@@ -1024,7 +1026,7 @@ TAG_TYPE_META = MappingProxyType(
         TagResourceType.PROJECT_TEMPLATE: TagTypeMeta(
             allowed_values=("Tag 21",),
         ),
-    }
+    },
 )
 
 
@@ -1091,7 +1093,7 @@ PROJECT_PHASES_META = MappingProxyType(
                 ProjectOutputDef(title="Lorem ipsum 14"),
             ],
         ),
-    }
+    },
 )
 
 #####################################
@@ -1156,7 +1158,7 @@ _secondary_btn_styling = "ring-1 ring-inset"
 theme = Theme(
     default=ThemeStylingVariant(
         primary=ThemeStylingUnit(
-            color="bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition"
+            color="bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition",
         ),
         primary_disabled=ThemeStylingUnit(color="bg-blue-300 text-blue-50 focus-visible:outline-blue-600 transition"),
         secondary=ThemeStylingUnit(
@@ -1277,8 +1279,7 @@ def format_timestamp(timestamp: datetime):
     """
     if now() - timestamp > timedelta(days=7):
         return timestamp.strftime("%b %-d, %Y")
-    else:
-        return naturaltime(timestamp)
+    return naturaltime(timestamp)
 
 
 def group_by(
@@ -1400,17 +1401,16 @@ def serialize_to_js(obj):
             items.append(f"{key}: {serialized_value}")
         return f"{{ {', '.join(items)} }}"
 
-    elif isinstance(obj, (list, tuple)):
+    if isinstance(obj, (list, tuple)):
         # If the object is a list, recursively serialize each item
         serialized_items = [serialize_to_js(item) for item in obj]
         return f"[{', '.join(serialized_items)}]"
 
-    elif isinstance(obj, str):
+    if isinstance(obj, str):
         return obj
 
-    else:
-        # For other types (int, float, etc.), just return the string representation
-        return str(obj)
+    # For other types (int, float, etc.), just return the string representation
+    return str(obj)
 
 
 #####################################
@@ -1481,7 +1481,7 @@ def button(context: Context, data: ButtonData):
             "attrs": all_attrs,
             "is_link": is_link,
             "slot_content": data.slot_content,
-        }
+        },
     ):
         return lazy_load_template(button_template_str).render(context)
 
@@ -1615,7 +1615,7 @@ def menu(context: Context, data: MenuData):
         {
             "x-show": model,
             "x-cloak": "",
-        }
+        },
     )
 
     menu_list_data = MenuListData(
@@ -1633,7 +1633,7 @@ def menu(context: Context, data: MenuData):
             "attrs": data.attrs,
             "menu_list_data": menu_list_data,
             "slot_activator": data.slot_activator,
-        }
+        },
     ):
         return lazy_load_template(menu_template_str).render(context)
 
@@ -1738,7 +1738,7 @@ def menu_list(context: Context, data: MenuListData):
         {
             "item_groups": item_groups,
             "attrs": data.attrs,
-        }
+        },
     ):
         return lazy_load_template(menu_list_template_str).render(context)
 
@@ -1800,7 +1800,7 @@ class TableCell:
 
     def __post_init__(self):
         if not isinstance(self.colspan, int) or self.colspan < 1:
-            raise ValueError("TableCell.colspan must be a non-negative integer." f" Instead got {self.colspan}")
+            raise ValueError(f"TableCell.colspan must be a non-negative integer. Instead got {self.colspan}")
 
 
 NULL_CELL = TableCell("")
@@ -1976,7 +1976,7 @@ class TableData(NamedTuple):
 
 @registry.library.simple_tag(takes_context=True)
 def table(context: Context, data: TableData):
-    rows_to_render = [tuple([row, prepare_row_headers(row, data.headers)]) for row in data.rows]
+    rows_to_render = [(row, prepare_row_headers(row, data.headers)) for row in data.rows]
 
     with context.push(
         {
@@ -1984,7 +1984,7 @@ def table(context: Context, data: TableData):
             "rows_to_render": rows_to_render,
             "NULL_CELL": NULL_CELL,
             "attrs": data.attrs,
-        }
+        },
     ):
         return lazy_load_template(table_template_str).render(context)
 
@@ -2080,7 +2080,7 @@ def icon(context: Context, data: IconData):
             "attrs": data.attrs,
             "heroicon_data": heroicon_data,
             "slot_content": data.slot_content,
-        }
+        },
     ):
         return lazy_load_template(icon_template_str).render(context)
 
@@ -2097,9 +2097,9 @@ ICONS = {
                 "stroke-linecap": "round",
                 "stroke-linejoin": "round",
                 "d": "M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5",  # noqa: E501
-            }
-        ]
-    }
+            },
+        ],
+    },
 }
 
 
@@ -2113,9 +2113,8 @@ class ComponentDefaults(metaclass=ComponentDefaultsMeta):
     def __post_init__(self) -> None:
         fields = self.__class__.__dataclass_fields__  # type: ignore[attr-defined]
         for field_name, dataclass_field in fields.items():
-            if dataclass_field.default is not MISSING:
-                if getattr(self, field_name) is None:
-                    setattr(self, field_name, dataclass_field.default)
+            if dataclass_field.default is not MISSING and getattr(self, field_name) is None:
+                setattr(self, field_name, dataclass_field.default)
 
 
 class IconDefaults(ComponentDefaults):
@@ -2195,7 +2194,7 @@ def heroicon(context: Context, data: HeroIconData):
             "icon_paths": icon_paths,
             "default_attrs": default_attrs,
             "attrs": kwargs.attrs,
-        }
+        },
     ):
         return lazy_load_template(heroicon_template_str).render(context)
 
@@ -2295,9 +2294,10 @@ def expansion_panel(context: Context, data: ExpansionPanelData):
             "expand_icon_data": expand_icon_data,
             "slot_header": data.slot_header,
             "slot_content": data.slot_content,
-        }
+        },
     ):
         return lazy_load_template(expansion_panel_template_str).render(context)
+
 
 #####################################
 # PROJECT_PAGE
@@ -2363,7 +2363,7 @@ def project_page(context: Context, data: ProjectPageData):
             ListItem(
                 value=title,
                 link=f"/projects/{data.project['id']}/phases/{phase['phase_template']['type']}",
-            )
+            ),
         )
 
     project_page_tabs = [
@@ -2378,7 +2378,7 @@ def project_page(context: Context, data: ProjectPageData):
                     contacts=data.contacts,
                     status_updates=data.status_updates,
                     editable=data.user_is_project_owner,
-                )
+                ),
             ),
         ),
         TabItemData(
@@ -2390,7 +2390,7 @@ def project_page(context: Context, data: ProjectPageData):
                     notes=data.notes_1,
                     comments_by_notes=data.comments_by_notes_1,  # type: ignore[arg-type]
                     editable=data.user_is_project_member,
-                )
+                ),
             ),
         ),
         TabItemData(
@@ -2402,7 +2402,7 @@ def project_page(context: Context, data: ProjectPageData):
                     notes=data.notes_2,
                     comments_by_notes=data.comments_by_notes_2,  # type: ignore[arg-type]
                     editable=data.user_is_project_member,
-                )
+                ),
             ),
         ),
         TabItemData(
@@ -2414,7 +2414,7 @@ def project_page(context: Context, data: ProjectPageData):
                     notes=data.notes_3,
                     comments_by_notes=data.comments_by_notes_3,  # type: ignore[arg-type]
                     editable=data.user_is_project_member,
-                )
+                ),
             ),
         ),
         TabItemData(
@@ -2426,7 +2426,7 @@ def project_page(context: Context, data: ProjectPageData):
                     outputs=data.outputs,
                     editable=data.user_is_project_member,
                     phase_titles=data.phase_titles,
-                )
+                ),
             ),
         ),
     ]
@@ -2435,7 +2435,7 @@ def project_page(context: Context, data: ProjectPageData):
         with tabs_context.push(
             {
                 "project_page_tabs": project_page_tabs,
-            }
+            },
         ):
             return lazy_load_template(project_page_tabs_template_str).render(tabs_context)
 
@@ -2444,12 +2444,12 @@ def project_page(context: Context, data: ProjectPageData):
         ListData(
             items=rendered_phases,
             item_attrs={"class": "py-5"},
-        )
+        ),
     )
     with context.push(
         {
             "project": data.project,
-        }
+        },
     ):
         header_content = lazy_load_template(project_page_header_template_str).render(context)
 
@@ -2463,6 +2463,7 @@ def project_page(context: Context, data: ProjectPageData):
     )
 
     return project_layout_tabbed(context, layout_tabbed_data)
+
 
 #####################################
 # PROJECT_LAYOUT_TABBED
@@ -2569,7 +2570,7 @@ def project_layout_tabbed(context: Context, data: ProjectLayoutTabbedData):
     breadcrumbs_content = breadcrumbs_tag(context, BreadcrumbsData(items=prefixed_breadcrumbs))
     bookmarks_content = bookmarks_tag(
         context,
-        BookmarksData(bookmarks=data.layout_data.bookmarks, project_id=data.layout_data.project["id"])
+        BookmarksData(bookmarks=data.layout_data.bookmarks, project_id=data.layout_data.project["id"]),
     )
 
     content_tabs_static_data = TabsStaticData(
@@ -2600,7 +2601,7 @@ def project_layout_tabbed(context: Context, data: ProjectLayoutTabbedData):
             "slot_left_panel": data.slot_left_panel,
             "slot_header": data.slot_header,
             "slot_tabs": data.slot_tabs,
-        }
+        },
     ):
         layout_content = lazy_load_template(project_layout_tabbed_content_template_str).render(context)
 
@@ -2695,7 +2696,7 @@ def layout(context: Context, data: LayoutData):
                 "sidebar_data": sidebar_data,
                 "slot_header": data.slot_header,
                 "slot_content": data.slot_content,
-            }
+            },
         ):
             layout_base_content = lazy_load_template(layout_base_content_template_str).render(provided_context)
 
@@ -2745,7 +2746,7 @@ def layout(context: Context, data: LayoutData):
         with provided_context.push(
             {
                 "base_data": base_data,
-            }
+            },
         ):
             return lazy_load_template("{% base base_data %}").render(provided_context)
 
@@ -2757,7 +2758,7 @@ def layout(context: Context, data: LayoutData):
     with context.push(
         {
             "render_context_provider_data": render_context_provider_data,
-        }
+        },
     ):
         return lazy_load_template(layout_template_str).render(context)
 
@@ -3108,7 +3109,7 @@ def base(context: Context, data: BaseData) -> str:
             "slot_css": data.slot_css,
             "slot_js": data.slot_js,
             "slot_content": data.slot_content,
-        }
+        },
     ):
         return lazy_load_template(base_template_str).render(context)
 
@@ -3330,7 +3331,7 @@ def sidebar(context: Context, data: SidebarData):
             "faq_icon_data": faq_icon_data,
             # Slots
             "slot_content": data.slot_content,
-        }
+        },
     ):
         return lazy_load_template(sidebar_template_str).render(context)
 
@@ -3391,7 +3392,7 @@ def navbar(context: Context, data: NavbarData):
         {
             "sidebar_toggle_icon_data": sidebar_toggle_icon_data,
             "attrs": data.attrs,
-        }
+        },
     ):
         return lazy_load_template(navbar_template_str).render(context)
 
@@ -3621,7 +3622,7 @@ def dialog(context: Context, data: DialogData):
             "slot_title": data.slot_title,
             "slot_content": data.slot_content,
             "slot_append": data.slot_append,
-        }
+        },
     ):
         return lazy_load_template(dialog_template_str).render(context)
 
@@ -3871,7 +3872,7 @@ def tags(context: Context, data: TagsData):
             "remove_button_data": remove_button_data,
             "add_tag_button_data": add_tag_button_data,
             "slot_title": slot_title,
-        }
+        },
     ):
         return lazy_load_template(tags_template_str).render(context)
 
@@ -4062,7 +4063,7 @@ def form(context: Context, data: FormData):
             "slot_actions_append": data.slot_actions_append,
             "slot_form": data.slot_form,
             "slot_below_form": data.slot_below_form,
-        }
+        },
     ):
         return lazy_load_template(form_template_str).render(context)
 
@@ -4074,9 +4075,7 @@ def form(context: Context, data: FormData):
 
 @dataclass(frozen=True)
 class Breadcrumb:
-    """
-    Single breadcrumb item used with the `breadcrumb` components.
-    """
+    """Single breadcrumb item used with the `breadcrumb` components."""
 
     value: Any
     """Value of the menu item to render."""
@@ -4160,7 +4159,7 @@ def breadcrumbs(context: Context, data: BreadcrumbsData):
         {
             "items": data.items,
             "attrs": data.attrs,
-        }
+        },
     ):
         return lazy_load_template(breadcrumbs_template_str).render(context)
 
@@ -4383,7 +4382,7 @@ def bookmarks(context: Context, data: BookmarksData):
             "bookmarks_icon_data": bookmarks_icon_data,
             "add_new_bookmark_icon_data": add_new_bookmark_icon_data,
             "context_menu_data": context_menu_data,
-        }
+        },
     ):
         return lazy_load_template(bookmarks_template_str).render(context)
 
@@ -4485,7 +4484,7 @@ def bookmark(context: Context, data: BookmarkData):
             "bookmark": data.bookmark._asdict(),
             "js": data.js,
             "bookmark_icon_data": bookmark_icon_data,
-        }
+        },
     ):
         return lazy_load_template(bookmark_template_str).render(context)
 
@@ -4562,7 +4561,7 @@ def list_tag(context: Context, data: ListData):
             "attrs": data.attrs,
             "item_attrs": data.item_attrs,
             "slot_empty": data.slot_empty,
-        }
+        },
     ):
         return lazy_load_template(list_template_str).render(context)
 
@@ -4728,7 +4727,7 @@ def tabs_impl(context: Context, data: TabsImplData):
             "content_attrs": data.content_attrs,
             "tabs_data": {"name": data.name},
             "theme": theme,
-        }
+        },
     ):
         return lazy_load_template(tabs_impl_template_str).render(context)
 
@@ -4743,6 +4742,11 @@ class TabsData(NamedTuple):
     slot_content: Optional[CallableSlot] = None
 
 
+class ProvidedData(NamedTuple):
+    tabs: List[TabEntry]
+    enabled: bool
+
+
 # This is an "API" component, meaning that it's designed to process
 # user input provided as nested components. But after the input is
 # processed, it delegates to an internal "implementation" component
@@ -4752,7 +4756,6 @@ def tabs(context: Context, data: TabsData):
     if not data.slot_content:
         return ""
 
-    ProvidedData = NamedTuple("ProvidedData", [("tabs", List[TabEntry]), ("enabled", bool)])
     collected_tabs: List[TabEntry] = []
     provided_data = ProvidedData(tabs=collected_tabs, enabled=True)
 
@@ -4792,7 +4795,7 @@ def tab_item(context, data: TabItemData):
         raise RuntimeError(
             "Component 'tab_item' was called with no parent Tabs component. "
             "Either wrap 'tab_item' in Tabs component, or check if the component "
-            "is not a descendant of another instance of 'tab_item'"
+            "is not a descendant of another instance of 'tab_item'",
         )
     parent_tabs = tab_ctx.tabs
 
@@ -4801,7 +4804,7 @@ def tab_item(context, data: TabItemData):
             "header": data.header,
             "disabled": data.disabled,
             "content": mark_safe(data.slot_content or "").strip(),
-        }
+        },
     )
     return ""
 
@@ -4877,7 +4880,7 @@ def tabs_static(context: Context, data: TabsStaticData):
             "hide_body": data.hide_body,
             "selected_content": selected_content,
             "theme": theme,
-        }
+        },
     ):
         return lazy_load_template(tabs_static_template_str).render(context)
 
@@ -5055,7 +5058,7 @@ def project_info(context: Context, data: ProjectInfoData) -> str:
             "edit_project_button_data": edit_project_button_data,
             "edit_team_button_data": edit_team_button_data,
             "edit_contacts_button_data": edit_contacts_button_data,
-        }
+        },
     ):
         return lazy_load_template(project_info_template_str).render(context)
 
@@ -5126,11 +5129,7 @@ project_notes_template_str: types.django_html = """
 
 def _make_comments_data(note: ProjectNote, comment: ProjectNoteComment):
     modified_time_str = format_timestamp(datetime.fromisoformat(comment["modified"]))
-    formatted_modified_by = (
-        modified_time_str
-        + " "
-        + comment['modified_by']['name']
-    )
+    formatted_modified_by = modified_time_str + " " + comment["modified_by"]["name"]
 
     edit_comment_icon_data = IconData(
         name="pencil-square",
@@ -5174,7 +5173,7 @@ def _make_notes_data(
                 "edit_note_icon_data": edit_note_icon_data,
                 "comments": comments_data,
                 "create_comment_button_data": create_comment_button_data,
-            }
+            },
         )
 
     return notes_data
@@ -5201,7 +5200,7 @@ def project_notes(context: Context, data: ProjectNotesData) -> str:
             "create_note_button_data": create_note_button_data,
             "notes_data": notes_data,
             "editable": data.editable,
-        }
+        },
     ):
         return lazy_load_template(project_notes_template_str).render(context)
 
@@ -5271,9 +5270,11 @@ def project_outputs_summary(context: Context, data: ProjectOutputsSummaryData) -
             {
                 "outputs_data": outputs_data,
                 "outputs": data.outputs,
-            }
+            },
         ):
-            expansion_panel_content = lazy_load_template(outputs_summary_expansion_content_template_str).render(context)  # noqa: E501
+            expansion_panel_content = lazy_load_template(outputs_summary_expansion_content_template_str).render(
+                context,
+            )
 
         expansion_panel_data = ExpansionPanelData(
             open=has_outputs,
@@ -5291,7 +5292,7 @@ def project_outputs_summary(context: Context, data: ProjectOutputsSummaryData) -
     with context.push(
         {
             "groups": groups,
-        }
+        },
     ):
         return lazy_load_template(project_outputs_summary_template_str).render(context)
 
@@ -5333,11 +5334,7 @@ project_status_updates_template_str: types.django_html = """
 
 def _make_status_update_data(status_update: ProjectStatusUpdate):
     modified_time_str = format_timestamp(datetime.fromisoformat(status_update["modified"]))
-    formatted_modified_by = (
-        modified_time_str
-        + " "
-        + status_update['modified_by']['name']
-    )
+    formatted_modified_by = modified_time_str + " " + status_update["modified_by"]["name"]
 
     return {
         "timestamp": formatted_modified_by,
@@ -5381,7 +5378,7 @@ def project_status_updates(context: Context, data: ProjectStatusUpdatesData) -> 
             "updates_data": updates_data,
             "editable": data.editable,
             "add_status_button_data": add_status_button_data,
-        }
+        },
     ):
         return lazy_load_template(project_status_updates_template_str).render(context)
 
@@ -5510,17 +5507,14 @@ def project_users(context: Context, data: ProjectUsersData) -> str:
                     "name": TableCell(user["name"]),
                     "role": TableCell(role["name"]),
                     "delete": delete_action,
-                }
-            )
+                },
+            ),
         )
 
     submit_url = f"/submit/{data.project_id}/role/create"
     project_url = f"/project/{data.project_id}"
 
-    if data.available_roles:
-        available_role_choices = [(role, role) for role in data.available_roles]
-    else:
-        available_role_choices = []
+    available_role_choices = [(role, role) for role in data.available_roles] if data.available_roles else []
 
     if data.available_users:
         available_user_choices = [(str(user["id"]), user["name"]) for user in data.available_users]
@@ -5554,7 +5548,7 @@ def project_users(context: Context, data: ProjectUsersData) -> str:
     with context.push(
         {
             "delete_icon_data": delete_icon_data,
-        }
+        },
     ):
         user_dialog_title = lazy_load_template(user_dialog_title_template_str).render(context)
 
@@ -5585,7 +5579,7 @@ def project_users(context: Context, data: ProjectUsersData) -> str:
             "set_role_button_data": set_role_button_data,
             "cancel_button_data": cancel_button_data,
             "dialog_data": dialog_data,
-        }
+        },
     ):
         return lazy_load_template(project_users_template_str).render(context)
 
@@ -5636,7 +5630,7 @@ def project_user_action(context: Context, data: ProjectUserActionData) -> str:
         {
             "role": role_data,
             "delete_icon_data": delete_icon_data,
-        }
+        },
     ):
         return lazy_load_template(project_user_action_template_str).render(context)
 
@@ -5692,7 +5686,7 @@ def project_outputs(context: Context, data: ProjectOutputsData) -> str:
                     url=attachment[0]["url"],
                     text=attachment[0]["text"],
                     tags=attachment[1],
-                )
+                ),
             )
 
         update_output_url = "/update"
@@ -5713,10 +5707,10 @@ def project_outputs(context: Context, data: ProjectOutputsData) -> str:
                         }
                         for d in attachments
                     ],
-                )
+                ),
             )
 
-        has_missing_deps = any([not output["completed"] for output, _ in dependencies])
+        has_missing_deps = any(not output["completed"] for output, _ in dependencies)
 
         output_badge_data = ProjectOutputBadgeData(
             completed=output["completed"],
@@ -5741,9 +5735,11 @@ def project_outputs(context: Context, data: ProjectOutputsData) -> str:
             {
                 "dependencies_data": [ProjectOutputDependencyData(dependency=dep) for dep in deps],
                 "output_form_data": output_form_data,
-            }
+            },
         ):
-            output_expansion_panel_content = lazy_load_template(output_expansion_panel_content_template_str).render(context)  # noqa: E501
+            output_expansion_panel_content = lazy_load_template(output_expansion_panel_content_template_str).render(
+                context,
+            )
 
         expansion_panel_data = ExpansionPanelData(
             panel_id=output["id"],  # type: ignore[arg-type]
@@ -5752,7 +5748,7 @@ def project_outputs(context: Context, data: ProjectOutputsData) -> str:
             header_attrs={"class": "flex align-center justify-between"},
             slot_header=f"""
                 <div>
-                    {output['name']}
+                    {output["name"]}
                 </div>
             """,
             slot_content=output_expansion_panel_content,
@@ -5763,13 +5759,13 @@ def project_outputs(context: Context, data: ProjectOutputsData) -> str:
                 output_data,
                 output_badge_data,
                 expansion_panel_data,
-            )
+            ),
         )
 
     with context.push(
         {
             "outputs_data": outputs_data,
-        }
+        },
     ):
         return lazy_load_template(project_outputs_template_str).render(context)
 
@@ -5833,7 +5829,7 @@ def project_output_badge(context: Context, data: ProjectOutputBadgeData):
             "theme": theme,
             "missing_icon_data": missing_icon_data,
             "completed_icon_data": completed_icon_data,
-        }
+        },
     ):
         return lazy_load_template(project_output_badge_template_str).render(context)
 
@@ -5952,7 +5948,7 @@ def project_output_dependency(context: Context, data: ProjectOutputDependencyDat
             "warning_icon_data": warning_icon_data,
             "missing_button_data": missing_button_data,
             "parent_attachments_data": parent_attachments_data,
-        }
+        },
     ):
         return lazy_load_template(project_output_dependency_template_str).render(context)
 
@@ -6131,7 +6127,7 @@ def project_output_attachments(context: Context, data: ProjectOutputAttachmentsD
             "edit_button_data": edit_button_data,
             "remove_button_data": remove_button_data,
             "tags_data": tags_data,
-        }
+        },
     ):
         return lazy_load_template(project_output_attachments_template_str).render(context)
 
@@ -6400,7 +6396,7 @@ def project_output_form(context: Context, data: ProjectOutputFormData):
             "project_output_attachments_data": project_output_attachments_data,
             "save_button_data": save_button_data,
             "add_attachment_button_data": add_attachment_button_data,
-        }
+        },
     ):
         form_content = lazy_load_template(form_content_template_str).render(context)
 
@@ -6414,9 +6410,10 @@ def project_output_form(context: Context, data: ProjectOutputFormData):
         {
             "form_data": form_data,
             "alpine_attachments": [d._asdict() for d in data.data.attachments],
-        }
+        },
     ):
         return lazy_load_template(project_output_form_template_str).render(context)
+
 
 #####################################
 #
@@ -6431,6 +6428,7 @@ def project_output_form(context: Context, data: ProjectOutputFormData):
 # The section below is NOT included.
 
 from django_components.testing import djc_test  # noqa: E402
+
 
 @djc_test
 def test_render(snapshot):

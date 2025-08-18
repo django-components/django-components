@@ -1,3 +1,4 @@
+# ruff: noqa: N802, PLC0415
 import re
 from dataclasses import dataclass
 from enum import Enum
@@ -440,7 +441,7 @@ class ComponentsSettings(NamedTuple):
     reload_on_template_change: Optional[bool] = None
     """Deprecated. Use
     [`COMPONENTS.reload_on_file_change`](./settings.md#django_components.app_settings.ComponentsSettings.reload_on_file_change)
-    instead."""  # noqa: E501
+    instead."""
 
     reload_on_file_change: Optional[bool] = None
     """
@@ -515,7 +516,7 @@ class ComponentsSettings(NamedTuple):
     forbidden_static_files: Optional[List[Union[str, re.Pattern]]] = None
     """Deprecated. Use
     [`COMPONENTS.static_files_forbidden`](./settings.md#django_components.app_settings.ComponentsSettings.static_files_forbidden)
-    instead."""  # noqa: E501
+    instead."""
 
     static_files_forbidden: Optional[List[Union[str, re.Pattern]]] = None
     """
@@ -693,7 +694,7 @@ class Dynamic(Generic[T]):
 #       for `COMPONENTS.dirs`, we do it lazily.
 # NOTE 2: We show the defaults in the documentation, together with the comments
 #        (except for the `Dynamic` instances and comments like `type: ignore`).
-#        So `fmt: off` turns off Black formatting and `snippet:defaults` allows
+#        So `fmt: off` turns off Black/Ruff formatting and `snippet:defaults` allows
 #        us to extract the snippet from the file.
 #
 # fmt: off
@@ -757,7 +758,7 @@ class InternalSettings:
 
         # For DIRS setting, we use a getter for the default value, because the default value
         # uses Django settings, which may not yet be initialized at the time these settings are generated.
-        dirs_default_fn = cast(Dynamic[Sequence[Union[str, Tuple[str, str]]]], defaults.dirs)
+        dirs_default_fn = cast("Dynamic[Sequence[Union[str, Tuple[str, str]]]]", defaults.dirs)
         dirs_default = dirs_default_fn.getter()
 
         self._settings = ComponentsSettings(
@@ -766,11 +767,13 @@ class InternalSettings:
             dirs=default(components_settings.dirs, dirs_default),
             app_dirs=default(components_settings.app_dirs, defaults.app_dirs),
             debug_highlight_components=default(
-                components_settings.debug_highlight_components, defaults.debug_highlight_components
+                components_settings.debug_highlight_components,
+                defaults.debug_highlight_components,
             ),
             debug_highlight_slots=default(components_settings.debug_highlight_slots, defaults.debug_highlight_slots),
             dynamic_component_name=default(
-                components_settings.dynamic_component_name, defaults.dynamic_component_name
+                components_settings.dynamic_component_name,
+                defaults.dynamic_component_name,
             ),
             libraries=default(components_settings.libraries, defaults.libraries),
             # NOTE: Internally we store the extensions as a list of instances, but the user
@@ -789,11 +792,12 @@ class InternalSettings:
     def _get_settings(self) -> ComponentsSettings:
         if self._settings is None:
             self._load_settings()
-        return cast(ComponentsSettings, self._settings)
+        return cast("ComponentsSettings", self._settings)
 
     def _prepare_extensions(self, new_settings: ComponentsSettings) -> List["ComponentExtension"]:
-        extensions: Sequence[Union[Type["ComponentExtension"], str]] = default(
-            new_settings.extensions, cast(List[str], defaults.extensions)
+        extensions: Sequence[Union[Type[ComponentExtension], str]] = default(
+            new_settings.extensions,
+            cast("List[str]", defaults.extensions),
         )
 
         # Prepend built-in extensions
@@ -804,7 +808,7 @@ class InternalSettings:
         from django_components.extensions.view import ViewExtension
 
         extensions = cast(
-            List[Type["ComponentExtension"]],
+            "List[Type[ComponentExtension]]",
             [
                 CacheExtension,
                 DefaultsExtension,
@@ -815,12 +819,12 @@ class InternalSettings:
         ) + list(extensions)
 
         # Extensions may be passed in either as classes or import strings.
-        extension_instances: List["ComponentExtension"] = []
+        extension_instances: List[ComponentExtension] = []
         for extension in extensions:
             if isinstance(extension, str):
                 import_path, class_name = extension.rsplit(".", 1)
                 extension_module = import_module(import_path)
-                extension = cast(Type["ComponentExtension"], getattr(extension_module, class_name))
+                extension = cast("Type[ComponentExtension]", getattr(extension_module, class_name))  # noqa: PLW2901
 
             if isinstance(extension, type):
                 extension_instance = extension()
@@ -837,7 +841,7 @@ class InternalSettings:
         if val is None:
             val = new_settings.reload_on_template_change
 
-        return default(val, cast(bool, defaults.reload_on_file_change))
+        return default(val, cast("bool", defaults.reload_on_file_change))
 
     def _prepare_static_files_forbidden(self, new_settings: ComponentsSettings) -> List[Union[str, re.Pattern]]:
         val = new_settings.static_files_forbidden
@@ -845,18 +849,18 @@ class InternalSettings:
         if val is None:
             val = new_settings.forbidden_static_files
 
-        return default(val, cast(List[Union[str, re.Pattern]], defaults.static_files_forbidden))
+        return default(val, cast("List[Union[str, re.Pattern]]", defaults.static_files_forbidden))
 
     def _prepare_context_behavior(self, new_settings: ComponentsSettings) -> Literal["django", "isolated"]:
         raw_value = cast(
-            Literal["django", "isolated"],
+            "Literal['django', 'isolated']",
             default(new_settings.context_behavior, defaults.context_behavior),
         )
         try:
             ContextBehavior(raw_value)
-        except ValueError:
+        except ValueError as err:
             valid_values = [behavior.value for behavior in ContextBehavior]
-            raise ValueError(f"Invalid context behavior: {raw_value}. Valid options are {valid_values}")
+            raise ValueError(f"Invalid context behavior: {raw_value}. Valid options are {valid_values}") from err
 
         return raw_value
 

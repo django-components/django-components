@@ -60,7 +60,8 @@ def cached_template(
         engine=...
     )
     ```
-    """  # noqa: E501
+
+    """
     template_cache = get_template_cache()
 
     template_cls = template_cls or Template
@@ -103,7 +104,7 @@ def prepare_component_template(
                 "Django-components received a Template instance which was not patched."
                 "If you are using Django's Template class, check if you added django-components"
                 "to INSTALLED_APPS. If you are using a custom template class, then you need to"
-                "manually patch the class."
+                "manually patch the class.",
             )
 
         with _maybe_bind_template(context, template):
@@ -223,7 +224,7 @@ def _get_component_template(component: "Component") -> Optional[Template]:
 
     # TODO_V1 - Remove `get_template_string()` in v1
     if hasattr(component, "get_template_string"):
-        template_string_getter = getattr(component, "get_template_string")
+        template_string_getter = component.get_template_string
         template_body_from_getter = template_string_getter(component.context)
     else:
         template_body_from_getter = None
@@ -244,8 +245,7 @@ def _get_component_template(component: "Component") -> Optional[Template]:
     sources_with_values = [k for k, v in template_sources.items() if v is not None]
     if len(sources_with_values) > 1:
         raise ImproperlyConfigured(
-            f"Component template was set multiple times in Component {component.name}."
-            f"Sources: {sources_with_values}"
+            f"Component template was set multiple times in Component {component.name}. Sources: {sources_with_values}",
         )
 
     # Load the template based on the source
@@ -281,7 +281,7 @@ def _get_component_template(component: "Component") -> Optional[Template]:
     if template is not None:
         return template
     # Create the template from the string
-    elif template_string is not None:
+    if template_string is not None:
         return _create_template_from_string(component.__class__, template_string)
 
     # Otherwise, Component has no template - this is valid, as it may be instead rendered
@@ -384,7 +384,12 @@ def cache_component_template_file(component_cls: Type["Component"]) -> None:
         return
 
     # NOTE: Avoids circular import
-    from django_components.component_media import ComponentMedia, Unset, _resolve_component_relative_files, is_set
+    from django_components.component_media import (  # noqa: PLC0415
+        ComponentMedia,
+        Unset,
+        _resolve_component_relative_files,
+        is_set,
+    )
 
     # If we access the `Component.template_file` attribute, then this triggers media resolution if it was not done yet.
     # The problem is that this also causes the loading of the Template, if Component has defined `template_file`.
@@ -422,12 +427,12 @@ def get_component_by_template_file(template_file: str) -> Optional[Type["Compone
     #
     # So at this point we want to call `cache_component_template_file()` for all Components for which
     # we skipped it earlier.
-    global component_template_file_cache_initialized
+    global component_template_file_cache_initialized  # noqa: PLW0603
     if not component_template_file_cache_initialized:
         component_template_file_cache_initialized = True
 
         # NOTE: Avoids circular import
-        from django_components.component import all_components
+        from django_components.component import all_components  # noqa: PLC0415
 
         components = all_components()
         for component in components:
@@ -462,10 +467,10 @@ def get_component_by_template_file(template_file: str) -> Optional[Type["Compone
 
 # NOTE: Used by `@djc_test` to reset the component template file cache
 def _reset_component_template_file_cache() -> None:
-    global component_template_file_cache
+    global component_template_file_cache  # noqa: PLW0603
     component_template_file_cache = {}
 
-    global component_template_file_cache_initialized
+    global component_template_file_cache_initialized  # noqa: PLW0603
     component_template_file_cache_initialized = False
 
 

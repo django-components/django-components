@@ -4,14 +4,18 @@ in an actual browser.
 """
 
 import re
+from typing import TYPE_CHECKING
 
-from playwright.async_api import Page
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
-from django_components import types
 from django_components.testing import djc_test
-from tests.testutils import setup_test_config
 from tests.e2e.utils import TEST_SERVER_URL, with_playwright
+from tests.testutils import setup_test_config
+
+if TYPE_CHECKING:
+    from playwright.async_api import Page
+
+    from django_components import types
 
 setup_test_config({"autodiscover": False})
 
@@ -48,9 +52,10 @@ class TestE2eDependencyRendering:
         data = await page.evaluate(test_js)
 
         # Check that the actual HTML content was loaded
-        assert re.compile(
-            r'Variable: <strong class="inner" data-djc-id-\w{7}="">foo</strong>'
-        ).search(data["bodyHTML"]) is not None
+        assert (
+            re.compile(r'Variable: <strong class="inner" data-djc-id-\w{7}="">foo</strong>').search(data["bodyHTML"])
+            is not None
+        )
         assertInHTML('<div class="my-style"> 123 </div>', data["bodyHTML"], count=1)
         assertInHTML('<div class="my-style2"> xyz </div>', data["bodyHTML"], count=1)
 
@@ -112,32 +117,35 @@ class TestE2eDependencyRendering:
         data = await page.evaluate(test_js)
 
         # Check that the actual HTML content was loaded
-        assert re.compile(
-            # <div class="outer" data-djc-id-c10uLMD>
-            #     Variable:
-            #     <strong class="inner" data-djc-id-cDZEnUC>
-            #         variable
-            #     </strong>
-            #     XYZ:
-            #     <strong class="other" data-djc-id-cIYirHK>
-            #         variable_inner
-            #     </strong>
-            # </div>
-            # <div class="my-style">123</div>
-            # <div class="my-style2">xyz</div>
-            r'<div class="outer" data-djc-id-\w{7}="">\s*'
-            r"Variable:\s*"
-            r'<strong class="inner" data-djc-id-\w{7}="">\s*'
-            r"variable\s*"
-            r"<\/strong>\s*"
-            r"XYZ:\s*"
-            r'<strong class="other" data-djc-id-\w{7}="">\s*'
-            r"variable_inner\s*"
-            r"<\/strong>\s*"
-            r"<\/div>\s*"
-            r'<div class="my-style">123<\/div>\s*'
-            r'<div class="my-style2">xyz<\/div>\s*'
-        ).search(data["bodyHTML"]) is not None
+        assert (
+            re.compile(
+                # <div class="outer" data-djc-id-c10uLMD>
+                #     Variable:
+                #     <strong class="inner" data-djc-id-cDZEnUC>
+                #         variable
+                #     </strong>
+                #     XYZ:
+                #     <strong class="other" data-djc-id-cIYirHK>
+                #         variable_inner
+                #     </strong>
+                # </div>
+                # <div class="my-style">123</div>
+                # <div class="my-style2">xyz</div>
+                r'<div class="outer" data-djc-id-\w{7}="">\s*'
+                r"Variable:\s*"
+                r'<strong class="inner" data-djc-id-\w{7}="">\s*'
+                r"variable\s*"
+                r"<\/strong>\s*"
+                r"XYZ:\s*"
+                r'<strong class="other" data-djc-id-\w{7}="">\s*'
+                r"variable_inner\s*"
+                r"<\/strong>\s*"
+                r"<\/div>\s*"
+                r'<div class="my-style">123<\/div>\s*'
+                r'<div class="my-style2">xyz<\/div>\s*',
+            ).search(data["bodyHTML"])
+            is not None
+        )
 
         # Check components' inlined JS got loaded
         assert data["component1JsMsg"] == "kapowww!"
@@ -216,20 +224,23 @@ class TestE2eDependencyRendering:
         # </div>
         # <div class="my-style">123</div>
         # <div class="my-style2">xyz</div>
-        assert re.compile(
-            r'<div class="outer" data-djc-id-\w{7}="">\s*'
-            r"Variable:\s*"
-            r'<strong class="inner" data-djc-id-\w{7}="">\s*'
-            r"variable\s*"
-            r"<\/strong>\s*"
-            r"XYZ:\s*"
-            r'<strong class="other" data-djc-id-\w{7}="">\s*'
-            r"variable_inner\s*"
-            r"<\/strong>\s*"
-            r"<\/div>\s*"
-            r'<div class="my-style">123<\/div>\s*'
-            r'<div class="my-style2">xyz<\/div>\s*'
-        ).search(data["bodyHTML"]) is not None
+        assert (
+            re.compile(
+                r'<div class="outer" data-djc-id-\w{7}="">\s*'
+                r"Variable:\s*"
+                r'<strong class="inner" data-djc-id-\w{7}="">\s*'
+                r"variable\s*"
+                r"<\/strong>\s*"
+                r"XYZ:\s*"
+                r'<strong class="other" data-djc-id-\w{7}="">\s*'
+                r"variable_inner\s*"
+                r"<\/strong>\s*"
+                r"<\/div>\s*"
+                r'<div class="my-style">123<\/div>\s*'
+                r'<div class="my-style2">xyz<\/div>\s*',
+            ).search(data["bodyHTML"])
+            is not None
+        )
 
         # Check components' inlined JS did NOT get loaded
         assert data["component1JsMsg"] is None
@@ -358,7 +369,7 @@ class TestE2eDependencyRendering:
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
         await page.wait_for_function(
-            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')"
+            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')",
         )
         await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
 
@@ -377,9 +388,15 @@ class TestE2eDependencyRendering:
         data = await page.evaluate(test_js)
 
         assert data["targetHtml"] is None
-        assert re.compile(
-            r'<div class="frag" data-djc-id-\w{7}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
-        ).search(data["fragHtml"]) is not None
+        assert (
+            re.compile(
+                r'<div class="frag" data-djc-id-\w{7}="">\s*'
+                r"123\s*"
+                r'<span id="frag-text">xxx</span>\s*'
+                r"</div>",
+            ).search(data["fragHtml"])
+            is not None
+        )
         assert "rgb(0, 0, 255)" in data["fragBg"]  # AKA 'background: blue'
 
         await page.close()
@@ -427,9 +444,15 @@ class TestE2eDependencyRendering:
         data = await page.evaluate(test_js)
 
         assert data["targetHtml"] is None
-        assert re.compile(
-            r'<div class="frag" data-djc-id-\w{7}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
-        ).search(data["fragHtml"]) is not None
+        assert (
+            re.compile(
+                r'<div class="frag" data-djc-id-\w{7}="">\s*'
+                r"123\s*"
+                r'<span id="frag-text">xxx</span>\s*'
+                r"</div>",
+            ).search(data["fragHtml"])
+            is not None
+        )
         assert "rgb(0, 0, 255)" in data["fragBg"]  # AKA 'background: blue'
 
         await page.close()
@@ -460,7 +483,7 @@ class TestE2eDependencyRendering:
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
         await page.wait_for_function(
-            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')"
+            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')",
         )
         await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
 
@@ -480,9 +503,15 @@ class TestE2eDependencyRendering:
 
         # NOTE: Unlike the vanilla JS tests, for the Alpine test we don't remove the targetHtml,
         # but only change its contents.
-        assert re.compile(
-            r'<div class="frag" data-djc-id-\w{7}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
-        ).search(data["targetHtml"]) is not None
+        assert (
+            re.compile(
+                r'<div class="frag" data-djc-id-\w{7}="">\s*'
+                r"123\s*"
+                r'<span id="frag-text">xxx</span>\s*'
+                r"</div>",
+            ).search(data["targetHtml"])
+            is not None
+        )
         assert "rgb(0, 0, 255)" in data["fragBg"]  # AKA 'background: blue'
 
         await page.close()
@@ -513,7 +542,7 @@ class TestE2eDependencyRendering:
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
         await page.wait_for_function(
-            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')"
+            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')",
         )
         await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
 
@@ -565,7 +594,7 @@ class TestE2eDependencyRendering:
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
         await page.wait_for_function(
-            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')"
+            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')",
         )
         await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
 
@@ -584,9 +613,15 @@ class TestE2eDependencyRendering:
         data = await page.evaluate(test_js)
 
         assert data["targetHtml"] is None
-        assert re.compile(
-            r'<div class="frag" data-djc-id-\w{7}="">\s*' r"123\s*" r'<span id="frag-text">xxx</span>\s*' r"</div>"
-        ).search(data["fragHtml"]) is not None
+        assert (
+            re.compile(
+                r'<div class="frag" data-djc-id-\w{7}="">\s*'
+                r"123\s*"
+                r'<span id="frag-text">xxx</span>\s*'
+                r"</div>",
+            ).search(data["fragHtml"])
+            is not None
+        )
         assert "rgb(0, 0, 255)" in data["fragBg"]  # AKA 'background: blue'
 
         await page.close()
@@ -599,7 +634,7 @@ class TestE2eDependencyRendering:
         await page.goto(single_comp_url)
 
         component_text = await page.locator('[x-data="alpine_test"]').text_content()
-        assertHTMLEqual(component_text.strip(), "ALPINE_TEST: 123")
+        assertHTMLEqual(component_text.strip(), "ALPINE_TEST: 123")  # type: ignore[union-attr]
 
         await page.close()
 
@@ -611,7 +646,7 @@ class TestE2eDependencyRendering:
         await page.goto(single_comp_url)
 
         component_text = await page.locator('[x-data="alpine_test"]').text_content()
-        assertHTMLEqual(component_text.strip(), "ALPINE_TEST: 123")
+        assertHTMLEqual(component_text.strip(), "ALPINE_TEST: 123")  # type: ignore[union-attr]
 
         await page.close()
 
@@ -623,7 +658,7 @@ class TestE2eDependencyRendering:
         await page.goto(single_comp_url)
 
         component_text = await page.locator('[x-data="alpine_test"]').text_content()
-        assertHTMLEqual(component_text.strip(), "ALPINE_TEST: 123")
+        assertHTMLEqual(component_text.strip(), "ALPINE_TEST: 123")  # type: ignore[union-attr]
 
         await page.close()
 
@@ -635,6 +670,6 @@ class TestE2eDependencyRendering:
         await page.goto(single_comp_url)
 
         component_text = await page.locator('[x-data="alpine_test"]').text_content()
-        assertHTMLEqual(component_text.strip(), "ALPINE_TEST:")
+        assertHTMLEqual(component_text.strip(), "ALPINE_TEST:")  # type: ignore[union-attr]
 
         await page.close()

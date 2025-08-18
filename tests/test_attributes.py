@@ -23,7 +23,9 @@ class TestFormatAttributes:
         assert format_attributes({"class": "foo", "style": "color: red;"}) == 'class="foo" style="color: red;"'
 
     def test_escapes_special_characters(self):
-        assert format_attributes({"x-on:click": "bar", "@click": "'baz'"}) == 'x-on:click="bar" @click="&#x27;baz&#x27;"'  # noqa: E501
+        assert (
+            format_attributes({"x-on:click": "bar", "@click": "'baz'"}) == 'x-on:click="bar" @click="&#x27;baz&#x27;"'
+        )
 
     def test_does_not_escape_special_characters_if_safe_string(self):
         assert format_attributes({"foo": mark_safe("'bar'")}) == "foo=\"'bar'\""
@@ -51,7 +53,7 @@ class TestMergeAttributes:
         assert merge_attributes({"class": "foo", "id": "bar"}, {"class": "baz"}) == {
             "class": "foo baz",
             "id": "bar",
-        }  # noqa: E501
+        }
 
     def test_merge_with_empty_dict(self):
         assert merge_attributes({}, {"foo": "bar"}) == {"foo": "bar"}
@@ -70,7 +72,7 @@ class TestMergeAttributes:
                     "tuna3",
                     {"baz": True, "baz2": False, "tuna": False, "tuna2": True, "tuna3": None},
                     ["extra", {"extra2": False, "baz2": True, "tuna": True, "tuna2": False}],
-                ]
+                ],
             },
         ) == {"class": "foo bar tuna baz baz2 extra"}
 
@@ -82,7 +84,7 @@ class TestMergeAttributes:
                     "background-color: blue;",
                     {"background-color": "green", "color": None, "width": False},
                     ["position: absolute", {"height": "12px"}],
-                ]
+                ],
             },
         ) == {"style": "color: red; height: 12px; background-color: green; position: absolute;"}
 
@@ -142,7 +144,7 @@ class TestHtmlAttrs:
                 <div {% html_attrs attrs defaults class="added_class" class="another-class" data-id=123 %}>
                     content
                 </div>
-            """  # noqa: E501
+            """
 
             def get_template_data(self, args, kwargs, slots, context):
                 return {
@@ -170,7 +172,7 @@ class TestHtmlAttrs:
                 <div {% html_attrs attrs defaults class %}>
                     content
                 </div>
-            """  # noqa: E501
+            """
 
             def get_template_data(self, args, kwargs, slots, context):
                 return {
@@ -183,7 +185,9 @@ class TestHtmlAttrs:
 
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'html_attrs': takes 2 positional argument(s) but more were given"),  # noqa: E501
+            match=re.escape(
+                "Invalid parameters for tag 'html_attrs': takes 2 positional argument(s) but more were given",
+            ),
         ):
             template.render(Context({"class_var": "padding-top-8"}))
 
@@ -251,7 +255,7 @@ class TestHtmlAttrs:
                 <div {% html_attrs ...props class="another-class" %}>
                     content
                 </div>
-            """  # noqa: E501
+            """
 
             def get_template_data(self, args, kwargs, slots, context):
                 return {
@@ -298,7 +302,7 @@ class TestHtmlAttrs:
             <div class="added_class another-class from_agg_key" data-djc-id-ca1bc3f data-id="123" type="submit">
                 content
             </div>
-            """,  # noqa: E501
+            """,
         )
         assert "override-me" not in rendered
 
@@ -344,7 +348,7 @@ class TestHtmlAttrs:
                 %}>
                     content
                 </div>
-            """  # noqa: E501
+            """
 
             def get_template_data(self, args, kwargs, slots, context):
                 return {"attrs": kwargs["attrs"]}
@@ -389,7 +393,7 @@ class TestHtmlAttrs:
                 <div {% html_attrs attrs class="added_class" class="another-class" data-id=123 %}>
                     content
                 </div>
-            """  # noqa: E501
+            """
 
             def get_template_data(self, args, kwargs, slots, context):
                 return {"attrs": kwargs["attrs"]}
@@ -419,7 +423,7 @@ class TestHtmlAttrs:
                 <div {% html_attrs class="added_class" class="another-class" data-id=123 %}>
                     content
                 </div>
-            """  # noqa: E501
+            """
 
             def get_template_data(self, args, kwargs, slots, context):
                 return {"attrs": kwargs["attrs"]}

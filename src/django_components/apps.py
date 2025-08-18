@@ -1,3 +1,4 @@
+# ruff: noqa: PLC0415
 import re
 from pathlib import Path
 from typing import Any
@@ -76,7 +77,7 @@ def _watch_component_files_for_autoreload() -> None:
 
     component_dirs = set(get_component_dirs())
 
-    def template_changed(sender: Any, file_path: Path, **kwargs: Any) -> None:
+    def template_changed(sender: Any, file_path: Path, **kwargs: Any) -> None:  # noqa: ARG001
         # Reload dev server if any of the files within `COMPONENTS.dirs` or `COMPONENTS.app_dirs` changed
         for dir_path in file_path.parents:
             if dir_path in component_dirs:

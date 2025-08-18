@@ -6,11 +6,8 @@ pytest
 pytest-asyncio
 pytest-django
 syrupy
-flake8
-flake8-pyproject
-isort
+ruff
 pre-commit
-black
 mypy
 playwright
 requests

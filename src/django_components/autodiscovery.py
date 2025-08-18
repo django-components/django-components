@@ -40,6 +40,7 @@ def autodiscover(
 
     modules = get_component_files(".py")
     ```
+
     """
     modules = get_component_files(".py")
     logger.debug(f"Autodiscover found {len(modules)} files in component directories.")
@@ -80,8 +81,9 @@ def import_libraries(
 
     import_libraries(lambda path: path.replace("tests.", "myapp."))
     ```
+
     """
-    from django_components.app_settings import app_settings
+    from django_components.app_settings import app_settings  # noqa: PLC0415
 
     return _import_modules(app_settings.LIBRARIES, map_module)
 
@@ -93,7 +95,7 @@ def _import_modules(
     imported_modules: List[str] = []
     for module_name in modules:
         if map_module:
-            module_name = map_module(module_name)
+            module_name = map_module(module_name)  # noqa: PLW2901
 
         # This imports the file and runs it's code. So if the file defines any
         # django components, they will be registered.

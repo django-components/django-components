@@ -1,8 +1,8 @@
+from djc_core_html_parser import set_html_attributes
 from pytest_django.asserts import assertHTMLEqual
 
-from djc_core_html_parser import set_html_attributes
-
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})

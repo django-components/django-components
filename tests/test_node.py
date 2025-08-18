@@ -12,9 +12,9 @@ from django.template.exceptions import TemplateSyntaxError
 from django_components import Component, types
 from django_components.node import BaseNode, template_tag
 from django_components.templatetags import component_tags
+from django_components.testing import djc_test
 from django_components.util.tag_parser import TagAttr
 
-from django_components.testing import djc_test
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -23,7 +23,7 @@ setup_test_config({"autodiscover": False})
 @djc_test
 class TestNode:
     def test_node_class_requires_tag(self):
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
 
             class CaptureNode(BaseNode):
                 pass
@@ -114,7 +114,7 @@ class TestNode:
         template = Template(template_str)
         template.render(Context({}))
 
-        allowed_flags, flags, active_flags = captured  # type: ignore
+        allowed_flags, flags, active_flags = captured  # type: ignore[misc]
         assert allowed_flags == ["required", "default"]
         assert flags == {"required": True, "default": False}
         assert active_flags == ["required"]
@@ -157,7 +157,7 @@ class TestNode:
             class TestNode(BaseNode):
                 tag = "mytag"
 
-                def render(self) -> str:  # type: ignore
+                def render(self) -> str:  # type: ignore[override]
                     return ""
 
     def test_node_render_accepted_params_set_by_render_signature(self):
@@ -179,7 +179,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag 'John' msg='Hello' required %}
-        """
+        """,
         )
         template1.render(Context({}))
         assert captured == ("John", 1, "Hello", "default")
@@ -189,7 +189,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag 'John2' count=2 msg='Hello' mode='custom' required %}
-        """
+        """,
         )
         template2.render(Context({}))
         assert captured == ("John2", 2, "Hello", "custom")
@@ -199,7 +199,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -212,7 +212,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag msg='Hello' %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -225,7 +225,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag name='John' %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -238,7 +238,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag 123 count=1 name='John' %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -251,7 +251,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag count=1 name='John' 123 %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -264,7 +264,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag 'John' msg='Hello' mode='custom' var=123 %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -277,7 +277,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag 'John' msg='Hello' mode='custom' data-id=123 class="pa-4" @click.once="myVar" %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -290,7 +290,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag data-id=123 'John' msg='Hello' %}
-        """
+        """,
         )
         with pytest.raises(
             SyntaxError,
@@ -321,7 +321,7 @@ class TestNode:
                 123 456 789 msg='Hello' a=1 b=2 c=3 required
                 data-id=123 class="pa-4" @click.once="myVar"
             %}
-        """
+        """,
         )
         template1.render(Context({}))
         assert captured == (
@@ -358,7 +358,7 @@ class TestNode:
                 @click="handleClick"
                 v-if="isVisible"
             %}
-            """
+            """,
         )
         template.render(Context({}))
 
@@ -377,7 +377,7 @@ class TestNode:
             """
             {% load component_tags %}
             {% mytag "John" name="Mary" %}
-            """
+            """,
         )
         with pytest.raises(
             TypeError,
@@ -396,14 +396,14 @@ class TestDecorator:
             match=re.escape("template_tag() missing 1 required positional argument: 'tag'"),
         ):
 
-            @template_tag(component_tags.register)  # type: ignore
-            def mytag(node: BaseNode, context: Context) -> str:
+            @template_tag(component_tags.register)  # type: ignore[call-arg]
+            def mytag(node: BaseNode, context: Context) -> str:  # noqa: ARG001
                 return ""
 
     # Test that the template tag can be used within the template under the registered tag
     def test_decorator_tags(self):
         @template_tag(component_tags.register, tag="mytag", end_tag="endmytag")
-        def render(node: BaseNode, context: Context, name: str, **kwargs) -> str:
+        def render(node: BaseNode, context: Context, name: str, **kwargs) -> str:  # noqa: ARG001
             return f"Hello, {name}!"
 
         # Works with end tag and self-closing
@@ -432,8 +432,8 @@ class TestDecorator:
         render._node.unregister(component_tags.register)  # type: ignore[attr-defined]
 
     def test_decorator_no_end_tag(self):
-        @template_tag(component_tags.register, tag="mytag")  # type: ignore
-        def render(node: BaseNode, context: Context, name: str, **kwargs) -> str:
+        @template_tag(component_tags.register, tag="mytag")
+        def render(node: BaseNode, context: Context, name: str, **kwargs) -> str:  # noqa: ARG001
             return f"Hello, {name}!"
 
         # Raises with end tag or self-closing
@@ -462,7 +462,7 @@ class TestDecorator:
 
     def test_decorator_flags(self):
         @template_tag(component_tags.register, tag="mytag", end_tag="endmytag", allowed_flags=["required", "default"])
-        def render(node: BaseNode, context: Context, name: str, **kwargs) -> str:
+        def render(node: BaseNode, context: Context, name: str, **kwargs) -> str:  # noqa: ARG001
             return ""
 
         render._node.unregister(component_tags.register)  # type: ignore[attr-defined]
@@ -471,8 +471,8 @@ class TestDecorator:
         # Check that the render function is called with the context
         captured = None
 
-        @template_tag(component_tags.register, tag="mytag")  # type: ignore
-        def render(node: BaseNode, context: Context) -> str:
+        @template_tag(component_tags.register, tag="mytag")
+        def render(node: BaseNode, context: Context) -> str:  # noqa: ARG001
             nonlocal captured
             captured = context.flatten()
             return f"Hello, {context['name']}!"
@@ -495,16 +495,22 @@ class TestDecorator:
             match=re.escape("Failed to create node class in 'template_tag()' for 'render'"),
         ):
 
-            @template_tag(component_tags.register, tag="mytag")  # type: ignore
-            def render(node: BaseNode) -> str:  # type: ignore
+            @template_tag(component_tags.register, tag="mytag")
+            def render(node: BaseNode) -> str:  # noqa: ARG001
                 return ""
 
     def test_decorator_render_accepted_params_set_by_render_signature(self):
         captured = None
 
-        @template_tag(component_tags.register, tag="mytag", allowed_flags=["required", "default"])  # type: ignore
+        @template_tag(component_tags.register, tag="mytag", allowed_flags=["required", "default"])
         def render(
-            node: BaseNode, context: Context, name: str, count: int = 1, *, msg: str, mode: str = "default"
+            node: BaseNode,  # noqa: ARG001
+            context: Context,  # noqa: ARG001
+            name: str,
+            count: int = 1,
+            *,
+            msg: str,
+            mode: str = "default",
         ) -> str:
             nonlocal captured
             captured = name, count, msg, mode
@@ -515,7 +521,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag 'John' msg='Hello' required %}
-        """
+        """,
         )
         template1.render(Context({}))
         assert captured == ("John", 1, "Hello", "default")
@@ -525,7 +531,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag 'John2' count=2 msg='Hello' mode='custom' required %}
-        """
+        """,
         )
         template2.render(Context({}))
         assert captured == ("John2", 2, "Hello", "custom")
@@ -535,7 +541,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -548,7 +554,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag msg='Hello' %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -561,7 +567,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag name='John' %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -574,7 +580,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag 123 count=1 name='John' %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -587,7 +593,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag count=1 name='John' 123 %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -600,7 +606,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag 'John' msg='Hello' mode='custom' var=123 %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -613,7 +619,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag 'John' msg='Hello' mode='custom' data-id=123 class="pa-4" @click.once="myVar" %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -626,7 +632,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag data-id=123 'John' msg='Hello' %}
-        """
+        """,
         )
         with pytest.raises(
             SyntaxError,
@@ -639,8 +645,8 @@ class TestDecorator:
     def test_decorator_render_extra_args_and_kwargs(self):
         captured = None
 
-        @template_tag(component_tags.register, tag="mytag", allowed_flags=["required", "default"])  # type: ignore
-        def render(node: BaseNode, context: Context, name: str, *args, msg: str, **kwargs) -> str:
+        @template_tag(component_tags.register, tag="mytag", allowed_flags=["required", "default"])
+        def render(node: BaseNode, context: Context, name: str, *args, msg: str, **kwargs) -> str:  # noqa: ARG001
             nonlocal captured
             captured = name, args, msg, kwargs
             return ""
@@ -652,7 +658,7 @@ class TestDecorator:
                 123 456 789 msg='Hello' a=1 b=2 c=3 required
                 data-id=123 class="pa-4" @click.once="myVar"
             %}
-        """
+        """,
         )
         template1.render(Context({}))
         assert captured == (
@@ -667,8 +673,8 @@ class TestDecorator:
     def test_decorator_render_kwargs_only(self):
         captured = None
 
-        @template_tag(component_tags.register, tag="mytag")  # type: ignore
-        def render(node: BaseNode, context: Context, **kwargs) -> str:
+        @template_tag(component_tags.register, tag="mytag")
+        def render(node: BaseNode, context: Context, **kwargs) -> str:  # noqa: ARG001
             nonlocal captured
             captured = kwargs
             return ""
@@ -685,7 +691,7 @@ class TestDecorator:
                 @click="handleClick"
                 v-if="isVisible"
             %}
-            """
+            """,
         )
         template.render(Context({}))
 
@@ -704,7 +710,7 @@ class TestDecorator:
             """
             {% load component_tags %}
             {% mytag "John" name="Mary" %}
-            """
+            """,
         )
         with pytest.raises(
             TypeError,
@@ -717,7 +723,7 @@ class TestDecorator:
 
 def force_signature_validation(fn):
     """
-    Creates a proxy around a function that makes __code__ inaccessible,
+    Create a proxy around a function that makes `__code__` inaccessible,
     forcing the use of signature-based validation.
     """
 
@@ -835,7 +841,7 @@ class TestSignatureBasedValidation:
         template = Template(template_str)
         template.render(Context({}))
 
-        allowed_flags, flags, active_flags = captured  # type: ignore
+        allowed_flags, flags, active_flags = captured  # type: ignore[misc]
         assert allowed_flags == ["required", "default"]
         assert flags == {"required": True, "default": False}
         assert active_flags == ["required"]
@@ -874,7 +880,7 @@ class TestSignatureBasedValidation:
         template1 = Template(template_str1)
         template1.render(Context({}))
 
-        params1, nodelist1, node_id1, contents1, template_name1, template_component1 = captured  # type: ignore
+        params1, nodelist1, node_id1, contents1, template_name1, template_component1 = captured  # type: ignore[misc]
         assert len(params1) == 1
         assert isinstance(params1[0], TagAttr)
         # NOTE: The comment node is not included in the nodelist
@@ -887,9 +893,12 @@ class TestSignatureBasedValidation:
         assert isinstance(nodelist1[5], TextNode)
         assert isinstance(nodelist1[6], IfNode)
         assert isinstance(nodelist1[7], TextNode)
-        assert contents1 == "\n              INSIDE TAG {{ my_var }} {# comment #} {% lorem 1 w %} {% if True %} henlo {% endif %}\n            "  # noqa: E501
+        assert (
+            contents1
+            == "\n              INSIDE TAG {{ my_var }} {# comment #} {% lorem 1 w %} {% if True %} henlo {% endif %}\n            "  # noqa: E501
+        )
         assert node_id1 == "a1bc3e"
-        assert template_name1 == '<unknown source>'
+        assert template_name1 == "<unknown source>"
         assert template_component1 is None
 
         captured = None  # Reset captured
@@ -902,14 +911,14 @@ class TestSignatureBasedValidation:
         template2 = Template(template_str2)
         template2.render(Context({}))
 
-        params2, nodelist2, node_id2, contents2, template_name2, template_component2 = captured  # type: ignore
-        assert len(params2) == 1  # type: ignore
-        assert isinstance(params2[0], TagAttr)  # type: ignore
-        assert len(nodelist2) == 0  # type: ignore
-        assert contents2 is None  # type: ignore
-        assert node_id2 == "a1bc3f"  # type: ignore
-        assert template_name2 == '<unknown source>'  # type: ignore
-        assert template_component2 is None  # type: ignore
+        params2, nodelist2, node_id2, contents2, template_name2, template_component2 = captured  # type: ignore[misc]
+        assert len(params2) == 1  # type: ignore[has-type]
+        assert isinstance(params2[0], TagAttr)  # type: ignore[has-type]
+        assert len(nodelist2) == 0  # type: ignore[has-type]
+        assert contents2 is None  # type: ignore[has-type]
+        assert node_id2 == "a1bc3f"  # type: ignore[has-type]
+        assert template_name2 == "<unknown source>"  # type: ignore[has-type]
+        assert template_component2 is None  # type: ignore[has-type]
 
         captured = None  # Reset captured
 
@@ -920,7 +929,14 @@ class TestSignatureBasedValidation:
             @force_signature_validation
             def render(self, context: Context, name: str, **kwargs) -> str:
                 nonlocal captured
-                captured = self.params, self.nodelist, self.node_id, self.contents, self.template_name, self.template_component  # noqa: E501
+                captured = (
+                    self.params,
+                    self.nodelist,
+                    self.node_id,
+                    self.contents,
+                    self.template_name,
+                    self.template_component,
+                )
                 return f"Hello, {name}!"
 
         TestNodeWithoutEndTag.register(component_tags.register)
@@ -932,14 +948,14 @@ class TestSignatureBasedValidation:
         template3 = Template(template_str3)
         template3.render(Context({}))
 
-        params3, nodelist3, node_id3, contents3, template_name3, template_component3 = captured  # type: ignore
-        assert len(params3) == 1  # type: ignore
-        assert isinstance(params3[0], TagAttr)  # type: ignore
-        assert len(nodelist3) == 0  # type: ignore
-        assert contents3 is None  # type: ignore
-        assert node_id3 == "a1bc40"  # type: ignore
-        assert template_name3 == '<unknown source>'  # type: ignore
-        assert template_component3 is None  # type: ignore
+        params3, nodelist3, node_id3, contents3, template_name3, template_component3 = captured  # type: ignore[misc]
+        assert len(params3) == 1  # type: ignore[has-type]
+        assert isinstance(params3[0], TagAttr)  # type: ignore[has-type]
+        assert len(nodelist3) == 0  # type: ignore[has-type]
+        assert contents3 is None  # type: ignore[has-type]
+        assert node_id3 == "a1bc40"  # type: ignore[has-type]
+        assert template_name3 == "<unknown source>"  # type: ignore[has-type]
+        assert template_component3 is None  # type: ignore[has-type]
 
         # Case 4 - Node nested in Component end tag
         class TestComponent(Component):
@@ -950,20 +966,20 @@ class TestSignatureBasedValidation:
 
         TestComponent.render(Context({}))
 
-        params4, nodelist4, node_id4, contents4, template_name4, template_component4 = captured  # type: ignore
-        assert len(params4) == 1  # type: ignore
-        assert isinstance(params4[0], TagAttr)  # type: ignore
-        assert len(nodelist4) == 0  # type: ignore
-        assert contents4 is None  # type: ignore
-        assert node_id4 == "a1bc42"  # type: ignore
+        params4, nodelist4, node_id4, contents4, template_name4, template_component4 = captured  # type: ignore[misc]
+        assert len(params4) == 1  # type: ignore[has-type]
+        assert isinstance(params4[0], TagAttr)  # type: ignore[has-type]
+        assert len(nodelist4) == 0  # type: ignore[has-type]
+        assert contents4 is None  # type: ignore[has-type]
+        assert node_id4 == "a1bc42"  # type: ignore[has-type]
 
         if os.name == "nt":
-            assert cast(str, template_name4).endswith("\\tests\\test_node.py::TestComponent")  # type: ignore
+            assert cast("str", template_name4).endswith("\\tests\\test_node.py::TestComponent")  # type: ignore[has-type]
         else:
-            assert cast(str, template_name4).endswith("/tests/test_node.py::TestComponent")  # type: ignore
+            assert cast("str", template_name4).endswith("/tests/test_node.py::TestComponent")  # type: ignore[has-type]
 
-        assert template_name4 == f"{__file__}::TestComponent"  # type: ignore
-        assert template_component4 is TestComponent  # type: ignore
+        assert template_name4 == f"{__file__}::TestComponent"  # type: ignore[has-type]
+        assert template_component4 is TestComponent  # type: ignore[has-type]
 
         # Cleanup
         TestNodeWithEndTag.unregister(component_tags.register)
@@ -1005,7 +1021,7 @@ class TestSignatureBasedValidation:
             class TestNode(BaseNode):
                 tag = "mytag"
 
-                def render(self) -> str:  # type: ignore
+                def render(self) -> str:  # type: ignore[override]
                     return ""
 
     def test_node_render_accepted_params_set_by_render_signature(self):
@@ -1028,7 +1044,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag 'John' msg='Hello' required %}
-        """
+        """,
         )
         template1.render(Context({}))
         assert captured == ("John", 1, "Hello", "default")
@@ -1038,7 +1054,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag 'John2' count=2 msg='Hello' mode='custom' required %}
-        """
+        """,
         )
         template2.render(Context({}))
         assert captured == ("John2", 2, "Hello", "custom")
@@ -1048,7 +1064,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -1061,7 +1077,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag msg='Hello' %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -1074,7 +1090,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag name='John' %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -1087,7 +1103,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag 123 count=1 name='John' %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -1100,7 +1116,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag count=1 name='John' 123 %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -1113,7 +1129,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag 'John' msg='Hello' mode='custom' var=123 %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -1126,7 +1142,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag 'John' msg='Hello' mode='custom' data-id=123 class="pa-4" @click.once="myVar" %}
-        """
+        """,
         )
         with pytest.raises(
             TypeError,
@@ -1139,7 +1155,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag data-id=123 'John' msg='Hello' %}
-        """
+        """,
         )
         with pytest.raises(
             SyntaxError,
@@ -1171,7 +1187,7 @@ class TestSignatureBasedValidation:
                 123 456 789 msg='Hello' a=1 b=2 c=3 required
                 data-id=123 class="pa-4" @click.once="myVar"
             %}
-        """
+        """,
         )
         template1.render(Context({}))
         assert captured == (
@@ -1209,7 +1225,7 @@ class TestSignatureBasedValidation:
                 @click="handleClick"
                 v-if="isVisible"
             %}
-            """
+            """,
         )
         template.render(Context({}))
 
@@ -1228,7 +1244,7 @@ class TestSignatureBasedValidation:
             """
             {% load component_tags %}
             {% mytag "John" name="Mary" %}
-            """
+            """,
         )
         with pytest.raises(
             TypeError,

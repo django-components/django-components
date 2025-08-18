@@ -1,3 +1,4 @@
+# ruff: noqa: S105
 """
 Parser for Django template tags.
 
@@ -180,7 +181,7 @@ class TagValuePart:
         # Create a hash based on the attributes that define object equality
         return hash((self.value, self.quoted, self.spread, self.translation, self.filter))
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, TagValuePart):
             return False
         return (
@@ -231,16 +232,15 @@ class TagValueStruct:
         def render_value(value: Union[TagValue, TagValueStruct]) -> str:
             if isinstance(value, TagValue):
                 return value.serialize()
-            else:
-                return value.serialize()
+            return value.serialize()
 
         if self.type == "simple":
             value = self.entries[0]
             return render_value(value)
-        elif self.type == "list":
+        if self.type == "list":
             prefix = self.spread or ""
             return prefix + "[" + ", ".join([render_value(entry) for entry in self.entries]) + "]"
-        elif self.type == "dict":
+        if self.type == "dict":
             prefix = self.spread or ""
             dict_pairs = []
             dict_pair: List[str] = []
@@ -255,17 +255,18 @@ class TagValueStruct:
                         dict_pairs.append(rendered)
                     else:
                         dict_pair.append(rendered)
+                elif entry.is_spread:
+                    if dict_pair:
+                        raise TemplateSyntaxError("Malformed dict: spread operator cannot be used as a dict key")
+                    dict_pairs.append(rendered)
                 else:
-                    if entry.is_spread:
-                        if dict_pair:
-                            raise TemplateSyntaxError("Malformed dict: spread operator cannot be used as a dict key")
-                        dict_pairs.append(rendered)
-                    else:
-                        dict_pair.append(rendered)
+                    dict_pair.append(rendered)
                 if len(dict_pair) == 2:
                     dict_pairs.append(": ".join(dict_pair))
                     dict_pair = []
             return prefix + "{" + ", ".join(dict_pairs) + "}"
+
+        raise ValueError(f"Invalid type: {self.type}")
 
     # When we want to render the TagValueStruct, which may contain nested lists and dicts,
     # we need to find all leaf nodes (the "simple" types) and compile them to FilterExpression.
@@ -308,7 +309,7 @@ class TagValueStruct:
                 raise TemplateSyntaxError("Malformed tag: simple value is not a TagValue")
             return value.resolve(context)
 
-        elif self.type == "list":
+        if self.type == "list":
             resolved_list: List[Any] = []
             for entry in self.entries:
                 resolved = entry.resolve(context)
@@ -325,7 +326,7 @@ class TagValueStruct:
                     resolved_list.append(resolved)
             return resolved_list
 
-        elif self.type == "dict":
+        if self.type == "dict":
             resolved_dict: Dict = {}
             dict_pair: List = []
 
@@ -336,14 +337,14 @@ class TagValueStruct:
                 if isinstance(entry, TagValueStruct) and entry.spread:
                     if dict_pair:
                         raise TemplateSyntaxError(
-                            "Malformed dict: spread operator cannot be used on the position of a dict value"
+                            "Malformed dict: spread operator cannot be used on the position of a dict value",
                         )
                     # Case: Spreading a literal dict: { **{"key": val2} }
                     resolved_dict.update(resolved)
                 elif isinstance(entry, TagValue) and entry.is_spread:
                     if dict_pair:
                         raise TemplateSyntaxError(
-                            "Malformed dict: spread operator cannot be used on the position of a dict value"
+                            "Malformed dict: spread operator cannot be used on the position of a dict value",
                         )
                     # Case: Spreading a variable: { **val }
                     resolved_dict.update(resolved)
@@ -357,6 +358,8 @@ class TagValueStruct:
                     resolved_dict[dict_key] = dict_value
                     dict_pair = []
             return resolved_dict
+
+        raise ValueError(f"Invalid type: {self.type}")
 
 
 def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
@@ -447,7 +450,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
         return False
 
     def taken_n(n: int) -> str:
-        result = text[index : index + n]  # noqa: E203
+        result = text[index : index + n]
         add_token(result)
         return result
 
@@ -506,7 +509,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
             if is_next_token(["..."]):
                 if curr_struct.type != "simple":
                     raise TemplateSyntaxError(
-                        f"Spread syntax '...' found in {curr_struct.type}. It must be used on tag attributes only"
+                        f"Spread syntax '...' found in {curr_struct.type}. It must be used on tag attributes only",
                     )
                 spread_token = "..."
             elif is_next_token(["**"]):
@@ -529,7 +532,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
             if curr_struct.type == "simple" and key is not None:
                 raise TemplateSyntaxError("Spread syntax '...' cannot follow a key ('key=...attrs')")
 
-            taken_n(len(cast(str, spread_token)))  # ... or * or **
+            taken_n(len(cast("str", spread_token)))  # ... or * or **
             # Allow whitespace between spread and the variable, but only for the Python-like syntax
             # (lists and dicts). E.g.:
             # `{% component key=[ * spread ] %}` or `{% component key={ ** spread } %}`
@@ -539,9 +542,8 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
             # `{% component key=val ...spread key2=val2 %}`
             if spread_token != "...":
                 take_while(TAG_WHITESPACE)
-            else:
-                if is_next_token(TAG_WHITESPACE) or is_at_end():
-                    raise TemplateSyntaxError("Spread syntax '...' is missing a value")
+            elif is_next_token(TAG_WHITESPACE) or is_at_end():
+                raise TemplateSyntaxError("Spread syntax '...' is missing a value")
         return spread_token
 
     # Parse attributes
@@ -586,9 +588,8 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
             # Manage state with regards to lists and dictionaries
             if is_next_token(["[", "...[", "*[", "**["]):
                 spread_token = extract_spread_token(curr_value, None)
-                if spread_token is not None:
-                    if curr_value.type == "simple" and key is not None:
-                        raise TemplateSyntaxError("Spread syntax '...' cannot follow a key ('key=...attrs')")
+                if spread_token is not None and curr_value.type == "simple" and key is not None:
+                    raise TemplateSyntaxError("Spread syntax '...' cannot follow a key ('key=...attrs')")
                 # NOTE: The `...`, `**`, `*` are "taken" in `extract_spread_token()`
                 taken_n(1)  # [
                 struct = TagValueStruct(type="list", entries=[], spread=spread_token, meta={}, parser=parser)
@@ -596,7 +597,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                 stack.append(struct)
                 continue
 
-            elif is_next_token(["]"]):
+            if is_next_token(["]"]):
                 if curr_value.type != "list":
                     raise TemplateSyntaxError("Unexpected closing bracket")
                 taken_n(1)  # ]
@@ -606,11 +607,10 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                     stack.pop()
                 continue
 
-            elif is_next_token(["{", "...{", "*{", "**{"]):
+            if is_next_token(["{", "...{", "*{", "**{"]):
                 spread_token = extract_spread_token(curr_value, None)
-                if spread_token is not None:
-                    if curr_value.type == "simple" and key is not None:
-                        raise TemplateSyntaxError("Spread syntax '...' cannot follow a key ('key=...attrs')")
+                if spread_token is not None and curr_value.type == "simple" and key is not None:
+                    raise TemplateSyntaxError("Spread syntax '...' cannot follow a key ('key=...attrs')")
                 # NOTE: The `...`, `**`, `*` are "taken" in `extract_spread_token()`
                 taken_n(1)  # {
 
@@ -630,7 +630,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                 stack.append(struct)
                 continue
 
-            elif is_next_token(["}"]):
+            if is_next_token(["}"]):
                 if curr_value.type != "dict":
                     raise TemplateSyntaxError("Unexpected closing bracket")
 
@@ -643,37 +643,33 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                             # Case: `{ "key": **{"key2": val2} }`
                             if dict_pair:
                                 raise TemplateSyntaxError(
-                                    "Spread syntax cannot be used in place of a dictionary value"
+                                    "Spread syntax cannot be used in place of a dictionary value",
                                 )
                             # Case: `{ **{"key": val2} }`
                             continue
-                        else:
-                            # Case: `{ {"key": val2}: value }`
-                            if not dict_pair:
-                                val_type = "Dictionary" if curr_value.type == "dict" else "List"
-                                raise TemplateSyntaxError(f"{val_type} cannot be used as a dictionary key")
-                            # Case: `{ "key": {"key2": val2} }`
-                            else:
-                                pass
+                        # Case: `{ {"key": val2}: value }`
+                        if not dict_pair:
+                            val_type = "Dictionary" if curr_value.type == "dict" else "List"
+                            raise TemplateSyntaxError(f"{val_type} cannot be used as a dictionary key")
+                        # Case: `{ "key": {"key2": val2} }`
                         dict_pair.append(entry)
                         if len(dict_pair) == 2:
                             dict_pair = []
+                    # Spread is fine when on its own, but cannot be used after a dict key
+                    elif entry.is_spread:
+                        # Case: `{ "key": **my_attrs }`
+                        if dict_pair:
+                            raise TemplateSyntaxError(
+                                "Spread syntax cannot be used in place of a dictionary value",
+                            )
+                        # Case: `{ **my_attrs }`
+                        continue
+                    # Non-spread value can be both key and value.
                     else:
-                        # Spread is fine when on its own, but cannot be used after a dict key
-                        if entry.is_spread:
-                            # Case: `{ "key": **my_attrs }`
-                            if dict_pair:
-                                raise TemplateSyntaxError(
-                                    "Spread syntax cannot be used in place of a dictionary value"
-                                )
-                            # Case: `{ **my_attrs }`
-                            continue
-                        # Non-spread value can be both key and value.
-                        else:
-                            # Cases: `{ my_attrs: "value" }` or `{ "key": my_attrs }`
-                            dict_pair.append(entry)
-                            if len(dict_pair) == 2:
-                                dict_pair = []
+                        # Cases: `{ my_attrs: "value" }` or `{ "key": my_attrs }`
+                        dict_pair.append(entry)
+                        if len(dict_pair) == 2:
+                            dict_pair = []
                 # If, at the end, there an unmatched key-value pair, raise an error
                 if dict_pair:
                     raise TemplateSyntaxError("Dictionary key is missing a value")
@@ -687,7 +683,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                     stack.pop()
                 continue
 
-            elif is_next_token([","]):
+            if is_next_token([","]):
                 if curr_value.type not in ("list", "dict"):
                     raise TemplateSyntaxError("Unexpected comma")
                 taken_n(1)  # ,
@@ -698,7 +694,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
             # NOTE: Altho `:` is used also in filter syntax, the "value" part
             # that the filter is part of is parsed as a whole block. So if we got
             # here, we know we're NOT in filter.
-            elif is_next_token([":"]):
+            if is_next_token([":"]):
                 if curr_value.type != "dict":
                     raise TemplateSyntaxError("Unexpected colon")
                 if not curr_value.meta["expects_key"]:
@@ -707,13 +703,11 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                 curr_value.meta["expects_key"] = False
                 continue
 
-            else:
-                # Allow only 1 top-level plain value, similar to JSON
-                if curr_value.type == "simple":
-                    stack.pop()
-                else:
-                    if is_at_end():
-                        raise TemplateSyntaxError("Unexpected end of text")
+            # Allow only 1 top-level plain value, similar to JSON
+            if curr_value.type == "simple":
+                stack.pop()
+            elif is_at_end():
+                raise TemplateSyntaxError("Unexpected end of text")
 
             # Once we got here, we know that next token is NOT a list nor dict.
             # So we can now parse the value.
@@ -731,9 +725,8 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                 if is_at_end():
                     if is_first_part:
                         raise TemplateSyntaxError("Unexpected end of text")
-                    else:
-                        end_of_value = True
-                        continue
+                    end_of_value = True
+                    continue
 
                 # In this case we've reached the end of a filter sequence
                 # e.g. image:      `height="20"|lower key1=value1`
@@ -744,7 +737,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                     continue
 
                 # Catch cases like `|filter` or `:arg`, which should be `var|filter` or `filter:arg`
-                elif is_first_part and is_next_token(TAG_FILTER):
+                if is_first_part and is_next_token(TAG_FILTER):
                     raise TemplateSyntaxError("Filter is missing a value")
 
                 # Get past the filter tokens like `|` or `:`, until the next value part.
@@ -800,7 +793,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                 elif curr_value.type == "list":
                     terminal_tokens = (",", "]")
                 else:
-                    terminal_tokens = tuple()
+                    terminal_tokens = ()
 
                 # Parse the value
                 #
@@ -860,7 +853,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                         spread=spread_token,
                         translation=is_translation,
                         filter=filter_token,
-                    )
+                    ),
                 )
 
             # Here we're done with the value (+ a sequence of filters)
@@ -878,19 +871,18 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                     # Validation for `{"key": **spread }`
                     if not curr_value.meta["expects_key"]:
                         raise TemplateSyntaxError(
-                            "Got spread syntax on the position of a value inside a dictionary key-value pair"
+                            "Got spread syntax on the position of a value inside a dictionary key-value pair",
                         )
 
                     # Validation for `{**spread: value }`
                     take_while(TAG_WHITESPACE)
                     if is_next_token([":"]):
                         raise TemplateSyntaxError("Spread syntax cannot be used in place of a dictionary key")
-                else:
-                    # Validation for `{"key", value }`
-                    if curr_value.meta["expects_key"]:
-                        take_while(TAG_WHITESPACE)
-                        if not is_next_token([":"]):
-                            raise TemplateSyntaxError("Dictionary key is missing a value")
+                # Validation for `{"key", value }`
+                elif curr_value.meta["expects_key"]:
+                    take_while(TAG_WHITESPACE)
+                    if not is_next_token([":"]):
+                        raise TemplateSyntaxError("Dictionary key is missing a value")
 
         # And at this point, we have the full representation of the tag value,
         # including any lists or dictionaries (even nested). E.g.
@@ -916,7 +908,7 @@ def parse_tag(text: str, parser: Optional[Parser]) -> Tuple[str, List[TagAttr]]:
                 key=key,
                 start_index=start_index,
                 value=total_value,
-            )
+            ),
         )
 
     return normalized, attrs

@@ -1,5 +1,6 @@
 import pytest
 from django.template import Context, Engine, Library, Template
+from pytest_django.asserts import assertHTMLEqual
 
 from django_components import (
     AlreadyRegistered,
@@ -16,9 +17,8 @@ from django_components import (
     registry,
     types,
 )
-from pytest_django.asserts import assertHTMLEqual
-
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})

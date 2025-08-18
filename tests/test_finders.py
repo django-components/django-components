@@ -3,9 +3,9 @@ from pathlib import Path
 
 from django.contrib.staticfiles import finders
 from django.contrib.staticfiles.management.commands.collectstatic import Command
-from django.test import SimpleTestCase
 
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -20,16 +20,17 @@ setup_test_config({"autodiscover": False})
 class MockCollectstaticCommand(Command):
     # NOTE: We do not expect this to be called
     def clear_dir(self, path):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # NOTE: We do not expect this to be called
     def link_file(self, path, prefixed_path, source_storage):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def copy_file(self, path, prefixed_path, source_storage):
         # Skip this file if it was already copied earlier
         if prefixed_path in self.copied_files:
-            return self.log("Skipping '%s' (already copied earlier)" % path)
+            self.log(f"Skipping '{path}' (already copied earlier)")
+            return
         # Delete the target file if needed or break
         if not self.delete_file(path, prefixed_path, source_storage):
             return
@@ -37,9 +38,9 @@ class MockCollectstaticCommand(Command):
         source_path = source_storage.path(path)
         # Finally start copying
         if self.dry_run:
-            self.log("Pretending to copy '%s'" % source_path, level=1)
+            self.log(f"Pretending to copy '{source_path}'", level=1)
         else:
-            self.log("Copying '%s'" % source_path, level=2)
+            self.log(f"Copying '{source_path}'", level=2)
             # ############# OUR CHANGE ##############
             # with source_storage.open(path) as source_file:
             #     self.storage.save(prefixed_path, source_file)
@@ -79,7 +80,8 @@ COMPONENTS = {
 urlpatterns: list = []
 
 
-class StaticFilesFinderTests(SimpleTestCase):
+@djc_test
+class TestStaticFilesFinder:
     @djc_test(
         django_settings={
             **common_settings,
@@ -95,13 +97,13 @@ class StaticFilesFinderTests(SimpleTestCase):
         collected = do_collect()
 
         # Check that the component files are NOT loaded when our finder is NOT added
-        self.assertNotIn(Path("staticfiles/staticfiles.css"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.js"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.html"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.py"), collected["modified"])
+        assert Path("staticfiles/staticfiles.css") not in collected["modified"]
+        assert Path("staticfiles/staticfiles.js") not in collected["modified"]
+        assert Path("staticfiles/staticfiles.html") not in collected["modified"]
+        assert Path("staticfiles/staticfiles.py") not in collected["modified"]
 
-        self.assertListEqual(collected["unmodified"], [])
-        self.assertListEqual(collected["post_processed"], [])
+        assert collected["unmodified"] == []
+        assert collected["post_processed"] == []
 
     @djc_test(
         django_settings={
@@ -120,13 +122,13 @@ class StaticFilesFinderTests(SimpleTestCase):
         collected = do_collect()
 
         # Check that our staticfiles_finder finds the files and OMITS .py and .html files
-        self.assertIn(Path("staticfiles/staticfiles.css"), collected["modified"])
-        self.assertIn(Path("staticfiles/staticfiles.js"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.html"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.py"), collected["modified"])
+        assert Path("staticfiles/staticfiles.css") in collected["modified"]
+        assert Path("staticfiles/staticfiles.js") in collected["modified"]
+        assert Path("staticfiles/staticfiles.html") not in collected["modified"]
+        assert Path("staticfiles/staticfiles.py") not in collected["modified"]
 
-        self.assertListEqual(collected["unmodified"], [])
-        self.assertListEqual(collected["post_processed"], [])
+        assert collected["unmodified"] == []
+        assert collected["post_processed"] == []
 
     @djc_test(
         django_settings={
@@ -151,13 +153,13 @@ class StaticFilesFinderTests(SimpleTestCase):
         collected = do_collect()
 
         # Check that our staticfiles_finder finds the files and OMITS .py and .html files
-        self.assertNotIn(Path("staticfiles/staticfiles.css"), collected["modified"])
-        self.assertIn(Path("staticfiles/staticfiles.js"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.html"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.py"), collected["modified"])
+        assert Path("staticfiles/staticfiles.css") not in collected["modified"]
+        assert Path("staticfiles/staticfiles.js") in collected["modified"]
+        assert Path("staticfiles/staticfiles.html") not in collected["modified"]
+        assert Path("staticfiles/staticfiles.py") not in collected["modified"]
 
-        self.assertListEqual(collected["unmodified"], [])
-        self.assertListEqual(collected["post_processed"], [])
+        assert collected["unmodified"] == []
+        assert collected["post_processed"] == []
 
     @djc_test(
         django_settings={
@@ -184,13 +186,13 @@ class StaticFilesFinderTests(SimpleTestCase):
         collected = do_collect()
 
         # Check that our staticfiles_finder finds the files and OMITS .py and .html files
-        self.assertIn(Path("staticfiles/staticfiles.css"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.js"), collected["modified"])
-        self.assertIn(Path("staticfiles/staticfiles.html"), collected["modified"])
-        self.assertIn(Path("staticfiles/staticfiles.py"), collected["modified"])
+        assert Path("staticfiles/staticfiles.css") in collected["modified"]
+        assert Path("staticfiles/staticfiles.js") not in collected["modified"]
+        assert Path("staticfiles/staticfiles.html") in collected["modified"]
+        assert Path("staticfiles/staticfiles.py") in collected["modified"]
 
-        self.assertListEqual(collected["unmodified"], [])
-        self.assertListEqual(collected["post_processed"], [])
+        assert collected["unmodified"] == []
+        assert collected["post_processed"] == []
 
     @djc_test(
         django_settings={
@@ -218,13 +220,13 @@ class StaticFilesFinderTests(SimpleTestCase):
         collected = do_collect()
 
         # Check that our staticfiles_finder finds the files and OMITS .py and .html files
-        self.assertIn(Path("staticfiles/staticfiles.css"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.js"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.html"), collected["modified"])
-        self.assertNotIn(Path("staticfiles/staticfiles.py"), collected["modified"])
+        assert Path("staticfiles/staticfiles.css") in collected["modified"]
+        assert Path("staticfiles/staticfiles.js") not in collected["modified"]
+        assert Path("staticfiles/staticfiles.html") not in collected["modified"]
+        assert Path("staticfiles/staticfiles.py") not in collected["modified"]
 
-        self.assertListEqual(collected["unmodified"], [])
-        self.assertListEqual(collected["post_processed"], [])
+        assert collected["unmodified"] == []
+        assert collected["post_processed"] == []
 
     # Handle deprecated `all` parameter:
     # - In Django 5.2, the `all` parameter was deprecated in favour of `find_all`.

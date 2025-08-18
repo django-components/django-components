@@ -32,7 +32,7 @@ DJANGO_COMMAND_ARGS = [
         default=1,
         type=int,
         choices=[0, 1, 2, 3],
-        help=("Verbosity level; 0=minimal output, 1=normal output, 2=verbose output, " "3=very verbose output"),
+        help=("Verbosity level; 0=minimal output, 1=normal output, 2=verbose output, 3=very verbose output"),
     ),
     CommandArg(
         "--settings",
@@ -44,7 +44,7 @@ DJANGO_COMMAND_ARGS = [
     ),
     CommandArg(
         "--pythonpath",
-        help=("A directory to add to the Python path, e.g. " '"/home/djangoprojects/myproject".'),
+        help=('A directory to add to the Python path, e.g. "/home/djangoprojects/myproject".'),
     ),
     CommandArg(
         "--traceback",
@@ -93,7 +93,7 @@ def load_as_django_command(command: Type[ComponentCommand]) -> Type[DjangoComman
         def __init__(self) -> None:
             self._command = command()
 
-        def create_parser(self, prog_name: str, subcommand: str, **kwargs: Any) -> ArgumentParser:
+        def create_parser(self, *_args: Any, **_kwargs: Any) -> ArgumentParser:
             parser = setup_parser_from_command(command)
             for arg in DJANGO_COMMAND_ARGS:
                 _setup_command_arg(parser, arg.asdict())
@@ -104,13 +104,13 @@ def load_as_django_command(command: Type[ComponentCommand]) -> Type[DjangoComman
         # this is where we forward the args to the command handler.
         def handle(self, *args: Any, **options: Any) -> None:
             # Case: (Sub)command matched and it HAS handler
-            resolved_command: Optional[ComponentCommand] = options.get("_command", None)
+            resolved_command: Optional[ComponentCommand] = options.get("_command")
             if resolved_command and resolved_command.handle:
                 resolved_command.handle(*args, **options)
                 return
 
             # Case: (Sub)command matched and it DOES NOT have handler (e.g. subcommand used for routing)
-            cmd_parser: Optional[ArgumentParser] = options.get("_parser", None)
+            cmd_parser: Optional[ArgumentParser] = options.get("_parser")
             if cmd_parser:
                 cmd_parser.print_help()
                 return

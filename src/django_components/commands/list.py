@@ -1,5 +1,6 @@
-import os
-from typing import Any, Dict, List, Optional, Type
+# ruff: noqa: T201
+from pathlib import Path
+from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, Type, Union
 
 from django_components.component import all_components
 from django_components.util.command import CommandArg, ComponentCommand
@@ -48,8 +49,8 @@ class ListCommand(ComponentCommand):
     # SUBCLASS API
     ####################
 
-    columns: List[str]
-    default_columns: List[str]
+    columns: ClassVar[Union[List[str], Tuple[str, ...], Set[str]]]
+    default_columns: ClassVar[Union[List[str], Tuple[str, ...], Set[str]]]
 
     def get_data(self) -> List[Dict[str, Any]]:
         return []
@@ -60,7 +61,7 @@ class ListCommand(ComponentCommand):
 
     arguments = ListArgumentsDescriptor()  # type: ignore[assignment]
 
-    def handle(self, *args: Any, **kwargs: Any) -> None:
+    def handle(self, *_args: Any, **kwargs: Any) -> None:
         """
         This runs when the "list" command is called. This handler delegates to subclasses
         to define how to get the data with the `get_data` method and formats the results
@@ -146,8 +147,8 @@ class ComponentListCommand(ListCommand):
     name = "list"
     help = "List all components created in this project."
 
-    columns = ["name", "full_name", "path"]
-    default_columns = ["full_name", "path"]
+    columns = ("name", "full_name", "path")
+    default_columns = ("full_name", "path")
 
     def get_data(self) -> List[Dict[str, Any]]:
         components = all_components()
@@ -158,13 +159,13 @@ class ComponentListCommand(ListCommand):
 
             # Make paths relative to CWD
             if module_file_path:
-                module_file_path = os.path.relpath(module_file_path, os.getcwd())
+                module_file_path = str(Path(module_file_path).relative_to(Path.cwd()))
 
             data.append(
                 {
                     "name": component.__name__,
                     "full_name": full_name,
                     "path": module_file_path,
-                }
+                },
             )
         return data

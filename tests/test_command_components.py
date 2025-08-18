@@ -2,7 +2,9 @@ from io import StringIO
 from unittest.mock import patch
 
 from django.core.management import call_command
+
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})

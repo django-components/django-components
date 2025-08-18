@@ -24,9 +24,9 @@ class ComponentsRootCommand(ComponentCommand):
     name = "components"
     help = "The entrypoint for the 'components' commands."
 
-    subcommands = [
+    subcommands = (
         CreateCommand,
         UpgradeCommand,
         ExtCommand,
         ComponentListCommand,
-    ]
+    )

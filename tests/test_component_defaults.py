@@ -3,8 +3,8 @@ from dataclasses import field
 from django.template import Context
 
 from django_components import Component, Default
-
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})

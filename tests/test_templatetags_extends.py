@@ -4,8 +4,8 @@ from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
-
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -146,7 +146,8 @@ class TestExtendsCompat:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_double_extends_on_main_template_and_component_two_different_components_same_parent(
-        self, components_settings
+        self,
+        components_settings,
     ):
         registry.register("blocked_and_slotted_component", gen_blocked_and_slotted_component())
 
@@ -214,7 +215,8 @@ class TestExtendsCompat:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_double_extends_on_main_template_and_component_two_different_components_different_parent(
-        self, components_settings
+        self,
+        components_settings,
     ):
         registry.register("blocked_and_slotted_component", gen_blocked_and_slotted_component())
 

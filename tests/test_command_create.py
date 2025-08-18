@@ -1,13 +1,15 @@
-import os
 import tempfile
 from io import StringIO
+from pathlib import Path
 from shutil import rmtree
 from unittest.mock import patch
 
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
+
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -22,12 +24,12 @@ class TestCreateComponentCommand:
         call_command("components", "create", component_name, "--path", temp_dir)
 
         expected_files = [
-            os.path.join(temp_dir, component_name, "script.js"),
-            os.path.join(temp_dir, component_name, "style.css"),
-            os.path.join(temp_dir, component_name, "template.html"),
+            Path(temp_dir) / component_name / "script.js",
+            Path(temp_dir) / component_name / "style.css",
+            Path(temp_dir) / component_name / "template.html",
         ]
         for file_path in expected_files:
-            assert os.path.exists(file_path)
+            assert file_path.exists()
 
         rmtree(temp_dir)
 
@@ -50,14 +52,14 @@ class TestCreateComponentCommand:
         )
 
         expected_files = [
-            os.path.join(temp_dir, component_name, "test.js"),
-            os.path.join(temp_dir, component_name, "test.css"),
-            os.path.join(temp_dir, component_name, "test.html"),
-            os.path.join(temp_dir, component_name, f"{component_name}.py"),
+            Path(temp_dir) / component_name / "test.js",
+            Path(temp_dir) / component_name / "test.css",
+            Path(temp_dir) / component_name / "test.html",
+            Path(temp_dir) / component_name / f"{component_name}.py",
         ]
 
         for file_path in expected_files:
-            assert os.path.exists(file_path), f"File {file_path} was not created"
+            assert file_path.exists(), f"File {file_path} was not created"
 
         rmtree(temp_dir)
 
@@ -74,8 +76,8 @@ class TestCreateComponentCommand:
             "--dry-run",
         )
 
-        component_path = os.path.join(temp_dir, component_name)
-        assert not os.path.exists(component_path)
+        component_path = Path(temp_dir) / component_name
+        assert not component_path.exists()
 
         rmtree(temp_dir)
 
@@ -83,10 +85,11 @@ class TestCreateComponentCommand:
         temp_dir = tempfile.mkdtemp()
 
         component_name = "existingcomponent"
-        component_path = os.path.join(temp_dir, component_name)
-        os.makedirs(component_path)
+        component_path = Path(temp_dir) / component_name
+        component_path.mkdir(parents=True)
 
-        with open(os.path.join(component_path, f"{component_name}.py"), "w") as f:
+        filepath = component_path / f"{component_name}.py"
+        with filepath.open("w", encoding="utf-8") as f:
             f.write("hello world")
 
         call_command(
@@ -98,7 +101,8 @@ class TestCreateComponentCommand:
             "--force",
         )
 
-        with open(os.path.join(component_path, f"{component_name}.py"), "r") as f:
+        filepath = component_path / f"{component_name}.py"
+        with filepath.open("r", encoding="utf-8") as f:
             assert "hello world" not in f.read()
 
         rmtree(temp_dir)
@@ -107,8 +111,8 @@ class TestCreateComponentCommand:
         temp_dir = tempfile.mkdtemp()
 
         component_name = "existingcomponent_2"
-        component_path = os.path.join(temp_dir, component_name)
-        os.makedirs(component_path)
+        component_path = Path(temp_dir) / component_name
+        component_path.mkdir(parents=True)
 
         with pytest.raises(CommandError):
             call_command("components", "create", component_name, "--path", temp_dir)
@@ -143,11 +147,11 @@ class TestCreateComponentCommand:
         call_command("startcomponent", component_name, "--path", temp_dir)
 
         expected_files = [
-            os.path.join(temp_dir, component_name, "script.js"),
-            os.path.join(temp_dir, component_name, "style.css"),
-            os.path.join(temp_dir, component_name, "template.html"),
+            Path(temp_dir) / component_name / "script.js",
+            Path(temp_dir) / component_name / "style.css",
+            Path(temp_dir) / component_name / "template.html",
         ]
         for file_path in expected_files:
-            assert os.path.exists(file_path)
+            assert file_path.exists()
 
         rmtree(temp_dir)

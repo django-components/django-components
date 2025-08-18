@@ -1,8 +1,10 @@
+# ruff: noqa: ARG002, N804, N805
 import sys
 from dataclasses import dataclass
 from inspect import signature
 from types import MethodType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -25,7 +27,6 @@ from django.template.base import NodeList, Parser, Template, Token
 from django.template.context import Context, RequestContext
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext
 from django.test.signals import template_rendered
-from django.views import View
 
 from django_components.app_settings import ContextBehavior
 from django_components.component_media import ComponentMediaInput, ComponentMediaMeta
@@ -40,11 +41,9 @@ from django_components.dependencies import (
     cache_component_js,
     cache_component_js_vars,
     insert_component_dependencies_comment,
-)
-from django_components.dependencies import render_dependencies as _render_dependencies
-from django_components.dependencies import (
     set_component_attrs_for_js_and_css,
 )
+from django_components.dependencies import render_dependencies as _render_dependencies
 from django_components.extension import (
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
@@ -85,13 +84,16 @@ from django_components.util.weakref import cached_ref
 
 # TODO_REMOVE_IN_V1 - Users should use top-level import instead
 # isort: off
-from django_components.component_registry import AlreadyRegistered as AlreadyRegistered  # NOQA
-from django_components.component_registry import ComponentRegistry as ComponentRegistry  # NOQA
-from django_components.component_registry import NotRegistered as NotRegistered  # NOQA
-from django_components.component_registry import register as register  # NOQA
-from django_components.component_registry import registry as registry  # NOQA
+from django_components.component_registry import AlreadyRegistered as AlreadyRegistered  # noqa: PLC0414
+from django_components.component_registry import ComponentRegistry as ComponentRegistry  # noqa: PLC0414,F811
+from django_components.component_registry import NotRegistered as NotRegistered  # noqa: PLC0414
+from django_components.component_registry import register as register  # noqa: PLC0414
+from django_components.component_registry import registry as registry  # noqa: PLC0414
 
 # isort: on
+
+if TYPE_CHECKING:
+    from django.views import View
 
 COMP_ONLY_FLAG = "only"
 
@@ -160,7 +162,7 @@ ALL_COMPONENTS: AllComponents = []
 
 def all_components() -> List[Type["Component"]]:
     """Get a list of all created [`Component`](../api#django_components.Component) classes."""
-    components: List[Type["Component"]] = []
+    components: List[Type[Component]] = []
     for comp_ref in ALL_COMPONENTS:
         comp = comp_ref()
         if comp is not None:
@@ -473,13 +475,13 @@ class ComponentMeta(ComponentMediaMeta):
             attrs["template_file"] = attrs.pop("template_name")
         attrs["template_name"] = ComponentTemplateNameDescriptor()
 
-        cls = cast(Type["Component"], super().__new__(mcs, name, bases, attrs))
+        cls = cast("Type[Component]", super().__new__(mcs, name, bases, attrs))
 
         # If the component defined `template_file`, then associate this Component class
         # with that template file path.
         # This way, when we will be instantiating `Template` in order to load the Component's template,
         # and its template_name matches this path, then we know that the template belongs to this Component class.
-        if "template_file" in attrs and attrs["template_file"]:
+        if attrs.get("template_file"):
             cache_component_template_file(cls)
 
         # TODO_V1 - Remove. This is only for backwards compatibility with v0.139 and earlier,
@@ -493,7 +495,7 @@ class ComponentMeta(ComponentMediaMeta):
                 context: Context,
                 template: Template,
                 result: str,
-                error: Optional[Exception],
+                _error: Optional[Exception],
             ) -> Optional[SlotResult]:
                 return orig_on_render_after(self, context, template, result)  # type: ignore[call-arg]
 
@@ -507,7 +509,7 @@ class ComponentMeta(ComponentMediaMeta):
         if not extensions:
             return
 
-        comp_cls = cast(Type["Component"], cls)
+        comp_cls = cast("Type[Component]", cls)
         extensions.on_component_class_deleted(OnComponentClassDeletedContext(comp_cls))
 
 
@@ -826,6 +828,7 @@ class Component(metaclass=ComponentMeta):
 
         Returns:
             Optional[str]: The filepath to the template.
+
         """
         return None
 
@@ -915,11 +918,12 @@ class Component(metaclass=ComponentMeta):
         Returns:
             Optional[Union[str, Template]]: The inlined Django template string or\
             a [`Template`](https://docs.djangoproject.com/en/5.1/topics/templates/#template) instance.
+
         """
         return None
 
     # TODO_V2 - Remove this in v2
-    def get_context_data(self, *args: Any, **kwargs: Any) -> Optional[Mapping]:
+    def get_context_data(self, *_args: Any, **_kwargs: Any) -> Optional[Mapping]:
         """
         DEPRECATED: Use [`get_template_data()`](../api#django_components.Component.get_template_data) instead.
         Will be removed in v2.
@@ -1788,7 +1792,7 @@ class Component(metaclass=ComponentMeta):
 
         media_class = MyMediaClass
     ```
-    """  # noqa: E501
+    """
 
     Media: ClassVar[Optional[Type[ComponentMediaInput]]] = None
     """
@@ -1832,7 +1836,7 @@ class Component(metaclass=ComponentMeta):
                 "print": ["path/to/style2.css"],
             }
     ```
-    """  # noqa: E501
+    """
 
     response_class: ClassVar[Type[HttpResponse]] = HttpResponse
     """
@@ -1911,8 +1915,8 @@ class Component(metaclass=ComponentMeta):
 
             Since this hook is called for every component, this means that the template would be modified
             every time a component is rendered.
+
         """
-        pass
 
     def on_render(self, context: Context, template: Optional[Template]) -> Union[SlotResult, OnRenderGenerator, None]:
         """
@@ -2026,11 +2030,14 @@ class Component(metaclass=ComponentMeta):
         """
         if template is None:
             return None
-        else:
-            return template.render(context)
+        return template.render(context)
 
     def on_render_after(
-        self, context: Context, template: Optional[Template], result: Optional[str], error: Optional[Exception]
+        self,
+        context: Context,
+        template: Optional[Template],
+        result: Optional[str],
+        error: Optional[Exception],
     ) -> Optional[SlotResult]:
         """
         Hook that runs when the component was fully rendered,
@@ -2099,7 +2106,6 @@ class Component(metaclass=ComponentMeta):
                         print(f"Error: {error}")
             ```
         """
-        pass
 
     # #####################################
     # BUILT-IN EXTENSIONS
@@ -2225,7 +2231,7 @@ class Component(metaclass=ComponentMeta):
         self,
         registered_name: Optional[str] = None,
         outer_context: Optional[Context] = None,
-        registry: Optional[ComponentRegistry] = None,  # noqa F811
+        registry: Optional[ComponentRegistry] = None,  # noqa: F811
         context: Optional[Context] = None,
         args: Optional[Any] = None,
         kwargs: Optional[Any] = None,
@@ -2233,8 +2239,8 @@ class Component(metaclass=ComponentMeta):
         deps_strategy: Optional[DependenciesStrategy] = None,
         request: Optional[HttpRequest] = None,
         node: Optional["ComponentNode"] = None,
-        id: Optional[str] = None,
-    ):
+        id: Optional[str] = None,  # noqa: A002
+    ) -> None:
         # TODO_v1 - Remove this whole block in v1. This is for backwards compatibility with pre-v0.140
         #           where one could do:
         #           `MyComp("my_comp").render(kwargs={"a": 1})`.
@@ -2272,10 +2278,10 @@ class Component(metaclass=ComponentMeta):
                     },
                 )
 
-            self.render_to_response = MethodType(primed_render_to_response, self)  # type: ignore
-            self.render = MethodType(primed_render, self)  # type: ignore
+            self.render_to_response = MethodType(primed_render_to_response, self)  # type: ignore[method-assign]
+            self.render = MethodType(primed_render, self)  # type: ignore[method-assign]
 
-        deps_strategy = cast(DependenciesStrategy, default(deps_strategy, "document"))
+        deps_strategy = cast("DependenciesStrategy", default(deps_strategy, "document"))
 
         self.id = default(id, _gen_component_id, factory=True)  # type: ignore[arg-type]
         self.name = _get_component_name(self.__class__, registered_name)
@@ -2293,9 +2299,9 @@ class Component(metaclass=ComponentMeta):
         self.input = ComponentInput(
             context=self.context,
             # NOTE: Convert args / kwargs / slots to plain lists / dicts
-            args=cast(List, args if isinstance(self.args, list) else list(self.args)),
-            kwargs=cast(Dict, kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)),
-            slots=cast(Dict, slots if isinstance(self.slots, dict) else to_dict(self.slots)),
+            args=cast("List", args if isinstance(self.args, list) else list(self.args)),
+            kwargs=cast("Dict", kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)),
+            slots=cast("Dict", slots if isinstance(self.slots, dict) else to_dict(self.slots)),
             deps_strategy=deps_strategy,
             # TODO_v1 - Remove, superseded by `deps_strategy`
             type=deps_strategy,
@@ -2804,7 +2810,7 @@ class Component(metaclass=ComponentMeta):
 
     [`{{ component_vars.is_filled.slot_name }}`](../template_vars#django_components.component.ComponentVars.is_filled)
 
-    """  # noqa: E501
+    """
 
     request: Optional[HttpRequest]
     """
@@ -2882,8 +2888,7 @@ class Component(metaclass=ComponentMeta):
 
         if request is None:
             return {}
-        else:
-            return gen_context_processors_data(self.context, request)
+        return gen_context_processors_data(self.context, request)
 
     # #####################################
     # MISC
@@ -2950,7 +2955,7 @@ class Component(metaclass=ComponentMeta):
         def outer_view(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
             # `view` is a built-in extension defined in `extensions.view`. It subclasses
             # from Django's `View` class, and adds the `component` attribute to it.
-            view_cls = cast(View, cls.View)  # type: ignore[attr-defined]
+            view_cls = cast("View", cls.View)  # type: ignore[attr-defined]
 
             # TODO_v1 - Remove `component` and use only `component_cls` instead.
             inner_view = view_cls.as_view(**initkwargs, component=cls(), component_cls=cls)
@@ -2971,13 +2976,13 @@ class Component(metaclass=ComponentMeta):
         slots: Optional[Any] = None,
         deps_strategy: DependenciesStrategy = "document",
         # TODO_v1 - Remove, superseded by `deps_strategy`
-        type: Optional[DependenciesStrategy] = None,
+        type: Optional[DependenciesStrategy] = None,  # noqa: A002
         # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
         outer_context: Optional[Context] = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: Optional[ComponentRegistry] = None,
+        registry: Optional[ComponentRegistry] = None,  # noqa: F811
         registered_name: Optional[str] = None,
         node: Optional["ComponentNode"] = None,
         **response_kwargs: Any,
@@ -3061,13 +3066,13 @@ class Component(metaclass=ComponentMeta):
         slots: Optional[Any] = None,
         deps_strategy: DependenciesStrategy = "document",
         # TODO_v1 - Remove, superseded by `deps_strategy`
-        type: Optional[DependenciesStrategy] = None,
+        type: Optional[DependenciesStrategy] = None,  # noqa: A002
         # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
         render_dependencies: bool = True,
         request: Optional[HttpRequest] = None,
         outer_context: Optional[Context] = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: Optional[ComponentRegistry] = None,
+        registry: Optional[ComponentRegistry] = None,  # noqa: F811
         registered_name: Optional[str] = None,
         node: Optional["ComponentNode"] = None,
     ) -> str:
@@ -3253,13 +3258,12 @@ class Component(metaclass=ComponentMeta):
         )
         ```
         """  # noqa: E501
-
         # TODO_v1 - Remove, superseded by `deps_strategy`
         if type is not None:
             if deps_strategy != "document":
                 raise ValueError(
                     "Component.render() received both `type` and `deps_strategy` arguments. "
-                    "Only one should be given. The `type` argument is deprecated. Use `deps_strategy` instead."
+                    "Only one should be given. The `type` argument is deprecated. Use `deps_strategy` instead.",
                 )
             deps_strategy = type
 
@@ -3293,7 +3297,7 @@ class Component(metaclass=ComponentMeta):
         request: Optional[HttpRequest] = None,
         outer_context: Optional[Context] = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: Optional[ComponentRegistry] = None,
+        registry: Optional[ComponentRegistry] = None,  # noqa: F811
         registered_name: Optional[str] = None,
         node: Optional["ComponentNode"] = None,
     ) -> str:
@@ -3326,7 +3330,7 @@ class Component(metaclass=ComponentMeta):
         request: Optional[HttpRequest] = None,
         outer_context: Optional[Context] = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: Optional[ComponentRegistry] = None,
+        registry: Optional[ComponentRegistry] = None,  # noqa: F811
         registered_name: Optional[str] = None,
         node: Optional["ComponentNode"] = None,
     ) -> str:
@@ -3394,7 +3398,7 @@ class Component(metaclass=ComponentMeta):
                 kwargs=kwargs_dict,
                 slots=slots_dict,
                 context=context,
-            )
+            ),
         )
 
         # The component rendering was short-circuited by an extension, skipping
@@ -3415,7 +3419,7 @@ class Component(metaclass=ComponentMeta):
         # Required for compatibility with Django's {% extends %} tag
         # See https://github.com/django-components/django-components/pull/859
         context.render_context.push(  # type: ignore[union-attr]
-            {BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())}  # type: ignore
+            {BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())},  # type: ignore[union-attr]
         )
 
         # We pass down the components the info about the component's parent.
@@ -3485,7 +3489,7 @@ class Component(metaclass=ComponentMeta):
                 template_data=template_data,
                 js_data=js_data,
                 css_data=css_data,
-            )
+            ),
         )
 
         # Cache component's JS and CSS scripts, in case they have been evicted from the cache.
@@ -3549,7 +3553,7 @@ class Component(metaclass=ComponentMeta):
                         # `{% if variable > 8 and component_vars.is_filled.header %}`
                         is_filled=component.is_filled,
                     ),
-                }
+                },
             ):
                 # Make a "snapshot" of the context as it was at the time of the render call.
                 #
@@ -3600,7 +3604,7 @@ class Component(metaclass=ComponentMeta):
                 if maybe_output is not None:
                     html = maybe_output
                     error = None
-            except Exception as new_error:
+            except Exception as new_error:  # noqa: BLE001
                 error = new_error
                 html = None
 
@@ -3619,7 +3623,7 @@ class Component(metaclass=ComponentMeta):
                     component_id=render_id,
                     result=html,
                     error=error,
-                )
+                ),
             )
 
             if result is not None:
@@ -3769,7 +3773,7 @@ class Component(metaclass=ComponentMeta):
         if legacy_template_data and new_template_data:
             raise RuntimeError(
                 f"Component {self.name} has both `get_context_data()` and `get_template_data()` methods. "
-                "Please remove one of them."
+                "Please remove one of them.",
             )
         template_data = new_template_data or legacy_template_data
 
@@ -3896,13 +3900,13 @@ class ComponentNode(BaseNode):
 
     tag = "component"
     end_tag = "endcomponent"
-    allowed_flags = [COMP_ONLY_FLAG]
+    allowed_flags = (COMP_ONLY_FLAG,)
 
     def __init__(
         self,
         # ComponentNode inputs
         name: str,
-        registry: ComponentRegistry,  # noqa F811
+        registry: ComponentRegistry,  # noqa: F811
         # BaseNode inputs
         params: List[TagAttr],
         flags: Optional[Dict[str, bool]] = None,
@@ -3930,7 +3934,7 @@ class ComponentNode(BaseNode):
         cls,
         parser: Parser,
         token: Token,
-        registry: ComponentRegistry,  # noqa F811
+        registry: ComponentRegistry,  # noqa: F811
         name: str,
         start_tag: str,
         end_tag: str,
@@ -3952,11 +3956,11 @@ class ComponentNode(BaseNode):
 
         if cached_registry is not registry:
             raise RuntimeError(
-                f"Detected two Components from different registries using the same start tag '{start_tag}'"
+                f"Detected two Components from different registries using the same start tag '{start_tag}'",
             )
-        elif cached_subcls.end_tag != end_tag:
+        if cached_subcls.end_tag != end_tag:
             raise RuntimeError(
-                f"Detected two Components using the same start tag '{start_tag}' but with different end tags"
+                f"Detected two Components using the same start tag '{start_tag}' but with different end tags",
             )
 
         # Call `BaseNode.parse()` as if with the context of subcls.

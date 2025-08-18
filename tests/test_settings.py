@@ -5,8 +5,8 @@ import pytest
 from django.test import override_settings
 
 from django_components.app_settings import ComponentsSettings, app_settings
-
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config(components={"autodiscover": False})
@@ -39,7 +39,7 @@ class TestSettings:
         },
     )
     def test_works_when_base_dir_is_string(self):
-        assert app_settings.DIRS == [Path("base_dir/components")]
+        assert [Path("base_dir/components")] == app_settings.DIRS
 
     @djc_test(
         django_settings={
@@ -47,7 +47,7 @@ class TestSettings:
         },
     )
     def test_works_when_base_dir_is_path(self):
-        assert app_settings.DIRS == [Path("base_dir/components")]
+        assert [Path("base_dir/components")] == app_settings.DIRS
 
     @djc_test(
         components_settings={

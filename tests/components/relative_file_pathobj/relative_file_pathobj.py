@@ -20,8 +20,7 @@ class PathObj:
 
         if self.static_path.endswith(".js"):
             return format_html('<script type="module" src="{}"></script>', static(self.static_path))
-        else:
-            return format_html('<link href="{}" rel="stylesheet">', static(self.static_path))
+        return format_html('<link href="{}" rel="stylesheet">', static(self.static_path))
 
 
 @register("relative_file_pathobj_component")

@@ -6,8 +6,8 @@ from django.template import Context, Template, TemplateSyntaxError
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, Slot, register, registry, types
-
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -23,7 +23,9 @@ def _gen_slotted_component():
                 <footer>{% slot "footer" %}Default footer{% endslot %}</footer>
             </custom-template>
         """
+
     return SlottedComponent
+
 
 #######################
 # TESTS
@@ -138,7 +140,7 @@ class TestComponentSlot:
                 [{"context_behavior": "isolated"}, ""],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_slotted_template_with_context_var(self, components_settings, expected):
         @register("test1")
@@ -384,7 +386,7 @@ class TestComponentSlot:
             TemplateSyntaxError,
             match=re.escape(
                 "Multiple fill tags cannot target the same slot name in component 'test': "
-                "Detected duplicate fill tag name 'title'"
+                "Detected duplicate fill tag name 'title'",
             ),
         ):
             template.render(Context())
@@ -413,7 +415,7 @@ class TestComponentSlot:
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
-                "Slot 'title' of component 'test' was filled twice: once explicitly and once implicitly as 'default'"
+                "Slot 'title' of component 'test' was filled twice: once explicitly and once implicitly as 'default'",
             ),
         ):
             template.render(Context())
@@ -443,7 +445,7 @@ class TestComponentSlot:
             TemplateSyntaxError,
             match=re.escape(
                 "Multiple fill tags cannot target the same slot name in component 'test': "
-                "Detected duplicate fill tag name 'default'"
+                "Detected duplicate fill tag name 'default'",
             ),
         ):
             template.render(Context())
@@ -673,7 +675,7 @@ class TestComponentSlotDefault:
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
-                "Only one component slot may be marked as 'default', found 'main' and 'other'"
+                "Only one component slot may be marked as 'default', found 'main' and 'other'",
             ),
         ):
             template.render(Context({}))
@@ -752,19 +754,19 @@ class TestComponentSlotDefault:
                 </div>
             """
 
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test_comp' %}
+                {% fill "main" %}Main content{% endfill %}
+                <p>And add this too!</p>
+            {% endcomponent %}
+        """
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
-                "Illegal content passed to component 'test_comp'. Explicit 'fill' tags cannot occur alongside other text"  # noqa: E501
+                "Illegal content passed to component 'test_comp'. Explicit 'fill' tags cannot occur alongside other text",  # noqa: E501
             ),
         ):
-            template_str: types.django_html = """
-                {% load component_tags %}
-                {% component 'test_comp' %}
-                  {% fill "main" %}Main content{% endfill %}
-                  <p>And add this too!</p>
-                {% endcomponent %}
-            """
             Template(template_str).render(Context({}))
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -1187,6 +1189,7 @@ class TestNestedSlots:
                     </div>
                 {% endslot %}
             """
+
         return NestedSlots
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -1366,7 +1369,6 @@ class TestSlottedTemplateRegression:
 
 @djc_test
 class TestSlotFallback:
-
     # TODO_v1 - REMOVE
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_basic_legacy(self, components_settings):
@@ -1771,7 +1773,9 @@ class TestScopedSlot:
         """
         with pytest.raises(
             RuntimeError,
-            match=re.escape("Fill 'my_slot' received the same string for slot fallback (fallback=...) and slot data (data=...)"),  # noqa: E501
+            match=re.escape(
+                "Fill 'my_slot' received the same string for slot fallback (fallback=...) and slot data (data=...)",
+            ),
         ):
             Template(template).render(Context())
 
@@ -1884,8 +1888,8 @@ class TestScopedSlot:
                 {
                     "fill_name": "my_slot",
                     "data_var": "slot_data_in_fill",
-                }
-            )
+                },
+            ),
         )
 
         expected = """
@@ -1929,8 +1933,8 @@ class TestScopedSlot:
                         "name": "my_slot",
                         "data": "slot_data_in_fill",
                     },
-                }
-            )
+                },
+            ),
         )
 
         expected = """
@@ -2005,6 +2009,7 @@ class TestDuplicateSlot:
                 return {
                     "name": kwargs.get("name", None),
                 }
+
         return DuplicateSlotComponent
 
     def _gen_duplicate_slot_nested_component(self):
@@ -2032,11 +2037,12 @@ class TestDuplicateSlot:
                 return {
                     "items": kwargs["items"],
                 }
+
         return DuplicateSlotNestedComponent
 
     def _gen_calendar_component(self):
         class CalendarComponent(Component):
-            """Nested in ComponentWithNestedComponent"""
+            """Nested in ComponentWithNestedComponent."""
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -2051,6 +2057,7 @@ class TestDuplicateSlot:
                 </main>
                 </div>
             """
+
         return CalendarComponent
 
     # NOTE: Second arg is the input for the "name" component kwarg
@@ -2064,9 +2071,9 @@ class TestDuplicateSlot:
                 [{"context_behavior": "isolated"}, None],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
-    def test_duplicate_slots(self, components_settings, input):
+    def test_duplicate_slots(self, components_settings, input):  # noqa: A002
         registry.register(name="duplicate_slot", component=self._gen_duplicate_slot_component())
         registry.register(name="calendar", component=self._gen_calendar_component())
 
@@ -2204,54 +2211,58 @@ class TestDuplicateSlot:
 class TestSlotFillTemplateSyntaxError:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_fill_with_no_parent_is_error(self, components_settings):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% fill "header" %}contents{% endfill %}
+        """
         with pytest.raises(
             TemplateSyntaxError,
-            match=re.escape("FillNode.render() (AKA {% fill ... %} block) cannot be rendered outside of a Component context"),  # noqa: E501
+            match=re.escape(
+                "FillNode.render() (AKA {% fill ... %} block) cannot be rendered outside of a Component context",
+            ),
         ):
-            template_str: types.django_html = """
-                {% load component_tags %}
-                {% fill "header" %}contents{% endfill %}
-            """
             Template(template_str).render(Context({}))
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_non_unique_fill_names_is_error(self, components_settings):
         registry.register("test", _gen_slotted_component())
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+                {% fill "header" %}Custom header {% endfill %}
+                {% fill "header" %}Other header{% endfill %}
+            {% endcomponent %}
+        """
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
                 "Multiple fill tags cannot target the same slot name in component 'test': "
-                "Detected duplicate fill tag name 'header'"
+                "Detected duplicate fill tag name 'header'",
             ),
         ):
-            template_str: types.django_html = """
-                {% load component_tags %}
-                {% component "test" %}
-                    {% fill "header" %}Custom header {% endfill %}
-                    {% fill "header" %}Other header{% endfill %}
-                {% endcomponent %}
-            """
             Template(template_str).render(Context({}))
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_non_unique_fill_names_is_error_via_vars(self, components_settings):
         registry.register("test", _gen_slotted_component())
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% with var1="header" var2="header" %}
+                {% component "test" %}
+                    {% fill var1 %}Custom header {% endfill %}
+                    {% fill var2 %}Other header{% endfill %}
+                {% endcomponent %}
+            {% endwith %}
+        """
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
                 "Multiple fill tags cannot target the same slot name in component 'test': "
-                "Detected duplicate fill tag name 'header'"
+                "Detected duplicate fill tag name 'header'",
             ),
         ):
-            template_str: types.django_html = """
-                {% load component_tags %}
-                {% with var1="header" var2="header" %}
-                    {% component "test" %}
-                        {% fill var1 %}Custom header {% endfill %}
-                        {% fill var2 %}Other header{% endfill %}
-                    {% endcomponent %}
-                {% endwith %}
-            """
             Template(template_str).render(Context({}))
 
 
@@ -2440,16 +2451,16 @@ class TestSlotInput:
 
         assert seen_slots == {}
 
-        header_slot: Slot = Slot(lambda ctx: "HEADER_SLOT")
+        header_slot: Slot = Slot(lambda _ctx: "HEADER_SLOT")
         main_slot_str = "MAIN_SLOT"
-        footer_slot_fn = lambda ctx: "FOOTER_SLOT"  # noqa: E731
+        footer_slot_fn = lambda _ctx: "FOOTER_SLOT"  # noqa: E731
 
         SlottedComponent.render(
             slots={
                 "header": header_slot,
                 "main": main_slot_str,
                 "footer": footer_slot_fn,
-            }
+            },
         )
 
         assert isinstance(seen_slots["header"], Slot)

@@ -35,7 +35,15 @@ def mark_extension_command_api(obj: TClass) -> TClass:
 #############################
 
 CommandLiteralAction = Literal[
-    "append", "append_const", "count", "extend", "store", "store_const", "store_true", "store_false", "version"
+    "append",
+    "append_const",
+    "count",
+    "extend",
+    "store",
+    "store_const",
+    "store_true",
+    "store_false",
+    "version",
 ]
 """
 The basic type of action to be taken when this argument is encountered at the command line.
@@ -43,7 +51,7 @@ The basic type of action to be taken when this argument is encountered at the co
 This is a subset of the values for `action` in
 [`ArgumentParser.add_argument()`](https://docs.python.org/3/library/argparse.html#the-add-argument-method).
 """
-mark_extension_command_api(CommandLiteralAction)  # type: ignore
+mark_extension_command_api(CommandLiteralAction)  # type: ignore[type-var]
 
 
 @mark_extension_command_api
@@ -54,7 +62,7 @@ class CommandArg:
 
     Fields on this class correspond to the arguments for
     [`ArgumentParser.add_argument()`](https://docs.python.org/3/library/argparse.html#the-add-argument-method)
-    """  # noqa: E501
+    """
 
     name_or_flags: Union[str, Sequence[str]]
     """Either a name or a list of option strings, e.g. 'foo' or '-f', '--foo'."""
@@ -111,7 +119,7 @@ class CommandArgGroup:
 
     Fields on this class correspond to the arguments for
     [`ArgumentParser.add_argument_group()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group)
-    """  # noqa: E501
+    """
 
     title: Optional[str] = None
     """
@@ -137,7 +145,7 @@ class CommandSubcommand:
 
     Fields on this class correspond to the arguments for
     [`ArgumentParser.add_subparsers.add_parser()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers)
-    """  # noqa: E501
+    """
 
     title: Optional[str] = None
     """
@@ -208,7 +216,7 @@ class CommandParserInput:
     formatter_class: Optional[Type["_FormatterClass"]] = None
     """A class for customizing the help output"""
     prefix_chars: Optional[str] = None
-    """The set of characters that prefix optional arguments (default: ‘-‘)"""
+    """The set of characters that prefix optional arguments (default: `-`)"""
     fromfile_prefix_chars: Optional[str] = None
     """The set of characters that prefix files from which additional arguments should be read (default: `None`)"""
     argument_default: Optional[Any] = None
@@ -234,7 +242,7 @@ class CommandParserInput:
 
 @mark_extension_command_api
 class CommandHandler(Protocol):
-    def __call__(self, *args: Any, **kwargs: Any) -> None: ...  # noqa: E704
+    def __call__(self, *args: Any, **kwargs: Any) -> None: ...
 
 
 @mark_extension_command_api
@@ -367,7 +375,7 @@ def setup_parser_from_command(command: Type[ComponentCommand]) -> ArgumentParser
 # Recursively setup the parser and its subcommands
 def _setup_parser_from_command(
     parser: ArgumentParser,
-    command: Union[Type[ComponentCommand], Type[ComponentCommand]],
+    command: Type[ComponentCommand],
 ) -> ArgumentParser:
     # Attach the command to the data returned by `parser.parse_args()`, so we know
     # which command was matched.
@@ -383,9 +391,9 @@ def _setup_parser_from_command(
                 # NOTE: Seems that dataclass's `asdict()` calls `asdict()` also on the
                 # nested dataclass fields. Thus we need to apply `_remove_none_values()`
                 # to the nested dataclass fields.
-                group_arg = _remove_none_values(group_arg)
+                cleaned_group_arg = _remove_none_values(group_arg)
 
-                _setup_command_arg(arg_group, group_arg)
+                _setup_command_arg(arg_group, cleaned_group_arg)
         else:
             _setup_command_arg(parser, arg.asdict())
 
@@ -421,11 +429,7 @@ def _setup_command_arg(parser: Union[ArgumentParser, "_ArgumentGroup"], arg: dic
 
 
 def _remove_none_values(data: dict) -> dict:
-    new_data = {}
-    for key, val in data.items():
-        if val is not None:
-            new_data[key] = val
-    return new_data
+    return {key: val for key, val in data.items() if val is not None}
 
 
 def style_success(message: str) -> str:

@@ -1,4 +1,3 @@
-import glob
 import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import List, NamedTuple, Optional, Set, Union
@@ -41,6 +40,7 @@ def get_component_dirs(include_apps: bool = True) -> List[Path]:
 
     - The paths in [`COMPONENTS.dirs`](../settings#django_components.app_settings.ComponentsSettings.dirs)
         must be absolute paths.
+
     """
     # Allow to configure from settings which dirs should be checked for components
     component_dirs = app_settings.DIRS
@@ -56,9 +56,7 @@ def get_component_dirs(include_apps: bool = True) -> List[Path]:
     is_component_dirs_set = raw_dirs_value is not None
     is_legacy_paths = (
         # Use value of `STATICFILES_DIRS` ONLY if `COMPONENT.dirs` not set
-        not is_component_dirs_set
-        and hasattr(settings, "STATICFILES_DIRS")
-        and settings.STATICFILES_DIRS
+        not is_component_dirs_set and getattr(settings, "STATICFILES_DIRS", None)
     )
     if is_legacy_paths:
         # NOTE: For STATICFILES_DIRS, we use the defaults even for empty list.
@@ -70,7 +68,7 @@ def get_component_dirs(include_apps: bool = True) -> List[Path]:
 
     logger.debug(
         "get_component_dirs will search for valid dirs from following options:\n"
-        + "\n".join([f" - {str(d)}" for d in component_dirs])
+        + "\n".join([f" - {d!s}" for d in component_dirs]),
     )
 
     # Add `[app]/[APP_DIR]` to the directories. This is, by default `[app]/components`
@@ -89,23 +87,22 @@ def get_component_dirs(include_apps: bool = True) -> List[Path]:
         # Consider tuples for STATICFILES_DIRS (See #489)
         # See https://docs.djangoproject.com/en/5.2/ref/settings/#prefixes-optional
         if isinstance(component_dir, (tuple, list)):
-            component_dir = component_dir[1]
+            component_dir = component_dir[1]  # noqa: PLW2901
         try:
             Path(component_dir)
         except TypeError:
             logger.warning(
                 f"{source} expected str, bytes or os.PathLike object, or tuple/list of length 2. "
-                f"See Django documentation for STATICFILES_DIRS. Got {type(component_dir)} : {component_dir}"
+                f"See Django documentation for STATICFILES_DIRS. Got {type(component_dir)} : {component_dir}",
             )
             continue
 
         if not Path(component_dir).is_absolute():
             raise ValueError(f"{source} must contain absolute paths, got '{component_dir}'")
-        else:
-            directories.add(Path(component_dir).resolve())
+        directories.add(Path(component_dir).resolve())
 
     logger.debug(
-        "get_component_dirs matched following template dirs:\n" + "\n".join([f" - {str(d)}" for d in directories])
+        "get_component_dirs matched following template dirs:\n" + "\n".join([f" - {d!s}" for d in directories]),
     )
     return list(directories)
 
@@ -143,6 +140,7 @@ def get_component_files(suffix: Optional[str] = None) -> List[ComponentFileEntry
 
     modules = get_component_files(".py")
     ```
+
     """
     search_glob = f"**/*{suffix}" if suffix else "**/*"
 
@@ -150,10 +148,10 @@ def get_component_files(suffix: Optional[str] = None) -> List[ComponentFileEntry
     component_filepaths = _search_dirs(dirs, search_glob)
 
     if hasattr(settings, "BASE_DIR") and settings.BASE_DIR:
-        project_root = str(settings.BASE_DIR)
+        project_root = settings.BASE_DIR
     else:
         # Fallback for getting the root dir, see https://stackoverflow.com/a/16413955/9788634
-        project_root = os.path.abspath(os.path.dirname(__name__))
+        project_root = Path(__name__).parent.resolve()
 
     # NOTE: We handle dirs from `COMPONENTS.dirs` and from individual apps separately.
     modules: List[ComponentFileEntry] = []
@@ -212,6 +210,7 @@ def _filepath_to_python_module(
     - And file_path is `/path/to/project/app/components/mycomp.py`
     - Then the path relative to project root is `app/components/mycomp.py`
     - Which we then turn into python import path `app.components.mycomp`
+
     """
     path_cls = PureWindowsPath if os.name == "nt" else PurePosixPath
 
@@ -234,8 +233,7 @@ def _search_dirs(dirs: List[Path], search_glob: str) -> List[Path]:
     """
     matched_files: List[Path] = []
     for directory in dirs:
-        for path_str in glob.iglob(str(Path(directory) / search_glob), recursive=True):
-            path = Path(path_str)
+        for path in Path(directory).rglob(search_glob):
             # Skip any subdirectory or file (under the top-level directory) that starts with an underscore
             rel_dir_parts = list(path.relative_to(directory).parts)
             name_part = rel_dir_parts.pop()

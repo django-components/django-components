@@ -70,11 +70,11 @@ class HtmlAttrsNode(BaseNode):
 
     tag = "html_attrs"
     end_tag = None  # inline-only
-    allowed_flags = []
+    allowed_flags = ()
 
     def render(
         self,
-        context: Context,
+        context: Context,  # noqa: ARG002
         attrs: Optional[Dict] = None,
         defaults: Optional[Dict] = None,
         **kwargs: Any,
@@ -269,7 +269,7 @@ def normalize_class(value: ClassValue) -> str:
     res: Dict[str, bool] = {}
     if isinstance(value, str):
         return value.strip()
-    elif isinstance(value, (list, tuple)):
+    if isinstance(value, (list, tuple)):
         # List items may be strings, dicts, or other lists/tuples
         for item in value:
             # NOTE: One difference from Vue is that if a class is given multiple times,
@@ -287,7 +287,7 @@ def normalize_class(value: ClassValue) -> str:
         # `{"class": True, "extra": True}` will result in `class="class extra"`
         res = value
     else:
-        raise ValueError(f"Invalid class value: {value}")
+        raise TypeError(f"Invalid class value: {value}")
 
     res_str = ""
     for key, val in res.items():
@@ -313,7 +313,7 @@ def _normalize_class(value: ClassValue) -> Dict[str, bool]:
     elif isinstance(value, dict):
         res = value
     else:
-        raise ValueError(f"Invalid class value: {value}")
+        raise TypeError(f"Invalid class value: {value}")
     return res
 
 
@@ -360,7 +360,7 @@ def normalize_style(value: StyleValue) -> str:
     res: StyleDict = {}
     if isinstance(value, str):
         return value.strip()
-    elif isinstance(value, (list, tuple)):
+    if isinstance(value, (list, tuple)):
         # List items may be strings, dicts, or other lists/tuples
         for item in value:
             normalized = _normalize_style(item)
@@ -369,7 +369,7 @@ def normalize_style(value: StyleValue) -> str:
         # Remove entries with `None` value
         res = _normalize_style(value)
     else:
-        raise ValueError(f"Invalid style value: {value}")
+        raise TypeError(f"Invalid style value: {value}")
 
     # By the time we get here, all `None` values have been removed.
     # If the final dict has `None` or `False` values, they are removed, so those
@@ -398,7 +398,7 @@ def _normalize_style(value: StyleValue) -> StyleDict:
             if val is not None:
                 res[key] = val
     else:
-        raise ValueError(f"Invalid style value: {value}")
+        raise TypeError(f"Invalid style value: {value}")
     return res
 
 

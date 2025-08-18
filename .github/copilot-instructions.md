@@ -8,7 +8,7 @@ Always reference these instructions first and fallback to search or bash command
 
 ### Initial Setup
 - Install development dependencies:
-  - `pip install -r requirements-dev.txt` -- installs all dev dependencies including pytest, black, flake8, etc.
+  - `pip install -r requirements-dev.txt` -- installs all dev dependencies including pytest, ruff, etc.
   - `pip install -e .` -- install the package in development mode
 - Install Playwright for browser testing (optional, may timeout):
   - `playwright install chromium --with-deps` -- NEVER CANCEL: Can take 10+ minutes due to large download. Set timeout to 15+ minutes.
@@ -20,14 +20,11 @@ Always reference these instructions first and fallback to search or bash command
   - `python -m pytest tests/test_component.py` -- runs specific test file (~5 seconds)
   - `python -m pytest tests/test_templatetags*.py` -- runs template tag tests (~10 seconds, 349 tests)
 - Run linting and code quality checks:
-  - `black --check src/django_components` -- check code formatting (~1 second)
-  - `black src/django_components` -- format code
-  - `isort --check-only --diff src/django_components` -- check import sorting (~1 second)
-  - `flake8 .` -- run linting (~2 seconds)
+  - `ruff check .` -- run linting, and import sorting (~2 seconds)
+  - `ruff format .` -- format code
   - `mypy .` -- run type checking (~10 seconds, may show some errors in tests)
 - Use tox for comprehensive testing (requires network access):
-  - `tox -e black` -- run black in isolated environment
-  - `tox -e flake8` -- run flake8 in isolated environment  
+  - `tox -e ruff` -- run ruff in isolated environment  
   - `tox` -- run full test matrix (multiple Python/Django versions). NEVER CANCEL: Takes 10-30 minutes.
 
 ### Sample Project Testing
@@ -52,7 +49,7 @@ The package provides custom Django management commands:
 
 ## Validation
 
-- Always run linting before committing: `black src/django_components && isort src/django_components && flake8 .`
+- Always run linting before committing: `ruff check .`
 - Always run at least basic tests: `python -m pytest tests/test_component.py`
 - Test sample project functionality: Start the sample project and make a request to verify components render correctly
 - Check that imports work: `python -c "import django_components; print('OK')"`
@@ -80,7 +77,7 @@ The package provides custom Django management commands:
 - Tests run on Python 3.8-3.13 with Django 4.2-5.2
 - Includes Playwright browser testing (requires `playwright install chromium --with-deps`)
 - Documentation building uses mkdocs
-- Pre-commit hooks run black, isort, and flake8
+- Pre-commit hooks run ruff
 
 ### Time Expectations
 - Installing dependencies: 1-2 minutes
@@ -100,7 +97,7 @@ The package provides custom Django management commands:
 1. Install dependencies: `pip install -r requirements-dev.txt && pip install -e .`
 2. Make changes to source code in `src/django_components/`
 3. Run tests: `python -m pytest tests/test_component.py` (or specific test files)
-4. Run linting: `black src/django_components && isort src/django_components && flake8 .`
+4. Run linting: `ruff check .`
 5. Test sample project: `cd sampleproject && python manage.py runserver`
 6. Validate with curl: `curl http://127.0.0.1:8000/`
 7. Run broader tests before final commit: `python -m pytest tests/test_templatetags*.py`
