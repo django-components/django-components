@@ -8,9 +8,7 @@ from typing import Literal
 
 # Fix for for https://github.com/airspeed-velocity/asv_runner/pull/44
 import benchmarks.monkeypatch_asv  # noqa: F401
-
 from benchmarks.utils import benchmark, create_virtual_module
-
 
 DJC_VS_DJ_GROUP = "Components vs Django"
 DJC_ISOLATED_VS_NON_GROUP = "isolated vs django modes"
@@ -30,7 +28,7 @@ TemplatingTestType = Literal[
 def _get_templating_filepath(renderer: TemplatingRenderer, size: TemplatingTestSize) -> Path:
     if renderer == "none":
         raise ValueError("Cannot get filepath for renderer 'none'")
-    elif renderer not in ["django", "django-components"]:
+    if renderer not in ["django", "django-components"]:
         raise ValueError(f"Invalid renderer: {renderer}")
 
     if size not in ("lg", "sm"):
@@ -43,11 +41,10 @@ def _get_templating_filepath(renderer: TemplatingRenderer, size: TemplatingTestS
             file_path = root / "tests" / "test_benchmark_django.py"
         else:
             file_path = root / "tests" / "test_benchmark_django_small.py"
+    elif size == "lg":
+        file_path = root / "tests" / "test_benchmark_djc.py"
     else:
-        if size == "lg":
-            file_path = root / "tests" / "test_benchmark_djc.py"
-        else:
-            file_path = root / "tests" / "test_benchmark_djc_small.py"
+        file_path = root / "tests" / "test_benchmark_djc_small.py"
 
     return file_path
 
@@ -60,7 +57,7 @@ def _get_templating_script(
 ) -> str:
     if renderer == "none":
         return ""
-    elif renderer not in ["django", "django-components"]:
+    if renderer not in ["django", "django-components"]:
         raise ValueError(f"Invalid renderer: {renderer}")
 
     # At this point, we know the renderer is either "django" or "django-components"
@@ -119,7 +116,7 @@ def setup_templating_memory_benchmark(
     context_mode: DjcContextMode,
     imports_only: bool = False,
 ):
-    global do_render
+    global do_render  # noqa: PLW0603
     module = _get_templating_module(renderer, size, context_mode, imports_only)
     data = module.gen_render_data()
     render = module.render
@@ -145,16 +142,15 @@ def prepare_templating_benchmark(
     # If we're testing the startup time, then the setup is actually the tested code
     if test_type == "startup":
         return setup_script
-    else:
-        # Otherwise include also data generation as part of setup
-        setup_script += "\n\n" "render_data = gen_render_data()\n"
+    # Otherwise include also data generation as part of setup
+    setup_script += "\n\nrender_data = gen_render_data()\n"
 
-        # Do the first render as part of setup if we're testing the subsequent renders
-        if test_type == "subsequent":
-            setup_script += "render(render_data)\n"
+    # Do the first render as part of setup if we're testing the subsequent renders
+    if test_type == "subsequent":
+        setup_script += "render(render_data)\n"
 
-        benchmark_script = "render(render_data)\n"
-        return benchmark_script, setup_script
+    benchmark_script = "render(render_data)\n"
+    return benchmark_script, setup_script
 
 
 # - Group: django-components vs django

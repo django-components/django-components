@@ -10,8 +10,8 @@ from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
 from django_components.expression import DynamicFilterExpression, is_aggregate_key
-
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -85,8 +85,7 @@ class TestDynamicExpr:
                 <div>{{ list_var|safe }}</div>
             """
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 "{{ var_a|lower }}"
@@ -94,7 +93,6 @@ class TestDynamicExpr:
                 list_var="{{ list|slice:':-1' }}"
             / %}
             """
-        )
 
         template = Template(template_str)
         rendered = template.render(
@@ -103,7 +101,7 @@ class TestDynamicExpr:
                     "var_a": "LoREM",
                     "is_active": True,
                     "list": [{"a": 1}, {"a": 2}, {"a": 3}],
-                }
+                },
             ),
         )
 
@@ -149,8 +147,7 @@ class TestDynamicExpr:
                 <div>{{ dict_var|safe }}</div>
             """
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 "{% lorem var_a w %}"
@@ -159,7 +156,6 @@ class TestDynamicExpr:
                 dict_var="{% noop dict %}"
             / %}
             """
-        )
 
         template = Template(template_str)
         rendered = template.render(
@@ -169,7 +165,7 @@ class TestDynamicExpr:
                     "is_active": True,
                     "list": [{"a": 1}, {"a": 2}],
                     "dict": {"a": 3},
-                }
+                },
             ),
         )
 
@@ -216,8 +212,7 @@ class TestDynamicExpr:
                 <div>{{ list_var|safe }}</div>
             """
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 "{# lorem var_a w #}"
@@ -226,7 +221,6 @@ class TestDynamicExpr:
                 list_var=" {# noop list #} "
             / %}
             """
-        )
 
         template = Template(template_str)
         rendered: str = template.render(
@@ -236,7 +230,7 @@ class TestDynamicExpr:
                     "var_a": 3,
                     "is_active": True,
                     "list": [{"a": 1}, {"a": 2}],
-                }
+                },
             ),
         )
 
@@ -284,8 +278,7 @@ class TestDynamicExpr:
                 <div>{{ dict_var|safe }}</div>
             """
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 " {% lorem var_a w %} "
@@ -295,7 +288,6 @@ class TestDynamicExpr:
                 dict_var=" {% noop dict %} "
             / %}
             """
-        )
 
         template = Template(template_str)
         rendered: str = template.render(
@@ -306,7 +298,7 @@ class TestDynamicExpr:
                     "is_active": True,
                     "list": [{"a": 1}, {"a": 2}],
                     "dict": {"a": 3},
-                }
+                },
             ),
         )
 
@@ -316,6 +308,7 @@ class TestDynamicExpr:
         assert captured["list_var"] == " [{'a': 1}, {'a': 2}] "
 
         # NOTE: This is whitespace-sensitive test, so we check exact output
+        # fmt: off
         assert rendered.strip() == (
             "<!-- _RENDERED SimpleComponent_85c7eb,ca1bc3f,, -->\n"
             '                <div data-djc-id-ca1bc3f=""> lorem ipsum dolor </div>\n'
@@ -324,6 +317,7 @@ class TestDynamicExpr:
             '                <div data-djc-id-ca1bc3f=""> [{\'a\': 1}, {\'a\': 2}] </div>\n'
             '                <div data-djc-id-ca1bc3f=""> {\'a\': 3} </div>'
         )
+        # fmt: on
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_ignores_invalid_tag(self, components_settings):
@@ -344,12 +338,10 @@ class TestDynamicExpr:
                 <div>{{ bool_var }}</div>
             """
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test' '"' "{%}" bool_var="{% noop is_active %}" / %}
             """
-        )
 
         template = Template(template_str)
         rendered = template.render(
@@ -383,15 +375,13 @@ class TestDynamicExpr:
                 <div>{{ bool_var }}</div>
             """
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 "{% component 'test' '{{ var_a }}' bool_var=is_active / %}"
                 bool_var="{% noop is_active %}"
             / %}
             """
-        )
 
         template = Template(template_str)
         rendered = template.render(
@@ -399,7 +389,7 @@ class TestDynamicExpr:
                 {
                     "var_a": 3,
                     "is_active": True,
-                }
+                },
             ),
         )
 
@@ -441,8 +431,7 @@ class TestSpreadOperator:
                 <div>{{ x }}</div>
             """
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 var_a
@@ -451,7 +440,6 @@ class TestSpreadOperator:
                 x=123
             / %}
             """
-        )
 
         template = Template(template_str)
         rendered = template.render(
@@ -464,7 +452,7 @@ class TestSpreadOperator:
                         "items": [1, 2, 3],
                     },
                     "list": [{"a": 1}, {"a": 2}, {"a": 3}],
-                }
+                },
             ),
         )
 
@@ -560,7 +548,7 @@ class TestSpreadOperator:
                         "data": "slot_data",
                         "default": "slot_default",
                     },
-                }
+                },
             ),
         )
 
@@ -607,7 +595,7 @@ class TestSpreadOperator:
                         "items": [1, 2, 3],
                     },
                     "list": [{"a": 1}, {"a": 2}, {"a": 3}],
-                }
+                },
             ),
         )
 
@@ -636,7 +624,7 @@ class TestSpreadOperator:
                         "defaults:class": "my-class",
                         "defaults:style": "NONO",
                     },
-                }
+                },
             ),
         )
         assertHTMLEqual(
@@ -670,13 +658,12 @@ class TestSpreadOperator:
                     "items": [1, 2, 3],
                 },
                 "list": [{"a": 1, "x": "OVERWRITTEN_X"}, {"a": 2}, {"a": 3}],
-            }
+            },
         )
 
         # Mergingg like this will raise TypeError, because it's like
         # a function receiving multiple kwargs with the same name.
-        template_str1: types.django_html = (
-            """
+        template_str1: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 ...my_dict
@@ -685,7 +672,6 @@ class TestSpreadOperator:
                 ..."{{ list|first }}"
             / %}
             """
-        )
 
         template1 = Template(template_str1)
 
@@ -694,8 +680,7 @@ class TestSpreadOperator:
 
         # But, similarly to python, we can merge multiple **kwargs by instead
         # merging them into a single dict, and spreading that.
-        template_str2: types.django_html = (
-            """
+        template_str2: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 ...{
@@ -706,7 +691,6 @@ class TestSpreadOperator:
                 attrs:style="OVERWRITTEN"
             / %}
             """
-        )
 
         template2 = Template(template_str2)
         rendered2 = template2.render(context)
@@ -727,15 +711,13 @@ class TestSpreadOperator:
         class SimpleComponent(Component):
             pass
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 var_a
                 ...
             / %}
             """
-        )
 
         with pytest.raises(TemplateSyntaxError, match=re.escape("Spread syntax '...' is missing a value")):
             Template(template_str)
@@ -752,22 +734,20 @@ class TestSpreadOperator:
                 nonlocal captured
                 captured = args, kwargs
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 ...var_a
                 ...var_b
             / %}
             """
-        )
         template = Template(template_str)
 
         context = Context(
             {
                 "var_a": "abc",
                 "var_b": [1, 2, 3],
-            }
+            },
         )
 
         template.render(context)
@@ -783,21 +763,19 @@ class TestSpreadOperator:
         class SimpleComponent(Component):
             pass
 
-        template_str: types.django_html = (
-            """
+        template_str: types.django_html = """
             {% load component_tags %}
             {% component 'test'
                 ...var_b
             / %}
             """
-        )
 
         template = Template(template_str)
 
         # List
         with pytest.raises(
             ValueError,
-            match=re.escape("Cannot spread non-iterable value: '...var_b' resolved to 123")
+            match=re.escape("Cannot spread non-iterable value: '...var_b' resolved to 123"),
         ):
             template.render(Context({"var_b": 123}))
 

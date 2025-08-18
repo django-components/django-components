@@ -555,7 +555,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 ctx.component_cls.my_attr = "my_value"
         ```
         """
-        pass
 
     def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
         """
@@ -577,7 +576,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 self.cache.pop(ctx.component_cls, None)
         ```
         """
-        pass
 
     def on_registry_created(self, ctx: OnRegistryCreatedContext) -> None:
         """
@@ -599,7 +597,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 ctx.registry.my_attr = "my_value"
         ```
         """
-        pass
 
     def on_registry_deleted(self, ctx: OnRegistryDeletedContext) -> None:
         """
@@ -621,7 +618,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 self.cache.pop(ctx.registry, None)
         ```
         """
-        pass
 
     def on_component_registered(self, ctx: OnComponentRegisteredContext) -> None:
         """
@@ -641,7 +637,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 print(f"Component {ctx.component_cls} registered to {ctx.registry} as '{ctx.name}'")
         ```
         """
-        pass
 
     def on_component_unregistered(self, ctx: OnComponentUnregisteredContext) -> None:
         """
@@ -661,7 +656,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 print(f"Component {ctx.component_cls} unregistered from {ctx.registry} as '{ctx.name}'")
         ```
         """
-        pass
 
     ###########################
     # Component render hooks
@@ -712,7 +706,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
             [`Component.slots`](./api.md#django_components.Component.slots)
             are plain `list` / `dict` objects.
         """
-        pass
 
     def on_component_data(self, ctx: OnComponentDataContext) -> None:
         """
@@ -739,7 +732,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 ctx.template_data["my_template_var"] = "my_value"
         ```
         """
-        pass
 
     def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
         """
@@ -797,7 +789,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                     print(f"Result: {ctx.result}")
         ```
         """
-        pass
 
     ##########################
     # Template / JS / CSS hooks
@@ -826,7 +817,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 return ctx.content.replace("Hello", "Hi")
         ```
         """
-        pass
 
     def on_template_compiled(self, ctx: OnTemplateCompiledContext) -> None:
         """
@@ -849,7 +839,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 print(f"Template origin: {ctx.template.origin.name}")
         ```
         """
-        pass
 
     def on_css_loaded(self, ctx: OnCssLoadedContext) -> Optional[str]:
         """
@@ -874,7 +863,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 return ctx.content.replace("Hello", "Hi")
         ```
         """
-        pass
 
     def on_js_loaded(self, ctx: OnJsLoadedContext) -> Optional[str]:
         """
@@ -899,7 +887,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 return ctx.content.replace("Hello", "Hi")
         ```
         """
-        pass
 
     ##########################
     # Tags lifecycle hooks
@@ -944,7 +931,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 print(f"Slot owner: {slot_owner}")
         ```
         """
-        pass
 
 
 # Decorator to store events in `ExtensionManager._events` when django_components is not yet initialized.
@@ -955,7 +941,7 @@ def store_events(func: TCallable) -> TCallable:
     def wrapper(self: "ExtensionManager", ctx: Any) -> Any:
         if not self._initialized:
             self._events.append((fn_name, ctx))
-            return
+            return None
 
         return func(self, ctx)
 
@@ -1051,7 +1037,7 @@ class ExtensionManager:
             extension_defaults = all_extensions_defaults.get(extension.name, None)
             if extension_defaults:
                 # Create dummy class that holds the extension defaults
-                defaults_class = type(f"{ext_class_name}Defaults", tuple(), extension_defaults.copy())
+                defaults_class = type(f"{ext_class_name}Defaults", (), extension_defaults.copy())
                 bases_list.insert(0, defaults_class)
 
             if component_ext_subclass:
@@ -1118,7 +1104,7 @@ class ExtensionManager:
         urls: List[URLResolver] = []
         seen_names: Set[str] = set()
 
-        from django_components import Component
+        from django_components import Component  # noqa: PLC0415
 
         for extension in self.extensions:
             # Ensure that the extension name won't conflict with existing Component class API
@@ -1297,7 +1283,7 @@ class ExtensionManager:
         for extension in self.extensions:
             try:
                 result = extension.on_component_rendered(ctx)
-            except Exception as error:
+            except Exception as error:  # noqa: BLE001
                 # Error from `on_component_rendered()` - clear HTML and set error
                 ctx = ctx._replace(result=None, error=error)
             else:

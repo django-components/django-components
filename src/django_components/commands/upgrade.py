@@ -1,7 +1,8 @@
+# ruff: noqa: T201
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 
 from django.conf import settings
 from django.template.engine import Engine
@@ -15,14 +16,14 @@ class UpgradeCommand(ComponentCommand):
     name = "upgrade"
     help = "Upgrade django components syntax from '{%% component_block ... %%}' to '{%% component ... %%}'."
 
-    arguments = [
+    arguments = (
         CommandArg(
             name_or_flags="--path",
             help="Path to search for components",
         ),
-    ]
+    )
 
-    def handle(self, *args: Any, **options: Any) -> None:
+    def handle(self, *_args: Any, **options: Any) -> None:
         current_engine = Engine.get_default()
         loader = DjcLoader(current_engine)
         dirs = loader.get_dirs(include_apps=False)
@@ -33,7 +34,7 @@ class UpgradeCommand(ComponentCommand):
         if options["path"]:
             dirs = [options["path"]]
 
-        all_files = []
+        all_files: List[Path] = []
 
         for dir_path in dirs:
             print(f"Searching for components in {dir_path}...")
@@ -41,11 +42,11 @@ class UpgradeCommand(ComponentCommand):
                 for file in files:
                     if not file.endswith((".html", ".py")):
                         continue
-                    file_path = os.path.join(root, file)
+                    file_path = Path(root) / file
                     all_files.append(file_path)
 
         for file_path in all_files:
-            with open(file_path, "r+", encoding="utf-8") as f:
+            with file_path.open("r+", encoding="utf-8") as f:
                 content = f.read()
                 content_with_closed_components, step0_count = re.subn(
                     r'({%\s*component\s*"(\w+?)"(.*?)%})(?!.*?{%\s*endcomponent\s*%})',

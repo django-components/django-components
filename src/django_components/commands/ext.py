@@ -16,7 +16,7 @@ class ExtCommand(ComponentCommand):
     name = "ext"
     help = "Run extension commands."
 
-    subcommands = [
+    subcommands = (
         ExtListCommand,
         ExtRunCommand,
-    ]
+    )

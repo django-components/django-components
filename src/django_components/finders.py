@@ -1,11 +1,12 @@
 import os
 import re
+from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from django import VERSION as DJANGO_VERSION
 from django.contrib.staticfiles.finders import BaseFinder
 from django.contrib.staticfiles.utils import get_files
-from django.core.checks import CheckMessage, Error, Warning
+from django.core import checks
 from django.core.files.storage import FileSystemStorage
 from django.utils._os import safe_join
 
@@ -34,7 +35,7 @@ class ComponentsFileSystemFinder(BaseFinder):
     - If `COMPONENTS.dirs` is not set, defaults to `settings.BASE_DIR / "components"`
     """
 
-    def __init__(self, app_names: Any = None, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, app_names: Any = None, *args: Any, **kwargs: Any) -> None:  # noqa: ARG002
         component_dirs = [str(p) for p in get_component_dirs()]
 
         # NOTE: The rest of the __init__ is the same as `django.contrib.staticfiles.finders.FileSystemFinder`,
@@ -47,7 +48,7 @@ class ComponentsFileSystemFinder(BaseFinder):
         self.storages: Dict[str, FileSystemStorage] = {}
         for root in component_dirs:
             if isinstance(root, (list, tuple)):
-                prefix, root = root
+                prefix, root = root  # noqa: PLW2901
             else:
                 prefix = ""
             if (prefix, root) not in self.locations:
@@ -60,41 +61,39 @@ class ComponentsFileSystemFinder(BaseFinder):
         super().__init__(*args, **kwargs)
 
     # NOTE: Based on `FileSystemFinder.check`
-    def check(self, **kwargs: Any) -> List[CheckMessage]:
-        errors: List[CheckMessage] = []
+    def check(self, **_kwargs: Any) -> List[checks.CheckMessage]:
+        errors: List[checks.CheckMessage] = []
         if not isinstance(app_settings.DIRS, (list, tuple)):
             errors.append(
-                Error(
+                checks.Error(
                     "The COMPONENTS.dirs setting is not a tuple or list.",
                     hint="Perhaps you forgot a trailing comma?",
                     id="components.E001",
-                )
+                ),
             )
             return errors
         for root in app_settings.DIRS:
             if isinstance(root, (list, tuple)):
-                prefix, root = root
+                prefix, root = root  # noqa: PLW2901
                 if prefix.endswith("/"):
                     errors.append(
-                        Error(
-                            "The prefix %r in the COMPONENTS.dirs setting must not end with a slash." % prefix,
+                        checks.Error(
+                            f"The prefix {prefix!r} in the COMPONENTS.dirs setting must not end with a slash.",
                             id="staticfiles.E003",
-                        )
+                        ),
                     )
-            elif not os.path.isdir(root):
+            elif not Path(root).is_dir():
                 errors.append(
-                    Warning(
+                    checks.Warning(
                         f"The directory '{root}' in the COMPONENTS.dirs setting does not exist.",
                         id="components.W004",
-                    )
+                    ),
                 )
         return errors
 
     # NOTE: Same as `FileSystemFinder.find`
     def find(self, path: str, **kwargs: Any) -> Union[List[str], str]:
-        """
-        Look for files in the extra locations as defined in COMPONENTS.dirs.
-        """
+        """Look for files in the extra locations as defined in COMPONENTS.dirs."""
         # Handle deprecated `all` parameter:
         # - In Django 5.2, the `all` parameter was deprecated in favour of `find_all`.
         # - Between Django 5.2 (inclusive) and 6.1 (exclusive), the `all` parameter was still
@@ -104,7 +103,7 @@ class ComponentsFileSystemFinder(BaseFinder):
         # See https://github.com/django/django/blob/5.2/django/contrib/staticfiles/finders.py#L58C9-L58C37
         # And https://github.com/django-components/django-components/issues/1119
         if DJANGO_VERSION >= (5, 2) and DJANGO_VERSION < (6, 1):
-            find_all = self._check_deprecated_find_param(**kwargs)  # type: ignore
+            find_all = self._check_deprecated_find_param(**kwargs)
         elif DJANGO_VERSION >= (6, 1):
             find_all = kwargs.get("find_all", False)
         else:
@@ -128,28 +127,26 @@ class ComponentsFileSystemFinder(BaseFinder):
         absolute path (or ``None`` if no match).
         """
         if prefix:
-            prefix = "%s%s" % (prefix, os.sep)
+            prefix = f"{prefix}{os.sep}"
             if not path.startswith(prefix):
                 return None
             path = path.removeprefix(prefix)
         path = safe_join(root, path)
 
-        if os.path.exists(path) and self._is_path_valid(path):
+        if Path(path).exists() and self._is_path_valid(path):
             return path
         return None
 
     # `Finder.list` is called from `collectstatic` command,
-    # see https://github.com/django/django/blob/bc9b6251e0b54c3b5520e3c66578041cc17e4a28/django/contrib/staticfiles/management/commands/collectstatic.py#L126C23-L126C30  # noqa E501
+    # see https://github.com/django/django/blob/bc9b6251e0b54c3b5520e3c66578041cc17e4a28/django/contrib/staticfiles/management/commands/collectstatic.py#L126C23-L126C30
     #
     # NOTE: This is same as `FileSystemFinder.list`, but we exclude Python/HTML files
     # NOTE 2: Yield can be annotated as Iterable, see https://stackoverflow.com/questions/38419654
     def list(self, ignore_patterns: List[str]) -> Iterable[Tuple[str, FileSystemStorage]]:
-        """
-        List all files in all locations.
-        """
-        for prefix, root in self.locations:
+        """List all files in all locations."""
+        for _prefix, root in self.locations:
             # Skip nonexistent directories.
-            if os.path.isdir(root):
+            if Path(root).is_dir():
                 storage = self.storages[root]
                 for path in get_files(storage, ignore_patterns):
                     if self._is_path_valid(path):

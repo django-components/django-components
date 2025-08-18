@@ -120,7 +120,7 @@ class ComponentCache(ExtensionComponentConfig):
         if self.include_slots:
             cache_key += ":" + self.hash_slots(slots)
         cache_key = self.component._class_hash + ":" + cache_key
-        cache_key = CACHE_KEY_PREFIX + md5(cache_key.encode()).hexdigest()
+        cache_key = CACHE_KEY_PREFIX + md5(cache_key.encode()).hexdigest()  # noqa: S324
         return cache_key
 
     def hash(self, args: List, kwargs: Dict) -> str:
@@ -141,10 +141,10 @@ class ComponentCache(ExtensionComponentConfig):
         hash_parts = []
         for key, slot in sorted_items:
             if callable(slot.contents):
-                raise ValueError(
+                raise TypeError(
                     f"Cannot hash slot '{key}' of component '{self.component.name}' - Slot functions are unhashable."
                     " Instead define the slot as a string or `{% fill %}` tag, or disable slot caching"
-                    " with `Cache.include_slots=False`."
+                    " with `Cache.include_slots=False`.",
                 )
             hash_parts.append(f"{key}-{slot.contents}")
         return ",".join(hash_parts)
@@ -175,7 +175,7 @@ class CacheExtension(ComponentExtension):
 
     ComponentConfig = ComponentCache
 
-    def __init__(self, *args: Any, **kwargs: Any):
+    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
         self.render_id_to_cache_key: dict[str, str] = {}
 
     def on_component_input(self, ctx: OnComponentInputContext) -> Optional[Any]:
@@ -196,7 +196,7 @@ class CacheExtension(ComponentExtension):
     def on_component_rendered(self, ctx: OnComponentRenderedContext) -> None:
         cache_instance = ctx.component.cache
         if not cache_instance.enabled:
-            return None
+            return
 
         if ctx.error is not None:
             return

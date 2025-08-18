@@ -12,8 +12,8 @@ from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, registry, render_dependencies, types
-
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -119,9 +119,7 @@ class TestRenderDependencies:
             rendered,
             count=1,
         )  # Inlined CSS
-        assertInHTML(
-            '<script>console.log("xyz");</script>', rendered, count=1
-        )  # Inlined JS
+        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
 
         assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
         assert rendered.count("<link") == 1
@@ -148,9 +146,7 @@ class TestRenderDependencies:
             rendered,
             count=1,
         )  # Inlined CSS
-        assertInHTML(
-            '<script>console.log("xyz");</script>', rendered, count=1
-        )  # Inlined JS
+        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
 
         assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
         assert rendered.count("<link") == 1
@@ -159,9 +155,9 @@ class TestRenderDependencies:
         # Check that the order is correct (dependencies are appended)
         assert rendered.strip() == (
             'Variable: <strong data-djc-id-ca1bc41="">foo</strong>\n'
-            '    \n'
+            "    \n"
             '        <script src="script.js"></script><script>console.log("xyz");</script><style>.xyz {\n'
-            '            color: red;\n'
+            "            color: red;\n"
             '        }</style><link href="style.css" media="all" rel="stylesheet">'
         )
 
@@ -541,7 +537,7 @@ class TestRenderDependencies:
                 "toLoadJsTags": ["PHNjcmlwdCBzcmM9InNjcmlwdC5qcyI+PC9zY3JpcHQ+",
                 "PHNjcmlwdCBzcmM9Ii9jb21wb25lbnRzL2NhY2hlL1NpbXBsZUNvbXBvbmVudF8zMTEwOTcuanMiPjwvc2NyaXB0Pg=="]}
             </script>
-        """  # noqa: E501
+        """
 
         assertHTMLEqual(expected, rendered)
 
@@ -555,7 +551,9 @@ class TestRenderDependencies:
 
         with pytest.raises(
             RuntimeError,
-            match=re.escape("Content of `Component.js` for component 'ComponentWithScript' contains '</script>' end tag."),  # noqa: E501
+            match=re.escape(
+                "Content of `Component.js` for component 'ComponentWithScript' contains '</script>' end tag.",
+            ),
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
 
@@ -572,7 +570,9 @@ class TestRenderDependencies:
 
         with pytest.raises(
             RuntimeError,
-            match=re.escape("Content of `Component.css` for component 'ComponentWithScript' contains '</style>' end tag."),  # noqa: E501
+            match=re.escape(
+                "Content of `Component.css` for component 'ComponentWithScript' contains '</style>' end tag.",
+            ),
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
 
@@ -1161,6 +1161,6 @@ class TestDependenciesStrategyRaw:
         assert rendered_raw.strip() == (
             '<script name="JS_PLACEHOLDER"></script>\n'
             '            <link name="CSS_PLACEHOLDER">\n'
-            '            <!-- _RENDERED SimpleComponent_311097,ca1bc41,, -->\n'
+            "            <!-- _RENDERED SimpleComponent_311097,ca1bc41,, -->\n"
             '        Variable: <strong data-djc-id-ca1bc41="">foo</strong>'
         )

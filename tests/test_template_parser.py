@@ -3,9 +3,9 @@ from django.template.base import Template, Token, TokenType
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
+from django_components.testing import djc_test
 from django_components.util.template_parser import parse_template
 
-from django_components.testing import djc_test
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -103,7 +103,7 @@ class TestTemplateParser:
             """{% verbatim %}
                 {{ this_is_not_a_var }}
                 {% this_is_not_a_tag %}
-            {% endverbatim %}"""
+            {% endverbatim %}""",
         )
 
         token_tuples = [token2tuple(token) for token in tokens]
@@ -126,7 +126,7 @@ class TestTemplateParser:
                 {% verbatim %}
                 {% endverbatim %}
                 {% endverbatim blockname %}
-            {% endverbatim myblock %}"""
+            {% endverbatim myblock %}""",
         )
 
         token_tuples = [token2tuple(token) for token in tokens]
@@ -178,7 +178,7 @@ class TestTemplateParser:
                         {% endcomponent %}
                     {% endverbatim %}
                 {% endcomponent %}
-            {% endif %}"""
+            {% endif %}""",
         )
 
         token_tuples = [token2tuple(token) for token in tokens]

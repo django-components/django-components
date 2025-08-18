@@ -5,8 +5,8 @@
 
 import difflib
 import json
+from dataclasses import MISSING, dataclass, field
 from datetime import date, datetime, timedelta
-from dataclasses import dataclass, field, MISSING
 from enum import Enum
 from inspect import signature
 from itertools import chain
@@ -31,15 +31,14 @@ from typing import (
 import django
 from django import forms
 from django.conf import settings
+from django.contrib.humanize.templatetags.humanize import naturaltime
 from django.http import HttpRequest
 from django.middleware import csrf
+from django.template.defaulttags import register as default_library
 from django.utils.safestring import mark_safe
 from django.utils.timezone import now
-from django.contrib.humanize.templatetags.humanize import naturaltime
-from django.template.defaulttags import register as default_library
 
-from django_components import Component, registry, register, types
-
+from django_components import Component, register, registry, types
 
 # DO NOT REMOVE - See https://github.com/django-components/django-components/pull/999
 # ----------- IMPORTS END ------------ #
@@ -61,9 +60,9 @@ if not settings.configured:
                 "OPTIONS": {
                     "builtins": [
                         "django_components.templatetags.component_tags",
-                    ]
+                    ],
                 },
-            }
+            },
         ],
         COMPONENTS={
             "autodiscover": False,
@@ -74,9 +73,9 @@ if not settings.configured:
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
                 "NAME": ":memory:",
-            }
+            },
         },
-        SECRET_KEY="secret",
+        SECRET_KEY="secret",  # noqa: S106
         ROOT_URLCONF="django_components.urls",
     )
     django.setup()
@@ -86,6 +85,7 @@ else:
 #####################################
 # RENDER ENTRYPOINT
 #####################################
+
 
 def gen_render_data():
     data = load_project_data_from_json(data_json)
@@ -101,7 +101,7 @@ def gen_render_data():
             "text": "Test bookmark",
             "url": "http://localhost:8000/bookmarks/9/create",
             "attachment": None,
-        }
+        },
     ]
 
     request = HttpRequest()
@@ -644,162 +644,154 @@ data_json = """
 # DATA LOADER
 #####################################
 
+
 def load_project_data_from_json(contents: str) -> dict:
     """
-    Loads project data from JSON and resolves references between objects.
+    Load project data from JSON and resolves references between objects.
     Returns the data with all resolvable references replaced with actual object references.
     """
     data = json.loads(contents)
 
     # First create lookup tables for objects that will be referenced
-    users_by_id = {
-        user['pk']: {'id': user['pk'], **user['fields']}
-        for user in data.get('users', [])
-    }
+    users_by_id = {user["pk"]: {"id": user["pk"], **user["fields"]} for user in data.get("users", [])}
 
     def _get_user(user_id: int):
-        return users_by_id[user_id] if user_id in users_by_id else data.get('users', [])[0]
+        return users_by_id[user_id] if user_id in users_by_id else data.get("users", [])[0]
 
-    organizations_by_id = {
-        org['pk']: {'id': org['pk'], **org['fields']}
-        for org in data.get('organizations', [])
-    }
+    organizations_by_id = {org["pk"]: {"id": org["pk"], **org["fields"]} for org in data.get("organizations", [])}
 
-    phase_templates_by_id = {
-        pt['pk']: {'id': pt['pk'], **pt['fields']}
-        for pt in data.get('phase_templates', [])
-    }
+    phase_templates_by_id = {pt["pk"]: {"id": pt["pk"], **pt["fields"]} for pt in data.get("phase_templates", [])}
 
     # 1. Resolve project's organization reference
-    project = {'id': data['project']['pk'], **data['project']['fields']}
-    if 'organization' in project:
-        org_id = project.pop('organization')  # Remove the ID field
-        project['organization'] = organizations_by_id[org_id]  # Add the reference
+    project = {"id": data["project"]["pk"], **data["project"]["fields"]}
+    if "organization" in project:
+        org_id = project.pop("organization")  # Remove the ID field
+        project["organization"] = organizations_by_id[org_id]  # Add the reference
 
     # 2. Project tags - no changes needed
-    project_tags = data['project_tags']
+    project_tags = data["project_tags"]
 
     # 3. Resolve phases' references
     phases = []
     phases_by_id = {}  # We'll need this for resolving output references later
-    for phase_data in data['phases']:
-        phase = {'id': phase_data['pk'], **phase_data['fields']}
-        if 'project' in phase:
-            phase['project'] = project
-        if 'phase_template' in phase:
-            template_id = phase.pop('phase_template')
-            phase['phase_template'] = phase_templates_by_id[template_id]
+    for phase_data in data["phases"]:
+        phase = {"id": phase_data["pk"], **phase_data["fields"]}
+        if "project" in phase:
+            phase["project"] = project
+        if "phase_template" in phase:
+            template_id = phase.pop("phase_template")
+            phase["phase_template"] = phase_templates_by_id[template_id]
         phases.append(phase)
-        phases_by_id[phase['id']] = phase
+        phases_by_id[phase["id"]] = phase
 
     # 4. Resolve notes_1 references
     notes_1 = []
     notes_1_by_id = {}  # We'll need this for resolving notes references
-    for note_data in data['notes_1']:
-        note = {'id': note_data['pk'], **note_data['fields']}
-        if 'project' in note:
-            note['project'] = project
+    for note_data in data["notes_1"]:
+        note = {"id": note_data["pk"], **note_data["fields"]}
+        if "project" in note:
+            note["project"] = project
         notes_1.append(note)
-        notes_1_by_id[note['id']] = note
+        notes_1_by_id[note["id"]] = note
 
     # 5. Resolve comments_by_notes_1 references
     comments_by_notes_1 = {}
-    for note_id, comments_list in data['comments_by_notes_1'].items():
+    for note_id, comments_list in data["comments_by_notes_1"].items():
         resolved_comments = []
         for comment_data in comments_list:
-            comment = {'id': comment_data['pk'], **comment_data['fields']}
-            if 'modified_by' in comment:
-                comment['modified_by'] = _get_user(comment['modified_by'])
-            if 'parent' in comment:
-                comment['parent'] = notes_1_by_id[comment['parent']]
+            comment = {"id": comment_data["pk"], **comment_data["fields"]}
+            if "modified_by" in comment:
+                comment["modified_by"] = _get_user(comment["modified_by"])
+            if "parent" in comment:
+                comment["parent"] = notes_1_by_id[comment["parent"]]
             resolved_comments.append(comment)
         comments_by_notes_1[note_id] = resolved_comments
 
     # 6. Resolve notes_2' references
     notes_2 = []
     notes_2_by_id = {}  # We'll need this for resolving notes references
-    for note_data in data['notes_2']:
-        note = {'id': note_data['pk'], **note_data['fields']}
-        if 'project' in note:
-            note['project'] = project
+    for note_data in data["notes_2"]:
+        note = {"id": note_data["pk"], **note_data["fields"]}
+        if "project" in note:
+            note["project"] = project
         notes_2.append(note)
-        notes_2_by_id[note['id']] = note
+        notes_2_by_id[note["id"]] = note
 
     # 7. Resolve comments_by_notes_2 references
     comments_by_notes_2 = {}
-    for note_id, comments_list in data['comments_by_notes_2'].items():
+    for note_id, comments_list in data["comments_by_notes_2"].items():
         resolved_comments = []
         for comment_data in comments_list:
-            comment = {'id': comment_data['pk'], **comment_data['fields']}
-            if 'modified_by' in comment:
-                comment['modified_by'] = _get_user(comment['modified_by'])
-            if 'parent' in comment:
-                comment['parent'] = notes_2_by_id[comment['parent']]
+            comment = {"id": comment_data["pk"], **comment_data["fields"]}
+            if "modified_by" in comment:
+                comment["modified_by"] = _get_user(comment["modified_by"])
+            if "parent" in comment:
+                comment["parent"] = notes_2_by_id[comment["parent"]]
             resolved_comments.append(comment)
         comments_by_notes_2[note_id] = resolved_comments
 
     # 8. Resolve notes_3 references
     notes_3 = []
     notes_3_by_id = {}  # We'll need this for resolving notes references
-    for note_data in data['notes_3']:
-        note = {'id': note_data['pk'], **note_data['fields']}
-        if 'project' in note:
-            note['project'] = project
+    for note_data in data["notes_3"]:
+        note = {"id": note_data["pk"], **note_data["fields"]}
+        if "project" in note:
+            note["project"] = project
         notes_3.append(note)
-        notes_3_by_id[note['id']] = note
+        notes_3_by_id[note["id"]] = note
 
     # 9. Resolve comments_by_notes_3 references
     comments_by_notes_3 = {}
-    for note_id, comments_list in data['comments_by_notes_3'].items():
+    for note_id, comments_list in data["comments_by_notes_3"].items():
         resolved_comments = []
         for comment_data in comments_list:
-            comment = {'id': comment_data['pk'], **comment_data['fields']}
-            if 'modified_by' in comment:
-                comment['modified_by'] = _get_user(comment['modified_by'])
-            if 'parent' in comment:
-                comment['parent'] = notes_3_by_id[comment['parent']]
+            comment = {"id": comment_data["pk"], **comment_data["fields"]}
+            if "modified_by" in comment:
+                comment["modified_by"] = _get_user(comment["modified_by"])
+            if "parent" in comment:
+                comment["parent"] = notes_3_by_id[comment["parent"]]
             resolved_comments.append(comment)
         comments_by_notes_3[note_id] = resolved_comments
 
     # 10. Resolve roles_with_users references
     roles = []
-    for role_data in data['roles_with_users']:
-        role = {'id': role_data['pk'], **role_data['fields']}
-        if 'project' in role:
-            role['project'] = project
-        if 'user' in role:
-            role['user'] = _get_user(role['user'])
+    for role_data in data["roles_with_users"]:
+        role = {"id": role_data["pk"], **role_data["fields"]}
+        if "project" in role:
+            role["project"] = project
+        if "user" in role:
+            role["user"] = _get_user(role["user"])
         roles.append(role)
 
     # 11. Contacts - EMPTY, so no changes needed
-    contacts = data['contacts']
+    contacts = data["contacts"]
 
     # 12. Resolve outputs references
     resolved_outputs = []
     outputs_by_id = {}  # For resolving dependencies
 
     # First pass: Create all output objects and build lookup
-    for output_tuple in data['outputs']:
+    for output_tuple in data["outputs"]:
         output_data = output_tuple[0]
-        output = {'id': output_data['pk'], **output_data['fields']}
-        if 'phase' in output:
-            output['phase'] = phases_by_id[output['phase']]
-        outputs_by_id[output['id']] = output
+        output = {"id": output_data["pk"], **output_data["fields"]}
+        if "phase" in output:
+            output["phase"] = phases_by_id[output["phase"]]
+        outputs_by_id[output["id"]] = output
 
     # Second pass: Process each output with its attachments and dependencies
-    for output_tuple in data['outputs']:
+    for output_tuple in data["outputs"]:
         output_data, attachments_data, dependencies_data = output_tuple
-        output = outputs_by_id[output_data['pk']]
+        output = outputs_by_id[output_data["pk"]]
 
         # Process attachments
         resolved_attachments = []
         for attachment_tuple in attachments_data:
             attachment_data = attachment_tuple[0]
-            attachment = {'id': attachment_data['pk'], **attachment_data['fields']}
-            if 'created_by' in attachment:
-                attachment['created_by'] = _get_user(attachment['created_by'])
-            if 'output' in attachment:
-                attachment['output'] = outputs_by_id[attachment['output']]
+            attachment = {"id": attachment_data["pk"], **attachment_data["fields"]}
+            if "created_by" in attachment:
+                attachment["created_by"] = _get_user(attachment["created_by"])
+            if "output" in attachment:
+                attachment["output"] = outputs_by_id[attachment["output"]]
             # Keep tags as is
             resolved_attachments.append((attachment, attachment_tuple[1]))
 
@@ -807,35 +799,37 @@ def load_project_data_from_json(contents: str) -> dict:
         resolved_dependencies = []
         for dep_tuple in dependencies_data:
             dep_data = dep_tuple[0]
-            dep_output = outputs_by_id[dep_data['pk']]
+            dep_output = outputs_by_id[dep_data["pk"]]
             # Keep the tuple structure but with resolved references
             resolved_dependencies.append((dep_output, dep_tuple[1]))
 
         resolved_outputs.append((output, resolved_attachments, resolved_dependencies))
 
     return {
-        'project': project,
-        'project_tags': project_tags,
-        'phases': phases,
-        'notes_1': notes_1,
-        'comments_by_notes_1': comments_by_notes_1,
-        'notes_2': notes_2,
-        'comments_by_notes_2': comments_by_notes_2,
-        'notes_3': notes_3,
-        'comments_by_notes_3': comments_by_notes_3,
-        'roles_with_users': roles,
-        'contacts': contacts,
-        'outputs': resolved_outputs,
-        'status_updates': data['status_updates'],
-        'user_is_project_member': data['user_is_project_member'],
-        'user_is_project_owner': data['user_is_project_owner'],
-        'phase_titles': data['phase_titles'],
-        'users': data['users'],
+        "project": project,
+        "project_tags": project_tags,
+        "phases": phases,
+        "notes_1": notes_1,
+        "comments_by_notes_1": comments_by_notes_1,
+        "notes_2": notes_2,
+        "comments_by_notes_2": comments_by_notes_2,
+        "notes_3": notes_3,
+        "comments_by_notes_3": comments_by_notes_3,
+        "roles_with_users": roles,
+        "contacts": contacts,
+        "outputs": resolved_outputs,
+        "status_updates": data["status_updates"],
+        "user_is_project_member": data["user_is_project_member"],
+        "user_is_project_owner": data["user_is_project_owner"],
+        "phase_titles": data["phase_titles"],
+        "users": data["users"],
     }
+
 
 #####################################
 # TYPES
 #####################################
+
 
 class User(TypedDict):
     id: int
@@ -938,6 +932,7 @@ class ProjectNoteComment(TypedDict):
 
 FORM_SHORT_TEXT_MAX_LEN = 255
 
+
 # This allows us to compare Enum values against strings
 class StrEnum(str, Enum):
     pass
@@ -950,12 +945,14 @@ class TagResourceType(StrEnum):
     PROJECT_OUTPUT_ATTACHMENT = "PROJECT_OUTPUT_ATTACHMENT"
     PROJECT_TEMPLATE = "PROJECT_TEMPLATE"
 
+
 class ProjectPhaseType(StrEnum):
     PHASE_1 = "PHASE_1"
     PHASE_2 = "PHASE_2"
     PHASE_3 = "PHASE_3"
     PHASE_4 = "PHASE_4"
     PHASE_5 = "PHASE_5"
+
 
 class TagTypeMeta(NamedTuple):
     allowed_values: Tuple[str, ...]
@@ -984,7 +981,7 @@ TAG_TYPE_META = MappingProxyType(
             ),
         ),
         TagResourceType.PROJECT_OUTPUT: TagTypeMeta(
-            allowed_values=tuple(),
+            allowed_values=(),
         ),
         TagResourceType.PROJECT_OUTPUT_ATTACHMENT: TagTypeMeta(
             allowed_values=(
@@ -1005,8 +1002,9 @@ TAG_TYPE_META = MappingProxyType(
         TagResourceType.PROJECT_TEMPLATE: TagTypeMeta(
             allowed_values=("Tag 21",),
         ),
-    }
+    },
 )
+
 
 class ProjectOutputDef(NamedTuple):
     title: str
@@ -1071,7 +1069,7 @@ PROJECT_PHASES_META = MappingProxyType(
                 ProjectOutputDef(title="Lorem ipsum 14"),
             ],
         ),
-    }
+    },
 )
 
 #####################################
@@ -1082,6 +1080,7 @@ ThemeColor = Literal["default", "error", "success", "alert", "info"]
 ThemeVariant = Literal["primary", "secondary"]
 
 VARIANTS = ["primary", "secondary"]
+
 
 class ThemeStylingUnit(NamedTuple):
     """
@@ -1135,10 +1134,10 @@ _secondary_btn_styling = "ring-1 ring-inset"
 theme = Theme(
     default=ThemeStylingVariant(
         primary=ThemeStylingUnit(
-            color="bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition"
+            color="bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition",
         ),
         primary_disabled=ThemeStylingUnit(
-            color="bg-blue-300 text-blue-50 focus-visible:outline-blue-600 transition"
+            color="bg-blue-300 text-blue-50 focus-visible:outline-blue-600 transition",
         ),
         secondary=ThemeStylingUnit(
             color="bg-white text-gray-800 ring-gray-300 hover:bg-gray-100 focus-visible:outline-gray-600 transition",
@@ -1151,10 +1150,10 @@ theme = Theme(
     ),
     error=ThemeStylingVariant(
         primary=ThemeStylingUnit(
-            color="bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600"
+            color="bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600",
         ),
         primary_disabled=ThemeStylingUnit(
-            color="bg-red-300 text-white focus-visible:outline-red-600"
+            color="bg-red-300 text-white focus-visible:outline-red-600",
         ),
         secondary=ThemeStylingUnit(
             color="bg-white text-red-600 ring-red-300 hover:bg-red-100 focus-visible:outline-red-600",
@@ -1167,10 +1166,10 @@ theme = Theme(
     ),
     alert=ThemeStylingVariant(
         primary=ThemeStylingUnit(
-            color="bg-amber-500 text-white hover:bg-amber-400 focus-visible:outline-amber-500"
+            color="bg-amber-500 text-white hover:bg-amber-400 focus-visible:outline-amber-500",
         ),
         primary_disabled=ThemeStylingUnit(
-            color="bg-amber-100 text-orange-300 focus-visible:outline-amber-500"
+            color="bg-amber-100 text-orange-300 focus-visible:outline-amber-500",
         ),
         secondary=ThemeStylingUnit(
             color="bg-white text-amber-500 ring-amber-300 hover:bg-amber-100 focus-visible:outline-amber-500",
@@ -1183,10 +1182,10 @@ theme = Theme(
     ),
     success=ThemeStylingVariant(
         primary=ThemeStylingUnit(
-            color="bg-green-600 text-white hover:bg-green-500 focus-visible:outline-green-600"
+            color="bg-green-600 text-white hover:bg-green-500 focus-visible:outline-green-600",
         ),
         primary_disabled=ThemeStylingUnit(
-            color="bg-green-300 text-white focus-visible:outline-green-600"
+            color="bg-green-300 text-white focus-visible:outline-green-600",
         ),
         secondary=ThemeStylingUnit(
             color="bg-white text-green-600 ring-green-300 hover:bg-green-100 focus-visible:outline-green-600",
@@ -1199,10 +1198,10 @@ theme = Theme(
     ),
     info=ThemeStylingVariant(
         primary=ThemeStylingUnit(
-            color="bg-sky-600 text-white hover:bg-sky-500 focus-visible:outline-sky-600"
+            color="bg-sky-600 text-white hover:bg-sky-500 focus-visible:outline-sky-600",
         ),
         primary_disabled=ThemeStylingUnit(
-            color="bg-sky-300 text-white focus-visible:outline-sky-600"
+            color="bg-sky-300 text-white focus-visible:outline-sky-600",
         ),
         secondary=ThemeStylingUnit(
             color="bg-white text-sky-600 ring-sky-300 hover:bg-sky-100 focus-visible:outline-sky-600",
@@ -1251,7 +1250,7 @@ def get_styling_css(
 
     if variant not in VARIANTS:
         raise ValueError(
-            f'Unknown theme variant "{variant}", must be one of {VARIANTS}'
+            f'Unknown theme variant "{variant}", must be one of {VARIANTS}',
         )
 
     variant_name = variant if not disabled else f"{variant}_disabled"
@@ -1268,6 +1267,7 @@ def get_styling_css(
 T = TypeVar("T")
 U = TypeVar("U")
 
+
 def format_timestamp(timestamp: datetime):
     """
     If the timestamp is more than 7 days ago, format it as "Jan 1, 2025".
@@ -1275,8 +1275,8 @@ def format_timestamp(timestamp: datetime):
     """
     if now() - timestamp > timedelta(days=7):
         return timestamp.strftime("%b %-d, %Y")
-    else:
-        return naturaltime(timestamp)
+    return naturaltime(timestamp)
+
 
 def group_by(
     lst: Iterable[T],
@@ -1303,6 +1303,7 @@ def group_by(
         grouped[key].append(mapped_item)
     return grouped
 
+
 def dynamic_apply(fn: Callable, *args):
     """
     Given a function and positional arguments that should be applied to given function,
@@ -1315,9 +1316,11 @@ def dynamic_apply(fn: Callable, *args):
 
     return fn(*first_n_args)
 
+
 #####################################
 # SHARED FORMS
 #####################################
+
 
 class ConditionalEditForm(forms.Form):
     """
@@ -1338,9 +1341,11 @@ class ConditionalEditForm(forms.Form):
         for form_field in fields.values():
             form_field.widget.attrs["readonly"] = True
 
+
 #####################################
 # TEMPLATE TAG FILTERS
 #####################################
+
 
 @default_library.filter("alpine")
 def to_alpine_json(value: dict):
@@ -1354,19 +1359,23 @@ def to_alpine_json(value: dict):
     data = json.dumps(value).replace('"', "'")
     return data
 
+
 @default_library.filter("json")
 def to_json(value: dict):
     """Serialize Python object to JSON."""
     data = json.dumps(value)
     return data
 
+
 @default_library.simple_tag
 def define(val=None):
     return val
 
+
 @default_library.filter
 def get_item(dictionary: dict, key: str):
     return dictionary.get(key)
+
 
 @default_library.filter("js")
 def serialize_to_js(obj):
@@ -1388,21 +1397,22 @@ def serialize_to_js(obj):
             items.append(f"{key}: {serialized_value}")
         return f"{{ {', '.join(items)} }}"
 
-    elif isinstance(obj, (list, tuple)):
+    if isinstance(obj, (list, tuple)):
         # If the object is a list, recursively serialize each item
         serialized_items = [serialize_to_js(item) for item in obj]
         return f"[{', '.join(serialized_items)}]"
 
-    elif isinstance(obj, str):
+    if isinstance(obj, str):
         return obj
 
-    else:
-        # For other types (int, float, etc.), just return the string representation
-        return str(obj)
+    # For other types (int, float, etc.), just return the string representation
+    return str(obj)
+
 
 #####################################
 # BUTTON
 #####################################
+
 
 @register("Button")
 class Button(Component):
@@ -1415,7 +1425,7 @@ class Button(Component):
         disabled: Optional[bool] = False,
         variant: Union["ThemeVariant", Literal["plain"]] = "primary",
         color: Union["ThemeColor", str] = "default",
-        type: Optional[str] = "button",
+        type: Optional[str] = "button",  # noqa: A002
         attrs: Optional[dict] = None,
     ):
         common_css = (
@@ -1426,14 +1436,12 @@ class Button(Component):
             all_css_class = common_css
         else:
             button_classes = get_styling_css(variant, color, disabled)  # type: ignore[arg-type]
-            all_css_class = (
-                f"{button_classes} {common_css} px-3 py-2 justify-center rounded-md shadow-sm"
-            )
+            all_css_class = f"{button_classes} {common_css} px-3 py-2 justify-center rounded-md shadow-sm"
 
         is_link = not disabled and (href or link)
 
         all_attrs = {
-            **(attrs or {})
+            **(attrs or {}),
         }
         if disabled:
             all_attrs["aria-disabled"] = "true"
@@ -1547,10 +1555,12 @@ class Menu(Component):
             all_list_attrs.update(list_attrs)
         if anchor:
             all_list_attrs[f"x-anchor.{anchor_dir}"] = anchor
-        all_list_attrs.update({
-            "x-show": model,
-            "x-cloak": "",
-        })
+        all_list_attrs.update(
+            {
+                "x-show": model,
+                "x-cloak": "",
+            },
+        )
 
         return {
             "model": model,
@@ -1613,9 +1623,11 @@ class Menu(Component):
         </div>
     """
 
+
 #####################################
 # MENU LIST
 #####################################
+
 
 def _normalize_item(item: Union[MenuItem, str]):
     # Wrap plain value in MenuItem
@@ -1714,9 +1726,11 @@ class MenuList(Component):
         </div>
     """  # noqa: E501
 
+
 #####################################
 # TABLE
 #####################################
+
 
 class TableHeader(NamedTuple):
     """Table header data structure used with the `table` components."""
@@ -1771,8 +1785,7 @@ class TableCell:
     def __post_init__(self):
         if not isinstance(self.colspan, int) or self.colspan < 1:
             raise ValueError(
-                "TableCell.colspan must be a non-negative integer."
-                f" Instead got {self.colspan}"
+                f"TableCell.colspan must be a non-negative integer. Instead got {self.colspan}",
             )
 
 
@@ -1882,9 +1895,7 @@ class Table(Component):
         rows: List[TableRow],
         attrs: Optional[dict] = None,
     ):
-        rows_to_render = [
-            tuple([row, prepare_row_headers(row, headers)]) for row in rows
-        ]
+        rows_to_render = [(row, prepare_row_headers(row, headers)) for row in rows]
 
         return {
             "headers": headers,
@@ -1961,9 +1972,11 @@ class Table(Component):
         </div>
     """  # noqa: E501
 
+
 #####################################
 # ICON
 #####################################
+
 
 @register("Icon")
 class Icon(Component):
@@ -2059,9 +2072,13 @@ class Icon(Component):
 ICONS = {
     "outline": {
         "academic-cap": [
-            {'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'd': 'M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5'}  # noqa: E501
-        ]
-    }
+            {
+                "stroke-linecap": "round",
+                "stroke-linejoin": "round",
+                "d": "M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 7.74-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5",  # noqa: E501
+            },
+        ],
+    },
 }
 
 
@@ -2075,9 +2092,8 @@ class ComponentDefaults(metaclass=ComponentDefaultsMeta):
     def __post_init__(self) -> None:
         fields = self.__class__.__dataclass_fields__  # type: ignore[attr-defined]
         for field_name, dataclass_field in fields.items():
-            if dataclass_field.default is not MISSING:
-                if getattr(self, field_name) is None:
-                    setattr(self, field_name, dataclass_field.default)
+            if dataclass_field.default is not MISSING and getattr(self, field_name) is None:
+                setattr(self, field_name, dataclass_field.default)
 
 
 class IconDefaults(ComponentDefaults):
@@ -2161,9 +2177,11 @@ class HeroIcon(Component):
             "attrs": kwargs.attrs,
         }
 
+
 #####################################
 # EXPANSION PANEL
 #####################################
+
 
 @register("ExpansionPanel")
 class ExpansionPanel(Component):
@@ -2171,7 +2189,7 @@ class ExpansionPanel(Component):
         self,
         /,
         *,
-        open: Optional[bool] = False,
+        open: Optional[bool] = False,  # noqa: A002
         panel_id: Optional[str] = None,
         attrs: Optional[dict] = None,
         header_attrs: Optional[dict] = None,
@@ -2253,9 +2271,11 @@ class ExpansionPanel(Component):
         });
     """
 
+
 #####################################
 # PROJECT_PAGE
 #####################################
+
 
 # Tabs on this page and the query params to open specific tabs on page load.
 class ProjectPageTabsToQueryParams(Enum):
@@ -2290,7 +2310,7 @@ class ProjectPage(Component):
         breadcrumbs: Optional[List["Breadcrumb"]] = None,
     ):
         rendered_phases: List[ListItem] = []
-        phases_by_type = {p['phase_template']['type']: p for p in phases}
+        phases_by_type = {p["phase_template"]["type"]: p for p in phases}
         for phase_meta in PROJECT_PHASES_META.values():
             phase = phases_by_type[phase_meta.type]
             title = phase_titles[phase_meta.type]
@@ -2298,7 +2318,7 @@ class ProjectPage(Component):
                 ListItem(
                     value=title,
                     link=f"/projects/{project['id']}/phases/{phase['phase_template']['type']}",
-                )
+                ),
             )
 
         redirect_url = f"/projects/{project['id']}"
@@ -2402,9 +2422,11 @@ class ProjectPage(Component):
         {% endcomponent %}
     """
 
+
 #####################################
 # PROJECT_LAYOUT_TABBED
 #####################################
+
 
 class ProjectLayoutData(NamedTuple):
     request: HttpRequest
@@ -2540,9 +2562,11 @@ class ProjectLayoutTabbed(Component):
         {% endcomponent %}
     """
 
+
 #####################################
 # LAYOUT
 #####################################
+
 
 class LayoutData(NamedTuple):
     request: HttpRequest
@@ -2653,12 +2677,14 @@ class Layout(Component):
 # RENDER_CONTEXT_PROVIDER
 #####################################
 
+
 class RenderContext(NamedTuple):
     """
     Data that's commonly available in all template rendering.
 
     In templates, we can assume that the data defined here is ALWAYS defined.
     """
+
     request: HttpRequest
     user: User
     csrf_token: str
@@ -2694,9 +2720,11 @@ class RenderContextProvider(Component):
         {% endprovide %}
     """
 
+
 #####################################
 # BASE
 #####################################
+
 
 @register("Base")
 class Base(Component):
@@ -2989,9 +3017,11 @@ class Base(Component):
         };
     """
 
+
 #####################################
 # SIDEBAR
 #####################################
+
 
 class SidebarItem(NamedTuple):
     name: str
@@ -3017,7 +3047,7 @@ def gen_sidebar_menu_items(active_projects: List[Project]) -> List[SidebarItem]:
             href="/projects",
             children=[
                 SidebarItem(
-                    name=project['name'],
+                    name=project["name"],
                     icon=None,
                     href=f"/projects/{project['id']}",
                 )
@@ -3160,9 +3190,11 @@ class Sidebar(Component):
         </div>
     """
 
+
 #####################################
 # NAVBAR
 #####################################
+
 
 @register("Navbar")
 class Navbar(Component):
@@ -3212,9 +3244,11 @@ class Navbar(Component):
         </div>
     """  # noqa: E501
 
+
 #####################################
 # DIALOG
 #####################################
+
 
 def construct_btn_onclick(model: str, btn_on_click: Optional[str]):
     """
@@ -3422,9 +3456,11 @@ class Dialog(Component):
         </div>
     """  # noqa: E501
 
+
 #####################################
 # TAGS
 #####################################
+
 
 class TagEntry(NamedTuple):
     tag: str
@@ -3445,7 +3481,7 @@ class Tags(Component):
         tag_type: str,
         js_props: dict,
         editable: bool = True,
-        max_width: Union[int, str] = '300px',
+        max_width: Union[int, str] = "300px",
         attrs: Optional[dict] = None,
     ):
         all_tags = TAG_TYPE_META[tag_type.upper()].allowed_values  # type: ignore[index]
@@ -3654,9 +3690,11 @@ class Tags(Component):
         });
     """
 
+
 #####################################
 # FORM
 #####################################
+
 
 @register("Form")
 class Form(Component):
@@ -3664,7 +3702,7 @@ class Form(Component):
         self,
         /,
         *,
-        type: Literal["table", "paragraph", "ul", None] = None,
+        type: Literal["table", "paragraph", "ul", None] = None,  # noqa: A002
         editable: bool = True,
         method: str = "post",
         # Submit btn
@@ -3830,15 +3868,15 @@ class Form(Component):
         });
     """
 
+
 #####################################
 # BREADCRUMBS
 #####################################
 
+
 @dataclass(frozen=True)
 class Breadcrumb:
-    """
-    Single breadcrumb item used with the `breadcrumb` components.
-    """
+    """Single breadcrumb item used with the `breadcrumb` components."""
 
     value: Any
     """Value of the menu item to render."""
@@ -3958,7 +3996,7 @@ class Bookmarks(Component):
         attachment_data: List[BookmarkItem] = []
 
         for bookmark in bookmarks:
-            is_attachment = bookmark['attachment'] is not None
+            is_attachment = bookmark["attachment"] is not None
 
             if is_attachment:
                 # Send user to the Output tab in Project page and open and scroll
@@ -3972,9 +4010,9 @@ class Bookmarks(Component):
                 edit_url = f"/edit/{project_id}/bookmark/{bookmark['id']}"
 
             entry = BookmarkItem(
-                text=bookmark['text'],
-                url=bookmark['url'],
-                id=bookmark['id'],
+                text=bookmark["text"],
+                url=bookmark["url"],
+                id=bookmark["id"],
                 edit_url=edit_url,
             )
 
@@ -4129,9 +4167,11 @@ class Bookmarks(Component):
         });
     """
 
+
 #####################################
 # BOOKMARK
 #####################################
+
 
 class BookmarkItem(NamedTuple):
     id: int
@@ -4217,9 +4257,11 @@ class Bookmark(Component):
         });
     """
 
+
 #####################################
 # LIST
 #####################################
+
 
 @dataclass(frozen=True)
 class ListItem:
@@ -4287,9 +4329,11 @@ class ListComponent(Component):
         </ul>
     """  # noqa: E501
 
+
 #####################################
 # TABS
 #####################################
+
 
 class TabEntry(NamedTuple):
     header: str
@@ -4519,7 +4563,7 @@ class TabItem(Component):
             raise RuntimeError(
                 f"Component '{self.name}' was called with no parent Tabs component. "
                 f"Either wrap '{self.name}' in Tabs component, or check if the component "
-                f"is not a descendant of another instance of '{self.name}'"
+                f"is not a descendant of another instance of '{self.name}'",
             )
         parent_tabs = tab_ctx.tabs
 
@@ -4532,11 +4576,13 @@ class TabItem(Component):
 
     def on_render_after(self, context, template, content, error=None) -> None:
         parent_tabs: List[dict] = context["parent_tabs"]
-        parent_tabs.append({
-            "header": context["header"],
-            "disabled": context["disabled"],
-            "content": mark_safe(content.strip()),
-        })
+        parent_tabs.append(
+            {
+                "header": context["header"],
+                "disabled": context["disabled"],
+                "content": mark_safe(content.strip()),
+            },
+        )
 
     template: types.django_html = """
         {% provide "_tab" tabs=empty_tabs enabled=False %}
@@ -4623,6 +4669,7 @@ class TabsStatic(Component):
 # PROJECT_INFO
 #####################################
 
+
 class ProjectInfoEntry(NamedTuple):
     title: str
     value: str
@@ -4655,9 +4702,9 @@ class ProjectInfo(Component):
         ]
 
         project_info = [
-            ProjectInfoEntry("Org", project['organization']['name']),
+            ProjectInfoEntry("Org", project["organization"]["name"]),
             ProjectInfoEntry("Duration", f"{project['start_date']} - {project['end_date']}"),
-            ProjectInfoEntry("Status", project['status']),
+            ProjectInfoEntry("Status", project["status"]),
             ProjectInfoEntry("Tags", ", ".join(project_tags) or "-"),
         ]
 
@@ -4781,21 +4828,19 @@ class ProjectInfo(Component):
         </div>
     """
 
+
 #####################################
 # PROJECT_NOTES
 #####################################
 
+
 def _make_comments_data(note: ProjectNote, comment: ProjectNoteComment):
-    modified_time_str = format_timestamp(datetime.fromisoformat(comment['modified']))
-    formatted_modified_by = (
-        modified_time_str
-        + " "
-        + comment['modified_by']['name']
-    )
+    modified_time_str = format_timestamp(datetime.fromisoformat(comment["modified"]))
+    formatted_modified_by = modified_time_str + " " + comment["modified_by"]["name"]
 
     return {
         "timestamp": formatted_modified_by,
-        "notes": comment['text'],
+        "notes": comment["text"],
         "edit_href": f"/update/{note['project']['id']}/note/{note['id']}/comment/{comment['id']}/",
     }
 
@@ -4806,17 +4851,17 @@ def _make_notes_data(
 ):
     notes_data: List[dict] = []
     for note in notes:
-        comments = comments_by_notes.get(note['id'], [])
+        comments = comments_by_notes.get(note["id"], [])
         comments_data = [_make_comments_data(note, comment) for comment in comments]
 
         notes_data.append(
             {
-                "text": note['text'],
-                "timestamp": note['created'],
+                "text": note["text"],
+                "timestamp": note["created"],
                 "edit_href": f"/edit/{note['project']['id']}/note/{note['id']}/",
                 "comments": comments_data,
                 "create_comment_url": f"/create/{note['project']['id']}/note/{note['id']}/",
-            }
+            },
         )
 
     return notes_data
@@ -4920,6 +4965,7 @@ class ProjectNotes(Component):
 # PROJECT_OUTPUTS_SUMMARY
 #####################################
 
+
 class AttachmentWithTags(NamedTuple):
     attachment: ProjectOutputAttachment
     tags: List[str]
@@ -4947,7 +4993,7 @@ class ProjectOutputsSummary(Component):
         editable: bool,
         phase_titles: Dict[ProjectPhaseType, str],
     ):
-        outputs_by_phase = group_by(outputs, lambda output, _: output[0]['phase']['phase_template']['type'])
+        outputs_by_phase = group_by(outputs, lambda output, _: output[0]["phase"]["phase_template"]["type"])
 
         groups: List[dict] = []
         for phase_meta in PROJECT_PHASES_META.values():
@@ -4959,7 +5005,7 @@ class ProjectOutputsSummary(Component):
                     "phase_type": phase_meta.type,
                     "outputs": phase_outputs,
                     "has_outputs": bool(phase_outputs),
-                }
+                },
             )
 
         return {
@@ -5003,24 +5049,20 @@ class ProjectOutputsSummary(Component):
 # PROJECT_STATUS_UPDATES
 #####################################
 
+
 def _make_status_update_data(status_update: ProjectStatusUpdate):
-    modified_time_str = format_timestamp(datetime.fromisoformat(status_update['modified']))
-    formatted_modified_by = (
-        modified_time_str
-        + " "
-        + status_update['modified_by']['name']
-    )
+    modified_time_str = format_timestamp(datetime.fromisoformat(status_update["modified"]))
+    formatted_modified_by = modified_time_str + " " + status_update["modified_by"]["name"]
 
     return {
         "timestamp": formatted_modified_by,
-        "text": status_update['text'],
+        "text": status_update["text"],
         "edit_href": f"/edit/{status_update['project']['id']}/status_update/{status_update['id']}",
     }
 
 
 @register("ProjectStatusUpdates")
 class ProjectStatusUpdates(Component):
-
     def get_context_data(
         self,
         /,
@@ -5125,14 +5167,14 @@ class ProjectUsers(Component):
     ):
         roles_table_rows = []
         for role in roles_with_users:
-            user = role['user']
+            user = role["user"]
 
             if editable:
                 delete_action = ProjectUserAction.render(
                     kwargs={
-                        "user_name": user['name'],
+                        "user_name": user["name"],
                         "project_id": project_id,
-                        "role_id": role['id'],
+                        "role_id": role["id"],
                     },
                     deps_strategy="ignore",
                 )
@@ -5142,27 +5184,20 @@ class ProjectUsers(Component):
             roles_table_rows.append(
                 create_table_row(
                     cols={
-                        "name": TableCell(user['name']),
-                        "role": TableCell(role['name']),
+                        "name": TableCell(user["name"]),
+                        "role": TableCell(role["name"]),
                         "delete": delete_action,
-                    }
-                )
+                    },
+                ),
             )
 
         submit_url = f"/submit/{project_id}/role/create"
         project_url = f"/project/{project_id}"
 
-        if available_roles:
-            available_role_choices = [
-                (role, role) for role in available_roles
-            ]
-        else:
-            available_role_choices = []
+        available_role_choices = [(role, role) for role in available_roles] if available_roles else []
 
         if available_users:
-            available_user_choices = [
-                (str(user['id']), user['name']) for user in available_users
-            ]
+            available_user_choices = [(str(user["id"]), user["name"]) for user in available_users]
         else:
             available_user_choices = []
 
@@ -5264,13 +5299,14 @@ class ProjectUsers(Component):
         });
     """
 
+
 #####################################
 # PROJECT_USER_ACTION
 #####################################
 
+
 @register("ProjectUserAction")
 class ProjectUserAction(Component):
-
     def get_context_data(
         self,
         /,
@@ -5308,6 +5344,7 @@ class ProjectUserAction(Component):
         </div>
     """
 
+
 #####################################
 # PROJECT_OUTPUTS
 #####################################
@@ -5315,7 +5352,6 @@ class ProjectUserAction(Component):
 
 @register("ProjectOutputs")
 class ProjectOutputs(Component):
-
     def get_context_data(
         self,
         /,
@@ -5331,11 +5367,13 @@ class ProjectOutputs(Component):
 
             attach_data: List[RenderedAttachment] = []
             for attachment in attachments:
-                attach_data.append(RenderedAttachment(
-                    url=attachment[0]['url'],
-                    text=attachment[0]['text'],
-                    tags=attachment[1],
-                ))
+                attach_data.append(
+                    RenderedAttachment(
+                        url=attachment[0]["url"],
+                        text=attachment[0]["text"],
+                        tags=attachment[1],
+                    ),
+                )
 
             update_output_url = "/update"
 
@@ -5349,18 +5387,16 @@ class ProjectOutputs(Component):
                         phase_url=phase_url,
                         attachments=[
                             {
-                                "url": d.attachment['url'],
-                                "text": d.attachment['text'],
+                                "url": d.attachment["url"],
+                                "text": d.attachment["text"],
                                 "tags": d.tags,
                             }
                             for d in attachments
                         ],
-                    )
+                    ),
                 )
 
-            has_missing_deps = any(
-                [not output['completed'] for output, _ in dependencies]
-            )
+            has_missing_deps = any(not output["completed"] for output, _ in dependencies)
 
             outputs_data.append(
                 RenderedProjectOutput(
@@ -5372,7 +5408,7 @@ class ProjectOutputs(Component):
                     },
                     attachments=attach_data,
                     update_output_url=update_output_url,
-                )
+                ),
             )
 
         return {
@@ -5421,9 +5457,11 @@ class ProjectOutputs(Component):
         </div>
     """
 
+
 #####################################
 # PROJECT_OUTPUT_BADGE
 #####################################
+
 
 @register("ProjectOutputBadge")
 class ProjectOutputBadge(Component):
@@ -5476,9 +5514,11 @@ class ProjectOutputBadge(Component):
         </span>
     """  # noqa: E501
 
+
 #####################################
 # PROJECT_OUTPUT_DEPENDENCY
 #####################################
+
 
 @register("ProjectOutputDependency")
 class ProjectOutputDependency(Component):
@@ -5578,9 +5618,11 @@ class ProjectOutputDependency(Component):
         });
     """
 
+
 #####################################
 # PROJECT_OUTPUT_ATTACHMENTS
 #####################################
+
 
 class ProjectOutputAttachmentsJsProps(TypedDict):
     attachments: str
@@ -6007,6 +6049,7 @@ class ProjectOutputForm(Component):
 # The section below is NOT included.
 
 from django_components.testing import djc_test  # noqa: E402
+
 
 @djc_test
 def test_render(snapshot):

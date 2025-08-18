@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Type
+from typing import Any, List, Optional, Type
 
 import griffe
 from mkdocs_util import get_mkdocstrings_plugin_handler_options, import_object, load_config
@@ -18,7 +18,7 @@ is_skip_docstring: bool = mkdocstrings_config.get("show_if_no_docstring", "false
 class RuntimeBasesExtension(griffe.Extension):
     """Griffe extension that lists class bases."""
 
-    def on_class_instance(self, cls: griffe.Class, **kwargs) -> None:
+    def on_class_instance(self, cls: griffe.Class, **_kwargs: Any) -> None:
         if is_skip_docstring and cls.docstring is None:
             return
 
@@ -37,7 +37,7 @@ class RuntimeBasesExtension(griffe.Extension):
 class SourceCodeExtension(griffe.Extension):
     """Griffe extension that adds link to the source code at the end of the docstring."""
 
-    def on_instance(self, obj: griffe.Object, **kwargs) -> None:
+    def on_instance(self, obj: griffe.Object, **_kwargs: Any) -> None:
         if is_skip_docstring and obj.docstring is None:
             return
 
@@ -46,7 +46,7 @@ class SourceCodeExtension(griffe.Extension):
         obj.docstring.value = html + obj.docstring.value
 
 
-def _format_source_code_html(relative_filepath: Path, lineno: Optional[int]):
+def _format_source_code_html(relative_filepath: Path, lineno: Optional[int]) -> str:
     # Remove trailing slash and whitespace
     repo_url = load_config()["repo_url"].strip("/ ")
     branch_path = f"tree/{SOURCE_CODE_GIT_BRANCH}"

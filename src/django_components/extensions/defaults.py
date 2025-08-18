@@ -145,8 +145,6 @@ class ComponentDefaults(ExtensionComponentConfig):
     ```
     """
 
-    pass
-
 
 class DefaultsExtension(ComponentExtension):
     """

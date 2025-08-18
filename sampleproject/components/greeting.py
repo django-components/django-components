@@ -1,3 +1,5 @@
+from django.http import HttpRequest, HttpResponse
+
 from django_components import Component, register, types
 
 
@@ -26,7 +28,7 @@ class Greeting(Component):
         return {"name": kwargs["name"]}
 
     class View:
-        def get(self, request, *args, **kwargs):
+        def get(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
             slots = {"message": "Hello, world!"}
             return Greeting.render_to_response(
                 request=request,

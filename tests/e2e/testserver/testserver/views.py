@@ -1,11 +1,14 @@
+from typing import TYPE_CHECKING
+
 from django.http import HttpResponse
 from django.template import Context, Template
 from testserver.components import FragComp, FragMedia
 
-from django_components import types
+if TYPE_CHECKING:
+    from django_components import types
 
 
-def single_component_view(request):
+def single_component_view(_request):
     template_str: types.django_html = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -27,7 +30,7 @@ def single_component_view(request):
     return HttpResponse(rendered)
 
 
-def multiple_components_view(request):
+def multiple_components_view(_request):
     template_str: types.django_html = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -50,7 +53,7 @@ def multiple_components_view(request):
     return HttpResponse(rendered)
 
 
-def check_js_order_in_js_view(request):
+def check_js_order_in_js_view(_request):
     template_str: types.django_html = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -74,7 +77,7 @@ def check_js_order_in_js_view(request):
     return HttpResponse(rendered)
 
 
-def check_js_order_in_media_view(request):
+def check_js_order_in_media_view(_request):
     template_str: types.django_html = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -98,7 +101,7 @@ def check_js_order_in_media_view(request):
     return HttpResponse(rendered)
 
 
-def check_js_order_vars_not_available_before_view(request):
+def check_js_order_vars_not_available_before_view(_request):
     template_str: types.django_html = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -170,8 +173,8 @@ def fragment_base_js_view(request):
         Context(
             {
                 "frag": frag,
-            }
-        )
+            },
+        ),
     )
     return HttpResponse(rendered)
 
@@ -283,13 +286,12 @@ def fragment_view(request):
     fragment_type = request.GET["frag"]
     if fragment_type == "comp":
         return FragComp.render_to_response(deps_strategy="fragment")
-    elif fragment_type == "media":
+    if fragment_type == "media":
         return FragMedia.render_to_response(deps_strategy="fragment")
-    else:
-        raise ValueError("Invalid fragment type")
+    raise ValueError("Invalid fragment type")
 
 
-def alpine_in_head_view(request):
+def alpine_in_head_view(_request):
     template_str: types.django_html = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -309,7 +311,7 @@ def alpine_in_head_view(request):
     return HttpResponse(rendered)
 
 
-def alpine_in_body_view(request):
+def alpine_in_body_view(_request):
     template_str: types.django_html = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -330,7 +332,7 @@ def alpine_in_body_view(request):
 
 
 # Same as before, but Alpine component defined in Component.js
-def alpine_in_body_view_2(request):
+def alpine_in_body_view_2(_request):
     template_str: types.django_html = """
         {% load component_tags %}
         <!DOCTYPE html>
@@ -350,7 +352,7 @@ def alpine_in_body_view_2(request):
     return HttpResponse(rendered)
 
 
-def alpine_in_body_vars_not_available_before_view(request):
+def alpine_in_body_vars_not_available_before_view(_request):
     template_str: types.django_html = """
         {% load component_tags %}
         <!DOCTYPE html>

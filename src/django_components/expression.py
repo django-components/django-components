@@ -81,18 +81,18 @@ class DynamicFilterExpression:
             # to avoid it being stringified
             if isinstance(node, VariableNode):
                 return node.filter_expression.resolve(context)
-            else:
-                # For any other tags `{% %}`, we're at a mercy of the authors, and
-                # we don't know if the result comes out stringified or not.
-                return node.render(context)
-        else:
-            # Lastly, if there's multiple nodes, we render it to a string
-            #
-            # NOTE: When rendering a NodeList, it expects that each node is a string.
-            # However, we want to support tags that return non-string results, so we can pass
-            # them as inputs to components. So we wrap the nodes in `StringifiedNode`
-            nodelist = NodeList(StringifiedNode(node) for node in self.nodelist)
-            return nodelist.render(context)
+
+            # For any other tags `{% %}`, we're at a mercy of the authors, and
+            # we don't know if the result comes out stringified or not.
+            return node.render(context)
+
+        # Lastly, if there's multiple nodes, we render it to a string
+        #
+        # NOTE: When rendering a NodeList, it expects that each node is a string.
+        # However, we want to support tags that return non-string results, so we can pass
+        # them as inputs to components. So we wrap the nodes in `StringifiedNode`
+        nodelist = NodeList(StringifiedNode(node) for node in self.nodelist)
+        return nodelist.render(context)
 
 
 class StringifiedNode(Node):
@@ -127,23 +127,20 @@ DYNAMIC_EXPR_RE = re.compile(
         comment_tag=r"(?:\{#.*?#\})",
         start_quote=r"(?P<quote>['\"])",  # NOTE: Capture group so we check for the same quote at the end
         end_quote=r"(?P=quote)",
-    )
+    ),
 )
 
 
 def is_dynamic_expression(value: Any) -> bool:
     # NOTE: Currently dynamic expression need at least 6 characters
     # for the opening and closing tags, and quotes, e.g. `"`, `{%`, `%}` in `" some text {% ... %}"`
-    MIN_EXPR_LEN = 6
+    MIN_EXPR_LEN = 6  # noqa: N806
 
     if not isinstance(value, str) or not value or len(value) < MIN_EXPR_LEN:
         return False
 
     # Is not wrapped in quotes, or does not contain any tags
-    if not DYNAMIC_EXPR_RE.match(value):
-        return False
-
-    return True
+    return bool(DYNAMIC_EXPR_RE.match(value))
 
 
 # TODO - Move this out into a plugin?
@@ -200,8 +197,9 @@ def process_aggregate_kwargs(params: List["TagParam"]) -> List["TagParam"]:
     This provides sufficient flexiblity to make it easy for component users to provide
     "fallthrough attributes", and sufficiently easy for component authors to process
     that input while still being able to provide their own keys.
+
     """
-    from django_components.util.template_tag import TagParam
+    from django_components.util.template_tag import TagParam  # noqa: PLC0415
 
     _check_kwargs_for_agg_conflict(params)
 
@@ -233,7 +231,7 @@ def process_aggregate_kwargs(params: List["TagParam"]) -> List["TagParam"]:
         if key in seen_keys:
             raise TemplateSyntaxError(
                 f"Received argument '{key}' both as a regular input ({key}=...)"
-                f" and as an aggregate dict ('{key}:key=...'). Must be only one of the two"
+                f" and as an aggregate dict ('{key}:key=...'). Must be only one of the two",
             )
         processed_params.append(TagParam(key=key, value=val))
 
@@ -256,7 +254,7 @@ def _check_kwargs_for_agg_conflict(params: List["TagParam"]) -> None:
         ):  # fmt: skip
             raise TemplateSyntaxError(
                 f"Received argument '{param.key}' both as a regular input ({param.key}=...)"
-                f" and as an aggregate dict ('{param.key}:key=...'). Must be only one of the two"
+                f" and as an aggregate dict ('{param.key}:key=...'). Must be only one of the two",
             )
 
         if is_agg_kwarg:

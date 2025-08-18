@@ -1,4 +1,4 @@
-"""
+r"""
 Parser for Django template.
 
 The parser reads a template file (usually HTML, but not necessarily), which may contain
@@ -83,8 +83,7 @@ def parse_template(text: str) -> List[Token]:
             if token.token_type == TokenType.BLOCK and ("'" in token.contents or '"' in token.contents):
                 broken_token = token
                 break
-            else:
-                resolved_tokens.append(token)
+            resolved_tokens.append(token)
 
         # If we found a broken token, we switch to our slow parser
         if broken_token is not None:
@@ -110,8 +109,8 @@ def _detailed_tag_parser(text: str, lineno: int, start_index: int) -> Token:
     result_content: List[str] = []
 
     # Pre-compute common substrings
-    QUOTE_CHARS = ("'", '"')
-    QUOTE_OR_PERCENT = (*QUOTE_CHARS, "%")
+    QUOTE_CHARS = ("'", '"')  # noqa: N806
+    QUOTE_OR_PERCENT = (*QUOTE_CHARS, "%")  # noqa: N806
 
     def take_char() -> str:
         nonlocal index
@@ -192,11 +191,10 @@ def _detailed_tag_parser(text: str, lineno: int, start_index: int) -> Token:
                 take_char()  # %
                 take_char()  # }
                 break
-            else:
-                # False alarm, just a string
-                content = take_until_any(QUOTE_CHARS)
-                result_content.append(content)
-                continue
+            # False alarm, just a string
+            content = take_until_any(QUOTE_CHARS)
+            result_content.append(content)
+            continue
 
         # Take regular content until we hit a quote or potential closing tag
         content = take_until_any(QUOTE_OR_PERCENT)

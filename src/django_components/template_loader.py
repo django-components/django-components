@@ -1,6 +1,4 @@
-"""
-Template loader that loads templates from each Django app's "components" directory.
-"""
+"""Template loader that loads templates from each Django app's "components" directory."""
 
 from pathlib import Path
 from typing import List

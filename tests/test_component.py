@@ -29,9 +29,9 @@ from django_components import (
     types,
 )
 from django_components.template import _get_component_template
+from django_components.testing import djc_test
 from django_components.urls import urlpatterns as dc_urlpatterns
 
-from django_components.testing import djc_test
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -44,11 +44,11 @@ class CustomClient(Client):
 
         if urlpatterns:
             urls_module = types.ModuleType("urls")
-            urls_module.urlpatterns = urlpatterns + dc_urlpatterns  # type: ignore
+            urls_module.urlpatterns = urlpatterns + dc_urlpatterns  # type: ignore[attr-defined]
             settings.ROOT_URLCONF = urls_module
         else:
             settings.ROOT_URLCONF = __name__
-        settings.SECRET_KEY = "secret"  # noqa
+        settings.SECRET_KEY = "secret"  # noqa: S105
         super().__init__(*args, **kwargs)
 
 
@@ -294,6 +294,7 @@ class TestComponentLegacyApi:
             """,
         )
 
+
 @djc_test
 class TestComponent:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -365,19 +366,21 @@ class TestComponent:
                         "builtins": [
                             "django_components.templatetags.component_tags",
                         ],
-                        'loaders': [
-                            ('django.template.loaders.cached.Loader', [
-
-                                # Default Django loader
-                                'django.template.loaders.filesystem.Loader',
-                                # Including this is the same as APP_DIRS=True
-                                'django.template.loaders.app_directories.Loader',
-                                # Components loader
-                                'django_components.template_loader.Loader',
-                            ]),
+                        "loaders": [
+                            (
+                                "django.template.loaders.cached.Loader",
+                                [
+                                    # Default Django loader
+                                    "django.template.loaders.filesystem.Loader",
+                                    # Including this is the same as APP_DIRS=True
+                                    "django.template.loaders.app_directories.Loader",
+                                    # Components loader
+                                    "django_components.template_loader.Loader",
+                                ],
+                            ),
                         ],
                     },
-                }
+                },
             ],
         },
     )
@@ -398,8 +401,8 @@ class TestComponent:
                     "variable": kwargs.get("variable", None),
                 }
 
-        SimpleComponent1.template  # Triggers template loading
-        SimpleComponent2.template  # Triggers template loading
+        _ = SimpleComponent1.template  # Triggers template loading
+        _ = SimpleComponent2.template  # Triggers template loading
 
         # Both components have their own Template instance, but they point to the same template file.
         assert isinstance(SimpleComponent1._template, Template)
@@ -692,7 +695,7 @@ class TestComponentRenderAPI:
 
         rendered = Outer.render()
 
-        assert rendered == 'hello'
+        assert rendered == "hello"
 
         assert isinstance(comp, TestComponent)
 
@@ -706,9 +709,9 @@ class TestComponentRenderAPI:
         assert comp.node.template_component == Outer
 
         if os.name == "nt":
-            assert comp.node.template_name.endswith("tests\\test_component.py::Outer")  # type: ignore
+            assert comp.node.template_name.endswith("tests\\test_component.py::Outer")  # type: ignore[union-attr]
         else:
-            assert comp.node.template_name.endswith("tests/test_component.py::Outer")  # type: ignore
+            assert comp.node.template_name.endswith("tests/test_component.py::Outer")  # type: ignore[union-attr]
 
     def test_metadata__python(self):
         comp: Any = None
@@ -734,7 +737,7 @@ class TestComponentRenderAPI:
             registered_name="test",
         )
 
-        assert rendered == 'hello'
+        assert rendered == "hello"
 
         assert isinstance(comp, TestComponent)
 
@@ -1463,7 +1466,7 @@ class TestComponentRender:
             TypeError,
             match=re.escape(
                 "An error occured while rendering components Root > parent > provider > provider(slot:content) > broken:\n"  # noqa: E501
-                "tuple indices must be integers or slices, not str"
+                "tuple indices must be integers or slices, not str",
             ),
         ):
             Root.render()
@@ -1810,40 +1813,41 @@ class TestComponentHook:
         parametrize=(
             ["template", "action", "method"],
             [
+                # on_render - return None
                 ["simple", "return_none", "on_render"],
                 ["broken", "return_none", "on_render"],
                 [None, "return_none", "on_render"],
-
+                # on_render_after - return None
                 ["simple", "return_none", "on_render_after"],
                 ["broken", "return_none", "on_render_after"],
                 [None, "return_none", "on_render_after"],
-
+                # on_render - no return
                 ["simple", "no_return", "on_render"],
                 ["broken", "no_return", "on_render"],
                 [None, "no_return", "on_render"],
-
+                # on_render_after - no return
                 ["simple", "no_return", "on_render_after"],
                 ["broken", "no_return", "on_render_after"],
                 [None, "no_return", "on_render_after"],
-
+                # on_render - raise error
                 ["simple", "raise_error", "on_render"],
                 ["broken", "raise_error", "on_render"],
                 [None, "raise_error", "on_render"],
-
+                # on_render_after - raise error
                 ["simple", "raise_error", "on_render_after"],
                 ["broken", "raise_error", "on_render_after"],
                 [None, "raise_error", "on_render_after"],
-
+                # on_render - return html
                 ["simple", "return_html", "on_render"],
                 ["broken", "return_html", "on_render"],
                 [None, "return_html", "on_render"],
-
+                # on_render_after - return html
                 ["simple", "return_html", "on_render_after"],
                 ["broken", "return_html", "on_render_after"],
                 [None, "return_html", "on_render_after"],
             ],
-            None
-        )
+            None,
+        ),
     )
     def test_result_interception(
         self,
@@ -1863,11 +1867,13 @@ class TestComponentHook:
 
         # Set template
         if template is None:
-            class Inner(Inner):  # type: ignore
+
+            class Inner(Inner):  # type: ignore  # noqa: PGH003
                 template = None
 
         elif template == "broken":
-            class Inner(Inner):  # type: ignore
+
+            class Inner(Inner):  # type: ignore  # noqa: PGH003
                 template = "{% component 'broken' / %}"
 
         elif template == "simple":
@@ -1876,16 +1882,18 @@ class TestComponentHook:
         # Set `on_render` behavior
         if method == "on_render":
             if action == "return_none":
-                class Inner(Inner):  # type: ignore
+
+                class Inner(Inner):  # type: ignore  # noqa: PGH003
                     def on_render(self, context: Context, template: Optional[Template]):
                         if template is None:
                             yield None
                         else:
                             html, error = yield template.render(context)
-                        return None
+                        return None  # noqa: PLR1711
 
             elif action == "no_return":
-                class Inner(Inner):  # type: ignore
+
+                class Inner(Inner):  # type: ignore  # noqa: PGH003
                     def on_render(self, context: Context, template: Optional[Template]):
                         if template is None:
                             yield None
@@ -1893,7 +1901,8 @@ class TestComponentHook:
                             html, error = yield template.render(context)
 
             elif action == "raise_error":
-                class Inner(Inner):  # type: ignore
+
+                class Inner(Inner):  # type: ignore  # noqa: PGH003
                     def on_render(self, context: Context, template: Optional[Template]):
                         if template is None:
                             yield None
@@ -1902,37 +1911,68 @@ class TestComponentHook:
                         raise ValueError("ERROR_FROM_ON_RENDER")
 
             elif action == "return_html":
-                class Inner(Inner):  # type: ignore
+
+                class Inner(Inner):  # type: ignore  # noqa: PGH003
                     def on_render(self, context: Context, template: Optional[Template]):
                         if template is None:
                             yield None
                         else:
                             html, error = yield template.render(context)
                         return "HTML_FROM_ON_RENDER"
+
             else:
                 raise pytest.fail(f"Unknown action: {action}")
 
         # Set `on_render_after` behavior
         elif method == "on_render_after":
             if action == "return_none":
-                class Inner(Inner):  # type: ignore
-                    def on_render_after(self, context: Context, template: Template, html: Optional[str], error: Optional[Exception]):  # noqa: E501
+
+                class Inner(Inner):  # type: ignore  # noqa: PGH003
+                    def on_render_after(
+                        self,
+                        context: Context,
+                        template: Template,
+                        html: Optional[str],
+                        error: Optional[Exception],
+                    ):
                         return None
 
             elif action == "no_return":
-                class Inner(Inner):  # type: ignore
-                    def on_render_after(self, context: Context, template: Template, html: Optional[str], error: Optional[Exception]):  # noqa: E501
+
+                class Inner(Inner):  # type: ignore  # noqa: PGH003
+                    def on_render_after(
+                        self,
+                        context: Context,
+                        template: Template,
+                        html: Optional[str],
+                        error: Optional[Exception],
+                    ):
                         pass
 
             elif action == "raise_error":
-                class Inner(Inner):  # type: ignore
-                    def on_render_after(self, context: Context, template: Template, html: Optional[str], error: Optional[Exception]):  # noqa: E501
+
+                class Inner(Inner):  # type: ignore  # noqa: PGH003
+                    def on_render_after(
+                        self,
+                        context: Context,
+                        template: Template,
+                        html: Optional[str],
+                        error: Optional[Exception],
+                    ):
                         raise ValueError("ERROR_FROM_ON_RENDER")
 
             elif action == "return_html":
-                class Inner(Inner):  # type: ignore
-                    def on_render_after(self, context: Context, template: Template, html: Optional[str], error: Optional[Exception]):  # noqa: E501
+
+                class Inner(Inner):  # type: ignore  # noqa: PGH003
+                    def on_render_after(
+                        self,
+                        context: Context,
+                        template: Template,
+                        html: Optional[str],
+                        error: Optional[Exception],
+                    ):
                         return "HTML_FROM_ON_RENDER"
+
             else:
                 raise pytest.fail(f"Unknown action: {action}")
         else:

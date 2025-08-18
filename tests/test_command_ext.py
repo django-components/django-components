@@ -5,8 +5,10 @@ from textwrap import dedent
 from unittest.mock import patch
 
 from django.core.management import call_command
+
 from django_components import CommandArg, CommandArgGroup, ComponentCommand, ComponentExtension
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -51,7 +53,7 @@ class DummyCommand(ComponentCommand):
         kwargs.pop("_command")
         kwargs.pop("_parser")
         sorted_kwargs = dict(sorted(kwargs.items()))
-        print(f"DummyCommand.handle: args={args}, kwargs={sorted_kwargs}")
+        print(f"DummyCommand.handle: args={args}, kwargs={sorted_kwargs}")  # noqa: T201
 
 
 class DummyExtension(ComponentExtension):
@@ -85,7 +87,7 @@ class TestExtensionsCommand:
                   {{list,run}}
                     list      List all extensions.
                     run       Run a command added by an extension.
-                """
+                """,
             ).lstrip()
         )
 
@@ -221,7 +223,7 @@ class TestExtensionsRunCommand:
                 subcommands:
                   {{dummy}}
                     dummy     Run commands added by the 'dummy' extension.
-                """
+                """,
             ).lstrip()
         )
 
@@ -248,7 +250,7 @@ class TestExtensionsRunCommand:
                 subcommands:
                   {{dummy_cmd}}
                     dummy_cmd  Dummy command description.
-                """
+                """,
             ).lstrip()
         )
 
@@ -275,7 +277,7 @@ class TestExtensionsRunCommand:
                 subcommands:
                   {{dummy_cmd}}
                     dummy_cmd  Dummy command description.
-                """
+                """,
             ).lstrip()
         )
 
@@ -294,7 +296,7 @@ class TestExtensionsRunCommand:
             == dedent(
                 """
                 DummyCommand.handle: args=(), kwargs={'bar': None, 'baz': None, 'foo': None, 'force_color': False, 'no_color': False, 'pythonpath': None, 'settings': None, 'skip_checks': True, 'traceback': False, 'verbosity': 1}
-                """  # noqa: E501
+                """,  # noqa: E501
             ).lstrip()
         )
 

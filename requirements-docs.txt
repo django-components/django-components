@@ -17,7 +17,6 @@
 # - mkdocstrings
 # - mkdocstrings-python
 # - pymdown-extensions
-# - black
 # - pygments
 # - pygments-djc
 # - django>=4.2
@@ -30,8 +29,6 @@ babel==2.17.0
     # via
     #   mkdocs-git-revision-date-localized-plugin
     #   mkdocs-material
-black==25.1.0
-    # via hatch.envs.docs
 bracex==2.6
     # via wcmatch
 cairocffi==1.7.1
@@ -46,7 +43,6 @@ charset-normalizer==3.4.3
     # via requests
 click==8.1.8
     # via
-    #   black
     #   mkdocs
 colorama==0.4.6
     # via
@@ -154,17 +150,13 @@ mkdocstrings==0.30.0
     #   mkdocstrings-python
 mkdocstrings-python==1.16.12
     # via hatch.envs.docs
-mypy-extensions==1.1.0
-    # via black
 packaging==25.0
     # via
-    #   black
     #   mkdocs
 paginate==0.5.7
     # via mkdocs-material
 pathspec==0.12.1
     # via
-    #   black
     #   mkdocs
 pillow==11.3.0
     # via
@@ -172,7 +164,6 @@ pillow==11.3.0
     #   mkdocs-material
 platformdirs==4.3.8
     # via
-    #   black
     #   mkdocs-get-deps
 pycparser==2.22
     # via cffi

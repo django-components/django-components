@@ -174,9 +174,10 @@ class SlotFunc(Protocol, Generic[TSlotData]):
         },
     )
     ```
+
     """
 
-    def __call__(self, ctx: SlotContext[TSlotData]) -> SlotResult: ...  # noqa E704
+    def __call__(self, ctx: SlotContext[TSlotData]) -> SlotResult: ...
 
 
 @dataclass
@@ -238,7 +239,7 @@ class Slot(Generic[TSlotData]):
 
     Read more about [Slot contents](../../concepts/fundamentals/slots#slot-contents).
     """
-    content_func: SlotFunc[TSlotData] = cast(SlotFunc[TSlotData], None)
+    content_func: SlotFunc[TSlotData] = cast("SlotFunc[TSlotData]", None)  # noqa: RUF009
     """
     The actual slot function.
 
@@ -319,7 +320,7 @@ class Slot(Generic[TSlotData]):
         # Raise if Slot received another Slot instance as `contents`,
         # because this leads to ambiguity about how to handle the metadata.
         if isinstance(self.contents, Slot):
-            raise ValueError("Slot received another Slot instance as `contents`")
+            raise TypeError("Slot received another Slot instance as `contents`")
 
         if self.content_func is None:
             self.contents, new_nodelist, self.content_func = self._resolve_contents(self.contents)
@@ -327,7 +328,7 @@ class Slot(Generic[TSlotData]):
                 self.nodelist = new_nodelist
 
         if not callable(self.content_func):
-            raise ValueError(f"Slot 'content_func' must be a callable, got: {self.content_func}")
+            raise TypeError(f"Slot 'content_func' must be a callable, got: {self.content_func}")
 
     # Allow to treat the instances as functions
     def __call__(
@@ -463,9 +464,9 @@ class SlotFallback:
     def slot_function(self, ctx: SlotContext):
         return f"Hello, {ctx.fallback}!"
     ```
-    """  # noqa: E501
+    """
 
-    def __init__(self, slot: "SlotNode", context: Context):
+    def __init__(self, slot: "SlotNode", context: Context) -> None:
         self._slot = slot
         self._context = context
 
@@ -486,12 +487,10 @@ name_escape_re = re.compile(r"[^\w]")
 
 # TODO_v1 - Remove, superseded by `Component.slots` and `component_vars.slots`
 class SlotIsFilled(dict):
-    """
-    Dictionary that returns `True` if the slot is filled (key is found), `False` otherwise.
-    """
+    """Dictionary that returns `True` if the slot is filled (key is found), `False` otherwise."""
 
     def __init__(self, fills: Dict, *args: Any, **kwargs: Any) -> None:
-        escaped_fill_names = {self._escape_slot_name(fill_name): True for fill_name in fills.keys()}
+        escaped_fill_names = {self._escape_slot_name(fill_name): True for fill_name in fills}
         super().__init__(escaped_fill_names, *args, **kwargs)
 
     def __missing__(self, key: Any) -> bool:
@@ -641,7 +640,7 @@ class SlotNode(BaseNode):
 
     tag = "slot"
     end_tag = "endslot"
-    allowed_flags = [SLOT_DEFAULT_FLAG, SLOT_REQUIRED_FLAG]
+    allowed_flags = (SLOT_DEFAULT_FLAG, SLOT_REQUIRED_FLAG)
 
     # NOTE:
     # In the current implementation, the slots are resolved only at the render time.
@@ -675,7 +674,7 @@ class SlotNode(BaseNode):
             raise TemplateSyntaxError(
                 "Encountered a SlotNode outside of a Component context. "
                 "Make sure that all {% slot %} tags are nested within {% component %} tags.\n"
-                f"SlotNode: {self.__repr__()}"
+                f"SlotNode: {self.__repr__()}",
             )
 
         # Component info
@@ -715,7 +714,7 @@ class SlotNode(BaseNode):
                     "Only one component slot may be marked as 'default', "
                     f"found '{default_slot_name}' and '{slot_name}'. "
                     f"To fix, check template '{component_ctx.template_name}' "
-                    f"of component '{component_name}'."
+                    f"of component '{component_name}'.",
                 )
 
             if default_slot_name is None:
@@ -730,7 +729,7 @@ class SlotNode(BaseNode):
             ):
                 raise TemplateSyntaxError(
                     f"Slot '{slot_name}' of component '{component_name}' was filled twice: "
-                    "once explicitly and once implicitly as 'default'."
+                    "once explicitly and once implicitly as 'default'.",
                 )
 
         # If slot is marked as 'default', we use the name 'default' for the fill,
@@ -798,7 +797,8 @@ class SlotNode(BaseNode):
             # To achieve that, we first find the left-most `hui3q2` (index 2), and then find the `ax3c89`
             # in the list of dicts before it (index 1).
             curr_index = get_index(
-                context.dicts, lambda d: _COMPONENT_CONTEXT_KEY in d and d[_COMPONENT_CONTEXT_KEY] == component_id
+                context.dicts,
+                lambda d: _COMPONENT_CONTEXT_KEY in d and d[_COMPONENT_CONTEXT_KEY] == component_id,
             )
             parent_index = get_last_index(context.dicts[:curr_index], lambda d: _COMPONENT_CONTEXT_KEY in d)
 
@@ -808,7 +808,8 @@ class SlotNode(BaseNode):
             # Looking left finds nothing. In this case, look for the first component layer to the right.
             if parent_index is None and curr_index + 1 < len(context.dicts):
                 parent_index = get_index(
-                    context.dicts[curr_index + 1 :], lambda d: _COMPONENT_CONTEXT_KEY in d  # noqa: E203
+                    context.dicts[curr_index + 1 :],
+                    lambda d: _COMPONENT_CONTEXT_KEY in d,
                 )
                 if parent_index is not None:
                     parent_index = parent_index + curr_index + 1
@@ -914,7 +915,7 @@ class SlotNode(BaseNode):
         # {% endprovide %}
         for key, value in context.flatten().items():
             if key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
-                extra_context[key] = value
+                extra_context[key] = value  # noqa: PERF403
 
         fallback = SlotFallback(self, context)
 
@@ -982,10 +983,9 @@ class SlotNode(BaseNode):
         registry_settings = component.registry.settings
         if registry_settings.context_behavior == ContextBehavior.DJANGO:
             return context
-        elif registry_settings.context_behavior == ContextBehavior.ISOLATED:
+        if registry_settings.context_behavior == ContextBehavior.ISOLATED:
             return outer_context if outer_context is not None else Context()
-        else:
-            raise ValueError(f"Unknown value for context_behavior: '{registry_settings.context_behavior}'")
+        raise ValueError(f"Unknown value for context_behavior: '{registry_settings.context_behavior}'")
 
 
 class FillNode(BaseNode):
@@ -1138,7 +1138,7 @@ class FillNode(BaseNode):
 
     tag = "fill"
     end_tag = "endfill"
-    allowed_flags = []
+    allowed_flags = ()
 
     def render(
         self,
@@ -1155,15 +1155,15 @@ class FillNode(BaseNode):
         if fallback is not None and default is not None:
             raise TemplateSyntaxError(
                 f"Fill tag received both 'default' and '{FILL_FALLBACK_KWARG}' kwargs. "
-                f"Use '{FILL_FALLBACK_KWARG}' instead."
+                f"Use '{FILL_FALLBACK_KWARG}' instead.",
             )
-        elif fallback is None and default is not None:
+        if fallback is None and default is not None:
             fallback = default
 
         if not _is_extracting_fill(context):
             raise TemplateSyntaxError(
                 "FillNode.render() (AKA {% fill ... %} block) cannot be rendered outside of a Component context. "
-                "Make sure that the {% fill %} tags are nested within {% component %} tags."
+                "Make sure that the {% fill %} tags are nested within {% component %} tags.",
             )
 
         # Validate inputs
@@ -1175,31 +1175,31 @@ class FillNode(BaseNode):
                 raise TemplateSyntaxError(f"Fill tag '{FILL_DATA_KWARG}' kwarg must resolve to a string, got {data}")
             if not is_identifier(data):
                 raise RuntimeError(
-                    f"Fill tag kwarg '{FILL_DATA_KWARG}' does not resolve to a valid Python identifier, got '{data}'"
+                    f"Fill tag kwarg '{FILL_DATA_KWARG}' does not resolve to a valid Python identifier, got '{data}'",
                 )
 
         if fallback is not None:
             if not isinstance(fallback, str):
                 raise TemplateSyntaxError(
-                    f"Fill tag '{FILL_FALLBACK_KWARG}' kwarg must resolve to a string, got {fallback}"
+                    f"Fill tag '{FILL_FALLBACK_KWARG}' kwarg must resolve to a string, got {fallback}",
                 )
             if not is_identifier(fallback):
                 raise RuntimeError(
                     f"Fill tag kwarg '{FILL_FALLBACK_KWARG}' does not resolve to a valid Python identifier,"
-                    f" got '{fallback}'"
+                    f" got '{fallback}'",
                 )
 
         # data and fallback cannot be bound to the same variable
         if data and fallback and data == fallback:
             raise RuntimeError(
                 f"Fill '{name}' received the same string for slot fallback ({FILL_FALLBACK_KWARG}=...)"
-                f" and slot data ({FILL_DATA_KWARG}=...)"
+                f" and slot data ({FILL_DATA_KWARG}=...)",
             )
 
         if body is not None and self.contents:
             raise TemplateSyntaxError(
                 f"Fill '{name}' received content both through '{FILL_BODY_KWARG}' kwarg and '{{% fill %}}' body. "
-                f"Use only one method."
+                f"Use only one method.",
             )
 
         fill_data = FillWithData(
@@ -1229,7 +1229,7 @@ class FillNode(BaseNode):
         if captured_fills is None:
             raise RuntimeError(
                 "FillNode.render() (AKA {% fill ... %} block) cannot be rendered outside of a Component context. "
-                "Make sure that the {% fill %} tags are nested within {% component %} tags."
+                "Make sure that the {% fill %} tags are nested within {% component %} tags.",
             )
 
         # To allow using variables which were defined within the template and to which
@@ -1282,9 +1282,9 @@ class FillNode(BaseNode):
         # ]
         for layer in context.dicts:
             if "forloop" in layer:
-                layer = layer.copy()
-                layer["forloop"] = layer["forloop"].copy()
-                data.extra_context.update(layer)
+                layer_copy = layer.copy()
+                layer_copy["forloop"] = layer_copy["forloop"].copy()
+                data.extra_context.update(layer_copy)
 
         captured_fills.append(data)
 
@@ -1472,11 +1472,11 @@ def _extract_fill_content(
     if not captured_fills:
         return False
 
-    elif content:
+    if content:
         raise TemplateSyntaxError(
             f"Illegal content passed to component '{component_name}'. "
             "Explicit 'fill' tags cannot occur alongside other text. "
-            "The component body rendered content: {content}"
+            "The component body rendered content: {content}",
         )
 
     # Check for any duplicates
@@ -1485,7 +1485,7 @@ def _extract_fill_content(
         if fill.name in seen_names:
             raise TemplateSyntaxError(
                 f"Multiple fill tags cannot target the same slot name in component '{component_name}': "
-                f"Detected duplicate fill tag name '{fill.name}'."
+                f"Detected duplicate fill tag name '{fill.name}'.",
             )
         seen_names.add(fill.name)
 
@@ -1550,7 +1550,7 @@ def normalize_slot_fills(
         if content is None:
             continue
         # Case: Content is a string / non-slot / non-callable
-        elif not callable(content):
+        if not callable(content):
             # NOTE: `Slot.content_func` and `Slot.nodelist` will be set in `Slot.__init__()`
             slot: Slot = Slot(contents=content, component_name=component_name, slot_name=slot_name)
         # Case: Content is a callable, so either a plain function or a `Slot` instance.
@@ -1573,17 +1573,15 @@ def _nodelist_to_slot(
     fill_node: Optional[Union[FillNode, "ComponentNode"]] = None,
     extra: Optional[Dict[str, Any]] = None,
 ) -> Slot:
-    if data_var:
-        if not data_var.isidentifier():
-            raise TemplateSyntaxError(
-                f"Slot data alias in fill '{slot_name}' must be a valid identifier. Got '{data_var}'"
-            )
+    if data_var and not data_var.isidentifier():
+        raise TemplateSyntaxError(
+            f"Slot data alias in fill '{slot_name}' must be a valid identifier. Got '{data_var}'",
+        )
 
-    if fallback_var:
-        if not fallback_var.isidentifier():
-            raise TemplateSyntaxError(
-                f"Slot fallback alias in fill '{slot_name}' must be a valid identifier. Got '{fallback_var}'"
-            )
+    if fallback_var and not fallback_var.isidentifier():
+        raise TemplateSyntaxError(
+            f"Slot fallback alias in fill '{slot_name}' must be a valid identifier. Got '{fallback_var}'",
+        )
 
     # We use Template.render() to render the nodelist, so that Django correctly sets up
     # and binds the context.
@@ -1655,7 +1653,7 @@ def _nodelist_to_slot(
         return rendered
 
     return Slot(
-        content_func=cast(SlotFunc, render_func),
+        content_func=cast("SlotFunc", render_func),
         component_name=component_name,
         slot_name=slot_name,
         nodelist=nodelist,

@@ -32,9 +32,9 @@ if not settings.configured:
                 "OPTIONS": {
                     "builtins": [
                         "django_components.templatetags.component_tags",
-                    ]
+                    ],
                 },
-            }
+            },
         ],
         COMPONENTS={
             "autodiscover": False,
@@ -45,9 +45,9 @@ if not settings.configured:
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
                 "NAME": ":memory:",
-            }
+            },
         },
-        SECRET_KEY="secret",
+        SECRET_KEY="secret",  # noqa: S106
         ROOT_URLCONF="django_components.urls",
     )
 
@@ -68,10 +68,10 @@ def lazy_load_template(template: str) -> Template:
     template_hash = hash(template)
     if template_hash in templates_cache:
         return templates_cache[template_hash]
-    else:
-        template_instance = Template(template)
-        templates_cache[template_hash] = template_instance
-        return template_instance
+
+    template_instance = Template(template)
+    templates_cache[template_hash] = template_instance
+    return template_instance
 
 
 #####################################
@@ -156,7 +156,7 @@ _secondary_btn_styling = "ring-1 ring-inset"
 theme = Theme(
     default=ThemeStylingVariant(
         primary=ThemeStylingUnit(
-            color="bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition"
+            color="bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition",
         ),
         primary_disabled=ThemeStylingUnit(color="bg-blue-300 text-blue-50 focus-visible:outline-blue-600 transition"),
         secondary=ThemeStylingUnit(
@@ -268,7 +268,7 @@ class Button(Component):
         disabled: Optional[bool] = False,
         variant: Union["ThemeVariant", Literal["plain"]] = "primary",
         color: Union["ThemeColor", str] = "default",
-        type: Optional[str] = "button",
+        type: Optional[str] = "button",  # noqa: A002
         attrs: Optional[dict] = None,
     ):
         common_css = (
@@ -335,6 +335,7 @@ class Button(Component):
 # The section below is NOT included.
 
 from django_components.testing import djc_test  # noqa: E402
+
 
 @djc_test
 def test_render(snapshot):

@@ -7,15 +7,15 @@ import re
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
-from django.utils.safestring import mark_safe
 from django.template.base import NodeList, TextNode
+from django.utils.safestring import mark_safe
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
 from django_components.component import ComponentNode
 from django_components.slots import FillNode, Slot, SlotContext, SlotFallback
-
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -32,7 +32,7 @@ class TestSlot:
                 [{"context_behavior": "isolated"}, True],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_render_slot_as_func(self, components_settings, is_isolated):
         class SimpleComponent(Component):
@@ -75,7 +75,7 @@ class TestSlot:
             assert slot_data_expected == ctx.data
 
             assert isinstance(ctx.fallback, SlotFallback)
-            assert "SLOT_DEFAULT" == str(ctx.fallback).strip()
+            assert str(ctx.fallback).strip() == "SLOT_DEFAULT"
 
             return f"FROM_INSIDE_SLOT_FN | {ctx.fallback}"
 
@@ -118,7 +118,7 @@ class TestSlot:
         )
 
     def test_render_raises_on_slot_instance_in_slot_constructor(self):
-        slot: Slot = Slot(lambda ctx: "SLOT_FN")
+        slot: Slot = Slot(lambda _ctx: "SLOT_FN")
 
         with pytest.raises(
             ValueError,
@@ -156,7 +156,7 @@ class TestSlot:
             assert slot_data_expected == ctx.data
 
             assert isinstance(ctx.fallback, str)
-            assert "SLOT_DEFAULT" == ctx.fallback
+            assert ctx.fallback == "SLOT_DEFAULT"
 
             return f"FROM_INSIDE_SLOT_FN | {ctx.fallback}"
 
@@ -186,10 +186,10 @@ class TestSlot:
         )
 
     def test_render_slot_unsafe_content__func(self):
-        def slot_fn1(ctx: SlotContext):
+        def slot_fn1(_ctx: SlotContext):
             return mark_safe("<script>alert('XSS')</script>")
 
-        def slot_fn2(ctx: SlotContext):
+        def slot_fn2(_ctx: SlotContext):
             return "<script>alert('XSS')</script>"
 
         slot1: Slot = Slot(slot_fn1)
@@ -262,7 +262,7 @@ class TestSlot:
                 nonlocal captured_slots
                 captured_slots = slots
 
-        slot_func = lambda ctx: "FROM_INSIDE_SLOT"  # noqa: E731
+        slot_func = lambda _ctx: "FROM_INSIDE_SLOT"  # noqa: E731
 
         SimpleComponent.render(
             slots={"first": slot_func},
@@ -301,7 +301,7 @@ class TestSlot:
                 nonlocal captured_slots
                 captured_slots = slots
 
-        slot_func = lambda ctx: "FROM_INSIDE_SLOT"  # noqa: E731
+        slot_func = lambda _ctx: "FROM_INSIDE_SLOT"  # noqa: E731
 
         SimpleComponent.render(
             slots={"first": Slot(slot_func)},
@@ -456,7 +456,7 @@ class TestSlot:
                 nonlocal captured_slots
                 captured_slots = slots
 
-        slot_func = lambda ctx: "FROM_INSIDE_SLOT"  # noqa: E731
+        slot_func = lambda _ctx: "FROM_INSIDE_SLOT"  # noqa: E731
 
         SimpleComponent.render(
             slots={"first": slot_func},
@@ -486,7 +486,7 @@ class TestSlot:
                 nonlocal captured_slots
                 captured_slots = slots
 
-        slot_func = lambda ctx: "FROM_INSIDE_SLOT"  # noqa: E731
+        slot_func = lambda _ctx: "FROM_INSIDE_SLOT"  # noqa: E731
 
         SimpleComponent.render(
             slots={"first": Slot(slot_func, extra={"foo": "bar"}, slot_name="whoop")},
@@ -608,9 +608,9 @@ class TestSlot:
         template.render(
             Context(
                 {
-                    "my_slot": Slot(lambda ctx: "FROM_INSIDE_NAMED_SLOT", extra={"foo": "bar"}, slot_name="whoop"),
-                }
-            )
+                    "my_slot": Slot(lambda _ctx: "FROM_INSIDE_NAMED_SLOT", extra={"foo": "bar"}, slot_name="whoop"),
+                },
+            ),
         )
 
         first_slot_func = captured_slots["first"]
@@ -638,7 +638,7 @@ class TestSlot:
         """
         template = Template(template_str)
 
-        my_slot: Slot = Slot(lambda ctx: "FROM_INSIDE_NAMED_SLOT")
+        my_slot: Slot = Slot(lambda _ctx: "FROM_INSIDE_NAMED_SLOT")
         rendered: str = template.render(Context({"my_slot": my_slot}))
 
         assert rendered.strip() == "FROM_INSIDE_NAMED_SLOT"
@@ -683,7 +683,7 @@ class TestSlot:
         """
         template = Template(template_str)
 
-        my_slot: Slot = Slot(lambda ctx: "FROM_INSIDE_NAMED_SLOT")
+        my_slot: Slot = Slot(lambda _ctx: "FROM_INSIDE_NAMED_SLOT")
 
         with pytest.raises(
             TemplateSyntaxError,
@@ -693,7 +693,7 @@ class TestSlot:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_slot_call_outside_render_context(self, components_settings):
-        from django_components import register, Component
+        from django_components import Component, register
 
         seen_slots = []
 

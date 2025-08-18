@@ -1,3 +1,5 @@
+# ruff: noqa: T201
+
 import functools
 import subprocess
 import sys
@@ -54,7 +56,7 @@ def run_django_dev_server():
     start_time = time.time()
     while time.time() - start_time < 30:  # timeout after 30 seconds
         try:
-            response = requests.get(f"http://127.0.0.1:{TEST_SERVER_PORT}/poll")
+            response = requests.get(f"http://127.0.0.1:{TEST_SERVER_PORT}/poll")  # noqa: S113
             if response.status_code == 200:
                 print("Django dev server is up and running.")
                 break

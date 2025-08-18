@@ -5,7 +5,7 @@ from hashlib import md5
 from importlib import import_module
 from itertools import chain
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, TypeVar, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, TypeVar, Union, cast
 from urllib import parse
 
 from django_components.constants import UID_LENGTH
@@ -43,9 +43,7 @@ def snake_to_pascal(name: str) -> str:
 def is_identifier(value: Any) -> bool:
     if not isinstance(value, str):
         return False
-    if not value.isidentifier():
-        return False
-    return True
+    return value.isidentifier()
 
 
 def any_regex_match(string: str, patterns: List[re.Pattern]) -> bool:
@@ -58,9 +56,7 @@ def no_regex_match(string: str, patterns: List[re.Pattern]) -> bool:
 
 # See https://stackoverflow.com/a/2020083/9788634
 def get_import_path(cls_or_fn: Type[Any]) -> str:
-    """
-    Get the full import path for a class or a function, e.g. `"path.to.MyClass"`
-    """
+    """Get the full import path for a class or a function, e.g. `"path.to.MyClass"`"""
     module = cls_or_fn.__module__
     if module == "builtins":
         return cls_or_fn.__qualname__  # avoid outputs like 'builtins.str'
@@ -79,7 +75,7 @@ def get_module_info(
         else:
             try:
                 module = import_module(module_name)
-            except Exception:
+            except Exception:  # noqa: BLE001
                 module = None
     else:
         module = None
@@ -96,9 +92,9 @@ def default(val: Optional[T], default: Union[U, Callable[[], U], Type[T]], facto
     if val is not None:
         return val
     if factory:
-        default_func = cast(Callable[[], U], default)
+        default_func = cast("Callable[[], U]", default)
         return default_func()
-    return cast(U, default)
+    return cast("U", default)
 
 
 def get_index(lst: List, key: Callable[[Any], bool]) -> Optional[int]:
@@ -124,7 +120,7 @@ def is_nonempty_str(txt: Optional[str]) -> bool:
 # Convert Component class to something like `TableComp_a91d03`
 def hash_comp_cls(comp_cls: Type["Component"]) -> str:
     full_name = get_import_path(comp_cls)
-    name_hash = md5(full_name.encode()).hexdigest()[0:6]
+    name_hash = md5(full_name.encode()).hexdigest()[0:6]  # noqa: S324
     return comp_cls.__name__ + "_" + name_hash
 
 
@@ -148,9 +144,9 @@ def to_dict(data: Any) -> dict:
     """
     if isinstance(data, dict):
         return data
-    elif hasattr(data, "_asdict"):  # Case: NamedTuple
+    if hasattr(data, "_asdict"):  # Case: NamedTuple
         return data._asdict()
-    elif is_dataclass(data):  # Case: dataclass
+    if is_dataclass(data):  # Case: dataclass
         return asdict(data)  # type: ignore[arg-type]
 
     return dict(data)
@@ -176,7 +172,11 @@ def format_url(url: str, query: Optional[Dict] = None, fragment: Optional[str] =
     return parse.urlunsplit(parts._replace(query=encoded_qs, fragment=fragment_enc))
 
 
-def format_as_ascii_table(data: List[Dict[str, Any]], headers: List[str], include_headers: bool = True) -> str:
+def format_as_ascii_table(
+    data: List[Dict[str, Any]],
+    headers: Union[List[str], Tuple[str, ...], Set[str]],
+    include_headers: bool = True,
+) -> str:
     """
     Format a list of dictionaries as an ASCII table.
 
@@ -201,6 +201,7 @@ def format_as_ascii_table(data: List[Dict[str, Any]], headers: List[str], includ
     ProjectDashboard          project.components.dashboard.ProjectDashboard                 ./project/components/dashboard
     ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAction    ./project/components/dashboard_action
     ```
+
     """  # noqa: E501
     # Calculate the width of each column
     column_widths = {header: len(header) for header in headers}
@@ -221,8 +222,5 @@ def format_as_ascii_table(data: List[Dict[str, Any]], headers: List[str], includ
         data_rows.append(data_row)
 
     # Combine all parts into the final table
-    if include_headers:
-        table = "\n".join([header_row, separator] + data_rows)
-    else:
-        table = "\n".join(data_rows)
+    table = "\n".join([header_row, separator, *data_rows]) if include_headers else "\n".join(data_rows)
     return table

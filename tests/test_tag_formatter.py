@@ -6,8 +6,8 @@ from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
 from django_components.tag_formatter import ShorthandComponentFormatter
-
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -66,7 +66,7 @@ class TestComponentTag:
             """
             {% load component_tags %}
             {% component "simple" / %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(
@@ -99,7 +99,7 @@ class TestComponentTag:
             {% component "simple" %}
                 OVERRIDEN!
             {% endcomponent %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(
@@ -135,7 +135,7 @@ class TestComponentTag:
             """
             {% load component_tags %}
             {% component "simple" / %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(
@@ -173,7 +173,7 @@ class TestComponentTag:
             {% component "simple" %}
                 OVERRIDEN!
             {% endcomponent %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(
@@ -209,7 +209,7 @@ class TestComponentTag:
             """
             {% load component_tags %}
             {% simple / %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(
@@ -247,7 +247,7 @@ class TestComponentTag:
             {% simple %}
                 OVERRIDEN!
             {% endsimple %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(
@@ -285,7 +285,7 @@ class TestComponentTag:
             {% simple %}
                 OVERRIDEN!
             {% /simple %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(
@@ -321,7 +321,7 @@ class TestComponentTag:
             {% simple %}
                 OVERRIDEN!
             {% endsimple %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(
@@ -356,27 +356,26 @@ class TestComponentTag:
         },
     )
     def test_raises_on_invalid_block_end_tag(self, components_settings):
+        @register("simple")
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div>
+                    {% slot "content" default %} SLOT_DEFAULT {% endslot %}
+                </div>
+            """
+
         with pytest.raises(
             ValueError,
             match=re.escape("MultiwordBlockEndTagFormatter returned an invalid tag for end_tag: 'end simple'"),
         ):
-
-            @register("simple")
-            class SimpleComponent(Component):
-                template: types.django_html = """
-                    {% load component_tags %}
-                    <div>
-                        {% slot "content" default %} SLOT_DEFAULT {% endslot %}
-                    </div>
-                """
-
             Template(
                 """
                 {% load component_tags %}
                 {% simple %}
                     OVERRIDEN!
                 {% bar %}
-            """
+            """,
             )
 
     @djc_test(
@@ -401,7 +400,7 @@ class TestComponentTag:
             """
             {% load component_tags %}
             {% simple / %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(
@@ -421,7 +420,7 @@ class TestComponentTag:
             {% simple %}
                 OVERRIDEN!
             {% endsimple %}
-        """
+        """,
         )
         rendered = template.render(Context())
         assertHTMLEqual(

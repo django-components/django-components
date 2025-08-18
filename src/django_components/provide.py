@@ -1,5 +1,4 @@
-from collections import namedtuple
-from typing import Any, Dict, Optional
+from typing import Any, Dict, NamedTuple, Optional
 
 from django.template import Context, TemplateSyntaxError
 from django.utils.safestring import SafeString
@@ -85,7 +84,7 @@ class ProvideNode(BaseNode):
 
     tag = "provide"
     end_tag = "endprovide"
-    allowed_flags = []
+    allowed_flags = ()
 
     def render(self, context: Context, name: str, **kwargs: Any) -> SafeString:
         # NOTE: The "provided" kwargs are meant to be shared privately, meaning that components
@@ -130,7 +129,7 @@ def get_injected_context_var(
     raise KeyError(
         f"Component '{component_name}' tried to inject a variable '{key}' before it was provided."
         f" To fix this, make sure that at least one ancestor of component '{component_name}' has"
-        f" the variable '{key}' in their 'provide' attribute."
+        f" the variable '{key}' in their 'provide' attribute.",
     )
 
 
@@ -148,17 +147,17 @@ def set_provided_context_var(
     # within template.
     if not key:
         raise TemplateSyntaxError(
-            "Provide tag received an empty string. Key must be non-empty and a valid identifier."
+            "Provide tag received an empty string. Key must be non-empty and a valid identifier.",
         )
     if not key.isidentifier():
         raise TemplateSyntaxError(
-            "Provide tag received a non-identifier string. Key must be non-empty and a valid identifier."
+            "Provide tag received a non-identifier string. Key must be non-empty and a valid identifier.",
         )
 
     # We turn the kwargs into a NamedTuple so that the object that's "provided"
     # is immutable. This ensures that the data returned from `inject` will always
     # have all the keys that were passed to the `provide` tag.
-    tuple_cls = namedtuple("DepInject", provided_kwargs.keys())  # type: ignore[misc]
+    tuple_cls = NamedTuple("DepInject", provided_kwargs.keys())  # type: ignore[misc]
     payload = tuple_cls(**provided_kwargs)
 
     # Instead of storing the provided data on the Context object, we store it

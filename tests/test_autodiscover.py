@@ -46,8 +46,8 @@ class TestAutodiscover:
 class TestImportLibraries:
     @djc_test(
         components_settings={
-            "libraries": ["tests.components.single_file", "tests.components.multi_file.multi_file"]
-        }
+            "libraries": ["tests.components.single_file", "tests.components.multi_file.multi_file"],
+        },
     )
     def test_import_libraries(self):
         all_components = registry.all().copy()
@@ -74,8 +74,8 @@ class TestImportLibraries:
 
     @djc_test(
         components_settings={
-            "libraries": ["components.single_file", "components.multi_file.multi_file"]
-        }
+            "libraries": ["components.single_file", "components.multi_file.multi_file"],
+        },
     )
     def test_import_libraries_map_modules(self):
         all_components = registry.all().copy()

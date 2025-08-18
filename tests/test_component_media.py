@@ -1,3 +1,4 @@
+# ruff: noqa: E501
 import os
 import re
 import sys
@@ -15,8 +16,8 @@ from django.utils.safestring import mark_safe
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, autodiscover, registry, render_dependencies, types
-
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -34,7 +35,7 @@ class TestMainMedia:
                 {% component_js_dependencies %}
                 {% component_css_dependencies %}
                 <div class='html-css-only'>Content</div>
-                """
+                """,
             )
             css = ".html-css-only { color: blue; }"
             js = "console.log('HTML and JS only');"
@@ -64,7 +65,7 @@ class TestMainMedia:
             {% component_js_dependencies %}
             {% component_css_dependencies %}
             <div class='html-css-only'>Content</div>
-            """
+            """,
         )
         assert TestComponent.css == ".html-css-only { color: blue; }"
         assert TestComponent.js == "console.log('HTML and JS only');"
@@ -75,9 +76,9 @@ class TestMainMedia:
     @djc_test(
         django_settings={
             "STATICFILES_DIRS": [
-                os.path.join(Path(__file__).resolve().parent, "static_root"),
+                Path(__file__).resolve().parent / "static_root",
             ],
-        }
+        },
     )
     def test_html_js_css_filepath_rel_to_component(self):
         from tests.test_app.components.app_lvl_comp.app_lvl_comp import AppLvlCompComponent
@@ -96,7 +97,7 @@ class TestMainMedia:
             {% component_js_dependencies %}
             {% component_css_dependencies %}
             {% component "test" variable="test" / %}
-            """
+            """,
         ).render(Context())
 
         assertInHTML(
@@ -135,9 +136,9 @@ class TestMainMedia:
     @djc_test(
         django_settings={
             "STATICFILES_DIRS": [
-                os.path.join(Path(__file__).resolve().parent, "static_root"),
+                Path(__file__).resolve().parent / "static_root",
             ],
-        }
+        },
     )
     def test_html_js_css_filepath_from_static(self):
         class TestComponent(Component):
@@ -165,7 +166,7 @@ class TestMainMedia:
             {% component_js_dependencies %}
             {% component_css_dependencies %}
             {% component "test" variable="test" / %}
-            """
+            """,
         ).render(Context())
 
         assert 'Variable: <strong data-djc-id-ca1bc41="">test</strong>' in rendered
@@ -180,12 +181,14 @@ class TestMainMedia:
 
         # Check that the HTML / JS / CSS can be accessed on the component class
         assert TestComponent.template == "Variable: <strong>{{ variable }}</strong>\n"
+        # fmt: off
         assert TestComponent.css == (
             "/* Used in `MainMediaTest` tests in `test_component_media.py` */\n"
             ".html-css-only {\n"
             "    color: blue;\n"
             "}"
         )
+        # fmt: on
         assert TestComponent.js == (
             '/* Used in `MainMediaTest` tests in `test_component_media.py` */\nconsole.log("HTML and JS only");\n'
         )
@@ -193,9 +196,9 @@ class TestMainMedia:
     @djc_test(
         django_settings={
             "STATICFILES_DIRS": [
-                os.path.join(Path(__file__).resolve().parent, "static_root"),
+                Path(__file__).resolve().parent / "static_root",
             ],
-        }
+        },
     )
     def test_html_js_css_filepath_lazy_loaded(self):
         from tests.test_app.components.app_lvl_comp.app_lvl_comp import AppLvlCompComponent
@@ -216,7 +219,7 @@ class TestMainMedia:
         # # Access the property to load the CSS
         # _ = TestComponent.css
 
-        assert AppLvlCompComponent._component_media.css == (".html-css-only {\n" "  color: blue;\n" "}\n")  # type: ignore[attr-defined]
+        assert AppLvlCompComponent._component_media.css == (".html-css-only {\n  color: blue;\n}\n")  # type: ignore[attr-defined]
         assert AppLvlCompComponent._component_media.css_file == "app_lvl_comp/app_lvl_comp.css"  # type: ignore[attr-defined]
 
         # Also check JS and HTML while we're at it
@@ -399,7 +402,7 @@ class TestComponentMedia:
     @djc_test(
         django_settings={
             "INSTALLED_APPS": ("django_components", "tests"),
-        }
+        },
     )
     def test_glob_pattern_relative_to_component(self):
         from tests.components.glob.glob import GlobComponent
@@ -414,7 +417,7 @@ class TestComponentMedia:
     @djc_test(
         django_settings={
             "INSTALLED_APPS": ("django_components", "tests"),
-        }
+        },
     )
     def test_glob_pattern_relative_to_root_dir(self):
         from tests.components.glob.glob import GlobComponentRootDir
@@ -429,7 +432,7 @@ class TestComponentMedia:
     @djc_test(
         django_settings={
             "INSTALLED_APPS": ("django_components", "tests"),
-        }
+        },
     )
     def test_non_globs_not_modified(self):
         from tests.components.glob.glob import NonGlobComponentRootDir
@@ -442,7 +445,7 @@ class TestComponentMedia:
     @djc_test(
         django_settings={
             "INSTALLED_APPS": ("django_components", "tests"),
-        }
+        },
     )
     def test_non_globs_not_modified_nonexist(self):
         from tests.components.glob.glob import NonGlobNonexistComponentRootDir
@@ -464,14 +467,17 @@ class TestComponentMedia:
         assertInHTML('<link href="/path/to/style.css" media="all" rel="stylesheet">', rendered)
 
         assertInHTML(
-            '<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered
+            '<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>',
+            rendered,
         )
         assertInHTML(
-            '<script src="http://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered
+            '<script src="http://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>',
+            rendered,
         )
         # `://` is escaped because Django's `Media.absolute_path()` doesn't consider `://` a valid URL
         assertInHTML(
-            '<script src="%3A//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>', rendered
+            '<script src="%3A//cdnjs.cloudflare.com/ajax/libs/Chart.js/3.0.2/chart.min.js"></script>',
+            rendered,
         )
         assertInHTML('<script src="/path/to/script.js"></script>', rendered)
 
@@ -604,7 +610,7 @@ class TestMediaPathAsObject:
         """
 
         class MyStr(str):
-            pass
+            __slots__ = ()
 
         class SimpleComponent(Component):
             template = """
@@ -718,7 +724,7 @@ class TestMediaPathAsObject:
     @djc_test(
         django_settings={
             "STATIC_URL": "static/",
-        }
+        },
     )
     def test_works_with_static(self):
         """Test that all the different ways of defining media files works with Django's staticfiles"""
@@ -770,13 +776,13 @@ class TestMediaStaticfiles:
             # NOTE: We don't need STATICFILES_DIRS, because we don't run collectstatic
             #       See https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-STATICFILES_DIRS
             "STATIC_URL": "static/",
-            "STATIC_ROOT": os.path.join(Path(__file__).resolve().parent, "static_root"),
+            "STATIC_ROOT": Path(__file__).resolve().parent / "static_root",
             # `django.contrib.staticfiles` MUST be installed for staticfiles resolution to work.
             "INSTALLED_APPS": [
                 "django.contrib.staticfiles",
                 "django_components",
             ],
-        }
+        },
     )
     def test_default_static_files_storage(self):
         """Test integration with Django's staticfiles app"""
@@ -818,7 +824,7 @@ class TestMediaStaticfiles:
             # NOTE: We don't need STATICFILES_DIRS, because we don't run collectstatic
             #       See https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-STATICFILES_DIRS
             "STATIC_URL": "static/",
-            "STATIC_ROOT": os.path.join(Path(__file__).resolve().parent, "static_root"),
+            "STATIC_ROOT": Path(__file__).resolve().parent / "static_root",
             # NOTE: STATICFILES_STORAGE is deprecated since 5.1, use STORAGES instead
             #       See https://docs.djangoproject.com/en/5.2/ref/settings/#storages
             "STORAGES": {
@@ -836,7 +842,7 @@ class TestMediaStaticfiles:
                 "django.contrib.staticfiles",
                 "django_components",
             ],
-        }
+        },
     )
     def test_manifest_static_files_storage(self):
         """Test integration with Django's staticfiles app and ManifestStaticFilesStorage"""
@@ -889,7 +895,7 @@ class TestMediaRelativePath:
                         {% endcomponent %}
                     {% endslot %}
                 </div>
-            """  # noqa
+            """
 
             def get_template_data(self, args, kwargs, slots, context):
                 return {"shadowing_variable": "NOT SHADOWED"}
@@ -921,7 +927,7 @@ class TestMediaRelativePath:
             "STATICFILES_DIRS": [
                 Path(__file__).resolve().parent / "components",
             ],
-        }
+        },
     )
     def test_component_with_relative_media_paths(self):
         registry.register(name="parent_component", component=self._gen_parent_component())
@@ -973,7 +979,7 @@ class TestMediaRelativePath:
             "STATICFILES_DIRS": [
                 Path(__file__).resolve().parent / "components",
             ],
-        }
+        },
     )
     def test_component_with_relative_media_paths_as_subcomponent(self):
         registry.register(name="parent_component", component=self._gen_parent_component())
@@ -1010,7 +1016,7 @@ class TestMediaRelativePath:
             "STATICFILES_DIRS": [
                 Path(__file__).resolve().parent / "components",
             ],
-        }
+        },
     )
     def test_component_with_relative_media_does_not_trigger_safestring_path_at__new__(self):
         """
@@ -1036,8 +1042,8 @@ class TestMediaRelativePath:
         # Mark the PathObj instances of 'relative_file_pathobj_component' so they won't raise
         # error if PathObj.__str__ is triggered.
         CompCls = registry.get("relative_file_pathobj_component")
-        CompCls.Media.js[0].throw_on_calling_str = False  # type: ignore
-        CompCls.Media.css["all"][0].throw_on_calling_str = False  # type: ignore
+        CompCls.Media.js[0].throw_on_calling_str = False  # type: ignore  # noqa: PGH003
+        CompCls.Media.css["all"][0].throw_on_calling_str = False  # type: ignore  # noqa: PGH003
 
         rendered = CompCls.render(kwargs={"variable": "abc"})
 

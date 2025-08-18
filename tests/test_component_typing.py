@@ -1,14 +1,14 @@
 import re
 from dataclasses import dataclass
 from typing import NamedTuple, Optional
-from typing_extensions import NotRequired, TypedDict
 
 import pytest
 from django.template import Context
+from typing_extensions import NotRequired, TypedDict
 
 from django_components import Component, Empty, Slot, SlotInput
-
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -76,7 +76,7 @@ class TestComponentTyping:
             kwargs=Button.Kwargs(name="name", age=123),
             slots=Button.Slots(
                 header="HEADER",
-                footer=Slot(lambda ctx: "FOOTER"),
+                footer=Slot(lambda _ctx: "FOOTER"),
             ),
         )
 
@@ -124,7 +124,7 @@ class TestComponentTyping:
             kwargs={"name": "name", "age": 123},
             slots={
                 "header": "HEADER",
-                "footer": Slot(lambda ctx: "FOOTER"),
+                "footer": Slot(lambda _ctx: "FOOTER"),
             },
         )
 
@@ -206,7 +206,7 @@ class TestComponentTyping:
             kwargs={"name": "name", "age": 123},
             slots={
                 "header": "HEADER",
-                "footer": Slot(lambda ctx: "FOOTER"),
+                "footer": Slot(lambda _ctx: "FOOTER"),
             },
         )
 
@@ -314,7 +314,7 @@ class TestComponentTyping:
             kwargs={"name": "name", "age": 123},
             slots={
                 "header": "HEADER",
-                "footer": Slot(lambda ctx: "FOOTER"),
+                "footer": Slot(lambda _ctx: "FOOTER"),
             },
         )
 
@@ -397,7 +397,7 @@ class TestComponentTyping:
             kwargs=Button.Kwargs(name="name", age=123),
             slots=Button.Slots(
                 header="HEADER",
-                footer=Slot(lambda ctx: "FOOTER"),
+                footer=Slot(lambda _ctx: "FOOTER"),
             ),
         )
 
@@ -412,7 +412,7 @@ class TestComponentTyping:
                 kwargs=Button.Kwargs(name="name", age=123),
                 slots=Button.Slots(
                     header="HEADER",
-                    footer=Slot(lambda ctx: "FOOTER"),
+                    footer=Slot(lambda _ctx: "FOOTER"),
                 ),
             )
 
@@ -427,7 +427,7 @@ class TestComponentTyping:
                 kwargs=Button.Kwargs(age=123),  # type: ignore[call-arg]
                 slots=Button.Slots(
                     header="HEADER",
-                    footer=Slot(lambda ctx: "FOOTER"),
+                    footer=Slot(lambda _ctx: "FOOTER"),
                 ),
             )
 
@@ -438,7 +438,7 @@ class TestComponentTyping:
             args=Button.Args(arg1="arg1", arg2="arg2"),
             kwargs=Button.Kwargs(name="name", age=123),
             slots=Button.Slots(  # type: ignore[typeddict-item]
-                footer=Slot(lambda ctx: "FOOTER"),  # Missing header
+                footer=Slot(lambda _ctx: "FOOTER"),  # Missing header
             ),
         )
 

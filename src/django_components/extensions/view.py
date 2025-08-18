@@ -27,7 +27,7 @@ else:
 
 
 class ViewFn(Protocol):
-    def __call__(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Any: ...  # noqa: E704
+    def __call__(self, request: HttpRequest, *args: Any, **kwargs: Any) -> Any: ...
 
 
 def _get_component_route_name(component: Union[Type["Component"], "Component"]) -> str:
@@ -143,7 +143,7 @@ class ComponentView(ExtensionComponentConfig, View):
     ```
     """
 
-    component_cls = cast(Type["Component"], None)
+    component_cls = cast("Type[Component]", None)
     """
     The parent component class.
 
@@ -220,28 +220,28 @@ class ComponentView(ExtensionComponentConfig, View):
     #           `return self.component_cls.render_to_response(request, *args, **kwargs)` or similar
     #           or raise NotImplementedError.
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component_cls(), "get")(request, *args, **kwargs)
+        return self.component_cls().get(request, *args, **kwargs)  # type: ignore[attr-defined]
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component_cls(), "post")(request, *args, **kwargs)
+        return self.component_cls().post(request, *args, **kwargs)  # type: ignore[attr-defined]
 
     def put(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component_cls(), "put")(request, *args, **kwargs)
+        return self.component_cls().put(request, *args, **kwargs)  # type: ignore[attr-defined]
 
     def patch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component_cls(), "patch")(request, *args, **kwargs)
+        return self.component_cls().patch(request, *args, **kwargs)  # type: ignore[attr-defined]
 
     def delete(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component_cls(), "delete")(request, *args, **kwargs)
+        return self.component_cls().delete(request, *args, **kwargs)  # type: ignore[attr-defined]
 
     def head(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component_cls(), "head")(request, *args, **kwargs)
+        return self.component_cls().head(request, *args, **kwargs)  # type: ignore[attr-defined]
 
     def options(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component_cls(), "options")(request, *args, **kwargs)
+        return self.component_cls().options(request, *args, **kwargs)  # type: ignore[attr-defined]
 
     def trace(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        return getattr(self.component_cls(), "trace")(request, *args, **kwargs)
+        return self.component_cls().trace(request, *args, **kwargs)  # type: ignore[attr-defined]
 
 
 class ViewExtension(ComponentExtension):

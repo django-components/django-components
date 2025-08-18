@@ -3,6 +3,8 @@ Here we check that the logic around dependency rendering outputs correct HTML.
 During actual rendering, the HTML is then picked up by the JS-side dependency manager.
 """
 
+# ruff: noqa: E501
+
 import re
 
 from django.template import Context, Template
@@ -126,8 +128,7 @@ class TestDependencyRendering:
         assert "toLoadCssTags" not in rendered
 
         assert rendered.strip() == (
-            '<script name="JS_PLACEHOLDER"></script>\n'
-            '            <link name="CSS_PLACEHOLDER">'
+            '<script name="JS_PLACEHOLDER"></script>\n            <link name="CSS_PLACEHOLDER">'
         )
 
     def test_no_js_dependencies_when_no_components_used(self):
@@ -387,8 +388,7 @@ class TestDependencyRendering:
         assert "toLoadCssTags" not in rendered
 
         assert rendered.strip() == (
-            '<script name="JS_PLACEHOLDER"></script>\n'
-            '            <link name="CSS_PLACEHOLDER">'
+            '<script name="JS_PLACEHOLDER"></script>\n            <link name="CSS_PLACEHOLDER">'
         )
 
     def test_multiple_components_dependencies(self):

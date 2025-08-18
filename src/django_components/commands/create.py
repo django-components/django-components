@@ -1,5 +1,5 @@
-import os
 import sys
+from pathlib import Path
 from textwrap import dedent
 from typing import Any
 
@@ -69,7 +69,7 @@ class CreateCommand(ComponentCommand):
     name = "create"
     help = "Create a new django component."
 
-    arguments = [
+    arguments = (
         CommandArg(
             name_or_flags="name",
             help="The name of the component to create. This is a required argument.",
@@ -118,9 +118,9 @@ class CreateCommand(ComponentCommand):
             ),
             action="store_true",
         ),
-    ]
+    )
 
-    def handle(self, *args: Any, **kwargs: Any) -> None:
+    def handle(self, *_args: Any, **kwargs: Any) -> None:
         name = kwargs["name"]
 
         if not name:
@@ -138,16 +138,16 @@ class CreateCommand(ComponentCommand):
         dry_run = kwargs["dry_run"]
 
         if path:
-            component_path = os.path.join(path, name)
+            component_path = Path(path) / name
         elif base_dir:
-            component_path = os.path.join(base_dir, "components", name)
+            component_path = Path(base_dir) / "components" / name
         else:
             raise CommandError("You must specify a path or set BASE_DIR in your django settings")
 
-        if os.path.exists(component_path):
+        if component_path.exists():
             if not force:
                 raise CommandError(
-                    f'The component "{name}" already exists at {component_path}. Use --force to overwrite.'
+                    f'The component "{name}" already exists at {component_path}. Use --force to overwrite.',
                 )
 
             if verbose:
@@ -158,29 +158,32 @@ class CreateCommand(ComponentCommand):
             sys.stdout.write(style_warning(msg) + "\n")
 
         if not dry_run:
-            os.makedirs(component_path, exist_ok=force)
+            component_path.mkdir(parents=True, exist_ok=force)
 
-            with open(os.path.join(component_path, js_filename), "w") as f:
+            js_path = component_path / js_filename
+            with js_path.open("w") as f:
                 script_content = dedent(
                     f"""
                     window.addEventListener('load', (event) => {{
                         console.log("{name} component is fully loaded");
                     }});
-                """
+                """,
                 )
                 f.write(script_content.strip())
 
-            with open(os.path.join(component_path, css_filename), "w") as f:
+            css_path = component_path / css_filename
+            with css_path.open("w") as f:
                 style_content = dedent(
                     f"""
                     .component-{name} {{
                         background: red;
                     }}
-                """
+                """,
                 )
                 f.write(style_content.strip())
 
-            with open(os.path.join(component_path, template_filename), "w") as f:
+            template_path = component_path / template_filename
+            with template_path.open("w") as f:
                 template_content = dedent(
                     f"""
                     <div class="component-{name}">
@@ -188,11 +191,12 @@ class CreateCommand(ComponentCommand):
                         <br>
                         This is {{ param }} context value.
                     </div>
-                """
+                """,
                 )
                 f.write(template_content.strip())
 
-            with open(os.path.join(component_path, f"{name}.py"), "w") as f:
+            py_path = component_path / f"{name}.py"
+            with py_path.open("w") as f:
                 py_content = dedent(
                     f"""
                     from django_components import Component, register
@@ -213,7 +217,7 @@ class CreateCommand(ComponentCommand):
                             return {{
                                 "param": kwargs.param,
                             }}
-                """
+                """,
                 )
                 f.write(py_content.strip())
 

@@ -20,7 +20,7 @@ component_media_cache: Optional[BaseCache] = None
 
 # TODO_V1 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
 def get_template_cache() -> LRUCache:
-    global template_cache
+    global template_cache  # noqa: PLW0603
     if template_cache is None:
         template_cache = LRUCache(maxsize=app_settings.TEMPLATE_CACHE_SIZE)
 
@@ -32,7 +32,7 @@ def get_component_media_cache() -> BaseCache:
         return caches[app_settings.CACHE]
 
     # If no cache is set, use a local memory cache.
-    global component_media_cache
+    global component_media_cache  # noqa: PLW0603
     if component_media_cache is None:
         component_media_cache = LocMemCache(
             "django-components-media",

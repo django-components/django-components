@@ -21,14 +21,14 @@ COLORS = {
 }
 
 
-def apply_component_highlight(type: Literal["component", "slot"], output: str, name: str) -> str:
+def apply_component_highlight(highlight_type: Literal["component", "slot"], output: str, name: str) -> str:
     """
     Wrap HTML (string) in a div with a border and a highlight color.
 
     This is part of the component / slot highlighting feature. User can toggle on
     to see the component / slot boundaries.
     """
-    color = COLORS[type]
+    color = COLORS[highlight_type]
 
     # Because the component / slot name is set via styling as a `::before` pseudo-element,
     # we need to generate a unique ID for each component / slot to avoid conflicts.

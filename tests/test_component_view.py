@@ -4,15 +4,17 @@ import pytest
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
 from django.template import Context, Template
-from django.test import Client, SimpleTestCase
+from django.test import Client
 from django.urls import path
+from pytest_django.asserts import assertInHTML
 
 from django_components import Component, ComponentView, get_component_url, register, types
+from django_components.testing import djc_test
 from django_components.urls import urlpatterns as dc_urlpatterns
 from django_components.util.misc import format_url
 
-from django_components.testing import djc_test
 from .testutils import setup_test_config
+
 
 # DO NOT REMOVE!
 #
@@ -40,16 +42,16 @@ class CustomClient(Client):
 
         if urlpatterns:
             urls_module = types.ModuleType("urls")
-            urls_module.urlpatterns = urlpatterns + dc_urlpatterns  # type: ignore
+            urls_module.urlpatterns = urlpatterns + dc_urlpatterns  # type: ignore[attr-defined]
             settings.ROOT_URLCONF = urls_module
         else:
             settings.ROOT_URLCONF = __name__
-        settings.SECRET_KEY = "secret"  # noqa
+        settings.SECRET_KEY = "secret"  # noqa: S105
         super().__init__(*args, **kwargs)
 
 
 @djc_test
-class TestComponentAsView(SimpleTestCase):
+class TestComponentAsView:
     def test_render_component_from_template(self):
         @register("testcomponent")
         class MockComponentRequest(Component):
@@ -64,19 +66,19 @@ class TestComponentAsView(SimpleTestCase):
             def get_template_data(self, args, kwargs, slots, context):
                 return {"variable": kwargs["variable"]}
 
-        def render_template_view(request):
+        def render_template_view(_request):
             template = Template(
                 """
                 {% load component_tags %}
                 {% component "testcomponent" variable="TEMPLATE" %}{% endcomponent %}
-                """
+                """,
             )
             return HttpResponse(template.render(Context({})))
 
         client = CustomClient(urlpatterns=[path("test_template/", render_template_view)])
         response = client.get("/test_template/")
-        self.assertEqual(response.status_code, 200)
-        self.assertInHTML(
+        assert response.status_code == 200
+        assertInHTML(
             '<input type="text" name="variable" value="TEMPLATE">',
             response.content.decode(),
         )
@@ -100,8 +102,8 @@ class TestComponentAsView(SimpleTestCase):
 
         client = CustomClient(urlpatterns=[path("test/", MockComponentRequest.as_view())])
         response = client.get("/test/")
-        self.assertEqual(response.status_code, 200)
-        self.assertInHTML(
+        assert response.status_code == 200
+        assertInHTML(
             '<input type="text" name="variable" value="GET">',
             response.content.decode(),
         )
@@ -124,8 +126,8 @@ class TestComponentAsView(SimpleTestCase):
 
         client = CustomClient(urlpatterns=[path("test/", MockComponentRequest.as_view())])
         response = client.get("/test/")
-        self.assertEqual(response.status_code, 200)
-        self.assertInHTML(
+        assert response.status_code == 200
+        assertInHTML(
             '<input type="text" name="variable" value="GET">',
             response.content.decode(),
         )
@@ -150,8 +152,8 @@ class TestComponentAsView(SimpleTestCase):
 
         client = CustomClient(urlpatterns=[path("test/", MockComponentRequest.as_view())])
         response = client.post("/test/", {"variable": "POST"})
-        self.assertEqual(response.status_code, 200)
-        self.assertInHTML(
+        assert response.status_code == 200
+        assertInHTML(
             '<input type="text" name="variable" value="POST">',
             response.content.decode(),
         )
@@ -175,8 +177,8 @@ class TestComponentAsView(SimpleTestCase):
 
         client = CustomClient(urlpatterns=[path("test/", MockComponentRequest.as_view())])
         response = client.post("/test/", {"variable": "POST"})
-        self.assertEqual(response.status_code, 200)
-        self.assertInHTML(
+        assert response.status_code == 200
+        assertInHTML(
             '<input type="text" name="variable" value="POST">',
             response.content.decode(),
         )
@@ -198,11 +200,8 @@ class TestComponentAsView(SimpleTestCase):
         view = MockComponentRequest.as_view()
         client = CustomClient(urlpatterns=[path("test/", view)])
         response = client.get("/test/")
-        self.assertEqual(response.status_code, 200)
-        self.assertInHTML(
-            '<input type="text" name="variable" value="MockComponentRequest">',
-            response.content.decode(),
-        )
+        assert response.status_code == 200
+        assert b'<input type="text" name="variable" value="MockComponentRequest">' in response.content
 
     def test_replace_slot_in_view(self):
         class MockComponentSlot(Component):
@@ -225,15 +224,9 @@ class TestComponentAsView(SimpleTestCase):
 
         client = CustomClient(urlpatterns=[path("test_slot/", MockComponentSlot.as_view())])
         response = client.get("/test_slot/")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b"Hey, I'm Bob",
-            response.content,
-        )
-        self.assertIn(
-            b"Nice to meet you, Bob",
-            response.content,
-        )
+        assert response.status_code == 200
+        assert b"Hey, I'm Bob" in response.content
+        assert b"Nice to meet you, Bob" in response.content
 
     def test_replace_slot_in_view_with_insecure_content(self):
         class MockInsecureComponentSlot(Component):
@@ -253,11 +246,8 @@ class TestComponentAsView(SimpleTestCase):
 
         client = CustomClient(urlpatterns=[path("test_slot_insecure/", MockInsecureComponentSlot.as_view())])
         response = client.get("/test_slot_insecure/")
-        self.assertEqual(response.status_code, 200)
-        self.assertNotIn(
-            b"<script>",
-            response.content,
-        )
+        assert response.status_code == 200
+        assert b"<script>" not in response.content
 
     def test_replace_context_in_view(self):
         class TestComponent(Component):
@@ -273,11 +263,8 @@ class TestComponentAsView(SimpleTestCase):
 
         client = CustomClient(urlpatterns=[path("test_context_django/", TestComponent.as_view())])
         response = client.get("/test_context_django/")
-        self.assertEqual(response.status_code, 200)
-        self.assertIn(
-            b"Hey, I'm Bob",
-            response.content,
-        )
+        assert response.status_code == 200
+        assert b"Hey, I'm Bob" in response.content
 
     def test_replace_context_in_view_with_insecure_content(self):
         class MockInsecureComponentContext(Component):
@@ -293,11 +280,8 @@ class TestComponentAsView(SimpleTestCase):
 
         client = CustomClient(urlpatterns=[path("test_context_insecure/", MockInsecureComponentContext.as_view())])
         response = client.get("/test_context_insecure/")
-        self.assertEqual(response.status_code, 200)
-        self.assertNotIn(
-            b"<script>",
-            response.content,
-        )
+        assert response.status_code == 200
+        assert b"<script>" not in response.content
 
     def test_component_url(self):
         class TestComponent(Component):
@@ -315,13 +299,16 @@ class TestComponentAsView(SimpleTestCase):
 
         # Check that the query and fragment are correctly escaped
         component_url3 = get_component_url(TestComponent, query={"f'oo": "b ar&ba'z"}, fragment='q u"x')
-        assert component_url3 == f"/components/ext/view/components/{TestComponent.class_id}/?f%27oo=b+ar%26ba%27z#q%20u%22x"  # noqa: E501
+        assert (
+            component_url3
+            == f"/components/ext/view/components/{TestComponent.class_id}/?f%27oo=b+ar%26ba%27z#q%20u%22x"
+        )
 
         # Merges query params from original URL
         component_url4 = format_url(
             "/components/ext/view/components/123?foo=123&bar=456#abc",
             query={"foo": "new", "baz": "new2"},
-            fragment='xyz',
+            fragment="xyz",
         )
         assert component_url4 == "/components/ext/view/components/123?foo=new&bar=456&baz=new2#xyz"
 

@@ -1,10 +1,10 @@
 import re
 import time
 
+import pytest
 from django.core.cache import caches
 from django.template import Template
 from django.template.context import Context
-import pytest
 
 from django_components import Component, register
 from django_components.testing import djc_test
@@ -209,7 +209,6 @@ class TestComponentCache:
         assert component.cache.get_entry(expected_key) == "<!-- _RENDERED TestComponent_28880f,ca1bc3f,, -->Hello"
 
     def test_cached_component_inside_include(self):
-
         @register("test_component")
         class TestComponent(Component):
             template = "Hello"
@@ -223,7 +222,7 @@ class TestComponentCache:
             {% block content %}
                 THIS_IS_IN_ACTUAL_TEMPLATE_SO_SHOULD_NOT_BE_OVERRIDDEN
             {% endblock %}
-        """
+        """,
         )
 
         result = template.render(Context({}))
@@ -251,7 +250,7 @@ class TestComponentCache:
             {% component "test_component" input="cake" %}
                 ONE
             {% endcomponent %}
-        """
+        """,
         ).render(Context({}))
 
         Template(
@@ -259,7 +258,7 @@ class TestComponentCache:
             {% component "test_component" input="cake" %}
                 ONE
             {% endcomponent %}
-        """
+        """,
         ).render(Context({}))
 
         # Check if the cache entry is set
@@ -277,7 +276,7 @@ class TestComponentCache:
             {% component "test_component" input="cake" %}
                 TWO
             {% endcomponent %}
-        """
+        """,
         ).render(Context({}))
 
         assert len(cache._cache) == 2
@@ -341,10 +340,10 @@ class TestComponentCache:
         with pytest.raises(
             ValueError,
             match=re.escape(
-                "Cannot hash slot 'content' of component 'TestComponent' - Slot functions are unhashable."
+                "Cannot hash slot 'content' of component 'TestComponent' - Slot functions are unhashable.",
             ),
         ):
             TestComponent.render(
                 kwargs={"input": "cake"},
-                slots={"content": lambda ctx: "ONE"},
+                slots={"content": lambda _ctx: "ONE"},
             )

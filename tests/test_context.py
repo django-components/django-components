@@ -5,9 +5,9 @@ from django.template import Context, RequestContext, Template
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, register, registry, types
+from django_components.testing import djc_test
 from django_components.util.misc import gen_id
 
-from django_components.testing import djc_test
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -15,7 +15,7 @@ setup_test_config({"autodiscover": False})
 
 # Context processor that generates a unique ID. This is used to test that the context
 # processor is generated only once, as each time this is called, it should generate a different ID.
-def dummy_context_processor(request):
+def dummy_context_processor(request):  # noqa: ARG001
     return {"dummy": gen_id()}
 
 
@@ -94,7 +94,7 @@ def gen_parent_component():
                     {% endcomponent %}
                 {% endslot %}
             </div>
-        """  # noqa
+        """  # noqa: E501
 
         def get_template_data(self, args, kwargs, slots, context):
             return {"shadowing_variable": "NOT SHADOWED"}
@@ -118,7 +118,7 @@ def gen_parent_component_with_args():
                     {% endcomponent %}
                 {% endslot %}
             </div>
-        """  # noqa
+        """  # noqa: E501
 
         def get_template_data(self, args, kwargs, slots, context):
             return {"inner_parent_value": kwargs["parent_value"]}
@@ -135,7 +135,8 @@ def gen_parent_component_with_args():
 class TestContext:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_nested_component_context_shadows_parent_with_unfilled_slots_and_component_tag(
-        self, components_settings,
+        self,
+        components_settings,
     ):
         registry.register(name="variable_display", component=gen_variable_display_component())
         registry.register(name="parent_component", component=gen_parent_component())
@@ -153,7 +154,8 @@ class TestContext:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_nested_component_instances_have_unique_context_with_unfilled_slots_and_component_tag(
-        self, components_settings,
+        self,
+        components_settings,
     ):
         registry.register(name="variable_display", component=gen_variable_display_component())
         registry.register(name="parent_component", component=gen_parent_component())
@@ -184,7 +186,7 @@ class TestContext:
                     {% endcomponent %}
                 {% endfill %}
             {% endcomponent %}
-        """  # NOQA
+        """  # noqa: E501
         template = Template(template_str)
         rendered = template.render(Context())
 
@@ -205,7 +207,7 @@ class TestContext:
                     {% endcomponent %}
                 {% endfill %}
             {% endcomponent %}
-        """  # NOQA
+        """  # noqa: E501
         template = Template(template_str)
         rendered = template.render(Context())
 
@@ -214,7 +216,8 @@ class TestContext:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_nested_component_context_shadows_outer_context_with_unfilled_slots_and_component_tag(
-        self, components_settings,
+        self,
+        components_settings,
     ):
         registry.register(name="variable_display", component=gen_variable_display_component())
         registry.register(name="parent_component", component=gen_parent_component())
@@ -232,7 +235,8 @@ class TestContext:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_nested_component_context_shadows_outer_context_with_filled_slots(
-        self, components_settings,
+        self,
+        components_settings,
     ):
         registry.register(name="variable_display", component=gen_variable_display_component())
         registry.register(name="parent_component", component=gen_parent_component())
@@ -245,7 +249,7 @@ class TestContext:
                     {% endcomponent %}
                 {% endfill %}
             {% endcomponent %}
-        """  # NOQA
+        """  # noqa: E501
         template = Template(template_str)
         rendered = template.render(Context({"shadowing_variable": "NOT SHADOWED"}))
 
@@ -324,7 +328,7 @@ class TestParentArgs:
                 [{"context_behavior": "isolated"}, "passed_in", ""],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_parent_args_available_in_slots(self, components_settings, first_val, second_val):
         registry.register(name="incrementer", component=gen_incrementer_component())
@@ -473,7 +477,7 @@ class TestComponentsCanAccessOuterContext:
                 [{"context_behavior": "isolated"}, ""],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_simple_component_can_use_outer_context(self, components_settings, expected_value):
         registry.register(name="simple_component", component=gen_simple_component())
@@ -890,22 +894,24 @@ class TestContextProcessors:
         assert list(context_processors_data.keys()) == ["csrf_token"]  # type: ignore[union-attr]
         assert inner_request == request
 
-    @djc_test(django_settings={
-        "TEMPLATES": [
-            {
-                "BACKEND": "django.template.backends.django.DjangoTemplates",
-                "DIRS": ["tests/templates/", "tests/components/"],
-                "OPTIONS": {
-                    "builtins": [
-                        "django_components.templatetags.component_tags",
-                    ],
-                    "context_processors": [
-                        "tests.test_context.dummy_context_processor",
-                    ],
+    @djc_test(
+        django_settings={
+            "TEMPLATES": [
+                {
+                    "BACKEND": "django.template.backends.django.DjangoTemplates",
+                    "DIRS": ["tests/templates/", "tests/components/"],
+                    "OPTIONS": {
+                        "builtins": [
+                            "django_components.templatetags.component_tags",
+                        ],
+                        "context_processors": [
+                            "tests.test_context.dummy_context_processor",
+                        ],
+                    },
                 },
-            }
-        ],
-    })
+            ],
+        },
+    )
     def test_data_generated_only_once(self):
         context_processors_data: Optional[Dict] = None
         context_processors_data_child: Optional[Dict] = None
@@ -932,8 +938,8 @@ class TestContextProcessors:
         request = HttpRequest()
         TestParentComponent.render(request=request)
 
-        parent_data = cast(dict, context_processors_data)
-        child_data = cast(dict, context_processors_data_child)
+        parent_data = cast("dict", context_processors_data)
+        child_data = cast("dict", context_processors_data_child)
 
         # Check that the context processors data is reused across the components with
         # the same request.

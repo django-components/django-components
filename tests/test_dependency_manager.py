@@ -1,13 +1,15 @@
 import re
-from typing import List
+from typing import TYPE_CHECKING, List
 
 import pytest
 from playwright.async_api import Browser, Error, Page
 
-from django_components import types
 from django_components.testing import djc_test
-from tests.testutils import setup_test_config
 from tests.e2e.utils import TEST_SERVER_URL, with_playwright
+from tests.testutils import setup_test_config
+
+if TYPE_CHECKING:
+    from django_components import types
 
 setup_test_config(
     components={"autodiscover": False},
@@ -33,7 +35,7 @@ async def _create_page_with_dep_manager(browser: Browser) -> Page:
         () => {
             eval(document.body.textContent);
         }
-        """
+        """,
     )
 
     # Ensure the body is clear
@@ -43,7 +45,7 @@ async def _create_page_with_dep_manager(browser: Browser) -> Page:
             document.body.innerHTML = '';
             document.head.innerHTML = '';
         }
-        """
+        """,
     )
 
     return page
@@ -52,7 +54,7 @@ async def _create_page_with_dep_manager(browser: Browser) -> Page:
 @djc_test(
     django_settings={
         "STATIC_URL": "static/",
-    }
+    },
 )
 class TestDependencyManager:
     @with_playwright
@@ -80,7 +82,7 @@ class TestDependencyManager:
 @djc_test(
     django_settings={
         "STATIC_URL": "static/",
-    }
+    },
 )
 class TestLoadScript:
     @with_playwright
@@ -207,7 +209,7 @@ class TestLoadScript:
 @djc_test(
     django_settings={
         "STATIC_URL": "static/",
-    }
+    },
 )
 class TestCallComponent:
     @with_playwright
