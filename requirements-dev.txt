@@ -31,6 +31,10 @@ colorama==0.4.6
 distlib==0.3.9
     # via virtualenv
 django==4.2.23
+    # via
+    #   -r requirements-dev.in
+    #   django-template-partials
+django-template-partials==25.1
     # via -r requirements-dev.in
 djc-core-html-parser==1.0.2
     # via -r requirements-dev.in
@@ -159,11 +163,12 @@ typing-extensions==4.13.2
     #   mypy
     #   pyee
     #   tox
+    #   virtualenv
 urllib3==2.2.3
     # via
     #   requests
     #   types-requests
-virtualenv==20.33.1
+virtualenv==20.34.0
     # via
     #   -r requirements-dev.in
     #   asv
