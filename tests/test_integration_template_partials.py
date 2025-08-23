@@ -11,11 +11,12 @@ See https://github.com/django-components/django-components/issues/1323#issuecomm
 from typing import NamedTuple
 
 import pytest
-from django.shortcuts import render
 from django.http import HttpRequest
+from django.shortcuts import render
 
 from django_components import Component, register
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 try:
@@ -28,9 +29,7 @@ setup_test_config(components={"autodiscover": False})
 
 
 # See https://github.com/django-components/django-components/issues/1323#issuecomment-3156654329
-@djc_test(
-    django_settings={"INSTALLED_APPS": ("template_partials", "django_components", "tests.test_app")}
-)
+@djc_test(django_settings={"INSTALLED_APPS": ("template_partials", "django_components", "tests.test_app")})
 class TestTemplatePartialsIntegration:
     @pytest.mark.skipif(TemplateProxy is None, reason="template_partials not available")
     def test_render_partial(self):

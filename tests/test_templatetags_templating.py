@@ -1,11 +1,13 @@
-"""This file tests various ways how the individual tags can be combined inside the templates"""
+"""Tests various ways how the individual tags can be combined inside the templates."""
+
+from typing import Dict
 
 from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
-
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -88,7 +90,7 @@ class TestNestedSlot:
                 [{"context_behavior": "isolated"}, "Jannete"],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_fill_inside_fill_with_same_name(self, components_settings, expected):
         class SlottedComponent(Component):
@@ -281,7 +283,7 @@ class TestSlotIteration:
                 [{"context_behavior": "isolated"}, ""],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_inner_slot_iteration_basic(self, components_settings, expected):
         registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
@@ -310,7 +312,7 @@ class TestSlotIteration:
                 [{"context_behavior": "isolated"}, "OUTER_SCOPE_VARIABLE OUTER_SCOPE_VARIABLE"],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_inner_slot_iteration_with_variable_from_outer_scope(self, components_settings, expected):
         registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
@@ -331,8 +333,8 @@ class TestSlotIteration:
                 {
                     "objects": objects,
                     "outer_scope_variable": "OUTER_SCOPE_VARIABLE",
-                }
-            )
+                },
+            ),
         )
 
         assertHTMLEqual(rendered, expected)
@@ -346,7 +348,7 @@ class TestSlotIteration:
                 [{"context_behavior": "isolated"}, ""],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_inner_slot_iteration_nested(self, components_settings, expected):
         registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
@@ -397,7 +399,7 @@ class TestSlotIteration:
                 [{"context_behavior": "isolated"}, "OUTER_SCOPE_VARIABLE1 OUTER_SCOPE_VARIABLE1"],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_inner_slot_iteration_nested_with_outer_scope_variable(self, components_settings, expected):
         registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
@@ -428,8 +430,8 @@ class TestSlotIteration:
                     "objects": objects,
                     "outer_scope_variable_1": "OUTER_SCOPE_VARIABLE1",
                     "outer_scope_variable_2": "OUTER_SCOPE_VARIABLE2",
-                }
-            )
+                },
+            ),
         )
 
         assertHTMLEqual(rendered, expected)
@@ -439,11 +441,14 @@ class TestSlotIteration:
         parametrize=(
             ["components_settings", "expected"],
             [
-                [{"context_behavior": "django"}, "ITER1_OBJ1 default ITER1_OBJ2 default ITER2_OBJ1 default ITER2_OBJ2 default"],  # noqa: E501
+                [
+                    {"context_behavior": "django"},
+                    "ITER1_OBJ1 default ITER1_OBJ2 default ITER2_OBJ1 default ITER2_OBJ2 default",
+                ],
                 [{"context_behavior": "isolated"}, ""],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_inner_slot_iteration_nested_with_slot_fallback(self, components_settings, expected):
         registry.register("slot_in_a_loop", self._get_component_simple_slot_in_a_loop())
@@ -496,7 +501,7 @@ class TestSlotIteration:
                 [{"context_behavior": "isolated"}, "OUTER_SCOPE_VARIABLE1 OUTER_SCOPE_VARIABLE1"],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_inner_slot_iteration_nested_with_slot_fallback_and_outer_scope_variable(
         self,
@@ -531,8 +536,8 @@ class TestSlotIteration:
                     "objects": objects,
                     "outer_scope_variable_1": "OUTER_SCOPE_VARIABLE1",
                     "outer_scope_variable_2": "OUTER_SCOPE_VARIABLE2",
-                }
-            )
+                },
+            ),
         )
         assertHTMLEqual(rendered, expected)
 
@@ -571,8 +576,8 @@ class TestSlotIteration:
                     "objects": objects,
                     "outer_scope_variable_1": "OUTER_SCOPE_VARIABLE1",
                     "outer_scope_variable_2": "OUTER_SCOPE_VARIABLE2",
-                }
-            )
+                },
+            ),
         )
 
         assertHTMLEqual(
@@ -596,7 +601,7 @@ class TestSlotIteration:
 class TestComponentNesting:
     def _get_calendar_component(self):
         class CalendarComponent(Component):
-            """Nested in ComponentWithNestedComponent"""
+            """Nested in ComponentWithNestedComponent."""
 
             template: types.django_html = """
                 {% load component_tags %}
@@ -611,6 +616,7 @@ class TestComponentNesting:
                 </main>
                 </div>
             """
+
         return CalendarComponent
 
     def _get_dashboard_component(self):
@@ -631,6 +637,7 @@ class TestComponentNesting:
                 </ol>
                 </div>
             """
+
         return DashboardComponent
 
     # NOTE: Second arg in tuple are expected names in nested fills. In "django" mode,
@@ -644,7 +651,7 @@ class TestComponentNesting:
                 [{"context_behavior": "isolated"}, "Jannete", "Jannete"],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_component_inside_slot(self, components_settings, first_name, second_name):
         registry.register("dashboard", self._get_dashboard_component())
@@ -717,7 +724,7 @@ class TestComponentNesting:
                 [{"context_behavior": "isolated"}, ""],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_component_nesting_component_without_fill(self, components_settings, expected):
         registry.register("dashboard", self._get_dashboard_component())
@@ -755,7 +762,7 @@ class TestComponentNesting:
                 [{"context_behavior": "isolated"}, ""],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
     def test_component_nesting_slot_inside_component_fill(self, components_settings, expected):
         registry.register("dashboard", self._get_dashboard_component())
@@ -910,7 +917,7 @@ class TestComponentNesting:
             slots={
                 "left_panel": "LEFT PANEL SLOT FROM FILL",
                 "content": "CONTENT SLOT FROM FILL",
-            }
+            },
         )
 
         expected = """
@@ -957,9 +964,9 @@ class TestComponentNesting:
                 [{"context_behavior": "isolated"}, ""],
             ],
             ["django", "isolated"],
-        )
+        ),
     )
-    def test_component_nesting_component_with_slot_fallback(self, components_settings, expected):
+    def test_component_nesting_component_with_slot_fallback(self, components_settings: Dict, expected: str):
         registry.register("dashboard", self._get_dashboard_component())
         registry.register("calendar", self._get_calendar_component())
 

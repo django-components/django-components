@@ -1,4 +1,4 @@
-## Install locally and run the tests
+## Local installation
 
 Start by forking the project by clicking the **Fork button** up in the right corner in the [GitHub](https://github.com/django-components/django-components).
 This makes a copy of the repository in your own name. Now you can clone this repository locally and start adding features:
@@ -19,6 +19,8 @@ You also have to install this local django-components version. Use `-e` for [edi
 ```sh
 pip install -e .
 ```
+
+## Running tests
 
 Now you can run the tests to make sure everything works as expected:
 
@@ -47,15 +49,39 @@ tox -e py38
 
 NOTE: See the available environments in `tox.ini`.
 
-And to run only linters, use:
+## Linting and formatting
+
+To check linting rules, run:
 
 ```sh
-tox -e mypy,flake8,isort,black
+ruff check .
+# Or to fix errors automatically:
+ruff check --fix .
 ```
 
-## Running Playwright tests
+To format the code, run:
 
-We use [Playwright](https://playwright.dev/python/docs/intro) for end-to-end tests. You will therefore need to install Playwright to be able to run these tests.
+```sh
+ruff format --check .
+# Or to fix errors automatically:
+ruff format .
+```
+
+To validate with Mypy, run:
+
+```sh
+mypy .
+```
+
+You can run these through `tox` as well:
+
+```sh
+tox -e mypy,ruff
+```
+
+## Playwright tests
+
+We use [Playwright](https://playwright.dev/python/docs/intro) for end-to-end tests. You will need to install Playwright to run these tests.
 
 Luckily, Playwright makes it very easy:
 
@@ -64,13 +90,15 @@ pip install -r requirements-dev.txt
 playwright install chromium --with-deps
 ```
 
-After Playwright is ready, simply run the tests with `tox`:
+After Playwright is ready, run the tests the same way as before:
 
 ```sh
-tox
+pytest
+# Or for specific Python version
+tox -e py38
 ```
 
-## Developing against live Django app
+## Dev server
 
 How do you check that your changes to django-components project will work in an actual Django project?
 
@@ -96,9 +124,10 @@ Use the [sampleproject](https://github.com/django-components/django-components/t
 
     !!! note
 
-        The path to the local version (in this case `..`) must point to the directory that has the `setup.py` file.
+        The path to the local version (in this case `..`) must point to the directory that has the `pyproject.toml` file.
 
-4. Start Django server
+4. Start Django server:
+
     ```sh
     python manage.py runserver
     ```
@@ -116,7 +145,7 @@ django_components uses a bit of JS code to:
 
 When you make changes to this JS code, you also need to compile it:
 
-1. Make sure you are inside `src/django_components_js`:
+1. Navigate to `src/django_components_js`:
 
     ```sh
     cd src/django_components_js

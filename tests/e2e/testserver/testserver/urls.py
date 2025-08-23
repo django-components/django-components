@@ -20,7 +20,7 @@ from testserver.views import (
 urlpatterns = [
     path("", include("django_components.urls")),
     # Empty response with status 200 to notify other systems when the server has started
-    path("poll/", lambda *args, **kwargs: HttpResponse("")),
+    path("poll/", lambda *_args, **_kwargs: HttpResponse("")),
     # Test views
     path("single/", single_component_view, name="single"),
     path("multi/", multiple_components_view, name="multi"),

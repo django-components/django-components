@@ -5,9 +5,9 @@ from django.template import Context, Template, TemplateSyntaxError
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
-from django_components.perfutil.provide import provide_cache, provide_references, all_reference_ids
-
+from django_components.perfutil.provide import all_reference_ids, provide_cache, provide_references
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -293,8 +293,8 @@ class TestProvideTemplateTag:
             Context(
                 {
                     "var_a": "my_provide",
-                }
-            )
+                },
+            ),
         )
 
         assertHTMLEqual(
@@ -336,8 +336,8 @@ class TestProvideTemplateTag:
                         "key": "hi",
                         "another": 9,
                     },
-                }
-            )
+                },
+            ),
         )
 
         assertHTMLEqual(
@@ -979,7 +979,6 @@ class TestProvideCache:
 
     # Cache should be cleared even if there is an error.
     def test_provide_outside_component_with_error(self):
-
         @register("injectee")
         class Injectee(Component):
             template = ""

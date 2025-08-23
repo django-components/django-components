@@ -10,31 +10,31 @@ from django_components import Component, Slot, SlotNode, register, registry
 from django_components.app_settings import app_settings
 from django_components.component_registry import ComponentRegistry
 from django_components.extension import (
-    URLRoute,
     ComponentExtension,
     ExtensionComponentConfig,
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
+    OnComponentDataContext,
+    OnComponentInputContext,
+    OnComponentRegisteredContext,
+    OnComponentRenderedContext,
+    OnComponentUnregisteredContext,
+    OnCssLoadedContext,
+    OnJsLoadedContext,
     OnRegistryCreatedContext,
     OnRegistryDeletedContext,
-    OnComponentRegisteredContext,
-    OnComponentUnregisteredContext,
-    OnComponentInputContext,
-    OnComponentDataContext,
-    OnComponentRenderedContext,
     OnSlotRenderedContext,
-    OnTemplateLoadedContext,
     OnTemplateCompiledContext,
-    OnJsLoadedContext,
-    OnCssLoadedContext,
+    OnTemplateLoadedContext,
+    URLRoute,
 )
 from django_components.extensions.cache import CacheExtension
 from django_components.extensions.debug_highlight import DebugHighlightExtension
 from django_components.extensions.defaults import DefaultsExtension
 from django_components.extensions.dependencies import DependenciesExtension
 from django_components.extensions.view import ViewExtension
-
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -46,7 +46,7 @@ def dummy_view(request: HttpRequest):
     return HttpResponse("Hello, world!")
 
 
-def dummy_view_2(request: HttpRequest, id: int, name: str):
+def dummy_view_2(request: HttpRequest, id: int, name: str):  # noqa: ARG001, A002
     return HttpResponse(f"Hello, world! {id} {name}")
 
 
@@ -64,9 +64,7 @@ class LegacyExtension(ComponentExtension):
 
 
 class DummyExtension(ComponentExtension):
-    """
-    Test extension that tracks all hook calls and their arguments.
-    """
+    """Test extension that tracks all hook calls and their arguments."""
 
     name = "test_extension"
 
@@ -265,7 +263,7 @@ class TestExtension:
 class TestExtensionHooks:
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_component_class_lifecycle_hooks(self):
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
 
         assert len(extension.calls["on_component_class_created"]) == 0
         assert len(extension.calls["on_component_class_deleted"]) == 0
@@ -297,7 +295,7 @@ class TestExtensionHooks:
 
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_registry_lifecycle_hooks(self):
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
 
         assert len(extension.calls["on_registry_created"]) == 0
         assert len(extension.calls["on_registry_deleted"]) == 0
@@ -334,7 +332,7 @@ class TestExtensionHooks:
                 return {"name": kwargs.get("name", "World")}
 
         registry.register("test_comp", TestComponent)
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
 
         # Verify on_component_registered was called
         assert len(extension.calls["on_component_registered"]) == 1
@@ -372,7 +370,7 @@ class TestExtensionHooks:
         test_slots = {"content": "Some content"}
         TestComponent.render(context=test_context, args=("arg1", "arg2"), kwargs={"name": "Test"}, slots=test_slots)
 
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
 
         # Verify on_component_input was called with correct args
         assert len(extension.calls["on_component_input"]) == 1
@@ -421,7 +419,7 @@ class TestExtensionHooks:
                 slots={"content": "Some content"},
             )
 
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
 
         # Verify on_component_rendered was called with correct args
         assert len(extension.calls["on_component_rendered"]) == 1
@@ -450,7 +448,7 @@ class TestExtensionHooks:
 
         assert rendered == "Hello Some content!"
 
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
 
         # Verify on_slot_rendered was called with correct args
         assert len(extension.calls["on_slot_rendered"]) == 1
@@ -462,7 +460,7 @@ class TestExtensionHooks:
         assert isinstance(slot_call.slot, Slot)
         assert slot_call.slot_name == "content"
         assert isinstance(slot_call.slot_node, SlotNode)
-        assert slot_call.slot_node.template_name.endswith("test_extension.py::TestComponent")  # type: ignore
+        assert slot_call.slot_node.template_name.endswith("test_extension.py::TestComponent")  # type: ignore[union-attr]
         assert slot_call.slot_node.template_component == TestComponent
         assert slot_call.slot_is_required is True
         assert slot_call.slot_is_default is True
@@ -518,7 +516,7 @@ class TestExtensionHooks:
         # Render the component to trigger all hooks
         TestComponent.render(args=(), kwargs={"name": "Test"})
 
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
 
         # on_template_loaded
         assert len(extension.calls["on_template_loaded"]) == 1
@@ -561,7 +559,7 @@ class TestExtensionHooks:
         # Render the component to trigger all hooks
         TestComponent.render(args=(), kwargs={"name": "Test"})
 
-        extension = cast(DummyExtension, app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
 
         # on_template_loaded
         # NOTE: The template file gets picked up by 'django.template.loaders.filesystem.Loader',
@@ -571,10 +569,10 @@ class TestExtensionHooks:
         assert ctx1.component_cls == TestComponent
         assert ctx1.content == (
             '<form method="post">\n'
-            '  {% csrf_token %}\n'
+            "  {% csrf_token %}\n"
             '  <input type="text" name="variable" value="{{ variable }}">\n'
             '  <input type="submit">\n'
-            '</form>\n'
+            "</form>\n"
         )
         assert isinstance(ctx1.origin, Origin)
         assert ctx1.origin.name.endswith("relative_file.html")
@@ -596,11 +594,7 @@ class TestExtensionHooks:
         assert len(extension.calls["on_css_loaded"]) == 1
         ctx4: OnCssLoadedContext = extension.calls["on_css_loaded"][0]
         assert ctx4.component_cls == TestComponent
-        assert ctx4.content == (
-            '.html-css-only {\n'
-            '  color: blue;\n'
-            '}\n'
-        )
+        assert ctx4.content == ".html-css-only {\n  color: blue;\n}\n"
 
     @djc_test(components_settings={"extensions": [OverrideAssetExtension]})
     def test_asset_hooks_override(self):
@@ -658,7 +652,7 @@ class TestExtensionDefaults:
             "extensions_defaults": {
                 "test_extension": {},
             },
-        }
+        },
     )
     def test_no_defaults(self):
         class TestComponent(Component):
@@ -675,13 +669,13 @@ class TestExtensionDefaults:
             "extensions_defaults": {
                 "test_extension": {
                     "foo": "NEW_FOO",
-                    "baz": classmethod(lambda self: "OVERRIDEN"),
+                    "baz": classmethod(lambda _self: "OVERRIDEN"),
                 },
                 "nonexistent": {
                     "1": "2",
                 },
             },
-        }
+        },
     )
     def test_defaults(self):
         class TestComponent(Component):
@@ -699,7 +693,7 @@ class TestLegacyApi:
     @djc_test(
         components_settings={
             "extensions": [LegacyExtension],
-        }
+        },
     )
     def test_extension_class(self):
         class TestComponent(Component):

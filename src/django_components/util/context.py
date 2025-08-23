@@ -20,8 +20,6 @@ else:
 class CopiedDict(dict):
     """Dict subclass to identify dictionaries that have been copied with `snapshot_context`"""
 
-    pass
-
 
 def snapshot_context(context: Context) -> Context:
     """
@@ -151,7 +149,7 @@ def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> D
         try:
             processors_data.update(data)
         except TypeError as e:
-            raise TypeError(f"Context processor {processor.__qualname__} didn't return a " "dictionary.") from e
+            raise TypeError(f"Context processor {processor.__qualname__} didn't return a dictionary.") from e
 
     context_processors_data[request] = processors_data
 

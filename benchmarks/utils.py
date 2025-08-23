@@ -1,9 +1,9 @@
 import os
 import sys
 from importlib.abc import Loader
-from importlib.util import spec_from_loader, module_from_spec
+from importlib.util import module_from_spec, spec_from_loader
 from types import ModuleType
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 
 # NOTE: benchmark_name constraints:
@@ -20,35 +20,35 @@ def benchmark(
     number: Optional[int] = None,
     min_run_count: Optional[int] = None,
     include_in_quick_benchmark: bool = False,
-    **kwargs,
-):
-    def decorator(func):
+    **kwargs: Any,
+) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         # For pull requests, we want to run benchmarks only for a subset of tests,
         # because the full set of tests takes about 10 minutes to run (5 min per commit).
         # This is done by setting DJC_BENCHMARK_QUICK=1 in the environment.
         if os.getenv("DJC_BENCHMARK_QUICK") and not include_in_quick_benchmark:
             # By setting the benchmark name to something that does NOT start with
             # valid prefixes like `time_`, `mem_`, or `peakmem_`, this function will be ignored by asv.
-            func.benchmark_name = "noop"
+            func.benchmark_name = "noop"  # type: ignore[attr-defined]
             return func
 
         # "group_name" is our custom field, which we actually convert to asv's "benchmark_name"
         if group_name is not None:
             benchmark_name = f"{group_name}.{func.__name__}"
-            func.benchmark_name = benchmark_name
+            func.benchmark_name = benchmark_name  # type: ignore[attr-defined]
 
         # Also "params" is custom, so we normalize it to "params" and "param_names"
         if params is not None:
-            func.params, func.param_names = list(params.values()), list(params.keys())
+            func.params, func.param_names = list(params.values()), list(params.keys())  # type: ignore[attr-defined]
 
         if pretty_name is not None:
-            func.pretty_name = pretty_name
+            func.pretty_name = pretty_name  # type: ignore[attr-defined]
         if timeout is not None:
-            func.timeout = timeout
+            func.timeout = timeout  # type: ignore[attr-defined]
         if number is not None:
-            func.number = number
+            func.number = number  # type: ignore[attr-defined]
         if min_run_count is not None:
-            func.min_run_count = min_run_count
+            func.min_run_count = min_run_count  # type: ignore[attr-defined]
 
         # Additional, untyped kwargs
         for k, v in kwargs.items():
@@ -60,11 +60,11 @@ def benchmark(
 
 
 class VirtualModuleLoader(Loader):
-    def __init__(self, code_string):
+    def __init__(self, code_string: str) -> None:
         self.code_string = code_string
 
-    def exec_module(self, module):
-        exec(self.code_string, module.__dict__)
+    def exec_module(self, module: ModuleType) -> None:
+        exec(self.code_string, module.__dict__)  # noqa: S102
 
 
 def create_virtual_module(name: str, code_string: str, file_path: str) -> ModuleType:

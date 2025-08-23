@@ -9,7 +9,7 @@ from mkdocs_gen_files import Nav
 ROOT = pathlib.Path(__file__).parent.parent.parent
 
 
-def generate_release_notes():
+def generate_release_notes() -> None:
     """
     Reads CHANGELOG.md, splits it into per-version pages,
     and generates an index page with links to all versions.
@@ -20,7 +20,7 @@ def generate_release_notes():
     # Create the output directory if it doesn't exist
     (ROOT / "docs" / releases_dir).mkdir(parents=True, exist_ok=True)
 
-    with open(changelog_path, "r", encoding="utf-8") as f:
+    with changelog_path.open("r", encoding="utf-8") as f:
         changelog_content = f.read()
 
     # Split the changelog by version headers (e.g., "## vX.Y.Z")
@@ -62,7 +62,7 @@ def generate_release_notes():
         # Prepare title for navigation, e.g. "v0.140.0 (2024-09-11)"
         nav_title = version_title_full
         if date_str:
-            parsed_date = datetime.strptime(date_str, "%d %b %Y")
+            parsed_date = datetime.strptime(date_str, "%d %b %Y")  # noqa: DTZ007
             formatted_date = parsed_date.strftime("%Y-%m-%d")
             nav_title += f" ({formatted_date})"
 

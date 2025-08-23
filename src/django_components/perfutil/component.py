@@ -77,10 +77,10 @@ component_renderer_cache: Dict[str, Tuple[ComponentRenderer, str]] = {}
 child_component_attrs: Dict[str, List[str]] = {}
 
 nested_comp_pattern = re.compile(
-    r'<template [^>]*?djc-render-id="\w{{{COMP_ID_LENGTH}}}"[^>]*?></template>'.format(COMP_ID_LENGTH=COMP_ID_LENGTH)
+    r'<template [^>]*?djc-render-id="\w{{{COMP_ID_LENGTH}}}"[^>]*?></template>'.format(COMP_ID_LENGTH=COMP_ID_LENGTH),  # noqa: UP032
 )
 render_id_pattern = re.compile(
-    r'djc-render-id="(?P<render_id>\w{{{COMP_ID_LENGTH}}})"'.format(COMP_ID_LENGTH=COMP_ID_LENGTH)
+    r'djc-render-id="(?P<render_id>\w{{{COMP_ID_LENGTH}}})"'.format(COMP_ID_LENGTH=COMP_ID_LENGTH),  # noqa: UP032
 )
 
 
@@ -135,7 +135,8 @@ def component_post_render(
     component_name: str,
     parent_id: Optional[str],
     on_component_rendered_callbacks: Dict[
-        str, Callable[[Optional[str], Optional[Exception]], OnComponentRenderedResult]
+        str,
+        Callable[[Optional[str], Optional[Exception]], OnComponentRenderedResult],
     ],
     on_html_rendered: Callable[[str], str],
 ) -> str:
@@ -345,11 +346,11 @@ def component_post_render(
             continue
 
         # Skip parts of errored components
-        elif curr_item.parent_id in ignored_ids:
+        if curr_item.parent_id in ignored_ids:
             continue
 
         # Process text parts
-        elif isinstance(curr_item, TextPart):
+        if isinstance(curr_item, TextPart):
             parent_html_parts = get_html_parts(curr_item.parent_id)
             parent_html_parts.append(curr_item.text)
 
@@ -388,7 +389,7 @@ def component_post_render(
         # - Rendering of component's template
         #
         # In all cases, we want to mark the component as errored, and let the parent handle it.
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             handle_error(component_id=component_id, error=err)
             continue
 
@@ -416,7 +417,7 @@ def component_post_render(
         last_index = 0
         parts_to_process: List[Union[TextPart, ComponentPart]] = []
         for match in nested_comp_pattern.finditer(comp_content):
-            part_before_component = comp_content[last_index : match.start()]  # noqa: E203
+            part_before_component = comp_content[last_index : match.start()]
             last_index = match.end()
             comp_part = match[0]
 
@@ -490,7 +491,7 @@ def _call_generator_before_callback(
 
         # Catch if `Component.on_render()` raises an exception, in which case this becomes
         # the new error.
-        except Exception as new_error:
+        except Exception as new_error:  # noqa: BLE001
             error = new_error
             html = None
         # This raises if `StopIteration` was not raised, which may be if `Component.on_render()`

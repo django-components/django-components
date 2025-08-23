@@ -7,17 +7,17 @@ T = TypeVar("T")
 class CacheNode(Generic[T]):
     """A node in the doubly linked list."""
 
-    def __init__(self, key: Hashable, value: T):
+    def __init__(self, key: Hashable, value: T) -> None:
         self.key = key
         self.value = value
-        self.prev: Optional["CacheNode"] = None
-        self.next: Optional["CacheNode"] = None
+        self.prev: Optional[CacheNode] = None
+        self.next: Optional[CacheNode] = None
 
 
 class LRUCache(Generic[T]):
     """A simple LRU Cache implementation."""
 
-    def __init__(self, maxsize: Optional[int] = None):
+    def __init__(self, maxsize: Optional[int] = None) -> None:
         """
         Initialize the LRU cache.
 
@@ -26,8 +26,8 @@ class LRUCache(Generic[T]):
         self.maxsize = maxsize
         self.cache: Dict[Hashable, CacheNode[T]] = {}  # Maps keys to nodes in the doubly linked list
         # Dummy head and tail nodes to simplify operations
-        self.head = CacheNode[T]("", cast(T, None))  # Most recently used
-        self.tail = CacheNode[T]("", cast(T, None))  # Least recently used
+        self.head = CacheNode[T]("", cast("T", None))  # Most recently used
+        self.tail = CacheNode[T]("", cast("T", None))  # Least recently used
         self.head.next = self.tail
         self.tail.prev = self.head
 
@@ -44,8 +44,8 @@ class LRUCache(Generic[T]):
             self._remove(node)
             self._add_to_front(node)
             return node.value
-        else:
-            return None  # Key not found
+
+        return None  # Key not found
 
     def has(self, key: Hashable) -> bool:
         """

@@ -125,8 +125,14 @@ class TestComponentMediaCache:
         assert not test_cache.has_key(f"__components:{TestSimpleComponent.class_id}:css")
 
         # Check that we cache `Component.js` / `Component.css`
-        assert test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:js").strip() == "console.log('Hello from JS');"  # noqa: E501
-        assert test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:css").strip() == ".novars-component { color: blue; }"  # noqa: E501
+        assert (
+            test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:js").strip()
+            == "console.log('Hello from JS');"
+        )
+        assert (
+            test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:css").strip()
+            == ".novars-component { color: blue; }"
+        )
 
         # Render the components to trigger caching of JS/CSS variables from `get_js_data` / `get_css_data`
         TestMediaAndVarsComponent.render()
@@ -138,4 +144,4 @@ class TestComponentMediaCache:
 
         # TODO - Update once JS and CSS vars are enabled
         assert test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:js:{js_vars_hash}").strip() == ""
-        assert test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:css:{css_vars_hash}").strip() == ""  # noqa: E501
+        assert test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:css:{css_vars_hash}").strip() == ""

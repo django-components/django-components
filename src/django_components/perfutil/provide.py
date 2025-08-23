@@ -1,6 +1,4 @@
-"""
-This module contains optimizations for the `{% provide %}` feature.
-"""
+"""This module contains optimizations for the `{% provide %}` feature."""
 
 from contextlib import contextmanager
 from typing import Dict, Generator, NamedTuple, Set

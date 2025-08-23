@@ -26,5 +26,3 @@ class Empty(NamedTuple):
 
     Read more about [Typing and validation](../../concepts/fundamentals/typing_and_validation).
     """
-
-    pass

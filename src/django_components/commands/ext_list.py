@@ -60,8 +60,8 @@ class ExtListCommand(ListCommand):
     name = "list"
     help = "List all extensions."
 
-    columns = ["name"]
-    default_columns = ["name"]
+    columns = ("name",)
+    default_columns = ("name",)
 
     def get_data(self) -> List[Dict[str, Any]]:
         data: List[Dict[str, Any]] = []
@@ -69,6 +69,6 @@ class ExtListCommand(ListCommand):
             data.append(
                 {
                     "name": extension.name,
-                }
+                },
             )
         return data

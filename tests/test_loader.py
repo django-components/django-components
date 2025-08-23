@@ -1,14 +1,14 @@
-import re
 import os
+import re
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from django.conf import settings
 
+from django_components.testing import djc_test
 from django_components.util.loader import _filepath_to_python_module, get_component_dirs, get_component_files
 
-from django_components.testing import djc_test
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -29,8 +29,7 @@ class TestComponentDirs:
 
         assert own_dirs == [
             # Top-level /components dir
-            Path(__file__).parent.resolve()
-            / "components",
+            Path(__file__).parent.resolve() / "components",
         ]
 
         # Apps with a `components` dir
@@ -42,7 +41,7 @@ class TestComponentDirs:
 
     @djc_test(
         django_settings={
-            "BASE_DIR": Path(__file__).parent.resolve() / "test_structures" / "test_structure_1",  # noqa
+            "BASE_DIR": Path(__file__).parent.resolve() / "test_structures" / "test_structure_1",
         },
     )
     def test_get_dirs__base_dir__complex(self):
@@ -71,7 +70,7 @@ class TestComponentDirs:
                 ("with_alias", Path(__file__).parent.resolve() / "components"),
                 ("too_many", Path(__file__).parent.resolve() / "components", Path(__file__).parent.resolve()),
                 ("with_not_str_alias", 3),
-            ],  # noqa
+            ],
         },
     )
     @patch("django_components.util.loader.logger.warning")
@@ -91,8 +90,7 @@ class TestComponentDirs:
 
         assert own_dirs == [
             # Top-level /components dir
-            Path(__file__).parent.resolve()
-            / "components",
+            Path(__file__).parent.resolve() / "components",
         ]
 
         warn_inputs = [warn.args[0] for warn in mock_warning.call_args_list]
@@ -164,8 +162,7 @@ class TestComponentDirs:
 
         assert own_dirs == [
             # Top-level /components dir
-            Path(__file__).parent.resolve()
-            / "components",
+            Path(__file__).parent.resolve() / "components",
         ]
 
     @djc_test(
@@ -183,8 +180,7 @@ class TestComponentDirs:
 
         assert own_dirs == [
             # Top-level /components dir
-            Path(__file__).parent.resolve()
-            / "components",
+            Path(__file__).parent.resolve() / "components",
         ]
 
     @djc_test(
@@ -202,8 +198,7 @@ class TestComponentDirs:
 
         assert own_dirs == [
             # Top-level /components dir
-            Path(__file__).parent.resolve()
-            / "components",
+            Path(__file__).parent.resolve() / "components",
         ]
 
     @djc_test(
@@ -227,8 +222,7 @@ class TestComponentDirs:
 
         assert own_dirs == [
             # Top-level /components dir
-            Path(__file__).parent.resolve()
-            / "components",
+            Path(__file__).parent.resolve() / "components",
         ]
 
 
@@ -303,13 +297,22 @@ class TestComponentFiles:
 
 @djc_test
 class TestFilepathToPythonModule:
-    def test_prepares_path(self):
+    def test_prepares_path__str(self):
         base_path = str(settings.BASE_DIR)
 
-        the_path = os.path.join(base_path, "tests.py")
+        the_path = os.path.join(base_path, "tests.py")  # noqa: PTH118
         assert _filepath_to_python_module(the_path, base_path, None) == "tests"
 
-        the_path = os.path.join(base_path, "tests/components/relative_file/relative_file.py")
+        the_path = os.path.join(base_path, "tests/components/relative_file/relative_file.py")  # noqa: PTH118
+        assert _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"
+
+    def test_prepares_path__path(self):
+        base_path = str(settings.BASE_DIR)
+
+        the_path = Path(base_path) / "tests.py"
+        assert _filepath_to_python_module(the_path, base_path, None) == "tests"
+
+        the_path = Path(base_path) / "tests/components/relative_file/relative_file.py"
         assert _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"
 
     def test_handles_separators_based_on_os_name(self):
@@ -320,7 +323,9 @@ class TestFilepathToPythonModule:
             assert _filepath_to_python_module(the_path, base_path, None) == "tests"
 
             the_path = base_path + "/" + "tests/components/relative_file/relative_file.py"
-            assert _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"  # noqa: E501
+            assert (
+                _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"
+            )
 
         base_path = str(settings.BASE_DIR).replace("/", "\\")
         with patch("os.name", new="nt"):
@@ -328,11 +333,15 @@ class TestFilepathToPythonModule:
             assert _filepath_to_python_module(the_path, base_path, None) == "tests"
 
             the_path = base_path + "\\" + "tests\\components\\relative_file\\relative_file.py"
-            assert _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"  # noqa: E501
+            assert (
+                _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"
+            )
 
             # NOTE: Windows should handle also POSIX separator
             the_path = base_path + "/" + "tests.py"
             assert _filepath_to_python_module(the_path, base_path, None) == "tests"
 
             the_path = base_path + "/" + "tests/components/relative_file/relative_file.py"
-            assert _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"  # noqa: E501
+            assert (
+                _filepath_to_python_module(the_path, base_path, None) == "tests.components.relative_file.relative_file"
+            )

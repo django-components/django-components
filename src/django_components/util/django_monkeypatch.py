@@ -29,7 +29,7 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
 
     # NOTE: Function signature of Template.__init__ hasn't changed in 11 years, so we can safely patch it.
     #       See https://github.com/django/django/blame/main/django/template/base.py#L139
-    def __init__(
+    def __init__(  # noqa: N807
         self: Template,
         template_string: Any,
         origin: Optional[Origin] = None,
@@ -38,7 +38,7 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
         **kwargs: Any,
     ) -> None:
         # NOTE: Avoids circular import
-        from django_components.template import (
+        from django_components.template import (  # noqa: PLC0415
             get_component_by_template_file,
             get_component_from_origin,
             set_component_to_origin,
@@ -70,7 +70,7 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
                     content=template_string,
                     origin=origin,
                     name=name,
-                )
+                ),
             )
 
         # Calling original `Template.__init__` should also compile the template into a Nodelist
@@ -82,7 +82,7 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
                 OnTemplateCompiledContext(
                     component_cls=component_cls,
                     template=self,
-                )
+                ),
             )
 
     template_cls.__init__ = __init__
@@ -129,7 +129,7 @@ def monkeypatch_template_compile_nodelist(template_cls: Type[Template]) -> None:
             return nodelist
         except Exception as e:
             if self.engine.debug:
-                e.template_debug = self.get_exception_info(e, e.token)  # type: ignore
+                e.template_debug = self.get_exception_info(e, e.token)  # type: ignore[attr-defined]
             raise
 
     template_cls.compile_nodelist = _compile_nodelist
@@ -162,7 +162,7 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
 
     # NOTE: This implementation is based on Django v5.1.3)
     def _template_render(self: Template, context: Context, *args: Any, **kwargs: Any) -> str:
-        "Display stage -- can be called many times"
+        """Display stage -- can be called many times"""
         # We parametrized `isolated_context`, which was `True` in the original method.
         if COMPONENT_IS_NESTED_KEY not in context:
             isolated_context = True
@@ -254,7 +254,7 @@ def monkeypatch_template_proxy_cls() -> None:
     # Patch TemplateProxy if template_partials is installed
     # See https://github.com/django-components/django-components/issues/1323#issuecomment-3164224042
     try:
-        from template_partials.templatetags.partials import TemplateProxy
+        from template_partials.templatetags.partials import TemplateProxy  # noqa: PLC0415
     except ImportError:
         # template_partials is in INSTALLED_APPS but not actually installed
         # This is fine, just skip the patching
@@ -270,7 +270,7 @@ def monkeypatch_template_proxy_cls() -> None:
 def monkeypatch_template_proxy_render(template_proxy_cls: Type[Any]) -> None:
     # NOTE: TemplateProxy.render() is same logic as Template.render(), just duplicated.
     # So we can instead reuse Template.render()
-    def _template_proxy_render(self: Any, context: Context, *args: Any, **kwargs: Any) -> str:
+    def _template_proxy_render(self: Any, context: Context, *_args: Any, **_kwargs: Any) -> str:
         return Template.render(self, context)
 
     template_proxy_cls.render = _template_proxy_render

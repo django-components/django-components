@@ -2,8 +2,9 @@ from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
-from django_components.extensions.debug_highlight import apply_component_highlight, COLORS
+from django_components.extensions.debug_highlight import COLORS, apply_component_highlight
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -87,7 +88,7 @@ class TestComponentHighlight:
             "extensions_defaults": {
                 "debug_highlight": {"highlight_components": True},
             },
-        }
+        },
     )
     def test_component_highlight_extension(self):
         template = _prepare_template()
@@ -232,7 +233,7 @@ class TestComponentHighlight:
             "extensions_defaults": {
                 "debug_highlight": {"highlight_slots": True},
             },
-        }
+        },
     )
     def test_slot_highlight_extension(self):
         template = _prepare_template()
@@ -399,12 +400,14 @@ class TestComponentHighlight:
                 highlight_components = True
                 highlight_slots = True
 
-        template = Template("""
+        template = Template(
+            """
             {% load component_tags %}
             {% component "inner" %}
                 {{ content }}
             {% endcomponent %}
-        """)
+        """,
+        )
         rendered = template.render(Context({"content": "Hello, world!"}))
 
         expected = """

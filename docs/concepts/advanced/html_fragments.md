@@ -91,7 +91,7 @@ MyTable.render(
 
 ## Live examples
 
-For live interactive examples, [start our demo project](../../community/development.md#developing-against-live-django-app)
+For live interactive examples, [start our demo project](../../community/development.md#dev-server)
 (`sampleproject`).
 
 Then navigate to these URLs:

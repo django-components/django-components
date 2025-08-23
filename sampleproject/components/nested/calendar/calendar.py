@@ -1,4 +1,6 @@
-from typing import NamedTuple
+from typing import Any, NamedTuple
+
+from django.http import HttpRequest, HttpResponse
 
 from django_components import Component, register
 
@@ -24,7 +26,7 @@ class CalendarNested(Component):
         }
 
     class View:
-        def get(self, request, *args, **kwargs):
+        def get(self, request: HttpRequest, *_args: Any, **_kwargs: Any) -> HttpResponse:
             return CalendarNested.render_to_response(
                 request=request,
                 kwargs={

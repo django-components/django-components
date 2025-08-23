@@ -41,7 +41,8 @@ def validate_params(
             args, kwargs = _validate_params_with_signature(validation_signature, params, extra_kwargs)
         return args, kwargs
     except TypeError as e:
-        raise TypeError(f"Invalid parameters for tag '{tag}': {str(e)}") from None
+        err_msg = str(e)
+        raise TypeError(f"Invalid parameters for tag '{tag}': {err_msg}") from None
 
 
 @dataclass
@@ -88,7 +89,7 @@ def resolve_params(
                     resolved_params.append(TagParam(key=None, value=value))
             else:
                 raise ValueError(
-                    f"Cannot spread non-iterable value: '{param.value.serialize()}' resolved to {resolved}"
+                    f"Cannot spread non-iterable value: '{param.value.serialize()}' resolved to {resolved}",
                 )
         else:
             resolved_params.append(TagParam(key=param.key, value=resolved))
@@ -110,7 +111,7 @@ class ParsedTag(NamedTuple):
 def parse_template_tag(
     tag: str,
     end_tag: Optional[str],
-    allowed_flags: Optional[List[str]],
+    allowed_flags: Optional[Iterable[str]],
     parser: Parser,
     token: Token,
 ) -> ParsedTag:
@@ -138,7 +139,8 @@ def parse_template_tag(
     else:
         is_inline = not end_tag
 
-    raw_params, flags = _extract_flags(tag_name, attrs, allowed_flags or [])
+    allowed_flags_set = set(allowed_flags) if allowed_flags else set()
+    raw_params, flags = _extract_flags(tag_name, attrs, allowed_flags_set)
 
     def _parse_tag_body(parser: Parser, end_tag: str, inline: bool) -> Tuple[NodeList, Optional[str]]:
         if inline:
@@ -188,8 +190,7 @@ def _extract_contents_until(parser: Parser, until_blocks: List[str]) -> str:
                 contents.append("{% " + token.contents + " %}")
             if command in until_blocks:
                 return "".join(contents)
-            else:
-                contents.append("{% " + token.contents + " %}")
+            contents.append("{% " + token.contents + " %}")
         elif token_type == 3:  # TokenType.COMMENT
             contents.append("{# " + token.contents + " #}")
         else:
@@ -205,7 +206,9 @@ def _extract_contents_until(parser: Parser, until_blocks: List[str]) -> str:
 
 
 def _extract_flags(
-    tag_name: str, attrs: List[TagAttr], allowed_flags: List[str]
+    tag_name: str,
+    attrs: List[TagAttr],
+    allowed_flags: Set[str],
 ) -> Tuple[List[TagAttr], Dict[str, bool]]:
     found_flags = set()
     remaining_attrs = []
@@ -386,13 +389,12 @@ def _validate_params_with_signature(
         if signature_param.kind in (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD):
             if signature_param.default == inspect.Parameter.empty:
                 raise TypeError(f"missing a required argument: '{param_name}'")
-            elif len(validated_args) <= next_positional_index:
+            if len(validated_args) <= next_positional_index:
                 validated_kwargs[param_name] = signature_param.default
         elif signature_param.kind == inspect.Parameter.KEYWORD_ONLY:
             if signature_param.default == inspect.Parameter.empty:
                 raise TypeError(f"missing a required argument: '{param_name}'")
-            else:
-                validated_kwargs[param_name] = signature_param.default
+            validated_kwargs[param_name] = signature_param.default
 
     # Return args and kwargs
     return validated_args, validated_kwargs
@@ -492,13 +494,12 @@ def _validate_params_with_code(
         if i < positional_count:  # Positional parameter
             if i < required_positional:
                 raise TypeError(f"missing a required argument: '{param_name}'")
-            elif len(validated_args) <= i:
+            if len(validated_args) <= i:
                 default_index = i - required_positional
                 validated_kwargs[param_name] = defaults[default_index]
         elif i < positional_count + kwonly_count:  # Keyword-only parameter
             if param_name not in kwdefaults:
                 raise TypeError(f"missing a required argument: '{param_name}'")
-            else:
-                validated_kwargs[param_name] = kwdefaults[param_name]
+            validated_kwargs[param_name] = kwdefaults[param_name]
 
     return tuple(validated_args), validated_kwargs
