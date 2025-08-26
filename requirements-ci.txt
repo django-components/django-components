@@ -95,7 +95,7 @@ tox-gh-actions==3.3.0
     # via -r requirements-ci.in
 types-requests==2.32.0.20241016
     # via -r requirements-ci.in
-typing-extensions==4.13.2
+typing-extensions==4.15.0
     # via
     #   -r requirements-ci.in
     #   pyee
