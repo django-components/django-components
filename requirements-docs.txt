@@ -208,7 +208,7 @@ pyyaml-env-tag==1.1
     #   mkdocs
 regex==2025.7.34
     # via mkdocs-material
-requests==2.32.4
+requests==2.32.5
     # via mkdocs-material
 six==1.17.0
     # via python-dateutil
