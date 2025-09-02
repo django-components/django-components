@@ -206,7 +206,7 @@ pyyaml-env-tag==1.1
     # via
     #   mike
     #   mkdocs
-regex==2025.7.34
+regex==2025.8.29
     # via mkdocs-material
 requests==2.32.4
     # via mkdocs-material
