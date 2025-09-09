@@ -2,7 +2,7 @@ import gc
 import inspect
 import sys
 from functools import wraps
-from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Set, Tuple, Type, Union
+from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 from unittest.mock import patch
 from weakref import ReferenceType
 
@@ -13,6 +13,7 @@ from django.template import engines
 from django.template.loaders.base import Loader
 from django.test import override_settings
 
+from django_components import ComponentsSettings
 from django_components.component import ALL_COMPONENTS, Component, component_node_subclasses_by_name
 from django_components.component_media import ComponentMedia
 from django_components.component_registry import ALL_REGISTRIES, ComponentRegistry
@@ -403,22 +404,39 @@ def djc_test(
     return decorator
 
 
-# Merge settings such that the fields in the `COMPONENTS` setting are merged.
 def _merge_django_settings(
-    django_settings: Optional[Dict] = None,
-    components_settings: Optional[Dict] = None,
-) -> Dict:
-    merged_settings = {} if not django_settings else django_settings.copy()
+    django_settings: Optional[Mapping[str, Any]] = None,
+    components_settings: Optional[Mapping[str, Any] | ComponentsSettings] = None,
+) -> dict[str, Any]:
+    """
+    Merge settings such that the fields in the `COMPONENTS` setting are merged.
+    Use components_settings to override fields in the django COMPONENTS setting.
+    """
+    # Start from existing django_settings (mapping expected from caller)
+    merged_settings: dict[str, Any] = dict(django_settings or {})
+
+    defaults = _components_to_mapping(_django_settings.COMPONENTS if _django_settings.configured else {})
+    current = _components_to_mapping(merged_settings.get("COMPONENTS"))
+    overrides = _components_to_mapping(components_settings)
 
     merged_settings["COMPONENTS"] = {
-        # Use the Django settings as they were before the `override_settings`
-        # as the defaults.
-        **(_django_settings.COMPONENTS if _django_settings.configured else {}),
-        **merged_settings.get("COMPONENTS", {}),
-        **(components_settings or {}),
+        **defaults,
+        **current,
+        **overrides,
     }
-
     return merged_settings
+
+
+def _components_to_mapping(
+    value: Optional[Mapping[str, Any] | ComponentsSettings],
+) -> dict[str, Any]:
+    if value is None:
+        return {}
+    if isinstance(value, Mapping):
+        return dict(value)
+    if isinstance(value, ComponentsSettings):
+        return dict(value._asdict())
+    raise TypeError("COMPONENTS must be a mapping or ComponentsSettings")
 
 
 def _setup_djc_global_state(
