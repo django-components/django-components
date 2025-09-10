@@ -54,7 +54,7 @@ class GenIdPatcher:
 
         def mock_gen_id(*_args: Any, **_kwargs: Any) -> str:
             self._gen_id_count += 1
-            return hex(self._gen_id_count)[2:]
+            return f"{self._gen_id_count:x}"
 
         self._gen_id_patch = patch("django_components.util.misc.generate", side_effect=mock_gen_id)
         self._gen_id_patch.start()

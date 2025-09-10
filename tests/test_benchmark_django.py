@@ -3962,7 +3962,7 @@ form_template_str: types.django_html = """
 
 
 class FormData(NamedTuple):
-    type: Literal["table", "paragraph", "ul", None] = None
+    type: Optional[Literal["table", "paragraph", "ul"]] = None
     editable: bool = True
     method: str = "post"
     # Submit btn
