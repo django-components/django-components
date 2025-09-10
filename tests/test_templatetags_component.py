@@ -4,9 +4,10 @@ from typing import NamedTuple
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
 from pytest_django.asserts import assertHTMLEqual
-from django_components import AlreadyRegistered, Component, NotRegistered, register, registry, types
 
+from django_components import AlreadyRegistered, Component, NotRegistered, register, registry, types
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
@@ -775,7 +776,6 @@ class TestRecursiveComponent:
                 depth = 0
 
             def get_template_data(self, args, kwargs, slots, context):
-                print("depth:", kwargs["depth"])
                 return {"depth": kwargs["depth"] + 1, "DEPTH": DEPTH}
 
             template: types.django_html = """
@@ -837,20 +837,23 @@ class TestComponentTemplateSyntaxError:
 
         with pytest.raises(
             TemplateSyntaxError,
-            match=re.escape("Illegal content passed to component 'test'. Explicit 'fill' tags cannot occur alongside other text"),  # noqa: E501
+            match=re.escape(
+                "Illegal content passed to component 'test'. Explicit 'fill' tags cannot occur alongside other text",
+            ),
         ):
             template.render(Context())
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_unclosed_component_is_error(self, components_settings):
         registry.register("test", gen_slotted_component())
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+            {% fill "header" %}{% endfill %}
+        """
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Unclosed tag on line 3: 'component'"),
         ):
-            template_str: types.django_html = """
-                {% load component_tags %}
-                {% component "test" %}
-                {% fill "header" %}{% endfill %}
-            """
             Template(template_str)

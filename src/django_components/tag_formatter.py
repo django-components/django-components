@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 # Require the start / end tags to contain NO spaces and only these characters
 TAG_CHARS = r"\w\-\:\@\.\#/"
-TAG_RE = re.compile(r"^[{chars}]+$".format(chars=TAG_CHARS))
+TAG_RE = re.compile(rf"^[{TAG_CHARS}]+$")
 
 
 class TagResult(NamedTuple):
@@ -106,6 +106,7 @@ class TagFormatterABC(abc.ABC):
 
         Returns:
             str: The formatted start tag.
+
         """
         ...
 
@@ -119,6 +120,7 @@ class TagFormatterABC(abc.ABC):
 
         Returns:
             str: The formatted end tag.
+
         """
         ...
 
@@ -131,7 +133,7 @@ class TagFormatterABC(abc.ABC):
         which is a tuple of `(component_name, remaining_tokens)`.
 
         Args:
-            tokens [List(str]): List of tokens passed to the component tag.
+            tokens (List[str]): List of tokens passed to the component tag.
 
         Returns:
             TagResult: Parsed component name and remaining tokens.
@@ -160,16 +162,15 @@ class TagFormatterABC(abc.ABC):
         ```python
         TagResult('my_comp', ['key=val', 'key2=val2'])
         ```
+
         """
         ...
 
 
 class InternalTagFormatter:
-    """
-    Internal wrapper around user-provided TagFormatters, so that we validate the outputs.
-    """
+    """Internal wrapper around user-provided TagFormatters, so that we validate the outputs."""
 
-    def __init__(self, tag_formatter: TagFormatterABC):
+    def __init__(self, tag_formatter: TagFormatterABC) -> None:
         self.tag_formatter = tag_formatter
 
     def start_tag(self, name: str) -> str:
@@ -192,13 +193,13 @@ class InternalTagFormatter:
         if not tag:
             raise ValueError(
                 f"{self.tag_formatter.__class__.__name__} returned an invalid tag for {tag_type}: '{tag}'."
-                f" Tag cannot be empty"
+                f" Tag cannot be empty",
             )
 
         if not TAG_RE.match(tag):
             raise ValueError(
                 f"{self.tag_formatter.__class__.__name__} returned an invalid tag for {tag_type}: '{tag}'."
-                f" Tag must contain only following chars: {TAG_CHARS}"
+                f" Tag must contain only following chars: {TAG_CHARS}",
             )
 
 
@@ -222,13 +223,13 @@ class ComponentFormatter(TagFormatterABC):
     ```
     """
 
-    def __init__(self, tag: str):
+    def __init__(self, tag: str) -> None:
         self.tag = tag
 
-    def start_tag(self, name: str) -> str:
+    def start_tag(self, _name: str) -> str:
         return self.tag
 
-    def end_tag(self, name: str) -> str:
+    def end_tag(self, _name: str) -> str:
         return f"end{self.tag}"
 
     def parse(self, tokens: List[str]) -> TagResult:
@@ -238,10 +239,7 @@ class ComponentFormatter(TagFormatterABC):
             raise TemplateSyntaxError(f"{self.__class__.__name__}: Component tag did not receive tag name")
 
         # If the first arg is a kwarg, then clearly the component name is not set.
-        if "=" in args[0]:
-            comp_name = None
-        else:
-            comp_name = args.pop(0)
+        comp_name = None if "=" in args[0] else args.pop(0)
 
         if not comp_name:
             raise TemplateSyntaxError("Component name must be a non-empty quoted string, e.g. 'my_comp'")

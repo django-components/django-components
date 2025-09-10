@@ -20,7 +20,7 @@ PARAMETRIZE_CONTEXT_BEHAVIOR = (
 def setup_test_config(
     components: Optional[Dict] = None,
     extra_settings: Optional[Dict] = None,
-):
+) -> None:
     if settings.configured:
         return
 
@@ -38,16 +38,16 @@ def setup_test_config(
                     "builtins": [
                         "django_components.templatetags.component_tags",
                     ],
-                    'loaders': [
+                    "loaders": [
                         # Default Django loader
-                        'django.template.loaders.filesystem.Loader',
+                        "django.template.loaders.filesystem.Loader",
                         # Including this is the same as APP_DIRS=True
-                        'django.template.loaders.app_directories.Loader',
+                        "django.template.loaders.app_directories.Loader",
                         # Components loader
-                        'django_components.template_loader.Loader',
+                        "django_components.template_loader.Loader",
                     ],
                 },
-            }
+            },
         ],
         "COMPONENTS": {
             **(components or {}),
@@ -57,7 +57,7 @@ def setup_test_config(
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
                 "NAME": ":memory:",
-            }
+            },
         },
         "SECRET_KEY": "secret",
         "ROOT_URLCONF": "django_components.urls",
@@ -67,7 +67,7 @@ def setup_test_config(
         **{
             **default_settings,
             **(extra_settings or {}),
-        }
+        },
     )
 
     django.setup()

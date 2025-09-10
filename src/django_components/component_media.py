@@ -1,3 +1,4 @@
+# ruff: noqa: PTH100, PTH118, PTH120, PTH207
 import glob
 import os
 import sys
@@ -254,7 +255,7 @@ class ComponentMediaInput(Protocol):
 
     print(MyComponent.media._js)  # ["script.js", "other1.js", "other2.js"]
     ```
-    """  # noqa: E501
+    """
 
 
 @dataclass
@@ -294,7 +295,7 @@ class ComponentMedia:
             if (inlined_val is not UNSET and file_val is not UNSET) and not (inlined_val is None and file_val is None):
                 raise ImproperlyConfigured(
                     f"Received non-empty value from both '{inlined_attr}' and '{file_attr}' in"
-                    f" Component {self.comp_cls.__name__}. Only one of the two must be set."
+                    f" Component {self.comp_cls.__name__}. Only one of the two must be set.",
                 )
         # Make a copy of the original state, so we can reset it in tests
         self._original = copy(self)
@@ -338,7 +339,7 @@ class ComponentMediaMeta(type):
             _normalize_media(attrs["Media"])
 
         cls = super().__new__(mcs, name, bases, attrs)
-        comp_cls = cast(Type["Component"], cls)
+        comp_cls = cast("Type[Component]", cls)
 
         _setup_lazy_media_resolve(comp_cls, attrs)
 
@@ -358,9 +359,9 @@ class ComponentMediaMeta(type):
         if name in COMP_MEDIA_LAZY_ATTRS:
             comp_media: Optional[ComponentMedia] = getattr(cls, "_component_media", None)
             if comp_media is not None and comp_media.resolved:
-                print(
+                print(  # noqa: T201
                     f"WARNING: Setting attribute '{name}' on component '{cls.__name__}' after the media files were"
-                    " already resolved. This may lead to unexpected behavior."
+                    " already resolved. This may lead to unexpected behavior.",
                 )
 
         # NOTE: When a metaclass specifies a `__setattr__` method, this overrides the normal behavior of
@@ -393,8 +394,7 @@ def _setup_lazy_media_resolve(comp_cls: Type["Component"], attrs: Dict[str, Any]
     def get_comp_media_attr(attr: str) -> Any:
         if attr == "media":
             return _get_comp_cls_media(comp_cls)
-        else:
-            return _get_comp_cls_attr(comp_cls, attr)
+        return _get_comp_cls_attr(comp_cls, attr)
 
     # Because of the lazy resolution, we want to know when the user tries to access the media attributes.
     # And because these fields are class attributes, we can't use `@property` decorator.
@@ -432,27 +432,26 @@ def _get_comp_cls_attr(comp_cls: Type["Component"], attr: str) -> Any:
         # For each of the pairs of inlined_content + file (e.g. `js` + `js_file`), if at least one of the two
         # is defined, we interpret it such that this (sub)class has overridden what was set by the parent class(es),
         # and we won't search further up the MRO.
-        def resolve_pair(inline_attr: str, file_attr: str) -> Any:
-            inline_attr_empty = getattr(comp_media, inline_attr, UNSET) is UNSET
-            file_attr_empty = getattr(comp_media, file_attr, UNSET) is UNSET
+        def is_pair_empty(inline_attr: str, file_attr: str) -> bool:
+            inline_attr_empty = getattr(comp_media, inline_attr, UNSET) is UNSET  # noqa: B023
+            file_attr_empty = getattr(comp_media, file_attr, UNSET) is UNSET  # noqa: B023
 
-            is_pair_empty = inline_attr_empty and file_attr_empty
-            if is_pair_empty:
-                return UNSET
-            else:
-                return value
+            return inline_attr_empty and file_attr_empty
 
         if attr in ("js", "js_file"):
-            value = resolve_pair("js", "js_file")
+            is_empty_pair = is_pair_empty("js", "js_file")
         elif attr in ("css", "css_file"):
-            value = resolve_pair("css", "css_file")
+            is_empty_pair = is_pair_empty("css", "css_file")
         elif attr in ("template", "template_file"):
-            value = resolve_pair("template", "template_file")
+            is_empty_pair = is_pair_empty("template", "template_file")
+        else:
+            is_empty_pair = False
+
+        value = UNSET if is_empty_pair else value
 
         if value is UNSET:
             continue
-        else:
-            return value
+        return value
     return None
 
 
@@ -509,7 +508,7 @@ def _get_comp_cls_media(comp_cls: Type["Component"]) -> Any:
         #           pass
         #       ```
         media_input = getattr(curr_cls, "Media", UNSET)
-        default_extend = True if media_input is not None else False
+        default_extend = media_input is not None
         media_extend = getattr(media_input, "extend", default_extend)
 
         # This ensures the same behavior as Django's Media class, where:
@@ -520,7 +519,7 @@ def _get_comp_cls_media(comp_cls: Type["Component"]) -> Any:
         if media_extend is True:
             bases = curr_cls.__bases__
         elif media_extend is False:
-            bases = tuple()
+            bases = ()
         else:
             bases = media_extend
 
@@ -716,17 +715,17 @@ def _normalize_media(media: Type[ComponentMediaInput]) -> None:
             for media_type, path_or_list in media.css.items():
                 # {"all": "style.css"}
                 if _is_media_filepath(path_or_list):
-                    media.css[media_type] = [path_or_list]  # type: ignore
+                    media.css[media_type] = [path_or_list]  # type: ignore[misc]
                 # {"all": ["style.css"]}
                 else:
-                    media.css[media_type] = path_or_list  # type: ignore
+                    media.css[media_type] = path_or_list  # type: ignore[misc]
         else:
             raise ValueError(f"Media.css must be str, list, or dict, got {type(media.css)}")
 
     if hasattr(media, "js") and media.js:
         # Allow: class Media: js = "script.js"
         if _is_media_filepath(media.js):
-            media.js = [media.js]  # type: ignore
+            media.js = [media.js]  # type: ignore[misc]
         # Allow: class Media: js = ["script.js"]
         else:
             # JS is already a list, no action needed
@@ -759,29 +758,31 @@ def _map_media_filepaths(media: Type[ComponentMediaInput], map_fn: Callable[[Seq
 
 
 def _is_media_filepath(filepath: Any) -> bool:
+    # Case callable
     if callable(filepath):
         return True
 
+    # Case SafeString
     if isinstance(filepath, SafeData) or hasattr(filepath, "__html__"):
         return True
 
-    elif isinstance(filepath, (Path, os.PathLike)) or hasattr(filepath, "__fspath__"):
+    # Case PathLike
+    if isinstance(filepath, (Path, os.PathLike)) or hasattr(filepath, "__fspath__"):
         return True
 
+    # Case bytes
     if isinstance(filepath, bytes):
         return True
 
-    if isinstance(filepath, str):
-        return True
-
-    return False
+    # Case str
+    return isinstance(filepath, str)
 
 
 def _normalize_media_filepath(filepaths: Sequence[ComponentMediaInputPath]) -> List[Union[str, SafeData]]:
     normalized: List[Union[str, SafeData]] = []
     for filepath in filepaths:
         if callable(filepath):
-            filepath = filepath()
+            filepath = filepath()  # noqa: PLW2901
 
         if isinstance(filepath, SafeData) or hasattr(filepath, "__html__"):
             normalized.append(filepath)
@@ -789,10 +790,10 @@ def _normalize_media_filepath(filepaths: Sequence[ComponentMediaInputPath]) -> L
 
         if isinstance(filepath, (Path, os.PathLike)) or hasattr(filepath, "__fspath__"):
             # In case of Windows OS, convert to forward slashes
-            filepath = Path(filepath.__fspath__()).as_posix()
+            filepath = Path(filepath.__fspath__()).as_posix()  # noqa: PLW2901
 
         if isinstance(filepath, bytes):
-            filepath = filepath.decode("utf-8")
+            filepath = filepath.decode("utf-8")  # noqa: PLW2901
 
         if isinstance(filepath, str):
             normalized.append(filepath)
@@ -800,14 +801,16 @@ def _normalize_media_filepath(filepaths: Sequence[ComponentMediaInputPath]) -> L
 
         raise ValueError(
             f"Unknown filepath {filepath} of type {type(filepath)}. Must be str, bytes, PathLike, SafeString,"
-            " or a function that returns one of the former"
+            " or a function that returns one of the former",
         )
 
     return normalized
 
 
 def _resolve_component_relative_files(
-    comp_cls: Type["Component"], comp_media: ComponentMedia, comp_dirs: List[Path]
+    comp_cls: Type["Component"],
+    comp_media: ComponentMedia,
+    comp_dirs: List[Path],
 ) -> None:
     """
     Check if component's HTML, JS and CSS files refer to files in the same directory
@@ -825,7 +828,8 @@ def _resolve_component_relative_files(
     if is_set(comp_media.template_file) or is_set(comp_media.js_file) or is_set(comp_media.css_file):
         will_resolve_files = True
     elif not will_resolve_files and is_set(comp_media.Media):
-        if getattr(comp_media.Media, "css", None) or getattr(comp_media.Media, "js", None):
+        has_media_files = getattr(comp_media.Media, "css", None) or getattr(comp_media.Media, "js", None)
+        if has_media_files:
             will_resolve_files = True
 
     if not will_resolve_files:
@@ -837,7 +841,7 @@ def _resolve_component_relative_files(
     if not module_file_path:
         logger.debug(
             f"Could not resolve the path to the file for component '{component_name}'."
-            " Paths for HTML, JS or CSS templates will NOT be resolved relative to the component file."
+            " Paths for HTML, JS or CSS templates will NOT be resolved relative to the component file.",
         )
         return
 
@@ -851,7 +855,7 @@ def _resolve_component_relative_files(
             f"No component directory found for component '{component_name}' in {module_file_path}"
             " If this component defines HTML, JS or CSS templates relatively to the component file,"
             " then check that the component's directory is accessible from one of the paths"
-            " specified in the Django's 'COMPONENTS.dirs' settings."
+            " specified in the Django's 'COMPONENTS.dirs' settings.",
         )
         return
 
@@ -876,12 +880,11 @@ def _resolve_component_relative_files(
         # NOTE: It's important to use `repr`, so we don't trigger __str__ on SafeStrings
         if has_matched:
             logger.debug(
-                f"Interpreting file '{repr(filepath)}' of component '{module_name}'" " relatively to component file"
+                f"Interpreting file '{filepath!r}' of component '{module_name}' relatively to component file",
             )
         else:
             logger.debug(
-                f"Interpreting file '{repr(filepath)}' of component '{module_name}'"
-                " relatively to components directory"
+                f"Interpreting file '{filepath!r}' of component '{module_name}' relatively to components directory",
             )
 
         return resolved_filepaths
@@ -904,18 +907,18 @@ def _resolve_component_relative_files(
 
     # Check if template name is a local file or not
     if is_set(comp_media.template_file):
-        comp_media.template_file = resolve_relative_media_file(comp_media.template_file, False)[0]
+        comp_media.template_file = resolve_relative_media_file(comp_media.template_file, allow_glob=False)[0]
     if is_set(comp_media.js_file):
-        comp_media.js_file = resolve_relative_media_file(comp_media.js_file, False)[0]
+        comp_media.js_file = resolve_relative_media_file(comp_media.js_file, allow_glob=False)[0]
     if is_set(comp_media.css_file):
-        comp_media.css_file = resolve_relative_media_file(comp_media.css_file, False)[0]
+        comp_media.css_file = resolve_relative_media_file(comp_media.css_file, allow_glob=False)[0]
 
     if is_set(comp_media.Media):
         _map_media_filepaths(
             comp_media.Media,
             # Media files can be defined as a glob patterns that match multiple files.
             # Thus, flatten the list of lists returned by `resolve_relative_media_file`.
-            lambda filepaths: flatten(resolve_relative_media_file(f, True) for f in filepaths),
+            lambda filepaths: flatten(resolve_relative_media_file(f, allow_glob=True) for f in filepaths),
         )
 
         # Go over the JS / CSS media files again, but this time, if there are still any globs,
@@ -925,7 +928,7 @@ def _resolve_component_relative_files(
             comp_media.Media,
             # Media files can be defined as a glob patterns that match multiple files.
             # Thus, flatten the list of lists returned by `resolve_static_media_file`.
-            lambda filepaths: flatten(resolve_static_media_file(f, True) for f in filepaths),
+            lambda filepaths: flatten(resolve_static_media_file(f, allow_glob=True) for f in filepaths),
         )
 
 
@@ -957,12 +960,11 @@ def resolve_media_file(
     if allow_glob and is_glob(filepath_abs_or_glob):
         # Since globs are matched against the files, then we know that these files exist.
         matched_abs_filepaths = glob.glob(filepath_abs_or_glob)
+    # But if we were given non-glob file path, then we need to check if it exists.
+    elif Path(filepath_abs_or_glob).exists():
+        matched_abs_filepaths = [filepath_abs_or_glob]
     else:
-        # But if we were given non-glob file path, then we need to check if it exists.
-        if Path(filepath_abs_or_glob).exists():
-            matched_abs_filepaths = [filepath_abs_or_glob]
-        else:
-            matched_abs_filepaths = []
+        matched_abs_filepaths = []
 
     # If there are no matches, return the original filepath
     if not matched_abs_filepaths:
@@ -1082,7 +1084,7 @@ def _get_asset(
     if asset_content is not UNSET and asset_file is not UNSET:
         raise ValueError(
             f"Received both '{inlined_attr}' and '{file_attr}' in Component {comp_cls.__qualname__}."
-            " Only one of the two must be set."
+            " Only one of the two must be set.",
         )
 
     # At this point we can tell that only EITHER `asset_content` OR `asset_file` is set.
@@ -1108,7 +1110,7 @@ def _get_asset(
         if asset_file is None:
             return None, None
 
-        asset_file = cast(str, asset_file)
+        asset_file = cast("str", asset_file)
 
         if inlined_attr == "template":
             # NOTE: `load_component_template()` applies `on_template_loaded()` and `on_template_compiled()` hooks.
@@ -1139,14 +1141,14 @@ def _get_asset(
             OnJsLoadedContext(
                 component_cls=comp_cls,
                 content=content,
-            )
+            ),
         )
     elif inlined_attr == "css":
         content = extensions.on_css_loaded(
             OnCssLoadedContext(
                 component_cls=comp_cls,
                 content=content,
-            )
+            ),
         )
 
     return content, None

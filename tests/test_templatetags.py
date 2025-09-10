@@ -2,9 +2,10 @@
 
 from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual
-from django_components import Component, register, registry, types
 
+from django_components import Component, register, registry, types
 from django_components.testing import djc_test
+
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})

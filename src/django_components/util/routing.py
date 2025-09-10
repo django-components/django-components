@@ -15,7 +15,7 @@ def mark_extension_url_api(obj: TClass) -> TClass:
 class URLRouteHandler(Protocol):
     """Framework-agnostic 'view' function for routes"""
 
-    def __call__(self, request: Any, *args: Any, **kwargs: Any) -> Any: ...  # noqa: E704
+    def __call__(self, request: Any, *args: Any, **kwargs: Any) -> Any: ...
 
 
 @mark_extension_url_api

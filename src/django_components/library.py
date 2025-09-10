@@ -31,9 +31,7 @@ class TagProtectedError(Exception):
 
     Thus, this exception is raised when a component is attempted to be registered under
     a forbidden name, such that it would overwrite one of django_component's own template tags.
-    """  # noqa: E501
-
-    pass
+    """
 
 
 PROTECTED_TAGS = [
@@ -57,9 +55,8 @@ def register_tag(
 ) -> None:
     # Register inline tag
     if is_tag_protected(library, tag):
-        raise TagProtectedError('Cannot register tag "%s", this tag name is protected' % tag)
-    else:
-        library.tag(tag, tag_fn)
+        raise TagProtectedError(f'Cannot register tag "{tag}", this tag name is protected')
+    library.tag(tag, tag_fn)
 
 
 def mark_protected_tags(lib: Library, tags: Optional[List[str]] = None) -> None:

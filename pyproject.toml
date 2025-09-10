@@ -10,8 +10,8 @@ description = "A way to create simple reusable template components in Django."
 keywords = ["django", "components", "css", "js", "html"]
 readme = "README.md"
 authors = [
-    {name = "Emil Stenström", email = "emil@emilstenstrom.se"},
-    {name = "Juro Oravec", email = "juraj.oravec.josefson@gmail.com"},
+    { name = "Emil Stenström", email = "emil@emilstenstrom.se" },
+    { name = "Juro Oravec", email = "juraj.oravec.josefson@gmail.com" },
 ]
 classifiers = [
     "Framework :: Django",
@@ -33,7 +33,7 @@ dependencies = [
     'djc-core-html-parser>=1.0.2',
     'typing-extensions>=4.12.2',
 ]
-license = {text = "MIT"}
+license = { text = "MIT" }
 
 # See https://docs.pypi.org/project_metadata/#icons
 [project.urls]
@@ -68,39 +68,117 @@ exclude = '''
 )/
 '''
 
-[tool.isort]
-profile = "black"
-line_length = 119
-multi_line_output = 3
-include_trailing_comma = "True"
-known_first_party = "django_components"
-
-[tool.flake8]
-ignore = ['E302', 'W503']
-max-line-length = 119
+[tool.ruff]
+line-length = 119
+src = ["src", "tests"]
 exclude = [
-  'migrations',
-  '__pycache__',
-  'manage.py',
-  'settings.py',
-  'env',
-  '.env',
-  '.venv',
-  '.tox',
-  'build',
+    "migrations",
+    "manage.py",
+    "settings.py",
+    "env",
+    ".env",
+    # From mypy
+    "test_structures",
 ]
-per-file-ignores = [
-  'tests/test_command_list.py:E501',
-  'tests/test_component_media.py:E501',
-  'tests/test_dependency_rendering.py:E501',
+
+# See https://docs.astral.sh/ruff/linter/#rule-selection
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    # Annotations
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in `*args`
+    # Docstring
+    "D100",  # Missing docstring in public module
+    "D101",  # Missing docstring in public class
+    "D102",  # Missing docstring in public method
+    "D103",  # Missing docstring in public function
+    "D104",  # Missing docstring in public package
+    "D105",  # Missing docstring in magic method
+    "D106",  # Missing docstring in public nested class
+    "D107",  # Missing docstring in `__init__`
+    "D203",  # Incorrect blank line before class
+    "D205",  # 1 blank line required between summary line and description
+    "D212",  # Multi-line docstring summary should start at the first line
+    "D400",  # First line should end with a period
+    "D401",  # First line of docstring should be in imperative mood
+    "D404",  # First word of the docstring should not be "This"
+    "D412",  # No blank lines allowed between a section header and its content ("Examples")
+    "D415",  # First line should end with a period, question mark, or exclamation point
+    # Exceptions
+    "EM101",  # Exception must not use a string literal, assign to variable first
+    "EM102",  # Exception must not use an f-string literal, assign to variable first
+    # `TODO` comments
+    "FIX002",  # Line contains TODO, consider resolving the issue
+    "TD002",  # Missing author in TODO; try: `# TODO(<author_name>): ...` or `# TODO @<author_name>: ...`
+    "TD003",  # Missing issue link for this TODO
+    "TD004",  # Missing colon in TODO
+    # Code
+    "C901",  # `test_result_interception` is too complex (36 > 10)
+    "COM812",  # missing-trailing-comma (NOTE: Already handled by formatter)
+    "ERA001",  # Found commented-out code (NOTE: Too many false positives)
+    "INP001",  # File `...` is part of an implicit namespace package. Add an `__init__.py`.
+    "PLR0915",  # Too many statements (64 > 50)
+    "PLR0911",  # Too many return statements (7 > 6)
+    "PLR0912",  # Too many branches (31 > 12)
+    "PLR0913",  # Too many arguments in function definition (6 > 5)
+    "PLR2004",  # Magic value used in comparison, consider replacing `123` with a constant variable
+    "RET504",  # Unnecessary assignment to `collected` before `return` statement
+    "S308",  # Use of `mark_safe` may expose cross-site scripting vulnerabilities
+    "S603",  # `subprocess` call: check for execution of untrusted input
+    "SIM108",  # Use ternary operator `...` instead of `if`-`else`-block
+    "SIM117",  # Use a single `with` statement with multiple contexts instead of nested `with` statements
+    "SLF001",  # Private member accessed: `_registry`
+    "TRY300",  # Consider moving this statement to an `else` block
+
+    # TODO: Following could be useful to start using, but might require more changes.
+    "C420",  # Unnecessary dict comprehension for iterable; use `dict.fromkeys` instead
+    "PERF401",  # Use `list.extend` to create a transformed list
+    "PERF203",  # `try`-`except` within a loop incurs performance overhead
+    "FBT001",  # Boolean-typed positional argument in function definition
+    "FBT002",  # Boolean default positional argument in function definition
+    "TRY003",  # Avoid specifying long messages outside the exception class
+    # TODO - Enable FA100 once we drop support for Python 3.8
+    "FA100",  # Add `from __future__ import annotations` to simplify `typing.Optional`
+    # TODO_V1 - Rename error to suffix with `Error` before v1?
+    "N818",  # Exception name `NotRegistered` should be named with an Error suffix
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["django_components"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "ARG002",  # Unused method argument: `components_settings`
+    "ANN",  # Annotations are not needed for tests
+    "N806",  # Variable `SimpleComponent` in function should be lowercase
+    "PLC0415",  # `import` should be at the top-level of a file
+    "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
+    "S101",  # Use of `assert` detected
+    "TRY002",  # Create your own exception
+]
+"benchmarks/*" = [
+    "ARG002",  # Unused method argument: `components_settings`
+    "ANN",  # Annotations are not needed for tests
+    "N806",  # Variable `SimpleComponent` in function should be lowercase
+    "PLC0415",  # `import` should be at the top-level of a file
+    "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
+    "S101",  # Use of `assert` detected
+    "TRY002",  # Create your own exception
+]
+"sampleproject/*" = [
+    "ARG002",  # Unused method argument
+    "ANN",  # Annotations are not needed for tests
+    "T201",  # `print` found
+    "DTZ",  # `datetime` found
+]
+
 
 [tool.mypy]
 check_untyped_defs = true
 ignore_missing_imports = true
 exclude = [
-    'test_structures',
-    'build',
+    "test_structures",
+    "build",
 ]
 
 [[tool.mypy.overrides]]
@@ -110,14 +188,14 @@ disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
 testpaths = [
-    "tests"
+    "tests",
 ]
 asyncio_mode = "auto"
 
 [tool.hatch.env]
 requires = [
     "hatch-mkdocs",
-    "hatch-pip-compile"
+    "hatch-pip-compile",
 ]
 
 [tool.hatch.envs.default]
@@ -126,11 +204,8 @@ dependencies = [
     "djc-core-html-parser",
     "tox",
     "pytest",
-    "flake8",
-    "flake8-pyproject",
-    "isort",
+    "ruff",
     "pre-commit",
-    "black",
     "mypy",
 ]
 type = "pip-compile"
@@ -141,9 +216,7 @@ type = "pip-compile"
 lock-filename = "requirements-docs.txt"
 detached = false
 # Dependencies are fetched automatically from the mkdocs.yml file with hatch-mkdocs
-# We only add black for formatting code in the docs
 dependencies = [
-    "black",
     "pygments",
     "pygments-djc",
     "mkdocs-awesome-nav",

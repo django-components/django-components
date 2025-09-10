@@ -1,9 +1,9 @@
 from django.template import Template
 
 from django_components import Component, cached_template, types
-
 from django_components.template import _get_component_template
 from django_components.testing import djc_test
+
 from .testutils import setup_test_config
 
 setup_test_config({"autodiscover": False})

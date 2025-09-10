@@ -2,7 +2,7 @@ import gc
 import inspect
 import sys
 from functools import wraps
-from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 from unittest.mock import patch
 from weakref import ReferenceType
 
@@ -15,11 +15,13 @@ from django.test import override_settings
 
 from django_components import ComponentsSettings
 from django_components.component import ALL_COMPONENTS, Component, component_node_subclasses_by_name
-from django_components.component_media import ComponentMedia
 from django_components.component_registry import ALL_REGISTRIES, ComponentRegistry
 from django_components.extension import extensions
 from django_components.perfutil.provide import provide_cache
 from django_components.template import _reset_component_template_file_cache, loading_components
+
+if TYPE_CHECKING:
+    from django_components.component_media import ComponentMedia
 
 # NOTE: `ReferenceType` is NOT a generic pre-3.9
 if sys.version_info >= (3, 9):
@@ -51,7 +53,7 @@ class GenIdPatcher:
         # Random number so that the generated IDs are "hex-looking", e.g. a1bc3d
         self._gen_id_count = 10599485
 
-        def mock_gen_id(*args: Any, **kwargs: Any) -> str:
+        def mock_gen_id(*_args: Any, **_kwargs: Any) -> str:
             self._gen_id_count += 1
             return hex(self._gen_id_count)[2:]
 
@@ -68,7 +70,7 @@ class GenIdPatcher:
 
 class CsrfTokenPatcher:
     def __init__(self) -> None:
-        self._csrf_token = "predictabletoken"
+        self._csrf_token = "predictabletoken"  # noqa: S105
         self._csrf_token_patch: Any = None
 
     def start(self) -> None:
@@ -201,8 +203,7 @@ def djc_test(
         - `(param_names, param_values)` or
         - `(param_names, param_values, ids)`
 
-        Example:
-
+    Example:
         ```py
         from django_components.testing import djc_test
 
@@ -268,6 +269,7 @@ def djc_test(
         3. The parametrized `components_settings` override the fields on the `components_settings` kwarg.
 
         Priority: `components_settings` (parametrized) > `components_settings` > `django_settings["COMPONENTS"]` > `django.conf.settings.COMPONENTS`
+
     """  # noqa: E501
 
     def decorator(func: Callable) -> Callable:
@@ -328,13 +330,13 @@ def djc_test(
                 # Make a copy of `ALL_COMPONENTS` and `ALL_REGISTRIES` as they were before the test.
                 # Since the tests require Django to be configured, this should contain any
                 # components that were registered with autodiscovery / at `AppConfig.ready()`.
-                _ALL_COMPONENTS = ALL_COMPONENTS.copy()
-                _ALL_REGISTRIES_COPIES: RegistriesCopies = []
+                _all_components = ALL_COMPONENTS.copy()
+                _all_registries_copies: RegistriesCopies = []
                 for reg_ref in ALL_REGISTRIES:
                     reg = reg_ref()
                     if not reg:
                         continue
-                    _ALL_REGISTRIES_COPIES.append((reg_ref, list(reg._registry.keys())))
+                    _all_registries_copies.append((reg_ref, list(reg._registry.keys())))
 
                 # Prepare global state
                 _setup_djc_global_state(gen_id_patcher, csrf_token_patcher)
@@ -343,8 +345,8 @@ def djc_test(
                     _clear_djc_global_state(
                         gen_id_patcher,
                         csrf_token_patcher,
-                        _ALL_COMPONENTS,  # type: ignore[arg-type]
-                        _ALL_REGISTRIES_COPIES,
+                        _all_components,  # type: ignore[arg-type]
+                        _all_registries_copies,
                         gc_collect,
                     )
 
@@ -389,7 +391,7 @@ def djc_test(
 
             # NOTE: Lazily import pytest, so user can still run tests with plain `unittest`
             #       if they choose not to use parametrization.
-            import pytest
+            import pytest  # noqa: PLC0415
 
             wrapper = pytest.mark.parametrize(param_names, values, ids=ids)(wrapper)
 
@@ -441,14 +443,14 @@ def _setup_djc_global_state(
     # Declare that the code is running in test mode - this is used
     # by the import / autodiscover mechanism to clean up loaded modules
     # between tests.
-    global IS_TESTING
+    global IS_TESTING  # noqa: PLW0603
     IS_TESTING = True
 
     gen_id_patcher.start()
     csrf_token_patcher.start()
 
     # Re-load the settings, so that the test-specific settings overrides are applied
-    from django_components.app_settings import app_settings
+    from django_components.app_settings import app_settings  # noqa: PLC0415
 
     app_settings._load_settings()
     extensions._initialized = False
@@ -478,7 +480,7 @@ def _clear_djc_global_state(
                 loader.reset()
 
     # NOTE: There are 1-2 tests which check Templates, so we need to clear the cache
-    from django_components.cache import component_media_cache, template_cache
+    from django_components.cache import component_media_cache, template_cache  # noqa: PLC0415
 
     if template_cache:
         template_cache.clear()
@@ -518,7 +520,7 @@ def _clear_djc_global_state(
             del ALL_COMPONENTS[reverse_index]
 
     # Remove registries that were created during the test
-    initial_registries_set: Set[RegistryRef] = set([reg_ref for reg_ref, init_keys in initial_registries_copies])
+    initial_registries_set: Set[RegistryRef] = {reg_ref for reg_ref, init_keys in initial_registries_copies}
     for index in range(len(ALL_REGISTRIES)):
         registry_ref = ALL_REGISTRIES[len(ALL_REGISTRIES) - index - 1]
         is_ref_deleted = registry_ref() is None
@@ -545,7 +547,7 @@ def _clear_djc_global_state(
 
     # Delete autoimported modules from memory, so the module
     # is executed also the next time one of the tests calls `autodiscover`.
-    from django_components.autodiscovery import LOADED_MODULES
+    from django_components.autodiscovery import LOADED_MODULES  # noqa: PLC0415
 
     for mod in LOADED_MODULES:
         sys.modules.pop(mod, None)
@@ -569,5 +571,5 @@ def _clear_djc_global_state(
     if gc_collect:
         gc.collect()
 
-    global IS_TESTING
+    global IS_TESTING  # noqa: PLW0603
     IS_TESTING = False

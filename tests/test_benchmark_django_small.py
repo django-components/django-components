@@ -32,9 +32,9 @@ if not settings.configured:
                 "OPTIONS": {
                     "builtins": [
                         "django_components.templatetags.component_tags",
-                    ]
+                    ],
                 },
-            }
+            },
         ],
         COMPONENTS={
             "autodiscover": False,
@@ -45,9 +45,9 @@ if not settings.configured:
             "default": {
                 "ENGINE": "django.db.backends.sqlite3",
                 "NAME": ":memory:",
-            }
+            },
         },
-        SECRET_KEY="secret",
+        SECRET_KEY="secret",  # noqa: S106
         ROOT_URLCONF="django_components.urls",
     )
     django.setup()
@@ -67,10 +67,9 @@ def lazy_load_template(template: str) -> Template:
     template_hash = hash(template)
     if template_hash in templates_cache:
         return templates_cache[template_hash]
-    else:
-        template_instance = Template(template)
-        templates_cache[template_hash] = template_instance
-        return template_instance
+    template_instance = Template(template)
+    templates_cache[template_hash] = template_instance
+    return template_instance
 
 
 #####################################
@@ -150,7 +149,7 @@ _secondary_btn_styling = "ring-1 ring-inset"
 theme = Theme(
     default=ThemeStylingVariant(
         primary=ThemeStylingUnit(
-            color="bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition"
+            color="bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition",
         ),
         primary_disabled=ThemeStylingUnit(color="bg-blue-300 text-blue-50 focus-visible:outline-blue-600 transition"),
         secondary=ThemeStylingUnit(
@@ -314,7 +313,7 @@ def button(context: Context, data: ButtonData):
             "attrs": all_attrs,
             "is_link": is_link,
             "slot_content": data.slot_content,
-        }
+        },
     ):
         return lazy_load_template(button_template_str).render(context)
 
@@ -332,6 +331,7 @@ def button(context: Context, data: ButtonData):
 # The section below is NOT included.
 
 from django_components.testing import djc_test  # noqa: E402
+
 
 @djc_test
 def test_render(snapshot):

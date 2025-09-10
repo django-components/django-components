@@ -11,7 +11,7 @@ actual_trace_level_num = -1
 def setup_logging() -> None:
     # Check if "TRACE" level was already defined. And if so, use its log level.
     # See https://docs.python.org/3/howto/logging.html#custom-levels
-    global actual_trace_level_num
+    global actual_trace_level_num  # noqa: PLW0603
     log_levels = _get_log_levels()
 
     if "TRACE" in log_levels:
@@ -25,8 +25,7 @@ def _get_log_levels() -> Dict[str, int]:
     # Use official API if possible
     if sys.version_info >= (3, 11):
         return logging.getLevelNamesMapping()
-    else:
-        return logging._nameToLevel.copy()
+    return logging._nameToLevel.copy()
 
 
 def trace(message: str, *args: Any, **kwargs: Any) -> None:
@@ -54,6 +53,7 @@ def trace(message: str, *args: Any, **kwargs: Any) -> None:
         },
     }
     ```
+
     """
     if actual_trace_level_num == -1:
         setup_logging()
@@ -96,26 +96,10 @@ def trace_component_msg(
 
     `"RENDER_SLOT COMPONENT 'component_name' SLOT: 'slot_name' FILLS: 'fill_name' PATH: Root > Child > Grandchild "`
     """
-
-    if component_id:
-        component_id_str = f"ID {component_id}"
-    else:
-        component_id_str = ""
-
-    if slot_name:
-        slot_name_str = f"SLOT: '{slot_name}'"
-    else:
-        slot_name_str = ""
-
-    if component_path:
-        component_path_str = "PATH: " + " > ".join(component_path)
-    else:
-        component_path_str = ""
-
-    if slot_fills:
-        slot_fills_str = "FILLS: " + ", ".join(slot_fills.keys())
-    else:
-        slot_fills_str = ""
+    component_id_str = f"ID {component_id}" if component_id else ""
+    slot_name_str = f"SLOT: '{slot_name}'" if slot_name else ""
+    component_path_str = "PATH: " + " > ".join(component_path) if component_path else ""
+    slot_fills_str = "FILLS: " + ", ".join(slot_fills.keys()) if slot_fills else ""
 
     full_msg = f"{action} COMPONENT: '{component_name}' {component_id_str} {slot_name_str} {slot_fills_str} {component_path_str} {extra}"  # noqa: E501
 

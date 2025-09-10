@@ -4,33 +4,29 @@
 #
 #    pip-compile requirements-dev.in
 #
-asgiref==3.8.1
+asgiref==3.9.1
     # via django
 asv==0.6.4
     # via -r requirements-dev.in
 asv-runner==0.2.1
     # via asv
-black==25.1.0
-    # via -r requirements-dev.in
-build==1.2.2.post1
+build==1.3.0
     # via asv
-cachetools==5.5.2
+cachetools==6.1.0
     # via tox
-certifi==2025.1.31
+certifi==2025.8.3
     # via requests
 cfgv==3.4.0
     # via pre-commit
 chardet==5.2.0
     # via tox
-charset-normalizer==3.4.1
+charset-normalizer==3.4.3
     # via requests
-click==8.1.8
-    # via black
 colorama==0.4.6
     # via tox
-distlib==0.3.9
+distlib==0.4.0
     # via virtualenv
-django==4.2.23
+django==5.2.5
     # via
     #   -r requirements-dev.in
     #   django-template-partials
@@ -38,47 +34,31 @@ django-template-partials==25.1
     # via -r requirements-dev.in
 djc-core-html-parser==1.0.2
     # via -r requirements-dev.in
-exceptiongroup==1.2.2
-    # via pytest
-filelock==3.16.1
+filelock==3.19.1
     # via
     #   tox
     #   virtualenv
-flake8==7.3.0
-    # via
-    #   -r requirements-dev.in
-    #   flake8-pyproject
-flake8-pyproject==1.2.3
-    # via -r requirements-dev.in
-greenlet==3.1.1
+greenlet==3.2.4
     # via playwright
-identify==2.6.8
+identify==2.6.13
     # via pre-commit
 idna==3.10
     # via requests
-importlib-metadata==8.5.0
-    # via
-    #   asv-runner
-    #   build
-iniconfig==2.0.0
+importlib-metadata==8.7.0
+    # via asv-runner
+iniconfig==2.1.0
     # via pytest
-isort==6.0.1
-    # via -r requirements-dev.in
-json5==0.10.0
+json5==0.12.1
     # via asv
-mccabe==0.7.0
-    # via flake8
 mypy==1.17.1
     # via -r requirements-dev.in
-mypy-extensions==1.0.0
+mypy-extensions==1.1.0
     # via
-    #   black
     #   mypy
 nodeenv==1.9.1
     # via pre-commit
-packaging==24.2
+packaging==25.0
     # via
-    #   black
     #   build
     #   pyproject-api
     #   pytest
@@ -86,46 +66,41 @@ packaging==24.2
 pathspec==0.12.1
     # via
     #   -r requirements-dev.in
-    #   black
     #   mypy
-platformdirs==4.3.6
+platformdirs==4.3.8
     # via
-    #   black
     #   tox
     #   virtualenv
-playwright==1.48.0
+playwright==1.54.0
     # via -r requirements-dev.in
-pluggy==1.5.0
+pluggy==1.6.0
     # via
     #   pytest
     #   tox
 pre-commit==4.3.0
     # via -r requirements-dev.in
-pycodestyle==2.14.0
-    # via flake8
-pyee==12.0.0
+pyee==13.0.0
     # via playwright
-pyflakes==3.4.0
-    # via flake8
-pygments==2.19.1
+pygments==2.19.2
     # via
     #   -r requirements-dev.in
     #   pygments-djc
+    #   pytest
 pygments-djc==1.0.1
     # via -r requirements-dev.in
 pympler==1.1
     # via asv
-pyproject-api==1.8.0
+pyproject-api==1.9.1
     # via tox
 pyproject-hooks==1.2.0
     # via build
-pytest==8.3.5
+pytest==8.4.1
     # via
     #   -r requirements-dev.in
     #   pytest-asyncio
     #   pytest-django
     #   syrupy
-pytest-asyncio==0.24.0
+pytest-asyncio==1.1.0
     # via -r requirements-dev.in
 pytest-django==4.11.1
     # via -r requirements-dev.in
@@ -133,7 +108,9 @@ pyyaml==6.0.2
     # via
     #   asv
     #   pre-commit
-requests==2.32.3
+requests==2.32.4
+    # via -r requirements-dev.in
+ruff==0.12.9
     # via -r requirements-dev.in
 sqlparse==0.5.3
     # via django
@@ -141,30 +118,16 @@ syrupy==4.9.1
     # via -r requirements-dev.in
 tabulate==0.9.0
     # via asv
-tomli==2.2.1
-    # via
-    #   asv
-    #   black
-    #   build
-    #   flake8-pyproject
-    #   mypy
-    #   pyproject-api
-    #   pytest
-    #   tox
-tox==4.25.0
+tox==4.28.4
     # via -r requirements-dev.in
-types-requests==2.32.0.20241016
+types-requests==2.32.4.20250809
     # via -r requirements-dev.in
-typing-extensions==4.13.2
+typing-extensions==4.14.1
     # via
     #   -r requirements-dev.in
-    #   asgiref
-    #   black
     #   mypy
     #   pyee
-    #   tox
-    #   virtualenv
-urllib3==2.2.3
+urllib3==2.5.0
     # via
     #   requests
     #   types-requests
@@ -174,7 +137,7 @@ virtualenv==20.34.0
     #   asv
     #   pre-commit
     #   tox
-whitenoise==6.7.0
+whitenoise==6.9.0
     # via -r requirements-dev.in
-zipp==3.20.2
+zipp==3.23.0
     # via importlib-metadata

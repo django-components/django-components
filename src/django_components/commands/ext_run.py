@@ -22,7 +22,7 @@ def _gen_subcommands() -> List[Type[ComponentCommand]]:
         if not extension.commands:
             continue
 
-        ExtCommand = type(
+        ExtCommand = type(  # noqa: N806
             "ExtRunSubcommand_" + extension.name,
             (ComponentCommand,),
             {
@@ -113,4 +113,4 @@ class ExtRunCommand(ComponentCommand):
 
     name = "run"
     help = "Run a command added by an extension."
-    subcommands = SubcommandsDescriptor()  # type: ignore
+    subcommands = SubcommandsDescriptor()  # type: ignore[assignment]

@@ -1,7 +1,7 @@
 import functools
 import inspect
 import keyword
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Tuple, Type, cast
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, List, Optional, Tuple, Type, cast
 
 from django.template import Context, Library
 from django.template.base import Node, NodeList, Parser, Token
@@ -50,10 +50,10 @@ class NodeMeta(type):
         bases: Tuple[Type, ...],
         attrs: Dict[str, Any],
     ) -> Type["BaseNode"]:
-        cls = cast(Type["BaseNode"], super().__new__(mcs, name, bases, attrs))
+        cls = cast("Type[BaseNode]", super().__new__(mcs, name, bases, attrs))
 
         # Ignore the `BaseNode` class itself
-        if attrs.get("__module__", None) == "django_components.node":
+        if attrs.get("__module__") == "django_components.node":
             return cls
 
         if not hasattr(cls, "tag"):
@@ -195,8 +195,8 @@ class NodeMeta(type):
 
         # Wrap cls.render() so we resolve the args and kwargs and pass them to the
         # actual render method.
-        cls.render = wrapper_render  # type: ignore
-        cls.render._djc_wrapped = True  # type: ignore
+        cls.render = wrapper_render  # type: ignore[assignment]
+        cls.render._djc_wrapped = True  # type: ignore[attr-defined]
 
         return cls
 
@@ -210,8 +210,7 @@ class BaseNode(Node, metaclass=NodeMeta):
     1. It declares how a particular template tag should be parsed - By setting the
        [`tag`](../api#django_components.BaseNode.tag),
        [`end_tag`](../api#django_components.BaseNode.end_tag),
-       and [`allowed_flags`](../api#django_components.BaseNode.allowed_flags)
-       attributes:
+       and [`allowed_flags`](../api#django_components.BaseNode.allowed_flags) attributes:
 
         ```python
         class SlotNode(BaseNode):
@@ -306,7 +305,7 @@ class BaseNode(Node, metaclass=NodeMeta):
     ```
     """
 
-    allowed_flags: ClassVar[Optional[List[str]]] = None
+    allowed_flags: ClassVar[Optional[Iterable[str]]] = None
     """
     The list of all *possible* flags for this tag.
 
@@ -328,7 +327,7 @@ class BaseNode(Node, metaclass=NodeMeta):
     ```
     """
 
-    def render(self, context: Context, *args: Any, **kwargs: Any) -> str:
+    def render(self, context: Context, *_args: Any, **_kwargs: Any) -> str:
         """
         Render the node. This method is meant to be overridden by subclasses.
 
@@ -491,7 +490,7 @@ class BaseNode(Node, metaclass=NodeMeta):
         contents: Optional[str] = None,
         template_name: Optional[str] = None,
         template_component: Optional[Type["Component"]] = None,
-    ):
+    ) -> None:
         self.params = params
         self.flags = flags or {flag: False for flag in self.allowed_flags or []}
         self.nodelist = nodelist or NodeList()
@@ -501,10 +500,7 @@ class BaseNode(Node, metaclass=NodeMeta):
         self.template_component = template_component
 
     def __repr__(self) -> str:
-        return (
-            f"<{self.__class__.__name__}: {self.node_id}. Contents: {repr(self.nodelist)}."
-            f" Flags: {self.active_flags}>"
-        )
+        return f"<{self.__class__.__name__}: {self.node_id}. Contents: {self.contents}. Flags: {self.active_flags}>"
 
     @property
     def active_flags(self) -> List[str]:
@@ -541,7 +537,7 @@ class BaseNode(Node, metaclass=NodeMeta):
         To register the tag, you can use [`BaseNode.register()`](../api#django_components.BaseNode.register).
         """
         # NOTE: Avoids circular import
-        from django_components.template import get_component_from_origin
+        from django_components.template import get_component_from_origin  # noqa: PLC0415
 
         tag_id = gen_id()
         tag = parse_template_tag(cls.tag, cls.end_tag, cls.allowed_flags, parser, token)
@@ -650,7 +646,7 @@ def template_tag(
                 {
                     "tag": tag,
                     "end_tag": end_tag,
-                    "allowed_flags": allowed_flags or [],
+                    "allowed_flags": allowed_flags or (),
                     "render": fn,
                 },
             )

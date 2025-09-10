@@ -38,8 +38,6 @@ class AlreadyRegistered(Exception):
     [ComponentRegistry](./api.md#django_components.ComponentRegistry).
     """
 
-    pass
-
 
 class NotRegistered(Exception):
     """
@@ -47,8 +45,6 @@ class NotRegistered(Exception):
     but it's NOT registered with given
     [ComponentRegistry](./api.md#django_components.ComponentRegistry).
     """
-
-    pass
 
 
 # Why do we store the tags with the components?
@@ -146,10 +142,8 @@ ALL_REGISTRIES: AllRegistries = []
 
 
 def all_registries() -> List["ComponentRegistry"]:
-    """
-    Get a list of all created [`ComponentRegistry`](./api.md#django_components.ComponentRegistry) instances.
-    """
-    registries: List["ComponentRegistry"] = []
+    """Get a list of all created [`ComponentRegistry`](./api.md#django_components.ComponentRegistry) instances."""
+    registries: List[ComponentRegistry] = []
     for reg_ref in ALL_REGISTRIES:
         reg = reg_ref()
         if reg is not None:
@@ -238,6 +232,7 @@ class ComponentRegistry:
         {% component "button" %}
         {% endcomponent %}
         ```
+
     """
 
     def __init__(
@@ -255,7 +250,7 @@ class ComponentRegistry:
         extensions.on_registry_created(
             OnRegistryCreatedContext(
                 registry=self,
-            )
+            ),
         )
 
     def __del__(self) -> None:
@@ -266,7 +261,7 @@ class ComponentRegistry:
         extensions.on_registry_deleted(
             OnRegistryDeletedContext(
                 registry=self,
-            )
+            ),
         )
 
         # Unregister all components when the registry is deleted
@@ -288,7 +283,7 @@ class ComponentRegistry:
         if self._library is not None:
             lib = self._library
         else:
-            from django_components.templatetags.component_tags import register as tag_library
+            from django_components.templatetags.component_tags import register as tag_library  # noqa: PLC0415
 
             # For the default library, we want to protect our template tags from
             # being overriden.
@@ -301,9 +296,7 @@ class ComponentRegistry:
 
     @property
     def settings(self) -> InternalRegistrySettings:
-        """
-        [Registry settings](./api.md#django_components.RegistrySettings) configured for this registry.
-        """
+        """[Registry settings](./api.md#django_components.RegistrySettings) configured for this registry."""
         # NOTE: We allow the settings to be given as a getter function
         # so the settings can respond to changes.
         if callable(self._settings):
@@ -348,10 +341,11 @@ class ComponentRegistry:
         ```python
         registry.register("button", ButtonComponent)
         ```
+
         """
         existing_component = self._registry.get(name)
         if existing_component and existing_component.cls.class_id != component.class_id:
-            raise AlreadyRegistered('The component "%s" has already been registered' % name)
+            raise AlreadyRegistered(f'The component "{name}" has already been registered')
 
         entry = self._register_to_library(name, component)
 
@@ -372,7 +366,7 @@ class ComponentRegistry:
                 registry=self,
                 name=name,
                 component_cls=entry.cls,
-            )
+            ),
         )
 
     def unregister(self, name: str) -> None:
@@ -398,6 +392,7 @@ class ComponentRegistry:
         # Then unregister
         registry.unregister("button")
         ```
+
         """
         # Validate
         self.get(name)
@@ -420,10 +415,9 @@ class ComponentRegistry:
 
         # Only unregister a tag if it's NOT protected
         is_protected = is_tag_protected(self.library, tag)
-        if not is_protected:
-            # Unregister the tag from library if this was the last component using this tag
-            if is_tag_empty and tag in self.library.tags:
-                self.library.tags.pop(tag, None)
+        # Unregister the tag from library if this was the last component using this tag
+        if not is_protected and is_tag_empty and tag in self.library.tags:
+            self.library.tags.pop(tag, None)
 
         entry = self._registry[name]
         del self._registry[name]
@@ -433,7 +427,7 @@ class ComponentRegistry:
                 registry=self,
                 name=name,
                 component_cls=entry.cls,
-            )
+            ),
         )
 
     def get(self, name: str) -> Type["Component"]:
@@ -461,9 +455,10 @@ class ComponentRegistry:
         registry.get("button")
         # > ButtonComponent
         ```
+
         """
         if name not in self._registry:
-            raise NotRegistered('The component "%s" is not registered' % name)
+            raise NotRegistered(f'The component "{name}" is not registered')
 
         return self._registry[name].cls
 
@@ -487,6 +482,7 @@ class ComponentRegistry:
         registry.has("button")
         # > True
         ```
+
         """
         return name in self._registry
 
@@ -510,6 +506,7 @@ class ComponentRegistry:
         # >   "card": CardComponent,
         # > }
         ```
+
         """
         comps = {key: entry.cls for key, entry in self._registry.items()}
         return comps
@@ -530,6 +527,7 @@ class ComponentRegistry:
         registry.all()
         # > {}
         ```
+
         """
         all_comp_names = list(self._registry.keys())
         for comp_name in all_comp_names:
@@ -544,7 +542,7 @@ class ComponentRegistry:
         component: Type["Component"],
     ) -> ComponentRegistryEntry:
         # Lazily import to avoid circular dependencies
-        from django_components.component import ComponentNode
+        from django_components.component import ComponentNode  # noqa: PLC0415
 
         registry = self
 
@@ -613,7 +611,10 @@ registry.clear()
 _the_registry = registry
 
 
-def register(name: str, registry: Optional[ComponentRegistry] = None) -> Callable[
+def register(
+    name: str,
+    registry: Optional[ComponentRegistry] = None,
+) -> Callable[
     [Type[TComponent]],
     Type[TComponent],
 ]:
@@ -656,6 +657,7 @@ def register(name: str, registry: Optional[ComponentRegistry] = None) -> Callabl
     class MyComponent(Component):
         ...
     ```
+
     """
     if registry is None:
         registry = _the_registry
