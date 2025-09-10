@@ -404,32 +404,28 @@ def djc_test(
     return decorator
 
 
+
 def _merge_django_settings(
     django_settings: Optional[Mapping[str, Any]] = None,
-    components_settings: Optional[Mapping[str, Any] | ComponentsSettings] = None,
-) -> dict[str, Any]:
+    components_settings: Optional[Union[Mapping[str, Any], "ComponentsSettings"]] = None,
+) -> Dict[str, Any]:
     """
     Merge settings such that the fields in the `COMPONENTS` setting are merged.
     Use components_settings to override fields in the django COMPONENTS setting.
     """
-    # Start from existing django_settings (mapping expected from caller)
-    merged_settings: dict[str, Any] = dict(django_settings or {})
+    merged_settings: Dict[str, Any] = dict(django_settings or {})
 
     defaults = _components_to_mapping(_django_settings.COMPONENTS if _django_settings.configured else {})
     current = _components_to_mapping(merged_settings.get("COMPONENTS"))
     overrides = _components_to_mapping(components_settings)
 
-    merged_settings["COMPONENTS"] = {
-        **defaults,
-        **current,
-        **overrides,
-    }
+    merged_settings["COMPONENTS"] = {**defaults, **current, **overrides}
     return merged_settings
 
 
 def _components_to_mapping(
-    value: Optional[Mapping[str, Any] | ComponentsSettings],
-) -> dict[str, Any]:
+    value: Optional[Union[Mapping[str, Any], "ComponentsSettings"]],
+) -> Dict[str, Any]:
     if value is None:
         return {}
     if isinstance(value, Mapping):
@@ -437,7 +433,6 @@ def _components_to_mapping(
     if isinstance(value, ComponentsSettings):
         return dict(value._asdict())
     raise TypeError("COMPONENTS must be a mapping or ComponentsSettings")
-
 
 def _setup_djc_global_state(
     gen_id_patcher: GenIdPatcher,
