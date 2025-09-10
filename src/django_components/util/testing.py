@@ -2,7 +2,21 @@ import gc
 import inspect
 import sys
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    Union,
+)
 from unittest.mock import patch
 from weakref import ReferenceType
 
@@ -406,7 +420,6 @@ def djc_test(
     return decorator
 
 
-
 def _merge_django_settings(
     django_settings: Optional[Mapping[str, Any]] = None,
     components_settings: Optional[Union[Mapping[str, Any], "ComponentsSettings"]] = None,
@@ -435,6 +448,7 @@ def _components_to_mapping(
     if isinstance(value, ComponentsSettings):
         return dict(value._asdict())
     raise TypeError("COMPONENTS must be a mapping or ComponentsSettings")
+
 
 def _setup_djc_global_state(
     gen_id_patcher: GenIdPatcher,
