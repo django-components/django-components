@@ -233,7 +233,7 @@ class ComponentFormatter(TagFormatterABC):
         return f"end{self.tag}"
 
     def parse(self, tokens: List[str]) -> TagResult:
-        tag, *args = tokens
+        _tag, *args = tokens
 
         if not args:
             raise TemplateSyntaxError(f"{self.__class__.__name__}: Component tag did not receive tag name")

@@ -1483,7 +1483,7 @@ class TestComponentHook:
 
             def on_render(self, context: Context, template: Optional[Template]):
                 calls.append("slotted__on_render_pre")
-                html, error = yield template.render(context)  # type: ignore[union-attr]
+                _html, _error = yield template.render(context)  # type: ignore[union-attr]
 
                 calls.append("slotted__on_render_post")
 
@@ -1516,7 +1516,7 @@ class TestComponentHook:
                 if template is None:
                     yield None
                 else:
-                    html, error = yield template.render(context)
+                    _html, _error = yield template.render(context)
 
                 calls.append("inner__on_render_post")
 
@@ -1550,7 +1550,7 @@ class TestComponentHook:
 
             def on_render(self, context: Context, template: Optional[Template]):
                 calls.append("middle__on_render_pre")
-                html, error = yield template.render(context)  # type: ignore[union-attr]
+                _html, _error = yield template.render(context)  # type: ignore[union-attr]
 
                 calls.append("middle__on_render_post")
 
@@ -1582,7 +1582,7 @@ class TestComponentHook:
 
             def on_render(self, context: Context, template: Optional[Template]):
                 calls.append("outer__on_render_pre")
-                html, error = yield template.render(context)  # type: ignore[union-attr]
+                _html, _error = yield template.render(context)  # type: ignore[union-attr]
 
                 calls.append("outer__on_render_post")
 
@@ -1702,7 +1702,7 @@ class TestComponentHook:
                 # Check we can modify entries set by other methods
                 context["from_on_before__edited1"] = context["from_on_before"] + " (on_render)"
 
-                html, error = yield template.render(context)
+                _html, _error = yield template.render(context)
 
                 context["from_on_render_post"] = "3"
 
@@ -1754,7 +1754,7 @@ class TestComponentHook:
             def on_render(self, context: Context, template: Template):
                 template.nodelist.append(TextNode("\n---\nFROM_ON_RENDER_PRE"))
 
-                html, error = yield template.render(context)
+                _html, _error = yield template.render(context)
 
                 template.nodelist.append(TextNode("\n---\nFROM_ON_RENDER_POST"))
 
@@ -1802,7 +1802,7 @@ class TestComponentHook:
             """
 
             def on_render(self, context: Context, template: Template):
-                html, error = yield template.render(context)
+                _html, error = yield template.render(context)
 
                 raise error from None  # Re-raise original error
 
@@ -1851,7 +1851,7 @@ class TestComponentHook:
     )
     def test_result_interception(
         self,
-        template: Literal["simple", "broken", None],
+        template: Optional[Literal["simple", "broken"]],
         action: Literal["return_none", "no_return", "raise_error", "return_html"],
         method: Literal["on_render", "on_render_after"],
     ):
@@ -1888,7 +1888,7 @@ class TestComponentHook:
                         if template is None:
                             yield None
                         else:
-                            html, error = yield template.render(context)
+                            _html, _error = yield template.render(context)
                         return None  # noqa: PLR1711
 
             elif action == "no_return":
@@ -1898,7 +1898,7 @@ class TestComponentHook:
                         if template is None:
                             yield None
                         else:
-                            html, error = yield template.render(context)
+                            _html, _error = yield template.render(context)
 
             elif action == "raise_error":
 
@@ -1907,7 +1907,7 @@ class TestComponentHook:
                         if template is None:
                             yield None
                         else:
-                            html, error = yield template.render(context)
+                            _html, _error = yield template.render(context)
                         raise ValueError("ERROR_FROM_ON_RENDER")
 
             elif action == "return_html":
@@ -1917,7 +1917,7 @@ class TestComponentHook:
                         if template is None:
                             yield None
                         else:
-                            html, error = yield template.render(context)
+                            _html, _error = yield template.render(context)
                         return "HTML_FROM_ON_RENDER"
 
             else:

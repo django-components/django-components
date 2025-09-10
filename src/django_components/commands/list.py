@@ -155,7 +155,7 @@ class ComponentListCommand(ListCommand):
         data: List[Dict[str, Any]] = []
         for component in components:
             full_name = get_import_path(component)
-            module, module_name, module_file_path = get_module_info(component)
+            _module, _module_name, module_file_path = get_module_info(component)
 
             # Make paths relative to CWD
             if module_file_path:
