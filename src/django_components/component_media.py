@@ -837,7 +837,7 @@ def _resolve_component_relative_files(
 
     component_name = comp_cls.__qualname__
     # Get the full path of the file where the component was defined
-    module, module_name, module_file_path = get_module_info(comp_cls)
+    _module, module_name, module_file_path = get_module_info(comp_cls)
     if not module_file_path:
         logger.debug(
             f"Could not resolve the path to the file for component '{component_name}'."
