@@ -292,5 +292,4 @@ each time:
 
 ---
 
-So far we've rendered components using template tag. [Next, let’s explore other ways to render components ➡️]
-(./rendering_components.md)
+So far we've rendered components using template tag. [Next, let’s explore other ways to render components ➡️](./rendering_components.md)
