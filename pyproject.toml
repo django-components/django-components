@@ -150,32 +150,6 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
     "ARG002",  # Unused method argument: `components_settings`
-    "ANN",  # Annotations are not needed for tests
-    "N806",  # Variable `SimpleComponent` in function should be lowercase
-    "PLC0415",  # `import` should be at the top-level of a file
-    "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
-    "S101",  # Use of `assert` detected
-    "TRY002",  # Create your own exception
-]
-"benchmarks/*" = [
-    "ARG002",  # Unused method argument: `components_settings`
-    "ANN",  # Annotations are not needed for tests
-    "N806",  # Variable `SimpleComponent` in function should be lowercase
-    "PLC0415",  # `import` should be at the top-level of a file
-    "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
-    "S101",  # Use of `assert` detected
-    "TRY002",  # Create your own exception
-]
-"sampleproject/*" = [
-    "ARG002",  # Unused method argument
-    "ANN",  # Annotations are not needed for tests
-    "T201",  # `print` found
-    "DTZ",  # `datetime` found
-]
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = [
-    "ARG002",  # Unused method argument: `components_settings`
     "ANN",     # Annotations are not needed for tests
     "N806",    # Variable `SimpleComponent` in function should be lowercase
     "PLC0415", # `import` should be at the top-level of a file
