@@ -147,9 +147,6 @@ ignore = [
     "N818",  # Exception name `NotRegistered` should be named with an Error suffix
 ]
 
-[tool.ruff.lint.isort]
-known-first-party = ["django_components"]
-
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
     "ARG002",  # Unused method argument: `components_settings`
@@ -175,10 +172,6 @@ known-first-party = ["django_components"]
     "T201",  # `print` found
     "DTZ",  # `datetime` found
 ]
-
-
-[tool.ruff.lint.isort]
-known-first-party = ["django_components"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
@@ -206,6 +199,8 @@ known-first-party = ["django_components"]
     "DTZ",    # `datetime` found
 ]
 
+[tool.ruff.lint.isort]
+known-first-party = ["django_components"]
 
 [tool.mypy]
 check_untyped_defs = true
