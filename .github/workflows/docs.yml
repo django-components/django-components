@@ -60,6 +60,8 @@ jobs:
             # See https://github.com/airspeed-velocity/asv/issues/1484
             python -m pip install -q pre-commit asv virtualenv==20.30
             python -m pip install -r requirements-docs.txt
+            # Install django-components locally
+            python -m pip install -e .
 
       ###########################################
       # RECORD BENCHMARK - ONLY ON PUSH TO MASTER
