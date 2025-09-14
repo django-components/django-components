@@ -168,7 +168,7 @@ jobs:
         run: |
           # TODO: Enable strict mode once docs are clean
           echo "Strict check of docs disabled."
-          # python -m mkdocs build --strict
+          # mkdocs build --strict
 
       - name: Build & deploy "dev" docs for a new commit to master
         if: github.event_name == 'push' && github.ref_type != 'tag'
@@ -180,7 +180,7 @@ jobs:
           git checkout master
 
           export SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          python -m mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
+          mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
 
       - name: Build & deploy docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
@@ -191,5 +191,5 @@ jobs:
           git pull origin gh-pages
           git checkout master
 
-          python -m mike deploy --push --update-aliases ${{ github.ref_name }} latest
-          python -m mike set-default latest --push
+          mike deploy --push --update-aliases ${{ github.ref_name }} latest
+          mike set-default latest --push
