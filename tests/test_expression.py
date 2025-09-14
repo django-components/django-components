@@ -32,7 +32,7 @@ class NoopNode(Node):
 
 
 def noop(parser: Parser, token: Token):
-    tag, raw_expr = token.split_contents()
+    _tag, raw_expr = token.split_contents()
     expr = parser.compile_filter(raw_expr)
 
     return NoopNode(expr)

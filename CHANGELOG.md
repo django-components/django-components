@@ -1,11 +1,19 @@
 # Release notes
 
+## v0.141.5
+
+#### Fix
+
+- Tests - Fix bug when using `@djc_test` decorator and the `COMPONENTS`
+  settings are set with `ComponentsSettings`
+  See [#1369](https://github.com/django-components/django-components/issues/1369)
+
 ## v0.141.4
 
 #### Fix
 
 - Fix compatibility with Django's `{% include %}` and `{% extends %}` tags.
-  See https://github.com/django-components/django-components/issues/1325
+  See [#1325](https://github.com/django-components/django-components/issues/1325)
 
 ## v0.141.3
 

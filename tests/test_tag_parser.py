@@ -1252,7 +1252,7 @@ class TestTagParser:
             TemplateSyntaxError,
             match=re.escape("Unexpected colon"),
         ):
-            _, attrs = parse_tag("component data={ key:: key }", None)
+            _, _attrs = parse_tag("component data={ key:: key }", None)
 
     def test_dict_spread(self):
         _, attrs = parse_tag("component data={ **spread }", None)
@@ -1378,7 +1378,7 @@ class TestTagParser:
             TemplateSyntaxError,
             match=re.escape("Filter argument (':arg') must follow a filter ('|filter')"),
         ):
-            _, attrs = parse_tag('component data={"key"|filter:"arg": "value"}', None)
+            _, _attrs = parse_tag('component data={"key"|filter:"arg": "value"}', None)
 
     def test_list_simple(self):
         _, attrs = parse_tag("component data=[1, 2, 3]", None)
@@ -2217,14 +2217,14 @@ class TestTagParser:
             TemplateSyntaxError,
             match=re.escape("Spread syntax cannot be used in place of a dictionary key"),
         ):
-            _, attrs = parse_tag("component data={**spread|abc: 123 }", None)
+            _, _attrs = parse_tag("component data={**spread|abc: 123 }", None)
 
     def test_spread_in_filter_position(self):
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax cannot be used inside of a filter"),
         ):
-            _, attrs = parse_tag("component data=val|...spread|abc }", None)
+            _, _attrs = parse_tag("component data=val|...spread|abc }", None)
 
     def test_spread_whitespace(self):
         # NOTE: Separating `...` from its variable is NOT valid, and will result in error.
@@ -2324,49 +2324,49 @@ class TestTagParser:
             TemplateSyntaxError,
             match=re.escape("Spread syntax '*' found outside of a list"),
         ):
-            _, attrs = parse_tag('component dict={"a": "b", *my_attr}', None)
+            _, _attrs = parse_tag('component dict={"a": "b", *my_attr}', None)
 
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax '...' found in dict. It must be used on tag attributes only"),
         ):
-            _, attrs = parse_tag('component dict={"a": "b", ...my_attr}', None)
+            _, _attrs = parse_tag('component dict={"a": "b", ...my_attr}', None)
 
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax '**' found outside of a dictionary"),
         ):
-            _, attrs = parse_tag('component list=["a", "b", **my_list]', None)
+            _, _attrs = parse_tag('component list=["a", "b", **my_list]', None)
 
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax '...' found in list. It must be used on tag attributes only"),
         ):
-            _, attrs = parse_tag('component list=["a", "b", ...my_list]', None)
+            _, _attrs = parse_tag('component list=["a", "b", ...my_list]', None)
 
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax '*' found outside of a list"),
         ):
-            _, attrs = parse_tag("component *attrs", None)
+            _, _attrs = parse_tag("component *attrs", None)
 
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax '**' found outside of a dictionary"),
         ):
-            _, attrs = parse_tag("component **attrs", None)
+            _, _attrs = parse_tag("component **attrs", None)
 
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax '*' found outside of a list"),
         ):
-            _, attrs = parse_tag("component key=*attrs", None)
+            _, _attrs = parse_tag("component key=*attrs", None)
 
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax '**' found outside of a dictionary"),
         ):
-            _, attrs = parse_tag("component key=**attrs", None)
+            _, _attrs = parse_tag("component key=**attrs", None)
 
     # Test that one cannot do `key=...{"a": "b"}`
     def test_spread_onto_key(self):
@@ -2374,19 +2374,19 @@ class TestTagParser:
             TemplateSyntaxError,
             match=re.escape("Spread syntax '...' cannot follow a key ('key=...attrs')"),
         ):
-            _, attrs = parse_tag('component key=...{"a": "b"}', None)
+            _, _attrs = parse_tag('component key=...{"a": "b"}', None)
 
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax '...' cannot follow a key ('key=...attrs')"),
         ):
-            _, attrs = parse_tag('component key=...["a", "b"]', None)
+            _, _attrs = parse_tag('component key=...["a", "b"]', None)
 
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape("Spread syntax '...' cannot follow a key ('key=...attrs')"),
         ):
-            _, attrs = parse_tag("component key=...attrs", None)
+            _, _attrs = parse_tag("component key=...attrs", None)
 
     def test_spread_dict_literal_nested(self):
         _, attrs = parse_tag('component { **{"key": val2}, "key": val1 }', None)

@@ -80,6 +80,7 @@ extra:
       link: https://github.com/django-components/django-components
     - icon: fontawesome/brands/python
       link: https://pypi.org/project/django-components/
+  google_site_verification: vQA3d50F2ByQxG0eB6b0YoPnYW9gZo8xnd6HKhCyuys
 
 markdown_extensions:
   abbr: {}

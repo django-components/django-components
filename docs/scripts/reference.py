@@ -846,7 +846,7 @@ def _extract_property_docstrings(cls: Type) -> Dict[str, str]:
     - The function assumes that the class is defined at the global scope (module level)
       and that the body is indented with 4 spaces.
     """
-    lines, start_line_index = inspect.getsourcelines(cls)
+    lines, _start_line_index = inspect.getsourcelines(cls)
     attrs_lines: List[str] = []
     ignore = True
     for line in lines:

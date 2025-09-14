@@ -100,11 +100,12 @@ typing-extensions==4.13.2
     #   -r requirements-ci.in
     #   pyee
     #   tox
+    #   virtualenv
 urllib3==2.2.3
     # via
     #   requests
     #   types-requests
-virtualenv==20.33.1
+virtualenv==20.34.0
     # via
     #   -r requirements-ci.in
     #   asv

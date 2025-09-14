@@ -3702,7 +3702,7 @@ class Form(Component):
         self,
         /,
         *,
-        type: Literal["table", "paragraph", "ul", None] = None,  # noqa: A002
+        type: Optional[Literal["table", "paragraph", "ul"]] = None,  # noqa: A002
         editable: bool = True,
         method: str = "post",
         # Submit btn
