@@ -60,13 +60,15 @@ pluggy==1.5.0
     #   tox
 pyee==12.0.0
     # via playwright
+pygments==2.19.2
+    # via pytest
 pympler==1.1
     # via asv
 pyproject-api==1.8.0
     # via tox
 pyproject-hooks==1.2.0
     # via build
-pytest==8.3.5
+pytest==8.4.2
     # via
     #   pytest-asyncio
     #   pytest-django
