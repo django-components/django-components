@@ -16,5 +16,6 @@ mkdocstrings-python
 pymdown-extensions
 pygments
 pygments-djc
+django-components
 django>=4.2
 djc-core-html-parser>=1.0
