@@ -185,6 +185,43 @@ twine upload --repository pypi dist/* -u __token__ -p <PyPI_TOKEN>
 
 [See the full workflow here.](https://github.com/django-components/django-components/discussions/557#discussioncomment-10179141)
 
+## Documentation website
+
+The documentation website is built using [MkDocs](https://www.mkdocs.org/) and [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+
+First install dependencies needed for the documentation:
+
+```sh
+pip install -r requirements-docs.txt
+```
+
+Then install this local django-components version. Use `-e` for [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) so you don't have to re-install after every change:
+
+```sh
+pip install -e .
+```
+
+To run the documentation server locally, run:
+
+```sh
+mkdocs serve
+```
+
+Then open <http://127.0.0.1:9000/django-components/> in your browser.
+
+To just build the documentation, run:
+
+```sh
+mkdocs build
+```
+
+The documentation site is deployed automatically with Github actions (see [`.github/workflows/docs.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/docs.yml)).
+
+The CI workflow runs when:
+
+- A new commit is pushed to the `master` branch - This updates the `dev` version
+- A new tag is pushed - This updates the `latest` version and the version specified in the tag name
+
 ## Maintenance
 
 ### Updating supported versions
