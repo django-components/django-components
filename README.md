@@ -11,6 +11,15 @@ in modern frontend frameworks like Vue or React.
 
 With `django-components` you can support Django projects small and large without leaving the Django ecosystem.
 
+## Sponsors
+
+<p align="center"><strong>Platinum Sponsors</strong></p>
+<p align="center">
+  <a href="https://www.ohne-makler.net/" target="_blank"><img
+  src="https://raw.githubusercontent.com/django-components/django-components/master/.github/assets/sponsors/sponsor-ohne-makler.png" height="120"
+  /></a>
+</p>
+
 ## Quickstart
 
 A component in django-components can be as simple as a Django template and Python code to declare the component:
