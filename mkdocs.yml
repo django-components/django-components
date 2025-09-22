@@ -196,3 +196,8 @@ plugins:
             - docs/scripts/extensions.py:RuntimeBasesExtension
             - docs/scripts/extensions.py:SourceCodeExtension
             # - docs/scripts/extensions.py:ComponentSyntaxesExtension
+  - macros:
+      render_by_default: false
+      force_render_paths: community/people.md
+      include_yaml:
+        - people: docs/community/people.yml

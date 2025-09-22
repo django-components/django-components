@@ -27,3 +27,37 @@ h6 {
 .md-nav__item--section {
   margin-top: 32px;
 }
+
+/* People */
+
+.user-list {
+  display: flex;
+  justify-content: center;
+  padding-top: 2em;
+  gap: 2.5em;
+  flex-wrap: wrap;
+  list-style-type: none;
+  text-align: center;
+}
+
+.user a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 18px;
+}
+
+.user .avatar-wrapper {
+  width: 8em;
+  height: 8em;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.title {
+    margin: 8px 0 4px 0;
+}
+
+.info {
+    font-size: 16px;
+}

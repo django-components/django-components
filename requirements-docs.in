@@ -7,6 +7,7 @@ mkdocs-gen-files
 mkdocs-git-authors-plugin
 mkdocs-git-revision-date-localized-plugin
 mkdocs-include-markdown-plugin
+mkdocs-macros-plugin
 mkdocs-material
 mkdocs-material[imaging]
 mkdocs-minify-plugin

@@ -1,5 +1,6 @@
 # `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
 nav:
+  - Django Components People: people.md
   - Questions & Help: help.md
   - Contributing: contributing.md
   - Development: development.md

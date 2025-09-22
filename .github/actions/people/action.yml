@@ -1,0 +1,31 @@
+# This logic is inspired by that of @tiangolo's (FastAPI People)
+# [FastAPI people script](https://github.com/fastapi/fastapi/blob/master/.github/workflows/people.yml).
+
+name: Django Components People
+
+on:
+  schedule:
+    - cron: "0 18 1 * *"
+
+jobs:
+  job:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install -U PyGithub pyyaml pydantic pydantic-settings httpx
+        shell: bash
+
+      - name: Update Django Components People
+        run: python ./docs/scripts/people.py
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
