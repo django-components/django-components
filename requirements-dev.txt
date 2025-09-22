@@ -135,7 +135,7 @@ tomli==2.2.1
     #   tox
 tox==4.28.4
     # via -r requirements-dev.in
-types-requests==2.32.4.20250809
+types-requests==2.32.4.20250913
     # via -r requirements-dev.in
 typing-extensions==4.14.1
     # via
