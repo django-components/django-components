@@ -57,7 +57,7 @@ iniconfig==2.1.0
     # via pytest
 json5==0.12.1
     # via asv
-mypy==1.17.1
+mypy==1.18.2
     # via -r requirements-dev.in
 mypy-extensions==1.1.0
     # via mypy
