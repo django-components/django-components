@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from django import VERSION as DJANGO_VERSION
 from django.template import Context, NodeList, Template
@@ -10,6 +10,9 @@ from django_components.dependencies import COMPONENT_COMMENT_REGEX, render_depen
 from django_components.extension import OnTemplateCompiledContext, OnTemplateLoadedContext, extensions
 from django_components.util.template_parser import parse_template
 
+if TYPE_CHECKING:
+    from django_components.component import Component
+
 
 # In some cases we can't work around Django's design, and need to patch the template class.
 def monkeypatch_template_cls(template_cls: Type[Template]) -> None:
@@ -19,7 +22,8 @@ def monkeypatch_template_cls(template_cls: Type[Template]) -> None:
     monkeypatch_template_init(template_cls)
     monkeypatch_template_compile_nodelist(template_cls)
     monkeypatch_template_render(template_cls)
-    template_cls._djc_patched = True
+
+    set_cls_patched(template_cls)
 
 
 # Patch `Template.__init__` to apply `on_template_loaded()` and `on_template_compiled()`
@@ -53,14 +57,22 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
         #
         # 2. Apply `extensions.on_template_preprocess()` to the template, so extensions can modify
         #    the template string before it's compiled into a nodelist.
-        if get_component_from_origin(origin) is not None:
-            component_cls = get_component_from_origin(origin)
-        elif origin is not None and origin.template_name is not None:
-            component_cls = get_component_by_template_file(origin.template_name)
-            if component_cls is not None:
-                set_component_to_origin(origin, component_cls)
+        if origin is None:
+            component_cls: Optional[Type[Component]] = None
         else:
-            component_cls = None
+            comp_from_origin = get_component_from_origin(origin)
+            if comp_from_origin is not None:
+                component_cls = comp_from_origin
+            elif origin.template_name is not None:
+                if isinstance(origin.template_name, bytes):
+                    template_name = origin.template_name.decode("utf-8")
+                else:
+                    template_name = origin.template_name
+                component_cls = get_component_by_template_file(template_name)
+                if component_cls is not None:
+                    set_component_to_origin(origin, component_cls)
+            else:
+                component_cls = None
 
         if component_cls is not None:
             template_string = str(template_string)
@@ -85,7 +97,7 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
                 ),
             )
 
-    template_cls.__init__ = __init__
+    template_cls.__init__ = __init__  # type: ignore[assignment]
 
 
 # Patch `Template.compile_nodelist` to use our custom parser. Our parser makes it possible
@@ -124,7 +136,7 @@ def monkeypatch_template_compile_nodelist(template_cls: Type[Template]) -> None:
                 # NOTE: This must be enabled ONLY for 5.1 and later. Previously it was also for older
                 #       Django versions, and this led to compatibility issue with django-template-partials.
                 #       See https://github.com/carltongibson/django-template-partials/pull/85#issuecomment-3187354790
-                self.extra_data = getattr(parser, "extra_data", {})
+                self.extra_data = getattr(parser, "extra_data", {})  # type: ignore[attr-defined]
                 #  ---------------- END OF ADDED IN Django v5.1 ----------------
             return nodelist
         except Exception as e:
@@ -132,7 +144,7 @@ def monkeypatch_template_compile_nodelist(template_cls: Type[Template]) -> None:
                 e.template_debug = self.get_exception_info(e, e.token)  # type: ignore[attr-defined]
             raise
 
-    template_cls.compile_nodelist = _compile_nodelist
+    template_cls.compile_nodelist = _compile_nodelist  # type: ignore[assignment]
 
 
 def monkeypatch_template_render(template_cls: Type[Template]) -> None:
@@ -177,9 +189,9 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
             if context.template is None:
                 with context.bind_template(self):
                     context.template_name = self.name
-                    result: str = self._render(context, *args, **kwargs)
+                    result: str = self._render(context, *args, **kwargs)  # type: ignore[attr-defined]
             else:
-                result = self._render(context, *args, **kwargs)
+                result = self._render(context, *args, **kwargs)  # type: ignore[attr-defined]
 
         # If the key is present, that means this Template is rendered as part of `Component.render()`
         # or `{% component %}`. In that case the parent component will take care of rendering the
@@ -213,7 +225,7 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
             result = render_dependencies(result)
         return result
 
-    template_cls.render = _template_render
+    template_cls.render = _template_render  # type: ignore[assignment]
 
 
 def monkeypatch_include_node(include_node_cls: Type[Node]) -> None:
@@ -221,7 +233,8 @@ def monkeypatch_include_node(include_node_cls: Type[Node]) -> None:
         return
 
     monkeypatch_include_render(include_node_cls)
-    include_node_cls._djc_patched = True
+
+    set_cls_patched(include_node_cls)
 
 
 def monkeypatch_include_render(include_node_cls: Type[Node]) -> None:
@@ -245,7 +258,7 @@ def monkeypatch_include_render(include_node_cls: Type[Node]) -> None:
         with context.update({_STRATEGY_CONTEXT_KEY: "ignore"}):
             return orig_include_render(self, context, *args, **kwargs)
 
-    include_node_cls.render = _include_render
+    include_node_cls.render = _include_render  # type: ignore[assignment]
 
 
 # NOTE: Remove once Django v5.2 reaches end of life
@@ -254,7 +267,7 @@ def monkeypatch_template_proxy_cls() -> None:
     # Patch TemplateProxy if template_partials is installed
     # See https://github.com/django-components/django-components/issues/1323#issuecomment-3164224042
     try:
-        from template_partials.templatetags.partials import TemplateProxy  # noqa: PLC0415
+        from template_partials.templatetags.partials import TemplateProxy  # noqa: PLC0415 # type: ignore[import]
     except ImportError:
         # template_partials is in INSTALLED_APPS but not actually installed
         # This is fine, just skip the patching
@@ -278,3 +291,7 @@ def monkeypatch_template_proxy_render(template_proxy_cls: Type[Any]) -> None:
 
 def is_cls_patched(cls: Type[Any]) -> bool:
     return getattr(cls, "_djc_patched", False)
+
+
+def set_cls_patched(cls: Type[Any]) -> None:
+    cls._djc_patched = True

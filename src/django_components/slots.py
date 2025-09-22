@@ -663,7 +663,7 @@ class SlotNode(BaseNode):
     #    for unfilled slots (rendered slots WILL raise an error if the fill is missing).
     # 2. User may provide extra fills, but these may belong to slots we haven't
     #    encountered in this render run. So we CANNOT say which ones are extra.
-    def render(self, context: Context, name: str, **kwargs: Any) -> SafeString:
+    def render(self, context: Context, name: str, **kwargs: Any) -> SafeString:  # type: ignore[override]
         # Do not render `{% slot %}` tags within the `{% component %} .. {% endcomponent %}` tags
         # at the fill discovery stage (when we render the component's body to determine if the body
         # is a default slot, or contains named slots).
@@ -914,7 +914,7 @@ class SlotNode(BaseNode):
         #   {% slot "content" %}{% endslot %}
         # {% endprovide %}
         for key, value in context.flatten().items():
-            if key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
+            if isinstance(key, str) and key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
                 extra_context[key] = value  # noqa: PERF403
 
         fallback = SlotFallback(self, context)
@@ -1140,7 +1140,7 @@ class FillNode(BaseNode):
     end_tag = "endfill"
     allowed_flags = ()
 
-    def render(
+    def render(  # type: ignore[override]
         self,
         context: Context,
         name: str,

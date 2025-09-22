@@ -15,7 +15,7 @@ def token2tuple(token: Token):
     return (
         token.token_type,
         token.contents,
-        (token.position[0], token.position[1]),
+        (token.position[0], token.position[1]) if token.position else None,
         token.lineno,
     )
 

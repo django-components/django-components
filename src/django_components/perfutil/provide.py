@@ -126,7 +126,7 @@ def register_provide_reference(context: Context, reference_id: str) -> None:
     all_reference_ids.add(reference_id)
 
     for key, provide_id in context.flatten().items():
-        if not key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
+        if not isinstance(key, str) or not key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
             continue
 
         if provide_id not in provide_references:

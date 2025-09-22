@@ -1,6 +1,6 @@
 import sys
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Type, Union, cast
 from weakref import ReferenceType, ref
 
 from django.core.exceptions import ImproperlyConfigured
@@ -14,6 +14,8 @@ from django_components.util.logger import trace_component_msg
 from django_components.util.misc import get_import_path, get_module_info
 
 if TYPE_CHECKING:
+    from django.template.backends.django import Template as DjangoTemplate
+
     from django_components.component import Component
 
 
@@ -99,7 +101,7 @@ def prepare_component_template(
             yield template
             return
 
-        if not is_cls_patched(template):
+        if not is_cls_patched(template.__class__):
             raise RuntimeError(
                 "Django-components received a Template instance which was not patched."
                 "If you are using Django's Template class, check if you added django-components"
@@ -224,8 +226,7 @@ def _get_component_template(component: "Component") -> Optional[Template]:
 
     # TODO_V1 - Remove `get_template_string()` in v1
     if hasattr(component, "get_template_string"):
-        template_string_getter = component.get_template_string
-        template_body_from_getter = template_string_getter(component.context)
+        template_body_from_getter = component.get_template_string(component.context)  # type: ignore[attr-defined]
     else:
         template_body_from_getter = None
     template_sources["get_template_string"] = template_body_from_getter
@@ -250,20 +251,20 @@ def _get_component_template(component: "Component") -> Optional[Template]:
 
     # Load the template based on the source
     if template_sources["get_template_name"]:
-        template_name = template_sources["get_template_name"]
+        template_name = cast("str", template_sources["get_template_name"])
         template: Optional[Template] = _load_django_template(template_name)
         template_string: Optional[str] = None
     elif template_sources["get_template_string"]:
-        template_string = template_sources["get_template_string"]
+        template_string = template_sources["get_template_string"]  # type: ignore[assignment]
         template = None
     elif template_sources["get_template"]:
         # `Component.get_template()` returns either string or Template instance
         if hasattr(template_sources["get_template"], "render"):
-            template = template_sources["get_template"]
+            template = template_sources["get_template"]  # type: ignore[assignment]
             template_string = None
         else:
             template = None
-            template_string = template_sources["get_template"]
+            template_string = template_sources["get_template"]  # type: ignore[assignment]
     elif component.template or component.template_file:
         # If the template was loaded from `Component.template` or `Component.template_file`,
         # then the Template instance was already created and cached in `Component._template`.
@@ -320,14 +321,15 @@ def _create_template_from_string(
 
     set_component_to_origin(origin, component)
 
+    template_name = cast("Optional[str]", origin.template_name)
     if is_component_template:
-        template = Template(template_string, name=origin.template_name, origin=origin)
+        template = Template(template_string, name=template_name, origin=origin)
     else:
         # TODO_V1 - `cached_template()` won't be needed as there will be only 1 template per component
         #           so we will be able to instead use `template_cache` to store the template
         template = cached_template(
             template_string=template_string,
-            name=origin.template_name,
+            name=template_name,
             origin=origin,
         )
 
@@ -349,7 +351,8 @@ def _create_template_from_string(
 #       - We would no longer need to set `TEMPLATES.OPTIONS.loaders` to include
 #         `django_components.template_loader.Loader`
 def _load_django_template(template_name: str) -> Template:
-    return django_get_template(template_name).template
+    engine_tmpl = cast("DjangoTemplate", django_get_template(template_name))
+    return engine_tmpl.template
 
 
 ########################################################
@@ -476,7 +479,7 @@ def _reset_component_template_file_cache() -> None:
 
 # Helpers so we know where in the codebase we set / access the `Origin.component_cls` attribute
 def set_component_to_origin(origin: Origin, component_cls: Type["Component"]) -> None:
-    origin.component_cls = component_cls
+    origin.component_cls = component_cls  # type: ignore[attr-defined]
 
 
 def get_component_from_origin(origin: Origin) -> Optional[Type["Component"]]:

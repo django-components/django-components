@@ -47,7 +47,30 @@ To run tests for a specific Python version, use:
 tox -e py38
 ```
 
-NOTE: See the available environments in `tox.ini`.
+!!! note
+
+    See the available environments in [tox.ini](https://github.com/django-components/django-components/blob/main/tox.ini).
+
+## Playwright tests
+
+We use [Playwright](https://playwright.dev/python/docs/intro) for end-to-end tests.
+
+Before you run tests for the first time, you will need to download Chromium.
+
+Playwright makes this very easy:
+
+```sh
+pip install -r requirements-dev.txt
+playwright install chromium --with-deps
+```
+
+After Playwright is ready, run the tests the same way as before:
+
+```sh
+pytest
+# Or for specific Python version
+tox -e py38
+```
 
 ## Linting and formatting
 
@@ -67,35 +90,72 @@ ruff format --check .
 ruff format .
 ```
 
-To validate with Mypy, run:
+You can run this through `tox` as well:
 
 ```sh
-mypy .
+tox -e ruff
 ```
 
-You can run these through `tox` as well:
+### Type checking with `mypy` and `basedpyright`
+
+This library uses both `mypy` and `basedpyright` for type checking to ensure compatibility for developers who may use different tools.
+
+In CI, we run both checkers in separate `tox` environments. For local development, especially with VS Code, it's recommended to use `basedpyright` for real-time feedback.
+
+Here's how to set it up:
+
+**1. Install `basedpyright`**
+
+Install `basedpyright` into your local development environment:
 
 ```sh
-tox -e mypy,ruff
+# Using pip
+pip install basedpyright
+
+# Or using uv
+uv pip install basedpyright
 ```
 
-## Playwright tests
+**2. Configure VS Code**
 
-We use [Playwright](https://playwright.dev/python/docs/intro) for end-to-end tests. You will need to install Playwright to run these tests.
+To get real-time type checking in VS Code, it's best to use the official `basedpyright` extension.
 
-Luckily, Playwright makes it very easy:
+1.  **Install the extension**: Search for and install the "Basedpyright" extension from the VS Code Marketplace.
+
+2.  **Configure your workspace settings**: Create or open the `.vscode/settings.json` file in the project root and add the following to ensure `basedpyright` is used as the language server and to avoid conflicts with other tools:
+
+    ```json
+    {
+      "python.languageServer": "None",
+      "python.linting.mypyEnabled": false
+    }
+    ```
+
+    By setting `"python.languageServer"` to `"None"`, you disable the default Pylance/Pyright language server, allowing the `basedpyright` extension to take over. Disabling `mypy` prevents duplicate error messages in the editor.
+
+**3. Run checks locally**
+
+The configuration for `basedpyright` is stored in `pyproject.toml` under the `[tool.basedpyright]` section. This means you can run it from the command line and get the same results as you see in your editor.
+
+To run `basedpyright` locally, run:
+
+
+To format the code, run:
 
 ```sh
-pip install -r requirements-dev.txt
-playwright install chromium --with-deps
+basedpyright .
 ```
 
-After Playwright is ready, run the tests the same way as before:
+Or use its `tox` environment:
 
 ```sh
-pytest
-# Or for specific Python version
-tox -e py38
+tox -e basedpyright
+```
+
+You can also run both `mypy` and `basedpyright` together:
+
+```sh
+tox -e mypy,basedpyright
 ```
 
 ## Dev server

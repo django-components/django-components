@@ -14,11 +14,11 @@ class TestTemplateCache:
     # TODO_v1 - Remove
     def test_cached_template(self):
         template_1 = cached_template("Variable: <strong>{{ variable }}</strong>")
-        template_1._test_id = "123"
+        template_1._test_id = "123"  # type: ignore[attr-defined]
 
         template_2 = cached_template("Variable: <strong>{{ variable }}</strong>")
 
-        assert template_2._test_id == "123"
+        assert template_2._test_id == "123"  # type: ignore[attr-defined]
 
     # TODO_v1 - Remove
     def test_cached_template_accepts_class(self):

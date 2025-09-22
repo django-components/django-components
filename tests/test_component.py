@@ -417,8 +417,8 @@ class TestComponent:
         assert SimpleComponent1._template.origin.loader == SimpleComponent2._template.origin.loader
 
         # The origins point to their respective Component classes.
-        assert SimpleComponent1._template.origin.component_cls == SimpleComponent1
-        assert SimpleComponent2._template.origin.component_cls == SimpleComponent2
+        assert SimpleComponent1._template.origin.component_cls == SimpleComponent1  # type: ignore[attr-defined]
+        assert SimpleComponent2._template.origin.component_cls == SimpleComponent2  # type: ignore[attr-defined]
 
         rendered = SimpleComponent1.render(kwargs={"variable": "test"})
         assertHTMLEqual(
@@ -1143,7 +1143,7 @@ class TestComponentRender:
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_render_to_response_change_response_class(self, components_settings):
-        class MyResponse:
+        class MyResponse(HttpResponse):
             def __init__(self, content: str) -> None:
                 self.content = bytes(content, "utf-8")
 
@@ -1600,7 +1600,7 @@ class TestComponentHook:
 
     def _gen_broken_component(self):
         class BrokenComponent(Component):
-            def on_render(self, context: Context, template: Template):
+            def on_render(self, context: Context, template: Optional[Template]):
                 raise ValueError("BROKEN")
 
         return BrokenComponent
@@ -1693,15 +1693,16 @@ class TestComponentHook:
                 from_on_after: {{ from_on_after }}
             """
 
-            def on_render_before(self, context: Context, template: Template) -> None:
+            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
                 # Insert value into the Context
                 context["from_on_before"] = "1"
 
-            def on_render(self, context: Context, template: Template):
+            def on_render(self, context: Context, template: Optional[Template]):
                 context["from_on_render_pre"] = "2"
                 # Check we can modify entries set by other methods
                 context["from_on_before__edited1"] = context["from_on_before"] + " (on_render)"
 
+                assert template is not None
                 _html, _error = yield template.render(context)
 
                 context["from_on_render_post"] = "3"
@@ -1711,7 +1712,7 @@ class TestComponentHook:
             def on_render_after(
                 self,
                 context: Context,
-                template: Template,
+                template: Optional[Template],
                 html: Optional[str],
                 error: Optional[Exception],
             ) -> None:
@@ -1744,14 +1745,16 @@ class TestComponentHook:
                 text
             """
 
-            def on_render_before(self, context: Context, template: Template) -> None:
+            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
                 # Insert text into the Template
                 #
                 # NOTE: Users should NOT do this, because this will insert the text every time
                 #       the component is rendered.
+                assert template is not None
                 template.nodelist.append(TextNode("\n---\nFROM_ON_BEFORE"))
 
-            def on_render(self, context: Context, template: Template):
+            def on_render(self, context: Context, template: Optional[Template]):
+                assert template is not None
                 template.nodelist.append(TextNode("\n---\nFROM_ON_RENDER_PRE"))
 
                 _html, _error = yield template.render(context)
@@ -1763,10 +1766,11 @@ class TestComponentHook:
             def on_render_after(
                 self,
                 context: Context,
-                template: Template,
+                template: Optional[Template],
                 html: Optional[str],
                 error: Optional[Exception],
             ) -> None:
+                assert template is not None
                 template.nodelist.append(TextNode("\n---\nFROM_ON_AFTER"))
 
         rendered = SimpleComponent.render()
@@ -1787,7 +1791,7 @@ class TestComponentHook:
                 text
             """
 
-            def on_render(self, context: Context, template: Template):
+            def on_render(self, context: Context, template: Optional[Template]):
                 return "OVERRIDDEN"
 
         rendered = SimpleComponent.render()
@@ -1801,8 +1805,9 @@ class TestComponentHook:
                 {% component "broken" / %}
             """
 
-            def on_render(self, context: Context, template: Template):
-                _html, error = yield template.render(context)
+            def on_render(self, context: Context, template: Optional[Template]):
+                assert template is not None
+                html, error = yield template.render(context)
 
                 raise error from None  # Re-raise original error
 
@@ -1859,7 +1864,7 @@ class TestComponentHook:
 
         Broken = self._gen_broken_component()
         Slotted = self._gen_slotted_component(calls)
-        Inner = self._gen_inner_component(calls)
+        Inner = self._gen_inner_component(calls)  # type: ignore[assignment]
         Middle = self._gen_middle_component(calls)
         Outer = self._gen_outer_component(calls)
 

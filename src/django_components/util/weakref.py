@@ -11,7 +11,7 @@ T = TypeVar("T")
 if sys.version_info >= (3, 9):
 
     @overload  # type: ignore[misc]
-    def cached_ref(obj: T) -> ReferenceType[T]: ...
+    def cached_ref(obj: T) -> ReferenceType[T]: ...  # type: ignore[misc]
 
 
 def cached_ref(obj: Any) -> ReferenceType:

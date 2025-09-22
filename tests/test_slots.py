@@ -4,6 +4,7 @@ For tests focusing on the `{% slot %}` tag, see `test_templatetags_slot_fill.py`
 """
 
 import re
+from typing import cast
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
@@ -435,10 +436,11 @@ class TestSlot:
         assert first_slot_func.fill_node is None
         assert first_slot_func.extra == {}
 
-        first_nodelist: NodeList = first_slot_func.nodelist
+        first_nodelist = cast("NodeList", first_slot_func.nodelist)
         assert len(first_nodelist) == 1
-        assert isinstance(first_nodelist[0], TextNode)
-        assert first_nodelist[0].s == "FIRST_SLOT"
+        text_node = first_nodelist[0]
+        assert isinstance(text_node, TextNode)
+        assert text_node.s == "FIRST_SLOT"
 
     # Part of the slot caching feature - test that consistent functions passed as slots
     # reuse the slot function.
@@ -534,10 +536,11 @@ class TestSlot:
         assert isinstance(first_slot_func.fill_node, ComponentNode)
         assert first_slot_func.extra == {}
 
-        first_nodelist: NodeList = first_slot_func.nodelist
+        first_nodelist = cast("NodeList", first_slot_func.nodelist)
         assert len(first_nodelist) == 1
-        assert isinstance(first_nodelist[0], TextNode)
-        assert first_nodelist[0].s == "\n              FROM_INSIDE_DEFAULT_SLOT\n            "
+        text_node = first_nodelist[0]
+        assert isinstance(text_node, TextNode)
+        assert text_node.s == "\n              FROM_INSIDE_DEFAULT_SLOT\n            "
 
     # Part of the slot caching feature - test that identical slot fill content
     # slots reuse the slot function.
@@ -575,10 +578,11 @@ class TestSlot:
         assert isinstance(first_slot_func.fill_node, FillNode)
         assert first_slot_func.extra == {}
 
-        first_nodelist: NodeList = first_slot_func.nodelist
+        first_nodelist = cast("NodeList", first_slot_func.nodelist)
         assert len(first_nodelist) == 1
-        assert isinstance(first_nodelist[0], TextNode)
-        assert first_nodelist[0].s == "\n                FROM_INSIDE_NAMED_SLOT\n              "
+        text_node = first_nodelist[0]
+        assert isinstance(text_node, TextNode)
+        assert text_node.s == "\n                FROM_INSIDE_NAMED_SLOT\n              "
 
     # Part of the slot caching feature - test that identical slot fill content
     # slots reuse the slot function.

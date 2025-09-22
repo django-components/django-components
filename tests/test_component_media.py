@@ -23,6 +23,26 @@ from .testutils import setup_test_config
 setup_test_config({"autodiscover": False})
 
 
+# NOTE: Pyright needs these Media classes to be defined at the top level,
+class JsDeferMedia(Media):
+    def render_js(self):
+        tags: List[str] = []
+        for path in self._js:  # type: ignore[attr-defined]
+            abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
+            tags.append(f'<script defer src="{abs_path}"></script>')
+        return tags
+
+
+class CssAbcMedia(Media):
+    def render_css(self):
+        tags: List[str] = []
+        media = sorted(self._css)  # type: ignore[attr-defined]
+        for medium in media:
+            for path in self._css[medium]:  # type: ignore[attr-defined]
+                tags.append(f'<link abc href="{path}" media="{medium}" rel="stylesheet" />')
+        return tags
+
+
 # "Main media" refer to the HTML, JS, and CSS set on the Component class itself
 # (as opposed via the `Media` class). These have special handling in the Component.
 @djc_test
@@ -71,7 +91,7 @@ class TestMainMedia:
         assert TestComponent.js == "console.log('HTML and JS only');"
 
         assert isinstance(TestComponent._template, Template)
-        assert TestComponent._template.origin.component_cls is TestComponent
+        assert TestComponent._template.origin.component_cls is TestComponent  # type: ignore[attr-defined]
 
     @djc_test(
         django_settings={
@@ -131,7 +151,7 @@ class TestMainMedia:
         assert TestComponent.js == 'console.log("JS file");\n'
 
         assert isinstance(TestComponent._template, Template)
-        assert TestComponent._template.origin.component_cls is TestComponent
+        assert TestComponent._template.origin.component_cls is TestComponent  # type: ignore[attr-defined]
 
     @djc_test(
         django_settings={
@@ -158,7 +178,7 @@ class TestMainMedia:
         assert 'console.log("HTML and JS only");' in TestComponent.js  # type: ignore[operator]
 
         assert isinstance(TestComponent._template, Template)
-        assert TestComponent._template.origin.component_cls is TestComponent
+        assert TestComponent._template.origin.component_cls is TestComponent  # type: ignore[attr-defined]
 
         rendered = Template(
             """
@@ -342,14 +362,6 @@ class TestComponentMedia:
         assertInHTML('<script src="path/to/script.js"></script>', rendered)
 
     def test_media_custom_render_js(self):
-        class MyMedia(Media):
-            def render_js(self):
-                tags: List[str] = []
-                for path in self._js:  # type: ignore[attr-defined]
-                    abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
-                    tags.append(f'<script defer src="{abs_path}"></script>')
-                return tags
-
         class SimpleComponent(Component):
             template = """
                 {% load component_tags %}
@@ -357,7 +369,7 @@ class TestComponentMedia:
                 {% component_css_dependencies %}
             """
 
-            media_class = MyMedia
+            media_class = JsDeferMedia
 
             class Media:
                 js = ["path/to/script.js", "path/to/script2.js"]
@@ -368,15 +380,6 @@ class TestComponentMedia:
         assert '<script defer src="path/to/script2.js"></script>' in rendered
 
     def test_media_custom_render_css(self):
-        class MyMedia(Media):
-            def render_css(self):
-                tags: List[str] = []
-                media = sorted(self._css)  # type: ignore[attr-defined]
-                for medium in media:
-                    for path in self._css[medium]:  # type: ignore[attr-defined]
-                        tags.append(f'<link abc href="{path}" media="{medium}" rel="stylesheet" />')
-                return tags
-
         class SimpleComponent(Component):
             template = """
                 {% load component_tags %}
@@ -384,7 +387,7 @@ class TestComponentMedia:
                 {% component_css_dependencies %}
             """
 
-            media_class = MyMedia
+            media_class = CssAbcMedia
 
             class Media:
                 css = {
@@ -787,14 +790,6 @@ class TestMediaStaticfiles:
     def test_default_static_files_storage(self):
         """Test integration with Django's staticfiles app"""
 
-        class MyMedia(Media):
-            def render_js(self):
-                tags: List[str] = []
-                for path in self._js:  # type: ignore[attr-defined]
-                    abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
-                    tags.append(f'<script defer src="{abs_path}"></script>')
-                return tags
-
         class SimpleComponent(Component):
             template = """
                 {% load component_tags %}
@@ -802,7 +797,7 @@ class TestMediaStaticfiles:
                 {% component_css_dependencies %}
             """
 
-            media_class = MyMedia
+            media_class = JsDeferMedia
 
             class Media:
                 css = "calendar/style.css"
@@ -847,14 +842,6 @@ class TestMediaStaticfiles:
     def test_manifest_static_files_storage(self):
         """Test integration with Django's staticfiles app and ManifestStaticFilesStorage"""
 
-        class MyMedia(Media):
-            def render_js(self):
-                tags: List[str] = []
-                for path in self._js:  # type: ignore[attr-defined]
-                    abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
-                    tags.append(f'<script defer src="{abs_path}"></script>')
-                return tags
-
         class SimpleComponent(Component):
             template = """
                 {% load component_tags %}
@@ -862,7 +849,7 @@ class TestMediaStaticfiles:
                 {% component_css_dependencies %}
             """
 
-            media_class = MyMedia
+            media_class = JsDeferMedia
 
             class Media:
                 css = "calendar/style.css"
@@ -1107,11 +1094,11 @@ class TestSubclassingAttributes:
 
         assert isinstance(ParentComp._template, Template)
         assert ParentComp._template.source == "<h1>parent</h1>"
-        assert ParentComp._template.origin.component_cls == ParentComp
+        assert ParentComp._template.origin.component_cls == ParentComp  # type: ignore[attr-defined]
 
         assert isinstance(TestComp._template, Template)
         assert TestComp._template.source == "<h1>child</h1>"
-        assert TestComp._template.origin.component_cls == TestComp
+        assert TestComp._template.origin.component_cls == TestComp  # type: ignore[attr-defined]
 
     def test_parent_null_child_non_null(self):
         class ParentComp(Component):
@@ -1131,7 +1118,7 @@ class TestSubclassingAttributes:
 
         assert isinstance(TestComp._template, Template)
         assert TestComp._template.source == "<h1>child</h1>"
-        assert TestComp._template.origin.component_cls == TestComp
+        assert TestComp._template.origin.component_cls == TestComp  # type: ignore[attr-defined]
 
     def test_parent_non_null_child_null(self):
         class ParentComp(Component):
@@ -1151,7 +1138,7 @@ class TestSubclassingAttributes:
 
         assert isinstance(ParentComp._template, Template)
         assert ParentComp._template.source == "<h1>parent</h1>"
-        assert ParentComp._template.origin.component_cls == ParentComp
+        assert ParentComp._template.origin.component_cls == ParentComp  # type: ignore[attr-defined]
 
     def test_parent_null_child_null(self):
         class ParentComp(Component):
@@ -1188,15 +1175,15 @@ class TestSubclassingAttributes:
 
         assert isinstance(GrandParentComp._template, Template)
         assert GrandParentComp._template.source == "<h1>grandparent</h1>"
-        assert GrandParentComp._template.origin.component_cls == GrandParentComp
+        assert GrandParentComp._template.origin.component_cls == GrandParentComp  # type: ignore[attr-defined]
 
         assert isinstance(ParentComp._template, Template)
         assert ParentComp._template.source == "<h1>grandparent</h1>"
-        assert ParentComp._template.origin.component_cls == ParentComp
+        assert ParentComp._template.origin.component_cls == ParentComp  # type: ignore[attr-defined]
 
         assert isinstance(TestComp._template, Template)
         assert TestComp._template.source == "<h1>grandparent</h1>"
-        assert TestComp._template.origin.component_cls == TestComp
+        assert TestComp._template.origin.component_cls == TestComp  # type: ignore[attr-defined]
 
     def test_grandparent_non_null_parent_null_child_pass(self):
         class GrandParentComp(Component):
@@ -1217,7 +1204,7 @@ class TestSubclassingAttributes:
 
         assert isinstance(GrandParentComp._template, Template)
         assert GrandParentComp._template.source == "<h1>grandparent</h1>"
-        assert GrandParentComp._template.origin.component_cls == GrandParentComp
+        assert GrandParentComp._template.origin.component_cls == GrandParentComp  # type: ignore[attr-defined]
 
         assert ParentComp._template is None
         assert TestComp._template is None
@@ -1241,15 +1228,15 @@ class TestSubclassingAttributes:
 
         assert isinstance(GrandParentComp._template, Template)
         assert GrandParentComp._template.source == "<h1>grandparent</h1>"
-        assert GrandParentComp._template.origin.component_cls == GrandParentComp
+        assert GrandParentComp._template.origin.component_cls == GrandParentComp  # type: ignore[attr-defined]
 
         assert isinstance(ParentComp._template, Template)
         assert ParentComp._template.source == "<h1>grandparent</h1>"
-        assert ParentComp._template.origin.component_cls == ParentComp
+        assert ParentComp._template.origin.component_cls == ParentComp  # type: ignore[attr-defined]
 
         assert isinstance(TestComp._template, Template)
         assert TestComp._template.source == "<h1>child</h1>"
-        assert TestComp._template.origin.component_cls == TestComp
+        assert TestComp._template.origin.component_cls == TestComp  # type: ignore[attr-defined]
 
     def test_grandparent_null_parent_pass_child_non_null(self):
         class GrandParentComp(Component):
@@ -1273,7 +1260,7 @@ class TestSubclassingAttributes:
 
         assert isinstance(TestComp._template, Template)
         assert TestComp._template.source == "<h1>child</h1>"
-        assert TestComp._template.origin.component_cls == TestComp
+        assert TestComp._template.origin.component_cls == TestComp  # type: ignore[attr-defined]
 
 
 @djc_test

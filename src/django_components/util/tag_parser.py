@@ -90,7 +90,7 @@ class TagValue:
     """
 
     parts: List["TagValuePart"]
-    compiled: Optional[FilterExpression] = None
+    compiled: Optional[Union[FilterExpression, DynamicFilterExpression]] = None
 
     @property
     def is_spread(self) -> bool:
@@ -112,6 +112,9 @@ class TagValue:
             spread_token = self.parts[0].spread
             spread_token_offset = len(spread_token) if spread_token else 0
             serialized = serialized[spread_token_offset:]
+
+        if parser is None:
+            raise ValueError("Parser is required to compile tag values")
 
         # Allow to use dynamic expressions as args, e.g. `"{{ }}"` inside of strings
         if is_dynamic_expression(serialized):

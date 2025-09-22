@@ -22,7 +22,7 @@ Always reference these instructions first and fallback to search or bash command
 - Run linting and code quality checks:
   - `ruff check .` -- run linting, and import sorting (~2 seconds)
   - `ruff format .` -- format code
-  - `mypy .` -- run type checking (~10 seconds, may show some errors in tests)
+  - `basedpyright .` -- run type checking (~10 seconds, may show some errors in tests)
 - Use tox for comprehensive testing (requires network access):
   - `tox -e ruff` -- run ruff in isolated environment  
   - `tox` -- run full test matrix (multiple Python/Django versions). NEVER CANCEL: Takes 10-30 minutes.

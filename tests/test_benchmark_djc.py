@@ -26,6 +26,7 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
+    cast,
 )
 
 import django
@@ -2084,8 +2085,9 @@ ICONS = {
 
 class ComponentDefaultsMeta(type):
     def __new__(mcs, name: str, bases: Tuple, namespace: Dict) -> Type:
-        # Apply dataclass decorator to the class
-        return dataclass(super().__new__(mcs, name, bases, namespace))
+        # Apply @dataclass decorator to the class
+        defaults_cls = super().__new__(mcs, name, bases, namespace)
+        return dataclass(defaults_cls)  # type: ignore[arg-type]
 
 
 class ComponentDefaults(metaclass=ComponentDefaultsMeta):
@@ -2706,7 +2708,7 @@ class RenderContextProvider(Component):
         csrf_token = csrf.get_token(request)
         context = RenderContext(
             request=request,
-            user=request.user,
+            user=cast("User", request.user),
             csrf_token=csrf_token,
         )
 

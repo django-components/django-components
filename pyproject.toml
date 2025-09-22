@@ -45,7 +45,7 @@ Donate = "https://github.com/sponsors/EmilStenstrom"
 
 
 ###########################################
-# TOOLS
+# BUILD TOOLS
 ###########################################
 
 [tool.setuptools.packages.find]
@@ -54,23 +54,17 @@ include = ["django_components*"]
 exclude = ["django_components.tests*"]
 namespaces = false
 
-[tool.black]
-line-length = 119
-include = '\.pyi?$'
-exclude = '''
-/(
-    \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | activate
-  | _build
-  | buck-out
-  | build
-  | dist
-)/
-'''
+###########################################
+# TESTING
+###########################################
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+###########################################
+# LINTING / FORMATTING
+###########################################
 
 [tool.ruff]
 line-length = 119
@@ -81,7 +75,7 @@ exclude = [
     "settings.py",
     "env",
     ".env",
-    # From mypy
+    # From tests
     "test_structures",
 ]
 
@@ -176,6 +170,32 @@ ignore = [
 [tool.ruff.lint.isort]
 known-first-party = ["django_components"]
 
+###########################################
+# TYPE CHECKING
+###########################################
+
+# NOTE: Pyright/Basedpyright is used for this project.
+# But to ensure compatibility with downstream projects that use Mypy,
+# we have to use both.
+[tool.basedpyright]
+include = ["src", "tests"]
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/test_structures",
+    "**/.mypy_cache",
+    "**/.pytest_cache",
+    "**/.ruff_cache",
+    "**/.asv",
+    "**/.tox",
+    "**/.venv",
+    "**/docs/benchmarks",
+]
+reportMissingImports = true
+reportMissingTypeStubs = false
+typeCheckingMode = "basic"
+reportPrivateUsage = false
+
 [tool.mypy]
 check_untyped_defs = true
 ignore_missing_imports = true
@@ -187,10 +207,3 @@ exclude = [
 [[tool.mypy.overrides]]
 module = "django_components.*"
 disallow_untyped_defs = true
-
-
-[tool.pytest.ini_options]
-testpaths = [
-    "tests",
-]
-asyncio_mode = "auto"

@@ -5,7 +5,7 @@ This file is for logic that focuses on transforming the AST of template tags
 
 import inspect
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, Iterable, List, Mapping, NamedTuple, Optional, Set, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Mapping, NamedTuple, Optional, Set, Tuple, cast
 
 from django.template import Context, NodeList
 from django.template.base import Parser, Token
@@ -173,7 +173,8 @@ def parse_template_tag(
 # See https://github.com/django/django/blob/1fb3f57e81239a75eb8f873b392e11534c041fdc/django/template/base.py#L471
 def _extract_contents_until(parser: Parser, until_blocks: List[str]) -> str:
     contents: List[str] = []
-    for token in reversed(parser.tokens):
+    tokens = cast("List[Token]", parser.tokens)
+    for token in reversed(tokens):
         # Use the raw values here for TokenType.* for a tiny performance boost.
         token_type = token.token_type.value
         if token_type == 0:  # TokenType.TEXT

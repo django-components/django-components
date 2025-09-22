@@ -77,6 +77,10 @@ def parse_template(text: str) -> List[Token]:
         tokens: List[Token] = lexer.tokenize()
 
         for token in tokens:
+            # Pyright compat
+            assert token.lineno is not None  # noqa: S101
+            assert token.position is not None  # noqa: S101
+
             token.lineno += lineno_offset
             token.position = (token.position[0] + index_start, token.position[1] + index_start)
 
@@ -87,8 +91,16 @@ def parse_template(text: str) -> List[Token]:
 
         # If we found a broken token, we switch to our slow parser
         if broken_token is not None:
+            # Pyright compat
+            assert broken_token.position is not None  # noqa: S101
+            assert broken_token.lineno is not None  # noqa: S101
+
             broken_token_start = broken_token.position[0]
             fixed_token = _detailed_tag_parser(text[broken_token_start:], broken_token.lineno, broken_token_start)
+
+            # Pyright compat
+            assert fixed_token.position is not None  # noqa: S101
+            assert fixed_token.lineno is not None  # noqa: S101
 
             resolved_tokens.append(fixed_token)
             index_start = fixed_token.position[1]

@@ -1,4 +1,5 @@
 django
+django-stubs
 djc-core-html-parser
 django-template-partials
 tox
@@ -8,7 +9,7 @@ pytest-django
 syrupy
 ruff
 pre-commit
-mypy
+basedpyright
 playwright
 requests
 types-requests

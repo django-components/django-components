@@ -165,7 +165,7 @@ class TestComponentCache:
         # Check if the cache entry is set
         cache = caches["default"]
 
-        assert len(cache._cache) == 2
+        assert len(cache._cache) == 2  # type: ignore[attr-defined]
         assert (
             component.cache.get_entry("components:cache:3535e1d1e5f6fa5bc521e7fe203a68d0")
             == "<!-- _RENDERED TestComponent_648b95,ca1bc3f,, -->Hello world"
@@ -265,7 +265,7 @@ class TestComponentCache:
         component = TestComponent()
         cache = caches["default"]
 
-        assert len(cache._cache) == 1
+        assert len(cache._cache) == 1  # type: ignore[attr-defined]
         assert (
             component.cache.get_entry("components:cache:87b9e27abdd3c6ef70982d065fc836a9")
             == '<!-- _RENDERED TestComponent_dd1dee,ca1bc3f,, -->Hello cake <div data-djc-id-ca1bc3f="">\n                ONE\n            </div>'  # noqa: E501
@@ -279,7 +279,7 @@ class TestComponentCache:
         """,
         ).render(Context({}))
 
-        assert len(cache._cache) == 2
+        assert len(cache._cache) == 2  # type: ignore[attr-defined]
         assert (
             component.cache.get_entry("components:cache:1d7e3a58972550cf9bec18f457fb1a61")
             == '<!-- _RENDERED TestComponent_dd1dee,ca1bc45,, -->Hello cake <div data-djc-id-ca1bc45="">\n                TWO\n            </div>'  # noqa: E501
@@ -309,7 +309,7 @@ class TestComponentCache:
         component = TestComponent()
         cache = caches["default"]
 
-        assert len(cache._cache) == 1
+        assert len(cache._cache) == 1  # type: ignore[attr-defined]
         assert (
             component.cache.get_entry("components:cache:362766726cd0e991f33b0527ef8a513c")
             == '<!-- _RENDERED TestComponent_34b6d1,ca1bc3e,, -->Hello cake <div data-djc-id-ca1bc3e="">ONE</div>'
@@ -320,7 +320,7 @@ class TestComponentCache:
             slots={"content": "TWO"},
         )
 
-        assert len(cache._cache) == 2
+        assert len(cache._cache) == 2  # type: ignore[attr-defined]
         assert (
             component.cache.get_entry("components:cache:468e3f122ac305cff5d9096a3c548faf")
             == '<!-- _RENDERED TestComponent_34b6d1,ca1bc42,, -->Hello cake <div data-djc-id-ca1bc42="">TWO</div>'

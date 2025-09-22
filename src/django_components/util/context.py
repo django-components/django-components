@@ -1,10 +1,10 @@
 import copy
 import sys
-from typing import Any, Callable, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple, cast
 from weakref import WeakKeyDictionary
 
 from django.http import HttpRequest
-from django.template import Engine
+from django.template import Engine, Origin
 from django.template.context import BaseContext, Context
 from django.template.loader_tags import BlockContext
 
@@ -95,22 +95,27 @@ def snapshot_context(context: Context) -> Context:
         # This layer is already copied, reuse this and all before it
         if isinstance(render_ctx_dict, CopiedDict):
             # NOTE: +1 because we want to include the current layer
-            render_ctx_copies = context.render_context.dicts[: render_ctx_dict_index + 1] + render_ctx_copies
+            render_ctx_copies = [
+                *context.render_context.dicts[: render_ctx_dict_index + 1],  # type: ignore[list-item]
+                *render_ctx_copies,
+            ]
             break
 
         # This holds info on what `{% block %}` blocks are defined
         render_ctx_dict_copy = CopiedDict(render_ctx_dict)
         if "block_context" in render_ctx_dict:
-            render_ctx_dict_copy["block_context"] = _copy_block_context(render_ctx_dict["block_context"])
+            orig_block_context = cast("BlockContext", render_ctx_dict["block_context"])
+            render_ctx_dict_copy["block_context"] = _copy_block_context(orig_block_context)
 
         # "extends_context" is a list of Origin objects
         if "extends_context" in render_ctx_dict:
-            render_ctx_dict_copy["extends_context"] = render_ctx_dict["extends_context"].copy()
+            orig_extends_context = cast("List[Origin]", render_ctx_dict["extends_context"])
+            render_ctx_dict_copy["extends_context"] = orig_extends_context.copy()
 
         render_ctx_dict_copy["_djc_snapshot"] = True
         render_ctx_copies.insert(0, render_ctx_dict_copy)
 
-    context_copy.render_context.dicts = render_ctx_copies
+    context_copy.render_context.dicts = render_ctx_copies  # type: ignore[assignment]
     return context_copy
 
 
@@ -142,7 +147,10 @@ def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> D
     request_context_processors: Tuple[Callable[..., Any], ...] = getattr(context, "_processors", ())
 
     # This part is same as in `RequestContext.bind_template()`
-    processors = default_engine.template_context_processors + request_context_processors
+    processors = (
+        *default_engine.template_context_processors,
+        *request_context_processors,
+    )
     processors_data = {}
     for processor in processors:
         data = processor(request)

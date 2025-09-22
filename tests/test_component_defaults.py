@@ -22,7 +22,7 @@ class TestComponentDefaults:
                 variable = "test"
                 another = 1
                 extra = "extra"
-                fn = lambda: "fn_as_val"  # noqa: E731
+                fn = lambda _: "fn_as_val"  # noqa: E731
 
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal did_call_context

@@ -31,7 +31,7 @@ def make_isolated_context_copy(context: Context) -> Context:
     # Make inject/provide to work in isolated mode
     context_keys = context.flatten().keys()
     for key in context_keys:
-        if key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
+        if isinstance(key, str) and key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
             context_copy[key] = context[key]
 
     return context_copy

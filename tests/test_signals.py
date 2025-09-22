@@ -30,14 +30,14 @@ def with_template_signal(func):
     def wrapper(*args, **kwargs):
         # Emulate Django test instrumentation for TestCase (see setup_test_environment)
         from django.template import Template
-        from django.test.utils import instrumented_test_render
+        from django.test.utils import instrumented_test_render  # type: ignore[attr-defined]
 
-        original_template_render = Template._render
-        Template._render = instrumented_test_render
+        original_template_render = Template._render  # type: ignore[attr-defined]
+        Template._render = instrumented_test_render  # type: ignore[attr-defined]
 
         func(*args, **kwargs)
 
-        Template._render = original_template_render
+        Template._render = original_template_render  # type: ignore[attr-defined]
 
     return wrapper
 

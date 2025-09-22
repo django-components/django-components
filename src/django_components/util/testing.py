@@ -9,13 +9,13 @@ from typing import (
     Dict,
     Iterable,
     List,
-    Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
     Type,
     Union,
+    cast,
 )
 from unittest.mock import patch
 from weakref import ReferenceType
@@ -24,7 +24,6 @@ import django
 from django.conf import settings as _django_settings
 from django.core.cache import BaseCache, caches
 from django.template import engines
-from django.template.loaders.base import Loader
 from django.test import override_settings
 
 from django_components import ComponentsSettings
@@ -35,6 +34,8 @@ from django_components.perfutil.provide import provide_cache
 from django_components.template import _reset_component_template_file_cache, loading_components
 
 if TYPE_CHECKING:
+    from django.template.backends.django import DjangoTemplates
+
     from django_components.component_media import ComponentMedia
 
 # NOTE: `ReferenceType` is NOT a generic pre-3.9
@@ -379,7 +380,7 @@ def djc_test(
         # Handle async test functions
         if inspect.iscoroutinefunction(func):
 
-            async def wrapper_outer(*args: Any, **kwargs: Any) -> Any:
+            async def wrapper_outer(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
                 return await _wrapper_impl(*args, **kwargs)
 
         else:
@@ -489,8 +490,11 @@ def _clear_djc_global_state(
     # beause the IDs count will reset to 0, but we won't generate IDs for the Nodes of the cached
     # templates. Thus, the IDs will be out of sync between the tests.
     for engine in engines.all():
-        for loader in engine.engine.template_loaders:
-            if isinstance(loader, Loader):
+        if not hasattr(engine, "engine"):
+            continue
+        django_engine = cast("DjangoTemplates", engine)
+        for loader in django_engine.engine.template_loaders:
+            if hasattr(loader, "reset"):
                 loader.reset()
 
     # NOTE: There are 1-2 tests which check Templates, so we need to clear the cache

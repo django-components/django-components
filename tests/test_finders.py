@@ -63,8 +63,8 @@ def do_collect():
     collected = cmd.collect()
 
     # Convert collected paths from string to Path, so we can run tests on both Unix and Windows
-    collected = {key: [Path(item) for item in items] for key, items in collected.items()}
-    return collected
+    collected_paths = {key: [Path(item) for item in items] for key, items in collected.items()}
+    return collected_paths
 
 
 common_settings = {
@@ -253,4 +253,5 @@ class TestStaticFilesFinder:
         # NOTE: This would raise an error in Django 5.2 without a fix
         result = finders.find("staticfiles/staticfiles.css")
 
+        assert result is not None
         assert Path(result) == Path("./tests/components/staticfiles/staticfiles.css").resolve()

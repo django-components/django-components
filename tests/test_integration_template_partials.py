@@ -20,7 +20,7 @@ from django_components.testing import djc_test
 from .testutils import setup_test_config
 
 try:
-    from template_partials.templatetags.partials import TemplateProxy
+    from template_partials.templatetags.partials import TemplateProxy  # type: ignore[reportMissingImports]
 except ImportError:
     TemplateProxy = None
 

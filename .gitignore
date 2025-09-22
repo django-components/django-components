@@ -81,6 +81,9 @@ site
 .direnv/
 .envrc
 .mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.tox/
 
 # JS, NPM Dependency directories
 node_modules/
