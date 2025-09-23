@@ -32,7 +32,7 @@ django==4.2.24
     # via
     #   -r requirements-dev.in
     #   django-template-partials
-django-template-partials==25.1
+django-template-partials==25.2
     # via -r requirements-dev.in
 djc-core-html-parser==1.0.2
     # via -r requirements-dev.in
@@ -57,7 +57,7 @@ iniconfig==2.1.0
     # via pytest
 json5==0.12.1
     # via asv
-mypy==1.17.1
+mypy==1.18.2
     # via -r requirements-dev.in
 mypy-extensions==1.1.0
     # via mypy
@@ -117,7 +117,7 @@ pyyaml==6.0.2
     #   pre-commit
 requests==2.32.4
     # via -r requirements-dev.in
-ruff==0.13.0
+ruff==0.13.1
     # via -r requirements-dev.in
 sqlparse==0.5.3
     # via django
