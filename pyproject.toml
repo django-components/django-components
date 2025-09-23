@@ -188,6 +188,28 @@ exclude = [
 module = "django_components.*"
 disallow_untyped_defs = true
 
+# TODO - Review these rules once we officially support Pylance / Pyright
+#        See https://github.com/django-components/django-components/issues/1397
+[tool.basedpyright]
+reportMissingTypeArgument = "none"
+reportUnknownParameterType = "none"
+reportAny = "none"
+reportExplicitAny = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownMemberType = "none"
+reportAttributeAccessIssue = "none"
+reportPrivateUsage = "none"
+reportConstantRedefinition = "none"
+reportUnusedCallResult = "none"
+reportImplicitStringConcatenation = "none"
+reportUnannotatedClassAttribute = "none"
+reportSelfClsParameterName = "none"
+reportDeprecated = "none"
+reportUnusedParameter = "none"
+reportUninitializedInstanceVariable = "none"
+reportRedeclaration = "none"
+reportIncompatibleVariableOverride = "none"
 
 [tool.pytest.ini_options]
 testpaths = [

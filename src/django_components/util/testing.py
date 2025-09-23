@@ -59,7 +59,7 @@ def is_testing() -> bool:
 
 class GenIdPatcher:
     def __init__(self) -> None:
-        self._gen_id_count = 10599485
+        self._gen_id_count: int = 10599485
         self._gen_id_patch: Any = None
 
     # Mock the `generate` function used inside `gen_id` so it returns deterministic IDs
@@ -84,7 +84,7 @@ class GenIdPatcher:
 
 class CsrfTokenPatcher:
     def __init__(self) -> None:
-        self._csrf_token = "predictabletoken"  # noqa: S105
+        self._csrf_token: str = "predictabletoken"  # noqa: S105
         self._csrf_token_patch: Any = None
 
     def start(self) -> None:
@@ -534,7 +534,7 @@ def _clear_djc_global_state(
             del ALL_COMPONENTS[reverse_index]
 
     # Remove registries that were created during the test
-    initial_registries_set: Set[RegistryRef] = {reg_ref for reg_ref, init_keys in initial_registries_copies}
+    initial_registries_set: Set[RegistryRef] = {reg_ref for reg_ref, _init_keys in initial_registries_copies}
     for index in range(len(ALL_REGISTRIES)):
         registry_ref = ALL_REGISTRIES[len(ALL_REGISTRIES) - index - 1]
         is_ref_deleted = registry_ref() is None

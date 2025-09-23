@@ -3609,8 +3609,8 @@ class Component(metaclass=ComponentMeta):
                 html = None
 
             # Remove component from caches
-            del component_context_cache[render_id]  # type: ignore[arg-type]
-            unregister_provide_reference(render_id)  # type: ignore[arg-type]
+            del component_context_cache[render_id]
+            unregister_provide_reference(render_id)
 
             # Allow extensions to either:
             # - Override/modify the rendered HTML by returning new value

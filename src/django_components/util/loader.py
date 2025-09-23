@@ -151,7 +151,7 @@ def get_component_files(suffix: Optional[str] = None) -> List[ComponentFileEntry
         project_root = settings.BASE_DIR
     else:
         # Fallback for getting the root dir, see https://stackoverflow.com/a/16413955/9788634
-        project_root = Path(__name__).parent.resolve()
+        project_root = Path.cwd()
 
     # NOTE: We handle dirs from `COMPONENTS.dirs` and from individual apps separately.
     modules: List[ComponentFileEntry] = []
