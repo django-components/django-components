@@ -1,4 +1,4 @@
-# <img src="https://raw.githubusercontent.com/django-components/django-components/master/logo/logo-black-on-white.svg" alt="django-components" style="max-width: 100%; background: white; color: black;">
+# <img src="https://raw.githubusercontent.com/django-components/django-components/master/assets/logo/logo-black-on-white.svg" alt="django-components" style="max-width: 100%; background: white; color: black;">
 
 [![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](https://django-components.github.io/django-components/latest/benchmarks/)[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white)](https://discord.gg/NaQ8QPyHtD)
 
@@ -16,7 +16,7 @@ With `django-components` you can support Django projects small and large without
 <p align="center">
   <a href="https://www.ohne-makler.net/?ref=django-components" target="_blank"
   title="Ohne-makler: Sell and rent real estate without an agent"><img
-  src="https://raw.githubusercontent.com/django-components/django-components/master/.github/assets/sponsors/sponsor-ohne-makler.png" height="120"
+  src="https://raw.githubusercontent.com/django-components/django-components/master/assets/sponsors/sponsor-ohne-makler.png" height="120"
   /></a>
 </p>
 
