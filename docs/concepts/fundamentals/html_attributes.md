@@ -608,10 +608,9 @@ class MyComp(Component):
     """
 
     def get_template_data(self, args, kwargs, slots, context):
-        date = kwargs.pop("date")
         return {
-            "date": date,
-            "attrs": kwargs,
+            "date": kwargs["date"],
+            "attrs": kwargs.get("attrs", {}),
             "class_from_var": "extra-class"
         }
 
