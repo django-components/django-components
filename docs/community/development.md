@@ -166,25 +166,6 @@ When you make changes to this JS code, you also need to compile it:
     The script will combine all JS/TS code into a single `.js` file, minify it,
     and copy it to `django_components/static/django_components/django_components.min.js`.
 
-## Packaging and publishing
-
-To package the library into a distribution that can be published to PyPI, run:
-
-```sh
-# Install pypa/build
-python -m pip install build --user
-# Build a binary wheel and a source tarball
-python -m build --sdist --wheel --outdir dist/ .
-```
-
-To publish the package to PyPI, use `twine` ([See Python user guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-the-distribution-archives)):
-
-```sh
-twine upload --repository pypi dist/* -u __token__ -p <PyPI_TOKEN>
-```
-
-[See the full workflow here.](https://github.com/django-components/django-components/discussions/557#discussioncomment-10179141)
-
 ## Documentation website
 
 The documentation website is built using [MkDocs](https://www.mkdocs.org/) and [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
@@ -222,6 +203,93 @@ The CI workflow runs when:
 - A new commit is pushed to the `master` branch - This updates the `dev` version
 - A new tag is pushed - This updates the `latest` version and the version specified in the tag name
 
+## Publishing
+
+We use Github actions to automatically publish new versions of django-components to PyPI when a new tag is pushed. [See the full workflow here](https://github.com/django-components/django-components/blob/master/.github/workflows/publish-to-pypi.yml).
+
+### Commands
+
+We do not manually release new versions of django-components. Commands below are shown for reference only.
+
+To package django-components into a distribution that can be published to PyPI, run `build`:
+
+```sh
+# Install pypa/build
+python -m pip install build --user
+# Build a binary wheel and a source tarball
+python -m build --sdist --wheel --outdir dist/ .
+```
+
+To then publish the contents of `dist/` to PyPI, use `twine` ([See Python user guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-the-distribution-archives)):
+
+```sh
+twine upload --repository pypi dist/* -u __token__ -p <PyPI_TOKEN>
+```
+
+### Release new version
+
+Let's say we want to release a new version `0.141.6`. We need to:
+
+1.  Bump the `version` in `pyproject.toml` to the desired version.
+
+    ```toml
+    [project]
+    version = "0.141.6"
+    ```
+
+2.  Create a summary of the changes in `CHANGELOG.md` at the top of the file.
+
+    When writing release notes for individual changes, it's useful to write them like mini announcements:
+
+    - Explain the context
+    - Then the change itself
+    - Then include an example
+
+    ```md
+    # Release notes
+
+    ## v0.141.6
+
+    _2025-09-24_
+
+    #### Fix
+
+    - Tests - Fix bug when using `@djc_test` decorator and the `COMPONENTS`
+      settings are set with `ComponentsSettings`
+      See [#1369](https://github.com/django-components/django-components/issues/1369)
+    ```
+
+    !!! note
+
+        When you include the release date in the format `_YYYY-MM-DD_`, it will be displayed in the release notes.
+
+        See [`docs/scripts/gen_release_notes.py`](https://github.com/django-components/django-components/blob/master/docs/scripts/gen_release_notes.py) for more details.
+
+        ![Example of a changelog entry](../images/release-notes-dates.png){ width="250" }
+
+3.  Create a new PR to merge the changes above into the `master` branch.
+
+4.  Create new release in [Github UI](https://github.com/django-components/django-components/releases/new).
+
+    ![Github UI release part 1](../images/release-github-ui-1.png)
+    ![Github UI release part 2](../images/release-github-ui-2.png)
+    ![Github UI release part 3](../images/release-github-ui-3.png)
+    ![Github UI release part 4](../images/release-github-ui-4.png)
+
+### Semantic versioning
+
+We use [Semantic Versioning](https://semver.org/) for django-components.
+
+The version number is in the format `MAJOR.MINOR.PATCH` (e.g. `0.141.6`).
+
+- `MAJOR` (e.g. `1.0.0`) is reserved for significant architectural changes and breaking changes.
+- `MINOR` (e.g. `0.1.0`) is incremented for new features.
+- `PATCH` (e.g. `0.0.1`) is incremented for bug fixes or documentation changes.
+
+## Development guides
+
+Head over to [Dev guides](./devguides/dependency_mgmt.md) for a deep dive into how django_components' features are implemented.
+
 ## Maintenance
 
 ### Updating supported versions
@@ -253,10 +321,6 @@ Then, you can run the script to update the URLs in the codebase.
 python scripts/validate_links.py --rewrite
 ```
 
-## Development guides
-
-Head over to [Dev guides](./devguides/dependency_mgmt.md) for a deep dive into how django_components' features are implemented.
-
 ## Project management
 
 ### Project board
@@ -265,14 +329,14 @@ We use the [GitHub project board](https://github.com/orgs/django-components/proj
 
 Quick overview of the columns:
 
-- *No status* - Issues that are not planned yet and need more discussion
+- _No status_ - Issues that are not planned yet and need more discussion
 - 🔵 **Backlog** - Planned but not ready to be picked up
 - 🟢 **Ready** - Ready to be picked up
 - 🟡 **In Progress** - Someone is already working on it
 - 🟣 **Ready for release** - Completed, but not released yet
 - 🟠 **Done** - Completed and released
 
-New issues are automatically added to the *No status* column.
+New issues are automatically added to the _No status_ column.
 
 To pick up an issue, assign it to yourself and move it to the 🟡 **In Progress** column.
 
