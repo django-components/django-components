@@ -631,3 +631,69 @@ class TestDependencyRendering:
             <div data-djc-id-ca1bc44>Another</div>
             """,
         )
+
+    def test_dependencies_with_component_in_inclusion_tag(self):
+        registry.register(name="test_component", component=OtherComponent)
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% inclusion_tag %}
+        """
+        template = Template(template_str)
+        rendered: str = template.render(Context({}))
+
+        # Dependency manager script
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(
+            """
+            <script src="xyz1.js"></script>
+            """,
+            rendered,
+            count=1,
+        )
+        assertInHTML(
+            """
+            <link href="xyz1.css" media="all" rel="stylesheet">
+            """,
+            rendered,
+            count=1,
+        )
+
+        assert rendered.count("<script") == 4  # manager + loader + 2 OtherComponent
+        assert rendered.count("<link") == 1  # 1 OtherComponent
+        assert rendered.count("<style") == 1  # 1 Style
+
+    def test_dependencies_with_component_in_inclusion_tag_working(self):
+        registry.register(name="test_component", component=OtherComponent)
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% inclusion_tag_working %}
+        """
+        template = Template(template_str)
+        rendered: str = template.render(Context({}))
+
+        # Dependency manager script
+        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(
+            """
+            <script src="xyz1.js"></script>
+            """,
+            rendered,
+            count=1,
+        )
+        assertInHTML(
+            """
+            <link href="xyz1.css" media="all" rel="stylesheet">
+            """,
+            rendered,
+            count=1,
+        )
+
+        assert rendered.count("<script") == 4  # manager + loader + 2 OtherComponent
+        assert rendered.count("<link") == 1  # 1 OtherComponent
+        assert rendered.count("<style") == 1  # 1 Style

@@ -28,6 +28,17 @@ ProvideNode.register(register)
 SlotNode.register(register)
 
 
+@register.inclusion_tag('component_inside_include_sub.html')
+def inclusion_tag():
+    return {}
+
+
+@register.inclusion_tag('component_inside_include_sub.html')
+def inclusion_tag_working():
+    # DJC_DEPS_STRATEGY = ignore fixes the expected behavior.
+    return {"DJC_DEPS_STRATEGY": 'ignore'}
+
+
 # For an intuitive use via Python imports, the tags are aliased to the function name.
 # E.g. so if the tag name is `slot`, one can also do:
 # `from django_components.templatetags.component_tags import slot`
