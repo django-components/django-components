@@ -4,6 +4,8 @@
 
 ### <table><td>[Read the full documentation](https://django-components.github.io/django-components/latest/)</td></table>
 
+### <table><td>[See Roadmap for v1](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=milestone--v1)</td></table>
+
 `django-components` is a modular and extensible UI framework for Django.
 
 It combines Django's templating system with the modularity seen
@@ -569,6 +571,6 @@ One of our goals with `django-components` is to make it easy to share components
 
 ## Contributing and development
 
-Get involved or sponsor this project - [See here](https://django-components.github.io/django-components/dev/overview/contributing/)
+Get involved or sponsor this project - [See here](https://django-components.github.io/django-components/dev/community/contributing/)
 
-Running django-components locally for development - [See here](https://django-components.github.io/django-components/dev/overview/development/)
+Running django-components locally for development - [See here](https://django-components.github.io/django-components/dev/community/development/)
