@@ -1075,3 +1075,44 @@ class TestExtendsCompat:
             <p data-djc-id-ca1bc40 data-djc-id-ca1bc42>This template extends another template.</p>
         """,
         )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_double_include_template_with_extend(
+        self,
+        components_settings,
+    ):
+
+        @register("simple_component")
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% slot 'content' / %}
+            """
+
+        template: types.django_html = """
+            {% extends 'block.html' %}
+            {% load component_tags %}
+            {% block body %}
+                {% component "simple_component" %}
+                    {% fill "content" %}
+                        {% include 'included.html' with variable="INCLUDED 1" %}
+                        {% include 'included.html' with variable="INCLUDED 2" %}
+                    {% endfill %}
+                {% endcomponent %}
+            {% endblock %}
+        """
+        rendered = Template(template).render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
+
+        expected = """
+            <!DOCTYPE html>
+            <html lang="en">
+              <body>
+                <main role="main">
+                  <div class='container main-container'>
+                    Variable: <strong data-djc-id-ca1bc40="">INCLUDED 1</strong>
+                    Variable: <strong data-djc-id-ca1bc40="">INCLUDED 2</strong>
+                  </div>
+                </main>
+              </body>
+            </html>
+        """
+        assertHTMLEqual(rendered, expected)
