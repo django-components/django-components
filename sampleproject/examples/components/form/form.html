@@ -1,0 +1,19 @@
+<form
+  {% if submit_href and editable %} action="{{ submit_href }}" {% endif %}
+  method="{{ method }}"
+  {% html_attrs attrs %}
+>
+  {% slot "prepend" / %}
+
+  <div {% html_attrs form_content_attrs %}>
+    {# Generate a grid of fields and labels out of given slots #}
+    <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 items-center">
+      {% for field_name, label in fields %}
+        {{ label }}
+        {% slot name=field_name / %}
+      {% endfor %}
+    </div>
+  </div>
+
+  {% slot "append" / %}
+</form>
