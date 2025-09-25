@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django_components",
+    "examples",
     "calendarapp",
 ]
 # Application definition
@@ -92,7 +93,7 @@ WSGI_APPLICATION = "sampleproject.wsgi.application"
 COMPONENTS = ComponentsSettings(
     #    autodiscover=True,
     dirs=[BASE_DIR / "components"],
-    #    app_dirs=["components"],
+    app_dirs=["components", "pages"],
     #    libraries=[],
     #    context_behavior="isolated",  # "django" | "isolated"
 )

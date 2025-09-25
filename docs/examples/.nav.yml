@@ -1,3 +1,6 @@
 # `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
 nav:
-  - Examples: overview.md
+  - index.md
+  - Components:
+    - ./form.md
+    - ./tabs.md
