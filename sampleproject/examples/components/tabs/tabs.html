@@ -1,0 +1,43 @@
+{% load component_tags %}
+<div
+  x-data="{ selectedTab: '{{ selected_tab }}' }"
+  {% html_attrs
+    container_attrs
+    id=id
+  %}
+>
+  <div
+    {% html_attrs
+      tablist_attrs
+      role="tablist"
+      aria-label=name
+    %}>
+    {% for tab_datum, is_hidden in tab_data %}
+      <button
+        :aria-selected="selectedTab === '{{ tab_datum.tab_id }}'"
+        @click="selectedTab = '{{ tab_datum.tab_id }}'"
+        {% html_attrs
+          tab_attrs
+          id=tab_datum.tab_id
+          role="tab"
+          aria-controls=tab_datum.tabpanel_id
+          disabled=tab_datum.disabled
+        %}>
+        {{ tab_datum.header }}
+      </button>
+    {% endfor %}
+  </div>
+  {% for tab_datum, is_hidden in tab_data %}
+    <article
+      :hidden="selectedTab != '{{ tab_datum.tab_id }}'"
+      {% html_attrs
+        tabpanel_attrs
+        hidden=is_hidden
+        role="tabpanel"
+        id=tab_datum.tabpanel_id
+        aria-labelledby=tab_datum.tab_id
+      %}>
+      {{ tab_datum.content }}
+    </article>
+  {% endfor %}
+</div>
