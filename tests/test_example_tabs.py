@@ -10,6 +10,7 @@ from tests.testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config({"autodiscover": False})
 
+
 # Instead of having to re-define the components from the examples section in documentation,
 # we import them directly from sampleproject.
 def _create_tab_components():

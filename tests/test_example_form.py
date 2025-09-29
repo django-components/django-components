@@ -91,7 +91,7 @@ class TestExampleForm:
         """
         template = Template(template_str)
 
-        with pytest.raises(ValueError, match="Unused labels: {'label:project'}"):
+        with pytest.raises(ValueError, match=r"Unused labels: {'label:project'}"):
             template.render(Context({}))
 
     def test_prepend_append_slots(self, components_settings):

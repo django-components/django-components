@@ -44,9 +44,7 @@ class _TablistImpl(Component):
         js = (
             # `mark_safe` is used so the script tag is usd as is, so we can add `defer` flag.
             # `defer` is used so that AlpineJS is actually loaded only after all plugins are registered
-            mark_safe(
-                '<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>'
-            ),
+            mark_safe('<script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>'),
         )
 
     class Kwargs(NamedTuple):
@@ -60,11 +58,7 @@ class _TablistImpl(Component):
         tabpanel_attrs: Optional[dict] = None
 
     def get_template_data(self, args, kwargs: Kwargs, slots, context):
-        selected_tab = (
-            kwargs.selected_tab
-            if kwargs.selected_tab is not None
-            else kwargs.tab_data[0].tab_id
-        )
+        selected_tab = kwargs.selected_tab if kwargs.selected_tab is not None else kwargs.tab_data[0].tab_id
         tab_data = [
             (tab, tab.tab_id != selected_tab)  # (tab, is_hidden)
             for tab in kwargs.tab_data
