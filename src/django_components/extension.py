@@ -14,6 +14,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from weakref import ref
 
 import django.urls
 from django.template import Context, Origin, Template
@@ -255,18 +256,25 @@ class ExtensionComponentConfig:
     component_class: Type["Component"]
     """The [`Component`](./api.md#django_components.Component) class that this extension is defined on."""
 
-    component: "Component"
-    """
-    When a [`Component`](./api.md#django_components.Component) is instantiated,
-    also the nested extension classes (such as `Component.View`) are instantiated,
-    receiving the component instance as an argument.
+    @property
+    def component(self) -> "Component":
+        """
+        When a [`Component`](./api.md#django_components.Component) is instantiated,
+        also the nested extension classes (such as `Component.View`) are instantiated,
+        receiving the component instance as an argument.
 
-    This attribute holds the owner [`Component`](./api.md#django_components.Component) instance
-    that this extension is defined on.
-    """
+        This attribute holds the owner [`Component`](./api.md#django_components.Component) instance
+        that this extension is defined on.
+        """
+        component = self._component_ref()
+        if component is None:
+            raise RuntimeError("Component has been garbage collected")
+        return component
 
     def __init__(self, component: "Component") -> None:
-        self.component = component
+        # NOTE: Use weak reference to avoid a circular reference between the component instance
+        # and the extension class.
+        self._component_ref = ref(component)
 
 
 # TODO_v1 - Delete

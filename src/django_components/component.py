@@ -19,7 +19,7 @@ from typing import (
     Union,
     cast,
 )
-from weakref import ReferenceType, WeakValueDictionary, finalize
+from weakref import ReferenceType, WeakValueDictionary, finalize, ref
 
 from django.forms.widgets import Media as MediaCls
 from django.http import HttpRequest, HttpResponse
@@ -61,9 +61,10 @@ from django_components.perfutil.component import (
     ComponentRenderer,
     OnComponentRenderedResult,
     component_context_cache,
+    component_instance_cache,
     component_post_render,
 )
-from django_components.perfutil.provide import register_provide_reference, unregister_provide_reference
+from django_components.perfutil.provide import register_provide_reference, unlink_component_from_provide_on_gc
 from django_components.provide import get_injected_context_var
 from django_components.slots import (
     Slot,
@@ -102,9 +103,11 @@ COMP_ONLY_FLAG = "only"
 if sys.version_info >= (3, 9):
     AllComponents = List[ReferenceType[Type["Component"]]]
     CompHashMapping = WeakValueDictionary[str, Type["Component"]]
+    ComponentRef = ReferenceType["Component"]
 else:
     AllComponents = List[ReferenceType]
     CompHashMapping = WeakValueDictionary
+    ComponentRef = ReferenceType
 
 
 OnRenderGenerator = Generator[
@@ -516,7 +519,7 @@ class ComponentMeta(ComponentMediaMeta):
 # Internal data that are made available within the component's template
 @dataclass
 class ComponentContext:
-    component: "Component"
+    component: ComponentRef
     component_path: List[str]
     template_name: Optional[str]
     default_slot: Optional[str]
@@ -525,6 +528,12 @@ class ComponentContext:
     # shares this dictionary for storing callbacks that are called from within `component_post_render`.
     # This is so that we can pass them all in when the root component is passed to `component_post_render`.
     post_render_callbacks: Dict[str, Callable[[Optional[str], Optional[Exception]], OnComponentRenderedResult]]
+
+
+def on_component_garbage_collected(component_id: str) -> None:
+    """Finalizer function to be called when a Component object is garbage collected."""
+    unlink_component_from_provide_on_gc(component_id)
+    component_context_cache.pop(component_id, None)
 
 
 class Component(metaclass=ComponentMeta):
@@ -2314,6 +2323,9 @@ class Component(metaclass=ComponentMeta):
         self.registry = default(registry, registry_)
         self.node = node
 
+        # Run finalizer when component is garbage collected
+        finalize(self, on_component_garbage_collected, self.id)
+
         extensions._init_component_instance(self)
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -2940,7 +2952,7 @@ class Component(metaclass=ComponentMeta):
 
         As the `{{ message }}` is taken from the "my_provide" provider.
         """
-        return get_injected_context_var(self.name, self.context, key, default)
+        return get_injected_context_var(self.id, self.name, key, default)
 
     @classmethod
     def as_view(cls, **initkwargs: Any) -> ViewFn:
@@ -3302,26 +3314,34 @@ class Component(metaclass=ComponentMeta):
         node: Optional["ComponentNode"] = None,
     ) -> str:
         component_name = _get_component_name(cls, registered_name)
+        render_id = _gen_component_id()
 
         # Modify the error to display full component path (incl. slots)
         with component_error_message([component_name]):
-            return cls._render_impl(
-                context=context,
-                args=args,
-                kwargs=kwargs,
-                slots=slots,
-                deps_strategy=deps_strategy,
-                request=request,
-                outer_context=outer_context,
-                # TODO_v2 - Remove `registered_name` and `registry`
-                registry=registry,
-                registered_name=registered_name,
-                node=node,
-            )
+            try:
+                return cls._render_impl(
+                    render_id=render_id,
+                    context=context,
+                    args=args,
+                    kwargs=kwargs,
+                    slots=slots,
+                    deps_strategy=deps_strategy,
+                    request=request,
+                    outer_context=outer_context,
+                    # TODO_v2 - Remove `registered_name` and `registry`
+                    registry=registry,
+                    registered_name=registered_name,
+                    node=node,
+                )
+            except Exception as e:
+                # Clean up if rendering fails
+                component_instance_cache.pop(render_id, None)
+                raise e from None
 
     @classmethod
     def _render_impl(
         comp_cls,
+        render_id: str,
         context: Optional[Union[Dict[str, Any], Context]] = None,
         args: Optional[Any] = None,
         kwargs: Optional[Any] = None,
@@ -3348,7 +3368,8 @@ class Component(metaclass=ComponentMeta):
             if request is None:
                 _, parent_comp_ctx = _get_parent_component_context(context)
                 if parent_comp_ctx:
-                    request = parent_comp_ctx.component.request
+                    parent_comp = parent_comp_ctx.component()
+                    request = parent_comp and parent_comp.request
 
         component_name = _get_component_name(comp_cls, registered_name)
 
@@ -3370,8 +3391,6 @@ class Component(metaclass=ComponentMeta):
         # See https://github.com/django-components/django-components/issues/414
         if not isinstance(context, (Context, RequestContext)):
             context = RequestContext(request, context) if request else Context(context)
-
-        render_id = _gen_component_id()
 
         component = comp_cls(
             id=render_id,
@@ -3446,11 +3465,14 @@ class Component(metaclass=ComponentMeta):
         )
 
         # Register the component to provide
-        register_provide_reference(context, render_id)
+        register_provide_reference(context, component)
 
-        # This is data that will be accessible (internally) from within the component's template
+        # This is data that will be accessible (internally) from within the component's template.
+        # NOTE: Be careful with the context - Do not store a strong reference to the component,
+        #       because that would prevent the component from being garbage collected.
+        # TODO: Test that ComponentContext and Component are garbage collected after render.
         component_ctx = ComponentContext(
-            component=component,
+            component=ref(component),
             component_path=component_path,
             # Template name is set only once we've resolved the component's Template instance.
             template_name=None,
@@ -3477,7 +3499,7 @@ class Component(metaclass=ComponentMeta):
         # 3. Call data methods
         ######################################
 
-        template_data, js_data, css_data = component._call_data_methods(context, args_list, kwargs_dict)
+        template_data, js_data, css_data = component._call_data_methods(args_list, kwargs_dict)
 
         extensions.on_component_data(
             OnComponentDataContext(
@@ -3589,12 +3611,25 @@ class Component(metaclass=ComponentMeta):
             js_input_hash=js_input_hash,
         )
 
-        # This is triggered when a component is rendered, but the component's parents
-        # may not have been rendered yet.
+        # `on_component_rendered` is triggered when a component is rendered.
+        # The component's parent(s) may not be fully rendered yet.
+        #
+        # NOTE: Inside `on_component_rendered`, we access the component indirectly via `component_instance_cache`.
+        # This is so that the function does not directly hold a strong reference to the component instance,
+        # so that the component instance can be garbage collected.
+        component_instance_cache[render_id] = component
+
         def on_component_rendered(
             html: Optional[str],
             error: Optional[Exception],
         ) -> OnComponentRenderedResult:
+            # NOTE: We expect `on_component_rendered` to be called only once,
+            #       so we can release the strong reference to the component instance.
+            #       This way, the component instance will persist only if the user keeps a reference to it.
+            component = component_instance_cache.pop(render_id, None)
+            if component is None:
+                raise RuntimeError("Component has been garbage collected")
+
             # Allow the user to either:
             # - Override/modify the rendered HTML by returning new value
             # - Raise an exception to discard the HTML and bubble up error
@@ -3607,10 +3642,6 @@ class Component(metaclass=ComponentMeta):
             except Exception as new_error:  # noqa: BLE001
                 error = new_error
                 html = None
-
-            # Remove component from caches
-            del component_context_cache[render_id]
-            unregister_provide_reference(render_id)
 
             # Allow extensions to either:
             # - Override/modify the rendered HTML by returning new value
@@ -3759,7 +3790,6 @@ class Component(metaclass=ComponentMeta):
 
     def _call_data_methods(
         self,
-        context: Context,
         # TODO_V2 - Remove `raw_args` and `raw_kwargs` in v2
         raw_args: List,
         raw_kwargs: Dict,
@@ -3779,11 +3809,11 @@ class Component(metaclass=ComponentMeta):
 
         # TODO - Enable JS and CSS vars - expose, and document
         # JS data
-        maybe_js_data = self.get_js_data(self.args, self.kwargs, self.slots, context)
+        maybe_js_data = self.get_js_data(self.args, self.kwargs, self.slots, self.context)
         js_data = to_dict(default(maybe_js_data, {}))
 
         # CSS data
-        maybe_css_data = self.get_css_data(self.args, self.kwargs, self.slots, context)
+        maybe_css_data = self.get_css_data(self.args, self.kwargs, self.slots, self.context)
         css_data = to_dict(default(maybe_css_data, {}))
 
         # Validate outputs
@@ -4005,7 +4035,9 @@ class ComponentNode(BaseNode):
         return output
 
 
-def _get_parent_component_context(context: Context) -> Union[Tuple[None, None], Tuple[str, ComponentContext]]:
+def _get_parent_component_context(
+    context: Union[Context, Mapping],
+) -> Union[Tuple[None, None], Tuple[str, ComponentContext]]:
     parent_id = context.get(_COMPONENT_CONTEXT_KEY, None)
     if parent_id is None:
         return None, None

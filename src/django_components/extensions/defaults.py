@@ -73,6 +73,9 @@ def _extract_defaults(defaults: Optional[Type]) -> List[ComponentDefaultField]:
 
         default_field = getattr(defaults, default_field_key)
 
+        if isinstance(default_field, property):
+            continue
+
         # If the field was defined with dataclass.field(), take the default / factory from there.
         if isinstance(default_field, Field):
             if default_field.default is not MISSING:

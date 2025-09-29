@@ -5,7 +5,7 @@ from django.utils.safestring import SafeString
 
 from django_components.context import _INJECT_CONTEXT_KEY_PREFIX
 from django_components.node import BaseNode
-from django_components.perfutil.provide import managed_provide_cache, provide_cache
+from django_components.perfutil.provide import component_provides, managed_provide_cache, provide_cache
 from django_components.util.misc import gen_id
 
 
@@ -102,8 +102,8 @@ class ProvideNode(BaseNode):
 
 
 def get_injected_context_var(
+    component_id: str,
     component_name: str,
-    context: Context,
     key: str,
     default: Optional[Any] = None,
 ) -> Any:
@@ -111,15 +111,13 @@ def get_injected_context_var(
     Retrieve a 'provided' field. The field MUST have been previously 'provided'
     by the component's ancestors using the `{% provide %}` template tag.
     """
-    # NOTE: For simplicity, we keep the provided values directly on the context.
-    # This plays nicely with Django's Context, which behaves like a stack, so "newer"
-    # values overshadow the "older" ones.
-    internal_key = _INJECT_CONTEXT_KEY_PREFIX + key
+    # NOTE: `component_provides` is defaultdict. Use `.get()` to avoid making an empty dictionary.
+    providers = component_provides.get(component_id)
 
     # Return provided value if found
-    if internal_key in context:
-        cache_key = context[internal_key]
-        return provide_cache[cache_key]
+    if providers and key in providers:
+        provide_id = providers[key]
+        return provide_cache[provide_id]
 
     # If a default was given, return that
     if default is not None:
@@ -133,6 +131,8 @@ def get_injected_context_var(
     )
 
 
+# TODO_v2 - Once we wrap all executions of Django's Template as our Components,
+#           we'll be able to store the provided data on ComponentContext instead of on Context.
 def set_provided_context_var(
     context: Context,
     key: str,
@@ -161,8 +161,12 @@ def set_provided_context_var(
     tuple_cls = NamedTuple("DepInject", fields)  # type: ignore[misc]
     payload = tuple_cls(**provided_kwargs)
 
-    # Instead of storing the provided data on the Context object, we store it
-    # in a separate dictionary, and we set only the key to the data on the Context.
+    # To allow the components nested inside `{% provide %}` to access the provided data,
+    # we pass the data through the Context.
+    # But instead of storing the data directly on the Context object, we store it
+    # in a separate dictionary, and we only set a key to the data on the Context.
+    # This helps with debugging as the Context is easier to inspect. It also helps
+    # with testing and garbage collection, as we can easily access/modify the provided data.
     context_key = _INJECT_CONTEXT_KEY_PREFIX + key
     provide_id = gen_id()
     context[context_key] = provide_id

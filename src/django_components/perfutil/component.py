@@ -8,7 +8,7 @@ from django_components.constants import COMP_ID_LENGTH
 from django_components.util.exception import component_error_message
 
 if TYPE_CHECKING:
-    from django_components.component import ComponentContext, OnRenderGenerator
+    from django_components.component import Component, ComponentContext, OnRenderGenerator
 
 OnComponentRenderedResult = Tuple[Optional[str], Optional[Exception]]
 
@@ -29,6 +29,15 @@ OnComponentRenderedResult = Tuple[Optional[str], Optional[Exception]]
 # `ComponentContext` data on a separate dictionary, and what's passed through the Context
 # is only a key to this dictionary.
 component_context_cache: Dict[str, "ComponentContext"] = {}
+
+# ComponentID -> Component instance mapping
+# This is used so that we can access the component instance from inside `on_component_rendered()`,
+# to call `Component.on_render_after()`.
+# These are strong references to ensure that the Component instance stays alive until after
+# `on_component_rendered()` has been called.
+# After that, we release the reference. If user does not keep a reference to the component,
+# it will be garbage collected.
+component_instance_cache: Dict[str, "Component"] = {}
 
 
 class ComponentPart(NamedTuple):

@@ -1,11 +1,15 @@
 """This module contains optimizations for the `{% provide %}` feature."""
 
+from collections import defaultdict
 from contextlib import contextmanager
-from typing import Dict, Generator, NamedTuple, Set
+from typing import TYPE_CHECKING, Dict, Generator, NamedTuple, Set, cast
 
 from django.template import Context
 
 from django_components.context import _INJECT_CONTEXT_KEY_PREFIX
+
+if TYPE_CHECKING:
+    from django_components.component import Component
 
 # Originally, when `{% provide %}` was used, the provided data was passed down
 # through the Context object.
@@ -77,77 +81,103 @@ from django_components.context import _INJECT_CONTEXT_KEY_PREFIX
 # outside of the Context object, to make it easier to debug the data flow.
 provide_cache: Dict[str, NamedTuple] = {}
 
-# Keep track of how many components are referencing each provided data.
-provide_references: Dict[str, Set[str]] = {}
+# Given a `{% provide %}` instance, keep track of which components are referencing it.
+# ProvideID -> Component[]
+# NOTE: We manually clean up the entries when either:
+#       - `{% provide %}` ends and there are no more references to it
+#       - The last component that referenced it is garbage collected
+provide_references: Dict[str, Set[str]] = defaultdict(set)
 
-# Keep track of all the listeners that are referencing any provided data.
-all_reference_ids: Set[str] = set()
+# The opposite - Given a component, keep track of which `{% provide %}` instances it is referencing.
+# Component -> ProvideID[]
+# NOTE: We manually clean up the entries when components are garbage collected.
+component_provides: Dict[str, Dict[str, str]] = defaultdict(dict)
 
 
 @contextmanager
 def managed_provide_cache(provide_id: str) -> Generator[None, None, None]:
-    all_reference_ids_before = all_reference_ids.copy()
-
-    def cache_cleanup() -> None:
-        # Lastly, remove provided data from the cache that was generated during this run,
-        # IF there are no more references to it.
-        if provide_id in provide_references and not provide_references[provide_id]:
-            provide_references.pop(provide_id)
-            provide_cache.pop(provide_id)
-
-        # Case: `{% provide %}` contained no components in its body.
-        # The provided data was not referenced by any components, but it's still in the cache.
-        elif provide_id not in provide_references and provide_id in provide_cache:
-            provide_cache.pop(provide_id)
-
     try:
         yield
     except Exception as e:
-        # In case of an error in `Component.render()`, there may be some
-        # references left hanging, so we remove them.
-        new_reference_ids = all_reference_ids - all_reference_ids_before
-        for reference_id in new_reference_ids:
-            unregister_provide_reference(reference_id)
-
-        # Cleanup
-        cache_cleanup()
+        # NOTE: In case of an error in within the `{% provide %}` block (e.g. when rendering a component),
+        # we rely on the component finalizer to remove the references.
+        # But we still want to call cleanup in case `{% provide %}` contained no components.
+        _cache_cleanup(provide_id)
         # Forward the error
         raise e from None
 
-    # Cleanup
-    cache_cleanup()
+    # Cleanup on success
+    _cache_cleanup(provide_id)
 
 
-def register_provide_reference(context: Context, reference_id: str) -> None:
+def _cache_cleanup(provide_id: str) -> None:
+    # Remove provided data from the cache, IF there are no more references to it.
+    # A `{% provide %}` will have no reference if:
+    # - It contains no components in its body
+    # - It contained components, but those components were already garbage collected
+    if provide_id in provide_references and not provide_references[provide_id]:
+        provide_references.pop(provide_id)
+        provide_cache.pop(provide_id, None)
+
+    # Case: `{% provide %}` contained no components in its body.
+    # The provided data was not referenced by any components, but it's still in the cache.
+    elif provide_id not in provide_references and provide_id in provide_cache:
+        provide_cache.pop(provide_id)
+
+
+# TODO - Once components can access their parents:
+#        Do NOT pass provide keys through components in isolated mode.
+#        Instead get parent's provide keys by getting the parent's id, `component.parent.id`
+#        and then accessing `component_provides[component.parent.id]`.
+#        The logic below would still remain, as that defines the `{% provide %}`
+#        instances defined INSIDE the parent component.
+#        And we would combine the two sources, and set that to `component_provides[component.id]`.
+def register_provide_reference(context: Context, component: "Component") -> None:
     # No `{% provide %}` among the ancestors, nothing to register to
     if not provide_cache:
         return
 
-    all_reference_ids.add(reference_id)
-
-    for key, provide_id in context.flatten().items():
+    # For all instances of `{% provide %}` that the current component is within,
+    # make note that this component has access to them.
+    for key, value in context.flatten().items():
+        # NOTE: Provided data is stored on the Context object as e.g.
+        # `{"_DJC_INJECT__my_provide": "a1b3c3"}`
+        # Where "a1b3c3" is the ID of the provided data.
         if not key.startswith(_INJECT_CONTEXT_KEY_PREFIX):
             continue
 
-        if provide_id not in provide_references:
-            provide_references[provide_id] = set()
-        provide_references[provide_id].add(reference_id)
+        provide_id = cast("str", value)
+        provide_key = key.split(_INJECT_CONTEXT_KEY_PREFIX, 1)[1]
+
+        # Update the Provide -> Component[] mapping.
+        provide_references[provide_id].add(component.id)
+
+        # Update the Component -> Provide[] mapping.
+        component_provides[component.id][provide_key] = provide_id
 
 
-def unregister_provide_reference(reference_id: str) -> None:
-    # No registered references, nothing to unregister
-    if reference_id not in all_reference_ids:
+def unregister_provide_reference(component_id: str) -> None:
+    # List of `{% provide %}` IDs that the component had access to.
+    component_provides_ids = component_provides.get(component_id)
+    if not component_provides_ids:
         return
 
-    all_reference_ids.remove(reference_id)
+    # Remove this component from all provide references it was subscribed to
+    for provide_id in component_provides_ids.values():
+        references_to_this_provide = provide_references.get(provide_id)
+        if references_to_this_provide:
+            references_to_this_provide.discard(component_id)
 
-    for provide_id in list(provide_references.keys()):
-        if reference_id not in provide_references[provide_id]:
-            continue
 
-        provide_references[provide_id].remove(reference_id)
+def unlink_component_from_provide_on_gc(component_id: str) -> None:
+    """
+    Finalizer function to be called when a Component object is garbage collected.
 
-        # There are no more references to the provided data, so we can delete it.
-        if not provide_references[provide_id]:
-            provide_cache.pop(provide_id)
-            provide_references.pop(provide_id)
+    Unlinking the component at this point ensures that one can call `Component.inject()`
+    even after the component was rendered, as long as one keeps the reference to the component object.
+    """
+    unregister_provide_reference(component_id)
+    provide_ids = component_provides.pop(component_id, None)
+    if provide_ids:
+        for provide_id in provide_ids.values():
+            _cache_cleanup(provide_id)

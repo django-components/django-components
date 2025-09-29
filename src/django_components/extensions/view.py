@@ -161,6 +161,9 @@ class ComponentView(ExtensionComponentConfig, View):
         ComponentExtension.ComponentConfig.__init__(self, component)
         View.__init__(self, **kwargs)
 
+        # TODO_v1 - Remove. Superseded by `component_cls`. This was used for backwards compatibility.
+        self.component = component
+
     @property
     def url(self) -> str:
         """
