@@ -606,7 +606,7 @@ def check_existing_github_issue(title: str, repo_owner: str, repo_name: str, tok
     # Search for issues with similar titles
     search_url = "https://api.github.com/search/issues"
     params = {
-        "q": f'repo:{repo_owner}/{repo_name} is:issue "{title.split(" ")[1]}" "supported versions"',
+        "q": f'repo:{repo_owner}/{repo_name} is:issue "{title.split(" ")[1]}" "supported versions"'.replace(" ", "%20"),
         "sort": "created",
         "order": "desc",
     }
