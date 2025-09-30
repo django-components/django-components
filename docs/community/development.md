@@ -310,14 +310,23 @@ Head over to [Dev guides](./devguides/dependency_mgmt.md) for a deep dive into h
 
 ### Updating supported versions
 
-The `scripts/supported_versions.py` script can be used to update the supported versions.
+The `scripts/supported_versions.py` script manages the supported Python and Django versions for the project.
+
+The script runs automatically via GitHub Actions once a week to check for version updates. If changes are detected, it creates a GitHub issue with the necessary updates. See the [`maint-supported-versions.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/maint-supported-versions.yml) workflow.
+
+You can also run the script manually:
 
 ```sh
-python scripts/supported_versions.py
+# Check if versions need updating
+python scripts/supported_versions.py check
+
+# Generate configuration snippets for manual updates
+python scripts/supported_versions.py generate
 ```
 
-This will check the current versions of Django and Python, and will print to the terminal
-all the places that need updating and what to set them to.
+The `generate` command will print to the terminal all the places that need updating and what to set them to.
+
+The script includes not just officially supported Django versions, but also intermediate versions within supported major series. For example, if Django 5.0 and 5.1 are officially EOL, but 5.2 is still supported, the script will also include Django 5.0 and 5.1.
 
 ### Updating link references
 
