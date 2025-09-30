@@ -310,8 +310,6 @@ python scripts/supported_versions.py generate
 
 The `generate` command will print to the terminal all the places that need updating and what to set them to.
 
-The script includes not just officially supported Django versions, but also intermediate versions within supported major series. For example, if Django 5.0 and 5.1 are officially EOL, but 5.2 is still supported, the script will also include Django 5.0 and 5.1.
-
 ### Updating link references
 
 The `scripts/validate_links.py` script can be used to update the link references.
