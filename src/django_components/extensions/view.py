@@ -48,6 +48,12 @@ def get_component_url(
 
     `get_component_url()` optionally accepts `query` and `fragment` arguments.
 
+    **Query parameter handling:**
+
+    - `True` values are rendered as flag parameters without values (e.g., `?enabled`)
+    - `False` and `None` values are omitted from the URL
+    - Other values are rendered normally (e.g., `?foo=bar`)
+
     **Example:**
 
     ```py
@@ -60,10 +66,10 @@ def get_component_url(
     # Get the URL for the component
     url = get_component_url(
         MyComponent,
-        query={"foo": "bar"},
+        query={"foo": "bar", "enabled": True, "debug": False, "unused": None},
         fragment="baz",
     )
-    # /components/ext/view/components/c1ab2c3?foo=bar#baz
+    # /components/ext/view/components/c1ab2c3?foo=bar&enabled#baz
     ```
     """
     view_cls: Optional[Type[ComponentView]] = getattr(component, "View", None)

@@ -308,6 +308,11 @@ name | type | description
       heading_level: 3
       show_if_no_docstring: true
 
+::: django_components.extension.OnComponentRenderedContext
+    options:
+      heading_level: 3
+      show_if_no_docstring: true
+
 ::: django_components.extension.OnComponentUnregisteredContext
     options:
       heading_level: 3
@@ -319,6 +324,21 @@ name | type | description
       show_if_no_docstring: true
 
 ::: django_components.extension.OnRegistryDeletedContext
+    options:
+      heading_level: 3
+      show_if_no_docstring: true
+
+::: django_components.extension.OnSlotRenderedContext
+    options:
+      heading_level: 3
+      show_if_no_docstring: true
+
+::: django_components.extension.OnTemplateCompiledContext
+    options:
+      heading_level: 3
+      show_if_no_docstring: true
+
+::: django_components.extension.OnTemplateLoadedContext
     options:
       heading_level: 3
       show_if_no_docstring: true

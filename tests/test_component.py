@@ -1471,6 +1471,56 @@ class TestComponentRender:
         ):
             Root.render()
 
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_pydantic_exception(self, components_settings):
+        from pydantic import BaseModel, ValidationError
+
+        @register("broken")
+        class Broken(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div> injected: {{ data|safe }} </div>
+                <main>
+                    {% slot "content" default / %}
+                </main>
+            """
+
+            class Kwargs(BaseModel):
+                data1: str
+
+            def get_template_data(self, args, kwargs: Kwargs, slots, context):
+                return {"data": kwargs.data1}
+
+        @register("parent")
+        class Parent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
+
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component "broken" %}
+                    {% slot "content" default / %}
+                {% endcomponent %}
+            """
+
+        @register("root")
+        class Root(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component "parent" data=123 %}
+                    {% fill "content" %}
+                        456
+                    {% endfill %}
+                {% endcomponent %}
+            """
+
+        # NOTE: We're unable to insert the component path in the Pydantic's exception message
+        with pytest.raises(
+            ValidationError,
+            match=re.escape("1 validation error for Kwargs\ndata1\n  Field required"),
+        ):
+            Root.render()
+
 
 @djc_test
 class TestComponentHook:

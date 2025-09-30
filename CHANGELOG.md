@@ -29,6 +29,26 @@
 
     Each yield operation is independent and returns its own `(html, error)` tuple, allowing you to handle each rendering result separately.
 
+#### Fix
+
+- Improve formatting when an exception is raised while rendering components. Error messages with newlines should now be properly formatted.
+
+- Add missing exports for `OnComponentRenderedContext`, `OnSlotRenderedContext`, `OnTemplateCompiledContext`, `OnTemplateLoadedContext`.
+
+#### Refactor
+
+- Changes to how `get_component_url()` handles query parameters:
+    - `True` values are now converted to boolean flags (e.g. `?enabled` instead of `?enabled=True`).
+    - `False` and `None` values are now filtered out.
+
+    ```py
+    url = get_component_url(
+        MyComponent,
+        query={"abc": 123, "enabled": True, "debug": False, "none_key": None},
+    )
+    # /components/ext/view/components/c1ab2c3?abc=123&enabled
+    ```
+
 ## v0.141.6
 
 #### Fix
