@@ -40,33 +40,53 @@ component_context_cache: Dict[str, "ComponentContext"] = {}
 component_instance_cache: Dict[str, "Component"] = {}
 
 
+class QueueItemId(NamedTuple):
+    """
+    Identifies which queue items we should ignore when we come across them
+    (due to a component having raised an error).
+    """
+
+    component_id: str
+    # NOTE: Versions are used so we can `yield` multiple times from `Component.on_render()`.
+    # Each time a value is yielded (or returned by `return`), we discard the previous HTML
+    # by incrementing the version and tagging the old version to be ignored.
+    version: int
+
+
 class ComponentPart(NamedTuple):
     """Queue item where a component is nested in another component."""
 
-    child_id: str
-    parent_id: Optional[str]
-    component_name_path: List[str]
+    item_id: QueueItemId
+    parent_id: Optional[QueueItemId]
+    full_path: List[str]
+    """Path of component names from the root component to the current component."""
 
     def __repr__(self) -> str:
-        return (
-            f"ComponentPart(child_id={self.child_id!r}, parent_id={self.parent_id!r}, "
-            f"component_name_path={self.component_name_path!r})"
-        )
+        return f"ComponentPart(item_id={self.item_id!r}, parent_id={self.parent_id!r}, full_path={self.full_path!r})"
 
 
 class TextPart(NamedTuple):
     """Queue item where a text is between two components."""
 
+    item_id: QueueItemId
     text: str
     is_last: bool
-    parent_id: str
 
 
 class ErrorPart(NamedTuple):
     """Queue item where a component has thrown an error."""
 
-    child_id: str
+    item_id: QueueItemId
     error: Exception
+    full_path: List[str]
+
+
+class GeneratorResult(NamedTuple):
+    html: Optional[str]
+    error: Optional[Exception]
+    needs_processing: bool
+    spent: bool
+    """Whether the generator has been "spent" - e.g. reached its end with `StopIteration`."""
 
 
 # Function that accepts a list of extra HTML attributes to be set on the component's root elements
@@ -142,7 +162,7 @@ def component_post_render(
     renderer: ComponentRenderer,
     render_id: str,
     component_name: str,
-    parent_id: Optional[str],
+    parent_render_id: Optional[str],
     on_component_rendered_callbacks: Dict[
         str,
         Callable[[Optional[str], Optional[Exception]], OnComponentRenderedResult],
@@ -181,7 +201,7 @@ def component_post_render(
     # 3. ComponentC - Triggered by `{% component "ComponentC" / %}` while B's template is being rendered
     #                 as part of full component tree render. Returns only a placeholder, to be replaced in next
     #                 step.
-    if parent_id is not None:
+    if parent_render_id is not None:
         return mark_safe(f'<template djc-render-id="{render_id}"></template>')
 
     # Case: Root component - Construct the final HTML by recursively replacing placeholders
@@ -205,7 +225,7 @@ def component_post_render(
     #   <h2>...</h2>
     #   <template djc-render-id="a1b3cf"></template>
     #   <span>...</span>
-    #   <template djc-render-id="f3d3cf"></template>
+    #   <template djc-render-id="f3d3d0"></template>
     # </div>
     # ```
     #
@@ -213,37 +233,38 @@ def component_post_render(
     # - <div><h2>...</h2>
     # - PLACEHOLDER djc-render-id="a1b3cf"
     # - <span>...</span>
-    # - PLACEHOLDER djc-render-id="f3d3cf"
+    # - PLACEHOLDER djc-render-id="f3d3d0"
     # - </div>
     #
-    # And put the pairs of (content, placeholder_id) into a queue:
-    # - ("<div><h2>...</h2>", "a1b3cf")
-    # - ("<span>...</span>", "f3d3cf")
-    # - ("</div>", None)
+    # And put these into a queue:
+    # ```py
+    # [
+    #     TextPart("<div><h2>...</h2>"),
+    #     ComponentPart("a1b3cf"),
+    #     TextPart("<span>...</span>"),
+    #     ComponentPart("f3d3d0"),
+    #     TextPart("</div>"),
+    # ]
+    # ```
     #
     # Then we process each part:
-    # 1. Append the content to the output
-    # 2. If the placeholder ID is not None, then we fetch the renderer by its placeholder ID (e.g. "a1b3cf")
+    # 1. If TextPart, we append the content to the output
+    # 2. If ComponentPart, then we fetch the renderer by its placeholder ID (e.g. "a1b3cf")
     # 3. If there were any extra attributes set by the parent component, we apply these to the renderer.
-    # 4. We split the content by placeholders, and put the pairs of (content, placeholder_id) into the queue,
-    #    repeating this whole process until we've processed all nested components.
-    # 5. If the placeholder ID is None, then we've reached the end of the component's HTML content,
+    # 4. We get back the rendered HTML for given component instance, with any extra attributes applied.
+    # 5. We split/parse this content by placeholders, resulting in more `TextPart` and `ComponentPart` items.
+    # 6. We insert these parts back into the queue, repeating this process until we've processed all nested components.
+    # 7. When we reach TextPart with `is_last=True`, then we've reached the end of the component's HTML content,
     #    and we can go one level up to continue the process with component's parent.
     process_queue: Deque[Union[ErrorPart, TextPart, ComponentPart]] = deque()
 
-    process_queue.append(
-        ComponentPart(
-            child_id=render_id,
-            parent_id=None,
-            component_name_path=[],
-        )
-    )
-
-    # By looping over the queue below, we obtain bits of rendered HTML, which we then
-    # must all join together into a single final HTML.
+    # `html_parts_by_component_id` holds component-specific bits of rendered HTML
+    # so that we can call `on_component_rendered` hook with the correct component instance.
     #
-    # But instead of joining it all up once at the end, we join the bits on component basis.
-    # So if component has a template like this:
+    # We then use `content_parts` to collect the final HTML for the component.
+    #
+    # Example - if component has a template like this:
+    #
     # ```django
     # <div>
     #   Hello
@@ -254,62 +275,190 @@ def component_post_render(
     # Then we end up with 3 bits - 1. text before, 2. component, and 3. text after
     #
     # We know when we've arrived at component's end. We then collect the HTML parts by the component ID,
-    # and when we hit the end, we join all the bits that belong to the same component.
+    # and we join all the bits that belong to the same component.
     #
-    # Once the component's HTML is joined, we can call the callback for the component, and
-    # then add the joined HTML to the cache for the parent component to continue the cycle.
+    # Once the component's HTML is joined, we then pass that to the callback for
+    # the corresponding component ID.
+    #
+    # Lastly we assign the child's final HTML to parent's parts, continuing the cycle.
     html_parts_by_component_id: Dict[str, List[str]] = {}
     content_parts: List[str] = []
 
-    # Remember which component ID had which parent ID, so we can bubble up errors
+    # Remember which component instance + version had which parent, so we can bubble up errors
     # to the parent component.
-    child_id_to_parent_id: Dict[str, Optional[str]] = {}
+    child_to_parent: Dict[QueueItemId, Optional[QueueItemId]] = {}
 
-    def get_html_parts(component_id: str) -> List[str]:
+    # We want to avoid having to iterate over the queue every time an error raises an error or
+    # when `on_render()` returns a new HTML, making the old HTML stale.
+    #
+    # So instead we keep track of which combinations of component ID + versions we should skip.
+    #
+    # When we then come across these instances in the main loop, we skip them.
+    ignored_components: Set[QueueItemId] = set()
+
+    # When `Component.on_render()` contains a `yield` statement, it becomes a generator.
+    #
+    # The generator may `yield` multiple times. So we keep track of which generator belongs to
+    # which component ID.
+    generators_by_component_id: Dict[str, Optional[OnRenderGenerator]] = {}
+
+    def get_html_parts(item_id: QueueItemId) -> List[str]:
+        component_id = item_id.component_id
         if component_id not in html_parts_by_component_id:
             html_parts_by_component_id[component_id] = []
         return html_parts_by_component_id[component_id]
 
-    def handle_error(component_id: str, error: Exception) -> None:
+    def pop_html_parts(item_id: QueueItemId) -> Optional[List[str]]:
+        component_id = item_id.component_id
+        return html_parts_by_component_id.pop(component_id, None)
+
+    # Split component's rendered HTML by placeholders, from:
+    #
+    # ```html
+    # <div>
+    #   <h2>...</h2>
+    #   <template djc-render-id="a1b3cf"></template>
+    #   <span>...</span>
+    #   <template djc-render-id="f3d3d0"></template>
+    # </div>
+    # ```
+    #
+    # To:
+    #
+    # ```py
+    # [
+    #     TextPart("<div><h2>...</h2>"),
+    #     ComponentPart("a1b3cf"),
+    #     TextPart("<span>...</span>"),
+    #     ComponentPart("f3d3d0"),
+    #     TextPart("</div>"),
+    # ]
+    # ```
+    def parse_component_result(
+        content: str,
+        item_id: QueueItemId,
+        full_path: List[str],
+    ) -> List[Union[TextPart, ComponentPart]]:
+        last_index = 0
+        parts_to_process: List[Union[TextPart, ComponentPart]] = []
+        for match in nested_comp_pattern.finditer(content):
+            part_before_component = content[last_index : match.start()]
+            last_index = match.end()
+            comp_part = match[0]
+
+            # Extract the placeholder ID from `<template djc-render-id="a1b3cf"></template>`
+            child_id_match = render_id_pattern.search(comp_part)
+            if child_id_match is None:
+                raise ValueError(f"No placeholder ID found in {comp_part}")
+            child_id = child_id_match.group("render_id")
+
+            parts_to_process.extend(
+                [
+                    TextPart(
+                        item_id=item_id,
+                        text=part_before_component,
+                        is_last=False,
+                    ),
+                    ComponentPart(
+                        # NOTE: Since this is the first that that this component will be rendered,
+                        # the version is 0.
+                        item_id=QueueItemId(component_id=child_id, version=0),
+                        parent_id=item_id,
+                        full_path=full_path,
+                    ),
+                ],
+            )
+
+        # Append any remaining text
+        parts_to_process.extend(
+            [
+                TextPart(
+                    item_id=item_id,
+                    text=content[last_index:],
+                    is_last=True,
+                ),
+            ],
+        )
+
+        return parts_to_process
+
+    def handle_error(item_id: QueueItemId, error: Exception, full_path: List[str]) -> None:
         # Cleanup
         # Remove any HTML parts that were already rendered for this component
-        html_parts_by_component_id.pop(component_id, None)
-        # Mark any remaining parts of this component (that may be still in the queue) as errored
-        ignored_ids.add(component_id)
-        # Also mark as ignored any remaining parts of the PARENT component.
+        pop_html_parts(item_id)
+
+        # Mark any remaining parts of this component version (that may be still in the queue) as errored
+        ignored_components.add(item_id)
+
+        # Also mark as ignored any remaining parts of this version of the PARENT component.
         # The reason is because due to the error, parent's rendering flow was disrupted.
-        # Even if parent recovers from the error by returning a new HTML, this new HTML
-        # may have nothing in common with the original HTML.
-        parent_id = child_id_to_parent_id[component_id]
+        # Parent may recover from the error by returning a new HTML. But in that case
+        # we will be processing that *new* HTML (by setting new version), and NOT this broken version.
+        parent_id = child_to_parent[item_id]
         if parent_id is not None:
-            ignored_ids.add(parent_id)
+            ignored_components.add(parent_id)
 
         # Add error item to the queue so we handle it in next iteration
         process_queue.appendleft(
             ErrorPart(
-                child_id=component_id,
+                item_id=item_id,
                 error=error,
-            )
+                full_path=full_path,
+            ),
         )
 
-    def finalize_component(component_id: str, error: Optional[Exception]) -> None:
-        parent_id = child_id_to_parent_id[component_id]
+    def finalize_component(item_id: QueueItemId, error: Optional[Exception], full_path: List[str]) -> None:
+        parent_id = child_to_parent[item_id]
 
-        component_parts = html_parts_by_component_id.pop(component_id, [])
+        component_parts = pop_html_parts(item_id)
         if error is None:
-            component_html = "".join(component_parts)
+            component_html = "".join(component_parts) if component_parts else ""
         else:
             component_html = None
 
-        # Allow to optionally override/modify the rendered content from `Component.on_render()`
+        # If we've got error, and the component has defined `on_render()` as a generator
+        # (with `yield`), then pass the result to the generator, and process the result.
+        #
+        # NOTE: We want to call the generator (`Component.on_render()`) BEFORE
+        # we call `Component.on_render_after()`. The latter will be called only once
+        # `Component.on_render()` has no more `yield` statements, so that `on_render_after()`
+        # (and `on_component_rendered` extension hook) are called at the very end of component rendering.
+        on_render_generator = generators_by_component_id.pop(item_id.component_id, None)
+        if on_render_generator is not None:
+            result = _call_generator(on_render_generator, component_html, error)
+
+            # Component's `on_render()` contains multiple `yield` keywords, so keep the generator.
+            if not result.spent:
+                generators_by_component_id[item_id.component_id] = on_render_generator
+
+            # The generator yielded or returned a new HTML. We want to process it as if
+            # it's a new component's HTML.
+            if result.needs_processing:
+                # Ignore the old version of the component
+                ignored_components.add(item_id)
+
+                new_version = item_id.version + 1
+                new_item_id = QueueItemId(component_id=item_id.component_id, version=new_version)
+
+                # Set the current parent as the parent of the new version
+                child_to_parent[new_item_id] = parent_id
+
+                # Split the new HTML by placeholders, and put the parts into the queue.
+                parts_to_process = parse_component_result(result.html or "", new_item_id, full_path)
+                process_queue.extendleft(reversed(parts_to_process))
+                return
+            # If we don't need to re-do the processing, then we can just use the result.
+            component_html, error = result.html, result.error
+
+        # Allow to optionally override/modify the rendered content from `Component.on_render_after()`
         # and by extensions' `on_component_rendered` hooks.
-        on_component_rendered = on_component_rendered_callbacks[component_id]
+        on_component_rendered = on_component_rendered_callbacks[item_id.component_id]
         component_html, error = on_component_rendered(component_html, error)
 
         # If this component had an error, then we ignore this component's HTML, and instead
         # bubble the error up to the parent component.
         if error is not None:
-            handle_error(component_id=component_id, error=error)
+            handle_error(item_id=item_id, error=error, full_path=full_path)
             return
 
         if component_html is None:
@@ -328,21 +477,15 @@ def component_post_render(
         else:
             content_parts.append(component_html)
 
-    # To avoid having to iterate over the queue multiple times to remove from it those
-    # entries that belong to components that have thrown error, we instead keep track of which
-    # components have thrown error, and skip any remaining parts of the component.
-    ignored_ids: Set[str] = set()
-
-    while len(process_queue):
-        curr_item = process_queue.popleft()
-
-        # NOTE: When an error is bubbling up, then the flow goes between `handle_error()`, `finalize_component()`,
+    # Body of the iteration, scoped in a function to avoid spilling the state out of the loop.
+    def on_item(curr_item: Union[ErrorPart, TextPart, ComponentPart]) -> None:
+        # NOTE: When an error is bubbling up, when the flow goes between `handle_error()`, `finalize_component()`,
         # and this branch, until we reach the root component, where the error is finally raised.
         #
         # Any ancestor component of the one that raised can intercept the error and instead return a new string
         # (or a new error).
         if isinstance(curr_item, ErrorPart):
-            parent_id = child_id_to_parent_id[curr_item.child_id]
+            parent_id = child_to_parent[curr_item.item_id]
 
             # If there is no parent, then we're at the root component, so we simply propagate the error.
             # This ends the error bubbling.
@@ -351,163 +494,134 @@ def component_post_render(
 
             # This will make the parent component either handle the error and return a new string instead,
             # or propagate the error to its parent.
-            finalize_component(component_id=parent_id, error=curr_item.error)
-            continue
+            finalize_component(item_id=parent_id, error=curr_item.error, full_path=curr_item.full_path)
+            return
 
-        # Skip parts of errored components
-        if curr_item.parent_id in ignored_ids:
-            continue
+        # Skip parts that belong to component versions that error'd
+        if curr_item.item_id in ignored_components:
+            return
 
         # Process text parts
         if isinstance(curr_item, TextPart):
-            parent_html_parts = get_html_parts(curr_item.parent_id)
-            parent_html_parts.append(curr_item.text)
+            curr_html_parts = get_html_parts(curr_item.item_id)
+            curr_html_parts.append(curr_item.text)
 
             # In this case we've reached the end of the component's HTML content, and there's
             # no more subcomponents to process. We can call `finalize_component()` to process
             # the component's HTML and eventually trigger `on_component_rendered` hook.
             if curr_item.is_last:
-                finalize_component(component_id=curr_item.parent_id, error=None)
+                finalize_component(item_id=curr_item.item_id, error=None, full_path=[])
 
-            continue
+            return
 
-        # The rest of this branch assumes `curr_item` is a `ComponentPart`
-        component_id = curr_item.child_id
+        if isinstance(curr_item, ComponentPart):
+            component_id = curr_item.item_id.component_id
 
-        # Remember which component ID had which parent ID, so we can bubble up errors
-        # to the parent component.
-        child_id_to_parent_id[component_id] = curr_item.parent_id
+            # Remember which component ID had which parent ID, so we can bubble up errors
+            # to the parent component.
+            child_to_parent[curr_item.item_id] = curr_item.parent_id
 
-        # Generate component's content, applying the extra HTML attributes set by the parent component
-        curr_comp_renderer, curr_comp_name = component_renderer_cache.pop(component_id)
-        # NOTE: Attributes passed from parent to current component are `None` for the root component.
-        curr_comp_attrs = child_component_attrs.pop(component_id, None)
+            # Generate component's content, applying the extra HTML attributes set by the parent component
+            curr_comp_renderer, curr_comp_name = component_renderer_cache.pop(component_id)
+            # NOTE: Attributes passed from parent to current component are `None` for the root component.
+            curr_comp_attrs = child_component_attrs.pop(component_id, None)
 
-        full_path = [*curr_item.component_name_path, curr_comp_name]
+            full_path = [*curr_item.full_path, curr_comp_name]
 
-        # This is where we actually render the component
-        #
-        # NOTE: [1:] because the root component will be yet again added to the error's
-        # `components` list in `_render_with_error_trace` so we remove the first element from the path.
-        try:
-            with component_error_message(full_path[1:]):
-                comp_content, grandchild_component_attrs, on_render_generator = curr_comp_renderer(curr_comp_attrs)
-        # This error may be triggered when any of following raises:
-        # - `Component.on_render()` (first part - before yielding)
-        # - `Component.on_render_before()`
-        # - Rendering of component's template
-        #
-        # In all cases, we want to mark the component as errored, and let the parent handle it.
-        except Exception as err:  # noqa: BLE001
-            handle_error(component_id=component_id, error=err)
-            continue
+            # This is where we actually render the component
+            #
+            # NOTE: [1:] because the root component will be yet again added to the error's
+            # `components` list in `_render_with_error_trace` so we remove the first element from the path.
+            try:
+                with component_error_message(full_path[1:]):
+                    comp_content, extra_child_component_attrs, on_render_generator = curr_comp_renderer(
+                        curr_comp_attrs,
+                    )
+            # This error may be triggered when any of following raises:
+            # - `Component.on_render()` (first part - before yielding)
+            # - `Component.on_render_before()`
+            # - Rendering of component's template
+            #
+            # In all cases, we want to mark the component as errored, and let the parent handle it.
+            except Exception as err:  # noqa: BLE001
+                handle_error(item_id=curr_item.item_id, error=err, full_path=full_path)
+                return
 
-        # To access the *final* output (with all its children rendered) from within `Component.on_render()`,
-        # users may convert it to a generator by including a `yield` keyword. If they do so, the part of code
-        # AFTER the yield will be called once, when the component's HTML is fully rendered.
-        #
-        # We want to make sure we call the second part of `Component.on_render()` BEFORE
-        # we call `Component.on_render_after()`. The latter will be triggered by calling
-        # corresponding `on_component_rendered`.
-        #
-        # So we want to wrap the `on_component_rendered` callback, so we get to call the generator first.
-        if on_render_generator is not None:
-            unwrapped_on_component_rendered = on_component_rendered_callbacks[component_id]
-            on_component_rendered_callbacks[component_id] = _call_generator_before_callback(
-                on_render_generator,
-                unwrapped_on_component_rendered,
-            )
+            if on_render_generator is not None:
+                generators_by_component_id[component_id] = on_render_generator
 
-        child_component_attrs.update(grandchild_component_attrs)
+            child_component_attrs.update(extra_child_component_attrs)
 
-        # Split component's content by placeholders, and put the pairs of
-        # `(text_between_components, placeholder_id)`
-        # into the queue.
-        last_index = 0
-        parts_to_process: List[Union[TextPart, ComponentPart]] = []
-        for match in nested_comp_pattern.finditer(comp_content):
-            part_before_component = comp_content[last_index : match.start()]
-            last_index = match.end()
-            comp_part = match[0]
+            # Split the component's rendered HTML by placeholders, and put the parts into the queue.
+            parts_to_process = parse_component_result(comp_content, curr_item.item_id, full_path)
+            process_queue.extendleft(reversed(parts_to_process))
 
-            # Extract the placeholder ID from `<template djc-render-id="a1b3cf"></template>`
-            grandchild_id_match = render_id_pattern.search(comp_part)
-            if grandchild_id_match is None:
-                raise ValueError(f"No placeholder ID found in {comp_part}")
-            grandchild_id = grandchild_id_match.group("render_id")
+        else:
+            raise TypeError("Unknown item type")
 
-            parts_to_process.extend(
-                [
-                    TextPart(
-                        text=part_before_component,
-                        is_last=False,
-                        parent_id=component_id,
-                    ),
-                    ComponentPart(
-                        child_id=grandchild_id,
-                        parent_id=component_id,
-                        component_name_path=full_path,
-                    ),
-                ]
-            )
+    # Kick off the process by adding the root component to the queue
+    process_queue.append(
+        ComponentPart(
+            item_id=QueueItemId(component_id=render_id, version=0),
+            parent_id=None,
+            full_path=[],
+        ),
+    )
 
-        # Append any remaining text
-        parts_to_process.extend(
-            [
-                TextPart(
-                    text=comp_content[last_index:],
-                    is_last=True,
-                    parent_id=component_id,
-                ),
-            ]
-        )
-
-        process_queue.extendleft(reversed(parts_to_process))
+    while len(process_queue):
+        curr_item = process_queue.popleft()
+        on_item(curr_item)
 
     # Lastly, join up all pieces of the component's HTML content
     output = "".join(content_parts)
 
+    # Allow to optionally modify the final output
     output = on_html_rendered(output)
 
     return mark_safe(output)
 
 
-def _call_generator_before_callback(
-    on_render_generator: Optional["OnRenderGenerator"],
-    inner_fn: Callable[[Optional[str], Optional[Exception]], OnComponentRenderedResult],
-) -> Callable[[Optional[str], Optional[Exception]], OnComponentRenderedResult]:
-    if on_render_generator is None:
-        return inner_fn
+def _call_generator(
+    on_render_generator: "OnRenderGenerator",
+    html: Optional[str],
+    error: Optional[Exception],
+) -> GeneratorResult:
+    generator_spent = False
+    needs_processing = False
 
-    def on_component_rendered_wrapper(
-        html: Optional[str],
-        error: Optional[Exception],
-    ) -> OnComponentRenderedResult:
-        try:
-            on_render_generator.send((html, error))
-        # `Component.on_render()` should contain only one `yield` statement, so calling `.send()`
-        # should reach `return` statement in `Component.on_render()`, which triggers `StopIteration`.
-        # In that case, the value returned from `Component.on_render()` with the `return` keyword
-        # is the new output (if not `None`).
-        except StopIteration as generator_err:
-            # To override what HTML / error gets returned, user may either:
-            # - Return a new HTML at the end of `Component.on_render()` (after yielding),
-            # - Raise a new error
-            new_output = generator_err.value
-            if new_output is not None:
-                html = new_output
-                error = None
+    try:
+        # `Component.on_render()` may have any number of `yield` statements, so we need to
+        # call `.send()` any number of times.
+        #
+        # To override what HTML / error gets returned, user may either:
+        # - Return a new HTML with `return` - We handle error / result ourselves
+        # - Yield a new HTML with `yield` - We return back to the user the processed HTML / error
+        #                                   for them to process further
+        # - Raise a new error
+        new_result = on_render_generator.send((html, error))
 
-        # Catch if `Component.on_render()` raises an exception, in which case this becomes
-        # the new error.
-        except Exception as new_error:  # noqa: BLE001
-            error = new_error
-            html = None
-        # This raises if `StopIteration` was not raised, which may be if `Component.on_render()`
-        # contains more than one `yield` statement.
-        else:
-            raise RuntimeError("`Component.on_render()` must include only one `yield` statement")
+    # If we've reached the end of `Component.on_render()` (or `return` statement), then we get `StopIteration`.
+    # In that case, we want to check if user returned new HTML from the `return` statement.
+    except StopIteration as generator_err:
+        generator_spent = True
 
-        return inner_fn(html, error)
+        # The return value is on `StopIteration.value`
+        new_output = generator_err.value
+        if new_output is not None:
+            html = new_output
+            error = None
+            needs_processing = True
 
-    return on_component_rendered_wrapper
+    # Catch if `Component.on_render()` raises an exception, in which case this becomes
+    # the new error.
+    except Exception as new_error:  # noqa: BLE001
+        error = new_error
+        html = None
+
+    # If the generator didn't raise an error then `Component.on_render()` yielded a new HTML result,
+    # that we need to process.
+    else:
+        needs_processing = True
+        return GeneratorResult(html=new_result, error=None, needs_processing=needs_processing, spent=generator_spent)
+
+    return GeneratorResult(html=html, error=error, needs_processing=needs_processing, spent=generator_spent)

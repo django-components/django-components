@@ -1809,6 +1809,56 @@ class TestComponentHook:
         with pytest.raises(ValueError, match=re.escape("BROKEN")):
             SimpleComponent.render()
 
+    def test_on_render_multiple_yields(self):
+        registry.register("broken", self._gen_broken_component())
+
+        results = []
+
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% if case == 1 %}
+                    {% component "broken" / %}
+                {% elif case == 2 %}
+                    Hello
+                {% elif case == 3 %}
+                    There
+                {% endif %}
+            """
+
+            def on_render(self, context: Context, template: Optional[Template]):
+                assert template is not None
+
+                with context.push({"case": 1}):
+                    html1, error1 = yield template.render(context)
+                    results.append((html1, error1))
+
+                with context.push({"case": 2}):
+                    html2, error2 = yield template.render(context)
+                    results.append((html2.strip(), error2))
+
+                with context.push({"case": 3}):
+                    html3, error3 = yield template.render(context)
+                    results.append((html3.strip(), error3))
+
+                html4, error4 = yield "Other result"
+                results.append((html4, error4))
+
+                return "Final result"
+
+        result = SimpleComponent.render()
+        assert result == "Final result"
+
+        # NOTE: Exceptions are stubborn, comparison evaluates to False even with the same message.
+        assert results[0][0] is None
+        assert isinstance(results[0][1], ValueError)
+        assert results[0][1].args[0] == "An error occured while rendering components broken:\nBROKEN"
+
+        assert results[1:] == [
+            ("Hello", None),
+            ("There", None),
+            ("Other result", None),
+        ]
+
     @djc_test(
         parametrize=(
             ["template", "action", "method"],

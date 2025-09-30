@@ -131,6 +131,8 @@ When `on_render()` is a generator then it:
     The error is `None` if the rendering was successful. Otherwise the error is set
     and the output is `None`.
 
+- Can yield multiple times within the same method for complex rendering scenarios
+
 - At the end it may return a new string to override the final rendered output.
 
 **Example:**
@@ -155,6 +157,29 @@ class MyTable(Component):
         # the rendered template.
         # Same as `Component.on_render_after()`
         return html + "<p>Hello</p>"
+```
+
+**Multiple yields example:**
+
+```py
+class MyTable(Component):
+    def on_render(self, context, template) -> OnRenderGenerator:
+        # First yield - render with one context
+        with context.push({"mode": "header"}):
+            header_html, header_error = yield template.render(context)
+
+        # Second yield - render with different context
+        with context.push({"mode": "body"}):
+            body_html, body_error = yield template.render(context)
+
+        # Third yield - render a string directly
+        footer_html, footer_error = yield "Footer content"
+
+        # Process all results and return final output
+        if header_error or body_error or footer_error:
+            return "Error occurred during rendering"
+
+        return f"{header_html}\n{body_html}\n{footer_html}"
 ```
 """
 
@@ -2036,6 +2061,35 @@ class Component(metaclass=ComponentMeta):
                         # The rendering failed
                         print(f"Error: {error}")
             ```
+
+        **Multiple yields**
+
+        You can yield multiple times within the same `on_render` method. This is useful for complex rendering scenarios
+        where you need to render different templates or handle multiple rendering operations:
+
+        ```py
+        class MyTable(Component):
+            def on_render(self, context, template):
+                # First yield - render with one context
+                with context.push({"mode": "header"}):
+                    header_html, header_error = yield template.render(context)
+
+                # Second yield - render with different context
+                with context.push({"mode": "body"}):
+                    body_html, body_error = yield template.render(context)
+
+                # Third yield - render a string directly
+                footer_html, footer_error = yield "Footer content"
+
+                # Process all results and return final output
+                if header_error or body_error or footer_error:
+                    return "Error occurred during rendering"
+
+                return f"{header_html}{body_html}{footer_html}"
+        ```
+
+        Each yield operation is independent and returns its own `(html, error)` tuple,
+        allowing you to handle each rendering result separately.
         """
         if template is None:
             return None
@@ -3682,7 +3736,7 @@ class Component(metaclass=ComponentMeta):
             renderer=deferred_render,
             render_id=render_id,
             component_name=component_name,
-            parent_id=parent_id,
+            parent_render_id=parent_id,
             on_component_rendered_callbacks=post_render_callbacks,
             on_html_rendered=on_html_rendered,
         )
@@ -3739,7 +3793,7 @@ class Component(metaclass=ComponentMeta):
             # Get the component's HTML
             # To access the *final* output (with all its children rendered) from within `Component.on_render()`,
             # users may convert it to a generator by including a `yield` keyword. If they do so, the part of code
-            # AFTER the yield will be called once, when the component's HTML is fully rendered.
+            # AFTER the yield will be called once when the component's HTML is fully rendered.
             #
             # Hence we have to distinguish between the two, and pass the generator with the HTML content
             html_content_or_generator = component.on_render(context, template)

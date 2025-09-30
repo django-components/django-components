@@ -1,5 +1,34 @@
 # Release notes
 
+## v0.142.0
+
+#### Feat
+
+- Multiple yields in `Component.on_render()` - You can now yield multiple times within the same `on_render` method for complex rendering scenarios.
+
+    ```py
+    class MyTable(Component):
+        def on_render(self, context, template):
+            # First yield - render with one context
+            with context.push({"mode": "header"}):
+                header_html, header_error = yield template.render(context)
+            
+            # Second yield - render with different context
+            with context.push({"mode": "body"}):
+                body_html, body_error = yield template.render(context)
+            
+            # Third yield - render a string directly
+            footer_html, footer_error = yield "Footer content"
+            
+            # Process all results and return final output
+            if header_error or body_error or footer_error:
+                return "Error occurred during rendering"
+            
+            return f"{header_html}\n{body_html}\n{footer_html}"
+    ```
+
+    Each yield operation is independent and returns its own `(html, error)` tuple, allowing you to handle each rendering result separately.
+
 ## v0.141.6
 
 #### Fix
