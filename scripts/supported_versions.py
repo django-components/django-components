@@ -1,4 +1,4 @@
-# ruff: noqa: T201, S310
+# ruff: noqa: BLE001, PLW2901, RUF001, S310, T201
 """
 This script manages the info about supported Python and Django versions.
 
@@ -182,7 +182,6 @@ def build_python_to_django(django_to_python: VersionMapping, latest_version: Ver
 
 def get_python_to_django() -> VersionMapping:
     """Get the Python to Django version mapping as extracted from the websites."""
-    active_python = get_python_supported_version("https://devguide.python.org/versions/")
     django_to_python = get_django_to_python_versions("https://docs.djangoproject.com/en/dev/faq/install/")
     django_supported_versions = get_django_supported_versions("https://www.djangoproject.com/download/")
     latest_version = get_latest_version("https://www.djangoproject.com/download/")
@@ -192,6 +191,7 @@ def get_python_to_django() -> VersionMapping:
     # NOTE: Uncomment the below if you want to include only those Python versions
     #       that are still actively supported. Otherwise, we include all Python versions
     #       that are compatible with supported Django versions.
+    # active_python = get_python_supported_version("https://devguide.python.org/versions/")
     # python_to_django = filter_dict(python_to_django, lambda item: item[0] in active_python)
 
     return python_to_django
@@ -605,8 +605,9 @@ def check_existing_github_issue(title: str, repo_owner: str, repo_name: str, tok
     """Check if a GitHub issue with similar title already exists"""
     # Search for issues with similar titles
     search_url = "https://api.github.com/search/issues"
+    repo_name = f"{repo_owner}/{repo_name}"
     params = {
-        "q": f'repo:{repo_owner}/{repo_name} is:issue "{title.split(" ")[1]}" "supported versions"'.replace(" ", "%20"),
+        "q": f'repo:{repo_name} is:issue "{title}"'.replace(" ", "%20"),
         "sort": "created",
         "order": "desc",
     }
@@ -660,9 +661,12 @@ def create_github_issue(title: str, body: str, repo_owner: str, repo_name: str, 
         return False
 
 
-def generate_issue_body(differences: VersionDifferences, current: VersionMapping, expected: VersionMapping) -> str:
+def generate_issue_body(differences: VersionDifferences, _current: VersionMapping, expected: VersionMapping) -> str:
     body = "## Supported versions need updating\n\n"
-    body += "The supported Python/Django version combinations have changed and need to be updated in the documentation.\n\n"
+    body += (
+        "The supported Python/Django version combinations have changed and "
+        "need to be updated in the documentation.\n\n"
+    )
 
     if differences.added_python_versions:
         body += "### Added Python versions\n"
