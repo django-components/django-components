@@ -2,6 +2,43 @@ from contextlib import contextmanager
 from typing import Generator, List
 
 
+def set_component_error_message(err: Exception, component_path: List[str]) -> None:
+    """
+    Format the error message to include the component path. E.g.
+    ```
+    KeyError: "An error occured while rendering components MyPage > MyComponent > MyComponent(slot:content)
+    ```
+    """
+    if not hasattr(err, "_components"):
+        err._components = []  # type: ignore[attr-defined]
+
+    components = getattr(err, "_components", [])
+    components = err._components = [*component_path, *components]  # type: ignore[attr-defined]
+
+    # Format component path as
+    # "MyPage > MyComponent > MyComponent(slot:content) > Base(slot:tab)"
+    comp_path = " > ".join(components)
+    prefix = f"An error occured while rendering components {comp_path}:\n"
+
+    # Access the exception's message, see https://stackoverflow.com/a/75549200/9788634
+    if len(err.args) and err.args[0] is not None:
+        orig_msg = str(err.args[0])
+        if components and "An error occured while rendering components" in orig_msg:
+            orig_msg = str(err.args[0]).split("\n", 1)[-1]
+    else:
+        # When the exception has no message, it may be that the exception
+        # does NOT rely on the `args` attribute. Such case is for example
+        # Pydantic exceptions.
+        #
+        # In this case, we still try to use the `args` attribute, but
+        # it's not guaranteed to work. So we also print out the component
+        # path ourselves.
+        print(prefix)  # noqa: T201
+        orig_msg = str(err)
+
+    err.args = (prefix + orig_msg,)  # tuple of one
+
+
 @contextmanager
 def component_error_message(component_path: List[str]) -> Generator[None, None, None]:
     """
@@ -14,34 +51,7 @@ def component_error_message(component_path: List[str]) -> Generator[None, None, 
     try:
         yield
     except Exception as err:
-        if not hasattr(err, "_components"):
-            err._components = []  # type: ignore[attr-defined]
-
-        components = getattr(err, "_components", [])
-        components = err._components = [*component_path, *components]  # type: ignore[attr-defined]
-
-        # Format component path as
-        # "MyPage > MyComponent > MyComponent(slot:content) > Base(slot:tab)"
-        comp_path = " > ".join(components)
-        prefix = f"An error occured while rendering components {comp_path}:\n"
-
-        # Access the exception's message, see https://stackoverflow.com/a/75549200/9788634
-        if len(err.args) and err.args[0] is not None:
-            orig_msg = str(err.args[0])
-            if components and "An error occured while rendering components" in orig_msg:
-                orig_msg = str(err.args[0]).split("\n", 1)[-1]
-        else:
-            # When the exception has no message, it may be that the exception
-            # does NOT rely on the `args` attribute. Such case is for example
-            # Pydantic exceptions.
-            #
-            # In this case, we still try to use the `args` attribute, but
-            # it's not guaranteed to work. So we also print out the component
-            # path ourselves.
-            print(prefix)  # noqa: T201
-            orig_msg = str(err)
-
-        err.args = (prefix + orig_msg,)  # tuple of one
+        set_component_error_message(err, component_path)
 
         # `from None` should still raise the original error, but without showing this
         # line in the traceback.

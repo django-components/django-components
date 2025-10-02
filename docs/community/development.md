@@ -98,6 +98,22 @@ pytest
 tox -e py38
 ```
 
+## Snapshot tests
+
+Some tests rely on snapshot testing with [syrupy](https://github.com/syrupy-project/syrupy) to test the HTML output of the components.
+
+If you need to update the snapshot tests, add `--snapshot-update` to the pytest command:
+
+```sh
+pytest --snapshot-update
+```
+
+Or with tox:
+
+```sh
+tox -e py39 -- --snapshot-update
+```
+
 ## Dev server
 
 How do you check that your changes to django-components project will work in an actual Django project?

@@ -5,10 +5,16 @@ from typing import TYPE_CHECKING, Callable, Deque, Dict, List, NamedTuple, Optio
 from django.utils.safestring import mark_safe
 
 from django_components.constants import COMP_ID_LENGTH
-from django_components.util.exception import component_error_message
+from django_components.util.exception import component_error_message, set_component_error_message
 
 if TYPE_CHECKING:
-    from django_components.component import Component, ComponentContext, OnRenderGenerator
+    from django_components.component import (
+        Component,
+        ComponentContext,
+        ComponentTreeContext,
+        OnRenderGenerator,
+        StartedGenerators,
+    )
 
 OnComponentRenderedResult = Tuple[Optional[str], Optional[Exception]]
 
@@ -89,21 +95,9 @@ class GeneratorResult(NamedTuple):
     """Whether the generator has been "spent" - e.g. reached its end with `StopIteration`."""
 
 
-# Function that accepts a list of extra HTML attributes to be set on the component's root elements
-# and returns the component's HTML content and a dictionary of child components' IDs
-# and their root elements' HTML attributes.
-#
-# In other words, we use this to "delay" the actual rendering of the component's HTML content,
-# until we know what HTML attributes to apply to the root elements.
-ComponentRenderer = Callable[
-    [Optional[List[str]]],
-    Tuple[str, Dict[str, List[str]], Optional["OnRenderGenerator"]],
-]
-
 # Render-time cache for component rendering
 # See component_post_render()
-component_renderer_cache: Dict[str, Tuple[ComponentRenderer, str]] = {}
-child_component_attrs: Dict[str, List[str]] = {}
+component_renderer_cache: "Dict[str, Tuple[Optional[OnRenderGenerator], str]]" = {}
 
 nested_comp_pattern = re.compile(
     r'<template [^>]*?djc-render-id="\w{{{COMP_ID_LENGTH}}}"[^>]*?></template>'.format(COMP_ID_LENGTH=COMP_ID_LENGTH),  # noqa: UP032
@@ -159,15 +153,12 @@ render_id_pattern = re.compile(
 #      to the root elements.
 # 8. Lastly, we merge all the parts together, and return the final HTML.
 def component_post_render(
-    renderer: ComponentRenderer,
+    renderer: "Optional[OnRenderGenerator]",
     render_id: str,
     component_name: str,
     parent_render_id: Optional[str],
-    on_component_rendered_callbacks: Dict[
-        str,
-        Callable[[Optional[str], Optional[Exception]], OnComponentRenderedResult],
-    ],
-    on_html_rendered: Callable[[str], str],
+    component_tree_context: "ComponentTreeContext",
+    on_component_tree_rendered: Callable[[str], str],
 ) -> str:
     # Instead of rendering the component's HTML content immediately, we store it,
     # so we can render the component only once we know if there are any HTML attributes
@@ -407,11 +398,11 @@ def component_post_render(
             ),
         )
 
-    def finalize_component(item_id: QueueItemId, error: Optional[Exception], full_path: List[str]) -> None:
+    def next_renderer_result(item_id: QueueItemId, error: Optional[Exception], full_path: List[str]) -> None:
         parent_id = child_to_parent[item_id]
 
         component_parts = pop_html_parts(item_id)
-        if error is None:
+        if error is None and component_parts:
             component_html = "".join(component_parts) if component_parts else ""
         else:
             component_html = None
@@ -425,7 +416,14 @@ def component_post_render(
         # (and `on_component_rendered` extension hook) are called at the very end of component rendering.
         on_render_generator = generators_by_component_id.pop(item_id.component_id, None)
         if on_render_generator is not None:
-            result = _call_generator(on_render_generator, component_html, error)
+            result = _call_generator(
+                on_render_generator=on_render_generator,
+                html=component_html,
+                error=error,
+                started_generators_cache=component_tree_context.started_generators,
+                full_path=full_path,
+            )
+            new_html = result.html
 
             # Component's `on_render()` contains multiple `yield` keywords, so keep the generator.
             if not result.spent:
@@ -443,17 +441,28 @@ def component_post_render(
                 # Set the current parent as the parent of the new version
                 child_to_parent[new_item_id] = parent_id
 
+                # Allow to optionally override/modify the intermediate result returned from `Component.on_render()`
+                # and by extensions' `on_component_intermediate` hooks.
+                on_component_intermediate = component_tree_context.on_component_intermediate_callbacks[
+                    item_id.component_id
+                ]
+                # NOTE: [1:] because the root component will be yet again added to the error's
+                # `components` list in `_render_with_error_trace` so we remove the first element from the path.
+                with component_error_message(full_path[1:]):
+                    new_html = on_component_intermediate(new_html)
+
                 # Split the new HTML by placeholders, and put the parts into the queue.
-                parts_to_process = parse_component_result(result.html or "", new_item_id, full_path)
+                parts_to_process = parse_component_result(new_html or "", new_item_id, full_path)
                 process_queue.extendleft(reversed(parts_to_process))
                 return
             # If we don't need to re-do the processing, then we can just use the result.
-            component_html, error = result.html, result.error
+            component_html, error = new_html, result.error
 
         # Allow to optionally override/modify the rendered content from `Component.on_render_after()`
         # and by extensions' `on_component_rendered` hooks.
-        on_component_rendered = on_component_rendered_callbacks[item_id.component_id]
-        component_html, error = on_component_rendered(component_html, error)
+        on_component_rendered = component_tree_context.on_component_rendered_callbacks[item_id.component_id]
+        with component_error_message(full_path[1:]):
+            component_html, error = on_component_rendered(component_html, error)
 
         # If this component had an error, then we ignore this component's HTML, and instead
         # bubble the error up to the parent component.
@@ -462,7 +471,7 @@ def component_post_render(
             return
 
         if component_html is None:
-            raise RuntimeError("Unexpected `None` from `Component.on_render()`")
+            return
 
         # At this point we have a component, and we've resolved all its children into strings.
         # So the component's full HTML is now only strings.
@@ -479,7 +488,7 @@ def component_post_render(
 
     # Body of the iteration, scoped in a function to avoid spilling the state out of the loop.
     def on_item(curr_item: Union[ErrorPart, TextPart, ComponentPart]) -> None:
-        # NOTE: When an error is bubbling up, when the flow goes between `handle_error()`, `finalize_component()`,
+        # NOTE: When an error is bubbling up, when the flow goes between `handle_error()`, `next_renderer_result()`,
         # and this branch, until we reach the root component, where the error is finally raised.
         #
         # Any ancestor component of the one that raised can intercept the error and instead return a new string
@@ -494,7 +503,7 @@ def component_post_render(
 
             # This will make the parent component either handle the error and return a new string instead,
             # or propagate the error to its parent.
-            finalize_component(item_id=parent_id, error=curr_item.error, full_path=curr_item.full_path)
+            next_renderer_result(item_id=parent_id, error=curr_item.error, full_path=curr_item.full_path)
             return
 
         # Skip parts that belong to component versions that error'd
@@ -507,10 +516,10 @@ def component_post_render(
             curr_html_parts.append(curr_item.text)
 
             # In this case we've reached the end of the component's HTML content, and there's
-            # no more subcomponents to process. We can call `finalize_component()` to process
+            # no more subcomponents to process. We can call `next_renderer_result()` to process
             # the component's HTML and eventually trigger `on_component_rendered` hook.
             if curr_item.is_last:
-                finalize_component(item_id=curr_item.item_id, error=None, full_path=[])
+                next_renderer_result(item_id=curr_item.item_id, error=None, full_path=[])
 
             return
 
@@ -521,40 +530,12 @@ def component_post_render(
             # to the parent component.
             child_to_parent[curr_item.item_id] = curr_item.parent_id
 
-            # Generate component's content, applying the extra HTML attributes set by the parent component
-            curr_comp_renderer, curr_comp_name = component_renderer_cache.pop(component_id)
-            # NOTE: Attributes passed from parent to current component are `None` for the root component.
-            curr_comp_attrs = child_component_attrs.pop(component_id, None)
-
+            on_render_generator, curr_comp_name = component_renderer_cache.pop(component_id)
             full_path = [*curr_item.full_path, curr_comp_name]
+            generators_by_component_id[component_id] = on_render_generator
 
             # This is where we actually render the component
-            #
-            # NOTE: [1:] because the root component will be yet again added to the error's
-            # `components` list in `_render_with_error_trace` so we remove the first element from the path.
-            try:
-                with component_error_message(full_path[1:]):
-                    comp_content, extra_child_component_attrs, on_render_generator = curr_comp_renderer(
-                        curr_comp_attrs,
-                    )
-            # This error may be triggered when any of following raises:
-            # - `Component.on_render()` (first part - before yielding)
-            # - `Component.on_render_before()`
-            # - Rendering of component's template
-            #
-            # In all cases, we want to mark the component as errored, and let the parent handle it.
-            except Exception as err:  # noqa: BLE001
-                handle_error(item_id=curr_item.item_id, error=err, full_path=full_path)
-                return
-
-            if on_render_generator is not None:
-                generators_by_component_id[component_id] = on_render_generator
-
-            child_component_attrs.update(extra_child_component_attrs)
-
-            # Split the component's rendered HTML by placeholders, and put the parts into the queue.
-            parts_to_process = parse_component_result(comp_content, curr_item.item_id, full_path)
-            process_queue.extendleft(reversed(parts_to_process))
+            next_renderer_result(item_id=curr_item.item_id, error=None, full_path=full_path)
 
         else:
             raise TypeError("Unknown item type")
@@ -576,7 +557,7 @@ def component_post_render(
     output = "".join(content_parts)
 
     # Allow to optionally modify the final output
-    output = on_html_rendered(output)
+    output = on_component_tree_rendered(output)
 
     return mark_safe(output)
 
@@ -585,10 +566,10 @@ def _call_generator(
     on_render_generator: "OnRenderGenerator",
     html: Optional[str],
     error: Optional[Exception],
+    started_generators_cache: "StartedGenerators",
+    full_path: List[str],
 ) -> GeneratorResult:
-    generator_spent = False
-    needs_processing = False
-
+    is_first_send = not started_generators_cache.get(on_render_generator, False)
     try:
         # `Component.on_render()` may have any number of `yield` statements, so we need to
         # call `.send()` any number of times.
@@ -598,30 +579,33 @@ def _call_generator(
         # - Yield a new HTML with `yield` - We return back to the user the processed HTML / error
         #                                   for them to process further
         # - Raise a new error
-        new_result = on_render_generator.send((html, error))
+        if is_first_send:
+            new_result = on_render_generator.send(None)
+        else:
+            new_result = on_render_generator.send((html, error))
 
     # If we've reached the end of `Component.on_render()` (or `return` statement), then we get `StopIteration`.
     # In that case, we want to check if user returned new HTML from the `return` statement.
     except StopIteration as generator_err:
-        generator_spent = True
-
         # The return value is on `StopIteration.value`
         new_output = generator_err.value
         if new_output is not None:
-            html = new_output
-            error = None
-            needs_processing = True
+            return GeneratorResult(html=new_output, error=None, needs_processing=True, spent=True)
+        # Nothing returned at the end of the generator, keep the original HTML and error
+        return GeneratorResult(html=html, error=error, needs_processing=False, spent=True)
 
     # Catch if `Component.on_render()` raises an exception, in which case this becomes
     # the new error.
     except Exception as new_error:  # noqa: BLE001
-        error = new_error
-        html = None
+        set_component_error_message(new_error, full_path[1:])
+        return GeneratorResult(html=None, error=new_error, needs_processing=False, spent=True)
 
     # If the generator didn't raise an error then `Component.on_render()` yielded a new HTML result,
     # that we need to process.
     else:
-        needs_processing = True
-        return GeneratorResult(html=new_result, error=None, needs_processing=needs_processing, spent=generator_spent)
+        if is_first_send or new_result is not None:
+            started_generators_cache[on_render_generator] = True
+            return GeneratorResult(html=new_result, error=None, needs_processing=True, spent=False)
 
-    return GeneratorResult(html=html, error=error, needs_processing=needs_processing, spent=generator_spent)
+        # Generator yielded `None`, keep the previous HTML and error
+        return GeneratorResult(html=html, error=error, needs_processing=False, spent=False)

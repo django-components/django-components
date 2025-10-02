@@ -5,7 +5,21 @@ from hashlib import md5
 from importlib import import_module
 from itertools import chain
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from urllib import parse
 
 from django_components.constants import UID_LENGTH
@@ -247,3 +261,9 @@ def format_as_ascii_table(
     # Combine all parts into the final table
     table = "\n".join([header_row, separator, *data_rows]) if include_headers else "\n".join(data_rows)
     return table
+
+
+# TODO - Convert to TypeGuard once Python 3.9 is dropped
+def is_generator(obj: Any) -> bool:
+    """Check if an object is a generator with send method."""
+    return hasattr(obj, "send")
