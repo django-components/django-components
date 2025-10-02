@@ -580,7 +580,7 @@ def _call_generator(
         #                                   for them to process further
         # - Raise a new error
         if is_first_send:
-            new_result = on_render_generator.send(None)
+            new_result = on_render_generator.send(None)  # type: ignore[arg-type]
         else:
             new_result = on_render_generator.send((html, error))
 

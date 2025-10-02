@@ -3883,6 +3883,7 @@ class Component(metaclass=ComponentMeta):
             # String (or other unknown type) - yield once with the result
             else:
                 yield html_content_or_generator
+                return None
 
         return inner_generator()
 
