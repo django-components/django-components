@@ -1869,9 +1869,9 @@ class TestComponentHook:
                 {% if case == 1 %}
                     {% component "broken" / %}
                 {% elif case == 2 %}
-                    Hello
+                    <div>Hello</div>
                 {% elif case == 3 %}
-                    There
+                    <div>There</div>
                 {% endif %}
             """
 
@@ -1890,23 +1890,25 @@ class TestComponentHook:
                     html3, error3 = yield template.render(context)
                     results.append((html3.strip(), error3))
 
-                html4, error4 = yield "Other result"
+                html4, error4 = yield "<div>Other result</div>"
                 results.append((html4, error4))
 
-                return "Final result"
+                return "<div>Final result</div>"
 
         result = SimpleComponent.render()
-        assert result == "Final result"
+        assert result == '<div data-djc-id-ca1bc3e="">Final result</div>'
 
         # NOTE: Exceptions are stubborn, comparison evaluates to False even with the same message.
         assert results[0][0] is None
         assert isinstance(results[0][1], ValueError)
         assert results[0][1].args[0] == "An error occured while rendering components broken:\nBROKEN"
 
+        # NOTE: It's important that all the results are wrapped in `<div>`
+        #       so we can check if the djc-id attribute was set.
         assert results[1:] == [
-            ("Hello", None),
-            ("There", None),
-            ("Other result", None),
+            ('<div data-djc-id-ca1bc3e="">Hello</div>', None),
+            ('<div data-djc-id-ca1bc3e="">There</div>', None),
+            ('<div data-djc-id-ca1bc3e="">Other result</div>', None),
         ]
 
     @djc_test(
