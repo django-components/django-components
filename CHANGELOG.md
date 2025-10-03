@@ -4,23 +4,48 @@
 
 #### Feat
 
+- Wrap the template rendering in `Component.on_render()` in a lambda function.
+
+    When you wrap the rendering call in a lambda function, and the rendering fails,
+    the error will be yielded back in the `(None, Exception)` tuple.
+
+    Before:
+
+    ```py
+    class MyTable(Component):
+        def on_render(self, context, template):
+            try:
+                intermediate = template.render(context)
+                html, error = yield intermediate
+            except Exception as e:
+                html, error = None, e
+    ```
+
+    After:
+
+    ```py
+    class MyTable(Component):
+        def on_render(self, context, template):
+            html, error = yield lambda: template.render(context)
+    ```
+
 - Multiple yields in `Component.on_render()` - You can now yield multiple times within the same `on_render` method for complex rendering scenarios.
 
     ```py
     class MyTable(Component):
         def on_render(self, context, template):
-            # First yield - render with one context
+            # First yield
             with context.push({"mode": "header"}):
-                header_html, header_error = yield template.render(context)
+                header_html, header_error = yield lambda: template.render(context)
             
-            # Second yield - render with different context
+            # Second yield
             with context.push({"mode": "body"}):
-                body_html, body_error = yield template.render(context)
+                body_html, body_error = yield lambda: template.render(context)
             
-            # Third yield - render a string directly
+            # Third yield
             footer_html, footer_error = yield "Footer content"
             
-            # Process all results and return final output
+            # Process all results
             if header_error or body_error or footer_error:
                 return "Error occurred during rendering"
             

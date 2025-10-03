@@ -1,6 +1,6 @@
 import re
 from collections import deque
-from typing import TYPE_CHECKING, Callable, Deque, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Callable, Deque, Dict, List, Literal, NamedTuple, Optional, Set, Tuple, Union
 
 from django.utils.safestring import mark_safe
 
@@ -90,7 +90,7 @@ class ErrorPart(NamedTuple):
 class GeneratorResult(NamedTuple):
     html: Optional[str]
     error: Optional[Exception]
-    needs_processing: bool
+    action: Literal["needs_processing", "rerender", "stop"]
     spent: bool
     """Whether the generator has been "spent" - e.g. reached its end with `StopIteration`."""
 
@@ -431,7 +431,7 @@ def component_post_render(
 
             # The generator yielded or returned a new HTML. We want to process it as if
             # it's a new component's HTML.
-            if result.needs_processing:
+            if result.action == "needs_processing":
                 # Ignore the old version of the component
                 ignored_components.add(item_id)
 
@@ -455,8 +455,20 @@ def component_post_render(
                 parts_to_process = parse_component_result(new_html or "", new_item_id, full_path)
                 process_queue.extendleft(reversed(parts_to_process))
                 return
-            # If we don't need to re-do the processing, then we can just use the result.
-            component_html, error = new_html, result.error
+            elif result.action == "rerender":
+                # Ignore the old version of the component
+                ignored_components.add(item_id)
+
+                new_version = item_id.version + 1
+                new_item_id = QueueItemId(component_id=item_id.component_id, version=new_version)
+                # Set the current parent as the parent of the new version
+                child_to_parent[new_item_id] = parent_id
+
+                next_renderer_result(item_id=new_item_id, error=result.error, full_path=full_path)
+                return
+            else:
+                # If we don't need to re-do the processing, then we can just use the result.
+                component_html, error = new_html, result.error
 
         # Allow to optionally override/modify the rendered content from `Component.on_render_after()`
         # and by extensions' `on_component_rendered` hooks.
@@ -590,22 +602,55 @@ def _call_generator(
         # The return value is on `StopIteration.value`
         new_output = generator_err.value
         if new_output is not None:
-            return GeneratorResult(html=new_output, error=None, needs_processing=True, spent=True)
+            return GeneratorResult(html=new_output, error=None, action="needs_processing", spent=True)
         # Nothing returned at the end of the generator, keep the original HTML and error
-        return GeneratorResult(html=html, error=error, needs_processing=False, spent=True)
+        return GeneratorResult(html=html, error=error, action="stop", spent=True)
 
     # Catch if `Component.on_render()` raises an exception, in which case this becomes
     # the new error.
     except Exception as new_error:  # noqa: BLE001
         set_component_error_message(new_error, full_path[1:])
-        return GeneratorResult(html=None, error=new_error, needs_processing=False, spent=True)
+        return GeneratorResult(html=None, error=new_error, action="stop", spent=True)
 
     # If the generator didn't raise an error then `Component.on_render()` yielded a new HTML result,
     # that we need to process.
     else:
+        # NOTE: Users may yield a function from `on_render()` instead of rendered template:
+        # ```py
+        # class MyTable(Component):
+        #     def on_render(self, context, template):
+        #         html, error = yield lambda: template.render(context)
+        #         return html + "<p>Hello</p>"
+        # ```
+        # This is so that we can keep the API simple, handling the errors in template rendering.
+        # Otherwise, people would have to write out:
+        # ```py
+        # try:
+        #     intermediate = template.render(context)
+        # except Exception as err:
+        #     result = None
+        #     error = err
+        # else:
+        #     result, error = yield intermediate
+        # ```
+        if callable(new_result):
+            try:
+                new_result = new_result()
+            except Exception as new_err:  # noqa: BLE001
+                started_generators_cache[on_render_generator] = True
+                set_component_error_message(new_err, full_path[1:])
+                # In other cases, when a component raises an error during rendering,
+                # we discard the errored component and move up to the parent component
+                # to decide what to do (propagate or return a new HTML).
+                #
+                # But if user yielded a function from `Component.on_render()`,
+                # we want to let the CURRENT component decide what to do.
+                # Hence why the action is "rerender" instead of "stop".
+                return GeneratorResult(html=None, error=new_err, action="rerender", spent=False)
+
         if is_first_send or new_result is not None:
             started_generators_cache[on_render_generator] = True
-            return GeneratorResult(html=new_result, error=None, needs_processing=True, spent=False)
+            return GeneratorResult(html=new_result, error=None, action="needs_processing", spent=False)
 
         # Generator yielded `None`, keep the previous HTML and error
-        return GeneratorResult(html=html, error=error, needs_processing=False, spent=False)
+        return GeneratorResult(html=html, error=error, action="stop", spent=False)

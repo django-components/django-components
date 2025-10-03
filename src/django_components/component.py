@@ -112,7 +112,7 @@ else:
 
 
 OnRenderGenerator = Generator[
-    Optional[SlotResult],
+    Optional[Union[SlotResult, Callable[[], SlotResult]]],
     Tuple[Optional[SlotResult], Optional[Exception]],
     Optional[SlotResult],
 ]
@@ -122,7 +122,7 @@ method if it yields (and thus returns a generator).
 
 When `on_render()` is a generator then it:
 
-- Yields a rendered template (string or `None`)
+- Yields a rendered template (string or `None`) or a lambda function to be called later.
 
 - Receives back a tuple of `(final_output, error)`.
 
@@ -151,13 +151,15 @@ class MyTable(Component):
         # Same as `Component.on_render_before()`
         context["hello"] = "world"
 
-        # Yield rendered template to receive fully-rendered template or error
-        html, error = yield template.render(context)
+        # Yield a function that renders the template
+        # to receive fully-rendered template or error.
+        html, error = yield lambda: template.render(context)
 
         # Do something AFTER rendering template, or post-process
         # the rendered template.
         # Same as `Component.on_render_after()`
-        return html + "<p>Hello</p>"
+        if html is not None:
+            return html + "<p>Hello</p>"
 ```
 
 **Multiple yields example:**
@@ -165,18 +167,18 @@ class MyTable(Component):
 ```py
 class MyTable(Component):
     def on_render(self, context, template) -> OnRenderGenerator:
-        # First yield - render with one context
+        # First yield
         with context.push({"mode": "header"}):
-            header_html, header_error = yield template.render(context)
+            header_html, header_error = yield lambda: template.render(context)
 
-        # Second yield - render with different context
+        # Second yield
         with context.push({"mode": "body"}):
-            body_html, body_error = yield template.render(context)
+            body_html, body_error = yield lambda: template.render(context)
 
-        # Third yield - render a string directly
+        # Third yield
         footer_html, footer_error = yield "Footer content"
 
-        # Process all results and return final output
+        # Process all results
         if header_error or body_error or footer_error:
             return "Error occurred during rendering"
 
@@ -2023,7 +2025,7 @@ class Component(metaclass=ComponentMeta):
         ```py
         class MyTable(Component):
             def on_render(self, context, template):
-                html, error = yield template.render(context)
+                html, error = yield lambda: template.render(context)
 
                 if error is None:
                     # The rendering succeeded
@@ -2044,7 +2046,7 @@ class Component(metaclass=ComponentMeta):
             ```py
             class MyTable(Component):
                 def on_render(self, context, template):
-                    html, error = yield template.render(context)
+                    html, error = yield lambda: template.render(context)
 
                     return "NEW HTML"
             ```
@@ -2058,7 +2060,7 @@ class Component(metaclass=ComponentMeta):
             ```py
             class MyTable(Component):
                 def on_render(self, context, template):
-                    html, error = yield template.render(context)
+                    html, error = yield lambda: template.render(context)
 
                     raise Exception("Error message")
             ```
@@ -2074,7 +2076,7 @@ class Component(metaclass=ComponentMeta):
             ```py
             class MyTable(Component):
                 def on_render(self, context, template):
-                    html, error = yield template.render(context)
+                    html, error = yield lambda: template.render(context)
 
                     if error is not None:
                         # The rendering failed
@@ -2091,11 +2093,11 @@ class Component(metaclass=ComponentMeta):
             def on_render(self, context, template):
                 # First yield - render with one context
                 with context.push({"mode": "header"}):
-                    header_html, header_error = yield template.render(context)
+                    header_html, header_error = yield lambda: template.render(context)
 
                 # Second yield - render with different context
                 with context.push({"mode": "body"}):
-                    body_html, body_error = yield template.render(context)
+                    body_html, body_error = yield lambda: template.render(context)
 
                 # Third yield - render a string directly
                 footer_html, footer_error = yield "Footer content"
@@ -3852,7 +3854,7 @@ class Component(metaclass=ComponentMeta):
         # ```
         # class MyTable(Component):
         #     def on_render(self, context, template):
-        #         html, error = yield template.render(context)
+        #         html, error = yield lamba: template.render(context)
         #         return html + "<p>Hello</p>"
         # ```
         #
