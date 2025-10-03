@@ -134,7 +134,9 @@ class MyTable(Component):
 When you render the original template in [`on_render()`](../../../reference/api#django_components.Component.on_render) as:
 
 ```py
-template.render(context)
+class MyTable(Component):
+    def on_render(self, context, template):
+        result = template.render(context)
 ```
 
 The result is NOT the final output, but an intermediate result. Nested components
@@ -208,6 +210,33 @@ At this point you can do 3 things:
                 print(f"Error: {error}")
     ```
 
+#### Multiple yields
+
+You can yield multiple times within the same `on_render` method. This is useful for complex rendering scenarios where you need to render different templates or handle multiple rendering operations:
+
+```py
+class MyTable(Component):
+    def on_render(self, context, template):
+        # First yield - render with one context
+        with context.push({"mode": "header"}):
+            header_html, header_error = yield template.render(context)
+        
+        # Second yield - render with different context
+        with context.push({"mode": "body"}):
+            body_html, body_error = yield template.render(context)
+        
+        # Third yield - render a string directly
+        footer_html, footer_error = yield "Footer content"
+        
+        # Process all results and return final output
+        if header_error or body_error or footer_error:
+            return "Error occurred during rendering"
+        
+        return f"{header_html}\n{body_html}\n{footer_html}"
+```
+
+Each yield operation is independent and returns its own `(html, error)` tuple, allowing you to handle each rendering result separately.
+
 #### Example: ErrorBoundary
 
 [`on_render()`](../../../reference/api#django_components.Component.on_render) can be used to
@@ -231,22 +260,50 @@ and return it if an error occured:
 
 ```djc_py
 class ErrorFallback(Component):
-    template = """
-      {% slot "content" default / %}
+    class Kwargs(NamedTuple):
+        fallback: Optional[str] = None
+
+    class Slots(NamedTuple):
+        default: Optional[SlotInput] = None
+        fallback: Optional[SlotInput] = None
+
+    template: types.django_html = """
+        {% if not error %}
+            {% slot "default" default / %}
+        {% else %}
+            {% slot "fallback" error=error / %}
+        {% endif %}
     """
 
-    def on_render(self, context, template):
-        fallback = self.slots.fallback
+    def on_render(
+        self,
+        context: Context,
+        template: Template,
+    ) -> OnRenderGenerator:
+        fallback_kwarg = cast(ErrorFallback.Kwargs, self.kwargs).fallback
+        fallback_slot = cast(ErrorFallback.Slots, self.slots).default
 
-        if fallback is None:
-            raise ValueError("fallback slot is required")
+        if fallback_kwarg is not None and fallback_slot is not None:
+            raise TemplateSyntaxError(
+                "The 'fallback' argument and slot cannot both be provided. Please provide only one.",
+            )
 
-        html, error = yield template.render(context)
+        result, error = yield template.render(context)
 
-        if error is not None:
-            return fallback()
+        # No error, return the result
+        if error is None:
+            return result
+
+        # Error, return the fallback
+        if fallback_kwarg is not None:
+            return fallback_kwarg
+        elif fallback_slot is not None:
+            # Render the template second time, this time with the error
+            # So that we render the fallback slot with proper access to the outer context and whatnot.
+            with context.push({"error": error}):
+                return template.render(context)
         else:
-            return html
+            return ""
 ```
 
 ### `on_render_after`

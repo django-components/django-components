@@ -13,6 +13,7 @@ playwright
 requests
 types-requests
 whitenoise
+pydantic
 pygments
 pygments-djc
 asv

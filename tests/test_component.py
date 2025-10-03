@@ -1471,6 +1471,56 @@ class TestComponentRender:
         ):
             Root.render()
 
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_pydantic_exception(self, components_settings):
+        from pydantic import BaseModel, ValidationError
+
+        @register("broken")
+        class Broken(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div> injected: {{ data|safe }} </div>
+                <main>
+                    {% slot "content" default / %}
+                </main>
+            """
+
+            class Kwargs(BaseModel):
+                data1: str
+
+            def get_template_data(self, args, kwargs: Kwargs, slots, context):
+                return {"data": kwargs.data1}
+
+        @register("parent")
+        class Parent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs["data"]}
+
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component "broken" %}
+                    {% slot "content" default / %}
+                {% endcomponent %}
+            """
+
+        @register("root")
+        class Root(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component "parent" data=123 %}
+                    {% fill "content" %}
+                        456
+                    {% endfill %}
+                {% endcomponent %}
+            """
+
+        # NOTE: We're unable to insert the component path in the Pydantic's exception message
+        with pytest.raises(
+            ValidationError,
+            match=re.escape("1 validation error for Kwargs\ndata1\n  Field required"),
+        ):
+            Root.render()
+
 
 @djc_test
 class TestComponentHook:
@@ -1644,7 +1694,9 @@ class TestComponentHook:
             "outer__on_render_before",
             "outer__on_render_pre",
             "middle__on_render_before",
+            "middle__on_render_before",
             "middle__on_render_pre",
+            "inner__on_render_before",
             "inner__on_render_before",
             "inner__on_render_pre",
             "slotted__on_render_before",
@@ -1653,14 +1705,13 @@ class TestComponentHook:
             "slotted__on_render_after",
             "inner__on_render_post",
             "inner__on_render_after",
-            "inner__on_render_before",
             "inner__on_render_pre",
             "inner__on_render_post",
             "inner__on_render_after",
             "middle__on_render_post",
             "middle__on_render_after",
-            "middle__on_render_before",
             "middle__on_render_pre",
+            "inner__on_render_before",
             "inner__on_render_before",
             "inner__on_render_pre",
             "slotted__on_render_before",
@@ -1669,7 +1720,6 @@ class TestComponentHook:
             "slotted__on_render_after",
             "inner__on_render_post",
             "inner__on_render_after",
-            "inner__on_render_before",
             "inner__on_render_pre",
             "inner__on_render_post",
             "inner__on_render_after",
@@ -1808,6 +1858,58 @@ class TestComponentHook:
 
         with pytest.raises(ValueError, match=re.escape("BROKEN")):
             SimpleComponent.render()
+
+    def test_on_render_multiple_yields(self):
+        registry.register("broken", self._gen_broken_component())
+
+        results = []
+
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                {% if case == 1 %}
+                    {% component "broken" / %}
+                {% elif case == 2 %}
+                    <div>Hello</div>
+                {% elif case == 3 %}
+                    <div>There</div>
+                {% endif %}
+            """
+
+            def on_render(self, context: Context, template: Optional[Template]):
+                assert template is not None
+
+                with context.push({"case": 1}):
+                    html1, error1 = yield template.render(context)
+                    results.append((html1, error1))
+
+                with context.push({"case": 2}):
+                    html2, error2 = yield template.render(context)
+                    results.append((html2.strip(), error2))
+
+                with context.push({"case": 3}):
+                    html3, error3 = yield template.render(context)
+                    results.append((html3.strip(), error3))
+
+                html4, error4 = yield "<div>Other result</div>"
+                results.append((html4, error4))
+
+                return "<div>Final result</div>"
+
+        result = SimpleComponent.render()
+        assert result == '<div data-djc-id-ca1bc3e="">Final result</div>'
+
+        # NOTE: Exceptions are stubborn, comparison evaluates to False even with the same message.
+        assert results[0][0] is None
+        assert isinstance(results[0][1], ValueError)
+        assert results[0][1].args[0] == "An error occured while rendering components broken:\nBROKEN"
+
+        # NOTE: It's important that all the results are wrapped in `<div>`
+        #       so we can check if the djc-id attribute was set.
+        assert results[1:] == [
+            ('<div data-djc-id-ca1bc3e="">Hello</div>', None),
+            ('<div data-djc-id-ca1bc3e="">There</div>', None),
+            ('<div data-djc-id-ca1bc3e="">Other result</div>', None),
+        ]
 
     @djc_test(
         parametrize=(

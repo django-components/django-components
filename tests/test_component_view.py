@@ -307,6 +307,18 @@ class TestComponentAsView:
             == f"/components/ext/view/components/{TestComponent.class_id}/?f%27oo=b+ar%26ba%27z#q%20u%22x"
         )
 
+        # Converts `True` to no flag parameter (no value, e.g. `enabled` instead of `enabled=True`)
+        # And filters out `False` and `None` values
+        component_url3 = get_component_url(
+            TestComponent,
+            query={"f'oo": "b ar&ba'z", "true_key": True, "false_key": False, "none_key": None},
+            fragment='q u"x',
+        )
+        assert (
+            component_url3
+            == f"/components/ext/view/components/{TestComponent.class_id}/?f%27oo=b+ar%26ba%27z&true_key#q%20u%22x"
+        )
+
         # Merges query params from original URL
         component_url4 = format_url(
             "/components/ext/view/components/123?foo=123&bar=456#abc",

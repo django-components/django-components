@@ -34,7 +34,6 @@ from django_components.component_registry import (
     registry,
     all_registries,
 )
-from django_components.components import DynamicComponent
 from django_components.dependencies import DependenciesStrategy, render_dependencies
 from django_components.extension import (
     ComponentExtension,
@@ -47,6 +46,10 @@ from django_components.extension import (
     OnComponentClassDeletedContext,
     OnComponentInputContext,
     OnComponentDataContext,
+    OnComponentRenderedContext,
+    OnSlotRenderedContext,
+    OnTemplateCompiledContext,
+    OnTemplateLoadedContext,
 )
 from django_components.extensions.cache import ComponentCache
 from django_components.extensions.defaults import ComponentDefaults, Default
@@ -80,6 +83,9 @@ import django_components.types as types  # noqa: PLR0402
 from django_components.util.loader import ComponentFileEntry, get_component_dirs, get_component_files
 from django_components.util.routing import URLRoute, URLRouteHandler
 from django_components.util.types import Empty
+
+# NOTE: Import built-in components last to avoid circular imports
+from django_components.components import DynamicComponent
 
 # isort: on
 
@@ -122,10 +128,14 @@ __all__ = [
     "OnComponentDataContext",
     "OnComponentInputContext",
     "OnComponentRegisteredContext",
+    "OnComponentRenderedContext",
     "OnComponentUnregisteredContext",
     "OnRegistryCreatedContext",
     "OnRegistryDeletedContext",
     "OnRenderGenerator",
+    "OnSlotRenderedContext",
+    "OnTemplateCompiledContext",
+    "OnTemplateLoadedContext",
     "ProvideNode",
     "RegistrySettings",
     "ShorthandComponentFormatter",

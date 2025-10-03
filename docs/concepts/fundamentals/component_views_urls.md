@@ -10,8 +10,8 @@ For web applications, it's common to define endpoints that serve HTML content (A
 django-components has a suite of features that help you write and manage views and their URLs:
 
 - For each component, you can define methods for handling HTTP requests (GET, POST, etc.) - `get()`, `post()`, etc.
-  
-- Use [`Component.as_view()`](../../../reference/api#django_components.Component.as_view) to be able to use your Components  with Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/). This works the same way as [`View.as_view()`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View.as_view).
+
+- Use [`Component.as_view()`](../../../reference/api#django_components.Component.as_view) to be able to use your Components with Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/). This works the same way as [`View.as_view()`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View.as_view).
 
 - To avoid having to manually define the endpoints for each component, you can set the component to be "public" with [`Component.View.public = True`](../../../reference/api#django_components.ComponentView.public). This will automatically create a URL for the component. To retrieve the component URL, use [`get_component_url()`](../../../reference/api#django_components.get_component_url).
 
@@ -59,7 +59,6 @@ class Calendar(Component):
     `get()`, `post()`, `put()`, `patch()`, `delete()`, `head()`, `options()`, `trace()`
 
     Each of these receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest) object as the first argument.
-
 
 <!-- TODO_V1 REMOVE -->
 
@@ -111,7 +110,7 @@ urlpatterns = [
 
 [`Component.as_view()`](../../../reference/api#django_components.Component.as_view)
 internally calls [`View.as_view()`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View.as_view), passing the component
-instance as one of the arguments.
+class as one of the arguments.
 
 ## Register URLs automatically
 
@@ -144,8 +143,14 @@ This way you don't have to mix your app URLs with component URLs.
     ```py
     url = get_component_url(
         MyComponent,
-        query={"foo": "bar"},
+        query={"foo": "bar", "enabled": True, "debug": False, "unused": None},
         fragment="baz",
     )
-    # /components/ext/view/components/c1ab2c3?foo=bar#baz
+    # /components/ext/view/components/c1ab2c3?foo=bar&enabled#baz
     ```
+
+    **Query parameter handling:**
+
+    - `True` values are rendered as flag parameters without values (e.g., `?enabled`)
+    - `False` and `None` values are omitted from the URL
+    - Other values are rendered normally (e.g., `?foo=bar`)

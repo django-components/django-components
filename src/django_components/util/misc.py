@@ -5,7 +5,21 @@ from hashlib import md5
 from importlib import import_module
 from itertools import chain
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 from urllib import parse
 
 from django_components.constants import UID_LENGTH
@@ -162,12 +176,35 @@ def format_url(url: str, query: Optional[Dict] = None, fragment: Optional[str] =
     ```
 
     `query` and `fragment` are optional, and not applied if `None`.
+
+    Boolean `True` values in query parameters are rendered as flag parameters without values.
+
+    `False` and `None` values in query parameters are omitted.
+
+    ```py
+    url = format_url(
+        url="https://example.com",
+        query={"foo": "bar", "baz": None, "enabled": True, "debug": False},
+    )
+    # https://example.com?foo=bar&enabled
+    ```
     """
     parts = parse.urlsplit(url)
     fragment_enc = parse.quote(fragment or parts.fragment, safe="")
     base_qs = dict(parse.parse_qsl(parts.query))
-    merged = {**base_qs, **(query or {})}
-    encoded_qs = parse.urlencode(merged, safe="")
+    # Filter out `None` and `False` values
+    filtered_query = {k: v for k, v in (query or {}).items() if v is not None and v is not False}
+    merged = {**base_qs, **filtered_query}
+
+    # Handle boolean True values as flag parameters (no explicit value)
+    query_parts = []
+    for key, value in merged.items():
+        if value is True:
+            query_parts.append(parse.quote_plus(str(key)))
+        else:
+            query_parts.append(f"{parse.quote_plus(str(key))}={parse.quote_plus(str(value))}")
+
+    encoded_qs = "&".join(query_parts)
 
     return parse.urlunsplit(parts._replace(query=encoded_qs, fragment=fragment_enc))
 
@@ -224,3 +261,9 @@ def format_as_ascii_table(
     # Combine all parts into the final table
     table = "\n".join([header_row, separator, *data_rows]) if include_headers else "\n".join(data_rows)
     return table
+
+
+# TODO - Convert to TypeGuard once Python 3.9 is dropped
+def is_generator(obj: Any) -> bool:
+    """Check if an object is a generator with send method."""
+    return hasattr(obj, "send")
