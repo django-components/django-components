@@ -1,36 +1,36 @@
 name: Notify Discord on new PRs
 
 on:
-    pull_request:
-        types: [opened]
+  pull_request:
+    types: [opened]
 
 jobs:
-    notify:
-        runs-on: ubuntu-latest
-        steps:
-            - name: Post to Discord (development channel)
-              env:
-                  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_DEVELOPMENT }}
-              run: |
-                  payload=$(jq -n \
-                    --arg title "${{ github.event.pull_request.title }}" \
-                    --arg url "${{ github.event.pull_request.html_url }}" \
-                    --arg user "${{ github.event.pull_request.user.login }}" \
-                    --arg repo "${{ github.repository }}" \
-                    --arg number "#${{ github.event.pull_request.number }}" \
-                    '{
-                      "username": "GitHub Pull Requests",
-                      "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-                      "embeds": [
-                        {
-                          "title": "New pull request: \($number) \($title)",
-                          "url": \($url),
-                          "color": 3066993,
-                          "author": {"name": \($user)},
-                          "footer": {"text": \($repo)},
-                          "timestamp": "${{ github.event.pull_request.created_at }}"
-                        }
-                      ]
-                    }')
-                  curl -sS -X POST -H "Content-Type: application/json" -d "$payload" "$DISCORD_WEBHOOK_URL" | cat
-
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord (development channel)
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_DEVELOPMENT }}
+        run: |
+          payload=$(jq -n \
+            --arg title "${{ github.event.pull_request.title }}" \
+            --arg url "${{ github.event.pull_request.html_url }}" \
+            --arg user "${{ github.event.pull_request.user.login }}" \
+            --arg repo "${{ github.repository }}" \
+            --arg number "#${{ github.event.pull_request.number }}" \
+            --arg timestamp "${{ github.event.pull_request.created_at }}" \
+            '{
+              "username": "GitHub Pull Requests",
+              "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+              "embeds": [
+                {
+                  "title": ("New pull request: " + $number + " " + $title),
+                  "url": $url,
+                  "color": 3066993,
+                  "author": {"name": $user},
+                  "footer": {"text": $repo},
+                  "timestamp": $timestamp
+                }
+              ]
+            }')
+          curl -sS -X POST -H "Content-Type: application/json" -d "$payload" "$DISCORD_WEBHOOK_URL" | cat

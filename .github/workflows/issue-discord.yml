@@ -18,17 +18,18 @@ jobs:
             --arg user "${{ github.event.issue.user.login }}" \
             --arg repo "${{ github.repository }}" \
             --arg number "#${{ github.event.issue.number }}" \
+            --arg timestamp "${{ github.event.issue.created_at }}" \
             '{
               "username": "GitHub Issues",
               "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
               "embeds": [
                 {
-                  "title": "New issue: \($number) \($title)",
-                  "url": \($url),
+                  "title": ("New issue: " + $number + " " + $title),
+                  "url": $url,
                   "color": 3447003,
-                  "author": {"name": \($user)},
-                  "footer": {"text": \($repo)},
-                  "timestamp": "${{ github.event.issue.created_at }}"
+                  "author": {"name": $user},
+                  "footer": {"text": $repo},
+                  "timestamp": $timestamp
                 }
               ]
             }')
