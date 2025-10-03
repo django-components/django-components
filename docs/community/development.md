@@ -348,9 +348,13 @@ python scripts/validate_links.py --rewrite
 
 ### Discord
 
-When a new release is published or a new issue is opened, a message is posted to the [Discord server](https://discord.gg/NaQ8QPyHtD).
+We integrate with our [Discord server](https://discord.gg/NaQ8QPyHtD) to notify about new releases, issues, PRs, and discussions.
 
-(See [`issue-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/issue-discord.yml) and [`release-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/release-discord.yml) workflows.)
+See:
+- [`issue-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/issue-discord.yml)
+- [`release-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/release-discord.yml)
+- [`pr-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/pr-discord.yml)
+- [`discussion-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/discussion-discord.yml)
 
 See [this tutorial](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) on how to set up the Discord webhooks.
 
