@@ -344,6 +344,25 @@ Then, you can run the script to update the URLs in the codebase.
 python scripts/validate_links.py --rewrite
 ```
 
+## Integrations
+
+### Discord
+
+We integrate with our [Discord server](https://discord.gg/NaQ8QPyHtD) to notify about new releases, issues, PRs, and discussions.
+
+See:
+- [`issue-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/issue-discord.yml)
+- [`release-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/release-discord.yml)
+- [`pr-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/pr-discord.yml)
+- [`discussion-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/discussion-discord.yml)
+
+See [this tutorial](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) on how to set up the Discord webhooks.
+
+The Discord webhook URLs are stored as secrets in the GitHub repository.
+
+- `DISCORD_WEBHOOK_DEVELOPMENT` - For new issues
+- `DISCORD_WEBHOOK_ANNOUNCEMENTS` - For new releases
+
 ## Project management
 
 ### Project board
