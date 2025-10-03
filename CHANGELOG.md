@@ -4,6 +4,37 @@
 
 #### Feat
 
+- New built-in component [`ErrorFallback`](https://django-components.github.io/django-components/0.142.0/reference/components/)
+
+    Use `ErrorFallback` to catch errors and display a fallback content instead.
+
+    This is similar to React's [`ErrorBoundary`](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
+    component.
+
+    Either pass the fallback as a kwarg:
+
+    ```django
+    {% component "error_fallback" fallback="Oops, something went wrong" %}
+        {% component "table" / %}
+    {% endcomponent %}
+    ```
+
+    Or use the full `fallback` slot:
+
+    ```django
+    {% component "error_fallback" %}
+        {% fill "content" %}
+            {% component "table" / %}
+        {% endfill %}
+        {% fill "fallback" data="data" %}
+            <p>Oops, something went wrong</p>
+            {% button href="/report-error" %}
+                Report error
+            {% endbutton %}
+        {% endfill %}
+    {% endcomponent %}
+    ```
+
 - Wrap the template rendering in `Component.on_render()` in a lambda function.
 
     When you wrap the rendering call in a lambda function, and the rendering fails,

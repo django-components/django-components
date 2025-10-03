@@ -85,7 +85,7 @@ from django_components.util.routing import URLRoute, URLRouteHandler
 from django_components.util.types import Empty
 
 # NOTE: Import built-in components last to avoid circular imports
-from django_components.components import DynamicComponent
+from django_components.components import DynamicComponent, ErrorFallback
 
 # isort: on
 
@@ -120,6 +120,7 @@ __all__ = [
     "DependenciesStrategy",
     "DynamicComponent",
     "Empty",
+    "ErrorFallback",
     "ExtensionComponentConfig",
     "FillNode",
     "NotRegistered",

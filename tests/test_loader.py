@@ -250,6 +250,7 @@ class TestComponentFiles:
             "components.urls",
             "django_components.components",
             "django_components.components.dynamic",
+            "django_components.components.error_fallback",
             "tests.test_app.components.app_lvl_comp.app_lvl_comp",
         ]
 
@@ -264,7 +265,8 @@ class TestComponentFiles:
         assert file_paths[7].parts[-3:] == ("tests", "components", "urls.py")
         assert file_paths[8].parts[-3:] == ("django_components", "components", "__init__.py")
         assert file_paths[9].parts[-3:] == ("django_components", "components", "dynamic.py")
-        assert file_paths[10].parts[-5:] == ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.py")
+        assert file_paths[10].parts[-3:] == ("django_components", "components", "error_fallback.py")
+        assert file_paths[11].parts[-5:] == ("tests", "test_app", "components", "app_lvl_comp", "app_lvl_comp.py")
 
     @djc_test(
         django_settings={

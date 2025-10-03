@@ -170,7 +170,7 @@ COMPONENTS = {
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L988" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/templatetags/component_tags.py#L990" target="_blank">See source code</a>
 
 
 
