@@ -1838,7 +1838,7 @@ class TestComponentHook:
             """
 
             def on_render(self, context: Context, template: Template):
-                html, error = yield lambda: template.render(context)
+                html, _error = yield lambda: template.render(context)
                 return html + "<p>Hello</p>"
 
         rendered = SimpleComponent.render()
@@ -1850,7 +1850,7 @@ class TestComponentHook:
         # Works without lambda
         class SimpleComponent2(SimpleComponent):
             def on_render(self, context: Context, template: Template):
-                html, error = yield template.render(context)
+                html, _error = yield template.render(context)
                 return html + "<p>Hello</p>"
 
         rendered2 = SimpleComponent2.render()
@@ -1865,12 +1865,11 @@ class TestComponentHook:
 
         class SimpleComponent(Component):
             def on_render(self, context: Context, template: Template):
-                html, error = yield lambda: broken_template()
+                _html, error = yield lambda: broken_template()
                 error.args = ("ERROR MODIFIED",)
 
         with pytest.raises(
-            ValueError,
-            match=re.escape("An error occured while rendering components SimpleComponent:\nERROR MODIFIED")
+            ValueError, match=re.escape("An error occured while rendering components SimpleComponent:\nERROR MODIFIED")
         ):
             SimpleComponent.render()
 
@@ -1879,14 +1878,11 @@ class TestComponentHook:
             def on_render(self, context: Context, template: Template):
                 # This raises an error instead of capturing it,
                 # so we never get to modifying the error.
-                html, error = yield broken_template()
+                _html, error = yield broken_template()
                 error.args = ("ERROR MODIFIED",)
 
         with pytest.raises(
-            ValueError,
-            match=re.escape(
-                "An error occured while rendering components SimpleComponent2:\nBROKEN"
-            )
+            ValueError, match=re.escape("An error occured while rendering components SimpleComponent2:\nBROKEN")
         ):
             SimpleComponent2.render()
 
