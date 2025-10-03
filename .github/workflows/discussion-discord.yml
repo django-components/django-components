@@ -1,0 +1,35 @@
+name: Notify Discord on new discussions
+
+on:
+    discussion:
+        types: [created]
+
+jobs:
+    notify:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Post to Discord (development channel)
+              env:
+                  DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_DEVELOPMENT }}
+              run: |
+                  payload=$(jq -n \
+                    --arg title "${{ github.event.discussion.title }}" \
+                    --arg url "${{ github.event.discussion.html_url }}" \
+                    --arg user "${{ github.event.discussion.user.login }}" \
+                    --arg repo "${{ github.repository }}" \
+                    --arg number "#${{ github.event.discussion.number }}" \
+                    '{
+                      "username": "GitHub Discussions",
+                      "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                      "embeds": [
+                        {
+                          "title": "New discussion: \($number) \($title)",
+                          "url": \($url),
+                          "color": 16776960,
+                          "author": {"name": \($user)},
+                          "footer": {"text": \($repo)},
+                          "timestamp": "${{ github.event.discussion.created_at }}"
+                        }
+                      ]
+                    }')
+                  curl -sS -X POST -H "Content-Type: application/json" -d "$payload" "$DISCORD_WEBHOOK_URL" | cat
