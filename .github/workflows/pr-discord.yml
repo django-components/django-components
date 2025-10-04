@@ -1,7 +1,10 @@
 name: Notify Discord on new PRs
 
 on:
-  pull_request:
+  # NOTE: Using `pull_request_target` instead of `pull_request`
+  # so we can access repository secrets.
+  # See https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request_target
+  pull_request_target:
     types: [opened]
 
 jobs:
