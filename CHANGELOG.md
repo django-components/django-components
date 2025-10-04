@@ -4,23 +4,79 @@
 
 #### Feat
 
+- New built-in component [`ErrorFallback`](https://django-components.github.io/django-components/0.142.0/reference/components/)
+
+    Use `ErrorFallback` to catch errors and display a fallback content instead.
+
+    This is similar to React's [`ErrorBoundary`](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
+    component.
+
+    Either pass the fallback as a kwarg:
+
+    ```django
+    {% component "error_fallback" fallback="Oops, something went wrong" %}
+        {% component "table" / %}
+    {% endcomponent %}
+    ```
+
+    Or use the full `fallback` slot:
+
+    ```django
+    {% component "error_fallback" %}
+        {% fill "content" %}
+            {% component "table" / %}
+        {% endfill %}
+        {% fill "fallback" data="data" %}
+            <p>Oops, something went wrong</p>
+            {% button href="/report-error" %}
+                Report error
+            {% endbutton %}
+        {% endfill %}
+    {% endcomponent %}
+    ```
+
+- Wrap the template rendering in `Component.on_render()` in a lambda function.
+
+    When you wrap the rendering call in a lambda function, and the rendering fails,
+    the error will be yielded back in the `(None, Exception)` tuple.
+
+    Before:
+
+    ```py
+    class MyTable(Component):
+        def on_render(self, context, template):
+            try:
+                intermediate = template.render(context)
+                html, error = yield intermediate
+            except Exception as e:
+                html, error = None, e
+    ```
+
+    After:
+
+    ```py
+    class MyTable(Component):
+        def on_render(self, context, template):
+            html, error = yield lambda: template.render(context)
+    ```
+
 - Multiple yields in `Component.on_render()` - You can now yield multiple times within the same `on_render` method for complex rendering scenarios.
 
     ```py
     class MyTable(Component):
         def on_render(self, context, template):
-            # First yield - render with one context
+            # First yield
             with context.push({"mode": "header"}):
-                header_html, header_error = yield template.render(context)
+                header_html, header_error = yield lambda: template.render(context)
             
-            # Second yield - render with different context
+            # Second yield
             with context.push({"mode": "body"}):
-                body_html, body_error = yield template.render(context)
+                body_html, body_error = yield lambda: template.render(context)
             
-            # Third yield - render a string directly
+            # Third yield
             footer_html, footer_error = yield "Footer content"
             
-            # Process all results and return final output
+            # Process all results
             if header_error or body_error or footer_error:
                 return "Error occurred during rendering"
             
@@ -50,6 +106,8 @@
     ```
 
 ## v0.141.6
+
+_29 Sep 2025_
 
 #### Fix
 
@@ -104,6 +162,8 @@
 
 ## v0.141.5
 
+_10 Sep 2025_
+
 #### Fix
 
 - Tests - Fix bug when using `@djc_test` decorator and the `COMPONENTS`
@@ -112,12 +172,16 @@
 
 ## v0.141.4
 
+_15 Aug 2025_
+
 #### Fix
 
 - Fix compatibility with Django's `{% include %}` and `{% extends %}` tags.
   See [#1325](https://github.com/django-components/django-components/issues/1325)
 
 ## v0.141.3
+
+_14 Aug 2025_
 
 #### Feat
 
@@ -134,11 +198,15 @@
 
 ## v0.141.2
 
+_21 Jul 2025_
+
 #### Fix
 
 - Fix bug where JS and CSS were missing when `{% component %}` tag was inside `{% include %}` tag ([#1296](https://github.com/django-components/django-components/issues/1296))
 
 ## v0.141.1
+
+_03 Jul 2025_
 
 #### Fix
 
@@ -157,6 +225,8 @@
 - Do not send `template_rendered` signal when rendering a component with no template. ([#1277](https://github.com/django-components/django-components/issues/1277))
 
 ## v0.141.0
+
+_10 Jun 2025_
 
 #### Feat
 
@@ -200,11 +270,15 @@
 
 ## v0.140.1
 
+_05 Jun 2025_
+
 #### Fix
 
 - Fix typo preventing benchmarking ([#1235](https://github.com/django-components/django-components/pull/1235))
 
 ## v0.140.0 🚨📢
+
+_05 Jun 2025_
 
 ⚠️ Major release ⚠️ - Please test thoroughly before / after upgrading.
 
@@ -1552,6 +1626,8 @@ Summary:
 
 ## v0.139.1
 
+_20 Apr 2025_
+
 #### Fix
 
 - Fix compatibility of component caching with `{% extend %}` block ([#1135](https://github.com/django-components/django-components/issues/1135))
@@ -1584,17 +1660,23 @@ Summary:
 
 ## v0.139.0
 
+_12 Apr 2025_
+
 #### Fix
 
 - Fix bug: Fix compatibility with `Finder.find()` in Django 5.2 ([#1119](https://github.com/django-components/django-components/issues/1119))
 
 ## v0.138
 
+_09 Apr 2025_
+
 #### Fix
 
 - Fix bug: Allow components with `Url.public = True` to be defined before `django.setup()`
 
 ## v0.137
+
+_09 Apr 2025_
 
 #### Feat
 
@@ -1685,6 +1767,8 @@ Summary:
 
 ## v0.136 🚨📢
 
+_05 Apr 2025_
+
 #### BREAKING CHANGES 🚨📢
 
 - Component input validation was moved to a separate extension [`djc-ext-pydantic`](https://github.com/django-components/djc-ext-pydantic).
@@ -1705,6 +1789,8 @@ Summary:
 - Make it possible to resolve URLs added by extensions by their names
 
 ## v0.135
+
+_31 Mar 2025_
 
 #### Feat
 
@@ -1769,11 +1855,15 @@ where each class name or style property can be managed separately.
 
 ## v0.134
 
+_23 Mar 2025_
+
 #### Fix
 
 - HOTFIX: Fix the use of URLs in `Component.Media.js` and `Component.Media.css`
 
 ## v0.133
+
+_23 Mar 2025_
 
 ⚠️ Attention ⚠️ - Please update to v0.134 to fix bugs introduced in v0.132.
 
@@ -1782,6 +1872,8 @@ where each class name or style property can be managed separately.
 - HOTFIX: Fix the use of URLs in `Component.Media.js` and `Component.Media.css`
 
 ## v0.132
+
+_22 Mar 2025_
 
 ⚠️ Attention ⚠️ - Please update to v0.134 to fix bugs introduced in v0.132.
 
@@ -1802,6 +1894,8 @@ where each class name or style property can be managed separately.
 - Fix installation for Python 3.13 on Windows.
 
 ## v0.131
+
+_20 Mar 2025_
 
 #### Feat
 
@@ -1851,6 +1945,8 @@ where each class name or style property can be managed separately.
 
 ## v0.130
 
+_20 Feb 2025_
+
 #### Feat
 
 - Access the HttpRequest object under `Component.request`.
@@ -1875,6 +1971,8 @@ where each class name or style property can be managed separately.
 
 ## v0.129
 
+_16 Feb 2025_
+
 #### Fix
 
 - Fix thread unsafe media resolve validation by moving it to ComponentMedia `__post_init` ([#977](https://github.com/django-components/django-components/pull/977)
@@ -1882,6 +1980,8 @@ where each class name or style property can be managed separately.
 - Fix error when template cache setting (`template_cache_size`) is set to 0 ([#974](https://github.com/django-components/django-components/pull/974)
 
 ## v0.128
+
+_04 Feb 2025_
 
 #### Feat
 
@@ -1905,11 +2005,15 @@ where each class name or style property can be managed separately.
 
 ## v0.127
 
+_01 Feb 2025_
+
 #### Fix
 
 - Fix component rendering when using `{% cache %}` with remote cache and multiple web servers ([#930](https://github.com/django-components/django-components/issues/930))
 
 ## v0.126
+
+_29 Jan 2025_
 
 #### Refactor
 
@@ -1920,6 +2024,8 @@ where each class name or style property can be managed separately.
     - And for the end of `<head>` we search for the **first** occurrence of `</head>`
 
 ## v0.125
+
+_22 Jan 2025_
 
 ⚠️ Attention ⚠️ - We migrated from `EmilStenstrom/django-components` to `django-components/django-components`.
 
@@ -1988,6 +2094,8 @@ If you see any broken links or other issues, please report them in [#922](https:
 
 ## v0.124
 
+_07 Jan 2025_
+
 #### Feat
 
 - Instead of inlining the JS and CSS under `Component.js` and `Component.css`, you can move
@@ -2039,11 +2147,15 @@ If you see any broken links or other issues, please report them in [#922](https:
 
 ## v0.123
 
+_23 Dec 2024_
+
 #### Fix
 
 - Fix edge cases around rendering components whose templates used the `{% extends %}` template tag ([#859](https://github.com/django-components/django-components/pull/859))
 
 ## v0.122
+
+_19 Dec 2024_
 
 #### Feat
 
@@ -2051,11 +2163,15 @@ If you see any broken links or other issues, please report them in [#922](https:
 
 ## v0.121
 
+_17 Dec 2024_
+
 #### Fix
 
 - Fix the use of Django template filters (`|lower:"etc"`) with component inputs [#855](https://github.com/django-components/django-components/pull/855).
 
 ## v0.120
+
+_15 Dec 2024_
 
 ⚠️ Attention ⚠️ - Please update to v0.121 to fix bugs introduced in v0.119.
 
@@ -2064,6 +2180,8 @@ If you see any broken links or other issues, please report them in [#922](https:
 - Fix the use of translation strings `_("bla")` as inputs to components [#849](https://github.com/django-components/django-components/pull/849).
 
 ## v0.119
+
+_13 Dec 2024_
 
 ⚠️ Attention ⚠️ - This release introduced bugs [#849](https://github.com/django-components/django-components/pull/849), [#855](https://github.com/django-components/django-components/pull/855). Please update to v0.121.
 
@@ -2080,6 +2198,8 @@ If you see any broken links or other issues, please report them in [#922](https:
 - Internal parsing of template tags tag was updated. No API change. (https://github.com/django-components/django-components/pull/827)
 
 ## v0.118
+
+_10 Dec 2024_
 
 #### Feat
 
@@ -2101,6 +2221,8 @@ If you see any broken links or other issues, please report them in [#922](https:
 
 ## v0.117
 
+_08 Dec 2024_
+
 #### Fix
 
 - The HTML parser no longer erronously inserts `<html><head><body>` on some occasions, and
@@ -2111,6 +2233,8 @@ If you see any broken links or other issues, please report them in [#922](https:
 - Replaced [Selectolax](https://github.com/rushter/selectolax) with [BeautifulSoup4](https://www.crummy.com/software/BeautifulSoup/bs4/doc/) as project dependencies.
 
 ## v0.116
+
+_06 Dec 2024_
 
 ⚠️ Attention ⚠️ - Please update to v0.117 to fix known bugs. See [#791](https://github.com/django-components/django-components/issues/791) and [#789](https://github.com/django-components/django-components/issues/789) and [#818](https://github.com/django-components/django-components/issues/818).
 
@@ -2159,6 +2283,8 @@ If you see any broken links or other issues, please report them in [#922](https:
 
 ## v0.115
 
+_02 Dec 2024_
+
 ⚠️ Attention ⚠️ - Please update to v0.117 to fix known bugs. See [#791](https://github.com/django-components/django-components/issues/791) and [#789](https://github.com/django-components/django-components/issues/789) and [#818](https://github.com/django-components/django-components/issues/818).
 
 #### Fix
@@ -2167,6 +2293,8 @@ If you see any broken links or other issues, please report them in [#922](https:
  (like `Component.template_name`) to POSIX paths.
 
 ## v0.114
+
+_27 Nov 2024_
 
 ⚠️ Attention ⚠️ - Please update to v0.117 to fix known bugs. See [#791](https://github.com/django-components/django-components/issues/791) and [#789](https://github.com/django-components/django-components/issues/789) and [#818](https://github.com/django-components/django-components/issues/818).
 
@@ -2177,6 +2305,8 @@ If you see any broken links or other issues, please report them in [#922](https:
 
 ## v0.113
 
+_26 Nov 2024_
+
 ⚠️ Attention ⚠️ - Please update to v0.117 to fix known bugs. See [#791](https://github.com/django-components/django-components/issues/791) and [#789](https://github.com/django-components/django-components/issues/789) and [#818](https://github.com/django-components/django-components/issues/818).
 
 #### Fix
@@ -2184,6 +2314,8 @@ If you see any broken links or other issues, please report them in [#922](https:
 - Ensure consistent order of scripts in `Component.Media.js`
 
 ## v0.112
+
+_26 Nov 2024_
 
 ⚠️ Attention ⚠️ - Please update to v0.117 to fix known bugs. See [#791](https://github.com/django-components/django-components/issues/791) and [#789](https://github.com/django-components/django-components/issues/789) and [#818](https://github.com/django-components/django-components/issues/818).
 
@@ -2193,6 +2325,8 @@ If you see any broken links or other issues, please report them in [#922](https:
 
 ## v0.111
 
+_26 Nov 2024_
+
 ⚠️ Attention ⚠️ - Please update to v0.117 to fix known bugs. See [#791](https://github.com/django-components/django-components/issues/791) and [#789](https://github.com/django-components/django-components/issues/789) and [#818](https://github.com/django-components/django-components/issues/818).
 
 #### Fix
@@ -2201,6 +2335,8 @@ If you see any broken links or other issues, please report them in [#922](https:
   tried to access provided data too early.
 
 ## v0.110 🚨📢
+
+_25 Nov 2024_
 
 _25 Nov 2024_
 
@@ -2530,6 +2666,8 @@ importing them.
 
 _11 Sep 2024_
 
+_11 Sep 2024_
+
 #### BREAKING CHANGES
 
 - `django_components.safer_staticfiles` app was removed. It is no longer needed.
@@ -2583,6 +2721,8 @@ _4 Sep 2024_
 
 _29 Aug 2024_
 
+_29 Aug 2024_
+
 #### Feat
 
 - Added support for dynamic components, where the component name is passed as a variable. (See [Dynamic components](https://github.com/django-components/django-components#dynamic-components))
@@ -2616,6 +2756,8 @@ _27 Aug 2024_
 - Component library authors can now configure `CONTEXT_BEHAVIOR` and `TAG_FORMATTER` settings independently from user settings.
 
 ## v0.92 🚨📢
+
+_22 Aug 2024_
 
 _22 Aug 2024_
 
@@ -2672,6 +2814,8 @@ _18 Aug 2024_
 
 _29 Jul 2024_
 
+_29 Jul 2024_
+
 #### BREAKING CHANGES
 
 - Autodiscovery module resolution changed. Following undocumented behavior was removed:
@@ -2688,6 +2832,8 @@ _29 Jul 2024_
     - Previously, autodiscovery handled relative files in `STATICFILES_DIRS`. To align with Django, `STATICFILES_DIRS` now must be full paths ([Django docs](https://docs.djangoproject.com/en/5.2/ref/settings/#std-setting-STATICFILES_DIRS)).
 
 ## v0.81 🚨📢
+
+_12 Jun 2024_
 
 _12 Jun 2024_
 
@@ -2713,11 +2859,15 @@ _1 Jun 2024_
 
 _1 Jun 2024_
 
+_1 Jun 2024_
+
 #### BREAKING CHANGES
 
 - Default value for the `COMPONENTS.context_behavior` setting was changes from `"isolated"` to `"django"`. If you did not set this value explicitly before, this may be a breaking change. See the rationale for change [here](https://github.com/django-components/django-components/issues/498).
 
 ## v0.77 🚨📢
+
+_23 May 2024_
 
 _23 May 2024_
 
@@ -2754,6 +2904,8 @@ _12 May 2024_
 
 _1 May 2024_
 
+_1 May 2024_
+
 #### BREAKING CHANGES
 
 - `{% if_filled "my_slot" %}` tags were replaced with `{{ component_vars.is_filled.my_slot }}` variables.
@@ -2769,6 +2921,8 @@ _17 Apr 2024_
 - Changed the default way how context variables are resolved in slots. See the [documentation](https://github.com/django-components/django-components/tree/0.67#isolate-components-slots) for more details.
 
 ## v0.50 🚨📢
+
+_26 Feb 2024_
 
 _26 Feb 2024_
 
@@ -2805,6 +2959,8 @@ _11 Apr 2023_
 - A second installable app `django_components.safer_staticfiles`. It provides the same behavior as `django.contrib.staticfiles` but with extra security guarantees (more info below in [Security Notes](https://github.com/django-components/django-components#security-notes)).
 
 ## v0.26 🚨📢
+
+_14 Mar 2023_
 
 _14 Mar 2023_
 

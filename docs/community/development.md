@@ -98,6 +98,22 @@ pytest
 tox -e py38
 ```
 
+## Snapshot tests
+
+Some tests rely on snapshot testing with [syrupy](https://github.com/syrupy-project/syrupy) to test the HTML output of the components.
+
+If you need to update the snapshot tests, add `--snapshot-update` to the pytest command:
+
+```sh
+pytest --snapshot-update
+```
+
+Or with tox:
+
+```sh
+tox -e py39 -- --snapshot-update
+```
+
 ## Dev server
 
 How do you check that your changes to django-components project will work in an actual Django project?
@@ -294,14 +310,21 @@ Head over to [Dev guides](./devguides/dependency_mgmt.md) for a deep dive into h
 
 ### Updating supported versions
 
-The `scripts/supported_versions.py` script can be used to update the supported versions.
+The `scripts/supported_versions.py` script manages the supported Python and Django versions for the project.
+
+The script runs automatically via GitHub Actions once a week to check for version updates. If changes are detected, it creates a GitHub issue with the necessary updates. See the [`maint-supported-versions.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/maint-supported-versions.yml) workflow.
+
+You can also run the script manually:
 
 ```sh
-python scripts/supported_versions.py
+# Check if versions need updating
+python scripts/supported_versions.py check
+
+# Generate configuration snippets for manual updates
+python scripts/supported_versions.py generate
 ```
 
-This will check the current versions of Django and Python, and will print to the terminal
-all the places that need updating and what to set them to.
+The `generate` command will print to the terminal all the places that need updating and what to set them to.
 
 ### Updating link references
 
@@ -320,6 +343,25 @@ Then, you can run the script to update the URLs in the codebase.
 ```sh
 python scripts/validate_links.py --rewrite
 ```
+
+## Integrations
+
+### Discord
+
+We integrate with our [Discord server](https://discord.gg/NaQ8QPyHtD) to notify about new releases, issues, PRs, and discussions.
+
+See:
+- [`issue-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/issue-discord.yml)
+- [`release-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/release-discord.yml)
+- [`pr-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/pr-discord.yml)
+- [`discussion-discord.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/discussion-discord.yml)
+
+See [this tutorial](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) on how to set up the Discord webhooks.
+
+The Discord webhook URLs are stored as secrets in the GitHub repository.
+
+- `DISCORD_WEBHOOK_DEVELOPMENT` - For new issues
+- `DISCORD_WEBHOOK_ANNOUNCEMENTS` - For new releases
 
 ## Project management
 

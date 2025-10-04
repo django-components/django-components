@@ -1533,7 +1533,7 @@ class TestComponentHook:
 
             def on_render(self, context: Context, template: Optional[Template]):
                 calls.append("slotted__on_render_pre")
-                _html, _error = yield template.render(context)  # type: ignore[union-attr]
+                _html, _error = yield lambda: template.render(context)  # type: ignore[union-attr]
 
                 calls.append("slotted__on_render_post")
 
@@ -1566,7 +1566,7 @@ class TestComponentHook:
                 if template is None:
                     yield None
                 else:
-                    _html, _error = yield template.render(context)
+                    _html, _error = yield lambda: template.render(context)
 
                 calls.append("inner__on_render_post")
 
@@ -1600,7 +1600,7 @@ class TestComponentHook:
 
             def on_render(self, context: Context, template: Optional[Template]):
                 calls.append("middle__on_render_pre")
-                _html, _error = yield template.render(context)  # type: ignore[union-attr]
+                _html, _error = yield lambda: template.render(context)  # type: ignore[union-attr]
 
                 calls.append("middle__on_render_post")
 
@@ -1632,7 +1632,7 @@ class TestComponentHook:
 
             def on_render(self, context: Context, template: Optional[Template]):
                 calls.append("outer__on_render_pre")
-                _html, _error = yield template.render(context)  # type: ignore[union-attr]
+                _html, _error = yield lambda: template.render(context)  # type: ignore[union-attr]
 
                 calls.append("outer__on_render_post")
 
@@ -1694,7 +1694,9 @@ class TestComponentHook:
             "outer__on_render_before",
             "outer__on_render_pre",
             "middle__on_render_before",
+            "middle__on_render_before",
             "middle__on_render_pre",
+            "inner__on_render_before",
             "inner__on_render_before",
             "inner__on_render_pre",
             "slotted__on_render_before",
@@ -1703,14 +1705,13 @@ class TestComponentHook:
             "slotted__on_render_after",
             "inner__on_render_post",
             "inner__on_render_after",
-            "inner__on_render_before",
             "inner__on_render_pre",
             "inner__on_render_post",
             "inner__on_render_after",
             "middle__on_render_post",
             "middle__on_render_after",
-            "middle__on_render_before",
             "middle__on_render_pre",
+            "inner__on_render_before",
             "inner__on_render_before",
             "inner__on_render_pre",
             "slotted__on_render_before",
@@ -1719,7 +1720,6 @@ class TestComponentHook:
             "slotted__on_render_after",
             "inner__on_render_post",
             "inner__on_render_after",
-            "inner__on_render_before",
             "inner__on_render_pre",
             "inner__on_render_post",
             "inner__on_render_after",
@@ -1752,7 +1752,7 @@ class TestComponentHook:
                 # Check we can modify entries set by other methods
                 context["from_on_before__edited1"] = context["from_on_before"] + " (on_render)"
 
-                _html, _error = yield template.render(context)
+                _html, _error = yield lambda: template.render(context)
 
                 context["from_on_render_post"] = "3"
 
@@ -1804,7 +1804,7 @@ class TestComponentHook:
             def on_render(self, context: Context, template: Template):
                 template.nodelist.append(TextNode("\n---\nFROM_ON_RENDER_PRE"))
 
-                _html, _error = yield template.render(context)
+                _html, _error = yield lambda: template.render(context)
 
                 template.nodelist.append(TextNode("\n---\nFROM_ON_RENDER_POST"))
 
@@ -1831,6 +1831,61 @@ class TestComponentHook:
             """,
         )
 
+    def test_lambda_yield(self):
+        class SimpleComponent(Component):
+            template: types.django_html = """
+                text
+            """
+
+            def on_render(self, context: Context, template: Template):
+                html, _error = yield lambda: template.render(context)
+                return html + "<p>Hello</p>"
+
+        rendered = SimpleComponent.render()
+        assertHTMLEqual(
+            rendered,
+            "text<p data-djc-id-ca1bc3e>Hello</p>",
+        )
+
+        # Works without lambda
+        class SimpleComponent2(SimpleComponent):
+            def on_render(self, context: Context, template: Template):
+                html, _error = yield template.render(context)
+                return html + "<p>Hello</p>"
+
+        rendered2 = SimpleComponent2.render()
+        assertHTMLEqual(
+            rendered2,
+            "text<p data-djc-id-ca1bc3f>Hello</p>",
+        )
+
+    def test_lambda_yield_error(self):
+        def broken_template():
+            raise ValueError("BROKEN")
+
+        class SimpleComponent(Component):
+            def on_render(self, context: Context, template: Template):
+                _html, error = yield lambda: broken_template()
+                error.args = ("ERROR MODIFIED",)
+
+        with pytest.raises(
+            ValueError, match=re.escape("An error occured while rendering components SimpleComponent:\nERROR MODIFIED")
+        ):
+            SimpleComponent.render()
+
+        # Does NOT work without lambda
+        class SimpleComponent2(SimpleComponent):
+            def on_render(self, context: Context, template: Template):
+                # This raises an error instead of capturing it,
+                # so we never get to modifying the error.
+                _html, error = yield broken_template()
+                error.args = ("ERROR MODIFIED",)
+
+        with pytest.raises(
+            ValueError, match=re.escape("An error occured while rendering components SimpleComponent2:\nBROKEN")
+        ):
+            SimpleComponent2.render()
+
     def test_on_render_no_yield(self):
         class SimpleComponent(Component):
             template: types.django_html = """
@@ -1852,7 +1907,7 @@ class TestComponentHook:
             """
 
             def on_render(self, context: Context, template: Template):
-                _html, error = yield template.render(context)
+                _html, error = yield lambda: template.render(context)
 
                 raise error from None  # Re-raise original error
 
@@ -1869,9 +1924,9 @@ class TestComponentHook:
                 {% if case == 1 %}
                     {% component "broken" / %}
                 {% elif case == 2 %}
-                    Hello
+                    <div>Hello</div>
                 {% elif case == 3 %}
-                    There
+                    <div>There</div>
                 {% endif %}
             """
 
@@ -1879,34 +1934,36 @@ class TestComponentHook:
                 assert template is not None
 
                 with context.push({"case": 1}):
-                    html1, error1 = yield template.render(context)
+                    html1, error1 = yield lambda: template.render(context)
                     results.append((html1, error1))
 
                 with context.push({"case": 2}):
-                    html2, error2 = yield template.render(context)
+                    html2, error2 = yield lambda: template.render(context)
                     results.append((html2.strip(), error2))
 
                 with context.push({"case": 3}):
-                    html3, error3 = yield template.render(context)
+                    html3, error3 = yield lambda: template.render(context)
                     results.append((html3.strip(), error3))
 
-                html4, error4 = yield "Other result"
+                html4, error4 = yield "<div>Other result</div>"
                 results.append((html4, error4))
 
-                return "Final result"
+                return "<div>Final result</div>"
 
         result = SimpleComponent.render()
-        assert result == "Final result"
+        assert result == '<div data-djc-id-ca1bc3e="">Final result</div>'
 
         # NOTE: Exceptions are stubborn, comparison evaluates to False even with the same message.
         assert results[0][0] is None
         assert isinstance(results[0][1], ValueError)
         assert results[0][1].args[0] == "An error occured while rendering components broken:\nBROKEN"
 
+        # NOTE: It's important that all the results are wrapped in `<div>`
+        #       so we can check if the djc-id attribute was set.
         assert results[1:] == [
-            ("Hello", None),
-            ("There", None),
-            ("Other result", None),
+            ('<div data-djc-id-ca1bc3e="">Hello</div>', None),
+            ('<div data-djc-id-ca1bc3e="">There</div>', None),
+            ('<div data-djc-id-ca1bc3e="">Other result</div>', None),
         ]
 
     @djc_test(
@@ -1988,7 +2045,7 @@ class TestComponentHook:
                         if template is None:
                             yield None
                         else:
-                            _html, _error = yield template.render(context)
+                            _html, _error = yield lambda: template.render(context)
                         return None  # noqa: PLR1711
 
             elif action == "no_return":
@@ -1998,7 +2055,7 @@ class TestComponentHook:
                         if template is None:
                             yield None
                         else:
-                            _html, _error = yield template.render(context)
+                            _html, _error = yield lambda: template.render(context)
 
             elif action == "raise_error":
 
@@ -2007,7 +2064,7 @@ class TestComponentHook:
                         if template is None:
                             yield None
                         else:
-                            _html, _error = yield template.render(context)
+                            _html, _error = yield lambda: template.render(context)
                         raise ValueError("ERROR_FROM_ON_RENDER")
 
             elif action == "return_html":
@@ -2017,7 +2074,7 @@ class TestComponentHook:
                         if template is None:
                             yield None
                         else:
-                            _html, _error = yield template.render(context)
+                            _html, _error = yield lambda: template.render(context)
                         return "HTML_FROM_ON_RENDER"
 
             else:

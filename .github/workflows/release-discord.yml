@@ -1,0 +1,21 @@
+name: Notify Discord on Release
+
+on:
+    push:
+      tags:
+        - '*'
+  
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+
+jobs:
+  # See https://github.com/teneplaysofficial/releasify-action
+  # and https://dev.to/tene/introducing-releasify-action-announce-github-releases-on-discord-effortlessly-3132
+  discordNotification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify via Releasify
+        uses: teneplaysofficial/releasify-action@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_ANNOUNCEMENTS }}
+          username: "ReleaseBot"
