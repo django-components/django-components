@@ -219,6 +219,12 @@ The CI workflow runs when:
 - A new commit is pushed to the `master` branch - This updates the `dev` version
 - A new tag is pushed - This updates the `latest` version and the version specified in the tag name
 
+### People page
+
+The [people page](https://django-components.github.io/django-components/dev/community/people/) is regularly updated with stats about the contributors and authors. This is triggered automatically once a month or manually via the Actions tab.
+
+See [`.github/workflows/maint-docs-people.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/maint-docs-people.yml) for more details.
+
 ## Publishing
 
 We use Github actions to automatically publish new versions of django-components to PyPI when a new tag is pushed. [See the full workflow here](https://github.com/django-components/django-components/blob/master/.github/workflows/publish-to-pypi.yml).

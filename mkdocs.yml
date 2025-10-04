@@ -197,7 +197,14 @@ plugins:
             - docs/scripts/extensions.py:SourceCodeExtension
             # - docs/scripts/extensions.py:ComponentSyntaxesExtension
   - macros:
+      # Macros plugin automatically transforms markdown pages into Jinja2 templates.
+      # The combination of `render_by_default: false` and `force_render_paths` makes
+      # this behaviour OPT-IN for specific pages.
+      # See https://mkdocs-macros-plugin.readthedocs.io/en/latest/rendering/#opt-in-through-the-config-file
       render_by_default: false
       force_render_paths: community/people.md
+      # The data included in these YAML files will be available as variables in the Jinja2 templates.
+      # e.g. `{{ people.maintainers }}`
+      # See https://mkdocs-macros-plugin.readthedocs.io/en/latest/#configuration-of-the-plugin
       include_yaml:
         - people: docs/community/people.yml

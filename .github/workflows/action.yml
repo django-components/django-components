@@ -5,20 +5,24 @@ name: Django Components People
 
 on:
   schedule:
+    # At 18:00 on day-of-month 1.
     - cron: "0 18 1 * *"
 
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
 jobs:
-  job:
+  update-people:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: "3.13"
 
       - name: Install dependencies
         run: pip install -U PyGithub pyyaml pydantic pydantic-settings httpx

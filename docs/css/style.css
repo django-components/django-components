@@ -41,23 +41,23 @@ h6 {
 }
 
 .user a {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 18px;
 }
 
 .user .avatar-wrapper {
-  width: 8em;
-  height: 8em;
+  width: 6em;
+  height: 6em;
   border-radius: 50%;
   overflow: hidden;
 }
 
 .title {
-    margin: 8px 0 4px 0;
+  margin: 8px 0 4px 0;
 }
 
 .info {
-    font-size: 16px;
+  font-size: 16px;
 }

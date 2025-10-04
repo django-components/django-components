@@ -105,6 +105,10 @@
     # /components/ext/view/components/c1ab2c3?abc=123&enabled
     ```
 
+#### Docs
+
+- New [people page](https://django-components.github.io/django-components/dev/community/people/) to celebrate the contributors and authors!
+
 ## v0.141.6
 
 _29 Sep 2025_
