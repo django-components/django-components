@@ -12,7 +12,7 @@ from django_components.util.tag_parser import TagAttr, TagValue, TagValuePart, T
 
 from .testutils import setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 # NOTE: We have to define the parser to be able to resolve filters

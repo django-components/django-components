@@ -5,7 +5,7 @@ from django_components.testing import djc_test
 
 from .testutils import setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 # This same set of tests is also found in djc_html_parser, to ensure that

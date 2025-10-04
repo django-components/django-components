@@ -34,7 +34,7 @@ from django_components.urls import urlpatterns as dc_urlpatterns
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 # Client for testing endpoints via requests

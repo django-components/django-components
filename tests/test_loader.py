@@ -11,7 +11,7 @@ from django_components.util.loader import _filepath_to_python_module, get_compon
 
 from .testutils import setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 @djc_test

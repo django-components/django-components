@@ -7,7 +7,7 @@ from django_components.testing import djc_test
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 def _get_templates_used_to_render(subject_template, render_context=None):

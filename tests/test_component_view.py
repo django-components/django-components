@@ -33,7 +33,7 @@ class ComponentBeforeReady(Component):
     template = "Hello"
 
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 class CustomClient(Client):

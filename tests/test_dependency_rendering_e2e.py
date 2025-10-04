@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
     from django_components import types
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 # NOTE: All views, components,  and associated JS and CSS are defined in

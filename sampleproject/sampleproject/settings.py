@@ -169,3 +169,9 @@ LOGGING = {
         },
     },
 }
+
+#####################
+# CUSTOM SETTINGS
+#####################
+
+EXAMPLES_DIR = BASE_DIR.parent / "docs" / "examples"

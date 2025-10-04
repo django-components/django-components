@@ -8,7 +8,7 @@ from django_components.testing import djc_test
 
 from .testutils import setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 # This subclass allows us to call the `collectstatic` command from within Python.

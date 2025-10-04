@@ -50,6 +50,7 @@ def setup_test_config(
             },
         ],
         "COMPONENTS": {
+            "autodiscover": False,
             **(components or {}),
         },
         "MIDDLEWARE": [],

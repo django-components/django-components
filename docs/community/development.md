@@ -219,6 +219,43 @@ The CI workflow runs when:
 - A new commit is pushed to the `master` branch - This updates the `dev` version
 - A new tag is pushed - This updates the `latest` version and the version specified in the tag name
 
+### Examples
+
+The [examples page](../../examples) is populated from entries in `docs/examples/`. 
+
+These examples have special folder layout:
+ 
+```txt
+|- docs/
+  |- examples/
+    |- <example_name>/
+      |- component.py - The component definition
+      |- page.py      - The page view for the example
+      |- test_example_<example_name>.py - Tests
+      |- README.md    - Component documentation
+      |- images/      - Images used in README
+```
+
+This allows us to keep the examples in one place, and define, test, and document them.
+
+**Previews** - There's a script in `sampleproject/examples/utils.py` that picks up the `component.py` and `page.py` files, making them previewable in the dev server (`http://localhost:8000/examples/<example_name>`).
+
+To see all available examples, go to `http://localhost:8000/examples/`.
+
+**Tests** - Use the file format `test_example_<example_name>.py` to define tests for the example. These tests are picked up when you run pytest.
+
+#### Adding examples
+
+Let's say we want to add an example called `form`:
+
+1. Create a new directory in `docs/examples/form/`
+2. Add actual implementation in `component.py`
+3. Add a live demo page in `page.py`
+4. Add tests in `test_example_form.py`
+5. Write up the documentation in `README.md`
+6. Link to that new page from `docs/examples/index.md`.
+7. Update `docs/examples/.nav.yml` to update the navigation.
+
 ### People page
 
 The [people page](https://django-components.github.io/django-components/dev/community/people/) is regularly updated with stats about the contributors and authors. This is triggered automatically once a month or manually via the Actions tab.

@@ -134,6 +134,7 @@ ignore = [
     "SIM117",  # Use a single `with` statement with multiple contexts instead of nested `with` statements
     "SLF001",  # Private member accessed: `_registry`
     "TRY300",  # Consider moving this statement to an `else` block
+    "TRY301",  # Abstract `raise` to an inner function
 
     # TODO: Following could be useful to start using, but might require more changes.
     "C420",  # Unnecessary dict comprehension for iterable; use `dict.fromkeys` instead
@@ -216,5 +217,6 @@ reportIncompatibleVariableOverride = "none"
 [tool.pytest.ini_options]
 testpaths = [
     "tests",
+    "docs/examples",
 ]
 asyncio_mode = "auto"

@@ -5,8 +5,6 @@ from django_components import Component, Slot, register, types
 
 @register("form")
 class Form(Component):
-    template_file = "form.html"
-
     class Kwargs(NamedTuple):
         editable: bool = True
         method: str = "post"
@@ -23,6 +21,28 @@ class Form(Component):
             "attrs": kwargs.attrs,
             "fields": fields,
         }
+
+    template: types.django_html = """
+        <form
+            {% if submit_href and editable %} action="{{ submit_href }}" {% endif %}
+            method="{{ method }}"
+            {% html_attrs attrs %}
+        >
+            {% slot "prepend" / %}
+
+            <div {% html_attrs form_content_attrs %}>
+                {# Generate a grid of fields and labels out of given slots #}
+                <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-2 items-center">
+                    {% for field_name, label in fields %}
+                        {{ label }}
+                        {% slot name=field_name / %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% slot "append" / %}
+        </form>
+    """
 
 
 # Users of this component can define form fields as slots.

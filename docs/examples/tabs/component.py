@@ -37,9 +37,6 @@ class _TablistImpl(Component):
     Refer to `Tablist` API below.
     """
 
-    template_file = "tabs.html"
-    css_file = "tabs.css"
-
     class Media:
         js = (
             # `mark_safe` is used so the script tag is usd as is, so we can add `defer` flag.
@@ -74,6 +71,160 @@ class _TablistImpl(Component):
             "tab_data": tab_data,
             "selected_tab": selected_tab,
         }
+
+    template: t.django_html = """
+        {% load component_tags %}
+        <div
+            x-data="{
+                selectedTab: '{{ selected_tab }}',
+            }"
+            {% html_attrs
+                container_attrs
+                id=id
+            %}
+        >
+            <div
+                {% html_attrs
+                    tablist_attrs
+                    role="tablist"
+                    aria-label=name
+                %}
+            >
+                {% for tab_datum, is_hidden in tab_data %}
+                    <button
+                        :aria-selected="selectedTab === '{{ tab_datum.tab_id }}'"
+                        @click="selectedTab = '{{ tab_datum.tab_id }}'"
+                        {% html_attrs
+                            tab_attrs
+                            id=tab_datum.tab_id
+                            role="tab"
+                            aria-controls=tab_datum.tabpanel_id
+                            disabled=tab_datum.disabled
+                        %}
+                    >
+                        {{ tab_datum.header }}
+                    </button>
+                {% endfor %}
+            </div>
+            {% for tab_datum, is_hidden in tab_data %}
+                <article
+                    :hidden="selectedTab != '{{ tab_datum.tab_id }}'"
+                    {% html_attrs
+                        tabpanel_attrs
+                        hidden=is_hidden
+                        role="tabpanel"
+                        id=tab_datum.tabpanel_id
+                        aria-labelledby=tab_datum.tab_id
+                    %}
+                >
+                    {{ tab_datum.content }}
+                </article>
+            {% endfor %}
+        </div>
+    """
+
+    css: t.css = """
+        /* based on https://codepen.io/brettsmason/pen/zYGEgZP */
+
+        [role="tablist"] {
+            margin: 0 0 -0.1em;
+            overflow: visible;
+        }
+
+        [role="tab"] {
+            position: relative;
+            margin: 0;
+            padding: 0.3em 0.5em 0.4em;
+            border: 1px solid hsl(219, 1%, 72%);
+            border-radius: 0.2em 0.2em 0 0;
+            box-shadow: 0 0 0.2em hsl(219, 1%, 72%);
+            overflow: visible;
+            font-family: inherit;
+            font-size: inherit;
+            background: hsl(220, 20%, 94%);
+        }
+
+        [role="tab"]:hover::before,
+        [role="tab"]:focus::before,
+        [role="tab"][aria-selected="true"]::before {
+            position: absolute;
+            bottom: 100%;
+            right: -1px;
+            left: -1px;
+            border-radius: 0.2em 0.2em 0 0;
+            border-top: 3px solid LinkText;
+            content: '';
+        }
+
+        [role="tab"][aria-selected="true"] {
+            border-radius: 0;
+            background: hsl(220, 43%, 99%);
+            outline: 0;
+        }
+
+        [role="tab"][aria-selected="true"]:not(:focus):not(:hover)::before {
+            border-top: 5px solid SelectedItem;
+        }
+
+        [role="tab"][aria-selected="true"]::after {
+            position: absolute;
+            z-index: 3;
+            bottom: -1px;
+            right: 0;
+            left: 0;
+            height: 0.3em;
+            background: hsl(220, 43%, 99%);
+            box-shadow: none;
+            content: '';
+        }
+
+        [role="tab"]:hover,
+        [role="tab"]:focus,
+        [role="tab"]:active {
+            outline: 0;
+            border-radius: 0;
+            color: inherit;
+        }
+
+        [role="tab"]:hover::before,
+        [role="tab"]:focus::before {
+            border-color: LinkText;
+        }
+
+        [role="tabpanel"] {
+            position: relative;
+            z-index: 2;
+            padding: 0.5em 0.5em 0.7em;
+            border: 1px solid hsl(219, 1%, 72%);
+            border-radius: 0 0.2em 0.2em 0.2em;
+            box-shadow: 0 0 0.2em hsl(219, 1%, 72%);
+            background: hsl(220, 43%, 99%);
+        }
+
+        [role="tabpanel"]:focus {
+            border-color: LinkText;
+            box-shadow: 0 0 0.2em LinkText;
+            outline: 0;
+        }
+
+        [role="tabpanel"]:focus::after {
+            position: absolute;
+            bottom: 0;
+            right: -1px;
+            left: -1px;
+            border-bottom: 3px solid LinkText;
+            border-radius: 0 0 0.2em 0.2em;
+            content: '';
+        }
+
+        [role="tabpanel"] p {
+            margin: 0;
+        }
+
+        [role="tabpanel"] * + p {
+            margin-top: 1em;
+        }
+    """
 
 
 @register("Tablist")

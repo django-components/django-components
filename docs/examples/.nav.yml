@@ -2,5 +2,5 @@
 nav:
   - index.md
   - Components:
-    - ./form.md
-    - ./tabs.md
+    - Form: ./form
+    - Tabs (AlpineJS): ./tabs

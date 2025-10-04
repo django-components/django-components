@@ -2,7 +2,7 @@
 
 A `Form` component that automatically generates labels and arranges fields in a grid. It simplifies form creation by handling the layout for you.
 
-![Form example](./images/form.png)
+![Form example](images/form.png)
 
 To get started, use the following example to create a simple form with 2 fields - `project` and `option`:
 
@@ -45,7 +45,7 @@ you can use the `label:<field_name>` slot.
 
 Whether you define custom labels or not, the form will have the following structure:
 
-![Form structure](./images/form_structure.png)
+![Form structure](images/form_structure.png)
 
 ## API
 
@@ -90,13 +90,17 @@ The `FormLabel` component accepts the following arguments:
 This will render:
 
 ```html
-<label for="user_name" class="font-semibold text-gray-700">
-  Your Name
-</label>
+<label for="user_name" class="font-semibold text-gray-700"> Your Name </label>
 ```
 
 If `title` is not provided, `field_name="user_name"` would automatically generate the title "User Name",
 converting snake_case to "Title Case".
+
+## Definition
+
+```djc_py
+--8<-- "docs/examples/form/component.py"
+```
 
 ## Example
 
@@ -105,7 +109,7 @@ To see the component in action, you can set up a view and a URL pattern as shown
 ### `views.py`
 
 ```djc_py
---8<-- "sampleproject/examples/pages/form.py"
+--8<-- "docs/examples/form/page.py"
 ```
 
 ### `urls.py`
@@ -118,19 +122,4 @@ from examples.pages.form import FormPage
 urlpatterns = [
     path("examples/form", FormPage.as_view(), name="form"),
 ]
-```
-
-## Definition
-
-### `form.py`
-
-```djc_py
---8<-- "sampleproject/examples/components/form/form.py"
-```
-
-### `form.html`
-
-```django
-{% load component_tags %}
---8<-- "sampleproject/examples/components/form/form.html"
 ```

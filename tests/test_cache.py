@@ -4,7 +4,7 @@ from django_components.util.cache import LRUCache
 
 from .testutils import setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 @djc_test

@@ -17,7 +17,7 @@ from django_components.util.tag_parser import TagAttr
 
 from .testutils import setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 @djc_test

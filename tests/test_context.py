@@ -10,7 +10,7 @@ from django_components.util.misc import gen_id
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 # Context processor that generates a unique ID. This is used to test that the context

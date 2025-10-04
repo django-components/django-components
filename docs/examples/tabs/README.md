@@ -18,7 +18,7 @@ To get started, use the following example to create a simple container with 2 ta
 {% endcomponent %}
 ```
 
-![Tabs example](./images/tabs.gif)
+![Tabs example](images/tabs.gif)
 
 ## API
 
@@ -45,30 +45,6 @@ The `Tab` component defines an individual tab. It MUST be nested inside a `Tabli
 
 Use the `Tab`'s default slot to define the content of the tab.
 
-## Example
-
-To see the component in action, you can set up a view and a URL pattern as shown below.
-
-### `views.py`
-
-This example shows how to render a full page with the tab component.
-
-```djc_py
---8<-- "sampleproject/examples/pages/tabs.py"
-```
-
-### `urls.py`
-
-```python
-from django.urls import path
-
-from examples.pages.tabs import TabsPage
-
-urlpatterns = [
-    path("examples/tabs", TabsPage.as_view(), name="tabs"),
-]
-```
-
 ## How it works
 
 At the start of rendering, `Tablist` defines special context that `Tab`s recognize.
@@ -81,20 +57,30 @@ After the rendering of `Tablist`'s body is done, we end up with list of rendered
 
 ## Definition
 
-### `tabs.py`
+```djc_py
+--8<-- "docs/examples/tabs/component.py"
+```
+
+## Example
+
+To see the component in action, you can set up a view and a URL pattern as shown below.
+
+### `views.py`
+
+This example shows how to render a full page with the tab component.
 
 ```djc_py
---8<-- "sampleproject/examples/components/tabs/tabs.py"
+--8<-- "docs/examples/tabs/page.py"
 ```
 
-### `tabs.html`
+### `urls.py`
 
-```django
---8<-- "sampleproject/examples/components/tabs/tabs.html"
-```
+```python
+from django.urls import path
 
-### `tabs.css`
+from examples.pages.tabs import TabsPage
 
-```css
---8<-- "sampleproject/examples/components/tabs/tabs.css"
+urlpatterns = [
+    path("examples/tabs", TabsPage.as_view(), name="tabs"),
+]
 ```

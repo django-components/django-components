@@ -11,7 +11,7 @@ from django_components.testing import djc_test
 
 from .testutils import setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 @djc_test

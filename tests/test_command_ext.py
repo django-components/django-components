@@ -11,7 +11,7 @@ from django_components.testing import djc_test
 
 from .testutils import setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 # NOTE: Argparse changed how the optional args are displayed in Python 3.11+
 if sys.version_info >= (3, 10):

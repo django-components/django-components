@@ -23,6 +23,8 @@ python manage.py runserver
 
 The app will be available at http://localhost:8000/.
 
+To see more examples, visit http://localhost:8000/examples/.
+
 ### Serving static files
 
 Assuming that you're running the dev server with `DEBUG=True` setting, ALL

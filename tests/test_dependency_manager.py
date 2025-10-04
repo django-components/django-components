@@ -12,7 +12,6 @@ if TYPE_CHECKING:
     from django_components import types
 
 setup_test_config(
-    components={"autodiscover": False},
     extra_settings={
         "ROOT_URLCONF": "tests.test_dependency_manager",
     },

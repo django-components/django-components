@@ -14,7 +14,7 @@ from django_components.testing import djc_test
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 # NOTE: By running garbage collection and then checking for empty caches,

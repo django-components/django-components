@@ -18,7 +18,7 @@ from django_components.testing import djc_test
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 # Test interaction of the `Slot` instances with Component rendering

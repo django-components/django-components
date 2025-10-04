@@ -25,7 +25,7 @@ except ImportError:
     TemplateProxy = None
 
 
-setup_test_config(components={"autodiscover": False})
+setup_test_config()
 
 
 # See https://github.com/django-components/django-components/issues/1323#issuecomment-3156654329

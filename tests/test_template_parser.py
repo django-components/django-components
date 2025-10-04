@@ -8,7 +8,7 @@ from django_components.util.template_parser import parse_template
 
 from .testutils import setup_test_config
 
-setup_test_config({"autodiscover": False})
+setup_test_config()
 
 
 def token2tuple(token: Token):
