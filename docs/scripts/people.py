@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import httpx
-import yaml
+import yaml  # type: ignore[import-untyped]
 from github import Github
 from pydantic import BaseModel, SecretStr
 from pydantic_settings import BaseSettings
@@ -132,7 +132,7 @@ def get_contributors(settings: Settings) -> Tuple[Counter, Dict[str, Author]]:
         last_edge = edges[-1]
         edges = get_graphql_pr_edges(settings=settings, after=last_edge.cursor)
 
-    contributors = Counter()
+    contributors: Counter[str] = Counter()
     authors: Dict[str, Author] = {}
     for pr in nodes:
         author = pr.author
@@ -158,8 +158,12 @@ def update_content(*, content_path: Path, new_content: Any) -> bool:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-    settings = Settings()
+
     git_exe = shutil.which("git")
+    if not git_exe:
+        raise RuntimeError("Cannot find git executable")
+
+    settings = Settings()
     logger.info("Using config: %s", settings.model_dump_json())
     g = Github(settings.github_token.get_secret_value())
     repo = g.get_repo(settings.github_repository)
