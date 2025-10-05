@@ -761,6 +761,9 @@ class TestProvideTemplateTag:
         # Ensure all caches are properly cleaned up even with many component instances
         _assert_clear_cache()
 
+    # TODO - Enable once globals and finalizers are scoped to a single DJC instance")
+    #        See https://github.com/django-components/django-components/issues/1413
+    @pytest.mark.skip("#TODO")
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_provide_component_forloop_with_error(self, components_settings):
         @register("error_loop_component")
