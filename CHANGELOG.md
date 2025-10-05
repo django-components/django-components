@@ -2,6 +2,8 @@
 
 ## v0.142.0
 
+_05 Oct 2025_
+
 #### Feat
 
 - New built-in component [`ErrorFallback`](https://django-components.github.io/django-components/0.142.0/reference/components/)
