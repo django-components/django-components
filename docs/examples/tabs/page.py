@@ -1,4 +1,4 @@
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 
 from django_components import Component, types
 
@@ -35,5 +35,5 @@ class TabsPage(Component):
     """
 
     class View:
-        def get(self, request: HttpRequest):
+        def get(self, request: HttpRequest) -> HttpResponse:
             return TabsPage.render_to_response(request=request)

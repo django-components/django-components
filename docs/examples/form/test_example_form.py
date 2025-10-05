@@ -1,4 +1,3 @@
-# ruff: noqa: S101,ANN201
 import pytest
 from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual
@@ -9,7 +8,7 @@ from django_components.testing import djc_test
 
 # Imported lazily, so we import components only once settings are set
 def _create_form_components():
-    from docs.examples.form.component import Form, FormLabel
+    from docs.examples.form.component import Form, FormLabel  # noqa: PLC0415
 
     registry.register("form", Form)
     registry.register("form_label", FormLabel)

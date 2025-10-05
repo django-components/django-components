@@ -89,5 +89,5 @@ def _import_module_file(py_file: Path, example_name: str, module_type: str):
         spec.loader.exec_module(module)
 
         print(f"Loaded example {module_type}: {example_name}/{py_file.name}")
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Failed to load {module_type} {example_name}/{py_file.name}: {e}")
