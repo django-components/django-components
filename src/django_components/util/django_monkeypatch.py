@@ -3,6 +3,7 @@ from typing import Any, Optional, Type
 from django import VERSION as DJANGO_VERSION
 from django.template import Context, NodeList, Template
 from django.template.base import Node, Origin, Parser
+from django.template.library import InclusionNode
 from django.template.loader_tags import IncludeNode
 
 from django_components.context import _COMPONENT_CONTEXT_KEY, _STRATEGY_CONTEXT_KEY, COMPONENT_IS_NESTED_KEY
@@ -196,6 +197,12 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
         if not COMPONENT_COMMENT_REGEX.search(result.encode("utf-8")):
             return result
 
+        # Don't post-process if this template was rendered with Django's InclusionNode.
+        # Fix for https://github.com/django-components/django-components/issues/1390
+        # NOTE: Lenght of 2 means a Context with single layer (+ layer with defaults)
+        if "_DJC_INSIDE_INCLUSION_TAG" in context and len(context.dicts) == 2:
+            return result
+
         # Allow users to configure the `deps_strategy` kwarg of `render_dependencies()`, even if
         # they render a Template directly with `Template.render()` or Django's `django.shortcuts.render()`.
         #
@@ -246,6 +253,69 @@ def monkeypatch_include_render(include_node_cls: Type[Node]) -> None:
             return orig_include_render(self, context, *args, **kwargs)
 
     include_node_cls.render = _include_render
+
+
+def monkeypatch_inclusion_node(inclusion_node_cls: Type[Node]) -> None:
+    if is_cls_patched(inclusion_node_cls):
+        return
+
+    monkeypatch_inclusion_init(inclusion_node_cls)
+    monkeypatch_inclusion_render(inclusion_node_cls)
+    inclusion_node_cls._djc_patched = True
+
+
+# Patch `InclusionNode.__init__` so that `InclusionNode.func` returns also `{"_DJC_INSIDE_INCLUSION_TAG": True}`.
+# This is then used in `Template.render()` so that we can detect if template was rendered inside an inclusion tag.
+# See https://github.com/django-components/django-components/issues/1390
+def monkeypatch_inclusion_init(inclusion_node_cls: Type[Node]) -> None:
+    original_init = inclusion_node_cls.__init__
+
+    # NOTE: Function signature of InclusionNode.__init__ hasn't changed in 9 years, so we can safely patch it.
+    #       See https://github.com/django/django/blame/main/django/template/library.py#L348
+    def __init__(  # noqa: N807
+        self: InclusionNode,
+        func: Any,
+        takes_context: bool,
+        args: Any,
+        kwargs: Any,
+        filename: Any,
+        *future_args: Any,
+        **future_kwargs: Any,
+    ) -> None:
+        original_init(self, func, takes_context, args, kwargs, filename, *future_args, **future_kwargs)  # type: ignore[misc]
+
+        orig_func = self.func
+        def new_func(*args: Any, **kwargs: Any) -> Any:
+            result = orig_func(*args, **kwargs)
+            result["_DJC_INSIDE_INCLUSION_TAG"] = True
+            return result
+
+        self.func = new_func
+
+    inclusion_node_cls.__init__ = __init__
+
+
+def monkeypatch_inclusion_render(inclusion_node_cls: Type[Node]) -> None:
+    # Modify `InclusionNode.render()`  so that the included
+    # template does NOT render the JS/CSS by itself.
+    #
+    # Instead, we want the parent template to decide whether to render the JS/CSS.
+    #
+    # We achieve this by setting `_DJC_INSIDE_INCLUSION_TAG`.
+    #
+    # Fix for https://github.com/django-components/django-components/issues/1390
+    if is_cls_patched(inclusion_node_cls):
+        # Do not patch if done so already. This helps us avoid RecursionError
+        return
+
+    orig_inclusion_render = inclusion_node_cls.render
+
+    # NOTE: This implementation is based on Django v5.2.5)
+    def _inclusion_render(self: InclusionNode, context: Context, *args: Any, **kwargs: Any) -> str:
+        with context.update({"_DJC_INSIDE_INCLUSION_TAG": True}):
+            return orig_inclusion_render(self, context, *args, **kwargs)
+
+    inclusion_node_cls.render = _inclusion_render
 
 
 # NOTE: Remove once Django v5.2 reaches end of life
