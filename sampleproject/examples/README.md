@@ -37,7 +37,7 @@ All examples are available as live demos:
 
 - **Index page**: [http://localhost:8000/examples/](http://localhost:8000/examples/) - Lists all available examples
 - **Individual examples**: `http://localhost:8000/examples/<example_name>`
-  - [http://localhost:8000/examples/form](http://localhost:8000/examples/form)
+  - [http://localhost:8000/examples/form_grid](http://localhost:8000/examples/form_grid)
   - [http://localhost:8000/examples/tabs](http://localhost:8000/examples/tabs)
 
 ## Adding new examples

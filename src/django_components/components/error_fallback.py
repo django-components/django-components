@@ -8,10 +8,9 @@ from django_components import Component, OnRenderGenerator, SlotInput, types
 
 class ErrorFallback(Component):
     """
-    Use `ErrorFallback` to catch errors and display a fallback content instead.
+    A component that catches errors and displays fallback content, similar to React's ErrorBoundary.
 
-    This is similar to React's
-    [`ErrorBoundary`](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
+    See React's [`ErrorBoundary`](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary)
     component.
 
     **Example:**

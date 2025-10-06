@@ -242,6 +242,8 @@ This allows us to keep the examples in one place, and define, test, and document
 
 To see all available examples, go to `http://localhost:8000/examples/`.
 
+The examples index page displays a short description for each example. These values are taken from a top-level `DESCRIPTION` string variable in the example's `component.py` file.
+
 **Tests** - Use the file format `test_example_<example_name>.py` to define tests for the example. These tests are picked up when you run pytest.
 
 #### Adding examples

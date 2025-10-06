@@ -12,6 +12,8 @@ from django.utils.text import slugify
 from django_components import Component, register
 from django_components import types as t
 
+DESCRIPTION = "Dynamic tabs with AlpineJS."
+
 
 class TabDatum(NamedTuple):
     """Datum for an individual tab."""
@@ -230,7 +232,7 @@ class _TablistImpl(Component):
 @register("Tablist")
 class Tablist(Component):
     """
-    Tablist role component comprised of nested tab components.
+    Dynamic tabs with [AlpineJS](https://alpinejs.dev/).
 
     After the input is processed, this component delegates to an internal implementation
     component that renders the content.

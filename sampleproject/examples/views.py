@@ -1,3 +1,5 @@
+from importlib import import_module
+
 from django.http import HttpRequest
 from django.utils.safestring import mark_safe
 
@@ -25,10 +27,21 @@ class ExamplesIndexPage(Component):
         for name in sorted(example_names):
             # Convert snake_case to PascalCase (e.g. error_fallback -> ErrorFallback)
             display_name = "".join(word.capitalize() for word in name.split("_"))
+
+            # For the short description, we use the DESCRIPTION variable from the component's module
+            description = ""
+            try:
+                module_name = f"examples.dynamic.{name}.component"
+                module = import_module(module_name)
+                description = getattr(module, "DESCRIPTION", "")
+            except ImportError:
+                pass  # Component file may not exist, which is fine
+
             examples.append(
                 {
                     "name": name,  # Original name for URLs
                     "display_name": display_name,  # PascalCase for display
+                    "description": description,
                 }
             )
 
@@ -65,7 +78,7 @@ class ExamplesIndexPage(Component):
                                                 {{ example.display_name }}
                                             </h2>
                                             <p class="text-gray-600 mb-4 flex-grow">
-                                                {{ example.display_name }} component example
+                                                {{ example.description }}
                                             </p>
                                             <a
                                                 href="/examples/{{ example.name }}"

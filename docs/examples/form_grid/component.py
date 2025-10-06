@@ -2,9 +2,13 @@ from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
 
 from django_components import Component, Slot, register, types
 
+DESCRIPTION = "Form that automatically arranges fields in a grid and generates labels."
+
 
 @register("form_grid")
 class FormGrid(Component):
+    """Form that automatically arranges fields in a grid and generates labels."""
+
     class Kwargs(NamedTuple):
         editable: bool = True
         method: str = "post"
