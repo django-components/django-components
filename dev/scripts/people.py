@@ -20,9 +20,20 @@ from pydantic_settings import BaseSettings
 
 logger = logging.getLogger(__name__)
 
-github_graphql_url = "https://api.github.com/graphql"
+MAINTAINER_USERS = {
+    "EmilStenstrom",
+    "JuroOravec",
+}
+BOT_USERS = {
+    "dependabot",
+    "github-actions",
+    "pre-commit-ci",
+    "copilot-swe-agent",
+}
 
-prs_query = """
+GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
+
+GET_PRS_QUERY = """
 query Q($after: String) {
   repository(name: "django-components", owner: "EmilStenstrom") {
     pullRequests(first: 100, after: $after) {
@@ -96,7 +107,7 @@ def get_graphql_response(
     headers = {"Authorization": f"token {settings.github_token.get_secret_value()}"}
     variables = {"after": after}
     response = httpx.post(
-        github_graphql_url,
+        GITHUB_GRAPHQL_URL,
         headers=headers,
         timeout=settings.httpx_timeout,
         json={"query": query, "variables": variables, "operationName": "Q"},
@@ -116,7 +127,7 @@ def get_graphql_response(
 
 def get_graphql_pr_edges(*, settings: Settings, after: Optional[str] = None) -> List[PullRequestEdge]:
     """Fetch pull request edges from GitHub GraphQL API."""
-    data = get_graphql_response(settings=settings, query=prs_query, after=after)
+    data = get_graphql_response(settings=settings, query=GET_PRS_QUERY, after=after)
     graphql_response = PRsResponse.model_validate(data)
     return graphql_response.data.repository.pullRequests.edges
 
@@ -168,22 +179,13 @@ def main() -> None:
     g = Github(settings.github_token.get_secret_value())
     repo = g.get_repo(settings.github_repository)
     contributors_data, users = get_contributors(settings=settings)
-    maintainers_logins = {
-        "EmilStenstrom",
-        "JuroOravec",
-    }
-    bot_logins = {
-        "dependabot",
-        "github-actions",
-        "pre-commit-ci",
-    }
-    skip_users = maintainers_logins | bot_logins
+    skip_users = MAINTAINER_USERS | BOT_USERS
     maintainers = []
-    for login in maintainers_logins:
-        user = users[login]
+    for username in MAINTAINER_USERS:
+        user = users[username]
         maintainers.append(
             {
-                "login": login,
+                "login": username,
                 "avatarUrl": user.avatarUrl,
                 "url": user.url,
             }
