@@ -249,7 +249,14 @@ def monkeypatch_include_render(include_node_cls: Type[Node]) -> None:
 
     # NOTE: This implementation is based on Django v5.1.3)
     def _include_render(self: IncludeNode, context: Context, *args: Any, **kwargs: Any) -> str:
-        with context.update({_STRATEGY_CONTEXT_KEY: "ignore"}):
+        # NOTE: `_STRATEGY_CONTEXT_KEY` is used so that we defer the rendering of components' JS/CSS
+        #       to until the parent template that used the `{% include %}` tag is rendered.
+        # NOTE: `{ COMPONENT_IS_NESTED_KEY: False }` is used so that a new RenderContext layer is created,
+        #       so that inside each `{% include %}` the template can use the `{% extends %}` tag.
+        #       Otherwise, the state leaks, and if both `{% include %}` templates use the `{% extends %}` tag,
+        #       the second one raises, because it would be like using two `{% extends %}` tags in the same template.
+        #       See https://github.com/django-components/django-components/issues/1389
+        with context.update({_STRATEGY_CONTEXT_KEY: "ignore", COMPONENT_IS_NESTED_KEY: False}):
             return orig_include_render(self, context, *args, **kwargs)
 
     include_node_cls.render = _include_render

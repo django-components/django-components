@@ -1,6 +1,18 @@
 # Release notes
 
+## v0.142.2
+
+_06 Oct 2025_
+
+#### Fix
+
+- Fix compatibility issue when there was multiple `{% include %}` blocks
+  inside a component fill, while those included templates contained `{% extends %}` tags.
+  See [#1389](https://github.com/django-components/django-components/issues/1389)
+
 ## v0.142.1
+
+_06 Oct 2025_
 
 #### Fix
 
