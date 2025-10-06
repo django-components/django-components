@@ -2,9 +2,7 @@
 
 A `FormGrid` component that automatically generates labels and arranges fields in a grid. It simplifies form creation by handling the layout for you.
 
-![Form example](images/form.png)
-
-To get started, use the following example to create a simple form with 2 fields - `project` and `option`:
+To get started, use the following example to create a simple form with 2 fields - `project` and `option`.
 
 ```django
 {% component "form_grid" %}
@@ -22,7 +20,9 @@ To get started, use the following example to create a simple form with 2 fields 
 {% endcomponent %}
 ```
 
-This will render a `<form>` where fields are defined using `field:<field_name>` slots.
+This will render a `<form>` where fields are defined using `field:<field_name>` slots:
+
+![Form example](images/form.png)
 
 Labels are automatically generated from the field name. If you want to define a custom label for a field,
 you can use the `label:<field_name>` slot.

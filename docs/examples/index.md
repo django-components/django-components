@@ -9,6 +9,7 @@ If you have components that would be useful to others, open a [pull request](htt
 
 ## Components
 
+- [ErrorFallback](./error_fallback.md) - A component that catches errors and displays fallback content, similar to React's ErrorBoundary.
 - [FormGrid](./form_grid) - A form component that automatically generates labels and arranges fields in a grid.
 - [Tabs (AlpineJS)](./tabs) - Dynamic tabs with [AlpineJS](https://alpinejs.dev/).
 

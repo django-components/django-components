@@ -2,5 +2,6 @@
 nav:
   - index.md
   - Components:
+    - ErrorFallback: ./error_fallback
     - FormGrid: ./form_grid
     - Tabs (AlpineJS): ./tabs

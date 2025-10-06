@@ -29,13 +29,9 @@ class ExamplesIndexPage(Component):
             display_name = "".join(word.capitalize() for word in name.split("_"))
 
             # For the short description, we use the DESCRIPTION variable from the component's module
-            description = ""
-            try:
-                module_name = f"examples.dynamic.{name}.component"
-                module = import_module(module_name)
-                description = getattr(module, "DESCRIPTION", "")
-            except ImportError:
-                pass  # Component file may not exist, which is fine
+            module_name = f"examples.dynamic.{name}.component"
+            module = import_module(module_name)
+            description = getattr(module, "DESCRIPTION", "")
 
             examples.append(
                 {
