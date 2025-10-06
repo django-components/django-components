@@ -1081,7 +1081,6 @@ class TestExtendsCompat:
         self,
         components_settings,
     ):
-
         @register("simple_component")
         class SimpleComponent(Component):
             template: types.django_html = """
