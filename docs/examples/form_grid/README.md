@@ -1,13 +1,13 @@
-# Form
+# FormGrid
 
-A `Form` component that automatically generates labels and arranges fields in a grid. It simplifies form creation by handling the layout for you.
+A `FormGrid` component that automatically generates labels and arranges fields in a grid. It simplifies form creation by handling the layout for you.
 
 ![Form example](images/form.png)
 
 To get started, use the following example to create a simple form with 2 fields - `project` and `option`:
 
 ```django
-{% component "form" %}
+{% component "form_grid" %}
   {% fill "field:project" %}
     <input name="project" required>
   {% endfill %}
@@ -28,10 +28,10 @@ Labels are automatically generated from the field name. If you want to define a 
 you can use the `label:<field_name>` slot.
 
 ```django
-{% component "form" %}
+{% component "form_grid" %}
   {# Custom label for "description" field #}
   {% fill "label:description" %}
-    {% component "form_label"
+    {% component "form_grid_label"
       field_name="description"
       title="Marvelous description"
     / %}
@@ -49,9 +49,9 @@ Whether you define custom labels or not, the form will have the following struct
 
 ## API
 
-### `Form` component
+### `FormGrid` component
 
-The `Form` component is the main container for your form fields. It accepts the following arguments:
+The `FormGrid` component is the main container for your form fields. It accepts the following arguments:
 
 - **`editable`** (optional, default `True`): A boolean that determines if the form is editable.
 - **`method`** (optional, default `"post"`): The HTTP method for the form submission.
@@ -67,13 +67,13 @@ To define the fields, you define a slot for each field.
 - **`prepend`**: Content in this slot will be placed at the beginning of the form, before the main fields.
 - **`append`**: Content in this slot will be placed at the end of the form, after the main fields. This is a good place for submit buttons.
 
-### `FormLabel` component
+### `FormGridLabel` component
 
-When `Form` component automatically generates labels for fields, it uses the `FormLabel` component.
+When `FormGrid` component automatically generates labels for fields, it uses the `FormGridLabel` component.
 
-When you need a custom label for a field, you can use the `FormLabel` component explicitly in `label:<field_name>` slots.
+When you need a custom label for a field, you can use the `FormGridLabel` component explicitly in `label:<field_name>` slots.
 
-The `FormLabel` component accepts the following arguments:
+The `FormGridLabel` component accepts the following arguments:
 
 - **`field_name`** (required): The name of the field that this label is for. This will be used as the `for` attribute of the label.
 - **`title`** (optional): Custom text for the label. If not provided, the component will automatically generate a title from the `field_name` by replacing underscores and hyphens with spaces and applying title case.
@@ -81,7 +81,7 @@ The `FormLabel` component accepts the following arguments:
 **Example:**
 
 ```django
-{% component "form_label"
+{% component "form_grid_label"
   field_name="user_name"
   title="Your Name"
 / %}
@@ -99,7 +99,7 @@ converting snake_case to "Title Case".
 ## Definition
 
 ```djc_py
---8<-- "docs/examples/form/component.py"
+--8<-- "docs/examples/form_grid/component.py"
 ```
 
 ## Example
@@ -109,7 +109,7 @@ To see the component in action, you can set up a view and a URL pattern as shown
 ### `views.py`
 
 ```djc_py
---8<-- "docs/examples/form/page.py"
+--8<-- "docs/examples/form_grid/page.py"
 ```
 
 ### `urls.py`
@@ -117,9 +117,9 @@ To see the component in action, you can set up a view and a URL pattern as shown
 ```python
 from django.urls import path
 
-from examples.pages.form import FormPage
+from examples.pages.form_grid import FormGridPage
 
 urlpatterns = [
-    path("examples/form", FormPage.as_view(), name="form"),
+    path("examples/form_grid", FormGridPage.as_view(), name="form_grid"),
 ]
 ```

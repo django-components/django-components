@@ -9,7 +9,7 @@ If you have components that would be useful to others, open a [pull request](htt
 
 ## Components
 
-- [Form](./form) - A form component that automatically generates labels and arranges fields in a grid.
+- [FormGrid](./form_grid) - A form component that automatically generates labels and arranges fields in a grid.
 - [Tabs (AlpineJS)](./tabs) - Dynamic tabs with [AlpineJS](https://alpinejs.dev/).
 
 ## Packages

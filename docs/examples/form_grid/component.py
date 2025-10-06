@@ -3,8 +3,8 @@ from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
 from django_components import Component, Slot, register, types
 
 
-@register("form")
-class Form(Component):
+@register("form_grid")
+class FormGrid(Component):
     class Kwargs(NamedTuple):
         editable: bool = True
         method: str = "post"
@@ -109,8 +109,8 @@ def prepare_form_grid(slots: Dict[str, Slot]):
         else:
             # Case: Component user didn't explicitly define how to render the label
             #       We will create the label for the field automatically
-            label = FormLabel.render(
-                kwargs=FormLabel.Kwargs(field_name=field_name),
+            label = FormGridLabel.render(
+                kwargs=FormGridLabel.Kwargs(field_name=field_name),
                 deps_strategy="ignore",
             )
 
@@ -122,8 +122,8 @@ def prepare_form_grid(slots: Dict[str, Slot]):
     return fields
 
 
-@register("form_label")
-class FormLabel(Component):
+@register("form_grid_label")
+class FormGridLabel(Component):
     template: types.django_html = """
         <label for="{{ field_name }}" class="font-semibold text-gray-700">
             {{ title }}

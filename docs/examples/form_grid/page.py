@@ -4,7 +4,7 @@ from django.utils.safestring import mark_safe
 from django_components import Component, types
 
 
-class FormPage(Component):
+class FormGridPage(Component):
     class Media:
         js = (
             # AlpineJS
@@ -16,7 +16,7 @@ class FormPage(Component):
     template: types.django_html = """
       <html>
         <head>
-          <title>Form</title>
+          <title>FormGrid</title>
           <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp,container-queries"></script>
         </head>
         <body>
@@ -29,7 +29,7 @@ class FormPage(Component):
               <h3>Submit form</h3>
             </div>
 
-            {% component "form"
+            {% component "form_grid"
               attrs:class="pb-4 px-4 pt-6 sm:px-6 lg:px-8 flex-auto flex flex-col"
               attrs:style="max-width: 600px;"
               attrs:@submit.prevent="onSubmit"
@@ -56,7 +56,7 @@ class FormPage(Component):
 
               {# Defined both label and field because label name is different from field name #}
               {% fill "label:description" %}
-                {% component "form_label" field_name="description" title="Marvelous description" / %}
+                {% component "form_grid_label" field_name="description" title="Marvelous description" / %}
               {% endfill %}
               {% fill "field:description" %}
                 <textarea
@@ -85,4 +85,4 @@ class FormPage(Component):
 
     class View:
         def get(self, request: HttpRequest):
-            return FormPage.render_to_response(request=request)
+            return FormGridPage.render_to_response(request=request)

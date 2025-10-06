@@ -8,10 +8,10 @@ from django_components.testing import djc_test
 
 # Imported lazily, so we import components only once settings are set
 def _create_form_components():
-    from docs.examples.form.component import Form, FormLabel  # noqa: PLC0415
+    from docs.examples.form_grid.component import FormGrid, FormGridLabel  # noqa: PLC0415
 
-    registry.register("form", Form)
-    registry.register("form_label", FormLabel)
+    registry.register("form_grid", FormGrid)
+    registry.register("form_grid_label", FormGridLabel)
 
 
 @pytest.mark.django_db
@@ -21,7 +21,7 @@ class TestExampleForm:
         _create_form_components()
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component "form" %}
+            {% component "form_grid" %}
               {% fill "field:project" %}<input name="project">{% endfill %}
               {% fill "field:option" %}<select name="option"></select>{% endfill %}
             {% endcomponent %}
@@ -53,7 +53,7 @@ class TestExampleForm:
         _create_form_components()
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component "form" %}
+            {% component "form_grid" %}
               {% fill "label:project" %}<strong>Custom Project Label</strong>{% endfill %}
               {% fill "field:project" %}<input name="project">{% endfill %}
             {% endcomponent %}
@@ -68,7 +68,7 @@ class TestExampleForm:
         _create_form_components()
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component "form" %}
+            {% component "form_grid" %}
               {% fill "label:project" %}Custom Project Label{% endfill %}
             {% endcomponent %}
         """
@@ -81,7 +81,7 @@ class TestExampleForm:
         _create_form_components()
         template_str: types.django_html = """
             {% load component_tags %}
-            {% component "form" %}
+            {% component "form_grid" %}
               {% fill "prepend" %}<div>Prepended content</div>{% endfill %}
               {% fill "field:project" %}<input name="project">{% endfill %}
               {% fill "append" %}<div>Appended content</div>{% endfill %}
