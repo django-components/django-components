@@ -11,6 +11,7 @@ If you have components that would be useful to others, open a [pull request](htt
 
 - [ErrorFallback](./error_fallback.md) - A component that catches errors and displays fallback content, similar to React's ErrorBoundary.
 - [FormGrid](./form_grid) - A form component that automatically generates labels and arranges fields in a grid.
+- [Recursion](./recursion) - 100 nested components? Not a problem! Handle recursive rendering out of the box.
 - [Tabs (AlpineJS)](./tabs) - Dynamic tabs with [AlpineJS](https://alpinejs.dev/).
 
 ## Packages

@@ -4,4 +4,5 @@ nav:
   - Components:
     - ErrorFallback: ./error_fallback
     - FormGrid: ./form_grid
+    - Recursion: ./recursion
     - Tabs (AlpineJS): ./tabs
