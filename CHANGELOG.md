@@ -1,5 +1,12 @@
 # Release notes
 
+## v0.142.1
+
+#### Fix
+
+- Fix bug introduced in v0.142.0 where django-components broke
+  when the `{% component_tags %}` library was NOT among the built-ins.
+
 ## v0.142.0
 
 _05 Oct 2025_

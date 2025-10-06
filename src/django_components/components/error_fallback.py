@@ -148,6 +148,7 @@ class ErrorFallback(Component):
     # TODO - Once we don't have to pass Context to the slot, we can remove the template
     #        and render the slots directly.
     template: types.django_html = """
+        {% load component_tags %}
         {% if not error %}
             {% slot "content" default / %}
         {% else %}
