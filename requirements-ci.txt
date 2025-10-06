@@ -10,7 +10,7 @@ asv-runner==0.2.1
     # via asv
 build==1.2.2.post1
     # via asv
-cachetools==5.5.2
+cachetools==6.2.0
     # via tox
 certifi==2025.1.31
     # via requests
@@ -24,7 +24,7 @@ distlib==0.3.9
     # via virtualenv
 exceptiongroup==1.2.2
     # via pytest
-filelock==3.16.1
+filelock==3.19.1
     # via
     #   tox
     #   virtualenv
@@ -41,7 +41,7 @@ iniconfig==2.0.0
     # via pytest
 json5==0.10.0
     # via asv
-packaging==24.2
+packaging==25.0
     # via
     #   asv
     #   build
@@ -50,13 +50,13 @@ packaging==24.2
     #   tox
 pathspec==0.12.1
     # via -r requirements-ci.in
-platformdirs==4.3.6
+platformdirs==4.4.0
     # via
     #   tox
     #   virtualenv
 playwright==1.48.0
     # via -r requirements-ci.in
-pluggy==1.5.0
+pluggy==1.6.0
     # via
     #   pytest
     #   tox
@@ -64,7 +64,7 @@ pyee==12.0.0
     # via playwright
 pympler==1.1
     # via asv
-pyproject-api==1.8.0
+pyproject-api==1.9.1
     # via tox
 pyproject-hooks==1.2.0
     # via build
@@ -89,7 +89,7 @@ tomli==2.2.1
     #   pyproject-api
     #   pytest
     #   tox
-tox==4.25.0
+tox==4.30.3
     # via
     #   -r requirements-ci.in
     #   tox-gh-actions
@@ -97,7 +97,7 @@ tox-gh-actions==3.3.0
     # via -r requirements-ci.in
 types-requests==2.32.0.20241016
     # via -r requirements-ci.in
-typing-extensions==4.13.2
+typing-extensions==4.15.0
     # via
     #   -r requirements-ci.in
     #   pyee
