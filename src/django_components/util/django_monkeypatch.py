@@ -285,6 +285,7 @@ def monkeypatch_inclusion_init(inclusion_node_cls: Type[Node]) -> None:
         original_init(self, func, takes_context, args, kwargs, filename, *future_args, **future_kwargs)  # type: ignore[misc]
 
         orig_func = self.func
+
         def new_func(*args: Any, **kwargs: Any) -> Any:
             result = orig_func(*args, **kwargs)
             result["_DJC_INSIDE_INCLUSION_TAG"] = True
