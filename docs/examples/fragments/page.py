@@ -121,13 +121,15 @@ class FragmentsPage(Component):
     """
 
     class View:
+        public = True
+
         # The same GET endpoint handles rendering either the whole page or a fragment.
         # We use the `type` query parameter to determine which one to render.
         def get(self, request: HttpRequest) -> HttpResponse:
             fragment_type = request.GET.get("type")
             if fragment_type:
-                FragmentCls = AlpineFragment if fragment_type == "alpine" else SimpleFragment
-                return FragmentCls.render_to_response(
+                fragment_cls = AlpineFragment if fragment_type == "alpine" else SimpleFragment
+                return fragment_cls.render_to_response(
                     request=request,
                     deps_strategy="fragment",
                     kwargs={"type": fragment_type},

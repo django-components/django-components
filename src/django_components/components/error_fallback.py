@@ -15,12 +15,15 @@ class ErrorFallback(Component):
 
     **Parameters**:
 
-    - **fallback** (str, optional): A string to display when an error occurs. Cannot be used together with the `fallback` slot.
+    - **fallback** (str, optional): A string to display when an error occurs.
+    Cannot be used together with the `fallback` slot.
 
     **Slots**:
 
     - **content** or **default**: The main content that might raise an error.
-    - **fallback**: Custom fallback content to display when an error occurs. When using the `fallback` slot, you can access the `error` object through slot data (`{% fill "fallback" data="data" %}`). Cannot be used together with the `fallback` kwarg.
+    - **fallback**: Custom fallback content to display when an error occurs. When using the `fallback` slot,
+    you can access the `error` object through slot data (`{% fill "fallback" data="data" %}`).
+    Cannot be used together with the `fallback` kwarg.
 
     **Example:**
 

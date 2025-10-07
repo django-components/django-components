@@ -1,3 +1,4 @@
+# ruff: noqa: S311
 import random
 from typing import NamedTuple, Optional
 
