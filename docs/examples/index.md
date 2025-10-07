@@ -13,6 +13,7 @@ If you have components that would be useful to others, open a [pull request](htt
 - [Error handling](./error_fallback) - A component that catches errors and displays fallback content, similar to React's ErrorBoundary.
 - [Recursion](./recursion) - 100 nested components? Not a problem! Handle recursive rendering out of the box.
 - [A/B Testing](./ab_testing) - Dynamically render different component versions. Use for A/B testing, phased rollouts, etc.
+- [Analytics](./analytics) - Track component errors or success rates to send them to Sentry or other services.
 
 ## Components
 

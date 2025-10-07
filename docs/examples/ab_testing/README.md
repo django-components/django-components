@@ -62,6 +62,22 @@ All extra parameters are passed through to the underlying components.
 
 ## Example
 
+To see the component in action, you can set up a view and a URL pattern as shown below.
+
+### `views.py`
+
 ```djc_py
 --8<-- "docs/examples/ab_testing/page.py"
+```
+
+### `urls.py`
+
+```python
+from django.urls import path
+
+from examples.pages.ab_testing import ABTestingPage
+
+urlpatterns = [
+    path("examples/ab_testing", ABTestingPage.as_view(), name="ab_testing"),
+]
 ```
