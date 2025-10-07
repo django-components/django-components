@@ -5,6 +5,7 @@ nav:
     - HTML fragments: ./fragments
     - Error handling: ./error_fallback
     - Recursion: ./recursion
+    - A/B testing: ./ab_testing
   - Components:
     - FormGrid: ./form_grid
     - Tabs (AlpineJS): ./tabs

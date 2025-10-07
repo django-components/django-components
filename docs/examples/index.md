@@ -12,6 +12,7 @@ If you have components that would be useful to others, open a [pull request](htt
 - [HTML fragments](./fragments) - Load HTML fragments using different client-side techniques: vanilla JavaScript, AlpineJS, and HTMX.
 - [Error handling](./error_fallback) - A component that catches errors and displays fallback content, similar to React's ErrorBoundary.
 - [Recursion](./recursion) - 100 nested components? Not a problem! Handle recursive rendering out of the box.
+- [A/B Testing](./ab_testing) - Dynamically render different component versions. Use for A/B testing, phased rollouts, etc.
 
 ## Components
 
