@@ -7,9 +7,7 @@ from .component import analytics_events, error_rate
 
 class AnalyticsPage(Component):
     class Media:
-        js = (
-            "https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries",
-        )
+        js = ("https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries",)
 
     template: types.django_html = """
         {% load component_tags %}

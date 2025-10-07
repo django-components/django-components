@@ -9,6 +9,7 @@ If you have components that would be useful to others, open a [pull request](htt
 
 ## Scenarios
 
+- [Form Submission](./form_submission) - Handle the entire form submission flow in a single file and without Django's Form class.
 - [HTML fragments](./fragments) - Load HTML fragments using different client-side techniques: vanilla JavaScript, AlpineJS, and HTMX.
 - [Error handling](./error_fallback) - A component that catches errors and displays fallback content, similar to React's ErrorBoundary.
 - [Recursion](./recursion) - 100 nested components? Not a problem! Handle recursive rendering out of the box.

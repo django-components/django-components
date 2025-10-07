@@ -1,7 +1,7 @@
 from django.http import HttpRequest, HttpResponse
 from django.utils.safestring import mark_safe
 
-from django_components import Component, types
+from django_components import Component, get_component_url, types
 
 from .component import AlpineFragment, SimpleFragment
 
@@ -14,10 +14,10 @@ class FragmentsPage(Component):
         )
 
     def get_template_data(self, args, kwargs, slots, context):
-        base_url = "/examples/fragments"
-        alpine_url = f"{base_url}?type=alpine"
-        js_url = f"{base_url}?type=js"
-        htmx_url = f"{base_url}?type=htmx"
+        # Get URLs that points to the FragmentsPageView.get() method
+        alpine_url = get_component_url(FragmentsPage, query={"type": "alpine"})
+        js_url = get_component_url(FragmentsPage, query={"type": "js"})
+        htmx_url = get_component_url(FragmentsPage, query={"type": "htmx"})
 
         return {
             "alpine_url": alpine_url,
