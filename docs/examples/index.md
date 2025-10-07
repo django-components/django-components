@@ -7,11 +7,15 @@ Here you will find public examples of components and component libraries.
 
 If you have components that would be useful to others, open a [pull request](https://github.com/django-components/django-components/pulls) to add them to this collection.
 
+## Scenarios
+
+- [HTML fragments](./fragments) - Load HTML fragments using different client-side techniques: vanilla JavaScript, AlpineJS, and HTMX.
+- [Error handling](./error_fallback) - A component that catches errors and displays fallback content, similar to React's ErrorBoundary.
+- [Recursion](./recursion) - 100 nested components? Not a problem! Handle recursive rendering out of the box.
+
 ## Components
 
-- [ErrorFallback](./error_fallback.md) - A component that catches errors and displays fallback content, similar to React's ErrorBoundary.
 - [FormGrid](./form_grid) - A form component that automatically generates labels and arranges fields in a grid.
-- [Recursion](./recursion) - 100 nested components? Not a problem! Handle recursive rendering out of the box.
 - [Tabs (AlpineJS)](./tabs) - Dynamic tabs with [AlpineJS](https://alpinejs.dev/).
 
 ## Packages

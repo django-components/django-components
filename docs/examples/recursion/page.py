@@ -17,7 +17,6 @@ class RecursionPage(Component):
         <html>
             <head>
                 <title>Recursion Example</title>
-                {{ component.media.render_js }}
             </head>
             <body class="bg-gray-100 p-8">
                 <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">

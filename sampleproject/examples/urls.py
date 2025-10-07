@@ -34,7 +34,7 @@ def get_example_urls():
             view_class = None
             for attr_name in dir(module):
                 attr = getattr(module, attr_name)
-                if issubclass(attr, Component) and attr_name != "Component":
+                if issubclass(attr, Component) and attr_name != "Component" and attr_name.endswith("Page"):
                     view_class = attr
                     break
 

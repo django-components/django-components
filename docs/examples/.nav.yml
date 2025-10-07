@@ -1,8 +1,10 @@
 # `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
 nav:
   - index.md
-  - Components:
-    - ErrorFallback: ./error_fallback
-    - FormGrid: ./form_grid
+  - Scenarios:
+    - HTML fragments: ./fragments
+    - Error handling: ./error_fallback
     - Recursion: ./recursion
+  - Components:
+    - FormGrid: ./form_grid
     - Tabs (AlpineJS): ./tabs
