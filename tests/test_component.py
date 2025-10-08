@@ -10,7 +10,7 @@ from typing import Any, List, Literal, NamedTuple, Optional
 import pytest
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
-from django.template import Context, RequestContext, Template
+from django.template import Context, RequestContext, Template, TemplateSyntaxError
 from django.template.base import TextNode
 from django.test import Client
 from django.urls import path
@@ -1470,6 +1470,49 @@ class TestComponentRender:
             ),
         ):
             Root.render()
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_prepends_exceptions_on_template_compile_error(self, components_settings):
+        @register("simple_component")
+        class SimpleComponent(Component):
+            template = "hello"
+
+        class Other(Component):
+            template = """
+                {% load component_tags %}
+                {% component "simple_component" %}
+                {% endif %}
+            """
+
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape(
+                "An error occured while rendering components Other:\n"
+                "Invalid block tag on line 4: 'endif', expected 'endcomponent'",
+            ),
+        ):
+            Other.render()
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_prepends_exceptions_on_template_compile_error2(self, components_settings):
+        @register("simple_component")
+        class SimpleComponent(Component):
+            template = "hello"
+
+        class Other(Component):
+            template = """
+                {% load component_tags %}
+                {% component "simple_component" %}
+            """
+
+        with pytest.raises(
+            TemplateSyntaxError,
+            match=re.escape(
+                "An error occured while rendering components Other:\n"
+                "Unclosed tag on line 3: 'component'",
+            ),
+        ):
+            Other.render()
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_pydantic_exception(self, components_settings):
