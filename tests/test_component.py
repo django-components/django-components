@@ -1508,8 +1508,7 @@ class TestComponentRender:
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
-                "An error occured while rendering components Other:\n"
-                "Unclosed tag on line 3: 'component'",
+                "An error occured while rendering components Other:\nUnclosed tag on line 3: 'component'",
             ),
         ):
             Other.render()
