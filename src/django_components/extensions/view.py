@@ -215,7 +215,6 @@ class ComponentView(ExtensionComponentConfig, View):
     url = get_component_url(MyComponent)
     ```
     """
-
     # NOTE: The methods below are defined to satisfy the `View` class. All supported methods
     # are defined in `View.http_method_names`.
     #

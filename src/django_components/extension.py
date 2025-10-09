@@ -1062,7 +1062,37 @@ class ExtensionManager:
                 {"component_cls": component_cls, "component_class": component_cls},
             )
 
-            # Finally, reassign the new class extension class on the component class.
+            if ext_class_name == "View" and component_ext_subclass is not None:
+                
+                # Only auto-set if public hasn't been explicitly set by the USER
+                # We need to check only user-defined classes, not ComponentView base class
+                explicit_public_set = False
+                for base in component_ext_subclass.__mro__[1:]:
+                    # Stop when we reach ComponentView - everything after is framework code
+                    if base.__name__ == 'ComponentView':
+                        break
+                    if 'public' in base.__dict__:
+                        explicit_public_set = True
+                        break
+                
+                if not explicit_public_set:
+                    # Check if any HTTP method was overridden in the user's View class
+                    http_methods = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']
+                    
+                    for base in component_ext_subclass.__mro__[1:]:  # Skip the wrapper
+                        
+                        # Stop when we reach ComponentView
+                        if base.__name__ == 'ComponentView':
+                            break
+                        
+                        for method in http_methods:
+                            if method in base.__dict__:
+                                component_ext_subclass.public = True
+                                break
+                        
+                        if component_ext_subclass.public:
+                            break
+
             setattr(component_cls, ext_class_name, component_ext_subclass)
 
     def _init_component_instance(self, component: "Component") -> None:
