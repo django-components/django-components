@@ -396,3 +396,41 @@ class TestComponentAsView:
         response = client.get(component_url)
         assert response.status_code == 404
         assert not did_call_get
+    
+    # Auto-public tests
+    def test_auto_public_set_for_overridden_http_method(self):
+        class MyComponent(Component):
+            class View:
+                def get(self, request):
+                    return HttpResponse("GET")
+
+        assert MyComponent.View.public is True 
+    
+    def test_auto_public_set_with_multiple_http_methods(self):
+        """Test that auto-public works when multiple HTTP methods are defined"""
+        class MyComponent(Component):
+            class View:
+                def get(self, request):
+                    return HttpResponse("GET")
+                
+                def post(self, request):
+                    return HttpResponse("POST")
+                
+                def put(self, request):
+                    return HttpResponse("PUT")
+        
+        assert MyComponent.View.public is True
+
+    def test_default_public_false_when_no_methods_defined(self):
+        class MyComponent(Component):
+            class View:
+                pass
+        assert getattr(MyComponent.View, "public", False) is False
+
+    def test_explicit_public_true_is_preserved(self):
+        class MyComponent(Component):
+            class View:
+                public = True
+                def get(self, request):
+                    return HttpResponse("GET")
+        assert MyComponent.View.public is True
