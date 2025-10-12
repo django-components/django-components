@@ -64,6 +64,8 @@ _06 Oct 2025_
 
 ## v0.142.0
 
+⚠️ This version is broken, please update to v0.142.1 ⚠️
+
 _05 Oct 2025_
 
 #### Feat

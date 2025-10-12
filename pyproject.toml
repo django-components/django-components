@@ -39,7 +39,7 @@ license = { text = "MIT" }
 [project.urls]
 Homepage = "https://github.com/django-components/django-components/"
 Documentation = "https://django-components.github.io/django-components/"
-Changelog = "https://django-components.github.io/django-components/latest/release_notes/"
+Changelog = "https://django-components.github.io/django-components/latest/releases/"
 Issues = "https://github.com/django-components/django-components/issues"
 Donate = "https://github.com/sponsors/EmilStenstrom"
 
