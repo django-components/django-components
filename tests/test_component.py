@@ -19,7 +19,6 @@ from pytest_django.asserts import assertHTMLEqual, assertInHTML
 from django_components import (
     Component,
     ComponentRegistry,
-    ComponentView,
     Slot,
     SlotInput,
     all_components,
@@ -1244,8 +1243,8 @@ class TestComponentRender:
                 def get(self, request):
                     how = "via GET request"
 
-                    return self.component.render_to_response(
-                        context=RequestContext(self.request),
+                    return self.component_cls.render_to_response(
+                        context=RequestContext(request),
                         kwargs={"how": how},
                     )
 

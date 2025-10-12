@@ -280,12 +280,12 @@ class TestExtensions:
 
         assert component is not None
         # Check properties from DummyExtension.ComponentConfig
-        assert component.test_extension.foo == "1"
-        assert component.test_extension.bar == "2"
+        assert component.test_extension.foo == "1"  # type: ignore[attr-defined]
+        assert component.test_extension.bar == "2"  # type: ignore[attr-defined]
         # Check properties from nested class
-        assert component.test_extension.nested_var == "from_nested"
+        assert component.test_extension.nested_var == "from_nested"  # type: ignore[attr-defined]
         # Check properties from parent of nested class
-        assert component.test_extension.parent_var == "from_parent"
+        assert component.test_extension.parent_var == "from_parent"  # type: ignore[attr-defined]
 
 
 @djc_test

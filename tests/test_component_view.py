@@ -8,7 +8,7 @@ from django.test import Client
 from django.urls import path
 from pytest_django.asserts import assertInHTML
 
-from django_components import Component, ComponentView, get_component_url, register, types
+from django_components import Component, get_component_url, register, types
 from django_components.testing import djc_test
 from django_components.urls import urlpatterns as dc_urlpatterns
 from django_components.util.misc import format_url
@@ -98,7 +98,7 @@ class TestComponentAsView:
 
             class View:
                 def get(self, request, *args, **kwargs) -> HttpResponse:
-                    return self.component.render_to_response(kwargs={"variable": "GET"})
+                    return self.component_cls.render_to_response(kwargs={"variable": "GET"})
 
         client = CustomClient(urlpatterns=[path("test/", MockComponentRequest.as_view())])
         response = client.get("/test/")
