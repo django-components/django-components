@@ -55,8 +55,6 @@ class ContactFormComponent(Component):
     """  # noqa: E501
 
     class View:
-        public = True
-
         # Submit handler
         def post(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
             # Access the submitted data

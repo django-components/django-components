@@ -261,18 +261,22 @@ Next, you need to set the URL for the component.
 
 You can either:
 
-1. Automatically assign the URL by setting the [`Component.View.public`](../../reference/api#django_components.ComponentView.public) attribute to `True`.
+1. Use [`get_component_url()`](../../reference/api#django_components.get_component_url) to retrieve the component URL - an anonymous HTTP endpoint that triggers the component's handlers without having to register the component in `urlpatterns`.
 
-    In this case, use [`get_component_url()`](../../reference/api#django_components.get_component_url) to get the URL for the component view.
+    ```py
+    from django_components import get_component_url
+
+    url = get_component_url(Calendar)
+    ```
+
+   The component endpoint is automatically registered in `urlpatterns` when you define a handler. To explicitly expose/hide the component, use [`Component.View.public`](../../../reference/api#django_components.ComponentView.public).
 
     ```djc_py
-    from django_components import Component, get_component_url
+    from django_components import Component
 
     class Calendar(Component):
         class View:
-            public = True
-
-    url = get_component_url(Calendar)
+            public = False
     ```
 
 2. Manually assign the URL by setting [`Component.as_view()`](../../reference/api#django_components.Component.as_view) to your `urlpatterns`:

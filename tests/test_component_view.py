@@ -96,7 +96,7 @@ class TestComponentAsView:
             def get_template_data(self, args, kwargs, slots, context):
                 return {"inner_var": kwargs["variable"]}
 
-            class View(ComponentView):
+            class View:
                 def get(self, request, *args, **kwargs) -> HttpResponse:
                     return self.component.render_to_response(kwargs={"variable": "GET"})
 
@@ -145,7 +145,7 @@ class TestComponentAsView:
             def get_template_data(self, args, kwargs, slots, context):
                 return {"inner_var": kwargs["variable"]}
 
-            class View(ComponentView):
+            class View:
                 def post(self, request, *args, **kwargs) -> HttpResponse:
                     variable = request.POST.get("variable")
                     return self.component.render_to_response(kwargs={"variable": variable})
@@ -366,7 +366,20 @@ class TestComponentAsView:
         assert response.content == b"Hello"
         assert did_call_get
 
-    def test_non_public_url(self):
+    def test_public_url_implicit(self):
+        class TestComponent(Component):
+            template = "Hello"
+
+            class View:
+                def get(self, request: HttpRequest, **kwargs: Any):
+                    component: Component = self.component  # type: ignore[attr-defined]
+                    return component.render_to_response()
+
+        # Check if the URL is correctly generated
+        component_url = get_component_url(TestComponent)
+        assert component_url == f"/components/ext/view/components/{TestComponent.class_id}/"
+
+    def test_public_url_disabled(self):
         did_call_get = False
 
         class TestComponent(Component):

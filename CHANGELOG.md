@@ -1,5 +1,45 @@
 # Release notes
 
+## v0.142.3
+
+#### Refactor
+
+- `Component.View.public = True` is now optional.
+
+    Before, to create component endpoints, you had to set both:
+
+    1. HTTP handlers on `Component.View`
+    2. `Component.View.public = True`.
+
+    Now, you can set only the HTTP handlers, and the component will be automatically exposed
+    when any of the HTTP handlers are defined.
+
+    You can still explicitly expose/hide the component with `Component.View.public = True/False`.
+
+    Before:
+
+    ```py
+    class MyTable(Component):
+        class View:
+            public = True
+
+            def get(self, request):
+                return self.render_to_response()
+
+    url = get_component_url(MyTable)
+    ```
+
+    After:
+
+    ```py
+    class MyTable(Component):
+        class View:
+            def get(self, request):
+                return self.render_to_response()
+
+    url = get_component_url(MyTable)
+    ```
+
 ## v0.142.2
 
 _06 Oct 2025_

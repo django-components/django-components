@@ -347,13 +347,10 @@ class Calendar(Component):
     template_file = "calendar.html"
 
     class View:
-        # Register Component with `urlpatterns`
-        public = True
-
         # Define handlers
         def get(self, request, *args, **kwargs):
             page = request.GET.get("page", 1)
-            return self.component.render_to_response(
+            return Calendar.render_to_response(
                 request=request,
                 kwargs={
                     "page": page,

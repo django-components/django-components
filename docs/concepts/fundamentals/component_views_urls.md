@@ -13,7 +13,9 @@ django-components has a suite of features that help you write and manage views a
 
 - Use [`Component.as_view()`](../../../reference/api#django_components.Component.as_view) to be able to use your Components with Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/). This works the same way as [`View.as_view()`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View.as_view).
 
-- To avoid having to manually define the endpoints for each component, you can set the component to be "public" with [`Component.View.public = True`](../../../reference/api#django_components.ComponentView.public). This will automatically create a URL for the component. To retrieve the component URL, use [`get_component_url()`](../../../reference/api#django_components.get_component_url).
+- Or use [`get_component_url()`](../../../reference/api#django_components.get_component_url) to retrieve the component URL - an anonymous HTTP endpoint that triggers the component's handlers without having to register the component in `urlpatterns`.
+
+    To expose a component, simply define a handler, or explicitly expose/hide the component with [`Component.View.public = True/False`](../../../reference/api#django_components.ComponentView.public).
 
 - In addition, [`Component`](../../../reference/api#django_components.Component) has a [`render_to_response()`](../../../reference/api#django_components.Component.render_to_response) method that renders the component template based on the provided input and returns an `HttpResponse` object.
 
@@ -114,19 +116,13 @@ class as one of the arguments.
 
 ## Register URLs automatically
 
-If you don't care about the exact URL of the component, you can let django-components manage the URLs for you by setting the [`Component.View.public`](../../../reference/api#django_components.ComponentView.public) attribute to `True`:
+If you don't care about the exact URL of the component, you can let django-components manage the URLs.
 
-```py
-class MyComponent(Component):
-    class View:
-        public = True
+Each component has an "anonymous" URL that triggers the component's HTTP handlers without having to define the component in `urlpatterns`.
 
-        def get(self, request):
-            return self.component_cls.render_to_response(request=request)
-    ...
-```
+This way you don't have to mix your app URLs with component URLs.
 
-Then, to get the URL for the component, use [`get_component_url()`](../../../reference/api#django_components.get_component_url):
+To obtain such "anonymous" URL, use [`get_component_url()`](../../../reference/api#django_components.get_component_url):
 
 ```py
 from django_components import get_component_url
@@ -134,7 +130,17 @@ from django_components import get_component_url
 url = get_component_url(MyComponent)
 ```
 
-This way you don't have to mix your app URLs with component URLs.
+The component is automatically registered in `urlpatterns` when you define a handler. You can also explicitly expose/hide the component with [`Component.View.public`](../../../reference/api#django_components.ComponentView.public):
+
+```py
+class MyComponent(Component):
+    class View:
+        public = False
+
+        def get(self, request):
+            return self.component_cls.render_to_response(request=request)
+    ...
+```
 
 !!! info
 

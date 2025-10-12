@@ -121,8 +121,6 @@ class FragmentsPage(Component):
     """
 
     class View:
-        public = True
-
         # The same GET endpoint handles rendering either the whole page or a fragment.
         # We use the `type` query parameter to determine which one to render.
         def get(self, request: HttpRequest) -> HttpResponse:

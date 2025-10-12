@@ -1240,7 +1240,7 @@ class TestComponentRender:
             def get_template_data(self, args, kwargs, slots, context):
                 return {"how": kwargs.pop("how")}
 
-            class View(ComponentView):
+            class View:
                 def get(self, request):
                     how = "via GET request"
 

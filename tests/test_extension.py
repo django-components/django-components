@@ -1,5 +1,5 @@
 import gc
-from typing import Any, Callable, Dict, List, cast
+from typing import Any, Callable, Dict, List, Optional, cast
 
 import pytest
 from django.http import HttpRequest, HttpResponse
@@ -215,7 +215,7 @@ class OverrideAssetExtension(ComponentExtension):
 
 
 @djc_test
-class TestExtension:
+class TestExtensions:
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_extensions_setting(self):
         assert len(app_settings.EXTENSIONS) == 6
@@ -257,6 +257,35 @@ class TestExtension:
 
         with pytest.raises(ValueError, match="Multiple extensions cannot have the same name 'test_extension'"):
             inner()
+
+    @djc_test(components_settings={"extensions": [DummyExtension]})
+    def test_nested_extension_config_inheritance(self):
+        component: Optional[Component] = None
+
+        class TestExtensionParent:
+            parent_var = "from_parent"
+
+        class MyComponent(Component):
+            template = "hello"
+
+            class TestExtension(TestExtensionParent):
+                nested_var = "from_nested"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal component
+                component = self
+
+        # Rendering the component will execute get_template_data
+        MyComponent.render()
+
+        assert component is not None
+        # Check properties from DummyExtension.ComponentConfig
+        assert component.test_extension.foo == "1"
+        assert component.test_extension.bar == "2"
+        # Check properties from nested class
+        assert component.test_extension.nested_var == "from_nested"
+        # Check properties from parent of nested class
+        assert component.test_extension.parent_var == "from_parent"
 
 
 @djc_test
