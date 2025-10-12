@@ -98,7 +98,7 @@ class TestComponentAsView:
 
             class View:
                 def get(self, request, *args, **kwargs) -> HttpResponse:
-                    return self.component_cls.render_to_response(kwargs={"variable": "GET"})
+                    return self.component_cls.render_to_response(kwargs={"variable": "GET"})  # type: ignore[attr-defined]
 
         client = CustomClient(urlpatterns=[path("test/", MockComponentRequest.as_view())])
         response = client.get("/test/")
@@ -148,7 +148,7 @@ class TestComponentAsView:
             class View:
                 def post(self, request, *args, **kwargs) -> HttpResponse:
                     variable = request.POST.get("variable")
-                    return self.component.render_to_response(kwargs={"variable": variable})
+                    return self.component_cls.render_to_response(kwargs={"variable": variable})  # type: ignore[attr-defined]
 
         client = CustomClient(urlpatterns=[path("test/", MockComponentRequest.as_view())])
         response = client.post("/test/", {"variable": "POST"})

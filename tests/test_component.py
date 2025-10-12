@@ -1243,7 +1243,7 @@ class TestComponentRender:
                 def get(self, request):
                     how = "via GET request"
 
-                    return self.component_cls.render_to_response(
+                    return self.component_cls.render_to_response(  # type: ignore[attr-defined]
                         context=RequestContext(request),
                         kwargs={"how": how},
                     )
