@@ -2,6 +2,10 @@
 
 ## v0.142.3
 
+#### Fix
+
+- Fixed compatibility with older versions of django-template-partials. django-components now works with django-template-partials v23.3 and later. (See [#1455](https://github.com/django-components/django-components/issues/1455))
+
 #### Refactor
 
 - `Component.View.public = True` is now optional.

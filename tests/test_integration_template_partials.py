@@ -28,6 +28,7 @@ except ImportError:
 setup_test_config()
 
 
+# Test compatibility with django-template-partials.
 # See https://github.com/django-components/django-components/issues/1323#issuecomment-3156654329
 @djc_test(django_settings={"INSTALLED_APPS": ("template_partials", "django_components", "tests.test_app")})
 class TestTemplatePartialsIntegration:

@@ -353,6 +353,17 @@ def monkeypatch_template_proxy_render(template_proxy_cls: Type[Any]) -> None:
 
     template_proxy_cls.render = _template_proxy_render
 
+    # TemplateProxy from django-template-partials replicates Template.render().
+    # However, the older versions (e.g. 24.1) didn't define `_render()` method.
+    # So we define it to support the older versions of django-template-partials.
+    # With this, we support django-template-partials as old as v23.3.
+    if not hasattr(template_proxy_cls, "_render"):
+
+        def _render(self: Any, context: Context, *args: Any, **kwargs: Any) -> str:
+            return self.nodelist.render(context, *args, **kwargs)
+
+        template_proxy_cls._render = _render
+
 
 def is_cls_patched(cls: Type[Any]) -> bool:
     return getattr(cls, "_djc_patched", False)
