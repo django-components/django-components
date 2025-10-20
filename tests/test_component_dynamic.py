@@ -1,5 +1,4 @@
 import re
-from typing import NamedTuple
 
 import pytest
 from django.template import Context, Template
@@ -21,7 +20,7 @@ class TestDynamicComponent:
                 Variable: <strong>{{ variable }}</strong>
             """
 
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 variable: str
                 variable2: str
 

@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple
+from typing import Dict, List
 
 from django_components import Component, register, types
 
@@ -14,7 +14,7 @@ error_rate = {
 
 @register("api_widget")
 class ApiWidget(Component):
-    class Kwargs(NamedTuple):
+    class Kwargs:
         simulate_error: bool = False
 
     def get_template_data(self, args, kwargs: Kwargs, slots, context):

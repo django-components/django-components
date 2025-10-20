@@ -1,6 +1,6 @@
 # ruff: noqa: ARG002, N804, N805
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, is_dataclass
 from inspect import signature
 from types import MethodType
 from typing import (
@@ -78,7 +78,14 @@ from django_components.template import cache_component_template_file, prepare_co
 from django_components.util.context import gen_context_processors_data, snapshot_context
 from django_components.util.exception import component_error_message
 from django_components.util.logger import trace_component_msg
-from django_components.util.misc import default, gen_id, hash_comp_cls, is_generator, to_dict
+from django_components.util.misc import (
+    convert_class_to_namedtuple,
+    default,
+    gen_id,
+    hash_comp_cls,
+    is_generator,
+    to_dict,
+)
 from django_components.util.template_tag import TagAttr
 from django_components.util.weakref import cached_ref
 
@@ -311,7 +318,7 @@ class ComponentVars(NamedTuple):
 
     @register("table")
     class Table(Component):
-        class Args(NamedTuple):
+        class Args:
             page: int
             per_page: int
 
@@ -363,7 +370,7 @@ class ComponentVars(NamedTuple):
 
     @register("table")
     class Table(Component):
-        class Kwargs(NamedTuple):
+        class Kwargs:
             page: int
             per_page: int
 
@@ -415,7 +422,7 @@ class ComponentVars(NamedTuple):
 
     @register("table")
     class Table(Component):
-        class Slots(NamedTuple):
+        class Slots:
             footer: SlotInput
 
         template = '''
@@ -505,6 +512,34 @@ class ComponentMeta(ComponentMediaMeta):
         if "template_name" in attrs:
             attrs["template_file"] = attrs.pop("template_name")
         attrs["template_name"] = ComponentTemplateNameDescriptor()
+
+        # Allow to define data classes (`Args`, `Kwargs`, `Slots`, `TemplateData`, `JsData`, `CssData`)
+        # without explicitly subclassing anything. In which case we make them into a subclass of `NamedTuple`.
+        # In other words:
+        # ```py
+        # class MyTable(Component):
+        #     class Kwargs(NamedTuple):
+        #         ...
+        # ```
+        # Can be simplified to:
+        # ```py
+        # class MyTable(Component):
+        #     class Kwargs:
+        #         ...
+        # ```
+        for data_class_name in ["Args", "Kwargs", "Slots", "TemplateData", "JsData", "CssData"]:
+            data_class = attrs.get(data_class_name)
+            # Not a class
+            if data_class is None or not isinstance(data_class, type):
+                continue
+            # Is dataclass
+            if is_dataclass(data_class):
+                continue
+            # Has base class(es)
+            has_parents = data_class.__bases__ != (object,)
+            if has_parents:
+                continue
+            attrs[data_class_name] = convert_class_to_namedtuple(data_class)
 
         cls = cast("Type[Component]", super().__new__(mcs, name, bases, attrs))
 
@@ -598,11 +633,10 @@ class Component(metaclass=ComponentMeta):
     will be the instance of this class:
 
     ```py
-    from typing import NamedTuple
     from django_components import Component
 
     class Table(Component):
-        class Args(NamedTuple):
+        class Args:
             color: str
             size: int
 
@@ -614,15 +648,6 @@ class Component(metaclass=ComponentMeta):
                 "size": args.size,
             }
     ```
-
-    The constructor of this class MUST accept positional arguments:
-
-    ```py
-    Args(*args)
-    ```
-
-    As such, a good starting point is to set this field to a subclass of
-    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple).
 
     Use `Args` to:
 
@@ -640,6 +665,20 @@ class Component(metaclass=ComponentMeta):
     )
     ```
 
+    If you do not specify any bases, the `Args` class will be automatically
+    converted to a `NamedTuple`:
+
+    `class Args:`  ->  `class Args(NamedTuple):`
+
+    If you explicitly set bases, the constructor of this class MUST accept positional arguments:
+
+    ```py
+    Args(*args)
+    ```
+
+    As such, a good starting point is to set this field to a subclass of
+    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple).
+
     Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
     """
 
@@ -654,11 +693,10 @@ class Component(metaclass=ComponentMeta):
     will be the instance of this class:
 
     ```py
-    from typing import NamedTuple
     from django_components import Component
 
     class Table(Component):
-        class Kwargs(NamedTuple):
+        class Kwargs:
             color: str
             size: int
 
@@ -670,16 +708,6 @@ class Component(metaclass=ComponentMeta):
                 "size": kwargs.size,
             }
     ```
-
-    The constructor of this class MUST accept keyword arguments:
-
-    ```py
-    Kwargs(**kwargs)
-    ```
-
-    As such, a good starting point is to set this field to a subclass of
-    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
-    or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
 
     Use `Kwargs` to:
 
@@ -697,6 +725,21 @@ class Component(metaclass=ComponentMeta):
     )
     ```
 
+    If you do not specify any bases, the `Kwargs` class will be automatically
+    converted to a `NamedTuple`:
+
+    `class Kwargs:`  ->  `class Kwargs(NamedTuple):`
+
+    If you explicitly set bases, the constructor of this class MUST accept keyword arguments:
+
+    ```py
+    Kwargs(**kwargs)
+    ```
+
+    As such, a good starting point is to set this field to a subclass of
+    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+    or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
+
     Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
     """
 
@@ -711,11 +754,10 @@ class Component(metaclass=ComponentMeta):
     will be the instance of this class:
 
     ```py
-    from typing import NamedTuple
     from django_components import Component, Slot, SlotInput
 
     class Table(Component):
-        class Slots(NamedTuple):
+        class Slots:
             header: SlotInput
             footer: Slot
 
@@ -727,16 +769,6 @@ class Component(metaclass=ComponentMeta):
                 "footer": slots.footer,
             }
     ```
-
-    The constructor of this class MUST accept keyword arguments:
-
-    ```py
-    Slots(**slots)
-    ```
-
-    As such, a good starting point is to set this field to a subclass of
-    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
-    or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
 
     Use `Slots` to:
 
@@ -756,6 +788,21 @@ class Component(metaclass=ComponentMeta):
         ),
     )
     ```
+
+    If you do not specify any bases, the `Slots` class will be automatically
+    converted to a `NamedTuple`:
+
+    `class Slots:`  ->  `class Slots(NamedTuple):`
+
+    If you explicitly set bases, the constructor of this class MUST accept keyword arguments:
+
+    ```py
+    Slots(**slots)
+    ```
+
+    As such, a good starting point is to set this field to a subclass of
+    [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+    or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
 
     Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
@@ -1081,18 +1128,17 @@ class Component(metaclass=ComponentMeta):
         **Example:**
 
         ```py
-        from typing import NamedTuple
         from django.template import Context
         from django_components import Component, SlotInput
 
         class MyComponent(Component):
-            class Args(NamedTuple):
+            class Args:
                 color: str
 
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 size: int
 
-            class Slots(NamedTuple):
+            class Slots:
                 footer: SlotInput
 
             def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
@@ -1123,7 +1169,7 @@ class Component(metaclass=ComponentMeta):
 
         ```py
         class MyComponent(Component):
-            class TemplateData(NamedTuple):
+            class TemplateData:
                 color: str
                 size: int
 
@@ -1156,22 +1202,22 @@ class Component(metaclass=ComponentMeta):
     If set and not `None`, then this class will be instantiated with the dictionary returned from
     [`get_template_data()`](../api#django_components.Component.get_template_data) to validate the data.
 
-    The constructor of this class MUST accept keyword arguments:
+    Use `TemplateData` to:
 
-    ```py
-    TemplateData(**template_data)
-    ```
+    - Validate the data returned from
+      [`get_template_data()`](../api#django_components.Component.get_template_data) at runtime.
+    - Set type hints for this data.
+    - Document the component data.
 
     You can also return an instance of `TemplateData` directly from
     [`get_template_data()`](../api#django_components.Component.get_template_data)
     to get type hints:
 
     ```py
-    from typing import NamedTuple
     from django_components import Component
 
     class Table(Component):
-        class TemplateData(NamedTuple):
+        class TemplateData:
             color: str
             size: int
 
@@ -1182,16 +1228,15 @@ class Component(metaclass=ComponentMeta):
             )
     ```
 
+    The constructor of this class MUST accept keyword arguments:
+
+    ```py
+    TemplateData(**template_data)
+    ```
+
     A good starting point is to set this field to a subclass of
     [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
     or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
-
-    Use `TemplateData` to:
-
-    - Validate the data returned from
-      [`get_template_data()`](../api#django_components.Component.get_template_data) at runtime.
-    - Set type hints for this data.
-    - Document the component data.
 
     Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
@@ -1376,13 +1421,13 @@ class Component(metaclass=ComponentMeta):
         from django_components import Component, SlotInput
 
         class MyComponent(Component):
-            class Args(NamedTuple):
+            class Args:
                 color: str
 
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 size: int
 
-            class Slots(NamedTuple):
+            class Slots:
                 footer: SlotInput
 
             def get_js_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
@@ -1413,7 +1458,7 @@ class Component(metaclass=ComponentMeta):
 
         ```py
         class MyComponent(Component):
-            class JsData(NamedTuple):
+            class JsData:
                 color: str
                 size: int
 
@@ -1439,22 +1484,22 @@ class Component(metaclass=ComponentMeta):
     If set and not `None`, then this class will be instantiated with the dictionary returned from
     [`get_js_data()`](../api#django_components.Component.get_js_data) to validate the data.
 
-    The constructor of this class MUST accept keyword arguments:
+    Use `JsData` to:
 
-    ```py
-    JsData(**js_data)
-    ```
+    - Validate the data returned from
+      [`get_js_data()`](../api#django_components.Component.get_js_data) at runtime.
+    - Set type hints for this data.
+    - Document the component data.
 
     You can also return an instance of `JsData` directly from
     [`get_js_data()`](../api#django_components.Component.get_js_data)
     to get type hints:
 
     ```py
-    from typing import NamedTuple
     from django_components import Component
 
     class Table(Component):
-        class JsData(NamedTuple):
+        class JsData(
             color: str
             size: int
 
@@ -1465,16 +1510,15 @@ class Component(metaclass=ComponentMeta):
             )
     ```
 
+    The constructor of this class MUST accept keyword arguments:
+
+    ```py
+    JsData(**js_data)
+    ```
+
     A good starting point is to set this field to a subclass of
     [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
     or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
-
-    Use `JsData` to:
-
-    - Validate the data returned from
-      [`get_js_data()`](../api#django_components.Component.get_js_data) at runtime.
-    - Set type hints for this data.
-    - Document the component data.
 
     Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
@@ -1664,18 +1708,17 @@ class Component(metaclass=ComponentMeta):
         **Example:**
 
         ```py
-        from typing import NamedTuple
         from django.template import Context
         from django_components import Component, SlotInput
 
         class MyComponent(Component):
-            class Args(NamedTuple):
+            class Args:
                 color: str
 
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 size: int
 
-            class Slots(NamedTuple):
+            class Slots:
                 footer: SlotInput
 
             def get_css_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
@@ -1705,7 +1748,7 @@ class Component(metaclass=ComponentMeta):
 
         ```py
         class MyComponent(Component):
-            class CssData(NamedTuple):
+            class CssData:
                 color: str
                 size: int
 
@@ -1731,22 +1774,22 @@ class Component(metaclass=ComponentMeta):
     If set and not `None`, then this class will be instantiated with the dictionary returned from
     [`get_css_data()`](../api#django_components.Component.get_css_data) to validate the data.
 
-    The constructor of this class MUST accept keyword arguments:
+    Use `CssData` to:
 
-    ```py
-    CssData(**css_data)
-    ```
+    - Validate the data returned from
+      [`get_css_data()`](../api#django_components.Component.get_css_data) at runtime.
+    - Set type hints for this data.
+    - Document the component data.
 
     You can also return an instance of `CssData` directly from
     [`get_css_data()`](../api#django_components.Component.get_css_data)
     to get type hints:
 
     ```py
-    from typing import NamedTuple
     from django_components import Component
 
     class Table(Component):
-        class CssData(NamedTuple):
+        class CssData:
             color: str
             size: int
 
@@ -1757,16 +1800,15 @@ class Component(metaclass=ComponentMeta):
             )
     ```
 
+    The constructor of this class MUST accept keyword arguments:
+
+    ```py
+    CssData(**css_data)
+    ```
+
     A good starting point is to set this field to a subclass of
     [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
     or a [dataclass](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass).
-
-    Use `CssData` to:
-
-    - Validate the data returned from
-      [`get_css_data()`](../api#django_components.Component.get_css_data) at runtime.
-    - Set type hints for this data.
-    - Document the component data.
 
     Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
@@ -2567,7 +2609,7 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component
 
     class Table(Component):
-        class Args(NamedTuple):
+        class Args:
             page: int
             per_page: int
 
@@ -2635,7 +2677,7 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component
 
     class Table(Component):
-        class Kwargs(NamedTuple):
+        class Kwargs:
             page: int
             per_page: int
 
@@ -2706,7 +2748,7 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component, Slot, SlotInput
 
     class Table(Component):
-        class Slots(NamedTuple):
+        class Slots:
             header: SlotInput
             footer: SlotInput
 
@@ -3314,19 +3356,19 @@ class Component(metaclass=ComponentMeta):
         Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
         ```python
-        from typing import NamedTuple, Optional
+        from typing import Optional
         from django_components import Component, Slot, SlotInput
 
         # Define the component with the types
         class Button(Component):
-            class Args(NamedTuple):
+            class Args:
                 name: str
 
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 surname: str
                 age: int
 
-            class Slots(NamedTuple):
+            class Slots:
                 my_slot: Optional[SlotInput] = None
                 footer: SlotInput
 

@@ -1,8 +1,10 @@
 import re
 import sys
+from collections import namedtuple
 from dataclasses import asdict, is_dataclass
 from hashlib import md5
 from importlib import import_module
+from inspect import getmembers
 from itertools import chain
 from types import ModuleType
 from typing import (
@@ -267,3 +269,50 @@ def format_as_ascii_table(
 def is_generator(obj: Any) -> bool:
     """Check if an object is a generator with send method."""
     return hasattr(obj, "send")
+
+
+def convert_class_to_namedtuple(cls: Type[Any]) -> Type[Tuple[Any, ...]]:
+    # Construct fields for a NamedTuple. Unfortunately one can't further subclass the subclass of `NamedTuple`,
+    # so we need to construct a new class with the same fields.
+    # NamedTuple has:
+    # - Required fields, which are defined without values (annotations only)
+    # - Optional fields with defaults
+    # ```py
+    # class Z:
+    #     b: str          # Required, annotated
+    #     a: int = None   # Optional, annotated
+    #     c = 1           # NOT A FIELD! Class var!
+    # ```
+    # Annotations are stored in `X.__annotations__`, while the defaults are regular class attributes
+    # NOTE: We ignore dunder methods
+    # NOTE 2: All fields with default values must come after fields without defaults.
+    field_names = list(cls.__annotations__.keys())
+
+    # Get default values from the original class and set them on the new NamedTuple class
+    field_names_set = set(field_names)
+    defaults = {}
+    class_attrs = {}
+    for name, value in getmembers(cls):
+        if name.startswith("__"):
+            continue
+        # Field default
+        if name in field_names_set:
+            defaults[name] = value
+        else:
+            # Class attribute
+            class_attrs[name] = value
+
+    # Figure out how many tuple fields have defaults. We need to know this
+    # because NamedTuple functional syntax uses the pattern where defaults
+    # are applied from the end.
+    # Final call then looks like this:
+    # `namedtuple("MyClass", ["a", "b", "c", "d"], defaults=[3, 4])`
+    # with defaults c=3 and d=4
+    num_fields_with_defaults = len(defaults)
+    if num_fields_with_defaults:
+        defaults_list = [defaults[name] for name in field_names[-num_fields_with_defaults:]]
+    else:
+        defaults_list = []
+    tuple_cls = namedtuple(cls.__name__, field_names, defaults=defaults_list)  # noqa: PYI024
+    tuple_cls.__annotations__ = cls.__annotations__
+    return tuple_cls

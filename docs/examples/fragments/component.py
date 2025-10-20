@@ -1,5 +1,3 @@
-from typing import NamedTuple
-
 from django_components import Component, register, types
 
 DESCRIPTION = "Use HTML fragments (partials) with HTMX, AlpineJS, or plain JS."
@@ -9,7 +7,7 @@ DESCRIPTION = "Use HTML fragments (partials) with HTMX, AlpineJS, or plain JS."
 class SimpleFragment(Component):
     """A simple fragment with JS and CSS."""
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         type: str
 
     template: types.django_html = """
@@ -37,7 +35,7 @@ class SimpleFragment(Component):
 class AlpineFragment(Component):
     """A fragment that defines an AlpineJS component."""
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         type: str
 
     # The fragment is wrapped in `<template x-if="false">` so that we prevent

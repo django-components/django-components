@@ -1,5 +1,3 @@
-from typing import NamedTuple
-
 import pytest
 from django.template import Context, Template
 from django.template.exceptions import TemplateSyntaxError
@@ -313,7 +311,7 @@ class TestErrorFallbackComponent:
     def test_error_fallback_nested_inside_another(self, components_settings):
         @register("broken")
         class BrokenComponent(Component):
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 msg: str
 
             def on_render(self, context: Context, template: Template):

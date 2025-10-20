@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Tuple
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 from django_components import Component, Slot, register, types
 
@@ -9,7 +9,7 @@ DESCRIPTION = "Form that automatically arranges fields in a grid and generates l
 class FormGrid(Component):
     """Form that automatically arranges fields in a grid and generates labels."""
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         editable: bool = True
         method: str = "post"
         form_content_attrs: Optional[dict] = None
@@ -114,7 +114,7 @@ def prepare_form_grid(slots: Dict[str, Slot]):
             # Case: Component user didn't explicitly define how to render the label
             #       We will create the label for the field automatically
             label = FormGridLabel.render(
-                kwargs=FormGridLabel.Kwargs(field_name=field_name),
+                kwargs=FormGridLabel.Kwargs(field_name=field_name),  # type: ignore[call-arg]
                 deps_strategy="ignore",
             )
 
@@ -134,7 +134,7 @@ class FormGridLabel(Component):
         </label>
     """
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         field_name: str
         title: Optional[str] = None
 

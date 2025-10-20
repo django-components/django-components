@@ -80,14 +80,13 @@ For a component to be renderable with the [`{% component %}`](../../../reference
 For example, if you register a component under the name `"button"`:
 
 ```python
-from typing import NamedTuple
 from django_components import Component, register
 
 @register("button")
 class Button(Component):
     template_file = "button.html"
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         name: str
         job: str
 
@@ -207,20 +206,20 @@ The [`Component.render()`](../../../reference/api/#django_components.Component.r
 This is the equivalent of calling the [`{% component %}`](../template_tags#component) tag.
 
 ```python
-from typing import NamedTuple, Optional
+from typing import Optional
 from django_components import Component, SlotInput
 
 class Button(Component):
     template_file = "button.html"
 
-    class Args(NamedTuple):
+    class Args:
         name: str
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         surname: str
         age: int
 
-    class Slots(NamedTuple):
+    class Slots:
         footer: Optional[SlotInput] = None
 
     def get_template_data(self, args, kwargs, slots, context):
@@ -264,20 +263,20 @@ Any extra arguments are passed to the [`HttpResponse`](https://docs.djangoprojec
 constructor.
 
 ```python
-from typing import NamedTuple, Optional
+from typing import Optional
 from django_components import Component, SlotInput
 
 class Button(Component):
     template_file = "button.html"
 
-    class Args(NamedTuple):
+    class Args(
         name: str
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         surname: str
         age: int
 
-    class Slots(NamedTuple):
+    class Slots:
         footer: Optional[SlotInput] = None
 
     def get_template_data(self, args, kwargs, slots, context):
@@ -486,19 +485,19 @@ and [`Slots`](../../../reference/api/#django_components.Component.Slots) classes
 Read more on [Typing and validation](../../fundamentals/typing_and_validation).
 
 ```python
-from typing import NamedTuple, Optional
+from typing import Optional
 from django_components import Component, Slot, SlotInput
 
 # Define the component with the types
 class Button(Component):
-    class Args(NamedTuple):
+    class Args(
         name: str
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         surname: str
         age: int
 
-    class Slots(NamedTuple):
+    class Slots:
         my_slot: Optional[SlotInput] = None
         footer: SlotInput
 

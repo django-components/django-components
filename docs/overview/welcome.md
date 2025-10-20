@@ -393,21 +393,21 @@ Avoid needless errors with [type hints and runtime input validation](https://dja
 To opt-in to input validation, define types for component's args, kwargs, slots:
 
 ```py
-from typing import NamedTuple, Optional
+from typing import Optional
 from django.template import Context
 from django_components import Component, Slot, SlotInput
 
 class Button(Component):
-    class Args(NamedTuple):
+    class Args:
         size: int
         text: str
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         variable: str
         another: int
         maybe_var: Optional[int] = None  # May be omitted
 
-    class Slots(NamedTuple):
+    class Slots:
         my_slot: Optional[SlotInput] = None
         another_slot: SlotInput
 

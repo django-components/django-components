@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, cast
+from typing import Optional, cast
 
 from django.template import Context, Template
 from django.template.exceptions import TemplateSyntaxError
@@ -115,10 +115,10 @@ class ErrorFallback(Component):
         Remember to define the `content` slot as function, so it's evaluated from inside of `ErrorFallback`.
     """
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         fallback: Optional[str] = None
 
-    class Slots(NamedTuple):
+    class Slots:
         default: Optional[SlotInput] = None
         content: Optional[SlotInput] = None
         fallback: Optional[SlotInput] = None

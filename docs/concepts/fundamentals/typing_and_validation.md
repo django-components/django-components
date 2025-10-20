@@ -20,20 +20,20 @@ that allow you to define the types of args, kwargs, slots, as well as the data r
 Use this to add type hints to your components, to validate the inputs at runtime, and to document them.
 
 ```py
-from typing import NamedTuple, Optional
+from typing import Optional
 from django.template import Context
 from django_components import Component, SlotInput
 
 class Button(Component):
-    class Args(NamedTuple):
+    class Args:
         size: int
         text: str
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         variable: str
         maybe_var: Optional[int] = None  # May be omitted
 
-    class Slots(NamedTuple):
+    class Slots:
         my_slot: Optional[SlotInput] = None
 
     def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
@@ -59,7 +59,7 @@ You can use [`Component.Args`](../../../reference/api#django_components.Componen
 [`Component.Kwargs`](../../../reference/api#django_components.Component.Kwargs),
 and [`Component.Slots`](../../../reference/api#django_components.Component.Slots) to type the component inputs.
 
-When you set these classes, at render time the `args`, `kwargs`, and `slots` parameters of the data methods
+When you set these input classes, the `args`, `kwargs`, and `slots` parameters of the data methods
 ([`get_template_data()`](../../../reference/api#django_components.Component.get_template_data),
 [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data),
 [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data))
@@ -80,7 +80,7 @@ or set them to `None`, the inputs will be passed as plain lists or dictionaries,
 and will not be validated.
 
 ```python
-from typing_extensions import NamedTuple, TypedDict
+from typing_extensions import TypedDict
 from django.template import Context
 from django_components import Component, Slot, SlotInput
 
@@ -90,15 +90,15 @@ class ButtonFooterSlotData(TypedDict):
 
 # Define the component with the types
 class Button(Component):
-    class Args(NamedTuple):
+    class Args:
         name: str
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         surname: str
         age: int
         maybe_var: Optional[int] = None  # May be omitted
 
-    class Slots(NamedTuple):
+    class Slots:
         # Use `SlotInput` to allow slots to be given as `Slot` instance,
         # plain string, or a function that returns a string.
         my_slot: Optional[SlotInput] = None
@@ -143,7 +143,7 @@ class Button(Component):
     Args = None
     Slots = None
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         name: str
         age: int
 
@@ -195,19 +195,18 @@ If you omit the [`TemplateData`](../../../reference/api#django_components.Compon
 or set them to `None`, the validation and instantiation will be skipped.
 
 ```python
-from typing import NamedTuple
 from django_components import Component
 
 class Button(Component):
-    class TemplateData(NamedTuple):
+    class TemplateData:
         data1: str
         data2: int
 
-    class JsData(NamedTuple):
+    class JsData:
         js_data1: str
         js_data2: int
 
-    class CssData(NamedTuple):
+    class CssData:
         css_data1: str
         css_data2: int
 
@@ -233,19 +232,18 @@ class Button(Component):
 For each data method, you can either return a plain dictionary with the data, or an instance of the respective data class directly.
 
 ```python
-from typing import NamedTuple
 from django_components import Component
 
 class Button(Component):
-    class TemplateData(NamedTuple):
+    class TemplateData:
         data1: str
         data2: int
 
-    class JsData(NamedTuple):
+    class JsData:
         js_data1: str
         js_data2: int
 
-    class CssData(NamedTuple):
+    class CssData:
         css_data1: str
         css_data2: int
 
@@ -270,33 +268,62 @@ class Button(Component):
 
 ## Custom types
 
-We recommend to use [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
-for the `Args` class, and [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple),
+So far, we've defined the input classes like `Kwargs` as simple classes.
+
+The truth is that when these classes don't subclass anything else,
+they are converted to `NamedTuples` behind the scenes.
+
+```py
+class Table(Component):
+    class Kwargs:
+        name: str
+        age: int
+```
+
+is the same as:
+
+```py
+class Table(Component):
+    class Kwargs(NamedTuple):
+        name: str
+        age: int
+```
+
+You can actually set these classes to anything you want - whether it's dataclasses,
+[Pydantic models](https://docs.pydantic.dev/latest/concepts/models/), or custom classes:
+
+```py
+from typing import NamedTuple, Optional
+from django_components import Component, Optional
+from pydantic import BaseModel
+
+class Button(Component):
+    class Args(NamedTuple):
+        size: int
+        text: str
+
+    @dataclass
+    class Kwargs:
+        variable: str
+        maybe_var: Optional[int] = None
+
+    class Slots(BaseModel):
+        my_slot: Optional[SlotInput] = None
+
+    def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+        ...
+```
+
+We recommend:
+
+- [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)
+for the `Args` class
+- [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple),
 [dataclasses](https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass),
 or [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/)
 for `Kwargs`, `Slots`, `TemplateData`, `JsData`, and `CssData` classes.
 
 However, you can use any class, as long as they meet the conditions below.
-
-For example, here is how you can use [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/)
-to validate the inputs at runtime.
-
-```py
-from django_components import Component
-from pydantic import BaseModel
-
-class Table(Component):
-    class Kwargs(BaseModel):
-        name: str
-        age: int
-
-    def get_template_data(self, args, kwargs, slots, context):
-        assert isinstance(kwargs, Table.Kwargs)
-
-Table.render(
-    kwargs=Table.Kwargs(name="John", age=30),
-)
-```
 
 ### `Args` class
 
@@ -390,7 +417,7 @@ As a workaround:
 
     ```py
     class Table(Component):
-        class Args(NamedTuple):
+        class Args:
             args: List[str]
 
     Table.render(
@@ -402,7 +429,7 @@ As a workaround:
 
     ```py
     class Table(Component):
-        class Kwargs(NamedTuple):
+        class Kwargs:
             variable: str
             another: int
             # Pass any extra keys under `extra`
@@ -422,17 +449,16 @@ As a workaround:
 To declare that a component accepts no args, kwargs, etc, define the types with no attributes using the `pass` keyword:
 
 ```py
-from typing import NamedTuple
 from django_components import Component
 
 class Button(Component):
-    class Args(NamedTuple):
+    class Args:
         pass
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         pass
 
-    class Slots(NamedTuple):
+    class Slots:
         pass
 ```
 
@@ -459,14 +485,14 @@ In the example below, `ButtonExtra` inherits `Kwargs` from `Button`, but overrid
 from django_components import Component, Empty
 
 class Button(Component):
-    class Args(NamedTuple):
+    class Args:
         size: int
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         color: str
 
 class ButtonExtra(Button):
-    class Args(NamedTuple):
+    class Args:
         name: str
         size: int
 
@@ -491,10 +517,10 @@ Compare the following:
 
 ```py
 class Button(Component):
-    class Args(NamedTuple):
+    class Args:
         size: int
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         color: str
 
     # Both `Args` and `Kwargs` are defined on the class
@@ -624,23 +650,23 @@ The steps to migrate are:
 Thus, the code above will become:
 
 ```py
-from typing import NamedTuple, Optional
+from typing import Optional
 from django.template import Context
 from django_components import Component, Slot, SlotInput
 
 # The Component class does not take any generics
 class Button(Component):
     # Types are now defined inside the component class
-    class Args(NamedTuple):
+    class Args:
         size: int
         text: str
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         variable: str
         another: int
         maybe_var: Optional[int] = None  # May be omitted
 
-    class Slots(NamedTuple):
+    class Slots:
         # Use `SlotInput` to allow slots to be given as `Slot` instance,
         # plain string, or a function that returns a string.
         my_slot: Optional[SlotInput] = None

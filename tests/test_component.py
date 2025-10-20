@@ -5,7 +5,7 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 
 import os
 import re
-from typing import Any, List, Literal, NamedTuple, Optional
+from typing import Any, List, Literal, Optional
 
 import pytest
 from django.conf import settings
@@ -591,23 +591,23 @@ class TestComponentRenderAPI:
         class TestComponent(Component):
             template = ""
 
-            class Args(NamedTuple):
+            class Args:
                 variable: int
                 another: str
 
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 variable: str
                 another: int
 
-            class Slots(NamedTuple):
+            class Slots:
                 my_slot: SlotInput
 
             def get_template_data(self, args, kwargs, slots, context):
                 nonlocal called
                 called = True
 
-                assert self.args == TestComponent.Args(123, "str")
-                assert self.kwargs == TestComponent.Kwargs(variable="test", another=1)
+                assert self.args == TestComponent.Args(123, "str")  # type: ignore[call-arg]
+                assert self.kwargs == TestComponent.Kwargs(variable="test", another=1)  # type: ignore[call-arg]
                 assert isinstance(self.slots, TestComponent.Slots)
                 assert isinstance(self.slots.my_slot, Slot)
                 assert self.slots.my_slot() == "MY_SLOT"
@@ -789,15 +789,15 @@ class TestComponentTemplateVars:
 
     def test_args_kwargs_slots__simple_typed(self):
         class TestComponent(Component):
-            class Args(NamedTuple):
+            class Args:
                 variable: int
                 another: str
 
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 variable: str
                 another: int
 
-            class Slots(NamedTuple):
+            class Slots:
                 my_slot: SlotInput
 
             template: types.django_html = """
@@ -898,15 +898,15 @@ class TestComponentTemplateVars:
             """
 
         class TestComponent(Component):
-            class Args(NamedTuple):
+            class Args:
                 variable: int
                 another: str
 
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 variable: str
                 another: int
 
-            class Slots(NamedTuple):
+            class Slots:
                 my_slot: SlotInput
 
             template: types.django_html = """

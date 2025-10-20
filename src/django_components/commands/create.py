@@ -207,7 +207,7 @@ class CreateCommand(ComponentCommand):
                         js_file = "{js_filename}"
                         css_file = "{css_filename}"
 
-                        class Kwargs(NamedTuple):
+                        class Kwargs:
                             param: str
 
                         class Defaults:

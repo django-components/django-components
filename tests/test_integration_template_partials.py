@@ -8,8 +8,6 @@ This file can be deleted after Django 5.2 reached end of life.
 See https://github.com/django-components/django-components/issues/1323#issuecomment-3163478287.
 """
 
-from typing import NamedTuple
-
 import pytest
 from django.http import HttpRequest
 from django.shortcuts import render
@@ -53,7 +51,7 @@ class TestTemplatePartialsIntegration:
                 })()
             """  # noqa: E501
 
-            class Kwargs(NamedTuple):
+            class Kwargs:
                 date: str
 
             def get_template_data(self, args, kwargs: Kwargs, slots, context):

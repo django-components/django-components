@@ -394,7 +394,6 @@ slot content function.
 **Example:**
 
 ```python
-from typing import NamedTuple
 from typing_extensions import TypedDict
 from django_components import Component, SlotInput
 
@@ -402,7 +401,7 @@ class TableFooterSlotData(TypedDict):
     page_number: int
 
 class Table(Component):
-    class Slots(NamedTuple):
+    class Slots:
         header: SlotInput
         footer: SlotInput[TableFooterSlotData]
 

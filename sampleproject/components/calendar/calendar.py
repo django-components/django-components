@@ -1,5 +1,3 @@
-from typing import NamedTuple
-
 from django_components import Component, register
 
 
@@ -15,7 +13,7 @@ class Calendar(Component):
     js_file = "calendar/calendar.js"
 
     # This component takes one parameter, a date string to show in the template
-    class Kwargs(NamedTuple):
+    class Kwargs:
         date: str
 
     def get_template_data(self, args, kwargs: Kwargs, slots, context):
@@ -46,7 +44,7 @@ class CalendarRelative(Component):
     js_file = "calendar.js"
 
     # This component takes one parameter, a date string to show in the template
-    class Kwargs(NamedTuple):
+    class Kwargs:
         date: str
 
     def get_template_data(self, args, kwargs: Kwargs, slots, context):

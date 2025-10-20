@@ -263,7 +263,7 @@ class Tablist(Component):
         {% endprovide %}
     """
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         id: Optional[str] = None
         name: str = "Tabs"
         selected_tab: Optional[str] = None
@@ -341,7 +341,7 @@ class Tab(Component):
         {% endprovide %}
     """
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         header: str
         disabled: bool = False
         id: Optional[str] = None

@@ -101,7 +101,7 @@ For live examples, see the [Examples](../../examples/index.md).
     It's also a good idea to have a common prefix for your components, so they can be easily distinguished from users' components. In the example below, we use the prefix `my_` / `My`.
 
     ```djc_py
-    from typing import NamedTuple, Optional
+    from typing import Optional
     from django_components import Component, SlotInput, register, types
 
     from myapp.templatetags.mytags import comp_registry
@@ -111,16 +111,16 @@ For live examples, see the [Examples](../../examples/index.md).
     @register("my_menu", registry=comp_registry)
     class MyMenu(Component):
         # Define the types
-        class Args(NamedTuple):
+        class Args:
             size: int
             text: str
 
-        class Kwargs(NamedTuple):
+        class Kwargs:
             vertical: Optional[bool] = None
             klass: Optional[str] = None
             style: Optional[str] = None
 
-        class Slots(NamedTuple):
+        class Slots:
             default: Optional[SlotInput] = None
 
         def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):

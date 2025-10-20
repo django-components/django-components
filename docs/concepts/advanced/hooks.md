@@ -289,14 +289,14 @@ To implement this, we render the fallback slot in [`on_render()`](../../../refer
 and return it if an error occured:
 
 ```djc_py
-from typing import NamedTuple, Optional
+from typing import Optional
 
 from django.template import Context, Template
 from django.utils.safestring import mark_safe
 from django_components import Component, OnRenderGenerator, SlotInput, types
 
 class ErrorFallback(Component):
-    class Slots(NamedTuple):
+    class Slots:
         default: Optional[SlotInput] = None
         fallback: Optional[SlotInput] = None
 

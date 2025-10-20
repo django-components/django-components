@@ -15,7 +15,7 @@ Each method handles the data independently - you can define different data for t
 
 ```python
 class ProfileCard(Component):
-    class Kwargs(NamedTuple):
+    class Kwargs:
         user_id: int
         show_details: bool
 
@@ -51,7 +51,7 @@ If [`get_template_data()`](../../../reference/api/#django_components.Component.g
 class ProfileCard(Component):
     template_file = "profile_card.html"
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         user_id: int
         show_details: bool
 
@@ -182,10 +182,10 @@ class ProfileCard(Component):
 
     ```py
     class ProfileCard(Component):
-        class Args(NamedTuple):
+        class Args:
             user_id: int
 
-        class Kwargs(NamedTuple):
+        class Kwargs:
             show_details: bool
 
         # Access inputs directly as parameters
@@ -228,10 +228,10 @@ class ProfileCard(Component):
 
     ```py
     class ProfileCard(Component):
-        class Args(NamedTuple):
+        class Args:
             user_id: int
 
-        class Kwargs(NamedTuple):
+        class Kwargs:
             show_details: bool
 
         def get_template_data(self, args: Args, kwargs: Kwargs, slots, context):
@@ -320,7 +320,7 @@ from django_components import Component, Default, register
 
 @register("profile_card")
 class ProfileCard(Component):
-    class Kwargs(NamedTuple):
+    class Kwargs:
         show_details: bool
 
     class Defaults:
@@ -344,7 +344,7 @@ class ProfileCard(Component):
 
     ```py
     class ProfileCard(Component):
-        class Kwargs(NamedTuple):
+        class Kwargs:
             show_details: bool = True
     ```
 
@@ -391,18 +391,18 @@ This will also validate the inputs at runtime, as the type classes will be insta
 Read more about [Component typing](../../fundamentals/typing_and_validation).
 
 ```python
-from typing import NamedTuple, Optional
+from typing import Optional
 from django_components import Component, SlotInput
 
 class Button(Component):
-    class Args(NamedTuple):
+    class Args:
         name: str
 
-    class Kwargs(NamedTuple):
+    class Kwargs:
         surname: str
         maybe_var: Optional[int] = None  # May be omitted
 
-    class Slots(NamedTuple):
+    class Slots:
         my_slot: Optional[SlotInput] = None
         footer: SlotInput
 
@@ -433,19 +433,18 @@ and [`CssData`](../../../reference/api/#django_components.Component.CssData) cla
 For each data method, you can either return a plain dictionary with the data, or an instance of the respective data class.
 
 ```python
-from typing import NamedTuple
 from django_components import Component
 
 class Button(Component):
-    class TemplateData(NamedTuple):
+    class TemplateData(
         data1: str
         data2: int
 
-    class JsData(NamedTuple):
+    class JsData:
         js_data1: str
         js_data2: int
 
-    class CssData(NamedTuple):
+    class CssData:
         css_data1: str
         css_data2: int
 

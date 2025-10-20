@@ -92,7 +92,7 @@ With `Args` class:
 from django_components import Component
 
 class Table(Component):
-    class Args(NamedTuple):
+    class Args:
         page: int
         per_page: int
 
@@ -137,7 +137,7 @@ With `Kwargs` class:
 from django_components import Component
 
 class Table(Component):
-    class Kwargs(NamedTuple):
+    class Kwargs:
         page: int
         per_page: int
 
@@ -182,7 +182,7 @@ With `Slots` class:
 from django_components import Component, Slot, SlotInput
 
 class Table(Component):
-    class Slots(NamedTuple):
+    class Slots:
         header: SlotInput
         footer: SlotInput
 

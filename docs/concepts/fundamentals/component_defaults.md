@@ -74,7 +74,7 @@ and so `selected_items` will be set to `[1, 2, 3]`.
 
     ```py
     class ProfileCard(Component):
-        class Kwargs(NamedTuple):
+        class Kwargs:
             show_details: bool = True
     ```
 
