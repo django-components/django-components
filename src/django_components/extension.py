@@ -1,3 +1,4 @@
+import sys
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
@@ -14,7 +15,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from weakref import ref
+from weakref import ReferenceType, ref
 
 import django.urls
 from django.template import Context, Origin, Template
@@ -31,6 +32,13 @@ if TYPE_CHECKING:
     from django_components.component_registry import ComponentRegistry
     from django_components.perfutil.component import OnComponentRenderedResult
     from django_components.slots import Slot, SlotNode, SlotResult
+
+
+# NOTE: `ReferenceType` is NOT a generic pre-3.9
+if sys.version_info >= (3, 9):
+    ComponentInstanceRef = ReferenceType["Component"]
+else:
+    ComponentInstanceRef = ReferenceType
 
 
 TCallable = TypeVar("TCallable", bound=Callable)
@@ -265,16 +273,27 @@ class ExtensionComponentConfig:
 
         This attribute holds the owner [`Component`](./api.md#django_components.Component) instance
         that this extension is defined on.
+
+        Some extensions like Storybook run outside of the component lifecycle,
+        so there is no component instance available when running extension's methods.
+        In such cases, this attribute will be `None`.
         """
-        component = self._component_ref()
+        component: Optional[Component] = None
+        if self._component_ref is not None:
+            component = self._component_ref()
         if component is None:
             raise RuntimeError("Component has been garbage collected")
         return component
 
-    def __init__(self, component: "Component") -> None:
+    def __init__(self, component: "Optional[Component]") -> None:
         # NOTE: Use weak reference to avoid a circular reference between the component instance
         # and the extension class.
-        self._component_ref = ref(component)
+        if component is not None:
+            self._component_ref: Optional[ComponentInstanceRef] = ref(component)
+        else:
+            # NOTE: Some extensions like Storybook run outside of the component lifecycle,
+            #       so there is no component instance available when running extension's methods.
+            self._component_ref = None
 
 
 # TODO_v1 - Delete

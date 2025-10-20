@@ -242,6 +242,11 @@ class TestExtensions:
         del TestAccessComp
         gc.collect()
 
+    @djc_test(components_settings={"extensions": [DummyExtension]})
+    def test_instantiate_ext_component_config_none(self):
+        config = DummyExtension.ComponentConfig(None)
+        assert isinstance(config, DummyExtension.ComponentConfig)
+
     def test_raises_on_extension_name_conflict(self):
         @djc_test(components_settings={"extensions": [RenderExtension]})
         def inner():

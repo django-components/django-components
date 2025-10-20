@@ -51,6 +51,10 @@
             ...
     ```
 
+- Extension authors: The `ExtensionComponentConfig` can be instantiated with `None` instead of a component instance.
+
+  This allows to call component-level extension methods outside of the normal rendering lifecycle.
+
 ## v0.142.3
 
 #### Fix

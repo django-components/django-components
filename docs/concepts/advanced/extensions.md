@@ -65,12 +65,14 @@ E.g.:
     Each method of the nested classes has access to the `component` attribute,
     which points to the component instance.
 
+    This may be `None` if the methods does NOT run during the rendering.
+
     ```python
     class MyTable(Component):
         class MyExtension:
             def get(self, request):
                 # `self.component` points to the instance of `MyTable` Component.
-                return self.component.render_to_response(request=request)
+                return self.component.kwargs.some_input
     ```
 
 ### Example: Component as View
