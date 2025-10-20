@@ -313,6 +313,6 @@ def convert_class_to_namedtuple(cls: Type[Any]) -> Type[Tuple[Any, ...]]:
         defaults_list = [defaults[name] for name in field_names[-num_fields_with_defaults:]]
     else:
         defaults_list = []
-    tuple_cls = namedtuple(cls.__name__, field_names, defaults=defaults_list)  # noqa: PYI024
+    tuple_cls = namedtuple(cls.__name__, field_names, defaults=defaults_list)  # type: ignore[misc]  # noqa: PYI024
     tuple_cls.__annotations__ = cls.__annotations__
     return tuple_cls
