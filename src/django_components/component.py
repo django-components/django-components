@@ -530,6 +530,7 @@ class ComponentMeta(ComponentMediaMeta):
         # NOTE: Using dataclasses with `slots=True` could be faster than using NamedTuple,
         #       but in real world web pages that may load 1-2s, data access and instantiation
         #       is only on the order of milliseconds, or about 0.1% of the overall time.
+        #       See https://github.com/django-components/django-components/pull/1467#discussion_r2449009201
         for data_class_name in ["Args", "Kwargs", "Slots", "TemplateData", "JsData", "CssData"]:
             data_class = attrs.get(data_class_name)
             # Not a class
