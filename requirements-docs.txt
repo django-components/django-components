@@ -42,7 +42,7 @@ defusedxml==0.7.1
     # via cairosvg
 django==5.2.5
     # via -r requirements-docs.in
-djc-core-html-parser==1.0.2
+djc-core-html-parser==1.0.3
     # via -r requirements-docs.in
 ghp-import==2.1.0
     # via mkdocs

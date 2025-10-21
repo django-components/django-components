@@ -74,7 +74,7 @@ The package provides custom Django management commands:
 
 ### CI/CD Information  
 - GitHub Actions workflow: `.github/workflows/tests.yml`
-- Tests run on Python 3.8-3.13 with Django 4.2-5.2
+- Tests run on Python 3.8-3.14 with Django 4.2-5.2
 - Includes Playwright browser testing (requires `playwright install chromium --with-deps`)
 - Documentation building uses mkdocs
 - Pre-commit hooks run ruff

@@ -8,6 +8,7 @@ Django-components supports all supported combinations versions of [Django](https
 | 3.11           | 4.2, 5.1, 5.2  |
 | 3.12           | 4.2, 5.1, 5.2  |
 | 3.13           | 5.1, 5.2       |
+| 3.14           | 5.2            |
 
 ### Operating systems
 
