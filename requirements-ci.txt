@@ -28,7 +28,7 @@ filelock==3.16.1
     # via
     #   tox
     #   virtualenv
-greenlet==3.1.1
+greenlet==3.2.4
     # via playwright
 idna==3.10
     # via requests
@@ -54,13 +54,13 @@ platformdirs==4.3.6
     # via
     #   tox
     #   virtualenv
-playwright==1.48.0
+playwright==1.55.0
     # via -r requirements-ci.in
 pluggy==1.5.0
     # via
     #   pytest
     #   tox
-pyee==12.0.0
+pyee==13.0.0
     # via playwright
 pympler==1.1
     # via asv
