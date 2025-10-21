@@ -54,7 +54,7 @@ platformdirs==4.3.6
     # via
     #   tox
     #   virtualenv
-playwright==1.55.0
+playwright==1.48.0
     # via -r requirements-ci.in
 pluggy==1.5.0
     # via
