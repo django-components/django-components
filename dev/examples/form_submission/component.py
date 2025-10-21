@@ -9,7 +9,7 @@ DESCRIPTION = "Handle the entire form submission flow in a single file and witho
 
 @register("thank_you_message")
 class ThankYouMessage(Component):
-    class Kwargs(NamedTuple):
+    class Kwargs:
         name: str
 
     def get_template_data(self, args, kwargs: Kwargs, slots, context):

@@ -1,6 +1,5 @@
 # ruff: noqa: S311
 import random
-from typing import NamedTuple
 
 from django_components import Component, register, types
 
@@ -9,7 +8,7 @@ DESCRIPTION = "A component that catches errors and displays fallback content, si
 
 @register("weather_widget")
 class WeatherWidget(Component):
-    class Kwargs(NamedTuple):
+    class Kwargs:
         location: str
         simulate_error: bool = False
 

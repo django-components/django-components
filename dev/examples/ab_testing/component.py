@@ -1,6 +1,6 @@
 # ruff: noqa: S311
 import random
-from typing import NamedTuple, Optional
+from typing import Optional
 
 from django_components import Component, register, types
 
@@ -9,7 +9,7 @@ DESCRIPTION = "Dynamically render different component versions. Use for A/B test
 
 @register("offer_card_old")
 class OfferCardOld(Component):
-    class Kwargs(NamedTuple):
+    class Kwargs:
         savings_percent: int
 
     def get_template_data(self, args, kwargs, slots, context):
@@ -45,7 +45,7 @@ class OfferCardNew(OfferCardOld):
 
 @register("offer_card")
 class OfferCard(Component):
-    class Kwargs(NamedTuple):
+    class Kwargs:
         savings_percent: int
         use_new_version: Optional[bool] = None
 

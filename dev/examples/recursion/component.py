@@ -1,5 +1,3 @@
-from typing import NamedTuple
-
 from django_components import Component, register, types
 
 DESCRIPTION = "100 nested components? Not a problem! Handle recursive rendering out of the box."
@@ -7,7 +5,7 @@ DESCRIPTION = "100 nested components? Not a problem! Handle recursive rendering 
 
 @register("recursion")
 class Recursion(Component):
-    class Kwargs(NamedTuple):
+    class Kwargs:
         current_depth: int = 0
 
     def get_template_data(self, args, kwargs: Kwargs, slots, context):
