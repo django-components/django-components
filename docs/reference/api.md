@@ -171,6 +171,10 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.get_component_defaults
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.get_component_dirs
     options:
       show_if_no_docstring: true

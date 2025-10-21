@@ -17,10 +17,7 @@ Each method handles the data independently - you can define different data for t
 class ProfileCard(Component):
     class Kwargs:
         user_id: int
-        show_details: bool
-
-    class Defaults:
-        show_details = True
+        show_details: bool = True
 
     def get_template_data(self, args, kwargs: Kwargs, slots, context):
         user = User.objects.get(id=kwargs.user_id)
@@ -304,7 +301,7 @@ class ProfileCard(Component):
 
 ## Default values
 
-You can use [`Defaults`](../../../reference/api/#django_components.Component.Defaults) class to provide default values for your inputs.
+You can use the [`Defaults`](../../../reference/api/#django_components.Component.Defaults) and [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs) classes to provide default values for your inputs.
 
 These defaults will be applied either when:
 
@@ -321,12 +318,9 @@ from django_components import Component, Default, register
 @register("profile_card")
 class ProfileCard(Component):
     class Kwargs:
-        show_details: bool
+        # Will be set to True if `None` or missing
+        show_details: bool = True
 
-    class Defaults:
-        show_details = True
-
-    # show_details will be set to True if `None` or missing
     def get_template_data(self, args, kwargs: Kwargs, slots, context):
         return {
             "show_details": kwargs.show_details,
@@ -334,26 +328,6 @@ class ProfileCard(Component):
 
     ...
 ```
-
-!!! warning
-
-    When typing your components with [`Args`](../../../reference/api/#django_components.Component.Args),
-    [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
-    or [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
-    you may be inclined to define the defaults in the classes.
-
-    ```py
-    class ProfileCard(Component):
-        class Kwargs:
-            show_details: bool = True
-    ```
-
-    This is **NOT recommended**, because:
-
-    - The defaults will NOT be applied to inputs when using [`self.raw_kwargs`](../../../reference/api/#django_components.Component.raw_kwargs) property.
-    - The defaults will NOT be applied when a field is given but set to `None`.
-
-    Instead, define the defaults in the [`Defaults`](../../../reference/api/#django_components.Component.Defaults) class.
 
 ## Accessing Render API
 

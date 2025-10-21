@@ -208,10 +208,7 @@ class CreateCommand(ComponentCommand):
                         css_file = "{css_filename}"
 
                         class Kwargs:
-                            param: str
-
-                        class Defaults:
-                            param = "sample value"
+                            param: str = "sample value"
 
                         def get_template_data(self, args, kwargs: Kwargs, slots, context):
                             return {{

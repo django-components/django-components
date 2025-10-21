@@ -22,10 +22,7 @@ class TestDynamicComponent:
 
             class Kwargs:
                 variable: str
-                variable2: str
-
-            class Defaults:
-                variable2 = "default"
+                variable2: str = "default"
 
             def get_template_data(self, args, kwargs: Kwargs, slots, context):
                 return {

@@ -52,7 +52,7 @@ from django_components.extension import (
     OnTemplateLoadedContext,
 )
 from django_components.extensions.cache import ComponentCache
-from django_components.extensions.defaults import ComponentDefaults, Default
+from django_components.extensions.defaults import ComponentDefaults, Default, get_component_defaults
 from django_components.extensions.debug_highlight import ComponentDebugHighlight
 from django_components.extensions.view import ComponentView, get_component_url
 from django_components.library import TagProtectedError
@@ -162,6 +162,7 @@ __all__ = [
     "component_shorthand_formatter",
     "format_attributes",
     "get_component_by_class_id",
+    "get_component_defaults",
     "get_component_dirs",
     "get_component_files",
     "get_component_url",

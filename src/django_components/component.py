@@ -527,6 +527,9 @@ class ComponentMeta(ComponentMediaMeta):
         #     class Kwargs:
         #         ...
         # ```
+        # NOTE: Using dataclasses with `slots=True` could be faster than using NamedTuple,
+        #       but in real world web pages that may load 1-2s, data access and instantiation
+        #       is only on the order of milliseconds, or about 0.1% of the overall time.
         for data_class_name in ["Args", "Kwargs", "Slots", "TemplateData", "JsData", "CssData"]:
             data_class = attrs.get(data_class_name)
             # Not a class
@@ -698,7 +701,7 @@ class Component(metaclass=ComponentMeta):
     class Table(Component):
         class Kwargs:
             color: str
-            size: int
+            size: int = 10
 
         def get_template_data(self, args, kwargs: Kwargs, slots, context):
             assert isinstance(kwargs, Table.Kwargs)
@@ -714,6 +717,7 @@ class Component(metaclass=ComponentMeta):
     - Validate the input at runtime.
     - Set type hints for the keyword arguments for data methods like
       [`get_template_data()`](../api#django_components.Component.get_template_data).
+    - Set defaults for individual fields
     - Document the component inputs.
 
     You can also use `Kwargs` to validate the keyword arguments for
@@ -724,6 +728,10 @@ class Component(metaclass=ComponentMeta):
         kwargs=Table.Kwargs(color="red", size=10),
     )
     ```
+
+    The defaults set on `Kwargs` will be merged with defaults from
+    [`Component.Defaults`](../api/#django_components.Component.Defaults) class.
+    `Kwargs` takes precendence. Read more about [Component defaults](../../concepts/fundamentals/component_defaults).
 
     If you do not specify any bases, the `Kwargs` class will be automatically
     converted to a `NamedTuple`:
@@ -2265,6 +2273,8 @@ class Component(metaclass=ComponentMeta):
     """
     The fields of this class are used to set default values for the component's kwargs.
 
+    These defaults will be merged with defaults on [`Component.Kwargs`](../api/#django_components.Component.Kwargs).
+
     Read more about [Component defaults](../../concepts/fundamentals/component_defaults).
 
     **Example:**
@@ -2669,6 +2679,9 @@ class Component(metaclass=ComponentMeta):
         then the `kwargs` property will return an instance of that `Kwargs` class.
     - Otherwise, `kwargs` will be a plain dict.
 
+    Kwargs have the defaults applied to them.
+    Read more about [Component defaults](../../concepts/fundamentals/component_defaults).
+
     **Example:**
 
     With `Kwargs` class:
@@ -2714,6 +2727,9 @@ class Component(metaclass=ComponentMeta):
     Unlike [`Component.kwargs`](../api/#django_components.Component.kwargs), this attribute
     is not typed and will remain as plain dict even if you define the
     [`Component.Kwargs`](../api/#django_components.Component.Kwargs) class.
+
+    `raw_kwargs` have the defaults applied to them.
+    Read more about [Component defaults](../../concepts/fundamentals/component_defaults).
 
     **Example:**
 

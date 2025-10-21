@@ -233,7 +233,7 @@ or [`get_css_data()`](../../reference/api#django_components.Component.get_css_da
 To make things easier, Components can specify their defaults. Defaults are used when
 no value is provided, or when the value is set to `None` for a particular input.
 
-To define defaults for a component, you create a nested `Defaults` class within your
+To define defaults for a component, you create a nested [`Defaults`](../../reference/api#django_components.Component.Defaults) class within your
 [`Component`](../../reference/api#django_components.Component) class.
 Each attribute in the `Defaults` class represents a default value for a corresponding input.
 
@@ -254,6 +254,57 @@ class Calendar(Component):
             "extra_class": kwargs["extra_class"],  # <--- changed
         }
 ```
+
+### 6. Add input validation
+
+Right now our `Calendar` component accepts any number of args and kwargs,
+and we can't see which ones are being used.
+
+*This is a maintenance nightmare!*
+
+Let's be good colleagues and document the component inputs.
+As a bonus, we will also get runtime validation of these inputs.
+
+For defining component inputs, there's 3 options:
+
+- [`Args`](../../reference/api#django_components.Component.Args) - For defining positional args passed to the component
+- [`Kwargs`](../../reference/api#django_components.Component.Kwargs) - For keyword args
+- [`Slots`](../../reference/api#django_components.Component.Slots) - For slots
+
+Our calendar component is using only kwargs, so we can ignore `Args` and `Slots`.
+The new `Kwargs` class defines fields that this component accepts:
+
+```py
+from django_components import Component, Default, register
+
+@register("calendar")
+class Calendar(Component):
+    template_file = "calendar.html"
+
+    class Kwargs:  # <--- changed (replaced Defaults)
+        date: Date
+        extra_class: str = "text-blue"
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):  # <--- changed
+        workweek_date = to_workweek_date(kwargs.date)  # <--- changed
+        return {
+            "date": workweek_date,
+            "extra_class": kwargs.extra_class,  # <--- changed
+        }
+```
+
+Notice that:
+
+- When we defined `Kwargs` class, the `kwargs` parameter to `get_template_data`
+  changed to an instance of `Kwargs`. Fields are now accessed as attributes.
+- Since `kwargs` is of class `Kwargs`, we've added annotation to the `kwargs` parameter.
+- `Kwargs` replaced `Defaults`, because defaults can be defined also on `Kwargs` class.
+
+And that's it! Now you can sleep safe knowing you won't break anything when
+adding or removing component inputs.
+
+Read more about [Component defaults](../concepts/fundamentals/component_defaults.md)
+and [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
 ---
 

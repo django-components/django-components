@@ -65,25 +65,33 @@ and so `selected_items` will be set to `[1, 2, 3]`.
 
     The defaults are aplied only to keyword arguments. They are NOT applied to positional arguments!
 
+### Defaults from `Kwargs`
+
+If you are using [`Component.Kwargs`](../fundamentals/typing_and_validation.md#typing-inputs) to specify the component input,
+you can set the defaults directly on `Kwargs`:
+
+```python
+class ProfileCard(Component):
+    class Kwargs:
+        user_id: int
+        show_details: bool = True
+```
+
+Which is the same as:
+
+```python
+class ProfileCard(Component):
+    class Kwargs:
+        user_id: int
+        show_details: bool
+
+    class Defaults:
+        show_details = True
+```
+
 !!! warning
 
-    When [typing](../fundamentals/typing_and_validation.md) your components with [`Args`](../../../reference/api/#django_components.Component.Args),
-    [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
-    or [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
-    you may be inclined to define the defaults in the classes.
-
-    ```py
-    class ProfileCard(Component):
-        class Kwargs:
-            show_details: bool = True
-    ```
-
-    This is **NOT recommended**, because:
-
-    - The defaults will NOT be applied to inputs when using [`self.raw_kwargs`](../../../reference/api/#django_components.Component.raw_kwargs) property.
-    - The defaults will NOT be applied when a field is given but set to `None`.
-
-    Instead, define the defaults in the [`Defaults`](../../../reference/api/#django_components.Component.Defaults) class.
+    This works only when `Component.Kwargs` is a plain class, NamedTuple or dataclass.
 
 ### Default factories
 
@@ -124,30 +132,28 @@ class MyTable(Component):
 
 ### Accessing defaults
 
-Since the defaults are defined on the component class, you can access the defaults for a component with the [`Component.Defaults`](../../../reference/api#django_components.Component.Defaults) property.
+The defaults may be defined on both [`Component.Defaults`](../../../reference/api#django_components.Component.Defaults) and [`Component.Kwargs`](../../../reference/api#django_components.Component.Kwargs) classes.
 
-So if we have a component like this:
+To get a final, merged dictionary of all the component's defaults, use [`get_component_defaults()`](../../../reference/api#django_components.get_component_defaults):
 
 ```py
-from django_components import Component, Default, register
+from django_components import Component, Default, get_component_defaults
 
-@register("my_table")
 class MyTable(Component):
+    class Kwargs:
+        position: str
+        order: int
+        items: list[int]
+        variable: str = "from_kwargs"
 
     class Defaults:
-        position = "left"
-        selected_items = Default(lambda: [1, 2, 3])
+        position: str = "left"
+        items = Default(lambda: [1, 2, 3])
 
-    def get_template_data(self, args, kwargs, slots, context):
-        return {
-            "position": kwargs["position"],
-            "selected_items": kwargs["selected_items"],
-        }
-```
-
-We can access individual defaults like this:
-
-```py
-print(MyTable.Defaults.position)
-print(MyTable.Defaults.selected_items)
+defaults = get_component_defaults(MyTable)
+# {
+#     "position": "left",
+#     "items": [1, 2, 3],
+#     "variable": "from_kwargs",
+# }
 ```
