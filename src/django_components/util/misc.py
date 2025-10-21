@@ -314,5 +314,11 @@ def convert_class_to_namedtuple(cls: Type[Any]) -> Type[Tuple[Any, ...]]:
     else:
         defaults_list = []
     tuple_cls = namedtuple(cls.__name__, field_names, defaults=defaults_list)  # type: ignore[misc]  # noqa: PYI024
+
+    # `collections.namedtuple` doesn't allow to specify annotations, so we pass them afterwards
     tuple_cls.__annotations__ = cls.__annotations__
+    # Likewise, `collections.namedtuple` doesn't allow to specify class vars
+    for name, value in class_attrs.items():
+        setattr(tuple_cls, name, value)
+
     return tuple_cls
