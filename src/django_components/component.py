@@ -3569,6 +3569,8 @@ class Component(metaclass=ComponentMeta):
         # 2. Prepare component state
         ######################################
 
+        context_processors_data = component.context_processors_data
+
         # Required for compatibility with Django's {% extends %} tag
         # See https://github.com/django-components/django-components/pull/859
         context.render_context.push(  # type: ignore[union-attr]
@@ -3653,6 +3655,17 @@ class Component(metaclass=ComponentMeta):
             ),
         )
 
+        # Check if template_data doesn't conflict with context_processors_data
+        # See https://github.com/django-components/django-components/issues/1482
+        # NOTE: This is done after on_component_data so extensions can modify the data first.
+        if context_processors_data:
+            for key in template_data:
+                if key in context_processors_data:
+                    raise ValueError(
+                        f"Variable '{key}' defined in component '{component_name}' conflicts "
+                        "with the same variable from context processors. Rename the variable in the component."
+                    )
+
         # Cache component's JS and CSS scripts, in case they have been evicted from the cache.
         cache_component_js(comp_cls, force=False)
         cache_component_css(comp_cls, force=False)
@@ -3697,7 +3710,7 @@ class Component(metaclass=ComponentMeta):
             with context.update(  # type: ignore[union-attr]
                 {
                     # Make data from context processors available inside templates
-                    **component.context_processors_data,
+                    **context_processors_data,
                     # Private context fields
                     _COMPONENT_CONTEXT_KEY: render_id,
                     COMPONENT_IS_NESTED_KEY: comp_is_nested,
