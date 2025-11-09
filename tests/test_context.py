@@ -1,5 +1,6 @@
 from typing import Dict, Optional, cast
 
+import pytest
 from django.http import HttpRequest
 from django.template import Context, RequestContext, Template
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
@@ -968,6 +969,43 @@ class TestContextProcessors:
         component = TestComponent(request=request)
 
         assert component.request == request
+
+    @djc_test(
+        # Same as settings in testutils.py, but also sets context_processors
+        django_settings={
+            "TEMPLATES": [
+                {
+                    "BACKEND": "django.template.backends.django.DjangoTemplates",
+                    "DIRS": [
+                        "tests/templates/",
+                        "tests/components/",
+                    ],
+                    "OPTIONS": {
+                        "builtins": [
+                            "django_components.templatetags.component_tags",
+                        ],
+                        "loaders": [
+                            "django.template.loaders.filesystem.Loader",
+                            "django.template.loaders.app_directories.Loader",
+                            "django_components.template_loader.Loader",
+                        ],
+                        "context_processors": [
+                            "django.template.context_processors.request",
+                        ],
+                    },
+                },
+            ],
+        }
+    )
+    def test_raises_on_conflict_with_template_data(self):
+        class TestComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "request": "OVERWRITTEN",
+                }
+
+        with pytest.raises(ValueError, match="Variable 'request' defined in component 'TestComponent' conflicts"):
+            TestComponent.render(request=HttpRequest())
 
 
 @djc_test
