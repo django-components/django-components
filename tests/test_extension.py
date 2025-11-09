@@ -5,6 +5,7 @@ import pytest
 from django.http import HttpRequest, HttpResponse
 from django.template import Context, Origin, Template
 from django.test import Client
+from django.urls import get_resolver, get_urlconf
 
 from django_components import Component, Slot, SlotNode, register, registry
 from django_components.app_settings import app_settings
@@ -649,6 +650,12 @@ class TestExtensionHooks:
 
 @djc_test
 class TestExtensionViews:
+    @djc_test(components_settings={"extensions": [DummyExtension]})
+    def test_resolver_not_populated_needlessly(self):
+        urlconf = get_urlconf()
+        resolver = get_resolver(urlconf)
+        assert not resolver._populated
+
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_views(self):
         client = Client()
