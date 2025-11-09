@@ -585,5 +585,11 @@ def _clear_djc_global_state(
     if gc_collect:
         gc.collect()
 
+    # Clear Django's URL resolver cache, so that any URLs that were added
+    # during tests are removed.
+    from django.urls.resolvers import _get_cached_resolver  # noqa: PLC0415
+
+    _get_cached_resolver.cache_clear()
+
     global IS_TESTING  # noqa: PLW0603
     IS_TESTING = False

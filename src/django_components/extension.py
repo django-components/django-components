@@ -1163,9 +1163,7 @@ class ExtensionManager:
         extensions_url_resolver.url_patterns = urls
 
         # Rebuild URL resolver cache to be able to resolve the new routes by their names.
-        urlconf = get_urlconf()
-        resolver = get_resolver(urlconf)
-        resolver._populate()
+        self._lazy_populate_resolver()
 
         # Flush stored events
         #
@@ -1189,6 +1187,22 @@ class ExtensionManager:
                 self._init_component_class(on_component_created_data.component_cls)
             getattr(self, hook)(data)
         self._events = []
+
+    # Django processes the paths from `urlpatterns` only once.
+    # This is at conflict with how we handle URL paths introduced by extensions,
+    # which may happen AFTER Django processes `urlpatterns`.
+    # If that happens, we need to force Django to re-process `urlpatterns`.
+    # If we don't do it, then the new paths added by our extensions won't work
+    # with e.g. `django.url.reverse()`.
+    # See https://discord.com/channels/1417824875023700000/1417825089675853906/1437034834118840411
+    def _lazy_populate_resolver(self) -> None:
+        urlconf = get_urlconf()
+        root_resolver = get_resolver(urlconf)
+        # However, if Django has NOT yet processed the `urlpatterns`, then do nothing.
+        # If we called `_populate()` in such case, we may break people's projects
+        # as the values may be resolved prematurely, before all the needed code is loaded.
+        if root_resolver._populated:
+            root_resolver._populate()
 
     def get_extension(self, name: str) -> ComponentExtension:
         for extension in self.extensions:
@@ -1221,12 +1235,8 @@ class ExtensionManager:
             all_urls.append(urlpattern)
             did_add_urls = True
 
-        # Force Django's URLResolver to update its lookups, so things like `reverse()` work
         if did_add_urls:
-            # Django's root URLResolver
-            urlconf = get_urlconf()
-            root_resolver = get_resolver(urlconf)
-            root_resolver._populate()
+            self._lazy_populate_resolver()
 
     def remove_extension_urls(self, name: str, urls: List[URLRoute]) -> None:
         if not self._initialized:
