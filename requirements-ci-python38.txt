@@ -12,7 +12,7 @@ build==1.2.2.post1
     # via asv
 cachetools==5.5.2
     # via tox
-certifi==2025.1.31
+certifi==2025.10.5
     # via requests
 chardet==5.2.0
     # via tox
