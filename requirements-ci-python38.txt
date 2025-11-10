@@ -10,7 +10,7 @@ asv-runner==0.2.1
     # via asv
 build==1.2.2.post1
     # via asv
-cachetools==5.5.2
+cachetools==6.2.1
     # via tox
 certifi==2025.1.31
     # via requests
