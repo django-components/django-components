@@ -1,5 +1,12 @@
 # Release notes
 
+## v0.143.2
+
+#### Fix
+
+- Fix KeyError when using `{% provide %}`, caused by premature cleanup
+ ([#1490](https://github.com/django-components/django-components/pull/1490)).
+
 ## v0.143.1
 
 #### Fix
