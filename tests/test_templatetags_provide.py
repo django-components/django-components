@@ -1297,3 +1297,46 @@ class TestProvideCache:
             Root.render()
 
         _assert_clear_cache()
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_provide_cache_not_cleaned_while_active(self, components_settings):
+        @register("injectee31")
+        class Injectee(Component):
+            template: types.django_html = """
+                <div>{{ value }}</div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                data = self.inject("my_provide")
+                return {"value": data.value}
+
+        @register("root")
+        class Root(Component):
+            template: types.django_html = """
+                <div>{{ content|safe }}</div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                # Nested synchronous rendering triggers GC between components.
+                nested_template = Template(
+                    """
+                    {% load component_tags %}
+                    {% for i in "xxxxxxxxxx" %}
+                        {% provide "my_provide" value="hello" %}
+                            {% component "injectee31" %}{% endcomponent %}
+                            {% component "injectee31" %}{% endcomponent %}
+                            {% component "injectee31" %}{% endcomponent %}
+                        {% endprovide %}
+                    {% endfor %}
+                """
+                )
+                content = nested_template.render(Context({}))
+                return {"content": content}
+
+        _assert_clear_cache()
+
+        rendered = Root.render()
+
+        # 10 iterations * 3 components = 30 occurrences
+        assert rendered.count(">hello</div>") == 30
+        _assert_clear_cache()

@@ -93,12 +93,20 @@ provide_references: Dict[str, Set[str]] = defaultdict(set)
 # NOTE: We manually clean up the entries when components are garbage collected.
 component_provides: Dict[str, Dict[str, str]] = defaultdict(dict)
 
+# Track which {% provide %} blocks are currently active (rendering).
+# This prevents premature cache cleanup when components are garbage collected.
+active_provides: Set[str] = set()
+
 
 @contextmanager
 def managed_provide_cache(provide_id: str) -> Generator[None, None, None]:
+    # Mark this provide block as active
+    active_provides.add(provide_id)
     try:
         yield
     except Exception as e:
+        # Mark this provide block as no longer active
+        active_provides.discard(provide_id)
         # NOTE: In case of an error in within the `{% provide %}` block (e.g. when rendering a component),
         # we rely on the component finalizer to remove the references.
         # But we still want to call cleanup in case `{% provide %}` contained no components.
@@ -106,11 +114,17 @@ def managed_provide_cache(provide_id: str) -> Generator[None, None, None]:
         # Forward the error
         raise e from None
 
+    # Mark this provide block as no longer active
+    active_provides.discard(provide_id)
     # Cleanup on success
     _cache_cleanup(provide_id)
 
 
 def _cache_cleanup(provide_id: str) -> None:
+    # Don't cleanup if the provide block is still active.
+    if provide_id in active_provides:
+        return
+
     # Remove provided data from the cache, IF there are no more references to it.
     # A `{% provide %}` will have no reference if:
     # - It contains no components in its body
