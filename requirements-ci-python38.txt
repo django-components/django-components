@@ -50,7 +50,7 @@ packaging==24.2
     #   tox
 pathspec==0.12.1
     # via -r requirements-ci.in
-platformdirs==4.3.6
+platformdirs==4.4.0
     # via
     #   tox
     #   virtualenv
