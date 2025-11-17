@@ -114,5 +114,5 @@ virtualenv==20.35.3
     #   tox
 whitenoise==6.7.0
     # via -r requirements-ci.in
-zipp==3.20.2
+zipp==3.23.0
     # via importlib-metadata
