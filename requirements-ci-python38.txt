@@ -41,7 +41,7 @@ iniconfig==2.0.0
     # via pytest
 json5==0.12.1
     # via asv
-packaging==24.2
+packaging==25.0
     # via
     #   asv
     #   build
