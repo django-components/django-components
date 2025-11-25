@@ -37,7 +37,7 @@ importlib-metadata==8.5.0
     #   asv
     #   asv-runner
     #   build
-iniconfig==2.0.0
+iniconfig==2.1.0
     # via pytest
 json5==0.12.1
     # via asv
