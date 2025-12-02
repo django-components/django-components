@@ -26,7 +26,7 @@ jobs:
             --arg url "$URL" \
             --arg user "$USER" \
             --arg repo "$REPO" \
-            --arg number "#$NUMBER" \
+            --arg number "$NUMBER" \
             --arg timestamp "$TS" \
             '{
               "username": "GitHub Pull Requests",
