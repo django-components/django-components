@@ -14,14 +14,20 @@ jobs:
       - name: Post to Discord (development channel)
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_DEVELOPMENT }}
+          TITLE: ${{ github.event.pull_request.title }}
+          URL: ${{ github.event.pull_request.html_url }}
+          USER: ${{ github.event.pull_request.user.login }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.pull_request.number }}
+          TS: ${{ github.event.pull_request.created_at }}
         run: |
           payload=$(jq -n \
-            --arg title "${{ github.event.pull_request.title }}" \
-            --arg url "${{ github.event.pull_request.html_url }}" \
-            --arg user "${{ github.event.pull_request.user.login }}" \
-            --arg repo "${{ github.repository }}" \
-            --arg number "#${{ github.event.pull_request.number }}" \
-            --arg timestamp "${{ github.event.pull_request.created_at }}" \
+            --arg title "$TITLE" \
+            --arg url "$URL" \
+            --arg user "$USER" \
+            --arg repo "$REPO" \
+            --arg number "$NUMBER" \
+            --arg timestamp "$TS" \
             '{
               "username": "GitHub Pull Requests",
               "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
