@@ -60,7 +60,7 @@ pluggy==1.5.0
     # via
     #   pytest
     #   tox
-pyee==12.0.0
+pyee==13.0.0
     # via playwright
 pympler==1.1
     # via asv
