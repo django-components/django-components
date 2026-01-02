@@ -3,8 +3,8 @@ djc-core-html-parser
 django-template-partials
 tox
 pytest
-pytest-asyncio
 pytest-django
+pytest-asyncio==0.24.0
 syrupy
 ruff
 pre-commit
