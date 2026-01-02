@@ -99,6 +99,16 @@ pytest
 tox -e py38
 ```
 
+!!! note
+
+    Playwright downloads browser binaries per Playwright version. In practice, this extra step is only needed for `tox -e py38`, because that env uses a different (older) Playwright version than the other tox envs.
+
+    If `tox -e py38` fails with "Executable doesn't exist", install the browsers using the Playwright inside that tox env:
+
+    ```sh
+    .tox/py38/bin/python -m playwright install chromium
+    ```
+
 ## Snapshot tests
 
 Some tests rely on snapshot testing with [syrupy](https://github.com/syrupy-project/syrupy) to test the HTML output of the components.
@@ -222,10 +232,10 @@ The CI workflow runs when:
 
 ### Examples
 
-The [examples page](../../examples) is populated from entries in `docs/examples/`. 
+The [examples page](../../examples) is populated from entries in `docs/examples/`.
 
 These examples have special folder layout:
- 
+
 ```txt
 |- docs/
   |- examples/
