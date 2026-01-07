@@ -8,7 +8,7 @@ from django.test import Client
 from django.urls import path
 from pytest_django.asserts import assertInHTML
 
-from django_components import Component, get_component_url, register, types
+from django_components import Component, ComponentView, get_component_url, register, types
 from django_components.testing import djc_test
 from django_components.urls import urlpatterns as dc_urlpatterns
 from django_components.util.misc import format_url
@@ -326,6 +326,24 @@ class TestComponentAsView:
             fragment="xyz",
         )
         assert component_url4 == "/components/ext/view/components/123?foo=new&bar=456&baz=new2#xyz"
+
+        class TestComponentWithArgs(Component):
+            template = "Hello args"
+
+            class View(ComponentView):
+                public = True
+
+                @classmethod
+                def get_route_path(cls) -> str:
+                    return f"{super().get_route_path()}<str:arg1>/<int:arg2>/"
+
+        # Check that the query and fragment are correctly escaped
+        component_url5 = get_component_url(TestComponentWithArgs, args=["arg1", 2])
+        assert component_url5 == f"/components/ext/view/components/{TestComponentWithArgs.class_id}/arg1/2/"
+
+        # Check that the query and fragment are correctly escaped
+        component_url6 = get_component_url(TestComponentWithArgs, kwargs={"arg2": 2, "arg1": "kwarg1"})
+        assert component_url6 == f"/components/ext/view/components/{TestComponentWithArgs.class_id}/kwarg1/2/"
 
     def test_public_url(self):
         did_call_get = False
