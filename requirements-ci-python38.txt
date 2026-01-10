@@ -103,7 +103,7 @@ typing-extensions==4.13.2
     #   pyee
     #   tox
     #   virtualenv
-urllib3==2.2.3
+urllib3==2.6.3
     # via
     #   requests
     #   types-requests
