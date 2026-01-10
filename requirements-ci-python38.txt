@@ -39,7 +39,7 @@ importlib-metadata==8.5.0
     #   build
 iniconfig==2.1.0
     # via pytest
-json5==0.12.1
+json5==0.13.0
     # via asv
 packaging==25.0
     # via
