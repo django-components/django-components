@@ -152,7 +152,6 @@ typing-extensions==4.15.0
     #   pydantic
     #   pydantic-core
     #   pyee
-    #   pytest-asyncio
     #   tox
     #   typing-inspection
     #   virtualenv
@@ -162,7 +161,7 @@ urllib3==2.5.0
     # via
     #   requests
     #   types-requests
-virtualenv==20.35.4
+virtualenv==20.36.1
     # via
     #   -r requirements-dev.in
     #   asv
