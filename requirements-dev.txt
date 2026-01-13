@@ -59,7 +59,7 @@ json5==0.12.1
     # via asv
 librt==0.7.3
     # via mypy
-mypy==1.19.0
+mypy==1.19.1
     # via -r requirements-dev.in
 mypy-extensions==1.1.0
     # via mypy
@@ -152,7 +152,6 @@ typing-extensions==4.15.0
     #   pydantic
     #   pydantic-core
     #   pyee
-    #   pytest-asyncio
     #   tox
     #   typing-inspection
     #   virtualenv
