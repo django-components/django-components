@@ -11,14 +11,20 @@ jobs:
       - name: Post to Discord (announcements channel)
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_ANNOUNCEMENTS }}
+          NAME: ${{ github.event.release.name || github.event.release.tag_name }}
+          URL: ${{ github.event.release.html_url }}
+          BODY: ${{ github.event.release.body }}
+          USER: ${{ github.event.release.author.login }}
+          REPO: ${{ github.repository }}
+          TS: ${{ github.event.release.published_at }}
         run: |
           payload=$(jq -n \
-            --arg name "${{ github.event.release.name || github.event.release.tag_name }}" \
-            --arg url "${{ github.event.release.html_url }}" \
-            --arg body "${{ github.event.release.body }}" \
-            --arg user "${{ github.event.release.author.login }}" \
-            --arg repo "${{ github.repository }}" \
-            --arg timestamp "${{ github.event.release.published_at }}" \
+            --arg name "$NAME" \
+            --arg url "$URL" \
+            --arg body "$BODY" \
+            --arg user "$USER" \
+            --arg repo "$REPO" \
+            --arg timestamp "$TS" \
             '{
               "username": "GitHub Releases",
               "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
