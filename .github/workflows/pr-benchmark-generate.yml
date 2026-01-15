@@ -26,8 +26,10 @@ jobs:
         fetch-depth: 0  # Need full history for ASV
 
     - name: Fetch base branch
+      env:
+        REPO: ${{ github.repository }}
       run: |
-        git remote add upstream https://github.com/${{ github.repository }}.git
+        git remote add upstream https://github.com/$REPO.git
         git fetch upstream master
 
     - name: Set up Python
@@ -44,6 +46,8 @@ jobs:
         pip install asv virtualenv==20.30
 
     - name: Run benchmarks
+      env:
+        PR_NUMBER: ${{ github.event.pull_request.number }}
       run: |
         # TODO: REMOVE ONCE FIXED UPSTREAM
         # Fix for https://github.com/airspeed-velocity/asv_runner/issues/45
@@ -73,7 +77,7 @@ jobs:
         # We assume that the CI machine has a name that is unique and stable.
         # See https://github.com/airspeed-velocity/asv/issues/796#issuecomment-1188431794
         echo "Preparing benchmarks profile..."
-        MACHINE="ci_benchmark_${{ github.event.pull_request.number }}"
+        MACHINE="ci_benchmark_${PR_NUMBER}"
         asv machine --yes -v --machine ${MACHINE}
         echo "Benchmarks profile DONE."
 
@@ -95,7 +99,7 @@ jobs:
         echo "Creating pr directory..."
         mkdir -p pr
         # Save the PR number to a file, so that it can be used by the next step.
-        echo "${{ github.event.pull_request.number }}" > ./pr/pr_number.txt
+        echo "$PR_NUMBER" > ./pr/pr_number.txt
 
         # Compare against master
         # NOTE: The command is run twice, once so we can see the debug output, and once to save the results.
