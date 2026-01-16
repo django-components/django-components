@@ -12,7 +12,7 @@ build==1.2.2.post1
     # via asv
 cachetools==5.5.2
     # via tox
-certifi==2025.1.31
+certifi==2026.1.4
     # via requests
 chardet==5.2.0
     # via tox
@@ -39,7 +39,7 @@ importlib-metadata==8.5.0
     #   build
 iniconfig==2.1.0
     # via pytest
-json5==0.12.1
+json5==0.13.0
     # via asv
 packaging==25.0
     # via
@@ -76,7 +76,7 @@ pytest-asyncio==0.24.0
     # via -r requirements-ci.in
 pytest-django==4.11.1
     # via -r requirements-ci.in
-pyyaml==6.0.2
+pyyaml==6.0.3
     # via asv
 requests==2.32.3
     # via -r requirements-ci.in

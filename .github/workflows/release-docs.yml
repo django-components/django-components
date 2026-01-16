@@ -73,9 +73,10 @@ jobs:
           # See https://github.com/github/docs/issues/21930
           # And https://docs.github.com/en/actions/security-for-github-actions/security-guides/automatic-token-authentication
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
         run: |
           # Get the master branch so we can run benchmarks on it
-          git remote add upstream https://github.com/${{ github.repository }}.git
+          git remote add upstream https://github.com/$REPO.git
           git fetch origin master:master
           git checkout master
 
@@ -186,6 +187,8 @@ jobs:
 
       - name: Build & deploy docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
           # Fetch and checkout gh-pages to ensure we have the latest version
           git fetch origin gh-pages
@@ -193,5 +196,5 @@ jobs:
           git pull origin gh-pages
           git checkout master
 
-          mike deploy --push --update-aliases ${{ github.ref_name }} latest
+          mike deploy --push --update-aliases $REF_NAME latest
           mike set-default latest --push

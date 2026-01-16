@@ -11,14 +11,20 @@ jobs:
       - name: Post to Discord (development channel)
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_DEVELOPMENT }}
+          TITLE: ${{ github.event.issue.title }}
+          URL: ${{ github.event.issue.html_url }}
+          USER: ${{ github.event.issue.user.login }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+          TS: ${{ github.event.issue.created_at }}
         run: |
           payload=$(jq -n \
-            --arg title "${{ github.event.issue.title }}" \
-            --arg url "${{ github.event.issue.html_url }}" \
-            --arg user "${{ github.event.issue.user.login }}" \
-            --arg repo "${{ github.repository }}" \
-            --arg number "#${{ github.event.issue.number }}" \
-            --arg timestamp "${{ github.event.issue.created_at }}" \
+            --arg title "$TITLE" \
+            --arg url "$URL" \
+            --arg user "$USER" \
+            --arg repo "$REPO" \
+            --arg number "#$NUMBER" \
+            --arg timestamp "$TS" \
             '{
               "username": "GitHub Issues",
               "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
