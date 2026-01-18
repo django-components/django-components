@@ -1,0 +1,3 @@
+user-agent: *
+
+sitemap: https://django-components.github.io/django-components/latest/sitemap.xml
