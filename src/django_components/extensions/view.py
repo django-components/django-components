@@ -54,8 +54,9 @@ def get_component_url(
     Read more about [Component views and URLs](../../concepts/fundamentals/component_views_urls).
 
     `get_component_url()` optionally accepts `query` and `fragment` arguments.
+
     `get_component_url()` also accepts optionally `args` and `kwargs` arguments
-    that will be transmitted to django.urls.reverse
+    that will be transmitted to `django.urls.reverse`.
 
     **Query parameter handling:**
 
@@ -79,7 +80,34 @@ def get_component_url(
         query={"foo": "bar", "enabled": True, "debug": False, "unused": None},
         fragment="baz",
     )
-    # /components/ext/view/components/c1ab2c3?foo=bar&enabled#baz
+    # /components/ext/view/components/c1ab2c3/?foo=bar&enabled#baz
+    ```
+
+    **Example with route parameters:**
+
+    If your component defines a custom route path with parameters using
+    [`get_route_path()`](../api#django_components.ComponentView.get_route_path),
+    you can pass `args` and `kwargs` to fill those parameters:
+
+    ```py
+    from django_components import Component, get_component_url
+
+    class UserProfile(Component):
+        class View:
+            @classmethod
+            def get_route_path(cls):
+                return f"users/{cls.component_cls.class_id}/<str:username>/<int:user_id>/"
+
+            def get(self, request: HttpRequest, username: str, user_id: int, **kwargs: Any):
+                return UserProfile.render_to_response()
+
+    # Get the URL with route parameters filled
+    url = get_component_url(
+        UserProfile,
+        kwargs={"username": "john", "user_id": 42},
+        query={"tab": "settings"},
+    )
+    # /components/ext/view/components/c1ab2c3/john/42/?tab=settings
     ```
     """
     view_cls: Optional[Type[ComponentView]] = getattr(component, "View", None)
@@ -140,6 +168,9 @@ class ComponentView(ExtensionComponentConfig, View):
     ```
 
     This will create a URL route like `/components/ext/view/components/a1b2c3/`.
+
+    The component URL route can be customized by overriding
+    [`get_route_path()`](../api#django_components.ComponentView.get_route_path).
     """
 
     # NOTE: The `component` / `component_cls` attributes are NOT user input, but still must be declared
@@ -186,15 +217,24 @@ class ComponentView(ExtensionComponentConfig, View):
     def get_route_path(cls) -> str:
         """
         Get the route path for the component.
+
         By default, this is `components/{component.class_id}/`.
+
         You can override this method to customize the route path.
+
         **Example:**
         ```py
+        from django_components import Component, get_component_url
+
         class MyComponent(Component):
             class View:
                 @classmethod
                 def get_route_path(cls):
                     return f"my/custom/path/{cls.component_cls.class_id}/<int:pk>/"
+
+        # Get the URL with route parameters filled
+        url = get_component_url(MyComponent, kwargs={"pk": 123})
+        # /components/ext/view/my/custom/path/c1ab2c3/123/
         ```
         """
         return f"components/{cls.component_cls.class_id}/"

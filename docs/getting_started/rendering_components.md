@@ -140,9 +140,7 @@ def my_view(request):
     return response
 ```
 
-!!! info
-
-    **Response class of `render_to_response`**
+!!! info "Response class of `render_to_response`"
 
     While `render` method returns a plain string, `render_to_response` wraps the rendered content in a "Response" class. By default, this is [`django.http.HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpResponse).
 
@@ -207,14 +205,15 @@ Calendar.render(
 
 For web applications, it's common to define endpoints that serve HTML content (AKA views).
 
-If this is your case, you can define the view request handlers directly on your component by using the nested[`Component.View`](../../reference/api#django_components.Component.View) class.
+You can define the view endpoints directly on your component class by using the nested [`Component.View`](../../reference/api#django_components.Component.View) class.
 
 This is a great place for:
 
-- Endpoints that render whole pages, if your component
-  is a page component.
+- Web pages - Page components can use [`Component.View.get()`](../../reference/api#django_components.ComponentView.get) to return the entire web page upon GET request.
 
-- Endpoints that render the component as HTML fragments, to be used with HTMX or similar libraries.
+- Fragments - Fragment components (partials) can use [`Component.View.get()`](../../reference/api#django_components.ComponentView.get) to return HTML fragments upon GET request (to be used with HTMX or similar libraries).
+
+- Form submission - Define [`Component.View.post()`](../../reference/api#django_components.ComponentView.post) to handle a POST requests.
 
 Read more on [Component views and URLs](../../concepts/fundamentals/component_views_urls).
 
@@ -257,11 +256,11 @@ class Calendar(Component):
 
     Each of these receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest) object as the first argument.
 
-Next, you need to set the URL for the component.
+Next, define the URL route which will trigger these handlers.
 
 You can either:
 
-1. Use [`get_component_url()`](../../reference/api#django_components.get_component_url) to retrieve the component URL - an anonymous HTTP endpoint that triggers the component's handlers without having to register the component in `urlpatterns`.
+1. Use automatically generated component URL using [`get_component_url()`](../../reference/api#django_components.get_component_url):
 
     ```py
     from django_components import get_component_url
@@ -269,7 +268,9 @@ You can either:
     url = get_component_url(Calendar)
     ```
 
-   The component endpoint is automatically registered in `urlpatterns` when you define a handler. To explicitly expose/hide the component, use [`Component.View.public`](../../../reference/api#django_components.ComponentView.public).
+    This HTTP endpoint is automatically registered in Django's `urlpatterns` when you define a handler.
+
+    To explicitly enable/disable the component's URL, use [`Component.View.public`](../../../reference/api#django_components.ComponentView.public):
 
     ```djc_py
     from django_components import Component
@@ -297,3 +298,17 @@ The `get()`, `post()`, etc methods will receive the [`HttpRequest`](https://docs
 ```
 http://localhost:8000/calendar/?date=2024-12-13
 ```
+
+!!! info "Customizing component URLs"
+
+    By default, the component URL is `components/{component.class_id}/`.
+
+    You can customize the auto-generated component URL path by overriding [`Component.View.get_route_path()`](../../reference/api#django_components.ComponentView.get_route_path).
+    
+    This allows you to use route parameters in your component URLs, e.g.:
+    
+    ```
+    my/custom/path/<int:my_id>/
+    ```
+
+    Read more about [modifying component URLs](../../concepts/fundamentals/component_views_urls#modifying-the-route-path).
