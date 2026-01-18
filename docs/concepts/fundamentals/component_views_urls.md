@@ -116,13 +116,13 @@ class as one of the arguments.
 
 ## Register URLs automatically
 
-If you don't care about the exact URL of the component, you can let django-components manage the URLs.
+If you don't care about the exact URL of the component, you can let django-components manage the URLs for you.
 
-Each component has an "anonymous" URL that triggers the component's HTTP handlers without having to define the component in `urlpatterns`.
+Each component class has its own URL that triggers the component's HTTP handlers, without having to register the component in `urlpatterns`.
 
 This way you don't have to mix your app URLs with component URLs.
 
-To obtain such "anonymous" URL, use [`get_component_url()`](../../../reference/api#django_components.get_component_url):
+To obtain the component's URL, use [`get_component_url()`](../../../reference/api#django_components.get_component_url):
 
 ```py
 from django_components import get_component_url
@@ -130,7 +130,9 @@ from django_components import get_component_url
 url = get_component_url(MyComponent)
 ```
 
-The component is automatically registered in `urlpatterns` when you define a handler. You can also explicitly expose/hide the component with [`Component.View.public`](../../../reference/api#django_components.ComponentView.public):
+The component is automatically registered in `urlpatterns` when you define a handler.
+
+You can also explicitly enable/disable the component's URL with [`Component.View.public`](../../../reference/api#django_components.ComponentView.public):
 
 ```py
 class MyComponent(Component):
@@ -142,7 +144,7 @@ class MyComponent(Component):
     ...
 ```
 
-!!! info
+!!! info "Query parameters and fragment"
 
     If you need to pass query parameters or a fragment to the component URL, you can do so by passing the `query` and `fragment` arguments to [`get_component_url()`](../../../reference/api#django_components.get_component_url):
 
@@ -160,3 +162,29 @@ class MyComponent(Component):
     - `True` values are rendered as flag parameters without values (e.g., `?enabled`)
     - `False` and `None` values are omitted from the URL
     - Other values are rendered normally (e.g., `?foo=bar`)
+
+### Modifying the route path
+
+You can customize the component URL route by overriding [`Component.View.get_route_path()`](../../../reference/api#django_components.ComponentView.get_route_path). This allows you to add route parameters to your component URLs:
+
+```py
+from django_components import Component, get_component_url
+
+class UserProfile(Component):
+    class View:
+        @classmethod
+        def get_route_path(cls):
+            return f"users/<str:username>/<int:user_id>/"
+
+        def get(self, request, username: str, user_id: int, **kwargs):
+            return UserProfile.render_to_response()
+
+# Get the URL with route parameters filled
+url = get_component_url(
+    UserProfile,
+    kwargs={"username": "john", "user_id": 42},
+)
+# /components/ext/view/users/john/42/
+```
+
+When you define route parameters in `get_route_path()`, you can pass `args` and `kwargs` to [`get_component_url()`](../../../reference/api#django_components.get_component_url) to fill those parameters. Both `args` and `kwargs` are passed to Django's `reverse()` function.
