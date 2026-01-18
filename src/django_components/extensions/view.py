@@ -38,6 +38,8 @@ def get_component_url(
     component: Union[Type["Component"], "Component"],
     query: Optional[Dict] = None,
     fragment: Optional[str] = None,
+    args: Optional[Any] = None,
+    kwargs: Optional[Any] = None,
 ) -> str:
     """
     Get the URL for a [`Component`](../api#django_components.Component).
@@ -52,6 +54,8 @@ def get_component_url(
     Read more about [Component views and URLs](../../concepts/fundamentals/component_views_urls).
 
     `get_component_url()` optionally accepts `query` and `fragment` arguments.
+    `get_component_url()` also accepts optionally `args` and `kwargs` arguments
+    that will be transmitted to django.urls.reverse
 
     **Query parameter handling:**
 
@@ -83,7 +87,7 @@ def get_component_url(
         raise RuntimeError("Component URL is not available - Component is not public")
 
     route_name = _get_component_route_name(component)
-    url = django.urls.reverse(route_name)
+    url = django.urls.reverse(route_name, args=args, kwargs=kwargs)
     return format_url(url, query=query, fragment=fragment)
 
 
@@ -177,6 +181,23 @@ class ComponentView(ExtensionComponentConfig, View):
 
         # TODO_v1 - Remove. Superseded by `component_cls`. This was used for backwards compatibility.
         self.component = component
+
+    @classmethod
+    def get_route_path(cls) -> str:
+        """
+        Get the route path for the component.
+        By default, this is `components/{component.class_id}/`.
+        You can override this method to customize the route path.
+        **Example:**
+        ```py
+        class MyComponent(Component):
+            class View:
+                @classmethod
+                def get_route_path(cls):
+                    return f"my/custom/path/{cls.component_cls.class_id}/<int:pk>/"
+        ```
+        """
+        return f"components/{cls.component_cls.class_id}/"
 
     @property
     def url(self) -> str:
@@ -306,13 +327,13 @@ class ViewExtension(ComponentExtension):
     def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
         comp_cls = ctx.component_cls
         view_cls: Optional[Type[ComponentView]] = getattr(comp_cls, "View", None)
-        if not _is_view_public(view_cls):
+        if not view_cls or not _is_view_public(view_cls):
             return
 
         # Create a URL route like `components/MyTable_a1b2c3/`
         # And since this is within the `view` extension, the full URL path will then be:
         # `/components/ext/view/components/MyTable_a1b2c3/`
-        route_path = f"components/{comp_cls.class_id}/"
+        route_path = view_cls.get_route_path()
         route_name = _get_component_route_name(comp_cls)
         route = URLRoute(
             path=route_path,
