@@ -123,7 +123,7 @@ pyyaml==6.0.3
     #   pre-commit
 requests==2.32.5
     # via -r requirements-dev.in
-ruff==0.14.10
+ruff==0.14.13
     # via -r requirements-dev.in
 sqlparse==0.5.3
     # via django
