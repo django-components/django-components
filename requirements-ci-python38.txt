@@ -32,7 +32,7 @@ greenlet==3.1.1
     # via playwright
 idna==3.11
     # via requests
-importlib-metadata==8.5.0
+importlib-metadata==8.7.1
     # via
     #   asv
     #   asv-runner
