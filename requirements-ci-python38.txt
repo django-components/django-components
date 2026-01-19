@@ -8,7 +8,7 @@ asv==0.6.5
     # via -r requirements-ci.in
 asv-runner==0.2.1
     # via asv
-build==1.2.2.post1
+build==1.4.0
     # via asv
 cachetools==5.5.2
     # via tox
