@@ -1,5 +1,5 @@
 import sys
-from typing import TYPE_CHECKING, Any, ClassVar, Dict, Optional, Protocol, Type, Union, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Dict, Mapping, Optional, Protocol, Sequence, Type, Union, cast
 from weakref import WeakKeyDictionary
 
 import django.urls
@@ -38,8 +38,8 @@ def get_component_url(
     component: Union[Type["Component"], "Component"],
     query: Optional[Dict] = None,
     fragment: Optional[str] = None,
-    args: Optional[Any] = None,
-    kwargs: Optional[Any] = None,
+    args: Optional[Sequence[Any]] = None,
+    kwargs: Optional[Mapping[str, Any]] = None,
 ) -> str:
     """
     Get the URL for a [`Component`](../api#django_components.Component).

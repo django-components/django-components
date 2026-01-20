@@ -3,8 +3,8 @@ name: Run tests
 on:
   push:
     branches:
-      - 'master'
-      - 'dev'
+      - "master"
+      - "dev"
   pull_request:
   workflow_dispatch:
 
@@ -13,97 +13,97 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest, windows-latest]
 
     steps:
-    # Configure git to handle long paths
-    # See https://stackoverflow.com/questions/22575662/filename-too-long-in-git-for-windows
-    #
-    # Long paths that are over the limit are because of the benchmarking data
-    # created by asv, as these may look like this:
-    # docs/benchmarks/graphs/arch-x86_64/branch-master/cpu-AMD EPYC 7763 64-Core Processor/django-5.1/djc-core-html-parser/machine-fv-az1693-854/num_cpu-4/os-Linux 6.8.0-1021-azure/python-3.13/ram-16373792/isolated vs django modes.timeraw_render_lg_subsequent.json
-    - name: Configure git
-      run: |
-        git config --global core.longpaths true
+      # Configure git to handle long paths
+      # See https://stackoverflow.com/questions/22575662/filename-too-long-in-git-for-windows
+      #
+      # Long paths that are over the limit are because of the benchmarking data
+      # created by asv, as these may look like this:
+      # docs/benchmarks/graphs/arch-x86_64/branch-master/cpu-AMD EPYC 7763 64-Core Processor/django-5.1/djc-core-html-parser/machine-fv-az1693-854/num_cpu-4/os-Linux 6.8.0-1021-azure/python-3.13/ram-16373792/isolated vs django modes.timeraw_render_lg_subsequent.json
+      - name: Configure git
+        run: |
+          git config --global core.longpaths true
 
-    - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: "pip"
-    - name: Install dependencies (Python 3.8)
-      if: matrix.python-version == '3.8'
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install -r requirements-ci-python38.txt
-    - name: Install dependencies (Python > 3.8)
-      if: matrix.python-version != '3.8'
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install -r requirements-ci.txt
-    - name: Install Playwright browsers
-      run: |
-        # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
-        playwright install chromium --with-deps
-    - name: Run tests
-      run: tox
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+      - name: Install dependencies (Python 3.8)
+        if: matrix.python-version == '3.8'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ci-python38.txt
+      - name: Install dependencies (Python > 3.8)
+        if: matrix.python-version != '3.8'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ci.txt
+      - name: Install Playwright browsers
+        run: |
+          # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
+          playwright install chromium --with-deps
+      - name: Run tests
+        run: tox
 
   # Verify that docs build
   test_docs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.13']
+        python-version: ["3.13"]
 
     steps:
-    - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: "pip"
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install -r requirements-docs.txt
-        # Install your package locally
-        python -m pip install -e .
-    - name: Build documentation
-      run: mkdocs build --verbose
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-docs.txt
+          # Install your package locally
+          python -m pip install -e .
+      - name: Build documentation
+        run: mkdocs build --verbose
 
   # Verify that the sample project works
   test_sampleproject:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.14']
+        python-version: ["3.14"]
 
     steps:
-    - uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
-      with:
-        python-version: ${{ matrix.python-version }}
-        cache: "pip"
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
 
-    - name: Install dependencies
-      run: |
-        cd sampleproject
-        python -m pip install --upgrade pip
-        python -m pip install -r requirements.txt
-        # Install django-components locally
-        python -m pip install -e ..
-    - name: Check Django project
-      run: |
-        cd sampleproject
-        python manage.py check
-        python manage.py migrate --noinput
-        # Start the server, make request, and exit with error if it fails
-        python manage.py runserver & sleep 5
-        curl http://127.0.0.1:8000/ || exit 1
+      - name: Install dependencies
+        run: |
+          cd sampleproject
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          # Install django-components locally
+          python -m pip install -e ..
+      - name: Check Django project
+        run: |
+          cd sampleproject
+          python manage.py check
+          python manage.py migrate --noinput
+          # Start the server, make request, and exit with error if it fails
+          python manage.py runserver & sleep 5
+          curl http://127.0.0.1:8000/ || exit 1
