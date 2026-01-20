@@ -8,12 +8,12 @@ from django.template import Context, Template
 from django.template.base import TextNode, VariableNode
 from django.template.defaulttags import IfNode, LoremNode
 from django.template.exceptions import TemplateSyntaxError
+from djc_core.template_parser import TagAttr
 
 from django_components import Component, types
 from django_components.node import BaseNode, template_tag
 from django_components.templatetags import component_tags
 from django_components.testing import djc_test
-from django_components.util.tag_parser import TagAttr
 
 from .testutils import setup_test_config
 
@@ -120,6 +120,16 @@ class TestNode:
         assert active_flags == ["required"]
 
         TestNode.unregister(component_tags.register)
+
+    def test_node_class_flags_and_tag_conflict(self):
+        with pytest.raises(
+            ValueError,
+            match=r"Node MyTestNode's `tag` attribute \('mytag'\) cannot be the same as one of its `allowed_flags`.",
+        ):
+
+            class MyTestNode(BaseNode):
+                tag = "mytag"
+                allowed_flags = ["mytag"]
 
     def test_node_render(self):
         # Check that the render function is called with the context
@@ -254,7 +264,7 @@ class TestNode:
         """,
         )
         with pytest.raises(
-            TypeError,
+            SyntaxError,
             match=re.escape("positional argument follows keyword argument"),
         ):
             template6.render(Context({}))
@@ -467,6 +477,15 @@ class TestDecorator:
 
         render._node.unregister(component_tags.register)  # type: ignore[attr-defined]
 
+    def test_decorator_flags_and_tag_conflict(self):
+        with pytest.raises(
+            ValueError,
+            match=r"Node RenderNode's `tag` attribute \('mytag'\) cannot be the same as one of its `allowed_flags`.",
+        ):
+            @template_tag(component_tags.register, tag="mytag", allowed_flags=["mytag"])
+            def render(node: BaseNode, context: Context, name: str, **kwargs) -> str:  # noqa: ARG001
+                return ""
+
     def test_decorator_render(self):
         # Check that the render function is called with the context
         captured = None
@@ -596,7 +615,7 @@ class TestDecorator:
         """,
         )
         with pytest.raises(
-            TypeError,
+            SyntaxError,
             match=re.escape("positional argument follows keyword argument"),
         ):
             template6.render(Context({}))
@@ -1119,7 +1138,7 @@ class TestSignatureBasedValidation:
         """,
         )
         with pytest.raises(
-            TypeError,
+            SyntaxError,
             match=re.escape("positional argument follows keyword argument"),
         ):
             template6.render(Context({}))

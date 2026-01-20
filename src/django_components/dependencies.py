@@ -26,7 +26,7 @@ from django.template import Context, TemplateSyntaxError
 from django.templatetags.static import static
 from django.urls import path, reverse
 from django.utils.safestring import SafeString, mark_safe
-from djc_core_html_parser import set_html_attributes
+from djc_core.html_transformer import set_html_attributes
 
 from django_components.cache import get_component_media_cache
 from django_components.constants import COMP_ID_LENGTH

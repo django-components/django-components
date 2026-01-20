@@ -293,6 +293,119 @@ class TestComponentLegacyApi:
             """,
         )
 
+    def test_input_template_kwargs(self):
+        captured = None
+
+        @register("test")
+        class Test(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal captured
+                captured = kwargs
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test"
+                data={
+                    "items": [
+                        1|add:2,
+                        {"x"|upper: 2|add:3},
+                        *spread_items
+                    ],
+                    "nested": {
+                        "a": [
+                            1|add:2,
+                            *nums|default:"",
+                            *"{% lorem 1 w %}",
+                        ],
+                        "b": {
+                            "x": [
+                                *more|first,
+                            ],
+                            "{% lorem 2 w %}": "{% lorem 3 w %}",
+                        }
+                    },
+                    **rest,
+                    "key": _('value')|upper
+                }
+            / %}
+        """
+
+        template = Template(template_str)
+        template.render(
+            Context(
+                {
+                    "spread_items": ["foo", "bar"],
+                    "nums": [1, 2, 3],
+                    "more": ["baz", "qux"],
+                    "rest": {"a": "b"},
+                },
+            ),
+        )
+
+        assert captured == {
+            "data": {
+                "items": [3, {"X": 5}, "foo", "bar"],
+                "nested": {
+                    "a": [3, 1, 2, 3, "l", "o", "r", "e", "m"],
+                    "b": {
+                        "x": ["b", "a", "z"],
+                        "lorem ipsum": "lorem ipsum dolor",
+                    },
+                },
+                "a": "b",
+                "key": "VALUE",
+            },
+        }
+
+    def test_input_template_both_args_kwargs(self):
+        captured = None
+
+        @register("test")
+        class Test(Component):
+            template = "var"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal captured
+                captured = args, kwargs
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' 42 myvar key='val' key2=val2 %}
+            {% endcomponent %}
+        """
+        Template(template_str).render(Context({"myvar": "myval", "val2": [1, 2, 3]}))
+
+        assert captured == ([42, "myval"], {"key": "val", "key2": [1, 2, 3]})
+
+    def test_input_kwargs_special(self):
+        captured = None
+
+        @register("test")
+        class Test(Component):
+            template = "var"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal captured
+                captured = args, kwargs
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' date=date @lol=2 na-me=bzz @event:na-me.mod=bzz #my-id=True %}
+            {% endcomponent %}
+        """
+        Template(template_str).render(Context({"date": 2024, "bzz": "fzz"}))
+
+        assert captured == (
+            [],
+            {
+                "date": 2024,
+                "@lol": 2,
+                "na-me": "fzz",
+                "@event": {"na-me.mod": "fzz"},
+                "#my-id": True,
+            },
+        )
+
 
 @djc_test
 class TestComponent:

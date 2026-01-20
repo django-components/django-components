@@ -18,4 +18,4 @@ pymdown-extensions
 pygments
 pygments-djc
 django>=4.2
-djc-core-html-parser>=1.0
+djc-core>=1.2.2

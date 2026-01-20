@@ -9,8 +9,9 @@ from django.template.base import FilterExpression, Node, Parser, Token
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
-from django_components.expression import DynamicFilterExpression, is_aggregate_key
+from django_components.expression import DynamicFilterExpression
 from django_components.testing import djc_test
+from django_components.util.template_tag import is_aggregate_key
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
@@ -53,14 +54,14 @@ def make_context(d: Dict):
 @djc_test
 class TestDynamicExpr:
     def test_variable_resolve_dynamic_expr(self):
-        expr = DynamicFilterExpression(default_parser, '"{{ var_a|lower }}"')
+        expr = DynamicFilterExpression(
+            "{{ var_a|lower }}",
+            filters=default_parser.filters,
+            tags=default_parser.tags,
+        )
 
         ctx = make_context({"var_a": "LoREM"})
         assert expr.resolve(ctx) == "lorem"
-
-    def test_variable_raises_on_dynamic_expr_with_quotes_mismatch(self):
-        with pytest.raises(TemplateSyntaxError):
-            DynamicFilterExpression(default_parser, "'{{ var_a|lower }}\"")
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_variable_in_template(self, components_settings):
@@ -409,232 +410,6 @@ class TestDynamicExpr:
 
 class TestSpreadOperator:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_component(self, components_settings):
-        captured = {}
-
-        @register("test")
-        class SimpleComponent(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                nonlocal captured
-                captured = kwargs
-
-                return {
-                    "pos_var1": args[0],
-                    **kwargs,
-                }
-
-            template: types.django_html = """
-                <div>{{ pos_var1 }}</div>
-                <div>{{ attrs }}</div>
-                <div>{{ items }}</div>
-                <div>{{ a }}</div>
-                <div>{{ x }}</div>
-            """
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% component 'test'
-                var_a
-                ...my_dict
-                ..."{{ list|first }}"
-                x=123
-            / %}
-            """
-
-        template = Template(template_str)
-        rendered = template.render(
-            Context(
-                {
-                    "var_a": "LoREM",
-                    "my_dict": {
-                        "attrs:@click": "() => {}",
-                        "attrs:style": "height: 20px",
-                        "items": [1, 2, 3],
-                    },
-                    "list": [{"a": 1}, {"a": 2}, {"a": 3}],
-                },
-            ),
-        )
-
-        # Check that variables passed to the component are of correct type
-        assert captured["attrs"] == {"@click": "() => {}", "style": "height: 20px"}
-        assert captured["items"] == [1, 2, 3]
-        assert captured["a"] == 1
-        assert captured["x"] == 123
-
-        assertHTMLEqual(
-            rendered,
-            """
-            <div data-djc-id-ca1bc3f>LoREM</div>
-            <div data-djc-id-ca1bc3f>{'@click': '() =&gt; {}', 'style': 'height: 20px'}</div>
-            <div data-djc-id-ca1bc3f>[1, 2, 3]</div>
-            <div data-djc-id-ca1bc3f>1</div>
-            <div data-djc-id-ca1bc3f>123</div>
-            """,
-        )
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_slot(self, components_settings):
-        @register("test")
-        class SimpleComponent(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "my_dict": {
-                        "attrs:@click": "() => {}",
-                        "attrs:style": "height: 20px",
-                        "items": [1, 2, 3],
-                    },
-                    "list": [{"a": 1}, {"a": 2}, {"a": 3}],
-                }
-
-            template: types.django_html = """
-                {% load component_tags %}
-                {% slot "my_slot" ...my_dict ..."{{ list|first }}" x=123 default / %}
-            """
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% component 'test' %}
-                {% fill "my_slot" data="slot_data" %}
-                    {{ slot_data }}
-                {% endfill %}
-            {% endcomponent %}
-        """
-        template = Template(template_str)
-        rendered = template.render(Context({}))
-
-        assertHTMLEqual(
-            rendered,
-            """
-            {'items': [1, 2, 3], 'a': 1, 'x': 123, 'attrs': {'@click': '() =&gt; {}', 'style': 'height: 20px'}}
-            """,
-        )
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_fill(self, components_settings):
-        @register("test")
-        class SimpleComponent(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "my_dict": {
-                        "attrs:@click": "() => {}",
-                        "attrs:style": "height: 20px",
-                        "items": [1, 2, 3],
-                    },
-                    "list": [{"a": 1}, {"a": 2}, {"a": 3}],
-                }
-
-            template: types.django_html = """
-                {% load component_tags %}
-                {% slot "my_slot" ...my_dict ..."{{ list|first }}" x=123 default %}
-                    __SLOT_DEFAULT__
-                {% endslot %}
-            """
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% component 'test' %}
-                {% fill "my_slot" ...fill_data %}
-                    {{ slot_data }}
-                    {{ slot_default }}
-                {% endfill %}
-            {% endcomponent %}
-        """
-        template = Template(template_str)
-        rendered = template.render(
-            Context(
-                {
-                    "fill_data": {
-                        "data": "slot_data",
-                        "default": "slot_default",
-                    },
-                },
-            ),
-        )
-
-        assertHTMLEqual(
-            rendered,
-            """
-            {'items': [1, 2, 3], 'a': 1, 'x': 123, 'attrs': {'@click': '() =&gt; {}', 'style': 'height: 20px'}}
-            __SLOT_DEFAULT__
-            """,
-        )
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_provide(self, components_settings):
-        @register("test")
-        class SimpleComponent(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                data = self.inject("test")
-                return {
-                    "attrs": data.attrs,
-                    "items": data.items,
-                    "a": data.a,
-                }
-
-            template: types.django_html = """
-                {% load component_tags %}
-                <div>{{ attrs }}</div>
-                <div>{{ items }}</div>
-                <div>{{ a }}</div>
-            """
-
-        template_str: types.django_html = """
-            {% load component_tags %}
-            {% provide 'test' ...my_dict ..."{{ list|first }}" %}
-                {% component 'test' / %}
-            {% endprovide %}
-        """
-        template = Template(template_str)
-        rendered = template.render(
-            Context(
-                {
-                    "my_dict": {
-                        "attrs:@click": "() => {}",
-                        "attrs:style": "height: 20px",
-                        "items": [1, 2, 3],
-                    },
-                    "list": [{"a": 1}, {"a": 2}, {"a": 3}],
-                },
-            ),
-        )
-
-        assertHTMLEqual(
-            rendered,
-            """
-            <div data-djc-id-ca1bc41>{'@click': '() =&gt; {}', 'style': 'height: 20px'}</div>
-            <div data-djc-id-ca1bc41>[1, 2, 3]</div>
-            <div data-djc-id-ca1bc41>1</div>
-            """,
-        )
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_html_attrs(self, components_settings):
-        template_str: types.django_html = """
-            {% load component_tags %}
-            <div {% html_attrs defaults:test="hi" ...my_dict attrs:lol="123" %}>
-        """
-        template = Template(template_str)
-        rendered = template.render(
-            Context(
-                {
-                    "my_dict": {
-                        "attrs:style": "height: 20px",
-                        "class": "button",
-                        "defaults:class": "my-class",
-                        "defaults:style": "NONO",
-                    },
-                },
-            ),
-        )
-        assertHTMLEqual(
-            rendered,
-            """
-            <div test="hi" class="my-class button" style="height: 20px;" lol="123">
-            """,
-        )
-
-    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_later_spreads_do_not_overwrite_earlier(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
@@ -719,7 +494,7 @@ class TestSpreadOperator:
             / %}
             """
 
-        with pytest.raises(TemplateSyntaxError, match=re.escape("Spread syntax '...' is missing a value")):
+        with pytest.raises(SyntaxError, match=re.escape("Parse error")):
             Template(template_str)
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -774,8 +549,8 @@ class TestSpreadOperator:
 
         # List
         with pytest.raises(
-            ValueError,
-            match=re.escape("Cannot spread non-iterable value: '...var_b' resolved to 123"),
+            TypeError,
+            match=re.escape("Value of '...var_b' must be a mapping or an iterable, not int"),
         ):
             template.render(Context({"var_b": 123}))
 

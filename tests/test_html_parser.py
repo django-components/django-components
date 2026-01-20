@@ -1,4 +1,4 @@
-from djc_core_html_parser import set_html_attributes
+from djc_core.html_transformer import set_html_attributes
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components.testing import djc_test
@@ -8,8 +8,8 @@ from .testutils import setup_test_config
 setup_test_config()
 
 
-# This same set of tests is also found in djc_html_parser, to ensure that
-# this implementation can be replaced with the djc_html_parser's Rust-based implementation
+# This same set of tests is also found in djc_core.html_parser, to ensure that
+# this implementation can be replaced with the djc_core.html_parser's Rust-based implementation
 @djc_test
 class TestHTMLParser:
     def test_basic_transformation(self):

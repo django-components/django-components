@@ -27,6 +27,7 @@ from django.template.base import NodeList, Parser, Template, Token
 from django.template.context import Context, RequestContext
 from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext
 from django.test.signals import template_rendered
+from djc_core.template_parser import TagAttr
 
 from django_components.app_settings import ContextBehavior
 from django_components.component_media import ComponentMediaInput, ComponentMediaMeta
@@ -86,7 +87,6 @@ from django_components.util.misc import (
     is_generator,
     to_dict,
 )
-from django_components.util.template_tag import TagAttr
 from django_components.util.weakref import cached_ref
 
 # TODO_REMOVE_IN_V1 - Users should use top-level import instead
@@ -4112,21 +4112,27 @@ class ComponentNode(BaseNode):
         registry: ComponentRegistry,  # noqa: F811
         # BaseNode inputs
         params: List[TagAttr],
+        filters: Dict[str, Callable[[Any, Any], Any]],
+        tags: Dict[str, Callable[[Any, Any], Any]],
         flags: Optional[Dict[str, bool]] = None,
         nodelist: Optional[NodeList] = None,
         node_id: Optional[str] = None,
         contents: Optional[str] = None,
         template_name: Optional[str] = None,
         template_component: Optional[Type["Component"]] = None,
+        start_tag_source: Optional[str] = None,
     ) -> None:
         super().__init__(
             params=params,
             flags=flags,
+            filters=filters,
+            tags=tags,
             nodelist=nodelist,
             node_id=node_id,
             contents=contents,
             template_name=template_name,
             template_component=template_component,
+            start_tag_source=start_tag_source,
         )
 
         self.name = name
