@@ -34,7 +34,7 @@ django==4.2.25
     #   django-template-partials
 django-template-partials==25.3
     # via -r requirements-dev.in
-djc-core-html-parser==1.0.3
+djc-core==1.2.2
     # via -r requirements-dev.in
 exceptiongroup==1.3.0
     # via pytest

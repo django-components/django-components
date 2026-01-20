@@ -4,6 +4,7 @@ from weakref import ReferenceType, finalize
 
 from django.template import Library
 from django.template.base import Parser, Token
+from djc_core.template_parser import parse_tag
 
 from django_components.app_settings import ContextBehaviorType, app_settings
 from django_components.extension import (
@@ -15,6 +16,7 @@ from django_components.extension import (
 )
 from django_components.library import is_tag_protected, mark_protected_tags, register_tag
 from django_components.tag_formatter import TagFormatterABC, get_tag_formatter
+from django_components.util.template_tag import bits_from_tag
 from django_components.util.weakref import cached_ref
 
 if TYPE_CHECKING:
@@ -549,8 +551,11 @@ class ComponentRegistry:
         # Define a tag function that pre-processes the tokens, extracting
         # the component name and passing the rest to the actual tag function.
         def tag_fn(parser: Parser, token: Token) -> ComponentNode:
+            token_str = "{% " + token.contents + " %}"
+            tag = parse_tag(token_str)
+            bits = bits_from_tag(tag)
+
             # Let the TagFormatter pre-process the tokens
-            bits = token.split_contents()
             formatter = get_tag_formatter(registry)
             result = formatter.parse([*bits])
             start_tag = formatter.start_tag(result.component_name)

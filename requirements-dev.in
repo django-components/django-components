@@ -1,5 +1,5 @@
 django
-djc-core-html-parser
+djc-core>=1.2.2
 django-template-partials
 tox
 pytest

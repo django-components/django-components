@@ -339,7 +339,7 @@ class TestHtmlAttrs:
             template: types.django_html = """
                 {% load component_tags %}
                 <div {% html_attrs
-                    defaults=defaults
+                    defaults={"key": "val"}
                     attrs:class="from_agg_key"
                     defaults:class="override-me"
                     class="added_class"

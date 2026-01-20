@@ -1624,7 +1624,7 @@
               >
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bd1c="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bd1c="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -1718,7 +1718,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bd2b="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bd2b="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -1912,7 +1912,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd45="">
           
   
@@ -1934,7 +1934,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd46="">
           
   
@@ -1957,7 +1957,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bd47="">
@@ -2085,7 +2085,7 @@
               >
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bd4e="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bd4e="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -2177,7 +2177,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bd5f="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bd5f="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -2338,7 +2338,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bd6b="">
@@ -2556,7 +2556,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd71="">
           
   
@@ -2578,7 +2578,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd72="">
           
   
@@ -2601,7 +2601,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bd73="">
@@ -2744,7 +2744,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bd76="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bd76="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -2939,7 +2939,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd7e="">
           
   
@@ -2961,7 +2961,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd7f="">
           
   
@@ -2984,7 +2984,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bd80="">
@@ -3127,7 +3127,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bd83="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bd83="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -3322,7 +3322,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd8b="">
           
   
@@ -3344,7 +3344,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd8c="">
           
   
@@ -3367,7 +3367,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bd8d="">
@@ -3510,7 +3510,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bd90="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bd90="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -3705,7 +3705,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd98="">
           
   
@@ -3727,7 +3727,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bd99="">
           
   
@@ -3750,7 +3750,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bd9a="">
@@ -3893,7 +3893,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bd9d="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bd9d="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -4088,7 +4088,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bda5="">
           
   
@@ -4110,7 +4110,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bda6="">
           
   
@@ -4133,7 +4133,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bda7="">
@@ -4296,7 +4296,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bdac="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bdac="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -4457,7 +4457,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bdb5="">
@@ -4675,7 +4675,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bdbb="">
           
   
@@ -4697,7 +4697,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bdbc="">
           
   
@@ -4720,7 +4720,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bdbd="">
@@ -4848,7 +4848,7 @@
               >
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bdc0="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bdc0="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -4920,7 +4920,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bdcb="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bdcb="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -5115,7 +5115,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bdd3="">
           
   
@@ -5137,7 +5137,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bdd4="">
           
   
@@ -5160,7 +5160,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bdd5="">
@@ -5303,7 +5303,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bdd8="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bdd8="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -5498,7 +5498,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bde0="">
           
   
@@ -5520,7 +5520,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bde1="">
           
   
@@ -5543,7 +5543,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bde2="">
@@ -5686,7 +5686,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bde5="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bde5="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -5881,7 +5881,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bded="">
           
   
@@ -5903,7 +5903,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bdee="">
           
   
@@ -5926,7 +5926,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bdef="">
@@ -6069,7 +6069,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bdf2="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bdf2="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -6264,7 +6264,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bdfa="">
           
   
@@ -6286,7 +6286,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1bdfb="">
           
   
@@ -6309,7 +6309,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1bdfc="">
@@ -6437,7 +6437,7 @@
               >
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1bdff="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1bdff="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -6509,7 +6509,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1be06="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1be06="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -6704,7 +6704,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1be0e="">
           
   
@@ -6726,7 +6726,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1be0f="">
           
   
@@ -6749,7 +6749,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1be10="">
@@ -6892,7 +6892,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1be13="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1be13="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -7087,7 +7087,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1be1b="">
           
   
@@ -7109,7 +7109,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1be1c="">
           
   
@@ -7132,7 +7132,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1be1d="">
@@ -7260,7 +7260,7 @@
               >
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1be20="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1be20="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -7332,7 +7332,7 @@
   
                   
                       
-          <div :class="{ 'rotate-180': isOpen }" style="width: fit-content;" data-djc-id-ca1be25="">
+          <div :class="{ &#x27;rotate-180&#x27;: isOpen }" style="width: fit-content;" data-djc-id-ca1be25="">
               
               <span
                   class="group flex gap-x-3 rounded-md text-sm leading-6 font-semibold"
@@ -7527,7 +7527,7 @@
           <button
               type="button"
               
-              x-text="attachment.isPreview ? 'Edit' : 'Preview'" @click="() => $emit('toggleAttachment', index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              x-text="attachment.isPreview ? &#x27;Edit&#x27; : &#x27;Preview&#x27;" @click="() =&gt; $emit(&#x27;toggleAttachment&#x27;, index)" class="!py-1 bg-blue-600 text-white hover:bg-blue-500 focus-visible:outline-blue-600 transition inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1be2d="">
           
   
@@ -7549,7 +7549,7 @@
           <button
               type="button"
               
-              @click="() => $emit('removeAttachment', index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
+              @click="() =&gt; $emit(&#x27;removeAttachment&#x27;, index)" class="!py-1 bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600 inline-flex w-full text-sm font-semibold sm:mt-0 sm:w-auto focus-visible:outline-2 focus-visible:outline-offset-2 px-3 py-2 justify-center rounded-md shadow-sm"
            data-djc-id-ca1be2e="">
           
   
@@ -7572,7 +7572,7 @@
               x-props="{
                   initAllTags: '[&quot;Tag 9&quot;, &quot;Tag 10&quot;, &quot;Tag 11&quot;, &quot;Tag 12&quot;, &quot;Tag 13&quot;, &quot;Tag 14&quot;, &quot;Tag 15&quot;, &quot;Tag 16&quot;, &quot;Tag 17&quot;, &quot;Tag 18&quot;, &quot;Tag 19&quot;, &quot;Tag 20&quot;]',
                   initTags: attachment.tags,
-                  onChange: (tags) => $emit('setAttachmentTags', index, tags),
+                  onChange: (tags) =&gt; $emit(&#x27;setAttachmentTags&#x27;, index, tags),
               }"
               class="pb-8 pt-3 flex flex-col gap-y-3 items-start"
            data-djc-id-ca1be2f="">

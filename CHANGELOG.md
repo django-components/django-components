@@ -1,5 +1,31 @@
 # Release notes
 
+## v0.145.0
+
+#### Feat
+
+- `BaseNode` class now has the `filters` and `tags` attributes. These dictionaries keep track of what filters and tags can be used within the `{% %}` tag.
+
+    Extensions can use these attributes to add custom filters and tags to the tag.
+
+- When creating custom template tags with `BaseNode` class or `@template_tag` decorator, you now get an error when
+  the tag name is the same as one of the flags:
+
+    ```py
+    class SlotNode(BaseNode):
+        tag = "slot"
+        allowed_flags = ["slot"]  # Raises!
+    ```
+
+#### Refactor
+
+- In template, when a component tag has a positional argument
+  after a keyword argument it now raises `SyntaxError` instead of `TypeError`.
+
+    ```django
+    {% mytag 'John' msg='Hello' 123 %}
+    ```
+
 ## v0.144.0
 
 #### Feat

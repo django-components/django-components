@@ -5,18 +5,22 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, List,
 
 from django.template import Context, Library
 from django.template.base import Node, NodeList, Parser, Token
+from djc_core.template_parser import ParserConfig, TagAttr, TagConfig, TagSpec, TemplateVersion
 
 from django_components.util.logger import trace_node_msg
 from django_components.util.misc import gen_id
 from django_components.util.template_tag import (
-    TagAttr,
+    CompiledTagFn,
+    compile_tag_params_resolver,
     parse_template_tag,
-    resolve_params,
     validate_params,
 )
 
 if TYPE_CHECKING:
     from django_components.component import Component
+
+
+parser_config = ParserConfig(version=TemplateVersion.v1)
 
 
 # Normally, when `Node.render()` is called, it receives only a single argument `context`.
@@ -56,8 +60,22 @@ class NodeMeta(type):
         if attrs.get("__module__") == "django_components.node":
             return cls
 
-        if not hasattr(cls, "tag"):
+        if not hasattr(cls, "tag") or not cls.tag:
             raise ValueError(f"Node {name} must have a 'tag' attribute")
+
+        tag_name = cls.tag
+
+        # Remember the flags set for this tag, so that when we get to parsing templates,
+        # we'll be able to pass this metadata to the parser.
+        allowed_flags = attrs.get("allowed_flags")
+        if allowed_flags:
+            if tag_name in allowed_flags:
+                raise ValueError(
+                    f"Node {name}'s `tag` attribute ('{tag_name}') cannot be the same as one of its `allowed_flags`."
+                )
+
+            tag_config = TagConfig(tag=TagSpec(tag_name, set(allowed_flags)), sections=[])
+            parser_config.set_tag(tag_config)
 
         # Skip if already wrapped
         orig_render = cls.render
@@ -88,11 +106,21 @@ class NodeMeta(type):
         # NOTE: This is used for creating docs by `_format_tag_signature()` in `docs/scripts/reference.py`
         cls._signature = validation_signature
 
+        # This runs when the node's template tag is being rendered.
         @functools.wraps(orig_render)
         def wrapper_render(self: "BaseNode", context: Context) -> str:
             trace_node_msg("RENDER", self.tag, self.node_id)
 
-            resolved_params = resolve_params(self.tag, self.params, context)
+            if self._params_resolver is None:
+                self._params_resolver = compile_tag_params_resolver(
+                    tag_name=self.tag,
+                    params=self.params,
+                    source=self.start_tag_source or "",
+                    filters=self.filters,
+                    tags=self.tags,
+                )
+
+            args, kwargs = self._params_resolver(context)
 
             # Template tags may accept kwargs that are not valid Python identifiers, e.g.
             # `{% component data-id="John" class="pt-4" :href="myVar" %}`
@@ -137,26 +165,17 @@ class NodeMeta(type):
             # ```
             #
             # See https://github.com/django-components/django-components/discussions/900#discussioncomment-11859970
-            resolved_params_without_invalid_kwargs = []
-            invalid_kwargs = {}
-            did_see_special_kwarg = False
-            for resolved_param in resolved_params:
-                key = resolved_param.key
-                if key is not None:
-                    # Case: Special kwargs
-                    if not key.isidentifier() or keyword.iskeyword(key):
-                        # NOTE: Since these keys are not part of signature validation,
-                        # we have to check ourselves if any args follow them.
-                        invalid_kwargs[key] = resolved_param.value
-                        did_see_special_kwarg = True
-                    else:
-                        # Case: Regular kwargs
-                        resolved_params_without_invalid_kwargs.append(resolved_param)
+            kwargs_without_invalid_keys: List[Tuple[str, Any]] = []
+            invalid_kwargs: Dict[str, Any] = {}
+            for key, value in kwargs:
+                # Case: Special kwargs
+                if not key.isidentifier() or keyword.iskeyword(key):
+                    # NOTE: Since these keys are not part of signature validation,
+                    # we have to check ourselves if any args follow them.
+                    invalid_kwargs[key] = value
                 else:
-                    # Case: Regular positional args
-                    if did_see_special_kwarg:
-                        raise SyntaxError("positional argument follows keyword argument")
-                    resolved_params_without_invalid_kwargs.append(resolved_param)
+                    # Case: Regular kwargs
+                    kwargs_without_invalid_keys.append((key, value))
 
             # Validate the params against the signature
             #
@@ -180,15 +199,17 @@ class NodeMeta(type):
             #
             # But cause we stripped the two parameters, then the error will be:
             # `render() takes from 1 positional arguments but 2 were given`
-            args, kwargs = validate_params(
+            validate_params(
                 orig_render,
                 validation_signature,
-                self.tag,
-                resolved_params_without_invalid_kwargs,
-                invalid_kwargs,
+                tag=self.tag,
+                args=args,
+                kwargs=kwargs_without_invalid_keys,
+                extra_kwargs=invalid_kwargs,
             )
 
-            output = orig_render(self, context, *args, **kwargs)
+            kwargs_dict = dict(kwargs)
+            output = orig_render(self, context, *args, **kwargs_dict)
 
             trace_node_msg("RENDER", self.tag, self.node_id, msg="...Done!")
             return output
@@ -373,6 +394,25 @@ class BaseNode(Node, metaclass=NodeMeta):
     - Keyword arg `key2='val2 two'`
     """
 
+    start_tag_source: Optional[str]
+    """
+    The source code of the start tag with parameters as a string.
+
+    E.g. the following tag:
+
+    ```django
+    {% slot "content" default required %}
+      <div>
+        ...
+      </div>
+    {% endslot %}
+    ```
+
+    The `start_tag_source` will be `"{% slot "content" default required %}"`.
+
+    May be `None` if the `Node` instance was created manually.
+    """
+
     flags: Dict[str, bool]
     """
     Dictionary of all [`allowed_flags`](../api#django_components.BaseNode.allowed_flags)
@@ -412,6 +452,20 @@ class BaseNode(Node, metaclass=NodeMeta):
     ```
     """
 
+    filters: Dict[str, Callable]
+    """
+    The filters available to the tag.
+
+    This will be the same as the global Django filters.
+    """
+
+    tags: Dict[str, Callable]
+    """
+    The tags available to the tag.
+
+    This will be the same as the global Django tags.
+    """
+
     nodelist: NodeList
     """
     The nodelist of the tag.
@@ -434,7 +488,7 @@ class BaseNode(Node, metaclass=NodeMeta):
 
     contents: Optional[str]
     """
-    The contents of the tag.
+    The body of the tag as a string.
 
     This is the text between the opening and closing tags, e.g.
 
@@ -484,20 +538,27 @@ class BaseNode(Node, metaclass=NodeMeta):
     def __init__(
         self,
         params: List[TagAttr],
+        filters: Dict[str, Callable[[Any, Any], Any]],
+        tags: Dict[str, Callable[[Any, Any], Any]],
         flags: Optional[Dict[str, bool]] = None,
         nodelist: Optional[NodeList] = None,
         node_id: Optional[str] = None,
         contents: Optional[str] = None,
         template_name: Optional[str] = None,
         template_component: Optional[Type["Component"]] = None,
+        start_tag_source: Optional[str] = None,
     ) -> None:
         self.params = params
+        self._params_resolver: Optional[CompiledTagFn] = None
+        self.filters = filters
+        self.tags = tags
         self.flags = flags or {flag: False for flag in self.allowed_flags or []}
         self.nodelist = nodelist or NodeList()
         self.node_id = node_id or gen_id()
         self.contents = contents
         self.template_name = template_name
         self.template_component = template_component
+        self.start_tag_source = start_tag_source
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}: {self.node_id}. Contents: {self.contents}. Flags: {self.active_flags}>"
@@ -540,7 +601,7 @@ class BaseNode(Node, metaclass=NodeMeta):
         from django_components.template import get_component_from_origin  # noqa: PLC0415
 
         tag_id = gen_id()
-        tag = parse_template_tag(cls.tag, cls.end_tag, cls.allowed_flags, parser, token)
+        tag = parse_template_tag(cls.tag, cls.end_tag, parser_config, parser, token)
 
         trace_node_msg("PARSE", cls.tag, tag_id)
 
@@ -549,6 +610,9 @@ class BaseNode(Node, metaclass=NodeMeta):
             nodelist=body,
             node_id=tag_id,
             params=tag.params,
+            start_tag_source=tag.start_tag_source,
+            filters=parser.filters,
+            tags=parser.tags,
             flags=tag.flags,
             contents=contents,
             template_name=parser.origin.name if parser.origin else None,
@@ -651,7 +715,7 @@ def template_tag(
                 },
             )
         except Exception as e:
-            raise e.__class__(f"Failed to create node class in 'template_tag()' for '{fn.__name__}'") from e
+            raise e.__class__(f"Failed to create node class in 'template_tag()' for '{fn.__name__}': {e}") from e
 
         subcls.register(library)
 
