@@ -482,6 +482,7 @@ class TestDecorator:
             ValueError,
             match=r"Node RenderNode's `tag` attribute \('mytag'\) cannot be the same as one of its `allowed_flags`.",
         ):
+
             @template_tag(component_tags.register, tag="mytag", allowed_flags=["mytag"])
             def render(node: BaseNode, context: Context, name: str, **kwargs) -> str:  # noqa: ARG001
                 return ""

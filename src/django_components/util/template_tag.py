@@ -9,6 +9,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Mapping,
     NamedTuple,
@@ -22,7 +23,7 @@ from django.template import NodeList, Variable, VariableDoesNotExist
 from django.template.base import Parser, Token
 from django.template.exceptions import TemplateSyntaxError
 from djc_core.safe_eval import safe_eval
-from djc_core.template_parser import ParserConfig, TagAttr, compile_tag, parse_tag
+from djc_core.template_parser import GenericTag, ParserConfig, TagAttr, compile_tag, parse_tag
 from djc_core.template_parser.parse import TagUnion
 
 from django_components.expression import DynamicFilterExpression
@@ -61,11 +62,12 @@ def parse_template_tag(
     # Otherwise, depending on the end_tag, the tag may be:
     # 2. Block tag - With corresponding end tag, e.g. `{% slot %}...{% endslot %}`
     # 3. Inlined tag - Without the end tag, e.g. `{% html_attrs ... %}`
-    is_inline = parsed_tag_info.is_self_closing
+    is_inline = isinstance(parsed_tag_info, GenericTag) and parsed_tag_info.is_self_closing
 
     tag_config = tag_parser_config.get_tag(tag)
     tag_allowed_flags = (tag_config and tag_config.get_flags()) or set()
-    remaining_attrs, flags = _extract_flags(parsed_tag_info.attrs, tag_allowed_flags)
+    attrs = parsed_tag_info.attrs if isinstance(parsed_tag_info, GenericTag) else ()
+    remaining_attrs, flags = _extract_flags(attrs, tag_allowed_flags)
 
     def _parse_tag_body(parser: Parser, end_tag: str, inline: bool) -> Tuple[NodeList, Optional[str]]:
         if inline:
@@ -133,7 +135,7 @@ def _extract_contents_until(parser: Parser, until_blocks: List[str]) -> str:
 
 
 def _extract_flags(
-    attrs: List[TagAttr],
+    attrs: Iterable[TagAttr],
     allowed_flags: Set[str],
 ) -> Tuple[List[TagAttr], Dict[str, bool]]:
     found_flags: Set[str] = set()
@@ -156,8 +158,8 @@ def _extract_flags(
 
 def resolve_template_string(
     context: Mapping[str, Any],
-    source: str,
-    token: Tuple[int, int],
+    _source: str,
+    _token: Tuple[int, int],
     filters: Mapping[str, Callable],
     tags: Mapping[str, Callable],
     expr: str,
@@ -170,11 +172,11 @@ def resolve_template_string(
 
 
 def resolve_filter(
-    context: Mapping[str, Any],
-    source: str,
-    token: Tuple[int, int],
+    _context: Mapping[str, Any],
+    _source: str,
+    _token: Tuple[int, int],
     filters: Mapping[str, Callable],
-    tags: Mapping[str, Callable],
+    _tags: Mapping[str, Callable],
     name: str,
     value: Any,
     arg: Any,
@@ -192,10 +194,10 @@ def resolve_filter(
 # TODO - Cache?
 def resolve_variable(
     context: Mapping[str, Any],
-    source: str,
-    token: Tuple[int, int],
-    filters: Mapping[str, Callable],
-    tags: Mapping[str, Callable],
+    _source: str,
+    _token: Tuple[int, int],
+    _filters: Mapping[str, Callable],
+    _tags: Mapping[str, Callable],
     var: str,
 ) -> Any:
     try:
@@ -207,10 +209,10 @@ def resolve_variable(
 # TODO - Cache?
 def resolve_translation(
     context: Mapping[str, Any],
-    source: str,
-    token: Tuple[int, int],
-    filters: Mapping[str, Callable],
-    tags: Mapping[str, Callable],
+    _source: str,
+    _token: Tuple[int, int],
+    _filters: Mapping[str, Callable],
+    _tags: Mapping[str, Callable],
     text: str,
 ) -> Any:
     # The compiler gives us the variable stripped of `_(")` and `"),
@@ -224,10 +226,10 @@ python_expression_cache: Dict[str, Callable[[Mapping[str, Any]], Any]] = {}
 
 def resolve_python_expression(
     context: Mapping[str, Any],
-    source: str,
-    token: Tuple[int, int],
-    filters: Mapping[str, Callable],
-    tags: Mapping[str, Callable],
+    _source: str,
+    _token: Tuple[int, int],
+    _filters: Mapping[str, Callable],
+    _tags: Mapping[str, Callable],
     code: str,
 ) -> Any:
     if code not in python_expression_cache:
@@ -676,9 +678,12 @@ def _validate_params_with_code(
 # and there's no space between them, e.g. `_("Hello")|upper`.
 def bits_from_tag(tag: TagUnion) -> List[str]:
     bits = [tag.meta.name.content]
-    for attr in tag.attrs:
+    attrs = tag.attrs if isinstance(tag, GenericTag) else ()
+    is_self_closing = isinstance(tag, GenericTag) and tag.is_self_closing
+
+    for attr in attrs:
         attr_bit = attr.token.content
         bits.append(attr_bit)
-    if tag.is_self_closing:
+    if is_self_closing:
         bits.append("/")
     return bits

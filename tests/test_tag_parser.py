@@ -6,7 +6,7 @@ Source of truth is djc_core.template_parser.
 
 # ruff: noqa: ARG001,ARG005,E501
 import re
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, cast
 from unittest.mock import Mock
 
 import pytest
@@ -33,12 +33,12 @@ from djc_core.template_parser import (
 ###############################
 
 
-def expr_resolver(ctx, src, token, filters, tags, expr):
-    return f"EXPR_RESOLVED:{expr}"
+def expr_resolver(ctx, src, token, filters, tags, code):
+    return f"EXPR_RESOLVED:{code}"
 
 
-def template_resolver(ctx, src, token, filters, tags, template):
-    return f"TEMPLATE_RESOLVED:{template}"
+def template_resolver(ctx, src, token, filters, tags, expr):
+    return f"TEMPLATE_RESOLVED:{expr}"
 
 
 def translation_resolver(ctx, src, token, filters, tags, text):
@@ -58,7 +58,10 @@ def variable_resolver(ctx, src, token, filters, tags, var):
 ###############################
 
 
-def _simple_compile_tag(tag_or_attrs: Union[GenericTag, List[TagAttr]], source: str):
+def _simple_compile_tag(tag_or_attrs: Union[GenericTag, EndTag, ForLoopTag, List[TagAttr]], source: str):
+    if isinstance(tag_or_attrs, (EndTag, ForLoopTag)):
+        raise TypeError("EndTag and ForLoopTag are not supported for compile_tag")
+
     return compile_tag(
         tag_or_attrs,
         source,
@@ -256,9 +259,7 @@ def plain_variable_value(
         value_token = token_val
     # Extract root variable name (everything before first dot, or entire content if no dot)
     root_var = content.split(".")[0] if "." in content else content
-    used_var_start_index = (
-        start_index + len(spread) if spread is not None else start_index
-    )
+    used_var_start_index = start_index + len(spread) if spread is not None else start_index
     used_var_col = col + len(spread) if spread is not None else col
     used_var_token = token(root_var, used_var_start_index, line, used_var_col)
     return TagValue(
@@ -565,7 +566,7 @@ class TestResolvers:
         tags = {"my_tag": lambda *args, **kwargs: "<my_tag>"}
 
         tag_func = compile_tag(
-            tag,
+            tag,  # type: ignore[arg-type]
             tag_content,
             filters=filters,
             tags=tags,
@@ -618,7 +619,7 @@ class TestResolvers:
         mock_expr.assert_not_called()
 
     def test_template_string_resolver(self):
-        context = {}
+        context: Dict = {}
         tag_content = "{% component '{% lorem w 4 %}' %}"
         (
             mock_variable,
@@ -647,7 +648,7 @@ class TestResolvers:
         mock_expr.assert_not_called()
 
     def test_translation_resolver(self):
-        context = {}
+        context: Dict = {}
         tag_content = '{% component _("hello world") %}'
         (
             mock_variable,
@@ -676,7 +677,7 @@ class TestResolvers:
         mock_expr.assert_not_called()
 
     def test_expr_resolver(self):
-        context = {}
+        context: Dict = {}
         tag_content = "{% component (1 + 2) %}"
         (
             mock_variable,
@@ -705,7 +706,7 @@ class TestResolvers:
         mock_filter.assert_not_called()
 
     def test_filter_resolver(self):
-        context = {}
+        context: Dict = {}
         tag_content = "{% component my_var|upper:arg %}"
         (
             mock_variable,
@@ -838,9 +839,7 @@ class TestTagParser:
             SyntaxError,
             match="expected self_closing_slash, attribute, filter, or COMMENT",
         ):
-            parse_tag(
-                "{% component 'my_comp' key=val key2='val2 \"two\"' text=\"organisation's\" 'abc %}"
-            )
+            parse_tag("{% component 'my_comp' key=val key2='val2 \"two\"' text=\"organisation's\" 'abc %}")
 
     def test_trailing_quote_double(self):
         # Unclosed double quote in positional arg
@@ -848,23 +847,17 @@ class TestTagParser:
             SyntaxError,
             match="expected self_closing_slash, attribute, filter, or COMMENT",
         ):
-            parse_tag(
-                '{% component "my_comp" key=val key2="val2 \'two\'" text=\'organisation"s\' "abc %}'
-            )
+            parse_tag('{% component "my_comp" key=val key2="val2 \'two\'" text=\'organisation"s\' "abc %}')
 
     def test_trailing_quote_as_value_single(self):
         # Unclosed quote in key=value pair
         with pytest.raises(SyntaxError, match="expected value"):
-            parse_tag(
-                "{% component 'my_comp' key=val key2='val2 \"two\"' text=\"organisation's\" value='abc %}"
-            )
+            parse_tag("{% component 'my_comp' key=val key2='val2 \"two\"' text=\"organisation's\" value='abc %}")
 
     def test_trailing_quote_as_value_double(self):
         # Unclosed double quote in key=value pair
         with pytest.raises(SyntaxError, match="expected value"):
-            parse_tag(
-                '{% component "my_comp" key=val key2="val2 \'two\'" text=\'organisation"s\' value="abc %}'
-            )
+            parse_tag('{% component "my_comp" key=val key2="val2 \'two\'" text=\'organisation"s\' value="abc %}')
 
 
 class TestTranslation:
@@ -1003,9 +996,7 @@ class TestTranslation:
                             TagValueFilter(
                                 token=token('|default:_("fallback")', 19, 1, 20),
                                 name=token("default", 20, 1, 21),
-                                arg=plain_translation_value(
-                                    '_("fallback")', 28, 1, 29, None
-                                ),
+                                arg=plain_translation_value('_("fallback")', 28, 1, 29, None),
                             )
                         ],
                         [],
@@ -1041,15 +1032,9 @@ class TestTranslation:
                     value=plain_list_value(
                         token('[_("one"), _("two"), _("three")]', 13, 1, 14),
                         [
-                            ValueChild(
-                                plain_translation_value('_("one")', 14, 1, 15, None)
-                            ),
-                            ValueChild(
-                                plain_translation_value('_("two")', 24, 1, 25, None)
-                            ),
-                            ValueChild(
-                                plain_translation_value('_("three")', 34, 1, 35, None)
-                            ),
+                            ValueChild(plain_translation_value('_("one")', 14, 1, 15, None)),
+                            ValueChild(plain_translation_value('_("two")', 24, 1, 25, None)),
+                            ValueChild(plain_translation_value('_("three")', 34, 1, 35, None)),
                         ],
                     ),
                     is_flag=False,
@@ -1223,9 +1208,7 @@ class TestFilter:
         ]
 
     def test_filter_whitespace(self):
-        tag_content = (
-            "{% component value  |  lower    key=val  |  upper    key2=val2 %}"
-        )
+        tag_content = "{% component value  |  lower    key=val  |  upper    key2=val2 %}"
         tag = parse_tag(tag_content)
 
         expected_tag = GenericTag(
@@ -1504,9 +1487,7 @@ class TestFloat:
                                         TagValueFilter(
                                             token=token("|add:.2e-02", 23, 1, 24),
                                             name=token("add", 24, 1, 25),
-                                            arg=plain_float_value(
-                                                ".2e-02", 28, 1, 29, None
-                                            ),
+                                            arg=plain_float_value(".2e-02", 28, 1, 29, None),
                                         )
                                     ],
                                     [],
@@ -1874,9 +1855,7 @@ class TestString:
                             TagValueFilter(
                                 token=token('|default:"default_value"', 19, 1, 20),
                                 name=token("default", 20, 1, 21),
-                                arg=plain_string_value(
-                                    '"default_value"', 28, 1, 29, None
-                                ),
+                                arg=plain_string_value('"default_value"', 28, 1, 29, None),
                             )
                         ],
                         [],
@@ -2350,17 +2329,11 @@ class TestPythonExpr:
                         None,
                         [
                             TagValueFilter(
-                                token=token(
-                                    "|default:('fallback'.append(myvar))", 19, 1, 20
-                                ),
+                                token=token("|default:('fallback'.append(myvar))", 19, 1, 20),
                                 name=token("default", 20, 1, 21),
                                 arg=TagValue(
-                                    token=token(
-                                        "('fallback'.append(myvar))", 28, 1, 29
-                                    ),
-                                    value=token(
-                                        "('fallback'.append(myvar))", 28, 1, 29
-                                    ),
+                                    token=token("('fallback'.append(myvar))", 28, 1, 29),
+                                    value=token("('fallback'.append(myvar))", 28, 1, 29),
                                     children=[],
                                     kind=ValueKind("python_expr"),
                                     spread=None,
@@ -2413,16 +2386,8 @@ class TestPythonExpr:
                             14,
                         ),
                         [
-                            ValueChild(
-                                plain_python_expr_value(
-                                    "('one'.upper())", 14, 1, 15, None
-                                )
-                            ),
-                            ValueChild(
-                                plain_python_expr_value(
-                                    "('two'.lower())", 31, 1, 32, None
-                                )
-                            ),
+                            ValueChild(plain_python_expr_value("('one'.upper())", 14, 1, 15, None)),
+                            ValueChild(plain_python_expr_value("('two'.lower())", 31, 1, 32, None)),
                         ],
                     ),
                     is_flag=False,
@@ -2465,11 +2430,7 @@ class TestPythonExpr:
                             14,
                         ),
                         [
-                            ValueChild(
-                                plain_python_expr_value(
-                                    "('key'.upper())", 14, 1, 15, None
-                                )
-                            ),
+                            ValueChild(plain_python_expr_value("('key'.upper())", 14, 1, 15, None)),
                             ValueChild(
                                 python_expr_value(
                                     token("('val'.lower())|upper", 31, 1, 32),
@@ -2501,11 +2462,7 @@ class TestPythonExpr:
         tag_func = _simple_compile_tag(tag, tag_content)
         args, kwargs = tag_func({})
 
-        assert args == [
-            {
-                "EXPR_RESOLVED:('key'.upper())": "upper(EXPR_RESOLVED:('val'.lower()), None)"
-            }
-        ]
+        assert args == [{"EXPR_RESOLVED:('key'.upper())": "upper(EXPR_RESOLVED:('val'.lower()), None)"}]
         assert kwargs == []
 
 
@@ -2838,12 +2795,8 @@ class TestDict:
                                 arg=plain_dict_value(
                                     token('{ "key": "val" }', 28, 1, 29),
                                     [
-                                        ValueChild(
-                                            plain_string_value('"key"', 30, 1, 31, None)
-                                        ),
-                                        ValueChild(
-                                            plain_string_value('"val"', 37, 1, 38, None)
-                                        ),
+                                        ValueChild(plain_string_value('"key"', 30, 1, 31, None)),
+                                        ValueChild(plain_string_value('"val"', 37, 1, 38, None)),
                                     ],
                                 ),
                             )
@@ -2951,9 +2904,7 @@ class TestDict:
             name=token("component", 3, 1, 4),
             attrs=[
                 TagAttr(
-                    token=token(
-                        'data={ "key": val, **spread, "key2": val2 }', 13, 1, 14
-                    ),
+                    token=token('data={ "key": val, **spread, "key2": val2 }', 13, 1, 14),
                     key=token("data", 13, 1, 14),
                     value=plain_dict_value(
                         token('{ "key": val, **spread, "key2": val2 }', 18, 1, 19),
@@ -3031,9 +2982,7 @@ class TestDict:
                     ),
                     key=token("simple", 38, 3, 13),
                     value=plain_dict_value(
-                        token(
-                            '{\n                "a": 1|add:2\n            }', 45, 3, 20
-                        ),
+                        token('{\n                "a": 1|add:2\n            }', 45, 3, 20),
                         [
                             ValueChild(plain_string_value('"a"', 63, 4, 17, None)),
                             ValueChild(
@@ -3104,17 +3053,13 @@ class TestDict:
                                     [],
                                 )
                             ),
-                            ValueChild(
-                                plain_variable_value("spread", 167, 8, 17, "**")
-                            ),
+                            ValueChild(plain_variable_value("spread", 167, 8, 17, "**")),
                             ValueChild(plain_string_value('"obj"', 193, 9, 17, None)),
                             ValueChild(
                                 plain_dict_value(
                                     token('{"x": 1|add:2}', 200, 9, 24),
                                     [
-                                        ValueChild(
-                                            plain_string_value('"x"', 201, 9, 25, None)
-                                        ),
+                                        ValueChild(plain_string_value('"x"', 201, 9, 25, None)),
                                         ValueChild(
                                             int_value(
                                                 token("1|add:2", 206, 9, 30),
@@ -3122,13 +3067,9 @@ class TestDict:
                                                 None,
                                                 [
                                                     TagValueFilter(
-                                                        token=token(
-                                                            "|add:2", 207, 9, 31
-                                                        ),
+                                                        token=token("|add:2", 207, 9, 31),
                                                         name=token("add", 208, 9, 32),
-                                                        arg=plain_int_value(
-                                                            "2", 212, 9, 36, None
-                                                        ),
+                                                        arg=plain_int_value("2", 212, 9, 36, None),
                                                     )
                                                 ],
                                                 [],
@@ -3215,9 +3156,7 @@ class TestDict:
                                         TagValueFilter(
                                             token=token('|yesno:"yes,no"', 319, 13, 31),
                                             name=token("yesno", 320, 13, 32),
-                                            arg=plain_string_value(
-                                                '"yes,no"', 326, 13, 38, None
-                                            ),
+                                            arg=plain_string_value('"yes,no"', 326, 13, 38, None),
                                         )
                                     ],
                                     [],
@@ -3401,15 +3340,9 @@ class TestList:
                                 arg=plain_list_value(
                                     token("[1, 2, 3]", 28, 1, 29),
                                     [
-                                        ValueChild(
-                                            plain_int_value("1", 29, 1, 30, None)
-                                        ),
-                                        ValueChild(
-                                            plain_int_value("2", 32, 1, 33, None)
-                                        ),
-                                        ValueChild(
-                                            plain_int_value("3", 35, 1, 36, None)
-                                        ),
+                                        ValueChild(plain_int_value("1", 29, 1, 30, None)),
+                                        ValueChild(plain_int_value("2", 32, 1, 33, None)),
+                                        ValueChild(plain_int_value("3", 35, 1, 36, None)),
                                     ],
                                 ),
                             )
@@ -3553,9 +3486,7 @@ class TestList:
                                         TagValueFilter(
                                             token=token('|default:"d"', 258, 11, 22),
                                             name=token("default", 259, 11, 23),
-                                            arg=plain_string_value(
-                                                '"d"', 267, 11, 31, None
-                                            ),
+                                            arg=plain_string_value('"d"', 267, 11, 31, None),
                                         )
                                     ],
                                     [],
@@ -3586,29 +3517,15 @@ class TestList:
                             ValueChild(
                                 plain_list_value(
                                     token("[*nested]", 356, 15, 21),
-                                    [
-                                        ValueChild(
-                                            plain_variable_value(
-                                                "nested", 357, 15, 22, "*"
-                                            )
-                                        )
-                                    ],
+                                    [ValueChild(plain_variable_value("nested", 357, 15, 22, "*"))],
                                 )
                             ),
                             ValueChild(
                                 plain_dict_value(
                                     token('{"key": "val"}', 387, 16, 21),
                                     [
-                                        ValueChild(
-                                            plain_string_value(
-                                                '"key"', 388, 16, 22, None
-                                            )
-                                        ),
-                                        ValueChild(
-                                            plain_string_value(
-                                                '"val"', 395, 16, 29, None
-                                            )
-                                        ),
+                                        ValueChild(plain_string_value('"key"', 388, 16, 22, None)),
+                                        ValueChild(plain_string_value('"val"', 395, 16, 29, None)),
                                     ],
                                 )
                             ),
@@ -3700,13 +3617,9 @@ class TestList:
                                                 None,
                                                 [
                                                     TagValueFilter(
-                                                        token=token(
-                                                            "|add:2", 93, 5, 22
-                                                        ),
+                                                        token=token("|add:2", 93, 5, 22),
                                                         name=token("add", 94, 5, 23),
-                                                        arg=plain_int_value(
-                                                            "2", 98, 5, 27, None
-                                                        ),
+                                                        arg=plain_int_value("2", 98, 5, 27, None),
                                                     )
                                                 ],
                                                 [],
@@ -3715,15 +3628,11 @@ class TestList:
                                         ),
                                         ValueChild(
                                             plain_dict_value(
-                                                token(
-                                                    '{"x"|upper: 2|add:3}', 121, 6, 21
-                                                ),
+                                                token('{"x"|upper: 2|add:3}', 121, 6, 21),
                                                 [
                                                     ValueChild(
                                                         string_value(
-                                                            token(
-                                                                '"x"|upper', 122, 6, 22
-                                                            ),
+                                                            token('"x"|upper', 122, 6, 22),
                                                             token('"x"', 122, 6, 22),
                                                             None,
                                                             [
@@ -3749,9 +3658,7 @@ class TestList:
                                                     ),
                                                     ValueChild(
                                                         int_value(
-                                                            token(
-                                                                "2|add:3", 133, 6, 33
-                                                            ),
+                                                            token("2|add:3", 133, 6, 33),
                                                             token("2", 133, 6, 33),
                                                             None,
                                                             [
@@ -3796,15 +3703,9 @@ class TestList:
                                                 "*",
                                                 [
                                                     TagValueFilter(
-                                                        token=token(
-                                                            '|default:""', 176, 7, 34
-                                                        ),
-                                                        name=token(
-                                                            "default", 177, 7, 35
-                                                        ),
-                                                        arg=plain_string_value(
-                                                            '""', 185, 7, 43, None
-                                                        ),
+                                                        token=token('|default:""', 176, 7, 34),
+                                                        name=token("default", 177, 7, 35),
+                                                        arg=plain_string_value('""', 185, 7, 43, None),
                                                     )
                                                 ],
                                                 [],
@@ -3814,9 +3715,7 @@ class TestList:
                                     ],
                                 )
                             ),
-                            ValueChild(
-                                plain_string_value('"nested"', 223, 9, 17, None)
-                            ),
+                            ValueChild(plain_string_value('"nested"', 223, 9, 17, None)),
                             ValueChild(
                                 plain_dict_value(
                                     token(
@@ -3826,9 +3725,7 @@ class TestList:
                                         27,
                                     ),
                                     [
-                                        ValueChild(
-                                            plain_string_value('"a"', 255, 10, 21, None)
-                                        ),
+                                        ValueChild(plain_string_value('"a"', 255, 10, 21, None)),
                                         ValueChild(
                                             plain_list_value(
                                                 token(
@@ -3840,9 +3737,7 @@ class TestList:
                                                 [
                                                     ValueChild(
                                                         int_value(
-                                                            token(
-                                                                "1|add:2", 286, 11, 25
-                                                            ),
+                                                            token("1|add:2", 286, 11, 25),
                                                             token("1", 286, 11, 25),
                                                             None,
                                                             [
@@ -3912,9 +3807,7 @@ class TestList:
                                                 ],
                                             )
                                         ),
-                                        ValueChild(
-                                            plain_string_value('"b"', 379, 14, 21, None)
-                                        ),
+                                        ValueChild(plain_string_value('"b"', 379, 14, 21, None)),
                                         ValueChild(
                                             plain_dict_value(
                                                 token(
@@ -3924,11 +3817,7 @@ class TestList:
                                                     26,
                                                 ),
                                                 [
-                                                    ValueChild(
-                                                        plain_string_value(
-                                                            '"x"', 410, 15, 25, None
-                                                        )
-                                                    ),
+                                                    ValueChild(plain_string_value('"x"', 410, 15, 25, None)),
                                                     ValueChild(
                                                         plain_list_value(
                                                             token(
@@ -4046,7 +3935,7 @@ class TestList:
                 return f"{name}({value}, {arg})"
 
         tag_func = compile_tag(
-            tag,
+            tag,  # type: ignore[arg-type]
             tag_content,
             filters={},
             tags={},
@@ -4151,7 +4040,7 @@ class TestSpread:
                 return f"{name}({value}, {arg})"
 
         tag_func = compile_tag(
-            tag,
+            tag,  # type: ignore[arg-type]
             tag_content,
             filters={},
             tags={},
@@ -4185,9 +4074,7 @@ class TestSpread:
     # NOTE: But there CAN be whitespace between `*` / `**` and the value,
     #       because we're scoped inside `{ ... }` dict or `[ ... ]` list.
     def test_spread_whitespace_2(self):
-        tag_content = (
-            '{% component dict={"a": "b", ** my_attr} list=["a", * my_list] %}'
-        )
+        tag_content = '{% component dict={"a": "b", ** my_attr} list=["a", * my_list] %}'
         tag = parse_tag(tag_content)
 
         expected_tag = GenericTag(
@@ -4369,14 +4256,8 @@ class TestSpread:
                                     token=token('**{"key": val2}', 15, 1, 16),
                                     value=token('{"key": val2}', 17, 1, 18),
                                     children=[
-                                        ValueChild(
-                                            plain_string_value('"key"', 18, 1, 19, None)
-                                        ),
-                                        ValueChild(
-                                            plain_variable_value(
-                                                "val2", 25, 1, 26, None
-                                            )
-                                        ),
+                                        ValueChild(plain_string_value('"key"', 18, 1, 19, None)),
+                                        ValueChild(plain_variable_value("val2", 25, 1, 26, None)),
                                     ],
                                     kind=ValueKind("dict"),
                                     spread="**",
@@ -4465,11 +4346,7 @@ class TestSpread:
                                     token=token("*[val1]", 15, 1, 16),
                                     value=token("[val1]", 16, 1, 17),
                                     children=[
-                                        ValueChild(
-                                            plain_variable_value(
-                                                "val1", 17, 1, 18, None
-                                            )
-                                        ),
+                                        ValueChild(plain_variable_value("val1", 17, 1, 18, None)),
                                     ],
                                     kind=ValueKind("list"),
                                     spread="*",
@@ -4550,9 +4427,7 @@ class TestTemplateString:
                 TagAttr(
                     token=token("'{% lorem w 4 %}'", 13, 1, 14),
                     key=None,
-                    value=plain_template_string_value(
-                        "'{% lorem w 4 %}'", 13, 1, 14, None
-                    ),
+                    value=plain_template_string_value("'{% lorem w 4 %}'", 13, 1, 14, None),
                     is_flag=False,
                 ),
             ],
@@ -4583,11 +4458,7 @@ class TestTemplateString:
                         token('{ "key": "{% lorem w 4 %}" }', 13, 1, 14),
                         [
                             ValueChild(plain_string_value('"key"', 15, 1, 16, None)),
-                            ValueChild(
-                                plain_template_string_value(
-                                    '"{% lorem w 4 %}"', 22, 1, 23, None
-                                )
-                            ),
+                            ValueChild(plain_template_string_value('"{% lorem w 4 %}"', 22, 1, 23, None)),
                         ],
                     ),
                     is_flag=False,
@@ -4619,11 +4490,7 @@ class TestTemplateString:
                     value=plain_list_value(
                         token("[ '{% lorem w 4 %}' ]", 13, 1, 14),
                         [
-                            ValueChild(
-                                plain_template_string_value(
-                                    "'{% lorem w 4 %}'", 15, 1, 16, None
-                                )
-                            ),
+                            ValueChild(plain_template_string_value("'{% lorem w 4 %}'", 15, 1, 16, None)),
                         ],
                     ),
                     is_flag=False,
@@ -4701,9 +4568,7 @@ class TestTemplateString:
                             TagValueFilter(
                                 token=token('|default:"{% lorem w 4 %}"', 19, 1, 20),
                                 name=token("default", 20, 1, 21),
-                                arg=plain_template_string_value(
-                                    '"{% lorem w 4 %}"', 28, 1, 29, None
-                                ),
+                                arg=plain_template_string_value('"{% lorem w 4 %}"', 28, 1, 29, None),
                             )
                         ],
                         [],
@@ -4773,11 +4638,7 @@ class TestComments:
                                     token=token("*[val1]", 15, 1, 16),
                                     value=token("[val1]", 16, 1, 17),
                                     children=[
-                                        ValueChild(
-                                            plain_variable_value(
-                                                "val1", 17, 1, 18, None
-                                            )
-                                        ),
+                                        ValueChild(plain_variable_value("val1", 17, 1, 18, None)),
                                     ],
                                     kind=ValueKind("list"),
                                     spread="*",
@@ -4808,7 +4669,8 @@ class TestComments:
         assert kwargs == []
 
     def test_comments_within_dict(self):
-        tag = parse_tag('{% component { "key": "123" {# comment #} } %}')
+        tag_content = '{% component { "key": "123" {# comment #} } %}'
+        tag = parse_tag(tag_content)
 
         expected_tag = GenericTag(
             token=token('{% component { "key": "123" {# comment #} } %}', 0, 1, 1),
@@ -4834,7 +4696,7 @@ class TestComments:
 
         assert tag == expected_tag
 
-        tag_func = _simple_compile_tag(tag, tag)
+        tag_func = _simple_compile_tag(tag, tag_content)
         args, kwargs = tag_func({"val1": 1, "val2": 2})
         assert args == [{"key": "123"}]
         assert kwargs == []
@@ -4844,9 +4706,7 @@ class TestParamsOrder:
     def test_arg_after_kwarg_is_error(self):
         tag_content = "{% my_tag key='value' positional_arg %}"
         ast = parse_tag(input=tag_content)
-        with pytest.raises(
-            SyntaxError, match="positional argument follows keyword argument"
-        ):
+        with pytest.raises(SyntaxError, match="positional argument follows keyword argument"):
             _simple_compile_tag(ast, tag_content)
 
     def test_arg_after_dict_spread_is_error(self):
@@ -4854,9 +4714,7 @@ class TestParamsOrder:
         ast = parse_tag(input=tag_content)
         tag_func = _simple_compile_tag(ast, tag_content)
 
-        with pytest.raises(
-            SyntaxError, match="positional argument follows keyword argument"
-        ):
+        with pytest.raises(SyntaxError, match="positional argument follows keyword argument"):
             tag_func({})
 
     def test_arg_after_list_spread_is_ok(self):
@@ -4895,9 +4753,7 @@ class TestParamsOrder:
         tag_content = "{% my_tag key='value' ...[1, 2, 3] %}"
         ast = parse_tag(input=tag_content)
         tag_func = _simple_compile_tag(ast, tag_content)
-        with pytest.raises(
-            SyntaxError, match="positional argument follows keyword argument"
-        ):
+        with pytest.raises(SyntaxError, match="positional argument follows keyword argument"):
             tag_func({})
 
     def test_list_spread_after_list_spread_is_ok(self):
@@ -4920,9 +4776,7 @@ class TestParamsOrder:
         tag_content = "{% my_tag ...{'key': 'value'} ...[1, 2, 3] %}"
         ast = parse_tag(input=tag_content)
         tag_func = _simple_compile_tag(ast, tag_content)
-        with pytest.raises(
-            SyntaxError, match="positional argument follows keyword argument"
-        ):
+        with pytest.raises(SyntaxError, match="positional argument follows keyword argument"):
             tag_func({})
 
     def test_dict_spread_after_list_spread_is_ok(self):
@@ -4938,10 +4792,8 @@ class TestFlags:
     def test_flag(self):
         tag_content = "{% my_tag 123 my_flag key='val' %}"
         config = ParserConfig(version=TemplateVersion.v1)
-        config.set_tag(
-            TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None)
-        )
-        ast = parse_tag(tag_content, config)
+        config.set_tag(TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None))
+        ast = cast("GenericTag", parse_tag(tag_content, config))
 
         assert ast.attrs[1].value.token.content == "my_flag"
         assert ast.attrs[1].is_flag
@@ -4954,7 +4806,7 @@ class TestFlags:
         assert kwargs == [("key", "val")]
 
         # Same as before, but with flags=None
-        ast2 = parse_tag(tag_content, config=None)
+        ast2 = cast("GenericTag", parse_tag(tag_content, config=None))
         assert ast2.attrs[1].value.token.content == "my_flag"
         assert not ast2.attrs[1].is_flag
 
@@ -4969,10 +4821,8 @@ class TestFlags:
     def test_flag_after_kwarg(self):
         tag_content = "{% my_tag key='value' my_flag %}"
         config = ParserConfig(version=TemplateVersion.v1)
-        config.set_tag(
-            TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None)
-        )
-        ast1 = parse_tag(tag_content, config)
+        config.set_tag(TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None))
+        ast1 = cast("GenericTag", parse_tag(tag_content, config))
 
         assert ast1.attrs[1].value.token.content == "my_flag"
         assert ast1.attrs[1].is_flag
@@ -4983,23 +4833,19 @@ class TestFlags:
         assert kwargs1 == [("key", "value")]
 
         # Same as before, but with flags=None
-        ast2 = parse_tag(tag_content, config=None)
+        ast2 = cast("GenericTag", parse_tag(tag_content, config=None))
         assert ast2.attrs[1].value.token.content == "my_flag"
         assert not ast2.attrs[1].is_flag
 
-        with pytest.raises(
-            SyntaxError, match="positional argument follows keyword argument"
-        ):
+        with pytest.raises(SyntaxError, match="positional argument follows keyword argument"):
             _simple_compile_tag(ast2, tag_content)
 
     # my_flag is NOT treated as flag because it's used as spread
     def test_flag_as_spread(self):
         tag_content = "{% my_tag ...my_flag %}"
         config = ParserConfig(version=TemplateVersion.v1)
-        config.set_tag(
-            TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None)
-        )
-        ast1 = parse_tag(tag_content, config)
+        config.set_tag(TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None))
+        ast1 = cast("GenericTag", parse_tag(tag_content, config))
 
         assert ast1.attrs[0].value.token.content == "...my_flag"
         assert not ast1.attrs[0].is_flag
@@ -5011,7 +4857,7 @@ class TestFlags:
         assert kwargs1 == []
 
         # Same as before, but with flags=None
-        ast2 = parse_tag(tag_content, config=None)
+        ast2 = cast("GenericTag", parse_tag(tag_content, config=None))
         assert ast2.attrs[0].value.token.content == "...my_flag"
         assert not ast2.attrs[0].is_flag
 
@@ -5025,10 +4871,8 @@ class TestFlags:
     def test_flag_as_kwarg(self):
         tag_content = "{% my_tag my_flag=123 %}"
         config = ParserConfig(version=TemplateVersion.v1)
-        config.set_tag(
-            TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None)
-        )
-        ast1 = parse_tag(tag_content, config)
+        config.set_tag(TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None))
+        ast1 = cast("GenericTag", parse_tag(tag_content, config))
 
         assert ast1.attrs[0].key
         assert ast1.attrs[0].key.content == "my_flag"
@@ -5040,7 +4884,7 @@ class TestFlags:
         assert kwargs1 == [("my_flag", 123)]
 
         # Same as before, but with no flags
-        ast2 = parse_tag(tag_content, config=None)
+        ast2 = cast("GenericTag", parse_tag(tag_content, config=None))
         assert ast2.attrs[0].key
         assert ast2.attrs[0].key.content == "my_flag"
         assert not ast2.attrs[0].is_flag
@@ -5053,34 +4897,28 @@ class TestFlags:
     def test_flag_duplicate(self):
         tag_content = "{% my_tag my_flag my_flag %}"
         config = ParserConfig(version=TemplateVersion.v1)
-        config.set_tag(
-            TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None)
-        )
-        with pytest.raises(
-            SyntaxError, match=r"Flag 'my_flag' may be specified only once."
-        ):
+        config.set_tag(TagConfig(tag=TagSpec("my_tag", flags={"my_flag"}), sections=None))
+        with pytest.raises(SyntaxError, match=r"Flag 'my_flag' may be specified only once."):
             parse_tag(tag_content, config)
 
     def test_flag_case_sensitive(self):
         tag_content = "{% my_tag my_flag %}"
         config = ParserConfig(version=TemplateVersion.v1)
-        config.set_tag(
-            TagConfig(tag=TagSpec("my_tag", flags={"MY_FLAG"}), sections=None)
-        )
-        ast = parse_tag(tag_content, config)
+        config.set_tag(TagConfig(tag=TagSpec("my_tag", flags={"MY_FLAG"}), sections=None))
+        ast = cast("GenericTag", parse_tag(tag_content, config))
         assert ast.attrs[0].value.token.content == "my_flag"
         assert not ast.attrs[0].is_flag
 
 
 class TestSelfClosing:
     def test_self_closing_simple(self):
-        ast = parse_tag("{% my_tag / %}")
+        ast = cast("GenericTag", parse_tag("{% my_tag / %}"))
         assert ast.meta.name.content == "my_tag"
         assert ast.is_self_closing is True
         assert ast.attrs == []
 
     def test_self_closing_with_args(self):
-        ast = parse_tag("{% my_tag key=val / %}")
+        ast = cast("GenericTag", parse_tag("{% my_tag key=val / %}"))
         assert ast.meta.name.content == "my_tag"
         assert ast.is_self_closing is True
         assert len(ast.attrs) == 1

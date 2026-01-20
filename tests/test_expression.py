@@ -4,7 +4,7 @@ import re
 from typing import Dict
 
 import pytest
-from django.template import Context, Template, TemplateSyntaxError
+from django.template import Context, Template
 from django.template.base import FilterExpression, Node, Parser, Token
 from pytest_django.asserts import assertHTMLEqual
 
