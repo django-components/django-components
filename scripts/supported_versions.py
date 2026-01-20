@@ -376,6 +376,7 @@ def parse_compatibility_markdown(file_path: Path) -> VersionMapping:
     | 3.11           | 4.2, 5.1, 5.2  |
     | 3.12           | 4.2, 5.1, 5.2  |
     | 3.13           | 5.1, 5.2       |
+    | 3.14           | 5.2            |
     ```
     """
     try:

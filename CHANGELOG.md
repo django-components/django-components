@@ -2,6 +2,10 @@
 
 ## v0.145.0
 
+#### Perf
+
+- `django-components` is now 17% faster thanks to using Rust-based template tag parsing.
+
 #### Feat
 
 - `BaseNode` class now has the `filters` and `tags` attributes. These dictionaries keep track of what filters and tags can be used within the `{% %}` tag.
