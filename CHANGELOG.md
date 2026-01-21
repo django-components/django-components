@@ -30,6 +30,14 @@
     {% mytag 'John' msg='Hello' 123 %}
     ```
 
+- When a component tag receives multiple kwargs with the same name, it no longer raises `TypeError`.
+
+  Instead, the later kwargs overwrite the earlier ones.
+
+    ```django
+    {% mytag 'John' x=123 x=456 %}
+    ```
+
 ## v0.144.0
 
 #### Feat

@@ -410,7 +410,7 @@ class TestDynamicExpr:
 
 class TestSpreadOperator:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
-    def test_later_spreads_do_not_overwrite_earlier(self, components_settings):
+    def test_later_spreads_can_overwrite_earlier(self, components_settings):
         @register("test")
         class SimpleComponent(Component):
             def get_template_data(self, args, kwargs, slots, context):
@@ -432,12 +432,14 @@ class TestSpreadOperator:
                     "attrs:style": "height: 20px",
                     "items": [1, 2, 3],
                 },
-                "list": [{"a": 1, "x": "OVERWRITTEN_X"}, {"a": 2}, {"a": 3}],
+                "list": [
+                    {"a": 1, "x": "OVERWRITTEN_X"},
+                    {"a": 2},
+                ],
             },
         )
 
-        # Mergingg like this will raise TypeError, because it's like
-        # a function receiving multiple kwargs with the same name.
+        # Merging like this is fine - earlier spreads are overwritten by later spreads.
         template_str1: types.django_html = """
             {% load component_tags %}
             {% component 'test'
@@ -449,9 +451,17 @@ class TestSpreadOperator:
             """
 
         template1 = Template(template_str1)
+        rendered1 = template1.render(context)
 
-        with pytest.raises(TypeError, match=re.escape("got multiple values for argument 'x'")):
-            template1.render(context)
+        assertHTMLEqual(
+            rendered1,
+            """
+            <div data-djc-id-ca1bc3f>{'@click': '() =&gt; {}', 'style': 'OVERWRITTEN'}</div>
+            <div data-djc-id-ca1bc3f>[1, 2, 3]</div>
+            <div data-djc-id-ca1bc3f>1</div>
+            <div data-djc-id-ca1bc3f>OVERWRITTEN_X</div>
+            """,
+        )
 
         # But, similarly to python, we can merge multiple **kwargs by instead
         # merging them into a single dict, and spreading that.
@@ -473,10 +483,10 @@ class TestSpreadOperator:
         assertHTMLEqual(
             rendered2,
             """
-            <div data-djc-id-ca1bc40>{'@click': '() =&gt; {}', 'style': 'OVERWRITTEN'}</div>
-            <div data-djc-id-ca1bc40>[1, 2, 3]</div>
-            <div data-djc-id-ca1bc40>1</div>
-            <div data-djc-id-ca1bc40>OVERWRITTEN_X</div>
+            <div data-djc-id-ca1bc41>{'@click': '() =&gt; {}', 'style': 'OVERWRITTEN'}</div>
+            <div data-djc-id-ca1bc41>[1, 2, 3]</div>
+            <div data-djc-id-ca1bc41>1</div>
+            <div data-djc-id-ca1bc41>OVERWRITTEN_X</div>
             """,
         )
 
