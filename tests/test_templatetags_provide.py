@@ -384,7 +384,7 @@ class TestProvideTemplateTag:
         """
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'provide': missing a required argument: 'name'"),
+            match=re.escape("missing 1 required positional argument: 'name'"),
         ):
             Template(template_str).render(Context({}))
 

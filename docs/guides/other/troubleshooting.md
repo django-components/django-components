@@ -40,6 +40,15 @@ While the slots will be highlighted with a **red** border and label:
 
     Use this feature ONLY in during development. Do NOT use it in production.
 
+## Template position in errors
+
+When a component or template tag raises an error, django-components automatically includes the exact tag
+that caused the error, as found in the template. This makes it easy to locate the problematic code in your template files.
+
+For example, this is the error message when a component receives incorrect arguments:
+
+![Template position in error message](../../images/debug-error-component-underline.png)
+
 ## Component path in errors
 
 When an error occurs, the error message will show the path to the component that

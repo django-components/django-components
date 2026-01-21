@@ -186,7 +186,7 @@ class TestHtmlAttrs:
         with pytest.raises(
             TypeError,
             match=re.escape(
-                "Invalid parameters for tag 'html_attrs': takes 2 positional argument(s) but more were given",
+                "takes from 0 to 2 positional arguments but 3 were given",
             ),
         ):
             template.render(Context({"class_var": "padding-top-8"}))
@@ -329,7 +329,7 @@ class TestHtmlAttrs:
 
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'html_attrs': got multiple values for argument 'attrs'"),
+            match=re.escape("got multiple values for argument 'attrs'"),
         ):
             template.render(Context({"class_var": "padding-top-8"}))
 

@@ -1,4 +1,3 @@
-import inspect
 import os
 import re
 from typing import cast
@@ -213,7 +212,7 @@ class TestNode:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
+            match=re.escape("missing 1 required positional argument: 'name'"),
         ):
             template3.render(Context({}))
 
@@ -226,7 +225,7 @@ class TestNode:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
+            match=re.escape("missing 1 required positional argument: 'name'"),
         ):
             template4.render(Context({}))
 
@@ -239,7 +238,7 @@ class TestNode:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'msg'"),
+            match=re.escape("missing 1 required keyword-only argument: 'msg'"),
         ):
             template5.render(Context({}))
 
@@ -252,7 +251,7 @@ class TestNode:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': got multiple values for argument 'name'"),
+            match=re.escape("got multiple values for argument 'name'"),
         ):
             template6.render(Context({}))
 
@@ -278,7 +277,7 @@ class TestNode:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'var'"),
+            match=re.escape("got an unexpected keyword argument 'var'"),
         ):
             template7.render(Context({}))
 
@@ -291,7 +290,7 @@ class TestNode:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'data-id'"),
+            match=re.escape("got an unexpected keyword argument 'data-id'"),
         ):
             template8.render(Context({}))
 
@@ -391,7 +390,7 @@ class TestNode:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': takes 0 positional arguments but 1 was given"),
+            match=re.escape("takes 0 positional arguments but 1 was given"),
         ):
             template2.render(Context({}))
 
@@ -565,7 +564,7 @@ class TestDecorator:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
+            match=re.escape("missing 1 required positional argument: 'name'"),
         ):
             template3.render(Context({}))
 
@@ -578,7 +577,7 @@ class TestDecorator:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
+            match=re.escape("missing 1 required positional argument: 'name'"),
         ):
             template4.render(Context({}))
 
@@ -591,7 +590,7 @@ class TestDecorator:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'msg'"),
+            match=re.escape("missing 1 required keyword-only argument: 'msg'"),
         ):
             template5.render(Context({}))
 
@@ -604,7 +603,7 @@ class TestDecorator:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': got multiple values for argument 'name'"),
+            match=re.escape("got multiple values for argument 'name'"),
         ):
             template6.render(Context({}))
 
@@ -630,7 +629,7 @@ class TestDecorator:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'var'"),
+            match=re.escape("got an unexpected keyword argument 'var'"),
         ):
             template7.render(Context({}))
 
@@ -643,7 +642,7 @@ class TestDecorator:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'data-id'"),
+            match=re.escape("got an unexpected keyword argument 'data-id'"),
         ):
             template8.render(Context({}))
 
@@ -734,35 +733,11 @@ class TestDecorator:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': takes 0 positional arguments but 1 was given"),
+            match=re.escape("takes 0 positional arguments but 1 was given"),
         ):
             template2.render(Context({}))
 
         render._node.unregister(component_tags.register)  # type: ignore[attr-defined]
-
-
-def force_signature_validation(fn):
-    """
-    Create a proxy around a function that makes `__code__` inaccessible,
-    forcing the use of signature-based validation.
-    """
-
-    class SignatureOnlyFunction:
-        def __init__(self, fn):
-            self.__wrapped__ = fn
-            self.__signature__ = inspect.signature(fn)
-
-        def __call__(self, *args, **kwargs):
-            return self.__wrapped__(*args, **kwargs)
-
-        def __getattr__(self, name):
-            # Return None for __code__ to force signature-based validation
-            if name == "__code__":
-                return None
-            # For all other attributes, delegate to the wrapped function
-            return getattr(self.__wrapped__, name)
-
-    return SignatureOnlyFunction(fn)
 
 
 @djc_test
@@ -773,7 +748,6 @@ class TestSignatureBasedValidation:
             tag = "mytag"
             end_tag = "endmytag"
 
-            @force_signature_validation
             def render(self, context: Context, name: str, **kwargs) -> str:
                 return f"Hello, {name}!"
 
@@ -808,7 +782,6 @@ class TestSignatureBasedValidation:
         class TestNode(BaseNode):
             tag = "mytag"
 
-            @force_signature_validation
             def render(self, context: Context, name: str, **kwargs) -> str:
                 return f"Hello, {name}!"
 
@@ -846,7 +819,6 @@ class TestSignatureBasedValidation:
             end_tag = "endmytag"
             allowed_flags = ["required", "default"]
 
-            @force_signature_validation
             def render(self, context: Context, name: str, **kwargs) -> str:
                 nonlocal captured
                 captured = self.allowed_flags, self.flags, self.active_flags
@@ -875,7 +847,6 @@ class TestSignatureBasedValidation:
             tag = "mytag"
             end_tag = "endmytag"
 
-            @force_signature_validation
             def render(self, context: Context, name: str, **kwargs) -> str:
                 nonlocal captured
                 captured = (
@@ -946,7 +917,6 @@ class TestSignatureBasedValidation:
         class TestNodeWithoutEndTag(BaseNode):
             tag = "mytag2"
 
-            @force_signature_validation
             def render(self, context: Context, name: str, **kwargs) -> str:
                 nonlocal captured
                 captured = (
@@ -1012,7 +982,6 @@ class TestSignatureBasedValidation:
         class TestNode(BaseNode):
             tag = "mytag"
 
-            @force_signature_validation
             def render(self, context: Context) -> str:
                 nonlocal captured
                 captured = context.flatten()
@@ -1051,7 +1020,6 @@ class TestSignatureBasedValidation:
             tag = "mytag"
             allowed_flags = ["required", "default"]
 
-            @force_signature_validation
             def render(self, context: Context, name: str, count: int = 1, *, msg: str, mode: str = "default") -> str:
                 nonlocal captured
                 captured = name, count, msg, mode
@@ -1088,7 +1056,7 @@ class TestSignatureBasedValidation:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
+            match=re.escape("missing 1 required positional argument: 'name'"),
         ):
             template3.render(Context({}))
 
@@ -1101,7 +1069,7 @@ class TestSignatureBasedValidation:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'name'"),
+            match=re.escape("missing 1 required positional argument: 'name'"),
         ):
             template4.render(Context({}))
 
@@ -1114,7 +1082,7 @@ class TestSignatureBasedValidation:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': missing a required argument: 'msg'"),
+            match=re.escape("missing 1 required keyword-only argument: 'msg'"),
         ):
             template5.render(Context({}))
 
@@ -1127,7 +1095,7 @@ class TestSignatureBasedValidation:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': got multiple values for argument 'name'"),
+            match=re.escape("got multiple values for argument 'name'"),
         ):
             template6.render(Context({}))
 
@@ -1153,7 +1121,7 @@ class TestSignatureBasedValidation:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'var'"),
+            match=re.escape("got an unexpected keyword argument 'var'"),
         ):
             template7.render(Context({}))
 
@@ -1166,7 +1134,7 @@ class TestSignatureBasedValidation:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': got an unexpected keyword argument 'data-id'"),
+            match=re.escape("got an unexpected keyword argument 'data-id'"),
         ):
             template8.render(Context({}))
 
@@ -1192,7 +1160,6 @@ class TestSignatureBasedValidation:
             tag = "mytag"
             allowed_flags = ["required", "default"]
 
-            @force_signature_validation
             def render(self, context: Context, name: str, *args, msg: str, **kwargs) -> str:
                 nonlocal captured
                 captured = name, args, msg, kwargs
@@ -1225,7 +1192,6 @@ class TestSignatureBasedValidation:
         class TestNode(BaseNode):
             tag = "mytag"
 
-            @force_signature_validation
             def render(self, context: Context, **kwargs) -> str:
                 nonlocal captured
                 captured = kwargs
@@ -1268,8 +1234,93 @@ class TestSignatureBasedValidation:
         )
         with pytest.raises(
             TypeError,
-            match=re.escape("Invalid parameters for tag 'mytag': takes 0 positional arguments but 1 was given"),
+            match=re.escape("takes 0 positional arguments but 1 was given"),
         ):
             template2.render(Context({}))
 
         TestNode.unregister(component_tags.register)
+
+    def test_pattern_takes_from_x_to_y_positional_args(self):
+        """Test pattern: 'takes from X to Y positional arguments but Z were given'."""
+
+        class TestNode1a(BaseNode):
+            tag = "mytag1a"
+
+            def render(self, context: Context, name: str, age: int = 10, city: str = "NYC") -> str:
+                return ""
+
+        TestNode1a.register(component_tags.register)
+
+        # Call with too many positional args (should trigger "takes from X to Y" pattern)
+        # Function signature: (self, context, name, age=10, city="NYC")
+        # After removing context: (name, age=10, city="NYC")
+        # So it takes from 1 to 3 positional arguments
+        # But we're passing 4 positional args
+        template = Template(
+            """
+            {% load component_tags %}
+            {% mytag1a 'John' 20 'Boston' 'extra' %}
+        """
+        )
+
+        with pytest.raises(
+            TypeError,
+            match=re.escape("takes from 1 to 3 positional arguments but 4 were given"),
+        ):
+            template.render(Context({}))
+
+        TestNode1a.unregister(component_tags.register)
+
+    def test_pattern_missing_multiple_positional_args(self):
+        """Test pattern: 'missing X required positional argument(s): argname' (count > 1)."""
+
+        class TestNode2b(BaseNode):
+            tag = "mytag2b"
+
+            def render(self, context: Context, name: str, age: int, city: str) -> str:
+                return ""
+
+        TestNode2b.register(component_tags.register)
+
+        # Call with no args (should trigger "missing 3 required positional arguments")
+        # After removing context: missing 3 args (name, age, city)
+        template = Template(
+            """
+            {% load component_tags %}
+            {% mytag2b %}
+        """,
+        )
+        with pytest.raises(
+            TypeError,
+            match=re.escape("missing 3 required positional arguments: 'name', 'age', and 'city'"),
+        ):
+            template.render(Context({}))
+
+        TestNode2b.unregister(component_tags.register)
+
+    def test_pattern_missing_keyword_only_args(self):
+        """Test pattern: 'missing X required keyword-only argument(s): argname'."""
+
+        class TestNode3(BaseNode):
+            tag = "mytag3"
+
+            def render(self, context: Context, name: str, *, msg: str, mode: str) -> str:
+                return ""
+
+        TestNode3.register(component_tags.register)
+
+        # Call without required keyword-only args
+        template = Template(
+            """
+            {% load component_tags %}
+            {% mytag3 'John' %}
+        """,
+        )
+
+        with pytest.raises(
+            TypeError,
+            match=re.escape("missing 2 required keyword-only arguments: 'msg' and 'mode'"),
+        ):
+            template.render(Context({}))
+
+        TestNode3.unregister(component_tags.register)
