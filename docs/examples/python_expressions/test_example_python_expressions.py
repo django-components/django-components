@@ -141,6 +141,7 @@ class TestPythonExpressions:
         template_str: types.django_html = """
             {% load component_tags %}
             {% component "button"
+                text=(config.get('button_text', 'Submit'))
                 variant=(config.get('button_style', 'primary'))
             / %}
         """
@@ -149,7 +150,10 @@ class TestPythonExpressions:
         # With config
         rendered = template.render(Context({"config": {"button_style": "secondary"}}))
         assert "bg-gray-200" in rendered
+        assert "Submit" in rendered
 
         # Without config (default)
-        rendered = template.render(Context({"config": {}}))
+        rendered = template.render(Context({"config": {"button_text": "Save"}}))
         assert "bg-blue-600" in rendered
+        assert "Save" in rendered
+        assert "Submit" not in rendered
