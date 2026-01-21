@@ -709,7 +709,10 @@ def _modify_typeerror_message(error: TypeError, current_file: str) -> None:
             last_frame = frames[-1]
 
             # If the error occurred in a different file, it's definitely nested
-            if last_frame.filename != current_file:
+            # Normalize paths for cross-platform compatibility (Windows uses different separators/casing)
+            current_file_normalized = str(Path(current_file).resolve())
+            last_frame_filename_normalized = str(Path(last_frame.filename).resolve())
+            if last_frame_filename_normalized != current_file_normalized:
                 should_modify = False
 
             # Additional check: if there are more than 2 frames, it's likely nested
