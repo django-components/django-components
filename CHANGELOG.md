@@ -38,6 +38,14 @@
     {% mytag 'John' x=123 x=456 %}
     ```
 
+- All template tags (`{% component %}`, `{% slot %}`, etc.) now include the exact tag (as found in the template) in the error message when an error occurs:
+
+    ```py
+    TypeError: Error in mytag: missing 1 required keyword-only arguments: 'msg'
+        1 | {% mytag 'John' %}
+            ^^^^^^^^^^^^^^^^^^
+    ```
+
 ## v0.144.0
 
 #### Feat
