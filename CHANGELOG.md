@@ -4,7 +4,10 @@
 
 #### Perf
 
-- `django-components` is now 17% faster thanks to using Rust-based template tag parsing.
+Rendering components is now ~20% faster, thanks to:
+
+- using Rust-based template tag parsing
+- skipping input validation in favour of on-exception handling
 
 #### Feat
 
