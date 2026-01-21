@@ -25,7 +25,7 @@ from djc_core.safe_eval import safe_eval
 from djc_core.template_parser import GenericTag, ParserConfig, TagAttr, compile_tag, parse_tag
 from djc_core.template_parser.parse import TagUnion
 
-from django_components.expression import DynamicFilterExpression
+from django_components.expression import TemplateExpression
 
 
 # Data obj to give meaning to the parsed tag fields
@@ -163,7 +163,7 @@ def resolve_template_string(
     tags: Mapping[str, Callable],
     expr: str,
 ) -> Any:
-    return DynamicFilterExpression(
+    return TemplateExpression(
         expr_str=expr,
         filters=filters,
         tags=tags,

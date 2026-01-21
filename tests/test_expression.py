@@ -9,7 +9,7 @@ from django.template.base import FilterExpression, Node, Parser, Token
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
-from django_components.expression import DynamicFilterExpression
+from django_components.expression import TemplateExpression
 from django_components.testing import djc_test
 from django_components.util.template_tag import is_aggregate_key
 
@@ -52,9 +52,9 @@ def make_context(d: Dict):
 
 # NOTE: Django calls the `{{ }}` syntax "variables" and `{% %}` "blocks"
 @djc_test
-class TestDynamicExpr:
-    def test_variable_resolve_dynamic_expr(self):
-        expr = DynamicFilterExpression(
+class TestTemplateExpression:
+    def test_variable_resolve_template_expression(self):
+        expr = TemplateExpression(
             "{{ var_a|lower }}",
             filters=default_parser.filters,
             tags=default_parser.tags,

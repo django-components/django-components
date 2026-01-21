@@ -83,7 +83,7 @@ Other than that, you can use spread operators multiple times, and even put keywo
 
 In a case of conflicts, the values added later (right-most) overwrite previous values.
 
-## Template tags inside literal strings
+## Nested templates
 
 _New in version 0.93_
 

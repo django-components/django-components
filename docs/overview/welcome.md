@@ -181,7 +181,7 @@ It extends Django's template tags syntax with:
 - [Self-closing tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#self-closing-tags) `{% mytag / %}`
 - [Multi-line template tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#multiline-tags)
 - [Spread operator](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#spread-operator) `...` to dynamically pass args or kwargs into the template tag
-- [Template tags inside literal strings](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#template-tags-inside-literal-strings) like `"{{ first_name }} {{ last_name }}"`
+- [Nested templates](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#nested-templates) like `"{{ first_name }} {{ last_name }}"`
 - [Pass dictonaries by their key-value pairs](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#pass-dictonary-by-its-key-value-pairs) `attr:key=val`
 
 ```htmldjango
