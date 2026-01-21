@@ -243,7 +243,7 @@ class TestTemplateExpression:
 
         # NOTE: This is whitespace-sensitive test, so we check exact output
         assert rendered.strip() == (
-            "<!-- _RENDERED SimpleComponent_6f07b3,ca1bc3f,, -->\n"
+            "<!-- _RENDERED SimpleComponent_3fd560,ca1bc3f,, -->\n"
             '                <div data-djc-id-ca1bc3f=""></div>\n'
             '                <div data-djc-id-ca1bc3f="">  abc</div>\n'
             '                <div data-djc-id-ca1bc3f=""></div>\n'
@@ -311,7 +311,7 @@ class TestTemplateExpression:
         # NOTE: This is whitespace-sensitive test, so we check exact output
         # fmt: off
         assert rendered.strip() == (
-            "<!-- _RENDERED SimpleComponent_85c7eb,ca1bc3f,, -->\n"
+            "<!-- _RENDERED SimpleComponent_e51e4e,ca1bc3f,, -->\n"
             '                <div data-djc-id-ca1bc3f=""> lorem ipsum dolor </div>\n'
             '                <div data-djc-id-ca1bc3f=""> lorem ipsum dolor [{\'a\': 1}] </div>\n'
             '                <div data-djc-id-ca1bc3f=""> True </div>\n'
