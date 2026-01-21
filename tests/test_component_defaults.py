@@ -353,6 +353,45 @@ class TestComponentDefaults:
         TestComponent.render(kwargs={})
         assert did_call_context
 
+    def test_nested_dataclass_remains_as_instance(self):
+        """
+        Test that nested dataclasses in Kwargs remain as dataclass instances,
+        not converted to dictionaries.
+        """
+        did_call_context = False
+
+        @dataclass
+        class User:
+            name: str
+
+        class TestComponent(Component):
+            template = ""
+
+            @dataclass
+            class Kwargs:
+                user: User
+                count: int
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal did_call_context
+                did_call_context = True
+
+                # The nested dataclass should remain as a User instance, not a dict
+                assert isinstance(kwargs.user, User)
+                assert kwargs.user.name == "John"
+                assert kwargs.count == 5
+
+                return {}
+
+        TestComponent.render(
+            kwargs={
+                "user": User(name="John"),
+                "count": 5,
+            }
+        )
+
+        assert did_call_context
+
 
 @djc_test
 class TestGetComponentDefaults:

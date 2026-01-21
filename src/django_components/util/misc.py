@@ -1,7 +1,7 @@
 import re
 import sys
 from collections import namedtuple
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, fields, is_dataclass
 from hashlib import md5
 from importlib import import_module
 from inspect import getmembers
@@ -163,7 +163,10 @@ def to_dict(data: Any) -> dict:
     if hasattr(data, "_asdict"):  # Case: NamedTuple
         return data._asdict()
     if is_dataclass(data):  # Case: dataclass
-        return asdict(data)  # type: ignore[arg-type]
+        # NOTE: This is same as `asdict`, but without recursing into nested dataclasses
+        return {
+            f.name: getattr(data, f.name) for f in fields(data)
+        }
 
     return dict(data)
 

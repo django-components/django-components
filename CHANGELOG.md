@@ -1,5 +1,34 @@
 # Release notes
 
+## v0.145.1
+
+#### Fix
+
+- There was bug where, when you defined `Kwargs`, `Args`, `Slots`, etc, as `@dataclass`,
+  and one of its fields was a dataclass object again, the nested dataclass was incorrectly
+  converted to a dictionary, instead of being left as a dataclass instance.
+
+    Before:
+
+    ```py
+    from dataclasses import dataclass
+    from django_components.util.misc import to_dict
+
+    @dataclass
+    class User:
+        name: str
+
+    class MyTable(Component):
+        @dataclass
+        class Kwargs:
+            user: User
+            count: int
+
+        def get_template_data(self, args, kwargs: Kwargs, slots, context):
+            # INCORRECT!!! Should be `User(name="John")`
+            assert kwargs.user == { "name": "John" }
+    ```
+
 ## v0.145.0
 
 #### Perf
