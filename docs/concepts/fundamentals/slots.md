@@ -944,7 +944,7 @@ Then the component will accept fills named `header-name` and `header-age` (among
 {% endfill %}
 ```
 
-In django-components you can achieve the same, simply by using a variable or a [template expression](../template_tag_syntax#template-tags-inside-literal-strings) instead of a string literal:
+In django-components you can achieve the same, simply by using a variable or a [nested template](../template_tag_syntax#nested-templates) instead of a string literal:
 
 ```django
 <table>

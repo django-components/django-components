@@ -6,7 +6,7 @@ from django.template.base import Parser, VariableNode
 from django_components.util.template_parser import parse_template
 
 
-class DynamicFilterExpression:
+class TemplateExpression:
     """
     To make working with Django templates easier, we allow to use (nested) template tags `{% %}`
     inside of strings that are passed to our template tags, e.g.:
@@ -15,9 +15,9 @@ class DynamicFilterExpression:
     {% component "my_comp" value_from_tag="{% gen_dict %}" %}
     ```
 
-    We call this the "dynamic" or "nested" expression.
+    We call this the "template expression".
 
-    A string is marked as a dynamic expression only if it contains any one
+    A string is marked as a template expression only if it contains any one
     of `{{ }}`, `{% %}`, or `{# #}`.
 
     If the expression consists of a single tag, with no extra text, we return the tag's

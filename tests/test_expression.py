@@ -9,7 +9,7 @@ from django.template.base import FilterExpression, Node, Parser, Token
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
-from django_components.expression import DynamicFilterExpression
+from django_components.expression import TemplateExpression
 from django_components.testing import djc_test
 from django_components.util.template_tag import is_aggregate_key
 
@@ -52,9 +52,9 @@ def make_context(d: Dict):
 
 # NOTE: Django calls the `{{ }}` syntax "variables" and `{% %}` "blocks"
 @djc_test
-class TestDynamicExpr:
-    def test_variable_resolve_dynamic_expr(self):
-        expr = DynamicFilterExpression(
+class TestTemplateExpression:
+    def test_variable_resolve_template_expression(self):
+        expr = TemplateExpression(
             "{{ var_a|lower }}",
             filters=default_parser.filters,
             tags=default_parser.tags,
@@ -243,7 +243,7 @@ class TestDynamicExpr:
 
         # NOTE: This is whitespace-sensitive test, so we check exact output
         assert rendered.strip() == (
-            "<!-- _RENDERED SimpleComponent_6f07b3,ca1bc3f,, -->\n"
+            "<!-- _RENDERED SimpleComponent_3fd560,ca1bc3f,, -->\n"
             '                <div data-djc-id-ca1bc3f=""></div>\n'
             '                <div data-djc-id-ca1bc3f="">  abc</div>\n'
             '                <div data-djc-id-ca1bc3f=""></div>\n'
@@ -311,7 +311,7 @@ class TestDynamicExpr:
         # NOTE: This is whitespace-sensitive test, so we check exact output
         # fmt: off
         assert rendered.strip() == (
-            "<!-- _RENDERED SimpleComponent_85c7eb,ca1bc3f,, -->\n"
+            "<!-- _RENDERED SimpleComponent_e51e4e,ca1bc3f,, -->\n"
             '                <div data-djc-id-ca1bc3f=""> lorem ipsum dolor </div>\n'
             '                <div data-djc-id-ca1bc3f=""> lorem ipsum dolor [{\'a\': 1}] </div>\n'
             '                <div data-djc-id-ca1bc3f=""> True </div>\n'
