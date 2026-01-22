@@ -4,6 +4,14 @@
 
 `django-components` is now tested across all major browsers - Chromium, Firefox, WebKit.
 
+#### Deprecations 🚨📢
+
+- In browser, `django-components` injects `Components` global JavaScript object.
+
+    This object has been renamed to `DjangoComponents` because `Components` global is used in Firefox ([#1544](https://github.com/django-components/django-components/issues/1544))
+
+    For backwards compatibility, the old object name `Components` is still available, and will be removed in v1.0.
+
 #### Feat
 
 - **Python expressions in template tags.** Evaluate Python code directly in template by wrapping expressions in parentheses:

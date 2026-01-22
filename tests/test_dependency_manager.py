@@ -61,10 +61,10 @@ class TestDependencyManager:
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         # Check the exposed API
-        keys = sorted(await page.evaluate("Object.keys(Components)"))
+        keys = sorted(await page.evaluate("Object.keys(DjangoComponents)"))
         assert keys == ["createComponentsManager", "manager", "unescapeJs"]
 
-        keys = await page.evaluate("Object.keys(Components.manager)")
+        keys = await page.evaluate("Object.keys(DjangoComponents.manager)")
         assert keys == [
             "callComponent",
             "registerComponent",
@@ -73,6 +73,24 @@ class TestDependencyManager:
             "loadCss",
             "markScriptLoaded",
         ]
+
+        await page.close()
+
+    # TODO_v1: Delete this test in v1
+    @with_playwright
+    async def test_backwards_compatibility_components_alias(self, browser_name):
+        if browser_name == "firefox":
+            pytest.skip("Firefox does not support the `Components` global")
+
+        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+
+        # Verify that Components is still available as an alias
+        components_exists = await page.evaluate("typeof Components !== 'undefined'")
+        assert components_exists is True
+
+        # Verify that Components and DjangoComponents are the same object
+        are_same = await page.evaluate("Components === DjangoComponents")
+        assert are_same is True
 
         await page.close()
 
@@ -90,7 +108,7 @@ class TestLoadScript:
 
         # JS code that loads a few dependencies, capturing the HTML after each action
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             const headBeforeFirstLoad = document.head.innerHTML;
 
@@ -134,7 +152,7 @@ class TestLoadScript:
 
         # JS code that loads a few dependencies, capturing the HTML after each action
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             const bodyBeforeFirstLoad = document.body.innerHTML;
 
@@ -178,7 +196,7 @@ class TestLoadScript:
 
         # JS code that loads a few dependencies, capturing the HTML after each action
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             // Adds a script the first time
             manager.markScriptLoaded('css', '/one/two');
@@ -216,7 +234,7 @@ class TestCallComponent:
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
             const compId = 'c12345';
@@ -267,7 +285,7 @@ class TestCallComponent:
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
             const compId = 'c12345';
@@ -307,7 +325,7 @@ class TestCallComponent:
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
             const compId = 'c12345';
@@ -341,7 +359,7 @@ class TestCallComponent:
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
             const compId = 'c12345';
@@ -377,7 +395,7 @@ class TestCallComponent:
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
             const compId = '12345';
@@ -397,7 +415,7 @@ class TestCallComponent:
 
         with pytest.raises(
             Error,
-            match=re.escape("Error: [Components] 'my_comp': No elements with component ID '12345' found"),
+            match=re.escape("[DjangoComponents] 'my_comp': No elements with component ID '12345' found"),
         ):
             await page.evaluate(test_js)
 
@@ -408,7 +426,7 @@ class TestCallComponent:
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
             const compId = 'c12345';
@@ -426,7 +444,7 @@ class TestCallComponent:
 
         with pytest.raises(
             Error,
-            match=re.escape("Error: [Components] 'my_comp': Cannot find input for hash 'input-abc'"),
+            match=re.escape("[DjangoComponents] 'my_comp': Cannot find input for hash 'input-abc'"),
         ):
             await page.evaluate(test_js)
 
@@ -437,7 +455,7 @@ class TestCallComponent:
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
-            const manager = Components.createComponentsManager();
+            const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
             const compId = '12345';
@@ -455,7 +473,7 @@ class TestCallComponent:
 
         with pytest.raises(
             Error,
-            match=re.escape("Error: [Components] 'my_comp': No component registered for that name"),
+            match=re.escape("[DjangoComponents] 'my_comp': No component registered for that name"),
         ):
             await page.evaluate(test_js)
 

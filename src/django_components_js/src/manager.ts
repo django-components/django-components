@@ -29,31 +29,31 @@ export type ScriptType = 'js' | 'css';
  * Usage:
  *
  * ```js
- * Components.registerComponent("table", async (data, { id, name, els }) => {
+ * DjangoComponents.registerComponent("table", async (data, { id, name, els }) => {
  *   ...
  * });
  * ```
  *
  * ```js
- * Components.registerComponentData("table", "3d09cf", () => {
+ * DjangoComponents.registerComponentData("table", "3d09cf", () => {
  *   return JSON.parse('{ "abc": 123 }');
  * });
  * ```
  *
  * ```js
- * Components.callComponent("table", 12345, "3d09cf");
+ * DjangoComponents.callComponent("table", 12345, "3d09cf");
  * ```
  *
  * ```js
- * Components.loadJs('<script src="/abc/def"></script>');
+ * DjangoComponents.loadJs('<script src="/abc/def"></script>');
  * ```
  *
  * ```js
- * Components.loadCss('<link href="/abc/def" />');
+ * DjangoComponents.loadCss('<link href="/abc/def" />');
  * ```
  *
  * ```js
- * Components.markScriptLoaded("js", '/abc/def');
+ * DjangoComponents.markScriptLoaded("js", '/abc/def');
  * ```
  */
 export const createComponentsManager = () => {
@@ -66,7 +66,7 @@ export const createComponentsManager = () => {
     const scriptNode = new DOMParser().parseFromString(tag, 'text/html').querySelector('script');
     if (!scriptNode) {
       throw Error(
-        '[Components] Failed to extract <script> tag. Make sure that the string contains' +
+        '[DjangoComponents] Failed to extract <script> tag. Make sure that the string contains' +
           ' <script></script> and is a valid HTML'
       );
     }
@@ -77,7 +77,7 @@ export const createComponentsManager = () => {
     const linkNode = new DOMParser().parseFromString(tag, 'text/html').querySelector('link');
     if (!linkNode) {
       throw Error(
-        '[Components] Failed to extract <link> tag. Make sure that the string contains' +
+        '[DjangoComponents] Failed to extract <link> tag. Make sure that the string contains' +
           ' <link></link> and is a valid HTML'
       );
     }
@@ -171,7 +171,7 @@ export const createComponentsManager = () => {
   const markScriptLoaded = (type: ScriptType, url: string): void => {
     if (type !== 'js' && type !== 'css') {
       throw Error(
-        `[Components] markScriptLoaded received invalid script type '${type}'. Must be one of 'js', 'css'`
+        `[DjangoComponents] markScriptLoaded received invalid script type '${type}'. Must be one of 'js', 'css'`
       );
     }
 
@@ -182,7 +182,7 @@ export const createComponentsManager = () => {
   const isScriptLoaded = (type: ScriptType, url: string): boolean => {
     if (type !== 'js' && type !== 'css') {
       throw Error(
-        `[Components] isScriptLoaded received invalid script type '${type}'. Must be one of 'js', 'css'`
+        `[DjangoComponents] isScriptLoaded received invalid script type '${type}'. Must be one of 'js', 'css'`
       );
     }
 
@@ -196,7 +196,7 @@ export const createComponentsManager = () => {
 
   /**
    * @example
-   * Components.registerComponentData("table", "a1b2c3", () => {{
+   * DjangoComponents.registerComponentData("table", "a1b2c3", () => {{
    *   return JSON.parse('{ "a": 2 }');
    * }});
    */
@@ -207,14 +207,14 @@ export const createComponentsManager = () => {
 
   const callComponent = (name: string, compId: string, inputHash: string): MaybePromise<any> => {
     const initFn = components[name];
-    if (!initFn) throw Error(`[Components] '${name}': No component registered for that name`);
+    if (!initFn) throw Error(`[DjangoComponents] '${name}': No component registered for that name`);
 
     const elems = Array.from(document.querySelectorAll<HTMLElement>(`[data-djc-id-${compId}]`));
-    if (!elems.length) throw Error(`[Components] '${name}': No elements with component ID '${compId}' found`);
+    if (!elems.length) throw Error(`[DjangoComponents] '${name}': No elements with component ID '${compId}' found`);
 
     const dataKey = `${name}:${inputHash}`;
     const dataFactory = componentInputs[dataKey];
-    if (!dataFactory) throw Error(`[Components] '${name}': Cannot find input for hash '${inputHash}'`);
+    if (!dataFactory) throw Error(`[DjangoComponents] '${name}': Cannot find input for hash '${inputHash}'`);
 
     const data = dataFactory();
 
