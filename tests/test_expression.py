@@ -679,9 +679,13 @@ class TestPythonExpressions:
         template = Template(template_str)
 
         # Test with admin user
-        rendered = template.render(Context({
-            "user": type("User", (), {"is_admin": True})(),
-        }))
+        rendered = template.render(
+            Context(
+                {
+                    "user": type("User", (), {"is_admin": True})(),
+                }
+            )
+        )
         assert captured["variant"] == "danger"
         assertHTMLEqual(
             rendered,
@@ -692,9 +696,13 @@ class TestPythonExpressions:
         )
 
         # Test with regular user
-        rendered = template.render(Context({
-            "user": type("User", (), {"is_admin": False})(),
-        }))
+        rendered = template.render(
+            Context(
+                {
+                    "user": type("User", (), {"is_admin": False})(),
+                }
+            )
+        )
         assert captured["variant"] == "primary"
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
@@ -852,9 +860,7 @@ class TestLiteralListsAndDicts:
 
         template = Template(template_str)
         rendered = template.render(
-            Context({
-                "user": type("User", (), {"name": "John", "email": "john@example.com"})()
-            })
+            Context({"user": type("User", (), {"name": "John", "email": "john@example.com"})()})
         )
 
         assert captured["items"] == ["John", "john@example.com", "extra"]
@@ -979,10 +985,14 @@ class TestLiteralListsAndDicts:
         """
 
         template = Template(template_str)
-        rendered = template.render(Context({
-            "user": type("User", (), {"name": "John"})(),
-            "count": 10,
-        }))
+        rendered = template.render(
+            Context(
+                {
+                    "user": type("User", (), {"name": "John"})(),
+                    "count": 10,
+                }
+            )
+        )
 
         assert captured["config"] == {"name": "John", "count": 10}
         assertHTMLEqual(
@@ -1059,9 +1069,13 @@ class TestLiteralListsAndDicts:
         """
 
         template = Template(template_str)
-        rendered = template.render(Context({
-            "user": type("User", (), {"active": False})(),
-        }))
+        rendered = template.render(
+            Context(
+                {
+                    "user": type("User", (), {"active": False})(),
+                }
+            )
+        )
 
         assert captured["items"] == [True, False, True]
         assertHTMLEqual(
@@ -1092,11 +1106,15 @@ class TestLiteralListsAndDicts:
         """
 
         template = Template(template_str)
-        rendered = template.render(Context({
-            "editable": False,
-            "items": [1, 2, 3],
-            "len": len,
-        }))
+        rendered = template.render(
+            Context(
+                {
+                    "editable": False,
+                    "items": [1, 2, 3],
+                    "len": len,
+                }
+            )
+        )
 
         assert captured["config"] == {"disabled": True, "count": 3}
         assertHTMLEqual(
