@@ -618,3 +618,509 @@ class TestAggregateKwargs:
         assert not is_aggregate_key(":attrs:")
         assert is_aggregate_key("at:trs")
         assert not is_aggregate_key(":at:trs")
+
+
+@djc_test
+class TestPythonExpressions:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_python_expression_negating_boolean(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["disabled"] = kwargs["disabled"]
+                return {"disabled": kwargs["disabled"]}
+
+            template: types.django_html = """
+                <div>{{ disabled }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' disabled=(not editable) / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(Context({"editable": False}))
+
+        assert captured["disabled"] is True
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>True</div>
+            """,
+        )
+
+        # Test with True
+        rendered = template.render(Context({"editable": True}))
+        assert captured["disabled"] is False
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_python_expression_conditional(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["variant"] = kwargs["variant"]
+                return {"variant": kwargs["variant"]}
+
+            template: types.django_html = """
+                <div>{{ variant }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' variant=(user.is_admin and 'danger' or 'primary') / %}
+        """
+
+        template = Template(template_str)
+
+        # Test with admin user
+        rendered = template.render(
+            Context(
+                {
+                    "user": type("User", (), {"is_admin": True})(),
+                }
+            )
+        )
+        assert captured["variant"] == "danger"
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>danger</div>
+            """,
+        )
+
+        # Test with regular user
+        rendered = template.render(
+            Context(
+                {
+                    "user": type("User", (), {"is_admin": False})(),
+                }
+            )
+        )
+        assert captured["variant"] == "primary"
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_python_expression_method_calls(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["text"] = kwargs["text"]
+                return {"text": kwargs["text"]}
+
+            template: types.django_html = """
+                <div>{{ text }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' text=(name.upper()) / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(Context({"name": "hello"}))
+
+        assert captured["text"] == "HELLO"
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>HELLO</div>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_python_expression_arithmetic(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["score"] = kwargs["score"]
+                return {"score": kwargs["score"]}
+
+            template: types.django_html = """
+                <div>{{ score }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' score=(user.points + bonus_points) / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(
+            Context(
+                {
+                    "user": type("User", (), {"points": 100})(),
+                    "bonus_points": 25,
+                }
+            )
+        )
+
+        assert captured["score"] == 125
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>125</div>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_python_expression_with_filter(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["text"] = kwargs["text"]
+                return {"text": kwargs["text"]}
+
+            template: types.django_html = """
+                <div>{{ text }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' text=(name.upper())|lower / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(Context({"name": "Hello"}))
+
+        assert captured["text"] == "hello"
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>hello</div>
+            """,
+        )
+
+
+@djc_test
+class TestLiteralListsAndDicts:
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_literal_list_simple(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["items"] = kwargs["items"]
+                return {"items": kwargs["items"]}
+
+            template: types.django_html = """
+                <div>{{ items|safe }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' items=[1, 2, 3, 4, 5] / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+
+        assert captured["items"] == [1, 2, 3, 4, 5]
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>[1, 2, 3, 4, 5]</div>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_literal_list_with_variables(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["items"] = kwargs["items"]
+                return {"items": kwargs["items"]}
+
+            template: types.django_html = """
+                <div>{{ items|safe }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' items=[user.name, user.email, "extra"] / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(
+            Context({"user": type("User", (), {"name": "John", "email": "john@example.com"})()})
+        )
+
+        assert captured["items"] == ["John", "john@example.com", "extra"]
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>['John', 'john@example.com', 'extra']</div>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_literal_list_with_filters(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["items"] = kwargs["items"]
+                return {"items": kwargs["items"]}
+
+            template: types.django_html = """
+                <div>{{ items|safe }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' items=["John"|upper, "Jane"|upper] / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+
+        assert captured["items"] == ["JOHN", "JANE"]
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>['JOHN', 'JANE']</div>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_literal_list_with_filter_on_list(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["items"] = kwargs["items"]
+                return {"items": kwargs["items"]}
+
+            template: types.django_html = """
+                <div>{{ items|safe }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' items=["John", "Jane", "Bob"]|slice:":2" / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+
+        assert captured["items"] == ["John", "Jane"]
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>['John', 'Jane']</div>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_literal_dict_simple(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["config"] = kwargs["config"]
+                return {"config": kwargs["config"]}
+
+            template: types.django_html = """
+                <div>{{ config|safe }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' config={"title": "Hello", "count": 5, "active": True} / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+
+        assert captured["config"] == {"title": "Hello", "count": 5, "active": True}
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>{'title': 'Hello', 'count': 5, 'active': True}</div>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_literal_dict_with_variables(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["config"] = kwargs["config"]
+                return {"config": kwargs["config"]}
+
+            template: types.django_html = """
+                <div>{{ config|safe }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' config={"name": user.name, "count": count} / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(
+            Context(
+                {
+                    "user": type("User", (), {"name": "John"})(),
+                    "count": 10,
+                }
+            )
+        )
+
+        assert captured["config"] == {"name": "John", "count": 10}
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>{'name': 'John', 'count': 10}</div>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_literal_nested_structures(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["data"] = kwargs["data"]
+                return {"data": kwargs["data"]}
+
+            template: types.django_html = """
+                <div>{{ data|safe }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test'
+                data=[
+                    {
+                        "name": "John",
+                        "hobbies": ["reading", "coding"],
+                        "meta": {"age": 30, "active": True}
+                    }
+                ]
+            / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+
+        expected_data = [
+            {
+                "name": "John",
+                "hobbies": ["reading", "coding"],
+                "meta": {"age": 30, "active": True},
+            }
+        ]
+        assert captured["data"] == expected_data
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>[{'name': 'John', 'hobbies': ['reading', 'coding'], 'meta': {'age': 30, 'active': True}}]</div>
+            """,  # noqa: E501
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_literal_list_with_python_expressions(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["items"] = kwargs["items"]
+                return {"items": kwargs["items"]}
+
+            template: types.django_html = """
+                <div>{{ items|safe }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' items=[(not user.active), False, True] / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(
+            Context(
+                {
+                    "user": type("User", (), {"active": False})(),
+                }
+            )
+        )
+
+        assert captured["items"] == [True, False, True]
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>[True, False, True]</div>
+            """,
+        )
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_literal_dict_with_python_expressions(self, components_settings):
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["config"] = kwargs["config"]
+                return {"config": kwargs["config"]}
+
+            template: types.django_html = """
+                <div>{{ config|safe }}</div>
+            """
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component 'test' config={"disabled": (not editable), "count": (len(items))} / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(
+            Context(
+                {
+                    "editable": False,
+                    "items": [1, 2, 3],
+                    "len": len,
+                }
+            )
+        )
+
+        assert captured["config"] == {"disabled": True, "count": 3}
+        assertHTMLEqual(
+            rendered,
+            """
+            <!-- _RENDERED SimpleComponent_5b8d97,ca1bc3f,, -->
+            <div data-djc-id-ca1bc3f>{'disabled': True, 'count': 3}</div>
+            """,
+        )

@@ -1,6 +1,184 @@
 All template tags in django_component, like `{% component %}` or `{% slot %}`, and so on,
 support extra syntax that makes it possible to write components like in Vue or React (JSX).
 
+## Python expressions
+
+_New in version 0.146.0_:
+
+Python expressions allow you to evaluate Python code directly in template tag attributes by wrapping the expression in parentheses. This provides a Vue/React-like experience for writing component templates.
+
+```django
+{% component "button" disabled=(not editable) / %}
+```
+
+In the example above, `(not editable)` is evaluated as a Python expression, so if `editable` is `False`, then `disabled` will be `True`.
+
+### Basic syntax
+
+Python expressions are simply Python code wrapped in parentheses:
+
+```django
+{% component "button"
+    disabled=(not editable)
+    variant=(user.is_admin and 'danger' or 'primary')
+    size=(name.upper() if name else 'medium')
+/ %}
+```
+
+### Common use cases
+
+**Negating booleans:**
+
+```django
+{% component "button" disabled=(not editable) / %}
+```
+
+**Conditional expressions:**
+
+```django
+{% component "button"
+    variant=(user.is_admin and 'danger' or 'primary')
+/ %}
+```
+
+**Method calls:**
+
+```django
+{% component "button" text=(name.upper()) / %}
+```
+
+**Complex expressions:**
+
+```django
+{% component "user_card"
+    is_active=(user.status == 'active')
+    score=(user.points + bonus_points)
+/ %}
+```
+
+**With filters:**
+
+You can apply Django filters to Python expressions:
+
+```django
+{% component "button"
+    text=(user.name.upper())|lower
+    count=(items|length)|add:1
+/ %}
+```
+
+In the example above, `(user.name.upper())` is first evaluated as a Python expression, then the `lower` filter is applied to the result.
+
+### Best practices
+
+1. **Use for simple transformations**: Python expressions are best for simple conditionals, negations, and basic operations.
+
+2. **Keep complex logic in Python**: Complex business logic should still be in `get_template_data()` or views, not in templates.
+
+3. **Context access**: Python expressions have access to the template context, so you can use any variables available in the context.
+
+4. **Performance**: Expressions are cached for performance, so repeated evaluations of the same expression are fast.
+
+5. **Readability**: Use Python expressions when they make the template more readable. If an expression becomes too complex, consider moving it to `get_template_data()`.
+
+## Literal lists and dictionaries
+
+_New in version 0.146.0_:
+
+You can pass literal lists and dictionaries directly in template tag attributes:
+
+```django
+{% component "table"
+    headers=["Name", "Age", "Email"]
+    data=[
+        {"name": "John", "age": 30, "email": "john@example.com"},
+        {"name": "Jane", "age": 25, "email": "jane@example.com"},
+    ]
+/ %}
+```
+
+Lists and dictionaries can contain the same values as template tag attributes:
+
+- Strings, numbers, booleans, and `None`
+- Python expressions
+- Template variables
+- Nested lists and dictionaries
+- Nested templates with `{{ }}` and `{% %}` syntax
+
+Each value can have filters applied to it.
+
+### Examples
+
+**Simple list:**
+```django
+{% component "list" items=[1, 2, 3, 4, 5] / %}
+```
+
+**List with template variables:**
+```django
+{% component "list" items=[user.name, user.email, "extra"] / %}
+```
+
+**List with filters:**
+
+You can apply filters to individual list items:
+
+```django
+{% component "list" items=["John"|upper, "Jane"|upper] / %}
+```
+
+You can also apply filters to the entire list:
+
+```django
+{% component "list" items=["John", "Jane", "Bob"]|slice:":2" / %}
+```
+
+**Dictionary:**
+```django
+{% component "card" config={"title": "Hello", "count": 5, "active": True} / %}
+```
+
+**Nested structures:**
+```django
+{% component "table"
+    data=[
+        {
+            "name": "John",
+            "hobbies": ["reading", "coding"],
+            "meta": {"age": 30, "active": True}
+        }
+    ]
+/ %}
+```
+
+**With Python expressions:**
+```django
+{% component "table"
+    headers=["Name", "Age"]
+    disabled_items=[(not user.active), False]
+/ %}
+```
+
+**With filters on lists and dictionaries:**
+
+You can apply filters to entire lists or dictionaries:
+
+```django
+{% component "table"
+    headers=["Name", "Age", "Email"]|slice:":2"
+    data=[{"name": "John"}, {"name": "Jane"}]|length
+/ %}
+```
+
+You can also combine filters with Python expressions:
+
+```django
+{% component "table"
+    items=[(user.name|upper), (user.email|lower)]
+    count=(items|length)|add:1
+/ %}
+```
+
 ## Self-closing tags
 
 When you have a tag like `{% component %}` or `{% slot %}`, but it has no content, you can simply append a forward slash `/` at the end, instead of writing out the closing tags like `{% endcomponent %}` or `{% endslot %}`:
@@ -15,32 +193,6 @@ becomes
 
 ```django
 {% component "button" / %}
-```
-
-## Special characters
-
-_New in version 0.71_:
-
-Keyword arguments can contain special characters `# @ . - _`, so keywords like
-so are still valid:
-
-```django
-<body>
-    {% component "calendar" my-date="2015-06-19" @click.native=do_something #some_id=True / %}
-</body>
-```
-
-These can then be accessed inside `get_template_data` so:
-
-```py
-@register("calendar")
-class Calendar(Component):
-    def get_template_data(self, args, kwargs, slots, context):
-        return {
-            "date": kwargs["my-date"],
-            "id": kwargs["#some_id"],
-            "on_click": kwargs["@click.native"]
-        }
 ```
 
 ## Spread operator
@@ -179,9 +331,11 @@ Similar is possible with [`django-expr`](https://pypi.org/project/django-expr/),
 
 > Note: Never use this feature to mix business logic and template logic. Business logic should still be in the view!
 
-## Pass dictonary by its key-value pairs
+## Flat dictionaries
 
 _New in version 0.74_:
+
+`dict:key=value` syntax, AKA defining a dictionary by its key-value pairs
 
 Sometimes, a component may expect a dictionary as one of its inputs.
 
@@ -249,6 +403,32 @@ Sweet! Now all the relevant HTML is inside the template, and we can move it to a
 > ```py
 > {"attrs": {"my_key:two": 2}}
 > ```
+
+## Special characters
+
+_New in version 0.71_:
+
+Keyword arguments can contain special characters `# @ . - _`, so keywords like
+so are still valid:
+
+```django
+<body>
+    {% component "calendar" my-date="2015-06-19" @click.native=do_something #some_id=True / %}
+</body>
+```
+
+These can then be accessed inside `get_template_data` so:
+
+```py
+@register("calendar")
+class Calendar(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        return {
+            "date": kwargs["my-date"],
+            "id": kwargs["#some_id"],
+            "on_click": kwargs["@click.native"]
+        }
+```
 
 ## Multiline tags
 

@@ -306,6 +306,18 @@ adding or removing component inputs.
 Read more about [Component defaults](../concepts/fundamentals/component_defaults.md)
 and [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
+### 7. Ways to pass component inputs
+
+`{% component %}` tag offers powerful features for passing inputs to components, such as:
+
+- [Python expressions](../../concepts/fundamentals/template_tag_syntax#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
+- [Literal lists and dictionaries](../../concepts/fundamentals/template_tag_syntax#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
+- [Spread operator](../../concepts/fundamentals/template_tag_syntax#spread-operator) `...` to dynamically pass args or kwargs into the template tag
+- [Nested templates](../../concepts/fundamentals/template_tag_syntax#nested-templates) like `"{{ first_name }} {{ last_name }}"`
+- [Flat dictionaries](../../concepts/fundamentals/template_tag_syntax#flat-dictionaries) `dict:key=val`
+
+Read more about all these features in [Template tag syntax](../concepts/fundamentals/template_tag_syntax.md).
+
 ---
 
 Next, you will learn [how to use slots give your components even more flexibility ➡️](./adding_slots.md)

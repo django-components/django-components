@@ -1,16 +1,13 @@
 Template tags introduced by django-components, such as `{% component %}` and `{% slot %}`,
 offer additional features over the default Django template tags:
 
-<!-- # TODO - Update docs regarding literal lists and dictionaries
-- Using literal lists and dictionaries
-- Comments inside and tag with `{# ... #}`
--->
+- [Python expressions `disabled=(not editable)`](../../fundamentals/template_tag_syntax#python-expressions)
+- [Literal lists and dictionaries](../../fundamentals/template_tag_syntax#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]`
 - [Self-closing tags `{% mytag / %}`](../../fundamentals/template_tag_syntax#self-closing-tags)
-- [Allowing the use of `:`, `-` (and more) in keys](../../fundamentals/template_tag_syntax#special-characters)
 - [Spread operator `...`](../../fundamentals/template_tag_syntax#spread-operator)
-- [Using template tags as inputs to other template tags](../../fundamentals/template_tag_syntax#use-template-tags-inside-component-inputs)
-- [Flat definition of dictionaries `attr:key=val`](../../fundamentals/template_tag_syntax#pass-dictonary-by-its-key-value-pairs)
+- [Nested templates](../../fundamentals/template_tag_syntax#nested-templates)
 - Function-like input validation
+- And more
 
 You too can easily create custom template tags that use the above features.
 
