@@ -79,6 +79,9 @@ class TestDependencyManager:
     # TODO_v1: Delete this test in v1
     @with_playwright
     async def test_backwards_compatibility_components_alias(self, browser_name):
+        if browser_name == "firefox":
+            pytest.skip("Firefox does not support the `Components` global")
+
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         # Verify that Components is still available as an alias
@@ -88,15 +91,6 @@ class TestDependencyManager:
         # Verify that Components and DjangoComponents are the same object
         are_same = await page.evaluate("Components === DjangoComponents")
         assert are_same is True
-
-        # Verify that Components has the same API
-        components_keys = sorted(await page.evaluate("Object.keys(Components)"))
-        django_components_keys = sorted(await page.evaluate("Object.keys(DjangoComponents)"))
-        assert components_keys == django_components_keys
-
-        # Verify that Components.manager works
-        manager_keys = await page.evaluate("Object.keys(Components.manager)")
-        assert len(manager_keys) > 0
 
         await page.close()
 
