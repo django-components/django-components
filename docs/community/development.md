@@ -82,13 +82,15 @@ tox -e mypy,ruff
 
 ## Playwright tests
 
-We use [Playwright](https://playwright.dev/python/docs/intro) for end-to-end tests. You will need to install Playwright to run these tests.
+We use [Playwright](https://playwright.dev/python/docs/intro) for end-to-end tests.
 
-Luckily, Playwright makes it very easy:
+Tests decorated with `@with_playwright` automatically run across all major browsers: Chromium, Firefox, and WebKit. This ensures cross-browser compatibility.
+
+You will need to install Playwright to run these tests. Luckily, Playwright makes it very easy:
 
 ```sh
 pip install -r requirements-dev.txt
-playwright install chromium --with-deps
+playwright install chromium firefox webkit --with-deps
 ```
 
 After Playwright is ready, run the tests the same way as before:
@@ -106,7 +108,7 @@ tox -e py38
     If `tox -e py38` fails with "Executable doesn't exist", install the browsers using the Playwright inside that tox env:
 
     ```sh
-    .tox/py38/bin/python -m playwright install chromium
+    .tox/py38/bin/python -m playwright install chromium firefox webkit
     ```
 
 ## Snapshot tests

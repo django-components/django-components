@@ -7,6 +7,8 @@ in modern frontend frameworks like Vue or React.
 
 With `django-components` you can support Django projects small and large without leaving the Django ecosystem.
 
+`django-components` is tested across all major browsers - Chromium, Firefox, WebKit ✅.
+
 ## Sponsors
 
 <p align="center">

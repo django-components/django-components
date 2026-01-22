@@ -11,7 +11,7 @@ Always reference these instructions first and fallback to search or bash command
   - `pip install -r requirements-dev.txt` -- installs all dev dependencies including pytest, ruff, etc.
   - `pip install -e .` -- install the package in development mode
 - Install Playwright for browser testing (optional, may timeout):
-  - `playwright install chromium --with-deps` -- NEVER CANCEL: Can take 10+ minutes due to large download. Set timeout to 15+ minutes.
+  - `playwright install chromium firefox webkit --with-deps` -- NEVER CANCEL: Can take 10+ minutes due to large download. Set timeout to 15+ minutes.
 
 ### Building and Testing
 - **NEVER CANCEL BUILDS OR TESTS** -- All timeouts below are validated minimums
@@ -75,7 +75,7 @@ The package provides custom Django management commands:
 ### CI/CD Information  
 - GitHub Actions workflow: `.github/workflows/tests.yml`
 - Tests run on Python 3.8-3.14 with Django 4.2-5.2
-- Includes Playwright browser testing (requires `playwright install chromium --with-deps`)
+- Includes Playwright browser testing (requires `playwright install chromium firefox webkit --with-deps`)
 - Documentation building uses mkdocs
 - Pre-commit hooks run ruff
 

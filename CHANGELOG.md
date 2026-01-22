@@ -2,6 +2,8 @@
 
 ## v0.146.0
 
+`django-components` is now tested across all major browsers - Chromium, Firefox, WebKit.
+
 #### Feat
 
 - **Python expressions in template tags.** Evaluate Python code directly in template by wrapping expressions in parentheses:

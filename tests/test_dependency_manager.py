@@ -57,7 +57,7 @@ async def _create_page_with_dep_manager(browser: Browser) -> Page:
 )
 class TestDependencyManager:
     @with_playwright
-    async def test_script_loads(self):
+    async def test_script_loads(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         # Check the exposed API
@@ -85,7 +85,7 @@ class TestDependencyManager:
 )
 class TestLoadScript:
     @with_playwright
-    async def test_load_js_scripts(self):
+    async def test_load_js_scripts(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         # JS code that loads a few dependencies, capturing the HTML after each action
@@ -129,7 +129,7 @@ class TestLoadScript:
         await page.close()
 
     @with_playwright
-    async def test_load_css_scripts(self):
+    async def test_load_css_scripts(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         # JS code that loads a few dependencies, capturing the HTML after each action
@@ -173,7 +173,7 @@ class TestLoadScript:
         await page.close()
 
     @with_playwright
-    async def test_does_not_load_script_if_marked_as_loaded(self):
+    async def test_does_not_load_script_if_marked_as_loaded(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         # JS code that loads a few dependencies, capturing the HTML after each action
@@ -212,7 +212,7 @@ class TestLoadScript:
 )
 class TestCallComponent:
     @with_playwright
-    async def test_calls_component_successfully(self):
+    async def test_calls_component_successfully(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
@@ -263,7 +263,7 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_calls_component_successfully_async(self):
+    async def test_calls_component_successfully_async(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
@@ -303,7 +303,7 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_error_in_component_call_do_not_propagate_sync(self):
+    async def test_error_in_component_call_do_not_propagate_sync(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
@@ -337,7 +337,7 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_error_in_component_call_do_not_propagate_async(self):
+    async def test_error_in_component_call_do_not_propagate_async(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
@@ -373,7 +373,7 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_raises_if_component_element_not_in_dom(self):
+    async def test_raises_if_component_element_not_in_dom(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
@@ -404,7 +404,7 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_raises_if_input_hash_not_registered(self):
+    async def test_raises_if_input_hash_not_registered(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
@@ -433,7 +433,7 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_raises_if_component_not_registered(self):
+    async def test_raises_if_component_not_registered(self, browser_name):
         page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
 
         test_js: types.js = """() => {
