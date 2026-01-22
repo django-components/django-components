@@ -369,7 +369,7 @@ class TestRenderDependencies:
             <thead>
             <script>
                 (() => {
-                    if (!globalThis.Components) {
+                    if (!globalThis.DjangoComponents) {
                         const s = document.createElement('script');
                         s.src = "django_components/django_components.min.js";
                         document.head.appendChild(s);
@@ -438,7 +438,7 @@ class TestRenderDependencies:
             </table>
             <script>
                 (() => {
-                    if (!globalThis.Components) {
+                    if (!globalThis.DjangoComponents) {
                         const s = document.createElement('script');
                         s.src = "django_components/django_components.min.js";
                         document.head.appendChild(s);
@@ -520,7 +520,7 @@ class TestRenderDependencies:
             </table>
             <script>
                 (() => {
-                    if (!globalThis.Components) {
+                    if (!globalThis.DjangoComponents) {
                         const s = document.createElement('script');
                         s.src = "django_components/django_components.min.js";
                         document.head.appendChild(s);
