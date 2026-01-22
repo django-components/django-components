@@ -47,7 +47,7 @@ jobs:
       - name: Install Playwright browsers
         run: |
           # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
-          playwright install chromium --with-deps
+          playwright install chromium firefox webkit --with-deps
       - name: Run tests
         run: tox
 

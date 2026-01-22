@@ -15,6 +15,7 @@ from typing import (
     Set,
     Tuple,
     Type,
+    TypeVar,
     Union,
 )
 from unittest.mock import patch
@@ -46,6 +47,9 @@ else:
     RegistriesCopies = List[Tuple[ReferenceType, List[str]]]
     InitialComponents = List[ReferenceType]
     RegistryRef = ReferenceType
+
+
+TCallable = TypeVar("TCallable", bound=Callable[..., Any])
 
 
 # Whether we're inside a test that was wrapped with `djc_test`.
@@ -125,7 +129,7 @@ def djc_test(
         ]
     ] = None,
     gc_collect: bool = True,
-) -> Callable:
+) -> Callable[[TCallable], TCallable]:
     """
     Decorator for testing components from django-components.
 
@@ -417,7 +421,7 @@ def djc_test(
         return decorator(django_settings)
 
     # Handle `@djc_test(settings)`
-    return decorator
+    return decorator  # type: ignore[return-value]
 
 
 def _merge_django_settings(

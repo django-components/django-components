@@ -5,12 +5,29 @@ import subprocess
 import sys
 import time
 from pathlib import Path
+from typing import Literal
 
+import pytest
 import requests
-from playwright.async_api import async_playwright
+from playwright.async_api import Browser, Playwright, async_playwright
 
 TEST_SERVER_PORT = "8000"
 TEST_SERVER_URL = f"http://127.0.0.1:{TEST_SERVER_PORT}"
+
+
+BROWSER_NAMES = ["chromium", "firefox", "webkit"]
+BrowserType = Literal["chromium", "firefox", "webkit"]
+
+
+async def _launch_browser(playwright: Playwright, browser_name: BrowserType) -> Browser:
+    if browser_name == "chromium":
+        return await playwright.chromium.launch()
+    elif browser_name == "firefox":
+        return await playwright.firefox.launch()
+    elif browser_name == "webkit":
+        return await playwright.webkit.launch()
+    else:
+        raise ValueError(f"Unknown browser: {browser_name}")
 
 
 # NOTE: Ideally we'd use Django's setUpClass and tearDownClass methods
@@ -20,22 +37,28 @@ TEST_SERVER_URL = f"http://127.0.0.1:{TEST_SERVER_PORT}"
 #       Additionally, Django's documentation is lacking on async setUp and tearDown,
 #       so instead we use a decorator to run async code before/after each test.
 def with_playwright(test_func):
-    """Decorator that sets up and tears down Playwright browser instance."""
+    """
+    Decorator that sets up and tears down Playwright browser instance.
+
+    Tests decorated with this will automatically run across all major browsers:
+    Chromium, Firefox, and WebKit.
+    """
 
     @functools.wraps(test_func)
-    async def wrapper(self, *args, **kwargs):
+    async def wrapper(self, browser_name: BrowserType, *args, **kwargs):
         # Setup
         self.playwright = await async_playwright().start()
-        self.browser = await self.playwright.chromium.launch()
+        self.browser = await _launch_browser(self.playwright, browser_name)
 
         # Test
-        await test_func(self, *args, **kwargs)
+        await test_func(self, *args, browser_name=browser_name, **kwargs)
 
         # Teardown
         await self.browser.close()
         await self.playwright.stop()
 
-    return wrapper
+    # Parametrize with all browsers
+    return pytest.mark.parametrize("browser_name", BROWSER_NAMES, ids=BROWSER_NAMES)(wrapper)
 
 
 def run_django_dev_server():
