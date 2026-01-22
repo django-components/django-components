@@ -1,6 +1,53 @@
 # Release notes
 
-## v0.145.1
+## v0.146.0
+
+#### Feat
+
+- **Python expressions in template tags.** Evaluate Python code directly in template by wrapping expressions in parentheses:
+
+    ```django
+    {% component "button"
+      disabled=(not editable)
+      variant=(user.is_admin and 'danger' or 'primary')
+    / %}
+    ```
+
+    Python expressions provide a Vue/React-like experience for writing component templates.
+
+    These allow you to perform simple transformations like:
+
+    - Negating booleans
+    - Conditional expressions
+    - Method calls
+    - Arithmetic operations
+    - And more...
+
+    Read more in the [Python expressions documentation](https://django-components.github.io/django-components/0.146.0/concepts/fundamentals/template_tag_syntax#python-expressions).
+
+- **Literal lists and dictionaries in template tags.** Pass structured data directly in templates:
+
+    ```django
+    {% component "table"
+        headers=["Name", "Age", "Email"]
+        data=[
+            {"name": "John", "age": 30, "email": "john@example.com"},
+            {"name": "Jane", "age": 25, "email": "jane@example.com"},
+        ]
+    / %}
+    ```
+
+    Lists and dictionaries can contain the same values as template tag attributes:
+
+    - Strings, numbers, booleans, and `None`
+    - Python expressions
+    - Template variables
+    - Nested lists and dictionaries
+    - Nested templates with `{{ }}` and `{% %}` syntax
+
+    Each value can have filters applied to it.
+
+    Read more in the [Literal lists and dictionaries documentation](https://django-components.github.io/django-components/0.146.0/concepts/fundamentals/template_tag_syntax#literal-lists-and-dictionaries).
 
 #### Fix
 

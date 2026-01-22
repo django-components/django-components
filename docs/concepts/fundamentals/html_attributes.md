@@ -122,7 +122,7 @@ In both cases, the attributes will be merged and rendered as:
         {% html_attrs attrs={"key": value} %}
         ```
 
-    - Or by defining the [dictionary keys](../template_tag_syntax/#pass-dictonary-by-its-key-value-pairs):
+    - Or by defining the [dictionary keys](../template_tag_syntax/#flat-dictionaries):
 
         ```django
         {% html_attrs attrs:key=value %}

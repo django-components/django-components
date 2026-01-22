@@ -144,6 +144,44 @@ class Calendar(Component):
         }
 ```
 
+### Extended template tags
+
+`django-components` is designed for flexibility, making working with templates a breeze.
+
+It extends Django's template tags syntax with:
+
+- [Python expressions](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
+- [Literal lists and dictionaries](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
+- [Self-closing tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#self-closing-tags) `{% mytag / %}`
+- [Multi-line template tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#multiline-tags)
+- [Spread operator](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#spread-operator) `...` to dynamically pass args or kwargs into the template tag
+- [Nested templates](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#nested-templates) like `"{{ first_name }} {{ last_name }}"`
+- [Flat dictionaries](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#flat-dictionaries) `dict:key=val`
+
+```django
+{% component "table"
+    disabled=(not user.is_active)
+    title="Friend list for {{ user.name }}"
+    headers=["Name", "Age", "Email"]
+    data=[
+        {
+            "name": "Jane"|upper,
+            "age": 25|add:1,
+            "email": "jane@example.com",
+            "hobbies": ["reading", "coding"],
+        },
+    ],
+    ...default_attrs
+    attrs:class="py-4 ma-2 border-2 border-gray-300 rounded-md"
+/ %}
+```
+
+You too can define template tags with these features by using
+[`@template_tag()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.template_tag)
+or [`BaseNode`](https://django-components.github.io/django-components/latest/reference/api/#django_components.BaseNode).
+
+Read more on [Custom template tags](https://django-components.github.io/django-components/latest/concepts/advanced/template_tags/).
+
 ### Composition with slots
 
 - Render components inside templates with
@@ -181,49 +219,6 @@ class Calendar(Component):
     {% endfill %}
 {% endcomponent %}
 ```
-
-### Extended template tags
-
-`django-components` is designed for flexibility, making working with templates a breeze.
-
-It extends Django's template tags syntax with:
-
-<!-- TODO - Document literal lists and dictionaries -->
-- Literal lists and dictionaries in the template
-- [Self-closing tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#self-closing-tags) `{% mytag / %}`
-- [Multi-line template tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#multiline-tags)
-- [Spread operator](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#spread-operator) `...` to dynamically pass args or kwargs into the template tag
-- [Nested templates](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#nested-templates) like `"{{ first_name }} {{ last_name }}"`
-- [Pass dictonaries by their key-value pairs](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#pass-dictonary-by-its-key-value-pairs) `attr:key=val`
-
-```django
-{% component "table"
-    ...default_attrs
-    title="Friend list for {{ user.name }}"
-    headers=["Name", "Age", "Email"]
-    data=[
-        {
-            "name": "John"|upper,
-            "age": 30|add:1,
-            "email": "john@example.com",
-            "hobbies": ["reading"],
-        },
-        {
-            "name": "Jane"|upper,
-            "age": 25|add:1,
-            "email": "jane@example.com",
-            "hobbies": ["reading", "coding"],
-        },
-    ],
-    attrs:class="py-4 ma-2 border-2 border-gray-300 rounded-md"
-/ %}
-```
-
-You too can define template tags with these features by using
-[`@template_tag()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.template_tag)
-or [`BaseNode`](https://django-components.github.io/django-components/latest/reference/api/#django_components.BaseNode).
-
-Read more on [Custom template tags](https://django-components.github.io/django-components/latest/concepts/advanced/template_tags/).
 
 ### Full programmatic access
 
