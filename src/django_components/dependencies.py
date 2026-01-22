@@ -134,10 +134,10 @@ def cache_component_js(comp_cls: Type["Component"], force: bool) -> None:
 #
 # It involves 3 steps:
 # 1. Register the common logic (equivalent to registering common CSS).
-#    with `Components.manager.registerComponent`.
+#    with `DjangoComponents.manager.registerComponent`.
 # 2. Register the unique set of JS variables (equivalent to defining CSS vars)
-#    with `Components.manager.registerComponentData`.
-# 3. Actually run a component's JS instance with `Components.manager.callComponent`,
+#    with `DjangoComponents.manager.registerComponentData`.
+# 3. Actually run a component's JS instance with `DjangoComponents.manager.callComponent`,
 #    specifying the components HTML elements with `component_id`, and JS vars with `input_hash`.
 def cache_component_js_vars(comp_cls: Type["Component"], js_vars: Mapping) -> Optional[str]:
     if not is_nonempty_str(comp_cls.js):
@@ -486,7 +486,7 @@ def _pre_loader_js() -> str:
     manager_url = static("django_components/django_components.min.js")
     return f"""
         (() => {{
-            if (!globalThis.Components) {{
+            if (!globalThis.DjangoComponents) {{
                 const s = document.createElement('script');
                 s.src = "{manager_url}";
                 document.head.appendChild(s);
@@ -782,7 +782,7 @@ def _prepare_tags_and_urls(
     loaded_css_urls: List[str] = []
 
     # When `strategy="document"`, we insert the actual <script> and <style> tags into the HTML.
-    # But even in that case we still need to call `Components.manager.markScriptLoaded`,
+    # But even in that case we still need to call `DjangoComponents.manager.markScriptLoaded`,
     # so the client knows NOT to fetch them again.
     # So in that case we populate both `inlined` and `loaded` lists
     for comp_cls_id, script_type, input_hash in data:
@@ -795,7 +795,7 @@ def _prepare_tags_and_urls(
         # When strategy is "document", "simple", "prepend", or "append", we insert the actual <script> and
         # <style> tags into the HTML.
         #
-        # But in case of strategy == "document" we still need to call `Components.manager.markScriptLoaded`,
+        # But in case of strategy == "document" we still need to call `DjangoComponents.manager.markScriptLoaded`,
         # so the client knows NOT to fetch the scripts again.
         # So in that case we populate both `inlined` and `loaded` lists
         if strategy == "document":

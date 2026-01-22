@@ -34,7 +34,7 @@ export function callWithAsyncErrorHandling(fn: Fn | Fn[], args?: any[]): any {
     return values;
   } else {
     console.warn(
-      `[Components] Invalid value type passed to callWithAsyncErrorHandling(): ${typeof fn}`
+      `[DjangoComponents] Invalid value type passed to callWithAsyncErrorHandling(): ${typeof fn}`
     );
   }
 }

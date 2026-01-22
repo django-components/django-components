@@ -4,7 +4,7 @@
 
 ```js
 // Register a function that is run at component initialization
-Components.manager.registerComponent(
+DjangoComponents.manager.registerComponent(
   "table",  // Component name
   async (data, { id, name, els }) => {
     ...
@@ -13,7 +13,7 @@ Components.manager.registerComponent(
 
 // Register data factory function that may be used by multiple
 // components.
-Components.registerComponentData(
+DjangoComponents.registerComponentData(
   "table",  // Component name
   "3d09cf", // Input ID
   () => {
@@ -23,7 +23,7 @@ Components.registerComponentData(
 
 // Once the component and data factories are registered,
 // we can run component's init function
-Components.callComponent(
+DjangoComponents.callComponent(
   "table",  // Component name
   "c123456",    // Component ID - An HTML element with corresponding
             //                attribute (`data-djc-id-c123456`) MUST
@@ -32,12 +32,20 @@ Components.callComponent(
 );
 
 // Load JS or CSS script if not laoded already
-Components.loadJs('<script src="/abc/def">');
+DjangoComponents.loadJs('<script src="/abc/def">');
 
 // Or mark one as already-loaded, so it is ignored when
 // we call `loadJs`
-Components.markScriptLoaded("js", '/abc/def');
+DjangoComponents.markScriptLoaded("js", '/abc/def');
 ```
+
+<!-- TODO_v1: Delete this section in v1 -->
+
+!!! note "Backwards compatibility"
+
+    The dependency manager was renamed from `Components` to `DjangoComponents` in v0.146.0. See https://github.com/django-components/django-components/issues/1544.
+
+    For backwards compatibility, `Components` will remain available as an alias to `DjangoComponents` until v1.0.
 
 ## Build
 

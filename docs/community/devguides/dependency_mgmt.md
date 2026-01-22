@@ -191,12 +191,12 @@ This is how we achieve that:
 
     ```js
     // Load JS or CSS script if not loaded already
-    Components.loadJs('<script src="/abc/xyz/script.js">');
-    Components.loadCss('<link href="/abc/xyz/style.css">');
+    DjangoComponents.loadJs('<script src="/abc/xyz/script.js">');
+    DjangoComponents.loadCss('<link href="/abc/xyz/style.css">');
 
     // Or mark one as already-loaded, so it is ignored when
     // we call `loadJs`
-    Components.markScriptLoaded("js", "/abc/def");
+    DjangoComponents.markScriptLoaded("js", "/abc/def");
     ```
 
     Note that `loadJs() / loadCss()` receive whole `<script> / <link>` tags, not just the URL.
