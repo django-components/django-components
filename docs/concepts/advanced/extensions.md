@@ -115,7 +115,7 @@ class MyTable(Component):
                 }
             }
 
-        def stories(self) -> List[StoryAnnotations]:
+        def stories(self) -> list[StoryAnnotations]:
             return []
 
         ...

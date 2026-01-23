@@ -13,7 +13,7 @@ on the [`Component`](../../../reference/api#django_components.Component) class.
 def on_render_before(
     self: Component,
     context: Context,
-    template: Optional[Template],
+    template: Template | None,
 ) -> None:
 ```
 
@@ -37,7 +37,7 @@ from django.template import Context, Template
 from django_components import Component
 
 class MyTable(Component):
-    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+    def on_render_before(self, context: Context, template: Template | None) -> None:
         # Insert value into the Context
         context["from_on_before"] = ":)"
 
@@ -62,8 +62,8 @@ _New in version 0.140_
 def on_render(
     self: Component,
     context: Context,
-    template: Optional[Template],
-) -> Union[str, SafeString, OnRenderGenerator, None]:
+    template: Template | None,
+) -> str | SafeString | OnRenderGenerator | None:
 ```
 
 [`Component.on_render`](../../../reference/api#django_components.Component.on_render) does the actual rendering.
@@ -289,16 +289,14 @@ To implement this, we render the fallback slot in [`on_render()`](../../../refer
 and return it if an error occured:
 
 ```djc_py
-from typing import Optional
-
 from django.template import Context, Template
 from django.utils.safestring import mark_safe
 from django_components import Component, OnRenderGenerator, SlotInput, types
 
 class ErrorFallback(Component):
     class Slots:
-        default: Optional[SlotInput] = None
-        fallback: Optional[SlotInput] = None
+        default: SlotInput | None = None
+        fallback: SlotInput | None = None
 
     template: types.django_html = """
         {% if not error %}
@@ -337,10 +335,10 @@ class ErrorFallback(Component):
 def on_render_after(
     self: Component,
     context: Context,
-    template: Optional[Template],
-    result: Optional[str | SafeString],
-    error: Optional[Exception],
-) -> Union[str, SafeString, None]:
+    template: Template | None,
+    result: str | SafeString | None,
+    error: Exception | None,
+) -> str | SafeString | None:
 ```
 
 [`on_render_after()`](../../../reference/api#django_components.Component.on_render_after) runs when the component was fully rendered,

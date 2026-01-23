@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 from django.http import HttpRequest, HttpResponse
 
@@ -32,7 +31,7 @@ class PythonExpressionsPage(Component):
         my_user: User
         bonus_points: int
         name: str
-        items: List[Item]
+        items: list[Item]
         config: dict
 
     def get_template_data(self, args, kwargs: Kwargs, slots, context):

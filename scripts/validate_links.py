@@ -45,7 +45,7 @@ import time
 from collections import defaultdict, deque
 from dataclasses import dataclass
 from pathlib import Path
-from typing import DefaultDict, Deque, Dict, List, Literal, Optional, Tuple, Union
+from typing import Literal, TypeAlias
 from urllib.parse import urlparse
 
 import pathspec
@@ -87,7 +87,7 @@ IGNORE_DOMAINS = [
 # This allows us to rewrite URLs across the codebase.
 # - If key is a str, it's a prefix and the value is the new prefix.
 # - If key is a re.Pattern, it's a regex and the value is the replacement string.
-URL_REWRITE_MAP: Dict[Union[str, re.Pattern], str] = {
+URL_REWRITE_MAP: dict[str | re.Pattern, str] = {
     # Example with regex and capture groups
     # re.compile(r"https://github.com/old-org/([^/]+)/"): r"https://github.com/new-org/\1/",
     # Update all Django docs URLs to 5.2
@@ -121,14 +121,14 @@ class Link:
     lineno: int
     url: str
     base_url: str  # The URL without the fragment
-    fragment: Optional[str]
+    fragment: str | None
 
 
 @dataclass
 class LinkRewrite:
     link: Link
     new_url: str
-    mapping_key: Union[str, re.Pattern]
+    mapping_key: str | re.Pattern
 
 
 @dataclass
@@ -138,7 +138,7 @@ class LinkError:
     error_details: str
 
 
-FetchedResults = Dict[str, Union[requests.Response, Exception, Literal["SKIPPED", "INVALID_URL"]]]
+FetchedResults: TypeAlias = dict[str, requests.Response | Exception | Literal["SKIPPED", "INVALID_URL"]]
 
 
 def is_binary_file(filepath: Path) -> bool:
@@ -164,7 +164,7 @@ def load_gitignore(root: Path) -> pathspec.PathSpec:
 
 
 # Recursively find all files not ignored by .gitignore
-def find_files(root: Path, spec: pathspec.PathSpec) -> List[Path]:
+def find_files(root: Path, spec: pathspec.PathSpec) -> list[Path]:
     files = []
     for dirpath, dirnames, filenames in os.walk(root):
         # Remove ignored dirs in-place
@@ -182,8 +182,8 @@ def find_files(root: Path, spec: pathspec.PathSpec) -> List[Path]:
 
 
 # Extract URLs from a file
-def extract_links_from_file(filepath: Path) -> List[Link]:
-    urls: List[Link] = []
+def extract_links_from_file(filepath: Path) -> list[Link]:
+    urls: list[Link] = []
     try:
         with filepath.open(encoding="utf-8", errors="replace") as f:
             for i, line in enumerate(f, 1):
@@ -205,10 +205,10 @@ def extract_links_from_file(filepath: Path) -> List[Link]:
 # fetched in parallel. This way we can spread the load over the domains, and avoid hitting the rate limits.
 # This function picks the next URL to fetch, respecting the cooldown.
 def pick_next_url(
-    domains: List[str],
-    domain_to_urls: Dict[str, Deque[str]],
-    last_request_time: Dict[str, float],
-) -> Optional[Tuple[str, str]]:
+    domains: list[str],
+    domain_to_urls: dict[str, deque[str]],
+    last_request_time: dict[str, float],
+) -> tuple[str, str] | None:
     now = time.time()
     for domain in domains:
         if not domain_to_urls[domain]:
@@ -220,7 +220,7 @@ def pick_next_url(
     return None
 
 
-def fetch_urls(links: List[Link]) -> FetchedResults:
+def fetch_urls(links: list[Link]) -> FetchedResults:
     """
     For each unique URL, make a GET request (with caching).
     Print progress for each request (including cache hits).
@@ -247,7 +247,7 @@ def fetch_urls(links: List[Link]) -> FetchedResults:
     # This way we can spread the load over the domains, and avoid hitting the rate limits.
 
     # Group URLs by domain
-    domain_to_urls: DefaultDict[str, Deque[str]] = defaultdict(deque)
+    domain_to_urls: defaultdict[str, deque[str]] = defaultdict(deque)
     for url in base_urls:
         parsed = urlparse(url)
         if parsed.hostname and any(parsed.hostname == d for d in IGNORE_DOMAINS):
@@ -317,9 +317,9 @@ def fetch_urls(links: List[Link]) -> FetchedResults:
     return all_url_results
 
 
-def rewrite_links(links: List[Link], files: List[Path], dry_run: bool) -> None:
+def rewrite_links(links: list[Link], files: list[Path], dry_run: bool) -> None:
     # Group by file for efficient rewriting
-    file_to_lines: Dict[str, List[str]] = {}
+    file_to_lines: dict[str, list[str]] = {}
     for filepath in files:
         try:
             with filepath.open(encoding="utf-8", errors="replace") as f:
@@ -328,7 +328,7 @@ def rewrite_links(links: List[Link], files: List[Path], dry_run: bool) -> None:
             print(f"[WARN] Could not read {filepath}: {e}", file=sys.stderr)
             continue
 
-    rewrites: List[LinkRewrite] = []
+    rewrites: list[LinkRewrite] = []
     for link in links:
         new_url, mapping_key = rewrite_url(link.url)
         if not new_url or new_url == link.url or mapping_key is None:
@@ -355,7 +355,7 @@ def rewrite_links(links: List[Link], files: List[Path], dry_run: bool) -> None:
             print(f"[REWRITE] {rewrite.link.file}#{rewrite.link.lineno}: {rewrite.link.url} -> {rewrite.new_url}")
 
 
-def rewrite_url(url: str) -> Union[Tuple[None, None], Tuple[str, Union[str, re.Pattern]]]:
+def rewrite_url(url: str) -> tuple[None, None] | tuple[str, str | re.Pattern]:
     """Return (new_url, mapping_key) if a mapping applies, else (None, None)."""
     for key, repl in URL_REWRITE_MAP.items():
         if isinstance(key, str):
@@ -369,8 +369,8 @@ def rewrite_url(url: str) -> Union[Tuple[None, None], Tuple[str, Union[str, re.P
     return None, None
 
 
-def check_links_for_errors(all_urls: List[Link], all_url_results: FetchedResults) -> List[LinkError]:
-    errors: List[LinkError] = []
+def check_links_for_errors(all_urls: list[Link], all_url_results: FetchedResults) -> list[LinkError]:
+    errors: list[LinkError] = []
     for link in all_urls:
         cache_val = all_url_results.get(link.base_url)
 
@@ -430,7 +430,7 @@ def check_fragment_in_html(html: str, fragment: str) -> bool:
     return bool(soup.find(id=fragment))
 
 
-def output_summary(errors: List[LinkError], output: Optional[str]) -> None:
+def output_summary(errors: list[LinkError], output: str | None) -> None:
     # Format the errors into a table
     headers = ["Type", "Details", "File", "URL"]
     data = [
@@ -482,7 +482,7 @@ def main() -> None:
     print(f"Scanning {len(files)} files...")
 
     # Find links in those files
-    all_links: List[Link] = []
+    all_links: list[Link] = []
     for filepath in files:
         if is_binary_file(filepath):
             continue

@@ -3,8 +3,13 @@
 This script manages the info about supported Python and Django versions.
 
 The script fetches the latest supported version information from official sources:
-- Python versions from https://devguide.python.org/versions/
+
+- Actively supported Python versions from https://devguide.python.org/versions/
 - Django versions and compatibility matrix from https://docs.djangoproject.com/
+
+The script only includes Python versions that are actively supported by the Python team,
+even if Django still supports older deprecated versions. This ensures we maintain
+support only for actively maintained Python versions.
 
 Commands:
     generate: Generates instructions for updating various files (tox.ini, pyproject.toml,
@@ -36,23 +41,24 @@ import re
 import sys
 import textwrap
 from collections import defaultdict
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, NamedTuple, TypeAlias
 from urllib import request
 
-Version = Tuple[int, ...]
-VersionMapping = Dict[Version, List[Version]]
+Version: TypeAlias = tuple[int, ...]
+VersionMapping: TypeAlias = dict[Version, list[Version]]
 
 
 class DjangoVersionChanges(NamedTuple):
-    added: List[Version]
-    removed: List[Version]
+    added: list[Version]
+    removed: list[Version]
 
 
 class VersionDifferences(NamedTuple):
-    added_python_versions: List[Version]
-    removed_python_versions: List[Version]
-    changed_django_versions: Dict[Version, DjangoVersionChanges]
+    added_python_versions: list[Version]
+    removed_python_versions: list[Version]
+    changed_django_versions: dict[Version, DjangoVersionChanges]
     has_changes: bool
 
 
@@ -64,7 +70,7 @@ class VersionDifferences(NamedTuple):
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; django-components version script)"}
 
 
-def filter_dict(d: Dict, filter_fn: Callable[[Any], bool]) -> Dict:
+def filter_dict(d: dict, filter_fn: Callable[[Any], bool]) -> dict:
     return dict(filter(filter_fn, d.items()))
 
 
@@ -72,18 +78,18 @@ def cut_by_content(content: str, cut_from: str, cut_to: str) -> str:
     return content.split(cut_from)[1].split(cut_to)[0]
 
 
-def keys_from_content(content: str) -> List[str]:
+def keys_from_content(content: str) -> list[str]:
     return re.findall(r"<td><p>(.*?)</p></td>", content)
 
 
-def get_python_supported_version(url: str) -> List[Version]:
+def get_python_supported_version(url: str) -> list[Version]:
     req = request.Request(url, headers=HEADERS)
     with request.urlopen(req) as response:
         response_content = response.read()
 
     content = response_content.decode("utf-8")
 
-    def parse_supported_versions(content: str) -> List[Version]:
+    def parse_supported_versions(content: str) -> list[Version]:
         content = cut_by_content(
             content,
             '<section id="supported-versions">',
@@ -114,7 +120,7 @@ def get_django_to_python_versions(url: str) -> VersionMapping:
         content = cut_by_content(content, "<tbody>", "</tbody>")
 
         versions = keys_from_content(content)
-        version_dict = dict(zip(versions[::2], versions[1::2]))
+        version_dict = dict(zip(versions[::2], versions[1::2], strict=False))
 
         django_to_python = {
             version_to_tuple(python_version): [
@@ -128,7 +134,7 @@ def get_django_to_python_versions(url: str) -> VersionMapping:
     return parse_supported_versions(content)
 
 
-def get_django_supported_versions(url: str) -> List[Tuple[int, ...]]:
+def get_django_supported_versions(url: str) -> list[tuple[int, ...]]:
     """Extract Django versions from the HTML content, e.g. `5.0` or `4.2`"""
     req = request.Request(url, headers=HEADERS)
     with request.urlopen(req) as response:
@@ -142,10 +148,10 @@ def get_django_supported_versions(url: str) -> List[Tuple[int, ...]]:
     )
 
     rows = re.findall(r"<tr>(.*?)</tr>", content.replace("\n", " "))
-    versions: List[Tuple[int, ...]] = []
+    versions: list[tuple[int, ...]] = []
     # NOTE: Skip first row as that's headers
     for row in rows[1:]:
-        data: List[str] = re.findall(r"<td>(.*?)</td>", row)
+        data: list[str] = re.findall(r"<td>(.*?)</td>", row)
         # NOTE: First column is version like `5.0` or `4.2 LTS`
         version_with_test = data[0]
         version = version_with_test.split(" ")[0]
@@ -188,11 +194,10 @@ def get_python_to_django() -> VersionMapping:
 
     supported_django_to_python = filter_dict(django_to_python, lambda item: item[0] in django_supported_versions)
     python_to_django = build_python_to_django(supported_django_to_python, latest_version)
-    # NOTE: Uncomment the below if you want to include only those Python versions
-    #       that are still actively supported. Otherwise, we include all Python versions
-    #       that are compatible with supported Django versions.
-    # active_python = get_python_supported_version("https://devguide.python.org/versions/")
-    # python_to_django = filter_dict(python_to_django, lambda item: item[0] in active_python)
+    # Filter to only include actively supported Python versions (not deprecated ones like 3.8, 3.9)
+    # This ensures we only support Python versions that are still maintained by the Python team
+    active_python = get_python_supported_version("https://devguide.python.org/versions/")
+    python_to_django = filter_dict(python_to_django, lambda item: item[0] in active_python)
 
     return python_to_django
 
@@ -305,7 +310,7 @@ def build_pyenv(python_to_django: VersionMapping) -> str:
 
 
 def build_ci_python_versions(python_to_django: VersionMapping) -> str:
-    # Outputs python-version, like: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    # Outputs python-version, like: ['3.10', '3.11', '3.12', '3.13', '3.14']
     lines = [
         f"'{env_format(python_version, divider='.')}'" for python_version, _django_versions in python_to_django.items()
     ]
@@ -371,7 +376,6 @@ def parse_compatibility_markdown(file_path: Path) -> VersionMapping:
     ```
     | Python version | Django version |
     |----------------|----------------|
-    | 3.9            | 4.2            |
     | 3.10           | 4.2, 5.1, 5.2  |
     | 3.11           | 4.2, 5.1, 5.2  |
     | 3.12           | 4.2, 5.1, 5.2  |

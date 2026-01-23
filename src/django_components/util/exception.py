@@ -1,8 +1,8 @@
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator, List
 
 
-def set_component_error_message(err: Exception, component_path: List[str]) -> None:
+def set_component_error_message(err: Exception, component_path: list[str]) -> None:
     """
     Format the error message to include the component path. E.g.
     ```
@@ -40,7 +40,7 @@ def set_component_error_message(err: Exception, component_path: List[str]) -> No
 
 
 @contextmanager
-def component_error_message(component_path: List[str]) -> Generator[None, None, None]:
+def component_error_message(component_path: list[str]) -> Generator[None, None, None]:
     """
     If an error occurs within the context, format the error message to include
     the component path. E.g.

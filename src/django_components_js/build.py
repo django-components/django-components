@@ -1,7 +1,7 @@
 import os
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
 
 DEFAULT_ESBUILD_ARGS = [
     "--bundle",
@@ -14,9 +14,9 @@ DEFAULT_ESBUILD_ARGS = [
 
 # Compile a list of JS/TS files into a single minified file with esbuild
 def compile_js_files_to_file(
-    file_paths: Sequence[Union[Path, str]],
-    out_file: Union[Path, str],
-    esbuild_args: Optional[List[str]] = None,
+    file_paths: Sequence[Path | str],
+    out_file: Path | str,
+    esbuild_args: list[str] | None = None,
 ) -> None:
     # Find Esbuild binary
     bin_name = "esbuild.cmd" if os.name == "nt" else "esbuild"

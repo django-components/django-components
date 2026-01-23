@@ -1,5 +1,5 @@
 from collections.abc import Hashable
-from typing import Dict, Generic, Optional, TypeVar, cast
+from typing import Generic, TypeVar, cast
 
 T = TypeVar("T")
 
@@ -10,28 +10,28 @@ class CacheNode(Generic[T]):
     def __init__(self, key: Hashable, value: T) -> None:
         self.key = key
         self.value = value
-        self.prev: Optional[CacheNode] = None
-        self.next: Optional[CacheNode] = None
+        self.prev: CacheNode | None = None
+        self.next: CacheNode | None = None
 
 
 class LRUCache(Generic[T]):
     """A simple LRU Cache implementation."""
 
-    def __init__(self, maxsize: Optional[int] = None) -> None:
+    def __init__(self, maxsize: int | None = None) -> None:
         """
         Initialize the LRU cache.
 
         :param maxsize: Maximum number of items the cache can hold. If None, the cache is unbounded.
         """
         self.maxsize = maxsize
-        self.cache: Dict[Hashable, CacheNode[T]] = {}  # Maps keys to nodes in the doubly linked list
+        self.cache: dict[Hashable, CacheNode[T]] = {}  # Maps keys to nodes in the doubly linked list
         # Dummy head and tail nodes to simplify operations
         self.head = CacheNode[T]("", cast("T", None))  # Most recently used
         self.tail = CacheNode[T]("", cast("T", None))  # Least recently used
         self.head.next = self.tail
         self.tail.prev = self.head
 
-    def get(self, key: Hashable) -> Optional[T]:
+    def get(self, key: Hashable) -> T | None:
         """
         Retrieve the value associated with the key.
 

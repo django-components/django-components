@@ -133,7 +133,7 @@ By default, the component's template is rendered as-is.
 
 ```py
 class Table(Component):
-    def on_render(self, context: Context, template: Optional[Template]):
+    def on_render(self, context: Context, template: Template | None):
         if template is not None:
             return template.render(context)
 ```

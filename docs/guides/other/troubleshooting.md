@@ -144,7 +144,7 @@ Thus, you can check where a slot was filled from by printing it out:
 
 ```python
 class MyComponent(Component):
-    def on_render_before(self, context: Context, template: Optional[Template]):
+    def on_render_before(self, context: Context, template: Template | None):
         print(self.slots)
 ```
 

@@ -5,7 +5,7 @@ import subprocess
 import sys
 import time
 from pathlib import Path
-from typing import Literal
+from typing import Literal, TypeAlias
 
 import pytest
 import requests
@@ -16,7 +16,7 @@ TEST_SERVER_URL = f"http://127.0.0.1:{TEST_SERVER_PORT}"
 
 
 BROWSER_NAMES = ["chromium", "firefox", "webkit"]
-BrowserType = Literal["chromium", "firefox", "webkit"]
+BrowserType: TypeAlias = Literal["chromium", "firefox", "webkit"]
 
 
 async def _launch_browser(playwright: Playwright, browser_name: BrowserType) -> Browser:

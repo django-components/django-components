@@ -1,5 +1,5 @@
-import sys
-from typing import TYPE_CHECKING, Callable, Dict, List, NamedTuple, Optional, Set, Type, TypeVar, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, NamedTuple, TypeAlias, TypeVar
 from weakref import ReferenceType, finalize
 
 from django.template import Library
@@ -23,11 +23,7 @@ if TYPE_CHECKING:
     from django_components.component import Component
 
 
-# NOTE: `ReferenceType` is NOT a generic pre-3.9
-if sys.version_info >= (3, 9):
-    AllRegistries = List[ReferenceType["ComponentRegistry"]]
-else:
-    AllRegistries = List[ReferenceType]
+AllRegistries: TypeAlias = list[ReferenceType["ComponentRegistry"]]
 
 
 TComponent = TypeVar("TComponent", bound="Component")
@@ -59,7 +55,7 @@ class NotRegistered(Exception):
 #
 # Thus we need to remember which component used which template tags.
 class ComponentRegistryEntry(NamedTuple):
-    cls: Type["Component"]
+    cls: type["Component"]
     tag: str
 
 
@@ -81,7 +77,7 @@ class RegistrySettings(NamedTuple):
     ```
     """
 
-    context_behavior: Optional[ContextBehaviorType] = None
+    context_behavior: ContextBehaviorType | None = None
     """
     Same as the global
     [`COMPONENTS.context_behavior`](./settings.md#django_components.app_settings.ComponentsSettings.context_behavior)
@@ -93,7 +89,7 @@ class RegistrySettings(NamedTuple):
     """
 
     # TODO_REMOVE_IN_V1
-    CONTEXT_BEHAVIOR: Optional[ContextBehaviorType] = None
+    CONTEXT_BEHAVIOR: ContextBehaviorType | None = None
     """
     _Deprecated. Use `context_behavior` instead. Will be removed in v1._
 
@@ -106,7 +102,7 @@ class RegistrySettings(NamedTuple):
     setting.
     """
 
-    tag_formatter: Optional[Union["TagFormatterABC", str]] = None
+    tag_formatter: "TagFormatterABC | str | None" = None
     """
     Same as the global
     [`COMPONENTS.tag_formatter`](./settings.md#django_components.app_settings.ComponentsSettings.tag_formatter)
@@ -118,7 +114,7 @@ class RegistrySettings(NamedTuple):
     """
 
     # TODO_REMOVE_IN_V1
-    TAG_FORMATTER: Optional[Union["TagFormatterABC", str]] = None
+    TAG_FORMATTER: "TagFormatterABC | str | None" = None
     """
     _Deprecated. Use `tag_formatter` instead. Will be removed in v1._
 
@@ -134,7 +130,7 @@ class RegistrySettings(NamedTuple):
 
 class InternalRegistrySettings(NamedTuple):
     context_behavior: ContextBehaviorType
-    tag_formatter: Union["TagFormatterABC", str]
+    tag_formatter: "TagFormatterABC | str"
 
 
 # We keep track of all registries that exist so that, when users want to
@@ -143,9 +139,9 @@ class InternalRegistrySettings(NamedTuple):
 ALL_REGISTRIES: AllRegistries = []
 
 
-def all_registries() -> List["ComponentRegistry"]:
+def all_registries() -> list["ComponentRegistry"]:
     """Get a list of all created [`ComponentRegistry`](./api.md#django_components.ComponentRegistry) instances."""
-    registries: List[ComponentRegistry] = []
+    registries: list[ComponentRegistry] = []
     for reg_ref in ALL_REGISTRIES:
         reg = reg_ref()
         if reg is not None:
@@ -177,7 +173,7 @@ class ComponentRegistry:
         library (Library, optional): Django\
             [`Library`](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#code-layout)\
             associated with this registry. If omitted, the default Library instance from django_components is used.
-        settings (Union[RegistrySettings, Callable[[ComponentRegistry], RegistrySettings]], optional): Configure\
+        settings (RegistrySettings | Callable[[ComponentRegistry], RegistrySettings], optional): Configure\
             how the components registered with this registry will behave when rendered.\
             See [`RegistrySettings`](./api.md#django_components.RegistrySettings). Can be either\
             a static value or a callable that returns the settings. If omitted, the settings from\
@@ -239,11 +235,11 @@ class ComponentRegistry:
 
     def __init__(
         self,
-        library: Optional[Library] = None,
-        settings: Optional[Union[RegistrySettings, Callable[["ComponentRegistry"], RegistrySettings]]] = None,
+        library: Library | None = None,
+        settings: RegistrySettings | Callable[["ComponentRegistry"], RegistrySettings] | None = None,
     ) -> None:
-        self._registry: Dict[str, ComponentRegistryEntry] = {}  # component name -> component_entry mapping
-        self._tags: Dict[str, Set[str]] = {}  # tag -> list[component names]
+        self._registry: dict[str, ComponentRegistryEntry] = {}  # component name -> component_entry mapping
+        self._tags: dict[str, set[str]] = {}  # tag -> list[component names]
         self._library = library
         self._settings = settings
 
@@ -302,7 +298,7 @@ class ComponentRegistry:
         # NOTE: We allow the settings to be given as a getter function
         # so the settings can respond to changes.
         if callable(self._settings):
-            settings_input: Optional[RegistrySettings] = self._settings(self)
+            settings_input: RegistrySettings | None = self._settings(self)
         else:
             settings_input = self._settings
 
@@ -318,7 +314,7 @@ class ComponentRegistry:
             tag_formatter=tag_formatter or app_settings.TAG_FORMATTER,
         )
 
-    def register(self, name: str, component: Type["Component"]) -> None:
+    def register(self, name: str, component: type["Component"]) -> None:
         """
         Register a [`Component`](./api.md#django_components.Component) class
         with this registry under the given name.
@@ -331,7 +327,7 @@ class ComponentRegistry:
 
         Args:
             name (str): The name under which the component will be registered. Required.
-            component (Type[Component]): The component class to register. Required.
+            component (type[Component]): The component class to register. Required.
 
         **Raises:**
 
@@ -432,7 +428,7 @@ class ComponentRegistry:
             ),
         )
 
-    def get(self, name: str) -> Type["Component"]:
+    def get(self, name: str) -> type["Component"]:
         """
         Retrieve a [`Component`](./api.md#django_components.Component)
         class registered under the given name.
@@ -441,7 +437,7 @@ class ComponentRegistry:
             name (str): The name under which the component was registered. Required.
 
         Returns:
-            Type[Component]: The component class registered under the given name.
+            type[Component]: The component class registered under the given name.
 
         **Raises:**
 
@@ -488,12 +484,12 @@ class ComponentRegistry:
         """
         return name in self._registry
 
-    def all(self) -> Dict[str, Type["Component"]]:
+    def all(self) -> dict[str, type["Component"]]:
         """
         Retrieve all registered [`Component`](./api.md#django_components.Component) classes.
 
         Returns:
-            Dict[str, Type[Component]]: A dictionary of component names to component classes
+            dict[str, type[Component]]: A dictionary of component names to component classes
 
         **Example:**
 
@@ -541,7 +537,7 @@ class ComponentRegistry:
     def _register_to_library(
         self,
         comp_name: str,
-        component: Type["Component"],
+        component: type["Component"],
     ) -> ComponentRegistryEntry:
         # Lazily import to avoid circular dependencies
         from django_components.component import ComponentNode  # noqa: PLC0415
@@ -618,10 +614,10 @@ _the_registry = registry
 
 def register(
     name: str,
-    registry: Optional[ComponentRegistry] = None,
+    registry: ComponentRegistry | None = None,
 ) -> Callable[
-    [Type[TComponent]],
-    Type[TComponent],
+    [type[TComponent]],
+    type[TComponent],
 ]:
     """
     Class decorator for registering a [component](./#django_components.Component)
@@ -667,7 +663,7 @@ def register(
     if registry is None:
         registry = _the_registry
 
-    def decorator(component: Type[TComponent]) -> Type[TComponent]:
+    def decorator(component: type[TComponent]) -> type[TComponent]:
         registry.register(name=name, component=component)
         return component
 

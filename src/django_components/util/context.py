@@ -1,6 +1,5 @@
 import copy
-import sys
-from typing import Any, Callable, Dict, List, Tuple
+from typing import TYPE_CHECKING, Any
 from weakref import WeakKeyDictionary
 
 from django.http import HttpRequest
@@ -8,13 +7,12 @@ from django.template import Engine
 from django.template.context import BaseContext, Context
 from django.template.loader_tags import BlockContext
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 # We cache the context processors data for each request, so that we don't have to
 # generate it for each component.
-# NOTE: Can't be used as generic in Python 3.8
-if sys.version_info >= (3, 9):
-    context_processors_data: WeakKeyDictionary[HttpRequest, Dict[str, Any]] = WeakKeyDictionary()
-else:
-    context_processors_data = WeakKeyDictionary()
+context_processors_data: WeakKeyDictionary[HttpRequest, dict[str, Any]] = WeakKeyDictionary()
 
 
 class CopiedDict(dict):
@@ -52,7 +50,7 @@ def snapshot_context(context: Context) -> Context:
     # is preserved for all (potentially nested) forloops.
     #
     # For non-forloop layers, we just make shallow copies.
-    dicts_with_copied_forloops: List[CopiedDict] = []
+    dicts_with_copied_forloops: list[CopiedDict] = []
 
     # NOTE: For better performance, we iterate over the dicts in reverse order.
     #       This is because:
@@ -88,7 +86,7 @@ def snapshot_context(context: Context) -> Context:
     context_copy.dicts = dicts_with_copied_forloops
 
     # Make a copy of RenderContext
-    render_ctx_copies: List[CopiedDict] = []
+    render_ctx_copies: list[CopiedDict] = []
     for render_ctx_dict_index in reversed(range(len(context.render_context.dicts))):
         render_ctx_dict = context.render_context.dicts[render_ctx_dict_index]
 
@@ -127,7 +125,7 @@ def _copy_block_context(block_context: BlockContext) -> BlockContext:
 # Django's logic for generating context processors data. The gist is the same as
 # `RequestContext.bind_template()`, but without depending on a Template object.
 # See https://github.com/django/django/blame/2d34ebe49a25d0974392583d5bbd954baf742a32/django/template/context.py#L255
-def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> Dict[str, Any]:
+def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> dict[str, Any]:
     if request in context_processors_data:
         return context_processors_data[request].copy()
 
@@ -139,7 +137,7 @@ def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> D
 
     # NOTE: Compatibility with `RequestContext`, which accepts an optional
     #       `processors` argument.
-    request_context_processors: Tuple[Callable[..., Any], ...] = getattr(context, "_processors", ())
+    request_context_processors: tuple[Callable[..., Any], ...] = getattr(context, "_processors", ())
 
     # This part is same as in `RequestContext.bind_template()`
     processors = default_engine.template_context_processors + request_context_processors

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from django_components.commands.list import ListCommand
 from django_components.extension import extensions
@@ -63,8 +63,8 @@ class ExtListCommand(ListCommand):
     columns = ("name",)
     default_columns = ("name",)
 
-    def get_data(self) -> List[Dict[str, Any]]:
-        data: List[Dict[str, Any]] = []
+    def get_data(self) -> list[dict[str, Any]]:
+        data: list[dict[str, Any]] = []
         for extension in extensions.extensions:
             data.append(
                 {

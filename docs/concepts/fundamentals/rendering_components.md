@@ -206,7 +206,6 @@ The [`Component.render()`](../../../reference/api/#django_components.Component.r
 This is the equivalent of calling the [`{% component %}`](../template_tags#component) tag.
 
 ```python
-from typing import Optional
 from django_components import Component, SlotInput
 
 class Button(Component):
@@ -220,7 +219,7 @@ class Button(Component):
         age: int
 
     class Slots:
-        footer: Optional[SlotInput] = None
+        footer: SlotInput | None = None
 
     def get_template_data(self, args, kwargs, slots, context):
         ...
@@ -263,7 +262,6 @@ Any extra arguments are passed to the [`HttpResponse`](https://docs.djangoprojec
 constructor.
 
 ```python
-from typing import Optional
 from django_components import Component, SlotInput
 
 class Button(Component):
@@ -277,7 +275,7 @@ class Button(Component):
         age: int
 
     class Slots:
-        footer: Optional[SlotInput] = None
+        footer: SlotInput | None = None
 
     def get_template_data(self, args, kwargs, slots, context):
         ...
@@ -485,7 +483,6 @@ and [`Slots`](../../../reference/api/#django_components.Component.Slots) classes
 Read more on [Typing and validation](../../fundamentals/typing_and_validation).
 
 ```python
-from typing import Optional
 from django_components import Component, Slot, SlotInput
 
 # Define the component with the types
@@ -498,7 +495,7 @@ class Button(Component):
         age: int
 
     class Slots:
-        my_slot: Optional[SlotInput] = None
+        my_slot: SlotInput | None = None
         footer: SlotInput
 
 # Add type hints to the render call

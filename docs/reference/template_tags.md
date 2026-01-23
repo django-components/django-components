@@ -164,7 +164,7 @@ COMPONENTS = {
 ## fill
 
 ```django
-{% fill name: str, *, data: Optional[str] = None, fallback: Optional[str] = None, body: Union[str, django.utils.safestring.SafeString, django_components.slots.SlotFunc[~TSlotData], django_components.slots.Slot[~TSlotData], NoneType] = None, default: Optional[str] = None %}
+{% fill name: str, *, data: str | None = None, fallback: str | None = None, body: str | django.utils.safestring.SafeString | django_components.slots.SlotFunc[~TSlotData] | django_components.slots.Slot[~TSlotData] | NoneType = None, default: str | None = None %}
 {% endfill %}
 ```
 
@@ -322,7 +322,7 @@ Then pass the slot to the [`{% fill %}`](../template_tags#fill) tag:
 ## html_attrs
 
 ```django
-{% html_attrs attrs: Optional[Dict] = None, defaults: Optional[Dict] = None, **kwargs: Any %}
+{% html_attrs attrs: dict | None = None, defaults: dict | None = None, **kwargs: Any %}
 ```
 
 

@@ -1,6 +1,6 @@
 """Module for interfacing with Django's Library (`django.template.library`)"""
 
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 from django.template.base import Node, Parser, Token
 from django.template.library import Library
@@ -59,7 +59,7 @@ def register_tag(
     library.tag(tag, tag_fn)
 
 
-def mark_protected_tags(lib: Library, tags: Optional[List[str]] = None) -> None:
+def mark_protected_tags(lib: Library, tags: list[str] | None = None) -> None:
     protected_tags = tags if tags is not None else PROTECTED_TAGS
     lib._protected_tags = [*protected_tags]
 

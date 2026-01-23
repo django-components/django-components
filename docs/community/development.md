@@ -31,21 +31,19 @@ pytest
 The library is also tested across many versions of Python and Django. To run tests that way:
 
 ```sh
-pyenv install -s 3.8
-pyenv install -s 3.9
 pyenv install -s 3.10
 pyenv install -s 3.11
 pyenv install -s 3.12
 pyenv install -s 3.13
 pyenv install -s 3.14
-pyenv local 3.8 3.9 3.10 3.11 3.12 3.13 3.14
+pyenv local 3.10 3.11 3.12 3.13 3.14
 tox -p
 ```
 
 To run tests for a specific Python version, use:
 
 ```sh
-tox -e py38
+tox -e py310
 ```
 
 NOTE: See the available environments in `tox.ini`.
@@ -98,18 +96,8 @@ After Playwright is ready, run the tests the same way as before:
 ```sh
 pytest
 # Or for specific Python version
-tox -e py38
+tox -e py310
 ```
-
-!!! note
-
-    Playwright downloads browser binaries per Playwright version. In practice, this extra step is only needed for `tox -e py38`, because that env uses a different (older) Playwright version than the other tox envs.
-
-    If `tox -e py38` fails with "Executable doesn't exist", install the browsers using the Playwright inside that tox env:
-
-    ```sh
-    .tox/py38/bin/python -m playwright install chromium firefox webkit
-    ```
 
 ## Snapshot tests
 
@@ -124,7 +112,7 @@ pytest --snapshot-update
 Or with tox:
 
 ```sh
-tox -e py39 -- --snapshot-update
+tox -e py310 -- --snapshot-update
 ```
 
 ## Dev server
@@ -369,6 +357,13 @@ Head over to [Dev guides](./devguides/dependency_mgmt.md) for a deep dive into h
 ### Updating supported versions
 
 The `scripts/supported_versions.py` script manages the supported Python and Django versions for the project.
+
+The script determines supported versions by:
+1. Fetching actively supported Python versions from https://devguide.python.org/versions/
+2. Fetching Django's compatibility matrix from https://docs.djangoproject.com/
+3. Finding the intersection: Python versions that are both actively supported by Python and compatible with supported Django versions
+
+This means we only support Python versions that are still actively maintained by the Python team, even if Django still supports older deprecated versions (like Python 3.8 or 3.9).
 
 The script runs automatically via GitHub Actions once a week to check for version updates. If changes are detected, it creates a GitHub issue with the necessary updates. See the [`maint-supported-versions.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/maint-supported-versions.yml) workflow.
 

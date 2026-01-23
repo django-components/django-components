@@ -1,6 +1,6 @@
-import sys
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, TypeAlias
 from weakref import ReferenceType, ref
 
 from django.core.exceptions import ImproperlyConfigured
@@ -20,10 +20,10 @@ if TYPE_CHECKING:
 # Legacy logic for creating Templates from string
 def cached_template(
     template_string: str,
-    template_cls: Optional[Type[Template]] = None,
-    origin: Optional[Origin] = None,
-    name: Optional[str] = None,
-    engine: Optional[Any] = None,
+    template_cls: type[Template] | None = None,
+    origin: Origin | None = None,
+    name: str | None = None,
+    engine: Any | None = None,
 ) -> Template:
     """
     DEPRECATED. Template caching will be removed in v1.
@@ -35,12 +35,12 @@ def cached_template(
     Args:
         template_string (str): Template as a string, same as the first argument to Django's\
             [`Template`](https://docs.djangoproject.com/en/5.2/topics/templates/#template). Required.
-        template_cls (Type[Template], optional): Specify the Template class that should be instantiated.\
+        template_cls (type[Template], optional): Specify the Template class that should be instantiated.\
             Defaults to Django's [`Template`](https://docs.djangoproject.com/en/5.2/topics/templates/#template) class.
-        origin (Type[Origin], optional): Sets \
+        origin (type[Origin], optional): Sets \
             [`Template.Origin`](https://docs.djangoproject.com/en/5.2/howto/custom-template-backend/#origin-api-and-3rd-party-integration).
-        name (Type[str], optional): Sets `Template.name`
-        engine (Type[Any], optional): Sets `Template.engine`
+        name (type[str], optional): Sets `Template.name`
+        engine (type[Any], optional): Sets `Template.engine`
 
     ```python
     from django_components import cached_template
@@ -68,7 +68,7 @@ def cached_template(
     engine_cls_path = get_import_path(engine.__class__) if engine else None
     cache_key = (template_cls_path, template_string, engine_cls_path)
 
-    maybe_cached_template: Optional[Template] = template_cache.get(cache_key)
+    maybe_cached_template: Template | None = template_cache.get(cache_key)
     if maybe_cached_template is None:
         template = template_cls(template_string, origin=origin, name=name, engine=engine)
         template_cache.set(cache_key, template)
@@ -87,7 +87,7 @@ def cached_template(
 def prepare_component_template(
     component: "Component",
     template_data: Any,
-) -> Generator[Optional[Template], Any, None]:
+) -> Generator[Template | None, Any, None]:
     context = component.context
     with context.update(template_data):
         template = _get_component_template(component)
@@ -167,13 +167,13 @@ def _maybe_bind_template(context: Context, template: Template) -> Generator[None
 #       could lead to more components being loaded at once.
 #       (For this to happen, user would have to define a Django template loader that renders other components
 #       while resolving the template file.)
-loading_components: List["ComponentRef"] = []
+loading_components: list["ComponentRef"] = []
 
 
 def load_component_template(
-    component_cls: Type["Component"],
-    filepath: Optional[str] = None,
-    content: Optional[str] = None,
+    component_cls: type["Component"],
+    filepath: str | None = None,
+    content: str | None = None,
 ) -> Template:
     if filepath is None and content is None:
         raise ValueError("Either `filepath` or `content` must be provided.")
@@ -200,7 +200,7 @@ def load_component_template(
 # be owned by the current Component class.
 # Thus each Component has it's own Template instance with their own Origins
 # pointing to the correct Component class.
-def ensure_unique_template(component_cls: Type["Component"], template: Template) -> Template:
+def ensure_unique_template(component_cls: type["Component"], template: Template) -> Template:
     # Use `template.origin.component_cls` to check if the template was cached by Django / template loaders.
     if get_component_from_origin(template.origin) is None:
         set_component_to_origin(template.origin, component_cls)
@@ -212,11 +212,11 @@ def ensure_unique_template(component_cls: Type["Component"], template: Template)
     return template
 
 
-def _get_component_template(component: "Component") -> Optional[Template]:
+def _get_component_template(component: "Component") -> Template | None:
     trace_component_msg("COMP_LOAD", component_name=component.name, component_id=component.id, slot_name=None)
 
     # TODO_V1 - Remove, not needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
-    template_sources: Dict[str, Optional[Union[str, Template]]] = {}
+    template_sources: dict[str, str | Template | None] = {}
 
     # TODO_V1 - Remove `get_template_name()` in v1
     template_sources["get_template_name"] = component.get_template_name(component.context)
@@ -250,8 +250,8 @@ def _get_component_template(component: "Component") -> Optional[Template]:
     # Load the template based on the source
     if template_sources["get_template_name"]:
         template_name = template_sources["get_template_name"]
-        template: Optional[Template] = _load_django_template(template_name)
-        template_string: Optional[str] = None
+        template: Template | None = _load_django_template(template_name)
+        template_string: str | None = None
     elif template_sources["get_template_string"]:
         template_string = template_sources["get_template_string"]
         template = None
@@ -289,7 +289,7 @@ def _get_component_template(component: "Component") -> Optional[Template]:
 
 
 def _create_template_from_string(
-    component: Type["Component"],
+    component: type["Component"],
     template_string: str,
     is_component_template: bool = False,
 ) -> Template:
@@ -357,22 +357,18 @@ def _load_django_template(template_name: str) -> Template:
 # See https://github.com/django-components/django-components/pull/1222
 ########################################################
 
-# NOTE: `ReferenceType` is NOT a generic pre-3.9
-if sys.version_info >= (3, 9):
-    ComponentRef = ReferenceType[Type["Component"]]
-else:
-    ComponentRef = ReferenceType
+ComponentRef: TypeAlias = ReferenceType[type["Component"]]
 
 
 # Remember which Component classes defined `template_file`. Since multiple Components may
 # define the same `template_file`, we store a list of weak references to the Component classes.
-component_template_file_cache: Dict[str, List[ComponentRef]] = {}
+component_template_file_cache: dict[str, list[ComponentRef]] = {}
 component_template_file_cache_initialized = False
 
 
 # Remember the mapping of `Component.template_file` -> `Component` class, so that we can associate
 # the `Template` instances with the correct Component class in our monkepatched `Template.__init__()`.
-def cache_component_template_file(component_cls: Type["Component"]) -> None:
+def cache_component_template_file(component_cls: type["Component"]) -> None:
     # When a Component class is created before Django is set up,
     # then `component_template_file_cache_initialized` is False and we leave it for later.
     # This is necessary because:
@@ -403,7 +399,7 @@ def cache_component_template_file(component_cls: Type["Component"]) -> None:
     comp_media: ComponentMedia = component_cls._component_media  # type: ignore[attr-defined]
     # Check if template has been resolved and relative files have been resolved
     if comp_media.resolved_template and comp_media.resolved_relative_paths:
-        template_file: Union[str, Unset, None] = component_cls.template_file
+        template_file: str | Unset | None = component_cls.template_file
     else:
         if not comp_media.resolved_relative_paths:
             # NOTE: By using `asset_type=None`, we will only resolve relative file paths,
@@ -421,7 +417,7 @@ def cache_component_template_file(component_cls: Type["Component"]) -> None:
     component_template_file_cache[template_file].append(ref(component_cls))
 
 
-def get_component_by_template_file(template_file: str) -> Optional[Type["Component"]]:
+def get_component_by_template_file(template_file: str) -> type["Component"] | None:
     # This function is called from within `Template.__init__()`. At that point, Django MUST be already set up,
     # because Django's `Template.__init__()` accesses the templating engines.
     #
@@ -475,9 +471,9 @@ def _reset_component_template_file_cache() -> None:
 
 
 # Helpers so we know where in the codebase we set / access the `Origin.component_cls` attribute
-def set_component_to_origin(origin: Origin, component_cls: Type["Component"]) -> None:
+def set_component_to_origin(origin: Origin, component_cls: type["Component"]) -> None:
     origin.component_cls = component_cls
 
 
-def get_component_from_origin(origin: Origin) -> Optional[Type["Component"]]:
+def get_component_from_origin(origin: Origin) -> type["Component"] | None:
     return getattr(origin, "component_cls", None)

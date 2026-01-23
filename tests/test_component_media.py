@@ -4,7 +4,6 @@ import re
 import sys
 from pathlib import Path
 from textwrap import dedent
-from typing import List, Optional
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
@@ -355,7 +354,7 @@ class TestComponentMedia:
     def test_media_custom_render_js(self):
         class MyMedia(Media):
             def render_js(self):
-                tags: List[str] = []
+                tags: list[str] = []
                 for path in self._js:  # type: ignore[attr-defined]
                     abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
                     tags.append(f'<script defer src="{abs_path}"></script>')
@@ -381,7 +380,7 @@ class TestComponentMedia:
     def test_media_custom_render_css(self):
         class MyMedia(Media):
             def render_css(self):
-                tags: List[str] = []
+                tags: list[str] = []
                 media = sorted(self._css)  # type: ignore[attr-defined]
                 for medium in media:
                     for path in self._css[medium]:  # type: ignore[attr-defined]
@@ -800,7 +799,7 @@ class TestMediaStaticfiles:
 
         class MyMedia(Media):
             def render_js(self):
-                tags: List[str] = []
+                tags: list[str] = []
                 for path in self._js:  # type: ignore[attr-defined]
                     abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
                     tags.append(f'<script defer src="{abs_path}"></script>')
@@ -860,7 +859,7 @@ class TestMediaStaticfiles:
 
         class MyMedia(Media):
             def render_js(self):
-                tags: List[str] = []
+                tags: list[str] = []
                 for path in self._js:  # type: ignore[attr-defined]
                     abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
                     tags.append(f'<script defer src="{abs_path}"></script>')
@@ -1146,8 +1145,8 @@ class TestSubclassingAttributes:
 
     def test_parent_non_null_child_null(self):
         class ParentComp(Component):
-            js: Optional[str] = "console.log('parent')"
-            template: Optional[str] = "<h1>parent</h1>"
+            js: str | None = "console.log('parent')"
+            template: str | None = "<h1>parent</h1>"
 
         class TestComp(ParentComp):
             js = None
@@ -1211,8 +1210,8 @@ class TestSubclassingAttributes:
 
     def test_grandparent_non_null_parent_null_child_pass(self):
         class GrandParentComp(Component):
-            js: Optional[str] = "console.log('grandparent')"
-            template: Optional[str] = "<h1>grandparent</h1>"
+            js: str | None = "console.log('grandparent')"
+            template: str | None = "<h1>grandparent</h1>"
 
         class ParentComp(GrandParentComp):
             js = None

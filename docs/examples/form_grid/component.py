@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any
 
 from django_components import Component, Slot, register, types
 
@@ -12,10 +12,10 @@ class FormGrid(Component):
     class Kwargs:
         editable: bool = True
         method: str = "post"
-        form_content_attrs: Optional[dict] = None
-        attrs: Optional[dict] = None
+        form_content_attrs: dict | None = None
+        attrs: dict | None = None
 
-    def get_template_data(self, args, kwargs: Kwargs, slots: Dict[str, Slot], context):
+    def get_template_data(self, args, kwargs: Kwargs, slots: dict[str, Slot], context):
         fields = prepare_form_grid(slots)
 
         return {
@@ -82,10 +82,10 @@ class FormGrid(Component):
 #   {% endfill %}
 # {% endcomponent %}
 # ```
-def prepare_form_grid(slots: Dict[str, Slot]):
-    used_labels: Set[str] = set()
-    unused_labels: Set[str] = set()
-    fields: List[Tuple[str, str]] = []
+def prepare_form_grid(slots: dict[str, Slot]):
+    used_labels: set[str] = set()
+    unused_labels: set[str] = set()
+    fields: list[tuple[str, str]] = []
 
     for slot_name in slots:
         # Case: Label slot
@@ -102,7 +102,7 @@ def prepare_form_grid(slots: Dict[str, Slot]):
         # Case: Field slot
         field_name = slot_name.split(":", 1)[1]
         label_slot_name = f"label:{field_name}"
-        label = None
+        label: str | None = None
         if label_slot_name in slots:
             # Case: Component user explicitly defined how to render the label
             label_slot: Slot[Any] = slots[label_slot_name]
@@ -118,7 +118,7 @@ def prepare_form_grid(slots: Dict[str, Slot]):
                 deps_strategy="ignore",
             )
 
-        fields.append((slot_name, label))
+        fields.append((slot_name, label))  # type: ignore[arg-type]
 
     if unused_labels:
         raise ValueError(f"Unused labels: {unused_labels}")
@@ -136,7 +136,7 @@ class FormGridLabel(Component):
 
     class Kwargs:
         field_name: str
-        title: Optional[str] = None
+        title: str | None = None
 
     def get_template_data(self, args, kwargs: Kwargs, slots, context):
         if kwargs.title:

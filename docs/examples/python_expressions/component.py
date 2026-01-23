@@ -1,5 +1,3 @@
-from typing import Optional
-
 from django_components import Component, register, types
 
 DESCRIPTION = "Evaluate Python expressions directly in template using parentheses."
@@ -11,7 +9,7 @@ class Button(Component):
         text: str
         disabled: bool = False
         variant: str = "primary"
-        size: Optional[str] = None
+        size: str | None = None
 
     def get_template_data(self, args, kwargs, slots, context):
         # Determine button classes based on variant and size
@@ -84,7 +82,7 @@ class SearchInput(Component):
     class Kwargs:
         placeholder: str = "Search..."
         required: bool = False
-        min_length: Optional[int] = None
+        min_length: int | None = None
 
     def get_template_data(self, args, kwargs, slots, context):
         attrs = {}

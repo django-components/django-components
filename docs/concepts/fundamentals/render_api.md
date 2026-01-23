@@ -96,7 +96,7 @@ class Table(Component):
         page: int
         per_page: int
 
-    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+    def on_render_before(self, context: Context, template: Template | None) -> None:
         assert self.args.page == 123
         assert self.args.per_page == 10
 
@@ -111,7 +111,7 @@ Without `Args` class:
 from django_components import Component
 
 class Table(Component):
-    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+    def on_render_before(self, context: Context, template: Template | None) -> None:
         assert self.args[0] == 123
         assert self.args[1] == 10
 ```
@@ -141,7 +141,7 @@ class Table(Component):
         page: int
         per_page: int
 
-    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+    def on_render_before(self, context: Context, template: Template | None) -> None:
         assert self.kwargs.page == 123
         assert self.kwargs.per_page == 10
 
@@ -156,7 +156,7 @@ Without `Kwargs` class:
 from django_components import Component
 
 class Table(Component):
-    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+    def on_render_before(self, context: Context, template: Template | None) -> None:
         assert self.kwargs["page"] == 123
         assert self.kwargs["per_page"] == 10
 ```
@@ -186,7 +186,7 @@ class Table(Component):
         header: SlotInput
         footer: SlotInput
 
-    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+    def on_render_before(self, context: Context, template: Template | None) -> None:
         assert isinstance(self.slots.header, Slot)
         assert isinstance(self.slots.footer, Slot)
 
@@ -204,7 +204,7 @@ Without `Slots` class:
 from django_components import Component, Slot, SlotInput
 
 class Table(Component):
-    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+    def on_render_before(self, context: Context, template: Template | None) -> None:
         assert isinstance(self.slots["header"], Slot)
         assert isinstance(self.slots["footer"], Slot)
 ```

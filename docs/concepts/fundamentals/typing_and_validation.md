@@ -20,7 +20,6 @@ that allow you to define the types of args, kwargs, slots, as well as the data r
 Use this to add type hints to your components, to validate the inputs at runtime, and to document them.
 
 ```py
-from typing import Optional
 from django.template import Context
 from django_components import Component, SlotInput
 
@@ -31,10 +30,10 @@ class Button(Component):
 
     class Kwargs:
         variable: str
-        maybe_var: Optional[int] = None  # May be omitted
+        maybe_var: int | None = None  # May be omitted
 
     class Slots:
-        my_slot: Optional[SlotInput] = None
+        my_slot: SlotInput | None = None
 
     def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
         ...
@@ -96,12 +95,12 @@ class Button(Component):
     class Kwargs:
         surname: str
         age: int
-        maybe_var: Optional[int] = None  # May be omitted
+        maybe_var: int | None = None  # May be omitted
 
     class Slots:
         # Use `SlotInput` to allow slots to be given as `Slot` instance,
         # plain string, or a function that returns a string.
-        my_slot: Optional[SlotInput] = None
+        my_slot: SlotInput | None = None
         # Use `Slot` to allow ONLY `Slot` instances.
         # The generic is optional, and it specifies the data available
         # to the slot function.
@@ -293,8 +292,8 @@ You can actually set these classes to anything you want - whether it's dataclass
 [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/), or custom classes:
 
 ```py
-from typing import NamedTuple, Optional
-from django_components import Component, Optional
+from typing import NamedTuple
+from django_components import Component, SlotInput
 from pydantic import BaseModel
 
 class Button(Component):
@@ -305,10 +304,10 @@ class Button(Component):
     @dataclass
     class Kwargs:
         variable: str
-        maybe_var: Optional[int] = None
+        maybe_var: int | None = None
 
     class Slots(BaseModel):
-        my_slot: Optional[SlotInput] = None
+        my_slot: SlotInput | None = None
 
     def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
         ...
@@ -418,7 +417,7 @@ As a workaround:
     ```py
     class Table(Component):
         class Args:
-            args: List[str]
+            args: list[str]
 
     Table.render(
         args=Table.Args(args=["a", "b", "c"]),
@@ -433,7 +432,7 @@ As a workaround:
             variable: str
             another: int
             # Pass any extra keys under `extra`
-            extra: Dict[str, any]
+            extra: dict[str, any]
 
     Table.render(
         kwargs=Table.Kwargs(
@@ -594,10 +593,10 @@ To type-check the inputs, you should wrap the inputs in [`Component.Args`](../..
 For example, if you had a component like this:
 
 ```py
-from typing import NotRequired, Tuple, TypedDict
+from typing import NotRequired, TypedDict, TypeAlias
 from django_components import Component, Slot, SlotInput
 
-ButtonArgs = Tuple[int, str]
+ButtonArgs: TypeAlias = tuple[int, str]
 
 class ButtonKwargs(TypedDict):
     variable: str
@@ -611,7 +610,7 @@ class ButtonSlots(TypedDict):
     # Use `Slot` to allow ONLY `Slot` instances.
     another_slot: Slot
 
-ButtonType = Component[ButtonArgs, ButtonKwargs, ButtonSlots]
+ButtonType: TypeAlias = Component[ButtonArgs, ButtonKwargs, ButtonSlots]
 
 class Button(ButtonType):
     def get_context_data(self, *args, **kwargs):
@@ -650,7 +649,6 @@ The steps to migrate are:
 Thus, the code above will become:
 
 ```py
-from typing import Optional
 from django.template import Context
 from django_components import Component, Slot, SlotInput
 
@@ -664,12 +662,12 @@ class Button(Component):
     class Kwargs:
         variable: str
         another: int
-        maybe_var: Optional[int] = None  # May be omitted
+        maybe_var: int | None = None  # May be omitted
 
     class Slots:
         # Use `SlotInput` to allow slots to be given as `Slot` instance,
         # plain string, or a function that returns a string.
-        my_slot: Optional[SlotInput] = None
+        my_slot: SlotInput | None = None
         # Use `Slot` to allow ONLY `Slot` instances.
         another_slot: Slot
 

@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type
+from typing import Any
 
 from django import VERSION as DJANGO_VERSION
 from django.template import Context, NodeList, Template
@@ -13,7 +13,7 @@ from django_components.util.template_parser import parse_template
 
 
 # In some cases we can't work around Django's design, and need to patch the template class.
-def monkeypatch_template_cls(template_cls: Type[Template]) -> None:
+def monkeypatch_template_cls(template_cls: type[Template]) -> None:
     if is_cls_patched(template_cls):
         return
 
@@ -25,7 +25,7 @@ def monkeypatch_template_cls(template_cls: Type[Template]) -> None:
 
 # Patch `Template.__init__` to apply `on_template_loaded()` and `on_template_compiled()`
 # extension hooks if the template belongs to a Component.
-def monkeypatch_template_init(template_cls: Type[Template]) -> None:
+def monkeypatch_template_init(template_cls: type[Template]) -> None:
     original_init = template_cls.__init__
 
     # NOTE: Function signature of Template.__init__ hasn't changed in 11 years, so we can safely patch it.
@@ -33,8 +33,8 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
     def __init__(  # noqa: N807
         self: Template,
         template_string: Any,
-        origin: Optional[Origin] = None,
-        name: Optional[str] = None,
+        origin: Origin | None = None,
+        name: str | None = None,
         *args: Any,
         **kwargs: Any,
     ) -> None:
@@ -93,7 +93,7 @@ def monkeypatch_template_init(template_cls: Type[Template]) -> None:
 # to use template tags as inputs to the component tag:
 #
 # {% component "my-component" description="{% lorem 3 w %}" / %}
-def monkeypatch_template_compile_nodelist(template_cls: Type[Template]) -> None:
+def monkeypatch_template_compile_nodelist(template_cls: type[Template]) -> None:
     def _compile_nodelist(self: Template) -> NodeList:
         """
         Parse and compile the template source into a nodelist. If debug
@@ -136,7 +136,7 @@ def monkeypatch_template_compile_nodelist(template_cls: Type[Template]) -> None:
     template_cls.compile_nodelist = _compile_nodelist
 
 
-def monkeypatch_template_render(template_cls: Type[Template]) -> None:
+def monkeypatch_template_render(template_cls: type[Template]) -> None:
     # Modify `Template.render` to set `isolated_context` kwarg of `push_state`
     # based on our custom `_DJC_COMPONENT_IS_NESTED`.
     #
@@ -223,7 +223,7 @@ def monkeypatch_template_render(template_cls: Type[Template]) -> None:
     template_cls.render = _template_render
 
 
-def monkeypatch_include_node(include_node_cls: Type[Node]) -> None:
+def monkeypatch_include_node(include_node_cls: type[Node]) -> None:
     if is_cls_patched(include_node_cls):
         return
 
@@ -231,7 +231,7 @@ def monkeypatch_include_node(include_node_cls: Type[Node]) -> None:
     include_node_cls._djc_patched = True
 
 
-def monkeypatch_include_render(include_node_cls: Type[Node]) -> None:
+def monkeypatch_include_render(include_node_cls: type[Node]) -> None:
     # Modify `IncludeNode.render()` (what renders `{% include %}` tag) so that the included
     # template does NOT render the JS/CSS by itself.
     #
@@ -262,7 +262,7 @@ def monkeypatch_include_render(include_node_cls: Type[Node]) -> None:
     include_node_cls.render = _include_render
 
 
-def monkeypatch_inclusion_node(inclusion_node_cls: Type[Node]) -> None:
+def monkeypatch_inclusion_node(inclusion_node_cls: type[Node]) -> None:
     if is_cls_patched(inclusion_node_cls):
         return
 
@@ -274,7 +274,7 @@ def monkeypatch_inclusion_node(inclusion_node_cls: Type[Node]) -> None:
 # Patch `InclusionNode.__init__` so that `InclusionNode.func` returns also `{"_DJC_INSIDE_INCLUSION_TAG": True}`.
 # This is then used in `Template.render()` so that we can detect if template was rendered inside an inclusion tag.
 # See https://github.com/django-components/django-components/issues/1390
-def monkeypatch_inclusion_init(inclusion_node_cls: Type[Node]) -> None:
+def monkeypatch_inclusion_init(inclusion_node_cls: type[Node]) -> None:
     original_init = inclusion_node_cls.__init__
 
     # NOTE: Function signature of InclusionNode.__init__ hasn't changed in 9 years, so we can safely patch it.
@@ -303,7 +303,7 @@ def monkeypatch_inclusion_init(inclusion_node_cls: Type[Node]) -> None:
     inclusion_node_cls.__init__ = __init__
 
 
-def monkeypatch_inclusion_render(inclusion_node_cls: Type[Node]) -> None:
+def monkeypatch_inclusion_render(inclusion_node_cls: type[Node]) -> None:
     # Modify `InclusionNode.render()`  so that the included
     # template does NOT render the JS/CSS by itself.
     #
@@ -345,7 +345,7 @@ def monkeypatch_template_proxy_cls() -> None:
     TemplateProxy._djc_patched = True
 
 
-def monkeypatch_template_proxy_render(template_proxy_cls: Type[Any]) -> None:
+def monkeypatch_template_proxy_render(template_proxy_cls: type[Any]) -> None:
     # NOTE: TemplateProxy.render() is same logic as Template.render(), just duplicated.
     # So we can instead reuse Template.render()
     def _template_proxy_render(self: Any, context: Context, *_args: Any, **_kwargs: Any) -> str:
@@ -365,5 +365,5 @@ def monkeypatch_template_proxy_render(template_proxy_cls: Type[Any]) -> None:
         template_proxy_cls._render = _render
 
 
-def is_cls_patched(cls: Type[Any]) -> bool:
+def is_cls_patched(cls: type[Any]) -> bool:
     return getattr(cls, "_djc_patched", False)

@@ -1,15 +1,14 @@
 import importlib.util
 import sys
 from pathlib import Path
-from typing import List, Set
 
 from django.conf import settings
 
 # Keep track of what we've already discovered to make subsequent calls a noop
-_discovered_examples: Set[str] = set()
+_discovered_examples: set[str] = set()
 
 
-def discover_example_modules() -> List[str]:
+def discover_example_modules() -> list[str]:
     """
     Find and import `component.py` and `page.py` files from example directories
     `docs/examples/*/` (e.g. `docs/examples/form/component.py`).

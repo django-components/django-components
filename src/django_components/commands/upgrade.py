@@ -2,7 +2,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 from django.conf import settings
 from django.template.engine import Engine
@@ -34,7 +34,7 @@ class UpgradeCommand(ComponentCommand):
         if options["path"]:
             dirs = [options["path"]]
 
-        all_files: List[Path] = []
+        all_files: list[Path] = []
 
         for dir_path in dirs:
             print(f"Searching for components in {dir_path}...")

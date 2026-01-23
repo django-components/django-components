@@ -1,4 +1,4 @@
-from typing import Any, Dict, NamedTuple, Optional
+from typing import Any, NamedTuple
 
 from django.template import Context, TemplateSyntaxError
 from django.utils.safestring import SafeString
@@ -105,7 +105,7 @@ def get_injected_context_var(
     component_id: str,
     component_name: str,
     key: str,
-    default: Optional[Any] = None,
+    default: Any | None = None,
 ) -> Any:
     """
     Retrieve a 'provided' field. The field MUST have been previously 'provided'
@@ -136,7 +136,7 @@ def get_injected_context_var(
 def set_provided_context_var(
     context: Context,
     key: str,
-    provided_kwargs: Dict[str, Any],
+    provided_kwargs: dict[str, Any],
 ) -> str:
     """
     'Provide' given data under given key. In other words, this data can be retrieved

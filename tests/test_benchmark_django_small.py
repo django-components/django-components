@@ -4,7 +4,7 @@
 # - https://github.com/django-components/django-components/pull/999
 
 from pathlib import Path
-from typing import Dict, Literal, NamedTuple, Optional, Union
+from typing import Literal, NamedTuple, TypeAlias
 
 import django
 from django.conf import settings
@@ -60,7 +60,7 @@ else:
 #
 #####################################
 
-templates_cache: Dict[int, Template] = {}
+templates_cache: dict[int, Template] = {}
 
 
 def lazy_load_template(template: str) -> Template:
@@ -101,8 +101,8 @@ def render(data: "ButtonData"):
 # THEME
 #####################################
 
-ThemeColor = Literal["default", "error", "success", "alert", "info"]
-ThemeVariant = Literal["primary", "secondary"]
+ThemeColor: TypeAlias = Literal["default", "error", "success", "alert", "info"]
+ThemeVariant: TypeAlias = Literal["primary", "secondary"]
 
 VARIANTS = ["primary", "secondary"]
 
@@ -213,9 +213,9 @@ theme = Theme(
 
 
 def get_styling_css(
-    variant: Optional["ThemeVariant"] = None,
-    color: Optional["ThemeColor"] = None,
-    disabled: Optional[bool] = None,
+    variant: "ThemeVariant | None" = None,
+    color: "ThemeColor | None" = None,
+    disabled: bool | None = None,
 ):
     """
     Dynamically access CSS styling classes for a specific variant and state.
@@ -277,14 +277,14 @@ button_template_str: types.django_html = """
 
 
 class ButtonData(NamedTuple):
-    href: Optional[str] = None
-    link: Optional[bool] = None
-    disabled: Optional[bool] = False
-    variant: Union["ThemeVariant", Literal["plain"]] = "primary"
-    color: Union["ThemeColor", str] = "default"
-    type: Optional[str] = "button"
-    attrs: Optional[dict] = None
-    slot_content: Optional[str] = ""
+    href: str | None = None
+    link: bool | None = None
+    disabled: bool | None = False
+    variant: "ThemeVariant | Literal['plain']" = "primary"
+    color: "ThemeColor | str" = "default"
+    type: str | None = "button"
+    attrs: dict | None = None
+    slot_content: str | None = ""
 
 
 def button(context: Context, data: ButtonData):

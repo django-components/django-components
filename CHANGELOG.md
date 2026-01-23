@@ -1,5 +1,11 @@
 # Release notes
 
+## v0.147.0
+
+#### Breaking changes 🚨📢
+
+- Dropped support for Python 3.8 and 3.9.
+
 ## v0.146.0
 
 `django-components` is now tested across all major browsers - Chromium, Firefox, WebKit.

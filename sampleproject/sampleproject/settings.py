@@ -3,7 +3,6 @@ import os
 import secrets
 import sys
 from pathlib import Path
-from typing import List
 
 from django_components import ComponentsSettings
 
@@ -21,7 +20,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", secrets.token_hex(100))
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS: List[str] = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS: list[str] = ["127.0.0.1", "localhost"]
 
 
 INSTALLED_APPS = [

@@ -5,7 +5,7 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 
 import os
 import re
-from typing import Any, List, Literal, Optional
+from typing import Any, Literal
 
 import pytest
 from django.conf import settings
@@ -1678,14 +1678,14 @@ class TestComponentRender:
 
 @djc_test
 class TestComponentHook:
-    def _gen_slotted_component(self, calls: List[str]):
+    def _gen_slotted_component(self, calls: list[str]):
         class Slotted(Component):
             template = "Hello from slotted"
 
-            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+            def on_render_before(self, context: Context, template: Template | None) -> None:
                 calls.append("slotted__on_render_before")
 
-            def on_render(self, context: Context, template: Optional[Template]):
+            def on_render(self, context: Context, template: Template | None):
                 calls.append("slotted__on_render_pre")
                 _html, _error = yield lambda: template.render(context)  # type: ignore[union-attr]
 
@@ -1695,15 +1695,15 @@ class TestComponentHook:
             def on_render_after(
                 self,
                 context: Context,
-                template: Optional[Template],
-                html: Optional[str],
-                error: Optional[Exception],
+                template: Template | None,
+                html: str | None,
+                error: Exception | None,
             ) -> None:
                 calls.append("slotted__on_render_after")
 
         return Slotted
 
-    def _gen_inner_component(self, calls: List[str]):
+    def _gen_inner_component(self, calls: list[str]):
         class Inner(Component):
             template: types.django_html = """
                 {% load component_tags %}
@@ -1712,10 +1712,10 @@ class TestComponentHook:
                 Inner end
             """
 
-            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+            def on_render_before(self, context: Context, template: Template | None) -> None:
                 calls.append("inner__on_render_before")
 
-            def on_render(self, context: Context, template: Optional[Template]):
+            def on_render(self, context: Context, template: Template | None):
                 calls.append("inner__on_render_pre")
                 if template is None:
                     yield None
@@ -1728,15 +1728,15 @@ class TestComponentHook:
             def on_render_after(
                 self,
                 context: Context,
-                template: Optional[Template],
-                html: Optional[str],
-                error: Optional[Exception],
+                template: Template | None,
+                html: str | None,
+                error: Exception | None,
             ) -> None:
                 calls.append("inner__on_render_after")
 
         return Inner
 
-    def _gen_middle_component(self, calls: List[str]):
+    def _gen_middle_component(self, calls: list[str]):
         class Middle(Component):
             template: types.django_html = """
                 {% load component_tags %}
@@ -1749,10 +1749,10 @@ class TestComponentHook:
                 Middle end
             """
 
-            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+            def on_render_before(self, context: Context, template: Template | None) -> None:
                 calls.append("middle__on_render_before")
 
-            def on_render(self, context: Context, template: Optional[Template]):
+            def on_render(self, context: Context, template: Template | None):
                 calls.append("middle__on_render_pre")
                 _html, _error = yield lambda: template.render(context)  # type: ignore[union-attr]
 
@@ -1762,15 +1762,15 @@ class TestComponentHook:
             def on_render_after(
                 self,
                 context: Context,
-                template: Optional[Template],
-                html: Optional[str],
-                error: Optional[Exception],
+                template: Template | None,
+                html: str | None,
+                error: Exception | None,
             ) -> None:
                 calls.append("middle__on_render_after")
 
         return Middle
 
-    def _gen_outer_component(self, calls: List[str]):
+    def _gen_outer_component(self, calls: list[str]):
         class Outer(Component):
             template: types.django_html = """
                 {% load component_tags %}
@@ -1781,10 +1781,10 @@ class TestComponentHook:
                 Outer end
             """
 
-            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+            def on_render_before(self, context: Context, template: Template | None) -> None:
                 calls.append("outer__on_render_before")
 
-            def on_render(self, context: Context, template: Optional[Template]):
+            def on_render(self, context: Context, template: Template | None):
                 calls.append("outer__on_render_pre")
                 _html, _error = yield lambda: template.render(context)  # type: ignore[union-attr]
 
@@ -1794,9 +1794,9 @@ class TestComponentHook:
             def on_render_after(
                 self,
                 context: Context,
-                template: Optional[Template],
-                html: Optional[str],
-                error: Optional[Exception],
+                template: Template | None,
+                html: str | None,
+                error: Exception | None,
             ) -> None:
                 calls.append("outer__on_render_after")
 
@@ -1810,7 +1810,7 @@ class TestComponentHook:
         return BrokenComponent
 
     def test_order(self):
-        calls: List[str] = []
+        calls: list[str] = []
 
         registry.register("slotted", self._gen_slotted_component(calls))
         registry.register("inner", self._gen_inner_component(calls))
@@ -1916,8 +1916,8 @@ class TestComponentHook:
                 self,
                 context: Context,
                 template: Template,
-                html: Optional[str],
-                error: Optional[Exception],
+                html: str | None,
+                error: Exception | None,
             ) -> None:
                 context["from_on_after"] = "4"
                 # Check we can modify entries set by other methods
@@ -1968,8 +1968,8 @@ class TestComponentHook:
                 self,
                 context: Context,
                 template: Template,
-                html: Optional[str],
-                error: Optional[Exception],
+                html: str | None,
+                error: Exception | None,
             ) -> None:
                 template.nodelist.append(TextNode("\n---\nFROM_ON_AFTER"))
 
@@ -2084,7 +2084,7 @@ class TestComponentHook:
                 {% endif %}
             """
 
-            def on_render(self, context: Context, template: Optional[Template]):
+            def on_render(self, context: Context, template: Template | None):
                 assert template is not None
 
                 with context.push({"case": 1}):
@@ -2162,11 +2162,11 @@ class TestComponentHook:
     )
     def test_result_interception(
         self,
-        template: Optional[Literal["simple", "broken"]],
+        template: Literal["simple", "broken"] | None,
         action: Literal["return_none", "no_return", "raise_error", "return_html"],
         method: Literal["on_render", "on_render_after"],
     ):
-        calls: List[str] = []
+        calls: list[str] = []
 
         Broken = self._gen_broken_component()
         Slotted = self._gen_slotted_component(calls)
@@ -2195,7 +2195,7 @@ class TestComponentHook:
             if action == "return_none":
 
                 class Inner(Inner):  # type: ignore  # noqa: PGH003
-                    def on_render(self, context: Context, template: Optional[Template]):
+                    def on_render(self, context: Context, template: Template | None):
                         if template is None:
                             yield None
                         else:
@@ -2205,7 +2205,7 @@ class TestComponentHook:
             elif action == "no_return":
 
                 class Inner(Inner):  # type: ignore  # noqa: PGH003
-                    def on_render(self, context: Context, template: Optional[Template]):
+                    def on_render(self, context: Context, template: Template | None):
                         if template is None:
                             yield None
                         else:
@@ -2214,7 +2214,7 @@ class TestComponentHook:
             elif action == "raise_error":
 
                 class Inner(Inner):  # type: ignore  # noqa: PGH003
-                    def on_render(self, context: Context, template: Optional[Template]):
+                    def on_render(self, context: Context, template: Template | None):
                         if template is None:
                             yield None
                         else:
@@ -2224,7 +2224,7 @@ class TestComponentHook:
             elif action == "return_html":
 
                 class Inner(Inner):  # type: ignore  # noqa: PGH003
-                    def on_render(self, context: Context, template: Optional[Template]):
+                    def on_render(self, context: Context, template: Template | None):
                         if template is None:
                             yield None
                         else:
@@ -2243,8 +2243,8 @@ class TestComponentHook:
                         self,
                         context: Context,
                         template: Template,
-                        html: Optional[str],
-                        error: Optional[Exception],
+                        html: str | None,
+                        error: Exception | None,
                     ):
                         return None
 
@@ -2255,8 +2255,8 @@ class TestComponentHook:
                         self,
                         context: Context,
                         template: Template,
-                        html: Optional[str],
-                        error: Optional[Exception],
+                        html: str | None,
+                        error: Exception | None,
                     ):
                         pass
 
@@ -2267,8 +2267,8 @@ class TestComponentHook:
                         self,
                         context: Context,
                         template: Template,
-                        html: Optional[str],
-                        error: Optional[Exception],
+                        html: str | None,
+                        error: Exception | None,
                     ):
                         raise ValueError("ERROR_FROM_ON_RENDER")
 
@@ -2279,8 +2279,8 @@ class TestComponentHook:
                         self,
                         context: Context,
                         template: Template,
-                        html: Optional[str],
-                        error: Optional[Exception],
+                        html: str | None,
+                        error: Exception | None,
                     ):
                         return "HTML_FROM_ON_RENDER"
 

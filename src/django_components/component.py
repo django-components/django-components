@@ -1,22 +1,14 @@
 # ruff: noqa: ARG002, N804, N805
-import sys
+from collections.abc import Callable, Generator, Mapping
 from dataclasses import dataclass, is_dataclass
 from inspect import signature
 from types import MethodType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
-    Dict,
-    Generator,
-    List,
-    Mapping,
     NamedTuple,
-    Optional,
-    Tuple,
-    Type,
-    Union,
+    TypeAlias,
     cast,
 )
 from weakref import ReferenceType, WeakKeyDictionary, WeakValueDictionary, finalize, ref
@@ -105,23 +97,16 @@ if TYPE_CHECKING:
 COMP_ONLY_FLAG = "only"
 
 
-# NOTE: `ReferenceType` is NOT a generic pre-3.9
-if sys.version_info >= (3, 9):
-    AllComponents = List[ReferenceType[Type["Component"]]]
-    CompHashMapping = WeakValueDictionary[str, Type["Component"]]
-    ComponentRef = ReferenceType["Component"]
-    StartedGenerators = WeakKeyDictionary["OnRenderGenerator", bool]
-else:
-    AllComponents = List[ReferenceType]
-    CompHashMapping = WeakValueDictionary
-    ComponentRef = ReferenceType
-    StartedGenerators = WeakKeyDictionary
+AllComponents: TypeAlias = list[ReferenceType[type["Component"]]]
+CompHashMapping: TypeAlias = WeakValueDictionary[str, type["Component"]]
+ComponentRef: TypeAlias = ReferenceType["Component"]
+StartedGenerators: TypeAlias = WeakKeyDictionary["OnRenderGenerator", bool]
 
 
-OnRenderGenerator = Generator[
-    Optional[Union[SlotResult, Callable[[], SlotResult]]],
-    Tuple[Optional[SlotResult], Optional[Exception]],
-    Optional[SlotResult],
+OnRenderGenerator: TypeAlias = Generator[
+    SlotResult | Callable[[], SlotResult] | None,
+    tuple[SlotResult | None, Exception | None],
+    SlotResult | None,
 ]
 """
 This is the signature of the [`Component.on_render()`](../api/#django_components.Component.on_render)
@@ -152,7 +137,7 @@ class MyTable(Component):
     def on_render(
         self,
         context: Context,
-        template: Optional[Template],
+        template: Template | None,
     ) -> OnRenderGenerator:
         # Do something BEFORE rendering template
         # Same as `Component.on_render_before()`
@@ -198,9 +183,9 @@ class MyTable(Component):
 ALL_COMPONENTS: AllComponents = []
 
 
-def all_components() -> List[Type["Component"]]:
+def all_components() -> list[type["Component"]]:
     """Get a list of all created [`Component`](../api#django_components.Component) classes."""
-    components: List[Type[Component]] = []
+    components: list[type[Component]] = []
     for comp_ref in ALL_COMPONENTS:
         comp = comp_ref()
         if comp is not None:
@@ -231,7 +216,7 @@ def all_components() -> List[Type["Component"]]:
 comp_cls_id_mapping: CompHashMapping = WeakValueDictionary()
 
 
-def get_component_by_class_id(comp_cls_id: str) -> Type["Component"]:
+def get_component_by_class_id(comp_cls_id: str) -> type["Component"]:
     """
     Get a component class by its unique ID.
 
@@ -268,11 +253,11 @@ class ComponentInput:
     Django's [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
     passed to `Component.render()`
     """
-    args: List
+    args: list
     """Positional arguments (as list) passed to `Component.render()`"""
-    kwargs: Dict
+    kwargs: dict
     """Keyword arguments (as dict) passed to `Component.render()`"""
-    slots: Dict[SlotName, Slot]
+    slots: dict[SlotName, Slot]
     """Slots (as dict) passed to `Component.render()`"""
     deps_strategy: DependenciesStrategy
     """Dependencies strategy passed to `Component.render()`"""
@@ -452,7 +437,7 @@ class ComponentVars(NamedTuple):
     """
 
     # TODO_v1 - Remove, superseded by `component_vars.slots`
-    is_filled: Dict[str, bool]
+    is_filled: dict[str, bool]
     """
     Deprecated. Will be removed in v1. Use [`component_vars.slots`](../template_vars#django_components.component.ComponentVars.slots) instead.
     Note that `component_vars.slots` no longer escapes the slot names.
@@ -490,23 +475,23 @@ def _gen_component_id() -> str:
     return COMP_ID_PREFIX + gen_id()
 
 
-def _get_component_name(cls: Type["Component"], registered_name: Optional[str] = None) -> str:
+def _get_component_name(cls: type["Component"], registered_name: str | None = None) -> str:
     return default(registered_name, cls.__name__)
 
 
 # Descriptor to pass getting/setting of `template_name` onto `template_file`
 class ComponentTemplateNameDescriptor:
-    def __get__(self, instance: Optional["Component"], cls: Type["Component"]) -> Any:
+    def __get__(self, instance: "Component | None", cls: type["Component"]) -> Any:
         obj = default(instance, cls)
         return obj.template_file  # type: ignore[attr-defined]
 
-    def __set__(self, instance_or_cls: Union["Component", Type["Component"]], value: Any) -> None:
+    def __set__(self, instance_or_cls: "Component | type[Component]", value: Any) -> None:
         cls = instance_or_cls if isinstance(instance_or_cls, type) else instance_or_cls.__class__
         cls.template_file = value
 
 
 class ComponentMeta(ComponentMediaMeta):
-    def __new__(mcs, name: str, bases: Tuple[Type, ...], attrs: Dict) -> Type:
+    def __new__(mcs, name: str, bases: tuple[type, ...], attrs: dict) -> type:
         # If user set `template_name` on the class, we instead set it to `template_file`,
         # because we want `template_name` to be the descriptor that proxies to `template_file`.
         if "template_name" in attrs:
@@ -545,7 +530,7 @@ class ComponentMeta(ComponentMediaMeta):
                 continue
             attrs[data_class_name] = convert_class_to_namedtuple(data_class)
 
-        cls = cast("Type[Component]", super().__new__(mcs, name, bases, attrs))
+        cls = cast("type[Component]", super().__new__(mcs, name, bases, attrs))
 
         # If the component defined `template_file`, then associate this Component class
         # with that template file path.
@@ -565,8 +550,8 @@ class ComponentMeta(ComponentMediaMeta):
                 context: Context,
                 template: Template,
                 result: str,
-                _error: Optional[Exception],
-            ) -> Optional[SlotResult]:
+                _error: Exception | None,
+            ) -> SlotResult | None:
                 return orig_on_render_after(self, context, template, result)  # type: ignore[call-arg]
 
             cls.on_render_after = on_render_after_wrapper  # type: ignore[assignment]
@@ -579,7 +564,7 @@ class ComponentMeta(ComponentMediaMeta):
         if not extensions:
             return
 
-        comp_cls = cast("Type[Component]", cls)
+        comp_cls = cast("type[Component]", cls)
         extensions.on_component_class_deleted(OnComponentClassDeletedContext(comp_cls))
 
 
@@ -587,15 +572,12 @@ class ComponentMeta(ComponentMediaMeta):
 @dataclass
 class ComponentTreeContext:
     # HTML attributes that are passed from parent to child components
-    component_attrs: Dict[str, List[str]]
+    component_attrs: dict[str, list[str]]
     # When we render a component, the root component, together with all the nested Components,
     # shares these dictionaries for storing callbacks.
     # These callbacks are called from within `component_post_render`
-    on_component_intermediate_callbacks: Dict[str, Callable[[Optional[str]], Optional[str]]]
-    on_component_rendered_callbacks: Dict[
-        str,
-        Callable[[Optional[str], Optional[Exception]], OnComponentRenderedResult],
-    ]
+    on_component_intermediate_callbacks: dict[str, Callable[[str | None], str | None]]
+    on_component_rendered_callbacks: dict[str, Callable[[str | None, Exception | None], OnComponentRenderedResult]]
     # Track which generators have been started. We need this info because the input to
     # `Generator.send()` changes when calling it the first time vs subsequent times.
     # Moreover, we can't simply store this directly on the generator object themselves
@@ -608,10 +590,10 @@ class ComponentTreeContext:
 @dataclass
 class ComponentContext:
     component: ComponentRef
-    component_path: List[str]
-    template_name: Optional[str]
-    default_slot: Optional[str]
-    outer_context: Optional[Context]
+    component_path: list[str]
+    template_name: str | None
+    default_slot: str | None
+    outer_context: Context | None
     tree: ComponentTreeContext
 
 
@@ -626,7 +608,7 @@ class Component(metaclass=ComponentMeta):
     # PUBLIC API (Configurable by users)
     # #####################################
 
-    Args: ClassVar[Optional[Type]] = None
+    Args: ClassVar[type | None] = None
     """
     Optional typing for positional arguments passed to the component.
 
@@ -686,7 +668,7 @@ class Component(metaclass=ComponentMeta):
     Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
     """
 
-    Kwargs: ClassVar[Optional[Type]] = None
+    Kwargs: ClassVar[type | None] = None
     """
     Optional typing for keyword arguments passed to the component.
 
@@ -752,7 +734,7 @@ class Component(metaclass=ComponentMeta):
     Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
     """
 
-    Slots: ClassVar[Optional[Type]] = None
+    Slots: ClassVar[type | None] = None
     """
     Optional typing for slots passed to the component.
 
@@ -831,7 +813,7 @@ class Component(metaclass=ComponentMeta):
         [`SlotInput`](../api#django_components.SlotInput) is a union of `Slot`, string, and function types.
     """
 
-    template_file: ClassVar[Optional[str]] = None
+    template_file: ClassVar[str | None] = None
     """
     Filepath to the Django template associated with this component.
 
@@ -885,7 +867,7 @@ class Component(metaclass=ComponentMeta):
 
     # NOTE: This attribute is managed by `ComponentTemplateNameDescriptor` that's set in the metaclass.
     #       But we still define it here for documenting and type hinting.
-    template_name: ClassVar[Optional[str]]
+    template_name: ClassVar[str | None] = None
     """
     Alias for [`template_file`](../api#django_components.Component.template_file).
 
@@ -901,7 +883,7 @@ class Component(metaclass=ComponentMeta):
     """
 
     # TODO_v1 - Remove
-    def get_template_name(self, context: Context) -> Optional[str]:
+    def get_template_name(self, context: Context) -> str | None:
         """
         DEPRECATED: Use instead [`Component.template_file`](../api#django_components.Component.template_file),
         [`Component.template`](../api#django_components.Component.template) or
@@ -938,12 +920,12 @@ class Component(metaclass=ComponentMeta):
                 in which the component is rendered.
 
         Returns:
-            Optional[str]: The filepath to the template.
+            str | None: The filepath to the template.
 
         """
         return None
 
-    template: Optional[str] = None
+    template: str | None = None
     """
     Inlined Django template (as a plain string) associated with this component.
 
@@ -988,7 +970,7 @@ class Component(metaclass=ComponentMeta):
     """
 
     # TODO_v1 - Remove
-    def get_template(self, context: Context) -> Optional[Union[str, Template]]:
+    def get_template(self, context: Context) -> str | Template | None:
         """
         DEPRECATED: Use instead [`Component.template_file`](../api#django_components.Component.template_file),
         [`Component.template`](../api#django_components.Component.template) or
@@ -1027,14 +1009,14 @@ class Component(metaclass=ComponentMeta):
             in which the component is rendered.
 
         Returns:
-            Optional[Union[str, Template]]: The inlined Django template string or\
+            str | Template | None: The inlined Django template string or\
             a [`Template`](https://docs.djangoproject.com/en/5.1/topics/templates/#template) instance.
 
         """
         return None
 
     # TODO_V2 - Remove this in v2
-    def get_context_data(self, *_args: Any, **_kwargs: Any) -> Optional[Mapping]:
+    def get_context_data(self, *_args: Any, **_kwargs: Any) -> Mapping | None:
         """
         DEPRECATED: Use [`get_template_data()`](../api#django_components.Component.get_template_data) instead.
         Will be removed in v2.
@@ -1071,7 +1053,7 @@ class Component(metaclass=ComponentMeta):
         """
         return None
 
-    def get_template_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Optional[Mapping]:
+    def get_template_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Mapping | None:
         """
         Use this method to define variables that will be available in the template.
 
@@ -1203,7 +1185,7 @@ class Component(metaclass=ComponentMeta):
         """
         return None
 
-    TemplateData: ClassVar[Optional[Type]] = None
+    TemplateData: ClassVar[type | None] = None
     """
     Optional typing for the data to be returned from
     [`get_template_data()`](../api#django_components.Component.get_template_data).
@@ -1281,7 +1263,7 @@ class Component(metaclass=ComponentMeta):
             ```
     """
 
-    js: Optional[str] = None
+    js: str | None = None
     """
     Main JS associated with this component inlined as string.
 
@@ -1314,7 +1296,7 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
-    js_file: ClassVar[Optional[str]] = None
+    js_file: ClassVar[str | None] = None
     """
     Main JS associated with this component as file path.
 
@@ -1354,7 +1336,7 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
-    def get_js_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Optional[Mapping]:
+    def get_js_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Mapping | None:
         """
         Use this method to define variables that will be available from within the component's JavaScript code.
 
@@ -1485,7 +1467,7 @@ class Component(metaclass=ComponentMeta):
         """
         return None
 
-    JsData: ClassVar[Optional[Type]] = None
+    JsData: ClassVar[type | None] = None
     """
     Optional typing for the data to be returned from
     [`get_js_data()`](../api#django_components.Component.get_js_data).
@@ -1563,7 +1545,7 @@ class Component(metaclass=ComponentMeta):
             ```
     """
 
-    css: Optional[str] = None
+    css: str | None = None
     """
     Main CSS associated with this component inlined as string.
 
@@ -1602,7 +1584,7 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
-    css_file: ClassVar[Optional[str]] = None
+    css_file: ClassVar[str | None] = None
     """
     Main CSS associated with this component as file path.
 
@@ -1647,7 +1629,7 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
-    def get_css_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Optional[Mapping]:
+    def get_css_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Mapping | None:
         """
         Use this method to define variables that will be available from within the component's CSS code.
 
@@ -1775,7 +1757,7 @@ class Component(metaclass=ComponentMeta):
         """
         return None
 
-    CssData: ClassVar[Optional[Type]] = None
+    CssData: ClassVar[type | None] = None
     """
     Optional typing for the data to be returned from
     [`get_css_data()`](../api#django_components.Component.get_css_data).
@@ -1853,7 +1835,7 @@ class Component(metaclass=ComponentMeta):
             ```
     """
 
-    media: Optional[MediaCls] = None
+    media: MediaCls | None = None
     """
     Normalized definition of JS and CSS media files associated with this component.
     `None` if [`Component.Media`](../api#django_components.Component.Media) is not defined.
@@ -1877,7 +1859,7 @@ class Component(metaclass=ComponentMeta):
     ```
     """  # noqa: E501
 
-    media_class: ClassVar[Type[MediaCls]] = MediaCls
+    media_class: ClassVar[type[MediaCls]] = MediaCls
     """
     Set the [Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#assets-as-a-static-definition)
     that will be instantiated with the JS and CSS media files from
@@ -1900,7 +1882,7 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
-    Media: ClassVar[Optional[Type[ComponentMediaInput]]] = None
+    Media: ClassVar[type[ComponentMediaInput] | None] = None
     """
     Defines JS and CSS media files associated with this component.
 
@@ -1944,7 +1926,7 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
-    response_class: ClassVar[Type[HttpResponse]] = HttpResponse
+    response_class: ClassVar[type[HttpResponse]] = HttpResponse
     """
     This attribute configures what class is used to generate response from
     [`Component.render_to_response()`](../api/#django_components.Component.render_to_response).
@@ -1975,7 +1957,7 @@ class Component(metaclass=ComponentMeta):
     # PUBLIC API - HOOKS (Configurable by users)
     # #####################################
 
-    def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+    def on_render_before(self, context: Context, template: Template | None) -> None:
         """
         Runs just before the component's template is rendered.
 
@@ -1986,7 +1968,7 @@ class Component(metaclass=ComponentMeta):
             context (Context): The Django
                 [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
                 that will be used to render the component's template.
-            template (Optional[Template]): The Django
+            template (Template | None): The Django
                 [Template](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
                 instance that will be rendered, or `None` if no template.
 
@@ -2002,7 +1984,7 @@ class Component(metaclass=ComponentMeta):
         from django_components import Component
 
         class MyTable(Component):
-            def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+            def on_render_before(self, context: Context, template: Template | None) -> None:
                 # Insert value into the Context
                 context["from_on_before"] = ":)"
 
@@ -2024,7 +2006,7 @@ class Component(metaclass=ComponentMeta):
 
         """
 
-    def on_render(self, context: Context, template: Optional[Template]) -> Union[SlotResult, OnRenderGenerator, None]:
+    def on_render(self, context: Context, template: Template | None) -> SlotResult | OnRenderGenerator | None:
         """
         This method does the actual rendering.
 
@@ -2170,10 +2152,10 @@ class Component(metaclass=ComponentMeta):
     def on_render_after(
         self,
         context: Context,
-        template: Optional[Template],
-        result: Optional[str],
-        error: Optional[Exception],
-    ) -> Optional[SlotResult]:
+        template: Template | None,
+        result: str | None,
+        error: Exception | None,
+    ) -> SlotResult | None:
         """
         Hook that runs when the component was fully rendered,
         including all its children.
@@ -2248,7 +2230,7 @@ class Component(metaclass=ComponentMeta):
 
     # NOTE: These are the classes and instances added by defaults extensions. These fields
     # are actually set at runtime, and so here they are only marked for typing.
-    Cache: ClassVar[Type[ComponentCache]]
+    Cache: ClassVar[type[ComponentCache]]
     """
     The fields of this class are used to configure the component caching.
 
@@ -2270,7 +2252,7 @@ class Component(metaclass=ComponentMeta):
     """
     Instance of [`ComponentCache`](../api#django_components.ComponentCache) available at component render time.
     """
-    Defaults: ClassVar[Type[ComponentDefaults]]
+    Defaults: ClassVar[type[ComponentDefaults]]
     """
     The fields of this class are used to set default values for the component's kwargs.
 
@@ -2293,7 +2275,7 @@ class Component(metaclass=ComponentMeta):
     """
     Instance of [`ComponentDefaults`](../api#django_components.ComponentDefaults) available at component render time.
     """
-    View: ClassVar[Type[ComponentView]]
+    View: ClassVar[type[ComponentView]]
     """
     The fields of this class are used to configure the component views and URLs.
 
@@ -2319,7 +2301,7 @@ class Component(metaclass=ComponentMeta):
     """
     Instance of [`ComponentView`](../api#django_components.ComponentView) available at component render time.
     """
-    DebugHighlight: ClassVar[Type[ComponentDebugHighlight]]
+    DebugHighlight: ClassVar[type[ComponentDebugHighlight]]
     """
     The fields of this class are used to configure the component debug highlighting.
 
@@ -2344,7 +2326,7 @@ class Component(metaclass=ComponentMeta):
         """Deprecated. Use `Component.class_id` instead."""
         return self.class_id
 
-    _template: Optional[Template] = None
+    _template: Template | None = None
     """
     Cached [`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
     instance for the [`Component`](../api#django_components.Component),
@@ -2366,17 +2348,17 @@ class Component(metaclass=ComponentMeta):
     # TODO_v1 - Change params order to match `Component.render()`
     def __init__(
         self,
-        registered_name: Optional[str] = None,
-        outer_context: Optional[Context] = None,
-        registry: Optional[ComponentRegistry] = None,  # noqa: F811
-        context: Optional[Context] = None,
-        args: Optional[Any] = None,
-        kwargs: Optional[Any] = None,
-        slots: Optional[Any] = None,
-        deps_strategy: Optional[DependenciesStrategy] = None,
-        request: Optional[HttpRequest] = None,
-        node: Optional["ComponentNode"] = None,
-        id: Optional[str] = None,  # noqa: A002
+        registered_name: str | None = None,
+        outer_context: Context | None = None,
+        registry: ComponentRegistry | None = None,  # noqa: F811
+        context: Context | None = None,
+        args: Any | None = None,
+        kwargs: Any | None = None,
+        slots: Any | None = None,
+        deps_strategy: DependenciesStrategy | None = None,
+        request: HttpRequest | None = None,
+        node: "ComponentNode | None" = None,
+        id: str | None = None,  # noqa: A002
     ) -> None:
         # TODO_v1 - Remove this whole block in v1. This is for backwards compatibility with pre-v0.140
         #           where one could do:
@@ -2422,13 +2404,13 @@ class Component(metaclass=ComponentMeta):
 
         self.id = default(id, _gen_component_id, factory=True)  # type: ignore[arg-type]
         self.name = _get_component_name(self.__class__, registered_name)
-        self.registered_name: Optional[str] = registered_name
+        self.registered_name: str | None = registered_name
         self.args = default(args, [])
         self.kwargs = default(kwargs, {})
         self.slots = default(slots, {})
-        self.raw_args: List[Any] = self.args if isinstance(self.args, list) else list(self.args)
-        self.raw_kwargs: Dict[str, Any] = self.kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)
-        self.raw_slots: Dict[str, Slot] = self.slots if isinstance(self.slots, dict) else to_dict(self.slots)
+        self.raw_args: list[Any] = self.args if isinstance(self.args, list) else list(self.args)
+        self.raw_kwargs: dict[str, Any] = self.kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)
+        self.raw_slots: dict[str, Slot] = self.slots if isinstance(self.slots, dict) else to_dict(self.slots)
         self.context = default(context, Context())
         # TODO_v1 - Remove `is_filled`, superseded by `Component.slots`
         self.is_filled = SlotIsFilled(to_dict(self.slots))
@@ -2436,9 +2418,9 @@ class Component(metaclass=ComponentMeta):
         self.input = ComponentInput(
             context=self.context,
             # NOTE: Convert args / kwargs / slots to plain lists / dicts
-            args=cast("List", args if isinstance(self.args, list) else list(self.args)),
-            kwargs=cast("Dict", kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)),
-            slots=cast("Dict", slots if isinstance(self.slots, dict) else to_dict(self.slots)),
+            args=cast("list", args if isinstance(self.args, list) else list(self.args)),
+            kwargs=cast("dict", kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)),
+            slots=cast("dict", slots if isinstance(self.slots, dict) else to_dict(self.slots)),
             deps_strategy=deps_strategy,
             # TODO_v1 - Remove, superseded by `deps_strategy`
             type=deps_strategy,
@@ -2447,7 +2429,7 @@ class Component(metaclass=ComponentMeta):
         )
         self.deps_strategy = deps_strategy
         self.request = request
-        self.outer_context: Optional[Context] = outer_context
+        self.outer_context: Context | None = outer_context
         self.registry = default(registry, registry_)
         self.node = node
 
@@ -2495,7 +2477,7 @@ class Component(metaclass=ComponentMeta):
     ```
     """
 
-    registered_name: Optional[str]
+    registered_name: str | None
     """
     If the component was rendered with the [`{% component %}`](../template_tags#component) template tag,
     this will be the name under which the component was registered in
@@ -2624,7 +2606,7 @@ class Component(metaclass=ComponentMeta):
             page: int
             per_page: int
 
-        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+        def on_render_before(self, context: Context, template: Template | None) -> None:
             assert self.args.page == 123
             assert self.args.per_page == 10
 
@@ -2639,13 +2621,13 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component
 
     class Table(Component):
-        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+        def on_render_before(self, context: Context, template: Template | None) -> None:
             assert self.args[0] == 123
             assert self.args[1] == 10
     ```
     """
 
-    raw_args: List[Any]
+    raw_args: list[Any]
     """
     Positional arguments passed to the component.
 
@@ -2661,7 +2643,7 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component
 
     class Table(Component):
-        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+        def on_render_before(self, context: Context, template: Template | None) -> None:
             assert self.raw_args[0] == 123
             assert self.raw_args[1] == 10
     ```
@@ -2695,7 +2677,7 @@ class Component(metaclass=ComponentMeta):
             page: int
             per_page: int
 
-        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+        def on_render_before(self, context: Context, template: Template | None) -> None:
             assert self.kwargs.page == 123
             assert self.kwargs.per_page == 10
 
@@ -2713,13 +2695,13 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component
 
     class Table(Component):
-        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+        def on_render_before(self, context: Context, template: Template | None) -> None:
             assert self.kwargs["page"] == 123
             assert self.kwargs["per_page"] == 10
     ```
     """
 
-    raw_kwargs: Dict[str, Any]
+    raw_kwargs: dict[str, Any]
     """
     Keyword arguments passed to the component.
 
@@ -2738,7 +2720,7 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component
 
     class Table(Component):
-        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+        def on_render_before(self, context: Context, template: Template | None) -> None:
             assert self.raw_kwargs["page"] == 123
             assert self.raw_kwargs["per_page"] == 10
     ```
@@ -2769,7 +2751,7 @@ class Component(metaclass=ComponentMeta):
             header: SlotInput
             footer: SlotInput
 
-        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+        def on_render_before(self, context: Context, template: Template | None) -> None:
             assert isinstance(self.slots.header, Slot)
             assert isinstance(self.slots.footer, Slot)
 
@@ -2787,13 +2769,13 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component, Slot, SlotInput
 
     class Table(Component):
-        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+        def on_render_before(self, context: Context, template: Template | None) -> None:
             assert isinstance(self.slots["header"], Slot)
             assert isinstance(self.slots["footer"], Slot)
     ```
     """
 
-    raw_slots: Dict[str, Slot]
+    raw_slots: dict[str, Slot]
     """
     Slots passed to the component.
 
@@ -2809,7 +2791,7 @@ class Component(metaclass=ComponentMeta):
     from django_components import Component
 
     class Table(Component):
-        def on_render_before(self, context: Context, template: Optional[Template]) -> None:
+        def on_render_before(self, context: Context, template: Template | None) -> None:
             assert self.raw_slots["header"] == "MY_HEADER"
             assert self.raw_slots["footer"] == "FOOTER: " + ctx.data["user_id"]
     ```
@@ -2870,7 +2852,7 @@ class Component(metaclass=ComponentMeta):
         - Used for inserting rendered HTML into other components.
     """
 
-    outer_context: Optional[Context]
+    outer_context: Context | None
     """
     When a component is rendered with the [`{% component %}`](../template_tags#component) tag,
     this is the Django's [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
@@ -2897,7 +2879,7 @@ class Component(metaclass=ComponentMeta):
     that was used to render the component.
     """
 
-    node: Optional["ComponentNode"]
+    node: "ComponentNode | None"
     """
     The [`ComponentNode`](../api/#django_components.ComponentNode) instance
     that was used to render the component.
@@ -2958,7 +2940,7 @@ class Component(metaclass=ComponentMeta):
 
     """
 
-    request: Optional[HttpRequest]
+    request: HttpRequest | None
     """
     [HTTPRequest](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest)
     object passed to this component.
@@ -2988,7 +2970,7 @@ class Component(metaclass=ComponentMeta):
     """
 
     @property
-    def context_processors_data(self) -> Dict:
+    def context_processors_data(self) -> dict:
         """
         Retrieve data injected by
         [`context_processors`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#configuring-an-engine).
@@ -3040,7 +3022,7 @@ class Component(metaclass=ComponentMeta):
     # MISC
     # #####################################
 
-    def inject(self, key: str, default: Optional[Any] = None) -> Any:
+    def inject(self, key: str, default: Any | None = None) -> Any:
         """
         Use this method to retrieve the data that was passed to a [`{% provide %}`](../template_tags#provide) tag
         with the corresponding key.
@@ -3116,21 +3098,21 @@ class Component(metaclass=ComponentMeta):
     @classmethod
     def render_to_response(
         cls,
-        context: Optional[Union[Dict[str, Any], Context]] = None,
-        args: Optional[Any] = None,
-        kwargs: Optional[Any] = None,
-        slots: Optional[Any] = None,
+        context: dict[str, Any] | Context | None = None,
+        args: Any | None = None,
+        kwargs: Any | None = None,
+        slots: Any | None = None,
         deps_strategy: DependenciesStrategy = "document",
         # TODO_v1 - Remove, superseded by `deps_strategy`
-        type: Optional[DependenciesStrategy] = None,  # noqa: A002
+        type: DependenciesStrategy | None = None,  # noqa: A002
         # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
         render_dependencies: bool = True,
-        request: Optional[HttpRequest] = None,
-        outer_context: Optional[Context] = None,
+        request: HttpRequest | None = None,
+        outer_context: Context | None = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: Optional[ComponentRegistry] = None,  # noqa: F811
-        registered_name: Optional[str] = None,
-        node: Optional["ComponentNode"] = None,
+        registry: ComponentRegistry | None = None,  # noqa: F811
+        registered_name: str | None = None,
+        node: "ComponentNode | None" = None,
         **response_kwargs: Any,
     ) -> HttpResponse:
         """
@@ -3206,21 +3188,21 @@ class Component(metaclass=ComponentMeta):
     @classmethod
     def render(
         cls,
-        context: Optional[Union[Dict[str, Any], Context]] = None,
-        args: Optional[Any] = None,
-        kwargs: Optional[Any] = None,
-        slots: Optional[Any] = None,
+        context: dict[str, Any] | Context | None = None,
+        args: Any | None = None,
+        kwargs: Any | None = None,
+        slots: Any | None = None,
         deps_strategy: DependenciesStrategy = "document",
         # TODO_v1 - Remove, superseded by `deps_strategy`
-        type: Optional[DependenciesStrategy] = None,  # noqa: A002
+        type: DependenciesStrategy | None = None,  # noqa: A002
         # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
         render_dependencies: bool = True,
-        request: Optional[HttpRequest] = None,
-        outer_context: Optional[Context] = None,
+        request: HttpRequest | None = None,
+        outer_context: Context | None = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: Optional[ComponentRegistry] = None,  # noqa: F811
-        registered_name: Optional[str] = None,
-        node: Optional["ComponentNode"] = None,
+        registry: ComponentRegistry | None = None,  # noqa: F811
+        registered_name: str | None = None,
+        node: "ComponentNode | None" = None,
     ) -> str:
         """
         Render the component into a string. This is the equivalent of calling
@@ -3373,7 +3355,6 @@ class Component(metaclass=ComponentMeta):
         Read more on [Typing and validation](../../concepts/fundamentals/typing_and_validation).
 
         ```python
-        from typing import Optional
         from django_components import Component, Slot, SlotInput
 
         # Define the component with the types
@@ -3386,7 +3367,7 @@ class Component(metaclass=ComponentMeta):
                 age: int
 
             class Slots:
-                my_slot: Optional[SlotInput] = None
+                my_slot: SlotInput | None = None
                 footer: SlotInput
 
         # Add type hints to the render call
@@ -3435,17 +3416,17 @@ class Component(metaclass=ComponentMeta):
     @classmethod
     def _render_with_error_trace(
         cls,
-        context: Optional[Union[Dict[str, Any], Context]] = None,
-        args: Optional[Any] = None,
-        kwargs: Optional[Any] = None,
-        slots: Optional[Any] = None,
+        context: dict[str, Any] | Context | None = None,
+        args: Any | None = None,
+        kwargs: Any | None = None,
+        slots: Any | None = None,
         deps_strategy: DependenciesStrategy = "document",
-        request: Optional[HttpRequest] = None,
-        outer_context: Optional[Context] = None,
+        request: HttpRequest | None = None,
+        outer_context: Context | None = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: Optional[ComponentRegistry] = None,  # noqa: F811
-        registered_name: Optional[str] = None,
-        node: Optional["ComponentNode"] = None,
+        registry: ComponentRegistry | None = None,  # noqa: F811
+        registered_name: str | None = None,
+        node: "ComponentNode | None" = None,
     ) -> str:
         component_name = _get_component_name(cls, registered_name)
         render_id = _gen_component_id()
@@ -3476,17 +3457,17 @@ class Component(metaclass=ComponentMeta):
     def _render_impl(
         comp_cls,
         render_id: str,
-        context: Optional[Union[Dict[str, Any], Context]] = None,
-        args: Optional[Any] = None,
-        kwargs: Optional[Any] = None,
-        slots: Optional[Any] = None,
+        context: dict[str, Any] | Context | None = None,
+        args: Any | None = None,
+        kwargs: Any | None = None,
+        slots: Any | None = None,
         deps_strategy: DependenciesStrategy = "document",
-        request: Optional[HttpRequest] = None,
-        outer_context: Optional[Context] = None,
+        request: HttpRequest | None = None,
+        outer_context: Context | None = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: Optional[ComponentRegistry] = None,  # noqa: F811
-        registered_name: Optional[str] = None,
-        node: Optional["ComponentNode"] = None,
+        registry: ComponentRegistry | None = None,  # noqa: F811
+        registered_name: str | None = None,
+        node: "ComponentNode | None" = None,
     ) -> str:
         ######################################
         # 1. Handle inputs
@@ -3510,7 +3491,7 @@ class Component(metaclass=ComponentMeta):
         # Allow to provide no args/kwargs/slots/context
         # NOTE: We make copies of args / kwargs / slots, so that plugins can modify them
         # without affecting the original values.
-        args_list: List[Any] = list(default(args, []))
+        args_list: list[Any] = list(default(args, []))
         kwargs_dict = to_dict(default(kwargs, {}))
         slots_dict = normalize_slot_fills(
             to_dict(default(slots, {})),
@@ -3786,7 +3767,7 @@ class Component(metaclass=ComponentMeta):
         # This callback is called with the value that was yielded from `Component.on_render()`.
         # It may be called multiple times for the same component, e.g. if `Component.on_render()`
         # contains multiple `yield` keywords.
-        def on_component_intermediate(html_content: Optional[str]) -> Optional[str]:
+        def on_component_intermediate(html_content: str | None) -> str | None:
             # HTML attributes passed from parent to current component.
             # NOTE: Is `None` for the root component.
             curr_comp_attrs = component_tree_context.component_attrs.get(render_id, None)
@@ -3817,8 +3798,8 @@ class Component(metaclass=ComponentMeta):
 
         # NOTE: This is called only once for a single component instance.
         def on_component_rendered(
-            html: Optional[str],
-            error: Optional[Exception],
+            html: str | None,
+            error: Exception | None,
         ) -> OnComponentRenderedResult:
             # NOTE: We expect `on_component_rendered` to be called only once,
             #       so we can release the strong reference to the component instance.
@@ -3911,10 +3892,10 @@ class Component(metaclass=ComponentMeta):
     # ```
     def _make_renderer_generator(
         self,
-        template: Optional[Template],
+        template: Template | None,
         context: Context,
-        component_path: List[str],
-    ) -> Optional[OnRenderGenerator]:
+        component_path: list[str],
+    ) -> OnRenderGenerator | None:
         component = self
 
         # Convert the component's HTML to a generator function.
@@ -3964,9 +3945,9 @@ class Component(metaclass=ComponentMeta):
     def _call_data_methods(
         self,
         # TODO_V2 - Remove `raw_args` and `raw_kwargs` in v2
-        raw_args: List,
-        raw_kwargs: Dict,
-    ) -> Tuple[Dict, Dict, Dict]:
+        raw_args: list,
+        raw_kwargs: dict,
+    ) -> tuple[dict, dict, dict]:
         # Template data
         maybe_template_data = self.get_template_data(self.args, self.kwargs, self.slots, self.context)
         new_template_data = to_dict(default(maybe_template_data, {}))
@@ -4005,7 +3986,7 @@ class Component(metaclass=ComponentMeta):
 # as individual subclasses of `ComponentNode`. However, multiple components
 # may use the same start & end tag combination, e.g. `{% component %}` and `{% endcomponent %}`.
 # So we cache the already-created subclasses to be reused.
-component_node_subclasses_by_name: Dict[str, Tuple[Type["ComponentNode"], ComponentRegistry]] = {}
+component_node_subclasses_by_name: dict[str, tuple[type["ComponentNode"], ComponentRegistry]] = {}
 
 
 class ComponentNode(BaseNode):
@@ -4111,16 +4092,16 @@ class ComponentNode(BaseNode):
         name: str,
         registry: ComponentRegistry,  # noqa: F811
         # BaseNode inputs
-        params: List[TagAttr],
-        filters: Dict[str, Callable[[Any, Any], Any]],
-        tags: Dict[str, Callable[[Any, Any], Any]],
-        flags: Optional[Dict[str, bool]] = None,
-        nodelist: Optional[NodeList] = None,
-        node_id: Optional[str] = None,
-        contents: Optional[str] = None,
-        template_name: Optional[str] = None,
-        template_component: Optional[Type["Component"]] = None,
-        start_tag_source: Optional[str] = None,
+        params: list[TagAttr],
+        filters: dict[str, Callable[[Any, Any], Any]],
+        tags: dict[str, Callable[[Any, Any], Any]],
+        flags: dict[str, bool] | None = None,
+        nodelist: NodeList | None = None,
+        node_id: str | None = None,
+        contents: str | None = None,
+        template_name: str | None = None,
+        template_component: type["Component"] | None = None,
+        start_tag_source: str | None = None,
     ) -> None:
         super().__init__(
             params=params,
@@ -4154,7 +4135,7 @@ class ComponentNode(BaseNode):
         # We try to reuse the same subclass for the same start tag, so we can
         # avoid creating a new subclass for each time `{% component %}` is called.
         if start_tag not in component_node_subclasses_by_name:
-            subcls: Type[ComponentNode] = type(subcls_name, (cls,), {"tag": start_tag, "end_tag": end_tag})
+            subcls: type[ComponentNode] = type(subcls_name, (cls,), {"tag": start_tag, "end_tag": end_tag})
             component_node_subclasses_by_name[start_tag] = (subcls, registry)
 
             # Remove the cache entry when either the registry or the component are deleted
@@ -4187,7 +4168,7 @@ class ComponentNode(BaseNode):
         if _is_extracting_fill(context):
             return ""
 
-        component_cls: Type[Component] = self.registry.get(self.name)
+        component_cls: type[Component] = self.registry.get(self.name)
 
         slot_fills = resolve_fills(context, self, self.name)
 
@@ -4215,8 +4196,8 @@ class ComponentNode(BaseNode):
 
 
 def _get_parent_component_context(
-    context: Union[Context, Mapping],
-) -> Union[Tuple[None, None], Tuple[str, ComponentContext]]:
+    context: Context | Mapping,
+) -> tuple[None, None] | tuple[str, ComponentContext]:
     parent_id = context.get(_COMPONENT_CONTEXT_KEY, None)
     if parent_id is None:
         return None, None

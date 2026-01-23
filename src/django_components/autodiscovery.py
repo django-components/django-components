@@ -1,5 +1,5 @@
 import importlib
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 from django_components.util.loader import get_component_files
 from django_components.util.logger import logger
@@ -8,12 +8,12 @@ from django_components.util.testing import is_testing
 # In tests, we want to capture which modules have been loaded, so we can
 # clean them up between tests. But there's no need to track this in
 # production.
-LOADED_MODULES: List[str] = []
+LOADED_MODULES: list[str] = []
 
 
 def autodiscover(
-    map_module: Optional[Callable[[str], str]] = None,
-) -> List[str]:
+    map_module: Callable[[str], str] | None = None,
+) -> list[str]:
     """
     Search for all python files in
     [`COMPONENTS.dirs`](../settings#django_components.app_settings.ComponentsSettings.dirs)
@@ -30,7 +30,7 @@ def autodiscover(
         This serves as an escape hatch for when you need to use this function in tests.
 
     Returns:
-        List[str]: A list of module paths of imported files.
+        list[str]: A list of module paths of imported files.
 
     To get the same list of modules that `autodiscover()` would return, but without importing them, use
     [`get_component_files()`](../api#django_components.get_component_files):
@@ -48,8 +48,8 @@ def autodiscover(
 
 
 def import_libraries(
-    map_module: Optional[Callable[[str], str]] = None,
-) -> List[str]:
+    map_module: Callable[[str], str] | None = None,
+) -> list[str]:
     """
     Import modules set in
     [`COMPONENTS.libraries`](../settings#django_components.app_settings.ComponentsSettings.libraries)
@@ -62,7 +62,7 @@ def import_libraries(
         This serves as an escape hatch for when you need to use this function in tests.
 
     Returns:
-        List[str]: A list of module paths of imported files.
+        list[str]: A list of module paths of imported files.
 
     **Examples:**
 
@@ -89,10 +89,10 @@ def import_libraries(
 
 
 def _import_modules(
-    modules: List[str],
-    map_module: Optional[Callable[[str], str]] = None,
-) -> List[str]:
-    imported_modules: List[str] = []
+    modules: list[str],
+    map_module: Callable[[str], str] | None = None,
+) -> list[str]:
+    imported_modules: list[str] = []
     for module_name in modules:
         if map_module:
             module_name = map_module(module_name)  # noqa: PLW2901

@@ -6,7 +6,7 @@ Source of truth is djc_core.template_parser.
 
 # ruff: noqa: ARG001,ARG005,E501
 import re
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, cast
 from unittest.mock import Mock
 
 import pytest
@@ -58,7 +58,7 @@ def variable_resolver(ctx, src, token, filters, tags, var):
 ###############################
 
 
-def _simple_compile_tag(tag_or_attrs: Union[GenericTag, EndTag, ForLoopTag, List[TagAttr]], source: str):
+def _simple_compile_tag(tag_or_attrs: GenericTag | EndTag | ForLoopTag | list[TagAttr], source: str):
     if isinstance(tag_or_attrs, (EndTag, ForLoopTag)):
         raise TypeError("EndTag and ForLoopTag are not supported for compile_tag")
 
@@ -91,7 +91,7 @@ def token(content: str, start_index: int, line: int, col: int) -> Token:
 # Takes key (optional), value, and is_flag
 # Calculates the token field internally from key token + "=" + value token
 # If key is None, the token is just the value token
-def tag_attr(key: Optional[Token], value: TagValue, is_flag: bool) -> TagAttr:
+def tag_attr(key: Token | None, value: TagValue, is_flag: bool) -> TagAttr:
     if key is not None:
         # Calculate token content: key + "=" + value.token.content
         token_content = f"{key.content}={value.token.content}"
@@ -120,7 +120,7 @@ def plain_string_value(
     start_index: int,
     line: int,
     col: int,
-    spread: Optional[str] = None,
+    spread: str | None = None,
 ) -> TagValue:
     if spread is not None:
         token_content = f"{spread}{content}"
@@ -151,7 +151,7 @@ def plain_int_value(
     start_index: int,
     line: int,
     col: int,
-    spread: Optional[str] = None,
+    spread: str | None = None,
 ) -> TagValue:
     if spread is not None:
         token_content = f"{spread}{content}"
@@ -182,7 +182,7 @@ def plain_float_value(
     start_index: int,
     line: int,
     col: int,
-    spread: Optional[str] = None,
+    spread: str | None = None,
 ) -> TagValue:
     if spread is not None:
         token_content = f"{spread}{content}"
@@ -213,7 +213,7 @@ def plain_translation_value(
     start_index: int,
     line: int,
     col: int,
-    spread: Optional[str] = None,
+    spread: str | None = None,
 ) -> TagValue:
     if spread is not None:
         token_content = f"{spread}{content}"
@@ -246,7 +246,7 @@ def plain_variable_value(
     start_index: int,
     line: int,
     col: int,
-    spread: Optional[str] = None,
+    spread: str | None = None,
 ) -> TagValue:
     if spread is not None:
         token_content = f"{spread}{content}"
@@ -279,10 +279,10 @@ def plain_variable_value(
 def string_value(
     token: Token,
     value: Token,
-    spread: Optional[str],
-    filters: List[TagValueFilter],
-    used_variables: List[Token],
-    assigned_variables: List[Token],
+    spread: str | None,
+    filters: list[TagValueFilter],
+    used_variables: list[Token],
+    assigned_variables: list[Token],
 ) -> TagValue:
     return TagValue(
         token=token,
@@ -301,10 +301,10 @@ def string_value(
 def int_value(
     token: Token,
     value: Token,
-    spread: Optional[str],
-    filters: List[TagValueFilter],
-    used_variables: List[Token],
-    assigned_variables: List[Token],
+    spread: str | None,
+    filters: list[TagValueFilter],
+    used_variables: list[Token],
+    assigned_variables: list[Token],
 ) -> TagValue:
     return TagValue(
         token=token,
@@ -324,10 +324,10 @@ def int_value(
 def variable_value(
     full_token: Token,
     value: Token,
-    spread: Optional[str],
-    filters: List[TagValueFilter],
-    used_variables: List[Token],
-    assigned_variables: List[Token],
+    spread: str | None,
+    filters: list[TagValueFilter],
+    used_variables: list[Token],
+    assigned_variables: list[Token],
 ) -> TagValue:
     # Extract root variable name (everything before first dot, or entire value if no dot)
     root_var = value.content.split(".")[0] if "." in value.content else value.content
@@ -355,10 +355,10 @@ def variable_value(
 def float_value(
     token: Token,
     value: Token,
-    spread: Optional[str],
-    filters: List[TagValueFilter],
-    used_variables: List[Token],
-    assigned_variables: List[Token],
+    spread: str | None,
+    filters: list[TagValueFilter],
+    used_variables: list[Token],
+    assigned_variables: list[Token],
 ) -> TagValue:
     return TagValue(
         token=token,
@@ -377,10 +377,10 @@ def float_value(
 def translation_value(
     token: Token,
     value: Token,
-    spread: Optional[str],
-    filters: List[TagValueFilter],
-    used_variables: List[Token],
-    assigned_variables: List[Token],
+    spread: str | None,
+    filters: list[TagValueFilter],
+    used_variables: list[Token],
+    assigned_variables: list[Token],
 ) -> TagValue:
     return TagValue(
         token=token,
@@ -402,7 +402,7 @@ def plain_template_string_value(
     start_index: int,
     line: int,
     col: int,
-    spread: Optional[str] = None,
+    spread: str | None = None,
 ) -> TagValue:
     if spread is not None:
         token_content = f"{spread}{content}"
@@ -430,10 +430,10 @@ def plain_template_string_value(
 def template_string_value(
     token: Token,
     value: Token,
-    spread: Optional[str],
-    filters: List[TagValueFilter],
-    used_variables: List[Token],
-    assigned_variables: List[Token],
+    spread: str | None,
+    filters: list[TagValueFilter],
+    used_variables: list[Token],
+    assigned_variables: list[Token],
 ) -> TagValue:
     return TagValue(
         token=token,
@@ -455,7 +455,7 @@ def plain_python_expr_value(
     start_index: int,
     line: int,
     col: int,
-    spread: Optional[str] = None,
+    spread: str | None = None,
 ) -> TagValue:
     if spread is not None:
         token_content = f"{spread}{content}"
@@ -483,10 +483,10 @@ def plain_python_expr_value(
 def python_expr_value(
     token: Token,
     value: Token,
-    spread: Optional[str],
-    filters: List[TagValueFilter],
-    used_variables: List[Token],
-    assigned_variables: List[Token],
+    spread: str | None,
+    filters: list[TagValueFilter],
+    used_variables: list[Token],
+    assigned_variables: list[Token],
 ) -> TagValue:
     return TagValue(
         token=token,
@@ -505,7 +505,7 @@ def python_expr_value(
 # The token and value are the same.
 def plain_dict_value(
     token: Token,
-    children: List[ValueChild],
+    children: list[ValueChild],
 ) -> TagValue:
     return TagValue(
         token=token,
@@ -524,7 +524,7 @@ def plain_dict_value(
 # The token and value are the same.
 def plain_list_value(
     token: Token,
-    children: List[ValueChild],
+    children: list[ValueChild],
 ) -> TagValue:
     return TagValue(
         token=token,
@@ -619,7 +619,7 @@ class TestResolvers:
         mock_expr.assert_not_called()
 
     def test_template_string_resolver(self):
-        context: Dict = {}
+        context: dict = {}
         tag_content = "{% component '{% lorem w 4 %}' %}"
         (
             mock_variable,
@@ -648,7 +648,7 @@ class TestResolvers:
         mock_expr.assert_not_called()
 
     def test_translation_resolver(self):
-        context: Dict = {}
+        context: dict = {}
         tag_content = '{% component _("hello world") %}'
         (
             mock_variable,
@@ -677,7 +677,7 @@ class TestResolvers:
         mock_expr.assert_not_called()
 
     def test_expr_resolver(self):
-        context: Dict = {}
+        context: dict = {}
         tag_content = "{% component (1 + 2) %}"
         (
             mock_variable,
@@ -706,7 +706,7 @@ class TestResolvers:
         mock_filter.assert_not_called()
 
     def test_filter_resolver(self):
-        context: Dict = {}
+        context: dict = {}
         tag_content = "{% component my_var|upper:arg %}"
         (
             mock_variable,

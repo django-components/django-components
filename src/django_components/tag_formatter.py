@@ -1,6 +1,6 @@
 import abc
 import re
-from typing import TYPE_CHECKING, List, NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from django.template import TemplateSyntaxError
 from django.utils.module_loading import import_string
@@ -36,7 +36,7 @@ class TagResult(NamedTuple):
     Then `component_name` would be `my_comp`.
     """
 
-    tokens: List[str]
+    tokens: list[str]
     """
     Remaining tokens (words) that were passed to the tag, with component name removed
 
@@ -89,7 +89,7 @@ class TagFormatterABC(abc.ABC):
         def end_tag(self, name: str) -> str:
             return f"end{name}"
 
-        def parse(self, tokens: List[str]) -> TagResult:
+        def parse(self, tokens: list[str]) -> TagResult:
             tokens = [*tokens]
             name = tokens.pop(0)
             return TagResult(name, tokens)
@@ -125,7 +125,7 @@ class TagFormatterABC(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def parse(self, tokens: List[str]) -> TagResult:
+    def parse(self, tokens: list[str]) -> TagResult:
         """
         Given the tokens (words) passed to a component start tag, this function extracts
         the component name from the tokens list, and returns
@@ -133,7 +133,7 @@ class TagFormatterABC(abc.ABC):
         which is a tuple of `(component_name, remaining_tokens)`.
 
         Args:
-            tokens (List[str]): List of tokens passed to the component tag.
+            tokens (list[str]): List of tokens passed to the component tag.
 
         Returns:
             TagResult: Parsed component name and remaining tokens.
@@ -183,7 +183,7 @@ class InternalTagFormatter:
         self._validate_tag(tag, "end_tag")
         return tag
 
-    def parse(self, tokens: List[str]) -> TagResult:
+    def parse(self, tokens: list[str]) -> TagResult:
         return self.tag_formatter.parse(tokens)
 
     # NOTE: We validate the generated tags, so they contain only valid characters (\w - : . @ #)
@@ -226,13 +226,13 @@ class ComponentFormatter(TagFormatterABC):
     def __init__(self, tag: str) -> None:
         self.tag = tag
 
-    def start_tag(self, _name: str) -> str:
+    def start_tag(self, name: str) -> str:  # noqa: ARG002
         return self.tag
 
-    def end_tag(self, _name: str) -> str:
+    def end_tag(self, name: str) -> str:  # noqa: ARG002
         return f"end{self.tag}"
 
-    def parse(self, tokens: List[str]) -> TagResult:
+    def parse(self, tokens: list[str]) -> TagResult:
         _tag, *args = tokens
 
         if not args:
@@ -282,7 +282,7 @@ class ShorthandComponentFormatter(TagFormatterABC):
     def end_tag(self, name: str) -> str:
         return f"end{name}"
 
-    def parse(self, tokens: List[str]) -> TagResult:
+    def parse(self, tokens: list[str]) -> TagResult:
         tokens = [*tokens]
         name = tokens.pop(0)
         return TagResult(name, tokens)

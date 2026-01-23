@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
         os: [ubuntu-latest, windows-latest]
 
     steps:
@@ -34,13 +34,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-      - name: Install dependencies (Python 3.8)
-        if: matrix.python-version == '3.8'
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-ci-python38.txt
-      - name: Install dependencies (Python > 3.8)
-        if: matrix.python-version != '3.8'
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-ci.txt

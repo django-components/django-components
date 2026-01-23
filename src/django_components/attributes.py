@@ -3,7 +3,8 @@
 # And https://github.com/Xzya/django-web-components/blob/b43eb0c832837db939a6f8c1980334b0adfdd6e4/django_web_components/attributes.py  # noqa: E501
 
 import re
-from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import Any, Literal, TypeAlias
 
 from django.template import Context
 from django.utils.html import conditional_escape, format_html
@@ -11,9 +12,9 @@ from django.utils.safestring import SafeString, mark_safe
 
 from django_components.node import BaseNode
 
-ClassValue = Union[Sequence["ClassValue"], str, Dict[str, bool]]
-StyleDict = Dict[str, Union[str, int, Literal[False], None]]
-StyleValue = Union[Sequence["StyleValue"], str, StyleDict]
+ClassValue: TypeAlias = Sequence["ClassValue"] | str | dict[str, bool]
+StyleDict: TypeAlias = dict[str, str | int | Literal[False] | None]
+StyleValue: TypeAlias = Sequence["StyleValue"] | str | StyleDict
 
 
 class HtmlAttrsNode(BaseNode):
@@ -75,8 +76,8 @@ class HtmlAttrsNode(BaseNode):
     def render(
         self,
         context: Context,  # noqa: ARG002
-        attrs: Optional[Dict] = None,
-        defaults: Optional[Dict] = None,
+        attrs: dict | None = None,
+        defaults: dict | None = None,
         **kwargs: Any,
     ) -> SafeString:
         # Merge
@@ -127,7 +128,7 @@ Deprecated. Use [`format_attributes`](../api#django_components.format_attributes
 """
 
 
-def merge_attributes(*attrs: Dict) -> Dict:
+def merge_attributes(*attrs: dict) -> dict:
     """
     Merge a list of dictionaries into a single dictionary.
 
@@ -207,10 +208,10 @@ def merge_attributes(*attrs: Dict) -> Dict:
     }
     ```
     """
-    result: Dict = {}
+    result: dict = {}
 
-    classes: List[ClassValue] = []
-    styles: List[StyleValue] = []
+    classes: list[ClassValue] = []
+    styles: list[StyleValue] = []
     for attrs_dict in attrs:
         for key, value in attrs_dict.items():
             if key == "class":
@@ -266,7 +267,7 @@ def normalize_class(value: ClassValue) -> str:
     - `extra-class` is used because it has a truthy value
     - `other-class` is ignored because it's last value is falsy
     """
-    res: Dict[str, bool] = {}
+    res: dict[str, bool] = {}
     if isinstance(value, str):
         return value.strip()
     if isinstance(value, (list, tuple)):
@@ -300,8 +301,8 @@ whitespace_re = re.compile(r"\s+")
 
 
 # Similar to `normalize_class`, but returns a dict instead of a string.
-def _normalize_class(value: ClassValue) -> Dict[str, bool]:
-    res: Dict[str, bool] = {}
+def _normalize_class(value: ClassValue) -> dict[str, bool]:
+    res: dict[str, bool] = {}
     if isinstance(value, str):
         class_parts = whitespace_re.split(value)
         res.update({part: True for part in class_parts if part})

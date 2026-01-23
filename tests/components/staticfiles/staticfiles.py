@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from django_components import Component, register
 
@@ -12,5 +12,5 @@ class RelativeFileWithPathObjComponent(Component):
         js = "staticfiles.js"
         css = "staticfiles.css"
 
-    def get_template_data(self, args, kwargs, slots, context) -> Dict[str, Any]:
+    def get_template_data(self, args, kwargs, slots, context) -> dict[str, Any]:
         return {"variable": kwargs["variable"]}

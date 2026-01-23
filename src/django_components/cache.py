@@ -1,5 +1,4 @@
 import sys
-from typing import Optional
 
 from django.core.cache import BaseCache, caches
 from django.core.cache.backends.locmem import LocMemCache
@@ -11,11 +10,11 @@ from django_components.util.cache import LRUCache
 #
 # This stores the parsed Templates. This is strictly local for now, as it stores instances.
 # NOTE: Lazily initialized so it can be configured based on user-defined settings.
-template_cache: Optional[LRUCache] = None
+template_cache: LRUCache | None = None
 
 # This stores the inlined component JS and CSS files (e.g. `Component.js` and `Component.css`).
 # We also store here the generated JS and CSS scripts that inject JS / CSS variables into the page.
-component_media_cache: Optional[BaseCache] = None
+component_media_cache: BaseCache | None = None
 
 
 # TODO_V1 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`

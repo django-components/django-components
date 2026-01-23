@@ -1,5 +1,5 @@
 from hashlib import md5
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from django.core.cache import BaseCache, caches
 
@@ -85,7 +85,7 @@ class ComponentCache(ExtensionComponentConfig):
         Read more about it in https://github.com/django-components/django-components/issues/1164.
     """
 
-    ttl: Optional[int] = None
+    ttl: int | None = None
     """
     The time-to-live (TTL) in seconds, i.e. for how long should an entry be valid in the cache.
 
@@ -95,7 +95,7 @@ class ComponentCache(ExtensionComponentConfig):
     - If `None`, the default TTL will be used.
     """
 
-    cache_name: Optional[str] = None
+    cache_name: str | None = None
     """
     The name of the cache to use. If `None`, the default cache will be used.
     """
@@ -113,7 +113,7 @@ class ComponentCache(ExtensionComponentConfig):
         cache = caches[cache_name]
         return cache
 
-    def get_cache_key(self, args: List, kwargs: Dict, slots: Dict) -> str:
+    def get_cache_key(self, args: list, kwargs: dict, slots: dict) -> str:
         # Allow user to override how the input is hashed into a cache key with `hash()`,
         # but then still prefix it wih our own prefix, so it's clear where it comes from.
         cache_key = self.hash(args, kwargs)
@@ -123,7 +123,7 @@ class ComponentCache(ExtensionComponentConfig):
         cache_key = CACHE_KEY_PREFIX + md5(cache_key.encode()).hexdigest()  # noqa: S324
         return cache_key
 
-    def hash(self, args: List, kwargs: Dict) -> str:
+    def hash(self, args: list, kwargs: dict) -> str:
         """
         Defines how the input (both args and kwargs) is hashed into a cache key.
 
@@ -136,7 +136,7 @@ class ComponentCache(ExtensionComponentConfig):
         kwargs_hash = ",".join(f"{k}-{v}" for k, v in sorted_items)
         return f"{args_hash}:{kwargs_hash}"
 
-    def hash_slots(self, slots: Dict[str, Slot]) -> str:
+    def hash_slots(self, slots: dict[str, Slot]) -> str:
         sorted_items = sorted(slots.items())
         hash_parts = []
         for key, slot in sorted_items:
@@ -176,9 +176,9 @@ class CacheExtension(ComponentExtension):
     ComponentConfig = ComponentCache
 
     def __init__(self, *_args: Any, **_kwargs: Any) -> None:
-        self.render_id_to_cache_key: Dict[str, str] = {}
+        self.render_id_to_cache_key: dict[str, str] = {}
 
-    def on_component_input(self, ctx: OnComponentInputContext) -> Optional[Any]:
+    def on_component_input(self, ctx: OnComponentInputContext) -> Any | None:
         cache_instance = ctx.component.cache
         if not cache_instance.enabled:
             return None

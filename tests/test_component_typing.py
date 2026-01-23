@@ -1,10 +1,10 @@
 import re
 from dataclasses import dataclass
-from typing import NamedTuple, Optional
+from typing import NamedTuple, TypedDict
 
 import pytest
 from django.template import Context
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired
 
 from django_components import Component, Empty, Slot, SlotInput
 from django_components.testing import djc_test
@@ -33,7 +33,7 @@ class TestComponentTyping:
             class Kwargs:
                 name: str
                 age: int
-                maybe_var: Optional[int] = None
+                maybe_var: int | None = None
 
             class Slots(TypedDict):
                 # Use `SlotInput` when you want to pass slot as string
@@ -100,11 +100,11 @@ class TestComponentTyping:
             class Kwargs:
                 name: str
                 age: int
-                maybe_var: Optional[int] = None
+                maybe_var: int | None = None
 
             class Slots:
                 header: SlotInput
-                footer: Optional[Slot[ButtonFooterSlotData]]
+                footer: Slot[ButtonFooterSlotData] | None
 
             def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
                 nonlocal template_called
@@ -471,7 +471,7 @@ class TestComponentTyping:
             class Kwargs:
                 name: str
                 age: int
-                maybe_var: Optional[int] = None
+                maybe_var: int | None = None
 
             class Slots(TypedDict):
                 # Use `SlotInput` when you want to pass slot as string

@@ -10,7 +10,7 @@ import subprocess
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import httpx
 import yaml  # type: ignore[import-untyped]
@@ -70,7 +70,7 @@ class Author(BaseModel):
 
 
 class PullRequestNode(BaseModel):
-    author: Union[Author, None] = None
+    author: Author | None = None
     title: str
     createdAt: datetime  # noqa: N815
     state: str
@@ -82,7 +82,7 @@ class PullRequestEdge(BaseModel):
 
 
 class PullRequests(BaseModel):
-    edges: List[PullRequestEdge]
+    edges: list[PullRequestEdge]
 
 
 class PRsRepository(BaseModel):
@@ -101,8 +101,8 @@ def get_graphql_response(
     *,
     settings: Settings,
     query: str,
-    after: Optional[str] = None,
-) -> Dict[str, Any]:
+    after: str | None = None,
+) -> dict[str, Any]:
     """Make a GraphQL request to GitHub API and return the response."""
     headers = {"Authorization": f"token {settings.github_token.get_secret_value()}"}
     variables = {"after": after}
@@ -125,14 +125,14 @@ def get_graphql_response(
     return data
 
 
-def get_graphql_pr_edges(*, settings: Settings, after: Optional[str] = None) -> List[PullRequestEdge]:
+def get_graphql_pr_edges(*, settings: Settings, after: str | None = None) -> list[PullRequestEdge]:
     """Fetch pull request edges from GitHub GraphQL API."""
     data = get_graphql_response(settings=settings, query=GET_PRS_QUERY, after=after)
     graphql_response = PRsResponse.model_validate(data)
     return graphql_response.data.repository.pullRequests.edges
 
 
-def get_contributors(settings: Settings) -> Tuple[Counter, Dict[str, Author]]:
+def get_contributors(settings: Settings) -> tuple[Counter, dict[str, Author]]:
     """Analyze pull requests to identify contributors."""
     nodes = []
     edges = get_graphql_pr_edges(settings=settings)
@@ -144,7 +144,7 @@ def get_contributors(settings: Settings) -> Tuple[Counter, Dict[str, Author]]:
         edges = get_graphql_pr_edges(settings=settings, after=last_edge.cursor)
 
     contributors: Counter[str] = Counter()
-    authors: Dict[str, Author] = {}
+    authors: dict[str, Author] = {}
     for pr in nodes:
         author = pr.author
         if author and pr.state == "MERGED":

@@ -1,4 +1,5 @@
-from typing import Any, Literal, NamedTuple, Optional, Type
+from dataclasses import dataclass
+from typing import Any, Literal
 
 from django_components.app_settings import app_settings
 from django_components.extension import (
@@ -10,7 +11,8 @@ from django_components.extension import (
 from django_components.util.misc import gen_id
 
 
-class HighlightColor(NamedTuple):
+@dataclass
+class HighlightColor:
     text_color: str
     border_color: str
 
@@ -51,12 +53,12 @@ def apply_component_highlight(highlight_type: Literal["component", "slot"], outp
 
 
 class HighlightComponentsDescriptor:
-    def __get__(self, obj: Optional[Any], objtype: Type) -> bool:
+    def __get__(self, obj: Any | None, objtype: type | None) -> bool:
         return app_settings.DEBUG_HIGHLIGHT_COMPONENTS
 
 
 class HighlightSlotsDescriptor:
-    def __get__(self, obj: Optional[Any], objtype: Type) -> bool:
+    def __get__(self, obj: Any | None, objtype: type | None) -> bool:
         return app_settings.DEBUG_HIGHLIGHT_SLOTS
 
 
@@ -124,16 +126,16 @@ class DebugHighlightExtension(ComponentExtension):
     ComponentConfig = ComponentDebugHighlight
 
     # Apply highlight to the slot's rendered output
-    def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
-        debug_cls: Optional[ComponentDebugHighlight] = getattr(ctx.component_cls, "DebugHighlight", None)
+    def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> str | None:
+        debug_cls: ComponentDebugHighlight | None = getattr(ctx.component_cls, "DebugHighlight", None)
         if not debug_cls or not debug_cls.highlight_slots:
             return None
 
         return apply_component_highlight("slot", ctx.result, f"{ctx.component_cls.__name__} - {ctx.slot_name}")
 
     # Apply highlight to the rendered component
-    def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
-        debug_cls: Optional[ComponentDebugHighlight] = getattr(ctx.component_cls, "DebugHighlight", None)
+    def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
+        debug_cls: ComponentDebugHighlight | None = getattr(ctx.component_cls, "DebugHighlight", None)
         if not debug_cls or not debug_cls.highlight_components or ctx.result is None:
             return None
 

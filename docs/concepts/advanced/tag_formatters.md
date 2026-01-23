@@ -154,7 +154,7 @@ class ShorthandComponentFormatter(TagFormatterABC):
     #
     # The parser receives:
     # `['button', 'href="..."', 'disabled']`
-    def parse(self, tokens: List[str]) -> TagResult:
+    def parse(self, tokens: list[str]) -> TagResult:
         tokens = [*tokens]
         name = tokens.pop(0)
         return TagResult(
