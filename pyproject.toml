@@ -117,7 +117,7 @@ docs = [
 ]
 
 ###########################################
-# TOOLS
+# BUILD TOOLS
 ###########################################
 
 [tool.setuptools.packages.find]
@@ -125,6 +125,18 @@ where = ["src"]
 include = ["django_components*"]
 exclude = ["django_components.tests*"]
 namespaces = false
+
+###########################################
+# TESTING TOOLS
+###########################################
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "docs/examples"]
+asyncio_mode = "auto"
+
+###########################################
+# FORMATTING & TYPE-CHECKING TOOLS
+###########################################
 
 [tool.black]
 line-length = 119
@@ -286,7 +298,3 @@ reportUnusedParameter = "none"
 reportUninitializedInstanceVariable = "none"
 reportRedeclaration = "none"
 reportIncompatibleVariableOverride = "none"
-
-[tool.pytest.ini_options]
-testpaths = ["tests", "docs/examples"]
-asyncio_mode = "auto"
