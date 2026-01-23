@@ -10,6 +10,7 @@ from tests.testutils import setup_test_config
 
 if TYPE_CHECKING:
     from django_components import types
+    from tests.e2e.utils import BrowserType
 
 setup_test_config(
     extra_settings={
@@ -57,8 +58,8 @@ async def _create_page_with_dep_manager(browser: Browser) -> Page:
 )
 class TestDependencyManager:
     @with_playwright
-    async def test_script_loads(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_script_loads(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await _create_page_with_dep_manager(browser)
 
         # Check the exposed API
         keys = sorted(await page.evaluate("Object.keys(DjangoComponents)"))
@@ -78,11 +79,11 @@ class TestDependencyManager:
 
     # TODO_v1: Delete this test in v1
     @with_playwright
-    async def test_backwards_compatibility_components_alias(self, browser_name):
+    async def test_backwards_compatibility_components_alias(self, browser: "Browser", browser_name: "BrowserType"):
         if browser_name == "firefox":
             pytest.skip("Firefox does not support the `Components` global")
 
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+        page = await _create_page_with_dep_manager(browser)
 
         # Verify that Components is still available as an alias
         components_exists = await page.evaluate("typeof Components !== 'undefined'")
@@ -103,8 +104,8 @@ class TestDependencyManager:
 )
 class TestLoadScript:
     @with_playwright
-    async def test_load_js_scripts(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_load_js_scripts(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await _create_page_with_dep_manager(browser)
 
         # JS code that loads a few dependencies, capturing the HTML after each action
         test_js: types.js = """() => {
@@ -147,8 +148,8 @@ class TestLoadScript:
         await page.close()
 
     @with_playwright
-    async def test_load_css_scripts(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_load_css_scripts(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await _create_page_with_dep_manager(browser)
 
         # JS code that loads a few dependencies, capturing the HTML after each action
         test_js: types.js = """() => {
@@ -191,8 +192,8 @@ class TestLoadScript:
         await page.close()
 
     @with_playwright
-    async def test_does_not_load_script_if_marked_as_loaded(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_does_not_load_script_if_marked_as_loaded(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await _create_page_with_dep_manager(browser)
 
         # JS code that loads a few dependencies, capturing the HTML after each action
         test_js: types.js = """() => {
@@ -230,8 +231,8 @@ class TestLoadScript:
 )
 class TestCallComponent:
     @with_playwright
-    async def test_calls_component_successfully(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_calls_component_successfully(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await _create_page_with_dep_manager(browser)
 
         test_js: types.js = """() => {
             const manager = DjangoComponents.createComponentsManager();
@@ -281,8 +282,8 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_calls_component_successfully_async(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_calls_component_successfully_async(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await _create_page_with_dep_manager(browser)
 
         test_js: types.js = """() => {
             const manager = DjangoComponents.createComponentsManager();
@@ -321,8 +322,10 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_error_in_component_call_do_not_propagate_sync(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_error_in_component_call_do_not_propagate_sync(
+        self, browser: "Browser", browser_name: "BrowserType"
+    ):
+        page = await _create_page_with_dep_manager(browser)
 
         test_js: types.js = """() => {
             const manager = DjangoComponents.createComponentsManager();
@@ -355,8 +358,10 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_error_in_component_call_do_not_propagate_async(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_error_in_component_call_do_not_propagate_async(
+        self, browser: "Browser", browser_name: "BrowserType"
+    ):
+        page = await _create_page_with_dep_manager(browser)
 
         test_js: types.js = """() => {
             const manager = DjangoComponents.createComponentsManager();
@@ -391,8 +396,8 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_raises_if_component_element_not_in_dom(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_raises_if_component_element_not_in_dom(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await _create_page_with_dep_manager(browser)
 
         test_js: types.js = """() => {
             const manager = DjangoComponents.createComponentsManager();
@@ -422,8 +427,8 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_raises_if_input_hash_not_registered(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_raises_if_input_hash_not_registered(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await _create_page_with_dep_manager(browser)
 
         test_js: types.js = """() => {
             const manager = DjangoComponents.createComponentsManager();
@@ -451,8 +456,8 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_raises_if_component_not_registered(self, browser_name):
-        page = await _create_page_with_dep_manager(self.browser)  # type: ignore[attr-defined]
+    async def test_raises_if_component_not_registered(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await _create_page_with_dep_manager(browser)
 
         test_js: types.js = """() => {
             const manager = DjangoComponents.createComponentsManager();
