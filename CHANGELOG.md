@@ -2,9 +2,15 @@
 
 ## v0.147.0
 
+#### Feat
+
+- Added support for Django 6.0.
+
 #### Breaking changes 🚨📢
 
 - Dropped support for Python 3.8 and 3.9.
+
+- Dropped support for Django 5.1.
 
 ## v0.146.0
 
