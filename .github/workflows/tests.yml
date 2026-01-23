@@ -44,9 +44,9 @@ jobs:
       - name: Install Playwright browsers
         run: |
           # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
-          playwright install chromium firefox webkit --with-deps
+          uv run playwright install chromium firefox webkit --with-deps
       - name: Run tests
-        run: tox
+        run: uv run tox
 
   # Verify that docs build
   test_docs:
@@ -72,7 +72,7 @@ jobs:
         run: |
           uv sync --group docs
       - name: Build documentation
-        run: mkdocs build --verbose
+        run: uv run mkdocs build --verbose
 
   # Verify that the sample project works
   test_sampleproject:
@@ -84,24 +84,27 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "pip"
 
       - name: Install dependencies
         run: |
           cd sampleproject
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          uv pip install -r requirements.txt
           # Install django-components locally
-          python -m pip install -e ..
+          uv pip install -e ..
       - name: Check Django project
         run: |
           cd sampleproject
-          python manage.py check
-          python manage.py migrate --noinput
+          uv run python manage.py check
+          uv run python manage.py migrate --noinput
           # Start the server, make request, and exit with error if it fails
-          python manage.py runserver & sleep 5
+          uv run python manage.py runserver & sleep 5
           curl http://127.0.0.1:8000/ || exit 1
