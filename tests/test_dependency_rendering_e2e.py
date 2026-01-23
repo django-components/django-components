@@ -13,9 +13,10 @@ from tests.e2e.utils import TEST_SERVER_URL, with_playwright
 from tests.testutils import setup_test_config
 
 if TYPE_CHECKING:
-    from playwright.async_api import Page
+    from playwright.async_api import Browser
 
     from django_components import types
+    from tests.e2e.utils import BrowserType
 
 setup_test_config()
 
@@ -25,10 +26,10 @@ setup_test_config()
 @djc_test
 class TestE2eDependencyRendering:
     @with_playwright
-    async def test_single_component_dependencies(self, browser_name):
+    async def test_single_component_dependencies(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/single"
 
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        page = await browser.new_page()
         await page.goto(single_comp_url)
 
         test_js: types.js = """() => {
@@ -74,10 +75,10 @@ class TestE2eDependencyRendering:
         await page.close()
 
     @with_playwright
-    async def test_multiple_component_dependencies(self, browser_name):
+    async def test_multiple_component_dependencies(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/multi"
 
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        page = await browser.new_page()
         await page.goto(single_comp_url)
 
         test_js: types.js = """() => {
@@ -168,10 +169,10 @@ class TestE2eDependencyRendering:
         await page.close()
 
     @with_playwright
-    async def test_renders_css_nojs_env(self, browser_name):
+    async def test_renders_css_nojs_env(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/multi"
 
-        page: Page = await self.browser.new_page(java_script_enabled=False)  # type: ignore[attr-defined]
+        page = await browser.new_page(java_script_enabled=False)
         await page.goto(single_comp_url)
 
         test_js: types.js = """() => {
@@ -263,10 +264,10 @@ class TestE2eDependencyRendering:
         await page.close()
 
     @with_playwright
-    async def test_js_executed_in_order__js(self, browser_name):
+    async def test_js_executed_in_order__js(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/js-order/js"
 
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        page = await browser.new_page()
         await page.goto(single_comp_url)
 
         test_js: types.js = """() => {
@@ -289,10 +290,10 @@ class TestE2eDependencyRendering:
         await page.close()
 
     @with_playwright
-    async def test_js_executed_in_order__media(self, browser_name):
+    async def test_js_executed_in_order__media(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/js-order/media"
 
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        page = await browser.new_page()
         await page.goto(single_comp_url)
 
         test_js: types.js = """() => {
@@ -319,10 +320,10 @@ class TestE2eDependencyRendering:
     # is used in the template before the other components. So the JS should
     # not be able to access the data from the other components.
     @with_playwright
-    async def test_js_executed_in_order__invalid(self, browser_name):
+    async def test_js_executed_in_order__invalid(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/js-order/invalid"
 
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        page = await browser.new_page()
         await page.goto(single_comp_url)
 
         test_js: types.js = """() => {
@@ -345,8 +346,8 @@ class TestE2eDependencyRendering:
 
     # Fragment where JS and CSS is defined on Component class
     @with_playwright
-    async def test_fragment_comp(self, browser_name):
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+    async def test_fragment_comp(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await browser.new_page()
         await page.goto(f"{TEST_SERVER_URL}/fragment/base/js?frag=comp")
 
         test_before_js: types.js = """() => {
@@ -403,8 +404,8 @@ class TestE2eDependencyRendering:
 
     # Fragment where JS and CSS is defined on Media class
     @with_playwright
-    async def test_fragment_media(self, browser_name):
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+    async def test_fragment_media(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await browser.new_page()
         await page.goto(f"{TEST_SERVER_URL}/fragment/base/js?frag=media")
 
         test_before_js: types.js = """() => {
@@ -459,8 +460,8 @@ class TestE2eDependencyRendering:
 
     # Fragment loaded by AlpineJS
     @with_playwright
-    async def test_fragment_alpine(self, browser_name):
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+    async def test_fragment_alpine(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await browser.new_page()
         await page.goto(f"{TEST_SERVER_URL}/fragment/base/alpine?frag=comp")
 
         test_before_js: types.js = """() => {
@@ -518,8 +519,8 @@ class TestE2eDependencyRendering:
 
     # Fragment loaded by HTMX
     @with_playwright
-    async def test_fragment_htmx(self, browser_name):
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+    async def test_fragment_htmx(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await browser.new_page()
         await page.goto(f"{TEST_SERVER_URL}/fragment/base/htmx?frag=comp")
 
         test_before_js: types.js = """() => {
@@ -570,8 +571,8 @@ class TestE2eDependencyRendering:
 
     # Fragment where the page wasn't rendered with the "document" strategy
     @with_playwright
-    async def test_fragment_without_document(self, browser_name):
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+    async def test_fragment_without_document(self, browser: "Browser", browser_name: "BrowserType"):
+        page = await browser.new_page()
         await page.goto(f"{TEST_SERVER_URL}/fragment/base/htmx_raw?frag=comp")
 
         test_before_js: types.js = """() => {
@@ -627,10 +628,10 @@ class TestE2eDependencyRendering:
         await page.close()
 
     @with_playwright
-    async def test_alpine__head(self, browser_name):
+    async def test_alpine__head(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/alpine/head"
 
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        page = await browser.new_page()
         await page.goto(single_comp_url)
 
         component_text = await page.locator('[x-data="alpine_test"]').text_content()
@@ -639,10 +640,10 @@ class TestE2eDependencyRendering:
         await page.close()
 
     @with_playwright
-    async def test_alpine__body(self, browser_name):
+    async def test_alpine__body(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/alpine/body"
 
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        page = await browser.new_page()
         await page.goto(single_comp_url)
 
         component_text = await page.locator('[x-data="alpine_test"]').text_content()
@@ -651,10 +652,10 @@ class TestE2eDependencyRendering:
         await page.close()
 
     @with_playwright
-    async def test_alpine__body2(self, browser_name):
+    async def test_alpine__body2(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/alpine/body2"
 
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        page = await browser.new_page()
         await page.goto(single_comp_url)
 
         component_text = await page.locator('[x-data="alpine_test"]').text_content()
@@ -663,10 +664,10 @@ class TestE2eDependencyRendering:
         await page.close()
 
     @with_playwright
-    async def test_alpine__invalid(self, browser_name):
+    async def test_alpine__invalid(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/alpine/invalid"
 
-        page: Page = await self.browser.new_page()  # type: ignore[attr-defined]
+        page = await browser.new_page()
         await page.goto(single_comp_url)
 
         component_text = await page.locator('[x-data="alpine_test"]').text_content()

@@ -84,6 +84,22 @@ We use [Playwright](https://playwright.dev/python/docs/intro) for end-to-end tes
 
 Tests decorated with `@with_playwright` automatically run across all major browsers: Chromium, Firefox, and WebKit. This ensures cross-browser compatibility.
 
+Test functions must include the `browser` and `browser_name` fixtures to work correctly.
+
+```py
+from django_components.testing import djc_test
+from tests.e2e.utils import BrowserType, with_playwright
+from playwright.async_api import Browser
+
+@djc_test
+class MyTest:
+    @with_playwright
+    async def test_script_loads(self, browser: Browser, browser_name: BrowserType):
+        page = await browser.new_page()
+        await page.goto(f"{TEST_SERVER_URL}/my-page")
+        assert page.content() == "My page"
+```
+
 You will need to install Playwright to run these tests. Luckily, Playwright makes it very easy:
 
 ```sh
