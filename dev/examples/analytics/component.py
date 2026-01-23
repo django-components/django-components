@@ -1,11 +1,9 @@
-from typing import Dict, List
-
 from django_components import Component, register, types
 
 DESCRIPTION = "Track component errors or success rates to send them to Sentry or other services."
 
 # A mock analytics service
-analytics_events: List[Dict] = []
+analytics_events: list[dict] = []
 error_rate = {
     "error": 0,
     "success": 0,

@@ -39,10 +39,11 @@ import inspect
 import re
 import sys
 from argparse import ArgumentParser
+from collections.abc import Sequence
 from importlib import import_module
 from pathlib import Path
 from textwrap import dedent
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import mkdocs_gen_files
 from django.conf import settings
@@ -299,7 +300,7 @@ def gen_reference_settings() -> None:
 
 
 # Get attributes / methods that are unique to the subclass
-def _get_unique_methods(base_class: Type, sub_class: Type) -> List[str]:
+def _get_unique_methods(base_class: type, sub_class: type) -> list[str]:
     base_methods = set(dir(base_class))
     subclass_methods = set(dir(sub_class))
     unique_methods = subclass_methods - base_methods
@@ -330,7 +331,7 @@ def _gen_default_settings_section(app_settings_filepath: str) -> str:
     #
     # However, for the documentation, we need to remove those.
     dynamic_re = re.compile(r"Dynamic\(lambda\: (?P<code>.+)\)")
-    cleaned_snippet_lines: List[str] = []
+    cleaned_snippet_lines: list[str] = []
     for line in defaults_snippet_lines:
         curr_line = comment_re.split(line)[0].rstrip()
         curr_line = dynamic_re.sub(
@@ -360,8 +361,8 @@ def gen_reference_tagformatters() -> None:
     preface += (root / template_path).read_text()
     out_path = "reference/tag_formatters.md"
 
-    tag_formatter_classes: Dict[str, Type[TagFormatterABC]] = {}
-    tag_formatter_instances: Dict[str, TagFormatterABC] = {}
+    tag_formatter_classes: dict[str, type[TagFormatterABC]] = {}
+    tag_formatter_instances: dict[str, TagFormatterABC] = {}
     for name, obj in inspect.getmembers(module):
         if _is_tag_formatter_instance(obj):
             tag_formatter_instances[name] = obj
@@ -376,7 +377,7 @@ def gen_reference_tagformatters() -> None:
         # ```markdown
         # - `django_components.component_formatter` for [ComponentFormatter](#django_components.ComponentFormatter)
         # ```
-        formatted_instances_lines: List[str] = []
+        formatted_instances_lines: list[str] = []
         for name, inst in tag_formatter_instances.items():
             cls = inst.__class__
             cls_link_hash = f"#{get_import_path(cls)}"
@@ -450,7 +451,7 @@ def gen_reference_commands() -> None:
         # Document all commands defined by django-components
         # All our commands are scoped under `components` (e.g. `components create`, `components upgrade`, etc.)
         # Furthermore, all subcommands are declared statically, so we can walk down the tree of subcommands.
-        commands_stack: List[Tuple[Type[ComponentCommand], Tuple[str, ...]]] = [(ComponentsRootCommand, ())]
+        commands_stack: list[tuple[type[ComponentCommand], tuple[str, ...]]] = [(ComponentsRootCommand, ())]
         while commands_stack:
             cmd_def_cls, cmd_path = commands_stack.pop()
             # NOTE: Argparse formats the help string, and so it uses `%%` to escape `%` characters.
@@ -816,7 +817,7 @@ def _format_hook_type(type_str: str) -> str:
     return type_str
 
 
-def _extract_property_docstrings(cls: Type) -> Dict[str, str]:
+def _extract_property_docstrings(cls: type) -> dict[str, str]:
     """
     Python doesn't provide a way to access docstrings of properties, e.g.:
 
@@ -847,7 +848,7 @@ def _extract_property_docstrings(cls: Type) -> Dict[str, str]:
       and that the body is indented with 4 spaces.
     """
     lines, _start_line_index = inspect.getsourcelines(cls)
-    attrs_lines: List[str] = []
+    attrs_lines: list[str] = []
     ignore = True
     for line in lines:
         if ignore:
@@ -916,9 +917,9 @@ def gen_reference_signals() -> None:
     mkdocs_gen_files.set_edit_path(out_path, template_path)
 
 
-def _list_urls(urlpatterns: Sequence[Union[URLPattern, URLResolver]], prefix: str = "") -> List[str]:
+def _list_urls(urlpatterns: Sequence[URLPattern | URLResolver], prefix: str = "") -> list[str]:
     """Recursively extract all URLs and their associated views from Django's urlpatterns"""
-    urls: List[str] = []
+    urls: list[str] = []
 
     for pattern in urlpatterns:
         if isinstance(pattern, URLPattern):
@@ -994,7 +995,7 @@ def _gen_command_args(parser: ArgumentParser) -> str:
 #               'names': ['--path PATH']},
 #              {'desc': "Show program's version number and exit.",
 # ```
-def _parse_command_args(cmd_inputs: str) -> Dict[str, List[Dict]]:
+def _parse_command_args(cmd_inputs: str) -> dict[str, list[dict]]:
     # Replace
     # ```
     # subcommands:
@@ -1025,8 +1026,8 @@ def _parse_command_args(cmd_inputs: str) -> Dict[str, List[Dict]]:
                 new_text_after_subcommands += line + "\n"
         cmd_inputs = text_before_subcommands + "subcommands:\n" + new_text_after_subcommands
 
-    section: Optional[str] = None
-    data: Dict[str, List[Dict]] = {}
+    section: str | None = None
+    data: dict[str, list[dict]] = {}
 
     for line in cmd_inputs.split("\n"):
         if not line:
@@ -1068,7 +1069,7 @@ def _parse_command_args(cmd_inputs: str) -> Dict[str, List[Dict]]:
     return data
 
 
-def _format_command_args(cmd_parser: ArgumentParser, cmd_path: Optional[Sequence[str]] = None) -> str:
+def _format_command_args(cmd_parser: ArgumentParser, cmd_path: Sequence[str] | None = None) -> str:
     cmd_inputs: str = _gen_command_args(cmd_parser)
     parsed_cmd_inputs = _parse_command_args(cmd_inputs)
 

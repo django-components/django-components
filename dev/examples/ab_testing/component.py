@@ -1,6 +1,5 @@
 # ruff: noqa: S311
 import random
-from typing import Optional
 
 from django_components import Component, register, types
 
@@ -47,7 +46,7 @@ class OfferCardNew(OfferCardOld):
 class OfferCard(Component):
     class Kwargs:
         savings_percent: int
-        use_new_version: Optional[bool] = None
+        use_new_version: bool | None = None
 
     def on_render(self, context, template):
         # Pass all kwargs to the child component
