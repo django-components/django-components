@@ -8,16 +8,88 @@ git clone https://github.com/<your GitHub username>/django-components.git
 cd django-components
 ```
 
-To quickly run the tests install the local dependencies by running:
+### Installing uv
 
+This project uses [uv](https://github.com/astral-sh/uv) for dependency management. Install uv first:
+
+**On macOS and Linux:**
 ```sh
-pip install -r requirements-dev.txt
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-You also have to install this local django-components version. Use `-e` for [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) so you don't have to re-install after every change:
+**On Windows:**
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Or using pip:
+```sh
+pip install uv
+```
+
+For more installation options, see the [uv documentation](https://docs.astral.sh/uv/getting-started/installation/).
+
+### Installing dependencies
+
+To install all development dependencies (including the package itself in editable mode):
 
 ```sh
-pip install -e .
+uv sync --group dev
+```
+
+This will:
+
+- Create a virtual environment (if one doesn't exist)
+- Install all project dependencies and dev dependencies
+- Install the package in editable mode
+- Generate or update `uv.lock` file
+
+To install dependencies for a specific group:
+
+- `uv sync --group dev` - Development dependencies (for local development)
+- `uv sync --group ci` - CI dependencies (for running tests in CI)
+- `uv sync --group docs` - Documentation dependencies (for building docs)
+
+### Managing dependencies
+
+**Adding a new dependency:**
+```sh
+# Add to main dependencies
+uv add <package-name>
+
+# Add to dev dependencies
+uv add --group dev <package-name>
+
+# Add to docs dependencies
+uv add --group docs <package-name>
+```
+
+**Removing a dependency:**
+```sh
+uv remove <package-name>
+# Or for a specific group:
+uv remove --group dev <package-name>
+```
+
+**Updating dependencies:**
+```sh
+# Update all dependencies to latest compatible versions
+uv lock --upgrade
+
+# Then sync to apply updates
+uv sync --group dev
+```
+
+**Switching between environments:**
+```sh
+# Activate the virtual environment
+source .venv/bin/activate  # On macOS/Linux
+# or
+.venv\Scripts\activate  # On Windows
+
+# Or use uv run to run commands in the environment
+uv run pytest
+uv run ruff check .
 ```
 
 ## Running tests
@@ -100,10 +172,9 @@ class MyTest:
         assert page.content() == "My page"
 ```
 
-You will need to install Playwright to run these tests. Luckily, Playwright makes it very easy:
+You will need to install Playwright to run these tests. If you've already run `uv sync --group dev`, Playwright should be installed. Then install the browsers:
 
 ```sh
-pip install -r requirements-dev.txt
 playwright install chromium firefox webkit --with-deps
 ```
 
@@ -146,13 +217,19 @@ Use the [sampleproject](https://github.com/django-components/django-components/t
 2. Install dependencies from the [requirements.txt](https://github.com/django-components/django-components/blob/master/sampleproject/requirements.txt) file:
 
     ```sh
+    # Using pip
     pip install -r requirements.txt
+    # Or using uv
+    uv pip install -r requirements.txt
     ```
 
 3. Link to your local version of django-components:
 
     ```sh
+    # Using pip
     pip install -e ..
+    # Or using uv
+    uv pip install -e ..
     ```
 
     !!! note
@@ -203,17 +280,13 @@ When you make changes to this JS code, you also need to compile it:
 
 The documentation website is built using [MkDocs](https://www.mkdocs.org/) and [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
 
-First install dependencies needed for the documentation:
+Install dependencies needed for the documentation:
 
 ```sh
-pip install -r requirements-docs.txt
+uv sync --group docs
 ```
 
-Then install this local django-components version. Use `-e` for [editable mode](https://setuptools.pypa.io/en/latest/userguide/development_mode.html) so you don't have to re-install after every change:
-
-```sh
-pip install -e .
-```
+This will install all documentation dependencies and the package itself in editable mode.
 
 To run the documentation server locally, run:
 
