@@ -916,7 +916,7 @@ class Component(metaclass=ComponentMeta):
 
         Args:
             context (Context): The Django template\
-                [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)\
+                [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)\
                 in which the component is rendered.
 
         Returns:
@@ -981,7 +981,7 @@ class Component(metaclass=ComponentMeta):
         but allows to dynamically resolve the template at render time.
 
         The template can be either plain string or
-        a [`Template`](https://docs.djangoproject.com/en/5.1/topics/templates/#template) instance.
+        a [`Template`](https://docs.djangoproject.com/en/5.2/topics/templates/#template) instance.
 
         See [`Component.template`](../api#django_components.Component.template) for more info and examples.
 
@@ -1005,12 +1005,12 @@ class Component(metaclass=ComponentMeta):
 
         Args:
             context (Context): The Django template\
-            [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)\
+            [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)\
             in which the component is rendered.
 
         Returns:
             str | Template | None: The inlined Django template string or\
-            a [`Template`](https://docs.djangoproject.com/en/5.1/topics/templates/#template) instance.
+            a [`Template`](https://docs.djangoproject.com/en/5.2/topics/templates/#template) instance.
 
         """
         return None

@@ -125,7 +125,7 @@ class SlotContext(Generic[TSlotData]):
     """
     context: Context | None = None
     """
-    Django template [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
+    Django template [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
     available inside the [`{% fill %}`](../template_tags#fill) tag.
 
     May be `None` if you call the slot fill directly, without using [`{% slot %}`](../template_tags#slot) tags.
