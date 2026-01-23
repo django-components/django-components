@@ -9,7 +9,6 @@ from django.template.loader import get_template as django_get_template
 
 from django_components.cache import get_template_cache
 from django_components.util.django_monkeypatch import is_cls_patched
-from django_components.util.loader import get_component_dirs
 from django_components.util.logger import trace_component_msg
 from django_components.util.misc import get_import_path, get_module_info
 
@@ -387,7 +386,7 @@ def cache_component_template_file(component_cls: Type["Component"]) -> None:
     from django_components.component_media import (  # noqa: PLC0415
         ComponentMedia,
         Unset,
-        _resolve_component_relative_files,
+        _load_media,
         is_set,
     )
 
@@ -398,17 +397,18 @@ def cache_component_template_file(component_cls: Type["Component"]) -> None:
     # At the same time, at this point we don't need the media files to be loaded. But we DO need for the relative
     # file path to be resolved.
     #
-    # So for this reason, `ComponentMedia.resolved_relative_files` was added to track if the media files were resolved.
+    # So for this reason, `ComponentMedia.resolved_relative_paths` was added to track if the media files were resolved.
     # Once relative files were resolved, we can safely access the template file from `ComponentMedia` instance
     # directly, thus avoiding the triggering of the Template loading.
     comp_media: ComponentMedia = component_cls._component_media  # type: ignore[attr-defined]
-    if comp_media.resolved and comp_media.resolved_relative_files:
+    # Check if template has been resolved and relative files have been resolved
+    if comp_media.resolved_template and comp_media.resolved_relative_paths:
         template_file: Union[str, Unset, None] = component_cls.template_file
     else:
-        # NOTE: This block of code is based on `_resolve_media()` in `component_media.py`
-        if not comp_media.resolved_relative_files:
-            comp_dirs = get_component_dirs()
-            _resolve_component_relative_files(component_cls, comp_media, comp_dirs=comp_dirs)
+        if not comp_media.resolved_relative_paths:
+            # NOTE: By using `asset_type=None`, we will only resolve relative file paths,
+            # but we will not load the files.
+            _load_media(component_cls, comp_media, asset_type=None)
 
         template_file = comp_media.template_file
 

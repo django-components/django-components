@@ -16,6 +16,7 @@ from django.utils.safestring import mark_safe
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, autodiscover, registry, render_dependencies, types
+from django_components.component_media import UNSET, ComponentMedia
 from django_components.testing import djc_test
 
 from .testutils import setup_test_config
@@ -46,7 +47,7 @@ class TestMainMedia:
         rendered = TestComponent.render()
 
         assertInHTML(
-            '<div class="html-css-only" data-djc-id-ca1bc40>Content</div>',
+            '<div class="html-css-only" data-djc-id-ca1bc3e>Content</div>',
             rendered,
         )
         assertInHTML(
@@ -219,23 +220,33 @@ class TestMainMedia:
         # # Access the property to load the CSS
         # _ = TestComponent.css
 
-        assert AppLvlCompComponent._component_media.css == (".html-css-only {\n  color: blue;\n}\n")  # type: ignore[attr-defined]
-        assert AppLvlCompComponent._component_media.css_file == "app_lvl_comp/app_lvl_comp.css"  # type: ignore[attr-defined]
+        media_obj: ComponentMedia = AppLvlCompComponent._component_media  # type: ignore[attr-defined]
+        assert media_obj.css == (".html-css-only {\n  color: blue;\n}\n")
+        assert media_obj.css_file == "app_lvl_comp/app_lvl_comp.css"
+        assert media_obj.js == 'console.log("JS file");\n'
+        assert media_obj.js_file == "app_lvl_comp/app_lvl_comp.js"
 
-        # Also check JS and HTML while we're at it
-        assert AppLvlCompComponent._component_media.template == (  # type: ignore[attr-defined]
+        # However, templates are loaded SEPARATELY from JS/CSS files, so they are not resolved yet
+        assert media_obj.template is UNSET
+        assert media_obj.template_file == "app_lvl_comp/app_lvl_comp.html"
+        assert media_obj._template is UNSET
+
+        # Because JS/CSS files were already loaded, that means we also already resolved relative file paths
+        assert media_obj.resolved_relative_paths
+
+        # Only now, when we access the template, it is resolved
+        _ = TestComponent.template
+
+        assert media_obj.template == (
             '<form method="post">\n'
             "  {% csrf_token %}\n"
             '  <input type="text" name="variable" value="{{ variable }}">\n'
             '  <input type="submit">\n'
             "</form>\n"
         )
-        assert AppLvlCompComponent._component_media.template_file == "app_lvl_comp/app_lvl_comp.html"  # type: ignore[attr-defined]
-        assert AppLvlCompComponent._component_media.js == 'console.log("JS file");\n'  # type: ignore[attr-defined]
-        assert AppLvlCompComponent._component_media.js_file == "app_lvl_comp/app_lvl_comp.js"  # type: ignore[attr-defined]
-
-        assert isinstance(AppLvlCompComponent._component_media._template, Template)  # type: ignore[attr-defined]
-        assert AppLvlCompComponent._component_media._template.origin.component_cls is AppLvlCompComponent  # type: ignore[attr-defined]
+        assert media_obj.template_file == "app_lvl_comp/app_lvl_comp.html"
+        assert isinstance(media_obj._template, Template)
+        assert media_obj._template.origin.component_cls is AppLvlCompComponent
 
     def test_html_variable_filtered(self):
         class FilteredComponent(Component):

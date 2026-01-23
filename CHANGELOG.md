@@ -86,6 +86,14 @@
             assert kwargs.user == { "name": "John" }
     ```
 
+#### Refactor
+
+- Component's JS, CSS, and HTML template are now loaded independently.
+
+    This means that accessing `Component.js` or `Component.css` no longer triggers template resolution.
+
+    This should improve server startup time as fewer files need to be loaded up front.
+
 ## v0.145.0
 
 #### Perf
