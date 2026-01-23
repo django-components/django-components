@@ -1,8 +1,9 @@
 """This module contains optimizations for the `{% provide %}` feature."""
 
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, Generator, NamedTuple, Set, cast
+from typing import TYPE_CHECKING, NamedTuple, cast
 
 from django.template import Context
 
@@ -79,23 +80,23 @@ if TYPE_CHECKING:
 
 # Similarly to ComponentContext instances, we store the actual Provided data
 # outside of the Context object, to make it easier to debug the data flow.
-provide_cache: Dict[str, NamedTuple] = {}
+provide_cache: dict[str, NamedTuple] = {}
 
 # Given a `{% provide %}` instance, keep track of which components are referencing it.
 # ProvideID -> Component[]
 # NOTE: We manually clean up the entries when either:
 #       - `{% provide %}` ends and there are no more references to it
 #       - The last component that referenced it is garbage collected
-provide_references: Dict[str, Set[str]] = defaultdict(set)
+provide_references: dict[str, set[str]] = defaultdict(set)
 
 # The opposite - Given a component, keep track of which `{% provide %}` instances it is referencing.
 # Component -> ProvideID[]
 # NOTE: We manually clean up the entries when components are garbage collected.
-component_provides: Dict[str, Dict[str, str]] = defaultdict(dict)
+component_provides: dict[str, dict[str, str]] = defaultdict(dict)
 
 # Track which {% provide %} blocks are currently active (rendering).
 # This prevents premature cache cleanup when components are garbage collected.
-active_provides: Set[str] = set()
+active_provides: set[str] = set()
 
 
 @contextmanager

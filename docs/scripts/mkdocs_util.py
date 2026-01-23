@@ -3,14 +3,14 @@
 from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import griffe
 import yaml  # type: ignore[import-untyped]
 
 
 @lru_cache
-def load_config() -> Dict:
+def load_config() -> dict:
     mkdocs_config_str = Path("mkdocs.yml").read_text()
     # NOTE: Use BaseLoader to avoid resolving tags like `!ENV`
     #       See https://stackoverflow.com/questions/45966633/yaml-error-could-not-determine-a-constructor-for-the-tag
@@ -19,9 +19,9 @@ def load_config() -> Dict:
 
 
 @lru_cache
-def find_plugin(name: str) -> Optional[Dict]:
+def find_plugin(name: str) -> dict | None:
     config = load_config()
-    plugins: List[Union[str, Dict[str, Dict]]] = config.get("plugins", [])
+    plugins: list[str | dict[str, dict]] = config.get("plugins", [])
     if not plugins:
         return None
 
@@ -35,7 +35,7 @@ def find_plugin(name: str) -> Optional[Dict]:
     return None
 
 
-def get_mkdocstrings_plugin_handler_options() -> Optional[Dict]:
+def get_mkdocstrings_plugin_handler_options() -> dict | None:
     plugin = find_plugin("mkdocstrings")
     if plugin is None:
         return None

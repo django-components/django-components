@@ -1,22 +1,13 @@
 import gc
 import inspect
 import sys
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
+    TypeAlias,
     TypeVar,
-    Union,
 )
 from unittest.mock import patch
 from weakref import ReferenceType
@@ -38,15 +29,9 @@ from django_components.template import _reset_component_template_file_cache, loa
 if TYPE_CHECKING:
     from django_components.component_media import ComponentMedia
 
-# NOTE: `ReferenceType` is NOT a generic pre-3.9
-if sys.version_info >= (3, 9):
-    RegistryRef = ReferenceType[ComponentRegistry]
-    RegistriesCopies = List[Tuple[ReferenceType[ComponentRegistry], List[str]]]
-    InitialComponents = List[ReferenceType[Type[Component]]]
-else:
-    RegistriesCopies = List[Tuple[ReferenceType, List[str]]]
-    InitialComponents = List[ReferenceType]
-    RegistryRef = ReferenceType
+RegistryRef: TypeAlias = ReferenceType[ComponentRegistry]
+RegistriesCopies: TypeAlias = list[tuple[ReferenceType[ComponentRegistry], list[str]]]
+InitialComponents: TypeAlias = list[ReferenceType[type[Component]]]
 
 
 TCallable = TypeVar("TCallable", bound=Callable[..., Any])
@@ -102,32 +87,24 @@ class CsrfTokenPatcher:
 
 
 def djc_test(
-    django_settings: Union[Optional[Dict], Callable, Type] = None,
-    components_settings: Optional[Dict] = None,
+    django_settings: dict | None | Callable | type = None,
+    components_settings: dict | None = None,
     # Input to `@pytest.mark.parametrize`
-    parametrize: Optional[
-        Union[
-            Tuple[
-                # names
-                Sequence[str],
-                # values
-                Sequence[Sequence[Any]],
-            ],
-            Tuple[
-                # names
-                Sequence[str],
-                # values
-                Sequence[Sequence[Any]],
-                # ids
-                Optional[
-                    Union[
-                        Iterable[Union[None, str, float, int, bool]],
-                        Callable[[Any], Optional[object]],
-                    ]
-                ],
-            ],
-        ]
-    ] = None,
+    parametrize: tuple[
+        # names
+        Sequence[str],
+        # values
+        Sequence[Sequence[Any]],
+    ]
+    | tuple[
+        # names
+        Sequence[str],
+        # values
+        Sequence[Sequence[Any]],
+        # ids
+        Iterable[None | str | float | int | bool] | Callable[[Any], None | object] | None,
+    ]
+    | None = None,
     gc_collect: bool = True,
 ) -> Callable[[TCallable], TCallable]:
     """
@@ -425,14 +402,14 @@ def djc_test(
 
 
 def _merge_django_settings(
-    django_settings: Optional[Mapping[str, Any]] = None,
-    components_settings: Optional[Union[Mapping[str, Any], "ComponentsSettings"]] = None,
-) -> Dict[str, Any]:
+    django_settings: Mapping[str, Any] | None = None,
+    components_settings: "Mapping[str, Any] | ComponentsSettings | None" = None,
+) -> dict[str, Any]:
     """
     Merge settings such that the fields in the `COMPONENTS` setting are merged.
     Use components_settings to override fields in the django COMPONENTS setting.
     """
-    merged_settings: Dict[str, Any] = dict(django_settings or {})
+    merged_settings: dict[str, Any] = dict(django_settings or {})
 
     defaults = _components_to_mapping(_django_settings.COMPONENTS if _django_settings.configured else {})
     current = _components_to_mapping(merged_settings.get("COMPONENTS"))
@@ -443,8 +420,8 @@ def _merge_django_settings(
 
 
 def _components_to_mapping(
-    value: Optional[Union[Mapping[str, Any], "ComponentsSettings"]],
-) -> Dict[str, Any]:
+    value: "Mapping[str, Any] | ComponentsSettings | None",
+) -> dict[str, Any]:
     if value is None:
         return {}
     if isinstance(value, Mapping):
@@ -538,7 +515,7 @@ def _clear_djc_global_state(
             del ALL_COMPONENTS[reverse_index]
 
     # Remove registries that were created during the test
-    initial_registries_set: Set[RegistryRef] = {reg_ref for reg_ref, _init_keys in initial_registries_copies}
+    initial_registries_set: set[RegistryRef] = {reg_ref for reg_ref, _init_keys in initial_registries_copies}
     for index in range(len(ALL_REGISTRIES)):
         registry_ref = ALL_REGISTRIES[len(ALL_REGISTRIES) - index - 1]
         is_ref_deleted = registry_ref() is None
@@ -579,7 +556,7 @@ def _clear_djc_global_state(
     loading_components.clear()
 
     # Clear Django caches
-    all_caches: List[BaseCache] = list(caches.all())
+    all_caches: list[BaseCache] = list(caches.all())
     for cache in all_caches:
         cache.clear()
 

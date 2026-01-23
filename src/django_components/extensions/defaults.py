@@ -1,8 +1,7 @@
 import dataclasses
-import sys
-from dataclasses import MISSING, Field, dataclass
+from collections.abc import Callable
 from inspect import isclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, TypeAlias
 from weakref import WeakKeyDictionary
 
 from django_components.extension import (
@@ -16,17 +15,13 @@ if TYPE_CHECKING:
     from django_components.component import Component
 
 
-# NOTE: `WeakKeyDictionary` is NOT a generic pre-3.9
-if sys.version_info >= (3, 9):
-    ComponentDefaultsCache = WeakKeyDictionary[Type["Component"], List["ComponentDefaultField"]]
-else:
-    ComponentDefaultsCache = WeakKeyDictionary
+ComponentDefaultsCache: TypeAlias = WeakKeyDictionary[type["Component"], list["ComponentDefaultField"]]
 
 
 defaults_by_component: ComponentDefaultsCache = WeakKeyDictionary()
 
 
-@dataclass
+@dataclasses.dataclass
 class Default:
     """
     Use this class to mark a field on the `Component.Defaults` class as a factory.
@@ -59,7 +54,7 @@ class ComponentDefaultField(NamedTuple):
     is_factory: bool
 
 
-def get_component_defaults(component: Union[Type["Component"], "Component"]) -> Dict[str, Any]:
+def get_component_defaults(component: "type[Component] | Component") -> dict[str, Any]:
     """
     Generate a defaults dictionary for a [`Component`](../api#django_components.Component).
 
@@ -103,13 +98,13 @@ def get_component_defaults(component: Union[Type["Component"], "Component"]) -> 
 
 # Figure out which defaults are factories and which are not, at class creation,
 # so that the actual creation of the defaults dictionary is simple.
-def _extract_defaults(defaults: Optional[Type], kwargs: Optional[Type]) -> List[ComponentDefaultField]:
+def _extract_defaults(defaults: type | None, kwargs: type | None) -> list["ComponentDefaultField"]:
     """
     Given the `Defaults` and `Kwargs` classes from a component, this function extracts
     the default values from them.
     """
     # First, extract defaults from the `Defaults` class
-    defaults_fields_map: Dict[str, ComponentDefaultField] = {}
+    defaults_fields_map: dict[str, ComponentDefaultField] = {}
     if defaults is not None:
         for default_field_key in dir(defaults):
             # Iterate only over fields set by the user (so non-dunder fields).
@@ -124,11 +119,11 @@ def _extract_defaults(defaults: Optional[Type], kwargs: Optional[Type]) -> List[
                 continue
 
             # If the field was defined with dataclass.field(), take the default / factory from there.
-            if isinstance(default_field, Field):
-                if default_field.default is not MISSING:
+            if isinstance(default_field, dataclasses.Field):
+                if default_field.default is not dataclasses.MISSING:
                     field_value = default_field.default
                     is_factory = False
-                elif default_field.default_factory is not MISSING:
+                elif default_field.default_factory is not dataclasses.MISSING:
                     field_value = default_field.default_factory
                     is_factory = True
                 else:
@@ -155,7 +150,7 @@ def _extract_defaults(defaults: Optional[Type], kwargs: Optional[Type]) -> List[
     # Next, extract defaults from the `Kwargs` class.
     # We check for dataclasses and NamedTuple, as those are the supported ways to define defaults.
     # Support for other types of `Kwargs` classes, like Pydantic models, is left to extensions.
-    kwargs_fields_map: Dict[str, ComponentDefaultField] = {}
+    kwargs_fields_map: dict[str, ComponentDefaultField] = {}
     if kwargs is not None:
         if dataclasses.is_dataclass(kwargs):
             for field in dataclasses.fields(kwargs):
@@ -192,7 +187,7 @@ def _extract_defaults(defaults: Optional[Type], kwargs: Optional[Type]) -> List[
     return list(merged_fields_map.values())
 
 
-def _apply_defaults(kwargs: Dict, defaults: List[ComponentDefaultField]) -> None:
+def _apply_defaults(kwargs: dict, defaults: list["ComponentDefaultField"]) -> None:
     """
     Apply the defaults from `Component.Defaults` to the given `kwargs`.
 

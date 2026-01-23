@@ -1,7 +1,8 @@
 import os
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any
 
 from django import VERSION as DJANGO_VERSION
 from django.contrib.staticfiles.finders import BaseFinder
@@ -42,10 +43,10 @@ class ComponentsFileSystemFinder(BaseFinder):
         # but using our locations instead of STATICFILES_DIRS.
 
         # List of locations with static files
-        self.locations: List[Tuple[str, str]] = []
+        self.locations: list[tuple[str, str]] = []
 
         # Maps dir paths to an appropriate storage instance
-        self.storages: Dict[str, FileSystemStorage] = {}
+        self.storages: dict[str, FileSystemStorage] = {}
         for root in component_dirs:
             if isinstance(root, (list, tuple)):
                 prefix, root = root  # noqa: PLW2901
@@ -61,8 +62,8 @@ class ComponentsFileSystemFinder(BaseFinder):
         super().__init__(*args, **kwargs)
 
     # NOTE: Based on `FileSystemFinder.check`
-    def check(self, **_kwargs: Any) -> List[checks.CheckMessage]:
-        errors: List[checks.CheckMessage] = []
+    def check(self, **_kwargs: Any) -> list[checks.CheckMessage]:
+        errors: list[checks.CheckMessage] = []
         if not isinstance(app_settings.DIRS, (list, tuple)):
             errors.append(
                 checks.Error(
@@ -92,7 +93,7 @@ class ComponentsFileSystemFinder(BaseFinder):
         return errors
 
     # NOTE: Same as `FileSystemFinder.find`
-    def find(self, path: str, **kwargs: Any) -> Union[List[str], str]:
+    def find(self, path: str, **kwargs: Any) -> list[str] | str:
         """Look for files in the extra locations as defined in COMPONENTS.dirs."""
         # Handle deprecated `all` parameter:
         # - In Django 5.2, the `all` parameter was deprecated in favour of `find_all`.
@@ -109,7 +110,7 @@ class ComponentsFileSystemFinder(BaseFinder):
         else:
             find_all = kwargs.get("all", False)
 
-        matches: List[str] = []
+        matches: list[str] = []
         for prefix, root in self.locations:
             if root not in searched_locations:
                 searched_locations.append(root)
@@ -121,7 +122,7 @@ class ComponentsFileSystemFinder(BaseFinder):
         return matches
 
     # NOTE: Same as `FileSystemFinder.find_local`, but we exclude Python/HTML files
-    def find_location(self, root: str, path: str, prefix: Optional[str] = None) -> Optional[str]:
+    def find_location(self, root: str, path: str, prefix: str | None = None) -> str | None:
         """
         Find a requested static file in a location and return the found
         absolute path (or ``None`` if no match).
@@ -142,7 +143,7 @@ class ComponentsFileSystemFinder(BaseFinder):
     #
     # NOTE: This is same as `FileSystemFinder.list`, but we exclude Python/HTML files
     # NOTE 2: Yield can be annotated as Iterable, see https://stackoverflow.com/questions/38419654
-    def list(self, ignore_patterns: List[str]) -> Iterable[Tuple[str, FileSystemStorage]]:
+    def list(self, ignore_patterns: Iterable[str] | None) -> Iterable[tuple[str, FileSystemStorage]]:
         """List all files in all locations."""
         for _prefix, root in self.locations:
             # Skip nonexistent directories.

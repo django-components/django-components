@@ -5,6 +5,7 @@
 
 import difflib
 import json
+from collections.abc import Callable, Iterable
 from dataclasses import MISSING, dataclass, field
 from datetime import date, datetime, timedelta
 from enum import Enum
@@ -13,18 +14,11 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
     Literal,
     NamedTuple,
-    Optional,
-    Tuple,
-    Type,
+    TypeAlias,
     TypedDict,
     TypeVar,
-    Union,
 )
 
 import django
@@ -89,7 +83,7 @@ else:
 #
 #####################################
 
-templates_cache: Dict[int, Template] = {}
+templates_cache: dict[int, Template] = {}
 
 
 def lazy_load_template(template: str) -> Template:
@@ -113,7 +107,7 @@ def gen_render_data():
     users = data.pop("users")
     user = users[0]
 
-    bookmarks: List[ProjectBookmark] = [
+    bookmarks: list[ProjectBookmark] = [
         {
             "id": 82,
             "project": data["project"],
@@ -886,7 +880,7 @@ class ProjectBookmark(TypedDict):
     project: Project
     text: str
     url: str
-    attachment: Optional["ProjectOutputAttachment"]
+    attachment: "ProjectOutputAttachment | None"
 
 
 class ProjectStatusUpdate(TypedDict):
@@ -924,7 +918,7 @@ class ProjectOutput(TypedDict):
     description: str
     completed: bool
     phase: ProjectPhase
-    dependency: Optional["ProjectOutput"]
+    dependency: "ProjectOutput | None"
 
 
 class ProjectOutputAttachment(TypedDict):
@@ -979,7 +973,7 @@ class ProjectPhaseType(StrEnum):
 
 
 class TagTypeMeta(NamedTuple):
-    allowed_values: Tuple[str, ...]
+    allowed_values: tuple[str, ...]
 
 
 # Additional metadata for Tags
@@ -1032,13 +1026,13 @@ TAG_TYPE_META = MappingProxyType(
 
 class ProjectOutputDef(NamedTuple):
     title: str
-    description: Optional[str] = None
-    dependency: Optional[str] = None
+    description: str | None = None
+    dependency: str | None = None
 
 
 class ProjectPhaseMeta(NamedTuple):
     type: ProjectPhaseType
-    outputs: List[ProjectOutputDef]
+    outputs: list[ProjectOutputDef]
 
 
 # This constant decides in which order the project phases are shown,
@@ -1100,8 +1094,8 @@ PROJECT_PHASES_META = MappingProxyType(
 # THEME
 #####################################
 
-ThemeColor = Literal["default", "error", "success", "alert", "info"]
-ThemeVariant = Literal["primary", "secondary"]
+ThemeColor: TypeAlias = Literal["default", "error", "success", "alert", "info"]
+ThemeVariant: TypeAlias = Literal["primary", "secondary"]
 
 VARIANTS = ["primary", "secondary"]
 
@@ -1231,9 +1225,9 @@ theme = Theme(
 
 
 def get_styling_css(
-    variant: Optional["ThemeVariant"] = None,
-    color: Optional["ThemeColor"] = None,
-    disabled: Optional[bool] = None,
+    variant: "ThemeVariant | None" = None,
+    color: "ThemeColor | None" = None,
+    disabled: bool | None = None,
 ):
     """
     Dynamically access CSS styling classes for a specific variant and state.
@@ -1285,7 +1279,7 @@ def format_timestamp(timestamp: datetime):
 def group_by(
     lst: Iterable[T],
     keyfn: Callable[[T, int], Any],
-    mapper: Optional[Callable[[T, int], U]] = None,
+    mapper: Callable[[T, int], U] | None = None,
 ):
     """
     Given a list, generates a key for each item in the list using the `keyfn`.
@@ -1297,7 +1291,7 @@ def group_by(
 
     Optionally map the values in the lists with `mapper`.
     """
-    grouped: Dict[Any, List[Union[U, T]]] = {}
+    grouped: dict[Any, list[U | T]] = {}
     for index, item in enumerate(lst):
         key = dynamic_apply(keyfn, item, index)
         if key not in grouped:
@@ -1341,7 +1335,7 @@ class ConditionalEditForm(forms.Form):
             self._disable_all_form_fields()
 
     def _disable_all_form_fields(self):
-        fields: Dict[str, forms.Field] = self.fields  # type: ignore[assignment]
+        fields: dict[str, forms.Field] = self.fields  # type: ignore[assignment]
         for form_field in fields.values():
             form_field.widget.attrs["readonly"] = True
 
@@ -1444,14 +1438,14 @@ button_template_str: types.django_html = """
 
 
 class ButtonData(NamedTuple):
-    href: Optional[str] = None
-    link: Optional[bool] = None
-    disabled: Optional[bool] = False
-    variant: Union["ThemeVariant", Literal["plain"]] = "primary"
-    color: Union["ThemeColor", str] = "default"
-    type: Optional[str] = "button"
-    attrs: Optional[dict] = None
-    slot_content: Optional[str] = ""
+    href: str | None = None
+    link: bool | None = None
+    disabled: bool | None = False
+    variant: "ThemeVariant | Literal['plain']" = "primary"
+    color: "ThemeColor | str" = "default"
+    type: str | None = "button"
+    attrs: dict | None = None
+    slot_content: str | None = ""
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -1490,8 +1484,8 @@ def button(context: Context, data: ButtonData):
 # MENU
 #####################################
 
-MaybeNestedList = List[Union[T, List[T]]]
-MenuItemGroup = List["MenuItem"]
+MaybeNestedList: TypeAlias = list[T | list[T]]
+MenuItemGroup: TypeAlias = list["MenuItem"]
 
 
 @dataclass(frozen=True)
@@ -1524,13 +1518,13 @@ class MenuItem:
     value: Any
     """Value of the menu item to render."""
 
-    link: Optional[str] = None
+    link: str | None = None
     """
     If set, the menu item will be wrapped in an `<a>` tag pointing to this
     link.
     """
 
-    item_attrs: Optional[dict] = None
+    item_attrs: dict | None = None
     """HTML attributes specific to this menu item."""
 
 
@@ -1586,19 +1580,19 @@ menu_template_str: types.django_html = """
 
 
 class MenuData(NamedTuple):
-    items: MaybeNestedList[Union[MenuItem, str]]
-    model: Optional[str] = None
+    items: "MaybeNestedList[MenuItem | str]"
+    model: str | None = None
     # CSS and HTML attributes
-    attrs: Optional[dict] = None
-    activator_attrs: Optional[dict] = None
-    list_attrs: Optional[dict] = None
+    attrs: dict | None = None
+    activator_attrs: dict | None = None
+    list_attrs: dict | None = None
     # UX
-    close_on_esc: Optional[bool] = True
-    close_on_click_outside: Optional[bool] = True
-    anchor: Optional[str] = None
-    anchor_dir: Optional[str] = "bottom"
+    close_on_esc: bool | None = True
+    close_on_click_outside: bool | None = True
+    anchor: str | None = None
+    anchor_dir: str | None = "bottom"
     # Slots
-    slot_activator: Optional[str] = None
+    slot_activator: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -1643,7 +1637,7 @@ def menu(context: Context, data: MenuData):
 #####################################
 
 
-def _normalize_item(item: Union[MenuItem, str]):
+def _normalize_item(item: MenuItem | str):
     # Wrap plain value in MenuItem
     if not isinstance(item, MenuItem):
         return MenuItem(value=item)
@@ -1652,15 +1646,15 @@ def _normalize_item(item: Union[MenuItem, str]):
 
 # Normalize a list of MenuItems such that they are all in groups. We achieve
 # this by collecting consecutive ungrouped items into a single group.
-def _normalize_items_to_groups(items: MaybeNestedList[Union[MenuItem, str]]):
+def _normalize_items_to_groups(items: "MaybeNestedList[MenuItem | str]"):
     def is_group(item):
         return isinstance(item, Iterable) and not isinstance(item, str)
 
-    groups: List[List[Union[MenuItem, str]]] = []
+    groups: list[list[MenuItem | str]] = []
 
-    curr_group: Optional[List[Union[MenuItem, str]]] = None
+    curr_group: list[MenuItem | str] | None = None
     for index, item_or_grp in enumerate(items):
-        group: List[Union[MenuItem, str]] = []
+        group: list[MenuItem | str] = []
         if isinstance(item_or_grp, Iterable) and not isinstance(item_or_grp, str):
             group = item_or_grp
         else:
@@ -1679,9 +1673,9 @@ def _normalize_items_to_groups(items: MaybeNestedList[Union[MenuItem, str]]):
     return groups
 
 
-def prepare_menu_items(items: MaybeNestedList[Union[MenuItem, str]]):
+def prepare_menu_items(items: MaybeNestedList[MenuItem | str]):
     groups = _normalize_items_to_groups(items)
-    normalized_groups: List[MenuItemGroup] = []
+    normalized_groups: list[MenuItemGroup] = []
 
     for group in groups:
         norm_group = list(map(_normalize_item, group))
@@ -1726,8 +1720,8 @@ menu_list_template_str: types.django_html = """
 
 
 class MenuListData(NamedTuple):
-    items: MaybeNestedList[Union[MenuItem, str]]
-    attrs: Optional[dict] = None
+    items: "MaybeNestedList[MenuItem | str]"
+    attrs: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -1757,13 +1751,13 @@ class TableHeader(NamedTuple):
     key: str
     """Dictionary key on `TableRow.cols` that holds data for this header."""
 
-    hidden: Optional[bool] = None
+    hidden: bool | None = None
     """
     Whether to hide the header. The column will still be rendered,
     only the column title will be hidden.
     """
 
-    cell_attrs: Optional[dict] = None
+    cell_attrs: dict | None = None
     """HTML attributes specific to this table header cell."""
 
 
@@ -1781,21 +1775,21 @@ class TableCell:
     See https://developer.mozilla.org/en-US/docs/Web/HTML/Element/td#colspan
     """
 
-    link: Optional[str] = None
+    link: str | None = None
     """
     If set, the cell value will be wrapped in an `<a>` tag pointing to this
     link.
     """
 
-    link_attrs: Optional[dict] = None
+    link_attrs: dict | None = None
     """
     HTML attributes for the `<a>` tag wrapping the link, if `link` is set.
     """
 
-    cell_attrs: Optional[dict] = None
+    cell_attrs: dict | None = None
     """HTML attributes specific to this table cell."""
 
-    linebreaks: Optional[bool] = None
+    linebreaks: bool | None = None
     """Whether to apply the `linebreaks` filter to this table cell."""
 
     def __post_init__(self):
@@ -1831,13 +1825,13 @@ class TableRow:
     ```
     """
 
-    cols: Dict[str, TableCell] = field(default_factory=dict)
+    cols: dict[str, TableCell] = field(default_factory=dict)
     """Data within this row."""
 
-    row_attrs: Optional[dict] = None
+    row_attrs: dict | None = None
     """HTML attributes for this row."""
 
-    col_attrs: Optional[dict] = None
+    col_attrs: dict | None = None
     """
     HTML attributes for each column in this row.
 
@@ -1846,9 +1840,9 @@ class TableRow:
 
 
 def create_table_row(
-    cols: Optional[Dict[str, Union[TableCell, Any]]] = None,
-    row_attrs: Optional[dict] = None,
-    col_attrs: Optional[dict] = None,
+    cols: dict[str, TableCell | Any] | None = None,
+    row_attrs: dict | None = None,
+    col_attrs: dict | None = None,
 ):
     # Normalize the values of `cols` to `TableCell` instances. This
     # way we allow to set values of `self.cols` dict as plain values, e.g.:
@@ -1870,7 +1864,7 @@ def create_table_row(
     #     }
     # )
     # ```
-    resolved_cols: Dict[str, TableCell] = {}
+    resolved_cols: dict[str, TableCell] = {}
     if cols:
         for key, val in cols.items():
             resolved_cols[key] = TableCell(value=val) if not isinstance(val, TableCell) else val
@@ -1882,7 +1876,7 @@ def create_table_row(
     )
 
 
-def prepare_row_headers(row: TableRow, headers: List[TableHeader]):
+def prepare_row_headers(row: TableRow, headers: list[TableHeader]):
     # Skip headers when cells have colspan > 1, thus merging those cells
     final_row_headers = []
     headers_to_skip = 0
@@ -1969,9 +1963,9 @@ table_template_str: types.django_html = """
 
 
 class TableData(NamedTuple):
-    headers: List[TableHeader]
-    rows: List[TableRow]
-    attrs: Optional[dict] = None
+    headers: list[TableHeader]
+    rows: list[TableRow]
+    attrs: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -2028,21 +2022,21 @@ icon_template_str: types.django_html = """
 
 class IconData(NamedTuple):
     name: str
-    variant: Optional[str] = None
-    size: Optional[int] = None
-    stroke_width: Optional[float] = None
-    viewbox: Optional[str] = None
-    svg_attrs: Optional[dict] = None
+    variant: str | None = None
+    size: int | None = None
+    stroke_width: float | None = None
+    viewbox: str | None = None
+    svg_attrs: dict | None = None
     # Note: Unlike the underlying icon component, this component uses color CSS classes
-    color: Optional[str] = ""
-    icon_color: Optional[str] = ""
-    text_color: Optional[str] = ""
-    href: Optional[str] = None
-    text_attrs: Optional[dict] = None
-    link_attrs: Optional[dict] = None
-    attrs: Optional[dict] = None
+    color: str | None = ""
+    icon_color: str | None = ""
+    text_color: str | None = ""
+    href: str | None = None
+    text_attrs: dict | None = None
+    link_attrs: dict | None = None
+    attrs: dict | None = None
     # Slots
-    slot_content: Optional[str] = None
+    slot_content: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -2104,9 +2098,9 @@ ICONS = {
 
 
 class ComponentDefaultsMeta(type):
-    def __new__(mcs, name: str, bases: Tuple, namespace: Dict) -> Type:
+    def __new__(mcs, name: str, bases: tuple, namespace: dict) -> type:
         # Apply dataclass decorator to the class
-        return dataclass(super().__new__(mcs, name, bases, namespace))
+        return dataclass(super().__new__(mcs, name, bases, namespace))  # type: ignore[arg-type]
 
 
 class ComponentDefaults(metaclass=ComponentDefaultsMeta):
@@ -2124,7 +2118,7 @@ class IconDefaults(ComponentDefaults):
     color: str = "currentColor"
     stroke_width: float = 1.5
     viewbox: str = "0 0 24 24"
-    attrs: Optional[Dict] = None
+    attrs: dict | None = None
 
 
 heroicon_template_str: types.django_html = """
@@ -2139,12 +2133,12 @@ heroicon_template_str: types.django_html = """
 
 class HeroIconData(NamedTuple):
     name: str
-    variant: Optional[str] = None
-    size: Optional[int] = None
-    color: Optional[str] = None
-    stroke_width: Optional[float] = None
-    viewbox: Optional[str] = None
-    attrs: Optional[Dict] = None
+    variant: str | None = None
+    size: int | None = None
+    color: str | None = None
+    stroke_width: float | None = None
+    viewbox: str | None = None
+    attrs: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -2174,7 +2168,7 @@ def heroicon(context: Context, data: HeroIconData):
 
     # These are set as "default" attributes, so users can override them
     # by passing them in the `attrs` argument.
-    default_attrs: Dict[str, Any] = {
+    default_attrs: dict[str, Any] = {
         "viewBox": kwargs.viewbox,
         "style": f"width: {kwargs.size}px; height: {kwargs.size}px",
         "aria-hidden": "true",
@@ -2260,14 +2254,14 @@ expansion_panel_template_str: types.django_html = """
 
 
 class ExpansionPanelData(NamedTuple):
-    open: Optional[bool] = False
-    panel_id: Optional[str] = None
-    attrs: Optional[dict] = None
-    header_attrs: Optional[dict] = None
-    content_attrs: Optional[dict] = None
+    open: bool | None = False
+    panel_id: str | None = None
+    attrs: dict | None = None
+    header_attrs: dict | None = None
+    content_attrs: dict | None = None
     icon_position: Literal["left", "right"] = "left"
-    slot_header: Optional[str] = None
-    slot_content: Optional[str] = None
+    slot_header: str | None = None
+    slot_content: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -2331,30 +2325,30 @@ project_page_tabs_template_str: types.django_html = """
 
 
 class ProjectPageData(NamedTuple):
-    phases: List[ProjectPhase]
-    project_tags: List[str]
-    notes_1: List[ProjectNote]
-    comments_by_notes_1: Dict[str, List[ProjectNoteComment]]
-    notes_2: List[ProjectNote]
-    comments_by_notes_2: Dict[str, List[ProjectNoteComment]]
-    notes_3: List[ProjectNote]
-    comments_by_notes_3: Dict[str, List[ProjectNoteComment]]
-    status_updates: List[ProjectStatusUpdate]
-    roles_with_users: List[ProjectRole]
-    contacts: List[ProjectContact]
-    outputs: List["OutputWithAttachmentsAndDeps"]
+    phases: list[ProjectPhase]
+    project_tags: list[str]
+    notes_1: list[ProjectNote]
+    comments_by_notes_1: dict[str, list[ProjectNoteComment]]
+    notes_2: list[ProjectNote]
+    comments_by_notes_2: dict[str, list[ProjectNoteComment]]
+    notes_3: list[ProjectNote]
+    comments_by_notes_3: dict[str, list[ProjectNoteComment]]
+    status_updates: list[ProjectStatusUpdate]
+    roles_with_users: list[ProjectRole]
+    contacts: list[ProjectContact]
+    outputs: list["OutputWithAttachmentsAndDeps"]
     user_is_project_member: bool
     user_is_project_owner: bool
-    phase_titles: Dict[ProjectPhaseType, str]
+    phase_titles: dict[ProjectPhaseType, str]
     # Used by project layout
     layout_data: "ProjectLayoutData"
     project: Project
-    breadcrumbs: Optional[List["Breadcrumb"]] = None
+    breadcrumbs: list["Breadcrumb"] | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
 def project_page(context: Context, data: ProjectPageData):
-    rendered_phases: List[ListItem] = []
+    rendered_phases: list[ListItem] = []
     phases_by_type = {p["phase_template"]["type"]: p for p in data.phases}
     for phase_meta in PROJECT_PHASES_META.values():
         phase = phases_by_type[phase_meta.type]
@@ -2472,9 +2466,9 @@ def project_page(context: Context, data: ProjectPageData):
 
 class ProjectLayoutData(NamedTuple):
     request: HttpRequest
-    active_projects: List[Project]
+    active_projects: list[Project]
     project: Project
-    bookmarks: List[ProjectBookmark]
+    bookmarks: list[ProjectBookmark]
 
 
 def gen_tabs(project_id: int):
@@ -2524,15 +2518,15 @@ project_layout_tabbed_content_template_str: types.django_html = """
 
 class ProjectLayoutTabbedData(NamedTuple):
     layout_data: ProjectLayoutData
-    breadcrumbs: Optional[List["Breadcrumb"]] = None
-    top_level_tab_index: Optional[int] = None
+    breadcrumbs: list["Breadcrumb"] | None = None
+    top_level_tab_index: int | None = None
     variant: Literal["thirds", "halves"] = "thirds"
     # Slots
-    slot_left_panel: Optional[str] = None
-    slot_js: Optional[str] = None
-    slot_css: Optional[str] = None
-    slot_header: Optional[str] = None
-    slot_tabs: Optional["CallableSlot"] = None
+    slot_left_panel: str | None = None
+    slot_js: str | None = None
+    slot_css: str | None = None
+    slot_header: str | None = None
+    slot_tabs: "CallableSlot | None" = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -2666,13 +2660,13 @@ layout_template_str: types.django_html = """
 
 class LayoutData(NamedTuple):
     data: ProjectLayoutData
-    attrs: Optional[dict] = None
+    attrs: dict | None = None
     # Slots
-    slot_js: Optional[str] = None
-    slot_css: Optional[str] = None
-    slot_header: Optional[str] = None
-    slot_content: Optional[str] = None
-    slot_sidebar: Optional[str] = None
+    slot_js: str | None = None
+    slot_css: str | None = None
+    slot_header: str | None = None
+    slot_content: str | None = None
+    slot_sidebar: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -2786,7 +2780,7 @@ class CallableSlot(NamedTuple):
 
 class RenderContextProviderData(NamedTuple):
     request: HttpRequest
-    slot_content: Optional[CallableSlot] = None
+    slot_content: CallableSlot | None = None
 
 
 # This component "provides" data. This is similar to ContextProviders
@@ -3092,9 +3086,9 @@ base_template_str: types.django_html = """
 
 
 class BaseData(NamedTuple):
-    slot_css: Optional[str] = None
-    slot_js: Optional[str] = None
-    slot_content: Optional[str] = None
+    slot_css: str | None = None
+    slot_js: str | None = None
+    slot_content: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -3121,15 +3115,15 @@ def base(context: Context, data: BaseData) -> str:
 
 class SidebarItem(NamedTuple):
     name: str
-    icon: Optional[str] = None
-    icon_variant: Optional[str] = None
-    href: Optional[str] = None
-    children: Optional[List["SidebarItem"]] = None
+    icon: str | None = None
+    icon_variant: str | None = None
+    href: str | None = None
+    children: list["SidebarItem"] | None = None
 
 
 # Links in the sidebar.
-def gen_sidebar_menu_items(active_projects: List[Project]) -> List[Tuple[IconData, List[ButtonData]]]:
-    items: List[Tuple[IconData, List[ButtonData]]] = [
+def gen_sidebar_menu_items(active_projects: list[Project]) -> list[tuple[IconData, list[ButtonData]]]:
+    items: list[tuple[IconData, list[ButtonData]]] = [
         (
             IconData(
                 name="home",
@@ -3272,9 +3266,9 @@ sidebar_template_str: types.django_html = """
 
 
 class SidebarData(NamedTuple):
-    active_projects: List[Project]
-    attrs: Optional[dict] = None
-    slot_content: Optional[str] = None
+    active_projects: list[Project]
+    attrs: dict | None = None
+    slot_content: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -3378,7 +3372,7 @@ navbar_template_str: types.django_html = """
 
 
 class NavbarData(NamedTuple):
-    attrs: Optional[dict] = None
+    attrs: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -3402,7 +3396,7 @@ def navbar(context: Context, data: NavbarData):
 #####################################
 
 
-def construct_btn_onclick(model: str, btn_on_click: Optional[str]):
+def construct_btn_onclick(model: str, btn_on_click: str | None):
     """
     We want to allow the component users to define Alpine.js `@click` actions.
     However, we also need to use `@click` to close the dialog after clicking
@@ -3512,41 +3506,41 @@ dialog_template_str: types.django_html = """
 
 
 class DialogData(NamedTuple):
-    model: Optional[str] = None
+    model: str | None = None
     # Classes and HTML attributes
-    attrs: Optional[dict] = None
-    activator_attrs: Optional[dict] = None
-    title_attrs: Optional[dict] = None
-    content_attrs: Optional[dict] = None
+    attrs: dict | None = None
+    activator_attrs: dict | None = None
+    title_attrs: dict | None = None
+    content_attrs: dict | None = None
     # Confirm button
-    confirm_hide: Optional[bool] = None
-    confirm_text: Optional[str] = "Confirm"
-    confirm_href: Optional[str] = None
-    confirm_disabled: Optional[bool] = None
-    confirm_variant: Optional["ThemeVariant"] = "primary"
-    confirm_color: Optional["ThemeColor"] = None
-    confirm_type: Optional[str] = None
-    confirm_on_click: Optional[str] = ""
-    confirm_attrs: Optional[dict] = None
+    confirm_hide: bool | None = None
+    confirm_text: str | None = "Confirm"
+    confirm_href: str | None = None
+    confirm_disabled: bool | None = None
+    confirm_variant: "ThemeVariant | None" = "primary"
+    confirm_color: "ThemeColor | None" = None
+    confirm_type: str | None = None
+    confirm_on_click: str | None = ""
+    confirm_attrs: dict | None = None
     # Cancel button
-    cancel_hide: Optional[bool] = None
-    cancel_text: Optional[str] = "Cancel"
-    cancel_href: Optional[str] = None
-    cancel_disabled: Optional[bool] = None
-    cancel_variant: Optional["ThemeVariant"] = "secondary"
-    cancel_color: Optional["ThemeColor"] = None
-    cancel_type: Optional[str] = None
-    cancel_on_click: Optional[str] = ""
-    cancel_attrs: Optional[dict] = None
+    cancel_hide: bool | None = None
+    cancel_text: str | None = "Cancel"
+    cancel_href: str | None = None
+    cancel_disabled: bool | None = None
+    cancel_variant: "ThemeVariant | None" = "secondary"
+    cancel_color: "ThemeColor | None" = None
+    cancel_type: str | None = None
+    cancel_on_click: str | None = ""
+    cancel_attrs: dict | None = None
     # UX
-    close_on_esc: Optional[bool] = True
-    close_on_click_outside: Optional[bool] = True
+    close_on_esc: bool | None = True
+    close_on_click_outside: bool | None = True
     # Slots
-    slot_activator: Optional[str] = None
-    slot_prepend: Optional[str] = None
-    slot_title: Optional[str] = None
-    slot_content: Optional[str] = None
-    slot_append: Optional[str] = None
+    slot_activator: str | None = None
+    slot_prepend: str | None = None
+    slot_title: str | None = None
+    slot_content: str | None = None
+    slot_append: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -3827,9 +3821,9 @@ class TagsData(NamedTuple):
     tag_type: str
     js_props: dict
     editable: bool = True
-    max_width: Union[int, str] = "300px"
-    attrs: Optional[dict] = None
-    slot_title: Optional[str] = None
+    max_width: int | str = "300px"
+    attrs: dict | None = None
+    slot_title: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -3962,38 +3956,38 @@ form_template_str: types.django_html = """
 
 
 class FormData(NamedTuple):
-    type: Optional[Literal["table", "paragraph", "ul"]] = None
+    type: Literal["table", "paragraph", "ul"] | None = None
     editable: bool = True
     method: str = "post"
     # Submit btn
-    submit_hide: Optional[bool] = None
-    submit_text: Optional[str] = "Submit"
-    submit_href: Optional[str] = None
-    submit_disabled: Optional[bool] = None
-    submit_variant: Optional["ThemeVariant"] = "primary"
-    submit_color: Optional["ThemeColor"] = None
-    submit_type: Optional[str] = "submit"
-    submit_attrs: Optional[dict] = None
+    submit_hide: bool | None = None
+    submit_text: str | None = "Submit"
+    submit_href: str | None = None
+    submit_disabled: bool | None = None
+    submit_variant: "ThemeVariant | None" = "primary"
+    submit_color: "ThemeColor | None" = None
+    submit_type: str | None = "submit"
+    submit_attrs: dict | None = None
     # Cancel btn
-    cancel_hide: Optional[bool] = None
-    cancel_text: Optional[str] = "Cancel"
-    cancel_href: Optional[str] = None
-    cancel_disabled: Optional[bool] = None
-    cancel_variant: Optional["ThemeVariant"] = "secondary"
-    cancel_color: Optional["ThemeColor"] = None
-    cancel_type: Optional[str] = "button"
-    cancel_attrs: Optional[dict] = None
+    cancel_hide: bool | None = None
+    cancel_text: str | None = "Cancel"
+    cancel_href: str | None = None
+    cancel_disabled: bool | None = None
+    cancel_variant: "ThemeVariant | None" = "secondary"
+    cancel_color: "ThemeColor | None" = None
+    cancel_type: str | None = "button"
+    cancel_attrs: dict | None = None
     # Actions
-    actions_hide: Optional[bool] = None
-    actions_attrs: Optional[dict] = None
+    actions_hide: bool | None = None
+    actions_attrs: dict | None = None
     # Other
-    form_content_attrs: Optional[dict] = None
-    attrs: Optional[dict] = None
+    form_content_attrs: dict | None = None
+    attrs: dict | None = None
     # Slots
-    slot_actions_prepend: Optional[str] = None
-    slot_actions_append: Optional[str] = None
-    slot_form: Optional[str] = None
-    slot_below_form: Optional[str] = None
+    slot_actions_prepend: str | None = None
+    slot_actions_append: str | None = None
+    slot_form: str | None = None
+    slot_below_form: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -4080,13 +4074,13 @@ class Breadcrumb:
     value: Any
     """Value of the menu item to render."""
 
-    link: Optional[str] = None
+    link: str | None = None
     """
     If set, the item will be wrapped in an `<a>` tag pointing to this
     link.
     """
 
-    item_attrs: Optional[dict] = None
+    item_attrs: dict | None = None
     """HTML attributes specific to this item."""
 
 
@@ -4149,8 +4143,8 @@ breadcrumbs_template_str: types.django_html = """
 
 
 class BreadcrumbsData(NamedTuple):
-    items: List[Breadcrumb]
-    attrs: Optional[dict] = None
+    items: list[Breadcrumb]
+    attrs: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -4292,14 +4286,14 @@ bookmarks_template_str: types.django_html = """
 
 class BookmarksData(NamedTuple):
     project_id: int
-    bookmarks: List[ProjectBookmark]
-    attrs: Optional[dict] = None
+    bookmarks: list[ProjectBookmark]
+    attrs: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
 def bookmarks(context: Context, data: BookmarksData):
-    bookmark_entries: List[BookmarkData] = []
-    attachment_entries: List[BookmarkData] = []
+    bookmark_entries: list[BookmarkData] = []
+    attachment_entries: list[BookmarkData] = []
 
     for bookmark in data.bookmarks:
         is_attachment = bookmark["attachment"] is not None
@@ -4456,7 +4450,7 @@ bookmark_template_str: types.django_html = """
 
 class BookmarkData(NamedTuple):
     bookmark: BookmarkItem
-    js: Optional[dict] = None
+    js: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -4506,15 +4500,15 @@ class ListItem:
     value: Any
     """Value of the menu item to render."""
 
-    link: Optional[str] = None
+    link: str | None = None
     """
     If set, the list item will be wrapped in an `<a>` tag pointing to this link.
     """
 
-    attrs: Optional[dict] = None
+    attrs: dict | None = None
     """Any additional attributes to apply to the list item."""
 
-    meta: Optional[dict] = None
+    meta: dict | None = None
     """Any additional data to pass along the list item."""
 
 
@@ -4546,11 +4540,11 @@ list_template_str: types.django_html = """
 
 
 class ListData(NamedTuple):
-    items: List[ListItem]
-    attrs: Optional[dict] = None
-    item_attrs: Optional[dict] = None
+    items: list[ListItem]
+    attrs: dict | None = None
+    item_attrs: dict | None = None
     # Slots
-    slot_empty: Optional[str] = None
+    slot_empty: str | None = None
 
 
 @registry.library.simple_tag(takes_context=True, name="list")
@@ -4580,7 +4574,7 @@ class TabEntry(NamedTuple):
 class TabStaticEntry(NamedTuple):
     header: str
     href: str
-    content: Optional[str]
+    content: str | None = None
     disabled: bool = False
 
 
@@ -4708,13 +4702,13 @@ tabs_impl_template_str: types.django_html = """
 
 
 class TabsImplData(NamedTuple):
-    tabs: List[TabEntry]
+    tabs: list[TabEntry]
     # Unique name to identify this tabs instance, so we can open/close the tabs
     # based on the query params.
-    name: Optional[str] = None
-    attrs: Optional[dict] = None
-    header_attrs: Optional[dict] = None
-    content_attrs: Optional[dict] = None
+    name: str | None = None
+    attrs: dict | None = None
+    header_attrs: dict | None = None
+    content_attrs: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -4735,15 +4729,15 @@ def tabs_impl(context: Context, data: TabsImplData):
 class TabsData(NamedTuple):
     # Unique name to identify this tabs instance, so we can open/close the tabs
     # based on the query params.
-    name: Optional[str] = None
-    attrs: Optional[dict] = None
-    header_attrs: Optional[dict] = None
-    content_attrs: Optional[dict] = None
-    slot_content: Optional[CallableSlot] = None
+    name: str | None = None
+    attrs: dict | None = None
+    header_attrs: dict | None = None
+    content_attrs: dict | None = None
+    slot_content: CallableSlot | None = None
 
 
 class ProvidedData(NamedTuple):
-    tabs: List[TabEntry]
+    tabs: list[TabEntry]
     enabled: bool
 
 
@@ -4756,7 +4750,7 @@ def tabs(context: Context, data: TabsData):
     if not data.slot_content:
         return ""
 
-    collected_tabs: List[TabEntry] = []
+    collected_tabs: list[TabEntry] = []
     provided_data = ProvidedData(tabs=collected_tabs, enabled=True)
 
     with context.push({"_tabs": provided_data}):
@@ -4779,7 +4773,7 @@ def tabs(context: Context, data: TabsData):
 class TabItemData(NamedTuple):
     header: str
     disabled: bool = False
-    slot_content: Optional[str] = None
+    slot_content: str | None = None
 
 
 # Use this component to define individual tabs inside the default slot
@@ -4850,12 +4844,12 @@ tabs_static_template_str: types.django_html = """
 
 
 class TabsStaticData(NamedTuple):
-    tabs: List[TabStaticEntry]
+    tabs: list[TabStaticEntry]
     tab_index: int = 0
     hide_body: bool = False
-    attrs: Optional[dict] = None
-    header_attrs: Optional[dict] = None
-    content_attrs: Optional[dict] = None
+    attrs: dict | None = None
+    header_attrs: dict | None = None
+    content_attrs: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -4975,10 +4969,10 @@ project_info_template_str: types.django_html = """
 
 class ProjectInfoData(NamedTuple):
     project: Project
-    project_tags: List[str]
-    contacts: List[ProjectContact]
-    status_updates: List[ProjectStatusUpdate]
-    roles_with_users: List[ProjectRole]
+    project_tags: list[str]
+    contacts: list[ProjectContact]
+    status_updates: list[ProjectStatusUpdate]
+    roles_with_users: list[ProjectRole]
     editable: bool
 
 
@@ -5146,10 +5140,10 @@ def _make_comments_data(note: ProjectNote, comment: ProjectNoteComment):
 
 
 def _make_notes_data(
-    notes: List[ProjectNote],
-    comments_by_notes: Dict[int, List[ProjectNoteComment]],
+    notes: list[ProjectNote],
+    comments_by_notes: dict[int, list[ProjectNoteComment]],
 ):
-    notes_data: List[dict] = []
+    notes_data: list[dict] = []
     for note in notes:
         comments = comments_by_notes.get(note["id"], [])
         comments_data = [_make_comments_data(note, comment) for comment in comments]
@@ -5181,8 +5175,8 @@ def _make_notes_data(
 
 class ProjectNotesData(NamedTuple):
     project_id: int
-    notes: List[ProjectNote]
-    comments_by_notes: Dict[int, List[ProjectNoteComment]]
+    notes: list[ProjectNote]
+    comments_by_notes: dict[int, list[ProjectNoteComment]]
     editable: bool
 
 
@@ -5212,18 +5206,18 @@ def project_notes(context: Context, data: ProjectNotesData) -> str:
 
 class AttachmentWithTags(NamedTuple):
     attachment: ProjectOutputAttachment
-    tags: List[str]
+    tags: list[str]
 
 
 class OutputWithAttachments(NamedTuple):
     output: ProjectOutput
-    attachments: List[AttachmentWithTags]
+    attachments: list[AttachmentWithTags]
 
 
 class OutputWithAttachmentsAndDeps(NamedTuple):
     output: ProjectOutput
-    attachments: List[AttachmentWithTags]
-    dependencies: List[OutputWithAttachments]
+    attachments: list[AttachmentWithTags]
+    dependencies: list[OutputWithAttachments]
 
 
 outputs_summary_expansion_content_template_str: types.django_html = """
@@ -5245,16 +5239,16 @@ project_outputs_summary_template_str: types.django_html = """
 
 class ProjectOutputsSummaryData(NamedTuple):
     project_id: int
-    outputs: List["OutputWithAttachmentsAndDeps"]
+    outputs: list["OutputWithAttachmentsAndDeps"]
     editable: bool
-    phase_titles: Dict[ProjectPhaseType, str]
+    phase_titles: dict[ProjectPhaseType, str]
 
 
 @registry.library.simple_tag(takes_context=True)
 def project_outputs_summary(context: Context, data: ProjectOutputsSummaryData) -> str:
     outputs_by_phase = group_by(data.outputs, lambda output, _: output[0]["phase"]["phase_template"]["type"])
 
-    groups: List[ExpansionPanelData] = []
+    groups: list[ExpansionPanelData] = []
     for phase_meta in PROJECT_PHASES_META.values():
         phase_outputs = outputs_by_phase.get(phase_meta.type, [])
         title = data.phase_titles[phase_meta.type]
@@ -5345,7 +5339,7 @@ def _make_status_update_data(status_update: ProjectStatusUpdate):
 
 class ProjectStatusUpdatesData(NamedTuple):
     project_id: int
-    status_updates: List[ProjectStatusUpdate]
+    status_updates: list[ProjectStatusUpdate]
     editable: bool
 
 
@@ -5401,8 +5395,8 @@ class ProjectAddUserForm(ConditionalEditForm):
     def __init__(
         self,
         editable: bool,
-        available_role_choices: List[Tuple[str, str]],
-        available_user_choices: List[Tuple[str, str]],
+        available_role_choices: list[tuple[str, str]],
+        available_user_choices: list[tuple[str, str]],
         *args,
         **kwargs,
     ):
@@ -5477,9 +5471,9 @@ project_users_template_str: types.django_html = """
 
 class ProjectUsersData(NamedTuple):
     project_id: int
-    roles_with_users: List[ProjectRole]
-    available_roles: Optional[List[str]]
-    available_users: Optional[List[User]]
+    roles_with_users: list[ProjectRole]
+    available_roles: list[str] | None = None
+    available_users: list[User] | None = None
     editable: bool = False
 
 
@@ -5669,17 +5663,17 @@ project_outputs_template_str: types.django_html = """
 
 class ProjectOutputsData(NamedTuple):
     project_id: int
-    outputs: List[OutputWithAttachmentsAndDeps]
+    outputs: list[OutputWithAttachmentsAndDeps]
     editable: bool
 
 
 @registry.library.simple_tag(takes_context=True)
 def project_outputs(context: Context, data: ProjectOutputsData) -> str:
-    outputs_data: List[Tuple[RenderedProjectOutput, ProjectOutputBadgeData, ExpansionPanelData]] = []
+    outputs_data: list[tuple[RenderedProjectOutput, ProjectOutputBadgeData, ExpansionPanelData]] = []
     for output_tuple in data.outputs:
         output, attachments, dependencies = output_tuple
 
-        attach_data: List[RenderedAttachment] = []
+        attach_data: list[RenderedAttachment] = []
         for attachment in attachments:
             attach_data.append(
                 RenderedAttachment(
@@ -5691,7 +5685,7 @@ def project_outputs(context: Context, data: ProjectOutputsData) -> str:
 
         update_output_url = "/update"
 
-        deps: List[RenderedOutputDep] = []
+        deps: list[RenderedOutputDep] = []
         for dep in dependencies:
             output, attachments = dep
             phase_url = f"/phase/{data.project_id}/{output['phase']['phase_template']['type']}"
@@ -6069,7 +6063,7 @@ class ProjectOutputAttachmentsData(NamedTuple):
     has_attachments: bool
     js_props: ProjectOutputAttachmentsJsProps
     editable: bool
-    attrs: Optional[dict] = None
+    attrs: dict | None = None
 
 
 @registry.library.simple_tag(takes_context=True)
@@ -6142,21 +6136,21 @@ OUTPUT_DESCRIPTION_PLACEHOLDER = "Placeholder text"
 class RenderedAttachment(NamedTuple):
     url: str
     text: str
-    tags: List[str]
+    tags: list[str]
 
 
 class RenderedOutputDep(NamedTuple):
     dependency: OutputWithAttachments
     phase_url: str
-    attachments: List[dict]
+    attachments: list[dict]
 
 
 class RenderedProjectOutput(NamedTuple):
     output: ProjectOutput
-    dependencies: List[RenderedOutputDep]
+    dependencies: list[RenderedOutputDep]
     has_missing_deps: bool
     output_data: dict
-    attachments: List[RenderedAttachment]
+    attachments: list[RenderedAttachment]
     update_output_url: str
 
 

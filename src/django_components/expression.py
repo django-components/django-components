@@ -1,4 +1,5 @@
-from typing import Any, Callable, Mapping
+from collections.abc import Callable, Mapping
+from typing import Any
 
 from django.template import Context, Node, NodeList
 from django.template.base import Parser, VariableNode

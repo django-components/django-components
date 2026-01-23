@@ -4,18 +4,11 @@ This file is for logic that focuses on transforming the AST of template tags
 """
 
 from collections import defaultdict
+from collections.abc import Callable, Iterable, Mapping
 from typing import (
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
     NamedTuple,
-    Optional,
     Protocol,
-    Set,
-    Tuple,
 )
 
 from django.template import NodeList, Variable, VariableDoesNotExist
@@ -31,14 +24,14 @@ from django_components.expression import TemplateExpression
 # Data obj to give meaning to the parsed tag fields
 class ParsedTag(NamedTuple):
     start_tag_source: str
-    flags: Dict[str, bool]
-    params: List[TagAttr]
-    parse_body: Callable[[], Tuple[NodeList, Optional[str]]]
+    flags: dict[str, bool]
+    params: list[TagAttr]
+    parse_body: Callable[[], tuple[NodeList, str | None]]
 
 
 def parse_template_tag(
     tag: str,
-    end_tag: Optional[str],
+    end_tag: str | None,
     tag_parser_config: ParserConfig,
     django_parser: Parser,
     token: Token,
@@ -68,10 +61,10 @@ def parse_template_tag(
     attrs = parsed_tag_info.attrs if isinstance(parsed_tag_info, GenericTag) else ()
     remaining_attrs, flags = _extract_flags(attrs, tag_allowed_flags)
 
-    def _parse_tag_body(parser: Parser, end_tag: str, inline: bool) -> Tuple[NodeList, Optional[str]]:
+    def _parse_tag_body(parser: Parser, end_tag: str, inline: bool) -> tuple[NodeList, str | None]:
         if inline:
             body = NodeList()
-            contents: Optional[str] = None
+            contents: str | None = None
         else:
             contents = _extract_contents_until(parser, [end_tag])
             body = parser.parse(parse_until=[end_tag])
@@ -98,8 +91,8 @@ def parse_template_tag(
 # to be used for caching slots.
 #
 # See https://github.com/django/django/blob/1fb3f57e81239a75eb8f873b392e11534c041fdc/django/template/base.py#L471
-def _extract_contents_until(parser: Parser, until_blocks: List[str]) -> str:
-    contents: List[str] = []
+def _extract_contents_until(parser: Parser, until_blocks: list[str]) -> str:
+    contents: list[str] = []
     for token in reversed(parser.tokens):
         # Use the raw values here for TokenType.* for a tiny performance boost.
         token_type = token.token_type.value
@@ -135,10 +128,10 @@ def _extract_contents_until(parser: Parser, until_blocks: List[str]) -> str:
 
 def _extract_flags(
     attrs: Iterable[TagAttr],
-    allowed_flags: Set[str],
-) -> Tuple[List[TagAttr], Dict[str, bool]]:
-    found_flags: Set[str] = set()
-    remaining_attrs: List[TagAttr] = []
+    allowed_flags: set[str],
+) -> tuple[list[TagAttr], dict[str, bool]]:
+    found_flags: set[str] = set()
+    remaining_attrs: list[TagAttr] = []
     for attr in attrs:
         if not attr.is_flag:
             remaining_attrs.append(attr)
@@ -150,7 +143,7 @@ def _extract_flags(
         found_flags.add(value)
 
     # Construct a dictionary of flags, e.g. `{"required": True, "disabled": False}`
-    flags_dict: Dict[str, bool] = {flag: flag in found_flags for flag in (allowed_flags or [])}
+    flags_dict: dict[str, bool] = {flag: flag in found_flags for flag in (allowed_flags or [])}
 
     return remaining_attrs, flags_dict
 
@@ -158,7 +151,7 @@ def _extract_flags(
 def resolve_template_string(
     context: Mapping[str, Any],
     _source: str,
-    _token: Tuple[int, int],
+    _token: tuple[int, int],
     filters: Mapping[str, Callable],
     tags: Mapping[str, Callable],
     expr: str,
@@ -173,7 +166,7 @@ def resolve_template_string(
 def resolve_filter(
     _context: Mapping[str, Any],
     _source: str,
-    _token: Tuple[int, int],
+    _token: tuple[int, int],
     filters: Mapping[str, Callable],
     _tags: Mapping[str, Callable],
     name: str,
@@ -194,7 +187,7 @@ def resolve_filter(
 def resolve_variable(
     context: Mapping[str, Any],
     _source: str,
-    _token: Tuple[int, int],
+    _token: tuple[int, int],
     _filters: Mapping[str, Callable],
     _tags: Mapping[str, Callable],
     var: str,
@@ -209,7 +202,7 @@ def resolve_variable(
 def resolve_translation(
     context: Mapping[str, Any],
     _source: str,
-    _token: Tuple[int, int],
+    _token: tuple[int, int],
     _filters: Mapping[str, Callable],
     _tags: Mapping[str, Callable],
     text: str,
@@ -220,13 +213,13 @@ def resolve_translation(
     return Variable(translation_var).resolve(context)
 
 
-python_expression_cache: Dict[str, Callable[[Mapping[str, Any]], Any]] = {}
+python_expression_cache: dict[str, Callable[[Mapping[str, Any]], Any]] = {}
 
 
 def resolve_python_expression(
     context: Mapping[str, Any],
     _source: str,
-    _token: Tuple[int, int],
+    _token: tuple[int, int],
     _filters: Mapping[str, Callable],
     _tags: Mapping[str, Callable],
     code: str,
@@ -239,15 +232,15 @@ def resolve_python_expression(
 
 
 class CompiledTagFn(Protocol):
-    def __call__(self, context: Mapping[str, Any]) -> Tuple[List[Any], List[Tuple[str, Any]]]: ...
+    def __call__(self, context: Mapping[str, Any]) -> tuple[list[Any], list[tuple[str, Any]]]: ...
 
 
 def compile_tag_params_resolver(
     tag_name: str,
-    params: List[TagAttr],
+    params: list[TagAttr],
     source: str,
-    filters: Dict[str, Callable],
-    tags: Dict[str, Callable],
+    filters: dict[str, Callable],
+    tags: dict[str, Callable],
 ) -> CompiledTagFn:
     compiled_tag = compile_tag(
         tag_or_attrs=params,
@@ -261,7 +254,7 @@ def compile_tag_params_resolver(
         filter=resolve_filter,
     )
 
-    def resolver(context: Mapping[str, Any]) -> Tuple[List[Any], List[Tuple[str, Any]]]:
+    def resolver(context: Mapping[str, Any]) -> tuple[list[Any], list[tuple[str, Any]]]:
         args, kwargs = compiled_tag(context)
 
         # TODO - Move these to extensions?
@@ -275,14 +268,14 @@ def compile_tag_params_resolver(
 
 
 # TODO_REMOVE_IN_V1 - Disallow specifying the same key multiple times once in v1.
-def merge_repeated_kwargs(args: List[Any], kwargs: List[Tuple[str, Any]]) -> Tuple[List[Any], List[Tuple[str, Any]]]:
-    resolved_kwargs: List[Tuple[str, Any]] = []
+def merge_repeated_kwargs(args: list[Any], kwargs: list[tuple[str, Any]]) -> tuple[list[Any], list[tuple[str, Any]]]:
+    resolved_kwargs: list[tuple[str, Any]] = []
     # Used for detecting duplicate kwargs
-    kwargs_by_key: Dict[str, Tuple[str, Any]] = {}
+    kwargs_by_key: dict[str, tuple[str, Any]] = {}
     # Keep track of the index of the first occurence of a kwarg
-    kwarg_indices_by_key: Dict[str, int] = {}
+    kwarg_indices_by_key: dict[str, int] = {}
     # Duplicate kwargs whose values are to be merged into a single string
-    duplicate_kwargs: Dict[str, List[str]] = defaultdict(list)
+    duplicate_kwargs: dict[str, list[str]] = defaultdict(list)
 
     for index, kwarg in enumerate(kwargs):
         key, value = kwarg
@@ -309,9 +302,9 @@ def merge_repeated_kwargs(args: List[Any], kwargs: List[Tuple[str, Any]]) -> Tup
 
 # TODO - Move this out into a plugin?
 def process_aggregate_kwargs(
-    args: List[Any],
-    kwargs: List[Tuple[str, Any]],
-) -> Tuple[List[Any], List[Tuple[str, Any]]]:
+    args: list[Any],
+    kwargs: list[tuple[str, Any]],
+) -> tuple[list[Any], list[tuple[str, Any]]]:
     """
     This function aggregates "prefixed" kwargs into dicts. "Prefixed" kwargs
     start with some prefix delimited with `:` (e.g. `attrs:`).
@@ -370,7 +363,7 @@ def process_aggregate_kwargs(
 
     processed_kwargs = []
     seen_keys = set()
-    nested_kwargs: Dict[str, Dict[str, Any]] = {}
+    nested_kwargs: dict[str, dict[str, Any]] = {}
     for key, value in kwargs:
         # Regular kwargs without `:` prefix
         if not is_aggregate_key(key):
@@ -398,7 +391,7 @@ def process_aggregate_kwargs(
     return args, processed_kwargs
 
 
-def _check_kwargs_for_agg_conflict(kwargs: List[Tuple[str, Any]]) -> None:
+def _check_kwargs_for_agg_conflict(kwargs: list[tuple[str, Any]]) -> None:
     seen_regular_kwargs = set()
     seen_agg_kwargs = set()
 
@@ -446,7 +439,7 @@ def is_aggregate_key(key: str) -> bool:
 # NOTE: Another reason we want to avoid using Django's `token.split_contents()`
 # is because it incorrectly handles when a translation has a filter,
 # and there's no space between them, e.g. `_("Hello")|upper`.
-def bits_from_tag(tag: TagUnion) -> List[str]:
+def bits_from_tag(tag: TagUnion) -> list[str]:
     bits = [tag.meta.name.content]
     attrs = tag.attrs if isinstance(tag, GenericTag) else ()
     is_self_closing = isinstance(tag, GenericTag) and tag.is_self_closing

@@ -1,6 +1,7 @@
 import re
 import sys
 from collections import namedtuple
+from collections.abc import Callable, Generator, Iterable
 from dataclasses import fields, is_dataclass
 from hashlib import md5
 from importlib import import_module
@@ -10,16 +11,8 @@ from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
+    TypeGuard,
     TypeVar,
-    Union,
     cast,
 )
 from urllib import parse
@@ -62,16 +55,16 @@ def is_identifier(value: Any) -> bool:
     return value.isidentifier()
 
 
-def any_regex_match(string: str, patterns: List[re.Pattern]) -> bool:
+def any_regex_match(string: str, patterns: list[re.Pattern]) -> bool:
     return any(p.search(string) is not None for p in patterns)
 
 
-def no_regex_match(string: str, patterns: List[re.Pattern]) -> bool:
+def no_regex_match(string: str, patterns: list[re.Pattern]) -> bool:
     return all(p.search(string) is None for p in patterns)
 
 
 # See https://stackoverflow.com/a/2020083/9788634
-def get_import_path(cls_or_fn: Type[Any]) -> str:
+def get_import_path(cls_or_fn: type[Any]) -> str:
     """Get the full import path for a class or a function, e.g. `"path.to.MyClass"`"""
     module = cls_or_fn.__module__
     if module == "builtins":
@@ -80,10 +73,10 @@ def get_import_path(cls_or_fn: Type[Any]) -> str:
 
 
 def get_module_info(
-    cls_or_fn: Union[Type[Any], Callable[..., Any]],
-) -> Tuple[Optional[ModuleType], Optional[str], Optional[str]]:
+    cls_or_fn: type[Any] | Callable[..., Any],
+) -> tuple[ModuleType | None, str | None, str | None]:
     """Get the module, module name and module file path where the class or function is defined."""
-    module_name: Optional[str] = getattr(cls_or_fn, "__module__", None)
+    module_name: str | None = getattr(cls_or_fn, "__module__", None)
 
     if module_name:
         if module_name in sys.modules:
@@ -97,14 +90,14 @@ def get_module_info(
         module = None
 
     if module:
-        module_file_path: Optional[str] = getattr(module, "__file__", None)
+        module_file_path: str | None = getattr(module, "__file__", None)
     else:
         module_file_path = None
 
     return module, module_name, module_file_path
 
 
-def default(val: Optional[T], default: Union[U, Callable[[], U], Type[T]], factory: bool = False) -> Union[T, U]:
+def default(val: T | None, default: U | Callable[[], U] | type[T], factory: bool = False) -> T | U:
     if val is not None:
         return val
     if factory:
@@ -113,7 +106,7 @@ def default(val: Optional[T], default: Union[U, Callable[[], U], Type[T]], facto
     return cast("U", default)
 
 
-def get_index(lst: List, key: Callable[[Any], bool]) -> Optional[int]:
+def get_index(lst: list[Any], key: Callable[[Any], bool]) -> int | None:
     """Get the index of the first item in the list that satisfies the key"""
     for i in range(len(lst)):
         if key(lst[i]):
@@ -121,7 +114,7 @@ def get_index(lst: List, key: Callable[[Any], bool]) -> Optional[int]:
     return None
 
 
-def get_last_index(lst: List, key: Callable[[Any], bool]) -> Optional[int]:
+def get_last_index(lst: list[Any], key: Callable[[Any], bool]) -> int | None:
     """Get the index of the last item in the list that satisfies the key"""
     for index, item in enumerate(reversed(lst)):
         if key(item):
@@ -129,12 +122,12 @@ def get_last_index(lst: List, key: Callable[[Any], bool]) -> Optional[int]:
     return None
 
 
-def is_nonempty_str(txt: Optional[str]) -> bool:
+def is_nonempty_str(txt: str | None) -> bool:
     return txt is not None and bool(txt.strip())
 
 
 # Convert Component class to something like `TableComp_a91d03`
-def hash_comp_cls(comp_cls: Type["Component"]) -> str:
+def hash_comp_cls(comp_cls: type["Component"]) -> str:
     full_name = get_import_path(comp_cls)
     name_hash = md5(full_name.encode()).hexdigest()[0:6]  # noqa: S324
     return comp_cls.__name__ + "_" + name_hash
@@ -148,7 +141,7 @@ def is_glob(filepath: str) -> bool:
     return is_glob_re.search(filepath) is not None
 
 
-def flatten(lst: Iterable[Iterable[T]]) -> List[T]:
+def flatten(lst: Iterable[Iterable[T]]) -> list[T]:
     return list(chain.from_iterable(lst))
 
 
@@ -169,7 +162,7 @@ def to_dict(data: Any) -> dict:
     return dict(data)
 
 
-def format_url(url: str, query: Optional[Dict] = None, fragment: Optional[str] = None) -> str:
+def format_url(url: str, query: dict[str, Any] | None = None, fragment: str | None = None) -> str:
     """
     Given a URL, add to it query parameters and a fragment, returning an updated URL.
 
@@ -213,8 +206,8 @@ def format_url(url: str, query: Optional[Dict] = None, fragment: Optional[str] =
 
 
 def format_as_ascii_table(
-    data: List[Dict[str, Any]],
-    headers: Union[List[str], Tuple[str, ...], Set[str]],
+    data: list[dict[str, Any]],
+    headers: list[str] | tuple[str, ...] | set[str],
     include_headers: bool = True,
 ) -> str:
     """
@@ -258,7 +251,9 @@ def format_as_ascii_table(
     data_rows = []
     for row in data:
         row_values = [str(row.get(header, "")) for header in headers]
-        data_row = "  ".join(f"{value:<{column_widths[header]}}" for value, header in zip(row_values, headers))
+        data_row = "  ".join(
+            f"{value:<{column_widths[header]}}" for value, header in zip(row_values, headers, strict=False)
+        )
         data_rows.append(data_row)
 
     # Combine all parts into the final table
@@ -266,13 +261,12 @@ def format_as_ascii_table(
     return table
 
 
-# TODO - Convert to TypeGuard once Python 3.9 is dropped
-def is_generator(obj: Any) -> bool:
+def is_generator(obj: Any) -> TypeGuard[Generator[Any, Any, Any]]:
     """Check if an object is a generator with send method."""
     return hasattr(obj, "send")
 
 
-def convert_class_to_namedtuple(cls: Type[Any]) -> Type[Tuple[Any, ...]]:
+def convert_class_to_namedtuple(cls: type[Any]) -> type[tuple[Any, ...]]:
     # Construct fields for a NamedTuple. Unfortunately one can't further subclass the subclass of `NamedTuple`,
     # so we need to construct a new class with the same fields.
     # NamedTuple has:

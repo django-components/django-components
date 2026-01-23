@@ -202,7 +202,7 @@ and [`self.slots`](../../../reference/api/#django_components.Component.slots) pr
 
 ```py
 class ProfileCard(Component):
-    def on_render_before(self, context: Context, template: Optional[Template]):
+    def on_render_before(self, context: Context, template: Template | None):
         # Access inputs via self.args, self.kwargs, self.slots
         self.args[0]
         self.kwargs.get("show_details", False)
@@ -365,7 +365,6 @@ This will also validate the inputs at runtime, as the type classes will be insta
 Read more about [Component typing](../../fundamentals/typing_and_validation).
 
 ```python
-from typing import Optional
 from django_components import Component, SlotInput
 
 class Button(Component):
@@ -374,10 +373,10 @@ class Button(Component):
 
     class Kwargs:
         surname: str
-        maybe_var: Optional[int] = None  # May be omitted
+        maybe_var: int | None = None  # May be omitted
 
     class Slots:
-        my_slot: Optional[SlotInput] = None
+        my_slot: SlotInput | None = None
         footer: SlotInput
 
     # Use the above classes to add type hints to the data method

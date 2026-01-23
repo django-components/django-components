@@ -1,7 +1,5 @@
 """Tests various ways how the individual tags can be combined inside the templates."""
 
-from typing import Dict
-
 from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual
 
@@ -966,7 +964,7 @@ class TestComponentNesting:
             ["django", "isolated"],
         ),
     )
-    def test_component_nesting_component_with_slot_fallback(self, components_settings: Dict, expected: str):
+    def test_component_nesting_component_with_slot_fallback(self, components_settings: dict, expected: str):
         registry.register("dashboard", self._get_dashboard_component())
         registry.register("calendar", self._get_calendar_component())
 

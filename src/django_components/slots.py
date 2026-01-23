@@ -1,24 +1,18 @@
 import difflib
 import re
+from collections.abc import Generator, Mapping
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from dataclasses import replace as dataclass_replace
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Generator,
     Generic,
-    List,
     Literal,
-    Mapping,
     NamedTuple,
-    Optional,
     Protocol,
-    Set,
-    Tuple,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
     runtime_checkable,
 )
@@ -54,7 +48,7 @@ FILL_BODY_KWARG = "body"
 
 
 # Public types
-SlotResult = Union[str, SafeString]
+SlotResult: TypeAlias = str | SafeString
 """
 Type representing the result of a slot render function.
 
@@ -114,7 +108,7 @@ class SlotContext(Generic[TSlotData]):
         return f"Hello, {ctx.data['name']}!"
     ```
     """
-    fallback: Optional[Union[str, "SlotFallback"]] = None
+    fallback: "str | SlotFallback | None" = None
     """
     Slot's fallback content. Lazily-rendered - coerce this value to string to force it to render.
 
@@ -129,7 +123,7 @@ class SlotContext(Generic[TSlotData]):
 
     May be `None` if you call the slot fill directly, without using [`{% slot %}`](../template_tags#slot) tags.
     """
-    context: Optional[Context] = None
+    context: Context | None = None
     """
     Django template [`Context`](https://docs.djangoproject.com/en/5.1/ref/templates/api/#django.template.Context)
     available inside the [`{% fill %}`](../template_tags#fill) tag.
@@ -249,26 +243,26 @@ class Slot(Generic[TSlotData]):
     """
 
     # Following fields are only for debugging
-    component_name: Optional[str] = None
+    component_name: str | None = None
     """
     Name of the component that originally received this slot fill.
 
     See [Slot metadata](../../concepts/fundamentals/slots#slot-metadata).
     """
-    slot_name: Optional[str] = None
+    slot_name: str | None = None
     """
     Slot name to which this Slot was initially assigned.
 
     See [Slot metadata](../../concepts/fundamentals/slots#slot-metadata).
     """
-    nodelist: Optional[NodeList] = None
+    nodelist: NodeList | None = None
     """
     If the slot was defined with [`{% fill %}`](../template_tags#fill) tag,
     this will be the Nodelist of the fill's content.
 
     See [Slot metadata](../../concepts/fundamentals/slots#slot-metadata).
     """
-    fill_node: Optional[Union["FillNode", "ComponentNode"]] = None
+    fill_node: "FillNode | ComponentNode | None" = None
     """
     If the slot was created from a [`{% fill %}`](../template_tags#fill) tag,
     this will be the [`FillNode`](../api/#django_components.FillNode) instance.
@@ -296,7 +290,7 @@ class Slot(Generic[TSlotData]):
                 # ...
     ```
     """
-    extra: Dict[str, Any] = field(default_factory=dict)
+    extra: dict[str, Any] = field(default_factory=dict)
     """
     Dictionary that can be used to store arbitrary metadata about the slot.
 
@@ -333,9 +327,9 @@ class Slot(Generic[TSlotData]):
     # Allow to treat the instances as functions
     def __call__(
         self,
-        data: Optional[TSlotData] = None,
-        fallback: Optional[Union[str, "SlotFallback"]] = None,
-        context: Optional[Context] = None,
+        data: TSlotData | None = None,
+        fallback: "str | SlotFallback | None" = None,
+        context: Context | None = None,
     ) -> SlotResult:
         slot_ctx: SlotContext = SlotContext(context=context, data=data or {}, fallback=fallback)
         result = self.content_func(slot_ctx)
@@ -356,7 +350,7 @@ class Slot(Generic[TSlotData]):
         slot_name = f"'{self.slot_name}'" if self.slot_name else None
         return f"<{self.__class__.__name__} component_name={comp_name} slot_name={slot_name}>"
 
-    def _resolve_contents(self, contents: Any) -> Tuple[Any, NodeList, SlotFunc[TSlotData]]:
+    def _resolve_contents(self, contents: Any) -> tuple[Any, NodeList, SlotFunc[TSlotData]]:
         # Case: Content is a string / scalar, so we can use `TextNode` to render it.
         if not callable(contents):
             contents = str(contents) if not isinstance(contents, (str, SafeString)) else contents
@@ -377,7 +371,7 @@ class Slot(Generic[TSlotData]):
 
 # NOTE: This must be defined here, so we don't have any forward references
 # otherwise Pydantic has problem resolving the types.
-SlotInput = Union[SlotResult, SlotFunc[TSlotData], Slot[TSlotData]]
+SlotInput: TypeAlias = SlotResult | SlotFunc[TSlotData] | Slot[TSlotData]
 """
 Type representing all forms in which slot content can be passed to a component.
 
@@ -394,7 +388,7 @@ slot content function.
 **Example:**
 
 ```python
-from typing_extensions import TypedDict
+from typing import TypedDict
 from django_components import Component, SlotInput
 
 class TableFooterSlotData(TypedDict):
@@ -428,14 +422,14 @@ html = Table.render(
 ```
 """
 # TODO_V1 - REMOVE, superseded by SlotInput
-SlotContent = SlotInput[TSlotData]
+SlotContent: TypeAlias = SlotInput[TSlotData]
 """
 DEPRECATED: Use [`SlotInput`](../api#django_components.SlotInput) instead. Will be removed in v1.
 """
 
 
 # Internal type aliases
-SlotName = str
+SlotName: TypeAlias = str
 
 
 class SlotFallback:
@@ -475,7 +469,7 @@ class SlotFallback:
 
 
 # TODO_v1 - REMOVE - superseded by SlotFallback
-SlotRef = SlotFallback
+SlotRef: TypeAlias = SlotFallback
 """
 DEPRECATED: Use [`SlotFallback`](../api#django_components.SlotFallback) instead. Will be removed in v1.
 """
@@ -488,7 +482,7 @@ name_escape_re = re.compile(r"[^\w]")
 class SlotIsFilled(dict):
     """Dictionary that returns `True` if the slot is filled (key is found), `False` otherwise."""
 
-    def __init__(self, fills: Dict, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, fills: dict, *args: Any, **kwargs: Any) -> None:
         escaped_fill_names = {self._escape_slot_name(fill_name): True for fill_name in fills}
         super().__init__(escaped_fill_names, *args, **kwargs)
 
@@ -885,7 +879,7 @@ class SlotNode(BaseNode):
                     msg += f"\nDid you mean '{fuzzy_fill_name_matches[0]}'?"
             raise TemplateSyntaxError(msg)
 
-        extra_context: Dict[str, Any] = {}
+        extra_context: dict[str, Any] = {}
 
         # NOTE: If a user defines a `{% slot %}` tag inside a `{% fill %}` tag, two things
         # may happen based on the context mode:
@@ -979,7 +973,7 @@ class SlotNode(BaseNode):
         context: Context,
         slot_is_filled: bool,
         component: "Component",
-        outer_context: Optional[Context],
+        outer_context: Context | None,
     ) -> Context:
         """Prepare the context used in a slot fill based on the settings."""
         # If slot is NOT filled, we use the slot's fallback AKA content between
@@ -1153,11 +1147,11 @@ class FillNode(BaseNode):
         context: Context,
         name: str,
         *,
-        data: Optional[str] = None,
-        fallback: Optional[str] = None,
-        body: Optional[SlotInput] = None,
+        data: str | None = None,
+        fallback: str | None = None,
+        body: SlotInput | None = None,
         # TODO_V1: Use `fallback` kwarg instead of `default`
-        default: Optional[str] = None,
+        default: str | None = None,
     ) -> str:
         # TODO_V1: Use `fallback` kwarg instead of `default`
         if fallback is not None and default is not None:
@@ -1232,7 +1226,7 @@ class FillNode(BaseNode):
         #       ...
         #     {% endfill %}
         #   {% endfor %}
-        captured_fills: Optional[List[FillWithData]] = context.get(FILL_GEN_CONTEXT_KEY, None)
+        captured_fills: list[FillWithData] | None = context.get(FILL_GEN_CONTEXT_KEY, None)
 
         if captured_fills is None:
             raise RuntimeError(
@@ -1258,7 +1252,7 @@ class FillNode(BaseNode):
         # `{% component %} ... {% endcomponent %}`. Hence we search for the last
         # index of `FILL_GEN_CONTEXT_KEY`.
         index_of_new_layers = get_last_index(context.dicts, lambda d: FILL_GEN_CONTEXT_KEY in d)
-        context_dicts: List[Dict[str, Any]] = context.dicts
+        context_dicts: list[dict[str, Any]] = context.dicts
         for dict_layer in context_dicts[index_of_new_layers:]:
             for key, value in dict_layer.items():
                 if not key.startswith("_"):
@@ -1307,7 +1301,7 @@ class FillWithData(NamedTuple):
     fill: FillNode
     name: str
     """Name of the slot to be filled, as set on the `{% fill %}` tag."""
-    body: Optional[SlotInput]
+    body: SlotInput | None
     """
     Slot fill as set by the `body` kwarg on the `{% fill %}` tag.
 
@@ -1318,11 +1312,11 @@ class FillWithData(NamedTuple):
     {% endcomponent %}
     ```
     """
-    fallback_var: Optional[str]
+    fallback_var: str | None
     """Name of the FALLBACK variable, as set on the `{% fill %}` tag."""
-    data_var: Optional[str]
+    data_var: str | None
     """Name of the DATA variable, as set on the `{% fill %}` tag."""
-    extra_context: Dict[str, Any]
+    extra_context: dict[str, Any]
     """
     Extra context variables that will be available inside the `{% fill %}` tag.
 
@@ -1350,7 +1344,7 @@ def resolve_fills(
     context: Context,
     component_node: "ComponentNode",
     component_name: str,
-) -> Dict[SlotName, Slot]:
+) -> dict[SlotName, Slot]:
     """
     Given a component body (`django.template.NodeList`), find all slot fills,
     whether defined explicitly with `{% fill %}` or implicitly.
@@ -1397,7 +1391,7 @@ def resolve_fills(
     {% endcomponent %}
     ```
     """
-    slots: Dict[SlotName, Slot] = {}
+    slots: dict[SlotName, Slot] = {}
 
     nodelist = component_node.nodelist
     contents = component_node.contents
@@ -1466,10 +1460,10 @@ def _extract_fill_content(
     nodes: NodeList,
     context: Context,
     component_name: str,
-) -> Union[List[FillWithData], Literal[False]]:
+) -> list[FillWithData] | Literal[False]:
     # When, during rendering of this tree, we encounter a {% fill %} node, instead of rendering content,
     # it will add itself into captured_fills, because `FILL_GEN_CONTEXT_KEY` is defined.
-    captured_fills: List[FillWithData] = []
+    captured_fills: list[FillWithData] = []
 
     with _extends_context_reset(context):
         with context.update({FILL_GEN_CONTEXT_KEY: captured_fills}):
@@ -1488,7 +1482,7 @@ def _extract_fill_content(
         )
 
     # Check for any duplicates
-    seen_names: Set[str] = set()
+    seen_names: set[str] = set()
     for fill in captured_fills:
         if fill.name in seen_names:
             raise TemplateSyntaxError(
@@ -1507,13 +1501,13 @@ def _extract_fill_content(
 
 def normalize_slot_fills(
     fills: Mapping[SlotName, SlotInput],
-    component_name: Optional[str] = None,
-) -> Dict[SlotName, Slot]:
+    component_name: str | None = None,
+) -> dict[SlotName, Slot]:
     norm_fills = {}
 
     # NOTE: `copy_slot` is defined as a separate function, instead of being inlined within
     #       the forloop, because the value the forloop variable points to changes with each loop iteration.
-    def copy_slot(content: Union[SlotFunc, Slot], slot_name: str) -> Slot:
+    def copy_slot(content: SlotFunc | Slot, slot_name: str) -> Slot:
         # Case: Already Slot and names assigned, so nothing to do.
         if isinstance(content, Slot) and content.slot_name and content.component_name:
             return content
@@ -1572,14 +1566,14 @@ def normalize_slot_fills(
 
 def _nodelist_to_slot(
     component_name: str,
-    slot_name: Optional[str],
+    slot_name: str | None,
     nodelist: NodeList,
-    contents: Optional[str] = None,
-    data_var: Optional[str] = None,
-    fallback_var: Optional[str] = None,
-    extra_context: Optional[Dict[str, Any]] = None,
-    fill_node: Optional[Union[FillNode, "ComponentNode"]] = None,
-    extra: Optional[Dict[str, Any]] = None,
+    contents: str | None = None,
+    data_var: str | None = None,
+    fallback_var: str | None = None,
+    extra_context: dict[str, Any] | None = None,
+    fill_node: "FillNode | ComponentNode | None" = None,
+    extra: dict[str, Any] | None = None,
 ) -> Slot:
     if data_var and not data_var.isidentifier():
         raise TemplateSyntaxError(

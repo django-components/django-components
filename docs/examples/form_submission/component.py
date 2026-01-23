@@ -1,5 +1,3 @@
-from typing import NamedTuple
-
 from django.http import HttpRequest, HttpResponse
 
 from django_components import Component, get_component_url, register, types
@@ -24,7 +22,7 @@ class ThankYouMessage(Component):
 
 @register("contact_form")
 class ContactFormComponent(Component):
-    def get_template_data(self, args, kwargs: NamedTuple, slots, context):
+    def get_template_data(self, args, kwargs, slots, context):
         # Send the form data to the HTTP handlers of this component
         submit_url = get_component_url(ContactFormComponent)
         return {

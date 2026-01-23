@@ -1,7 +1,6 @@
 """Catch-all for tests that use template tags and don't fit other files"""
 
 import re
-from typing import Dict
 
 import pytest
 from django.template import Context, Template
@@ -39,7 +38,7 @@ def noop(parser: Parser, token: Token):
     return NoopNode(expr)
 
 
-def make_context(d: Dict):
+def make_context(d: dict):
     ctx = Context(d)
     ctx.template = Template("")
     return ctx

@@ -3,20 +3,13 @@
 import base64
 import json
 import re
+from collections.abc import Mapping, Sequence
 from hashlib import md5
 from typing import (
     TYPE_CHECKING,
-    Dict,
-    List,
     Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Type,
+    TypeAlias,
     TypeVar,
-    Union,
     cast,
 )
 
@@ -37,8 +30,8 @@ if TYPE_CHECKING:
     from django_components.component import Component
 
 
-ScriptType = Literal["css", "js"]
-DependenciesStrategy = Literal["document", "fragment", "simple", "prepend", "append", "ignore"]
+ScriptType: TypeAlias = Literal["css", "js"]
+DependenciesStrategy: TypeAlias = Literal["document", "fragment", "simple", "prepend", "append", "ignore"]
 """
 Type for the available strategies for rendering JS and CSS dependencies.
 
@@ -66,7 +59,7 @@ DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append", "ignor
 def _gen_cache_key(
     comp_cls_id: str,
     script_type: ScriptType,
-    input_hash: Optional[str],
+    input_hash: str | None,
 ) -> str:
     if input_hash:
         return f"__components:{comp_cls_id}:{script_type}:{input_hash}"
@@ -74,9 +67,9 @@ def _gen_cache_key(
 
 
 def _is_script_in_cache(
-    comp_cls: Type["Component"],
+    comp_cls: type["Component"],
     script_type: ScriptType,
-    input_hash: Optional[str],
+    input_hash: str | None,
 ) -> bool:
     cache_key = _gen_cache_key(comp_cls.class_id, script_type, input_hash)
     cache = get_component_media_cache()
@@ -84,10 +77,10 @@ def _is_script_in_cache(
 
 
 def _cache_script(
-    comp_cls: Type["Component"],
+    comp_cls: type["Component"],
     script: str,
     script_type: ScriptType,
-    input_hash: Optional[str],
+    input_hash: str | None,
 ) -> None:
     """
     Given a component and it's inlined JS or CSS, store the JS/CSS in a cache,
@@ -105,7 +98,7 @@ def _cache_script(
     cache.set(cache_key, script.strip())
 
 
-def cache_component_js(comp_cls: Type["Component"], force: bool) -> None:
+def cache_component_js(comp_cls: type["Component"], force: bool) -> None:
     """
     Cache the content from `Component.js`. This is the common JS that's shared
     among all instances of the same component. So even if the component is rendered multiple
@@ -139,7 +132,7 @@ def cache_component_js(comp_cls: Type["Component"], force: bool) -> None:
 #    with `DjangoComponents.manager.registerComponentData`.
 # 3. Actually run a component's JS instance with `DjangoComponents.manager.callComponent`,
 #    specifying the components HTML elements with `component_id`, and JS vars with `input_hash`.
-def cache_component_js_vars(comp_cls: Type["Component"], js_vars: Mapping) -> Optional[str]:
+def cache_component_js_vars(comp_cls: type["Component"], js_vars: Mapping) -> str | None:
     if not is_nonempty_str(comp_cls.js):
         return None
 
@@ -159,7 +152,7 @@ def cache_component_js_vars(comp_cls: Type["Component"], js_vars: Mapping) -> Op
     return input_hash
 
 
-def wrap_component_js(comp_cls: Type["Component"], content: str) -> str:
+def wrap_component_js(comp_cls: type["Component"], content: str) -> str:
     if "</script" in content:
         raise RuntimeError(
             f"Content of `Component.js` for component '{comp_cls.__name__}' contains '</script>' end tag. "
@@ -168,7 +161,7 @@ def wrap_component_js(comp_cls: Type["Component"], content: str) -> str:
     return f"<script>{content}</script>"
 
 
-def cache_component_css(comp_cls: Type["Component"], force: bool) -> None:
+def cache_component_css(comp_cls: type["Component"], force: bool) -> None:
     """
     Cache the content from `Component.css`. This is the common CSS that's shared
     among all instances of the same component. So even if the component is rendered multiple
@@ -192,7 +185,7 @@ def cache_component_css(comp_cls: Type["Component"], force: bool) -> None:
 # the CSS vars under the CSS selector `[data-djc-css-a1b2c3]`. We define the stylesheet
 # with variables separately from `Component.css`, because different instances may return different
 # data from `get_css_data()`, which will live in different stylesheets.
-def cache_component_css_vars(comp_cls: Type["Component"], css_vars: Mapping) -> Optional[str]:
+def cache_component_css_vars(comp_cls: type["Component"], css_vars: Mapping) -> str | None:
     if not is_nonempty_str(comp_cls.css):
         return None
 
@@ -212,7 +205,7 @@ def cache_component_css_vars(comp_cls: Type["Component"], css_vars: Mapping) -> 
     return input_hash
 
 
-def wrap_component_css(comp_cls: Type["Component"], content: str) -> str:
+def wrap_component_css(comp_cls: type["Component"], content: str) -> str:
     if "</style" in content:
         raise RuntimeError(
             f"Content of `Component.css` for component '{comp_cls.__name__}' contains '</style>' end tag. "
@@ -230,11 +223,11 @@ def wrap_component_css(comp_cls: Type["Component"], content: str) -> str:
 
 
 def set_component_attrs_for_js_and_css(
-    html_content: Union[str, SafeString],
-    component_id: Optional[str],
-    css_input_hash: Optional[str],
-    root_attributes: Optional[List[str]] = None,
-) -> Tuple[Union[str, SafeString], Dict[str, List[str]]]:
+    html_content: str | SafeString,
+    component_id: str | None,
+    css_input_hash: str | None,
+    root_attributes: list[str] | None = None,
+) -> tuple[str | SafeString, dict[str, list[str]]]:
     # These are the attributes that we want to set on the root element.
     all_root_attributes = [*root_attributes] if root_attributes else []
 
@@ -297,10 +290,10 @@ def insert_component_dependencies_comment(
     content: str,
     # NOTE: We pass around the component CLASS, so the dependencies logic is not
     # dependent on ComponentRegistries
-    component_cls: Type["Component"],
+    component_cls: type["Component"],
     component_id: str,
-    js_input_hash: Optional[str],
-    css_input_hash: Optional[str],
+    js_input_hash: str | None,
+    css_input_hash: str | None,
 ) -> SafeString:
     """
     Given some textual content, prepend it with a short string that
@@ -325,7 +318,7 @@ def insert_component_dependencies_comment(
 #########################################################
 
 
-TContent = TypeVar("TContent", bound=Union[bytes, str])
+TContent = TypeVar("TContent", bound=bytes | str)
 
 
 CSS_PLACEHOLDER_NAME = "CSS_PLACEHOLDER"
@@ -518,7 +511,7 @@ def _pre_loader_js() -> str:
 #      will be fetched and executed only once.
 # 6. And lastly, we generate a JS script that will load / mark as loaded the JS and CSS
 #    as categorized in previous step.
-def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) -> Tuple[bytes, bytes, bytes]:
+def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) -> tuple[bytes, bytes, bytes]:
     """
     Process a textual content that may include metadata on rendered components.
     The metadata has format like this
@@ -530,7 +523,7 @@ def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) ->
     `<!-- _RENDERED table_10bac31,123,a92ef298,bd002c3 -->`
     """
     # Extract all matched instances of `<!-- _RENDERED ... -->` while also removing them from the text
-    all_parts: List[bytes] = []
+    all_parts: list[bytes] = []
 
     def on_replace_match(match: "re.Match[bytes]") -> bytes:
         all_parts.append(match.group("data"))
@@ -539,11 +532,11 @@ def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) ->
     content = COMPONENT_COMMENT_REGEX.sub(on_replace_match, content)
 
     # NOTE: Python's set does NOT preserve order, so both set and list are needed
-    seen_comp_hashes: Set[str] = set()
-    comp_hashes: List[str] = []
+    seen_comp_hashes: set[str] = set()
+    comp_hashes: list[str] = []
     # Used for passing Python vars to JS/CSS
-    variables_data: List[Tuple[str, ScriptType, Optional[str]]] = []
-    comp_data: List[Tuple[str, ScriptType, Optional[str]]] = []
+    variables_data: list[tuple[str, ScriptType, str | None]] = []
+    comp_data: list[tuple[str, ScriptType, str | None]] = []
 
     # Process individual parts. Each part is like a CSV row of `name,id,js,css`.
     # E.g. something like this:
@@ -555,8 +548,8 @@ def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) ->
             raise RuntimeError("Malformed dependencies data")
 
         comp_cls_id: str = part_match.group("comp_cls_id").decode("utf-8")
-        js_variables_hash: Optional[str] = part_match.group("js").decode("utf-8") or None
-        css_variables_hash: Optional[str] = part_match.group("css").decode("utf-8") or None
+        js_variables_hash: str | None = part_match.group("js").decode("utf-8") or None
+        css_variables_hash: str | None = part_match.group("css").decode("utf-8") or None
 
         if comp_cls_id in seen_comp_hashes:
             continue
@@ -726,10 +719,10 @@ src_pattern = re.compile(r'src="([^"]+)"')
 # Detect duplicates by URLs, extract URLs, and sort by URLs
 def _postprocess_media_tags(
     script_type: ScriptType,
-    tags: List[str],
-) -> Tuple[List[str], List[str]]:
-    urls: List[str] = []
-    tags_by_url: Dict[str, str] = {}
+    tags: list[str],
+) -> tuple[list[str], list[str]]:
+    urls: list[str] = []
+    tags_by_url: dict[str, str] = {}
 
     for tag in tags:
         # Extract the URL from <script src="..."> or <link href="...">
@@ -766,20 +759,20 @@ def _postprocess_media_tags(
 
 
 def _prepare_tags_and_urls(
-    data: List[Tuple[str, ScriptType, Optional[str]]],
+    data: list[tuple[str, ScriptType, str | None]],
     strategy: DependenciesStrategy,
-) -> Tuple[List[str], List[str], List[str], List[str], List[str], List[str]]:
+) -> tuple[list[str], list[str], list[str], list[str], list[str], list[str]]:
     from django_components.component import get_component_by_class_id  # noqa: PLC0415
 
     # JS / CSS that we should insert into the HTML
-    inlined_js_tags: List[str] = []
-    inlined_css_tags: List[str] = []
+    inlined_js_tags: list[str] = []
+    inlined_css_tags: list[str] = []
     # JS / CSS that the client-side dependency managers should load
-    to_load_js_urls: List[str] = []
-    to_load_css_urls: List[str] = []
+    to_load_js_urls: list[str] = []
+    to_load_css_urls: list[str] = []
     # JS / CSS that we want to mark as loaded in the dependency manager
-    loaded_js_urls: List[str] = []
-    loaded_css_urls: List[str] = []
+    loaded_js_urls: list[str] = []
+    loaded_css_urls: list[str] = []
 
     # When `strategy="document"`, we insert the actual <script> and <style> tags into the HTML.
     # But even in that case we still need to call `DjangoComponents.manager.markScriptLoaded`,
@@ -840,9 +833,9 @@ def _prepare_tags_and_urls(
 
 def get_script_content(
     script_type: ScriptType,
-    comp_cls: Type["Component"],
-    input_hash: Optional[str],
-) -> Optional[str]:
+    comp_cls: type["Component"],
+    input_hash: str | None,
+) -> str | None:
     cache = get_component_media_cache()
     cache_key = _gen_cache_key(comp_cls.class_id, script_type, input_hash)
     script = cache.get(cache_key)
@@ -852,8 +845,8 @@ def get_script_content(
 
 def get_script_tag(
     script_type: ScriptType,
-    comp_cls: Type["Component"],
-    input_hash: Optional[str],
+    comp_cls: type["Component"],
+    input_hash: str | None,
 ) -> str:
     content = get_script_content(script_type, comp_cls, input_hash)
     if content is None:
@@ -873,8 +866,8 @@ def get_script_tag(
 
 def get_script_url(
     script_type: ScriptType,
-    comp_cls: Type["Component"],
-    input_hash: Optional[str],
+    comp_cls: type["Component"],
+    input_hash: str | None,
 ) -> str:
     return reverse(
         CACHE_ENDPOINT_NAME,
@@ -887,16 +880,16 @@ def get_script_url(
 
 
 def _gen_exec_script(
-    to_load_js_tags: List[str],
-    to_load_css_tags: List[str],
-    loaded_js_urls: List[str],
-    loaded_css_urls: List[str],
-) -> Optional[str]:
+    to_load_js_tags: list[str],
+    to_load_css_tags: list[str],
+    loaded_js_urls: list[str],
+    loaded_css_urls: list[str],
+) -> str | None:
     # Return None if all lists are empty
     if not any([to_load_js_tags, to_load_css_tags, loaded_css_urls, loaded_js_urls]):
         return None
 
-    def map_to_base64(lst: Sequence[str]) -> List[str]:
+    def map_to_base64(lst: Sequence[str]) -> list[str]:
         return [base64.b64encode(tag.encode()).decode() for tag in lst]
 
     # Generate JSON that will tell the JS dependency manager which JS and CSS to load
@@ -927,9 +920,9 @@ head_or_body_end_tag_re = re.compile(r"<\/(?:head|body)\s*>", re.DOTALL)
 
 def _insert_js_css_to_default_locations(
     html_content: str,
-    js_content: Optional[str],
-    css_content: Optional[str],
-) -> Optional[str]:
+    js_content: str | None,
+    css_content: str | None,
+) -> str | None:
     """
     This function tries to insert the JS and CSS content into the default locations.
 
@@ -1003,7 +996,7 @@ def cached_script_view(
     req: HttpRequest,
     comp_cls_id: str,
     script_type: ScriptType,
-    input_hash: Optional[str] = None,
+    input_hash: str | None = None,
 ) -> HttpResponse:
     from django_components.component import get_component_by_class_id  # noqa: PLC0415
 

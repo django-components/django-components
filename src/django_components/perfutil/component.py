@@ -1,6 +1,7 @@
 import re
 from collections import deque
-from typing import TYPE_CHECKING, Callable, Deque, Dict, List, Literal, NamedTuple, Optional, Set, Tuple, Union
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Literal, NamedTuple, TypeAlias
 
 from django.utils.safestring import mark_safe
 
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
         StartedGenerators,
     )
 
-OnComponentRenderedResult = Tuple[Optional[str], Optional[Exception]]
+OnComponentRenderedResult: TypeAlias = tuple[str | None, Exception | None]
 
 # When we're inside a component's template, we need to acccess some component data,
 # as defined by `ComponentContext`. If we have nested components, then
@@ -34,7 +35,7 @@ OnComponentRenderedResult = Tuple[Optional[str], Optional[Exception]]
 # Thus, similarly to the data stored by `{% provide %}`, we store the actual
 # `ComponentContext` data on a separate dictionary, and what's passed through the Context
 # is only a key to this dictionary.
-component_context_cache: Dict[str, "ComponentContext"] = {}
+component_context_cache: dict[str, "ComponentContext"] = {}
 
 # ComponentID -> Component instance mapping
 # This is used so that we can access the component instance from inside `on_component_rendered()`,
@@ -43,7 +44,7 @@ component_context_cache: Dict[str, "ComponentContext"] = {}
 # `on_component_rendered()` has been called.
 # After that, we release the reference. If user does not keep a reference to the component,
 # it will be garbage collected.
-component_instance_cache: Dict[str, "Component"] = {}
+component_instance_cache: dict[str, "Component"] = {}
 
 
 class QueueItemId(NamedTuple):
@@ -63,8 +64,8 @@ class ComponentPart(NamedTuple):
     """Queue item where a component is nested in another component."""
 
     item_id: QueueItemId
-    parent_id: Optional[QueueItemId]
-    full_path: List[str]
+    parent_id: QueueItemId | None
+    full_path: list[str]
     """Path of component names from the root component to the current component."""
 
     def __repr__(self) -> str:
@@ -84,12 +85,12 @@ class ErrorPart(NamedTuple):
 
     item_id: QueueItemId
     error: Exception
-    full_path: List[str]
+    full_path: list[str]
 
 
 class GeneratorResult(NamedTuple):
-    html: Optional[str]
-    error: Optional[Exception]
+    html: str | None
+    error: Exception | None
     action: Literal["needs_processing", "rerender", "stop"]
     spent: bool
     """Whether the generator has been "spent" - e.g. reached its end with `StopIteration`."""
@@ -97,7 +98,7 @@ class GeneratorResult(NamedTuple):
 
 # Render-time cache for component rendering
 # See component_post_render()
-component_renderer_cache: "Dict[str, Tuple[Optional[OnRenderGenerator], str]]" = {}
+component_renderer_cache: "dict[str, tuple[OnRenderGenerator | None, str]]" = {}
 
 nested_comp_pattern = re.compile(
     r'<template [^>]*?djc-render-id="\w{{{COMP_ID_LENGTH}}}"[^>]*?></template>'.format(COMP_ID_LENGTH=COMP_ID_LENGTH),  # noqa: UP032
@@ -153,10 +154,10 @@ render_id_pattern = re.compile(
 #      to the root elements.
 # 8. Lastly, we merge all the parts together, and return the final HTML.
 def component_post_render(
-    renderer: "Optional[OnRenderGenerator]",
+    renderer: "OnRenderGenerator | None",
     render_id: str,
     component_name: str,
-    parent_render_id: Optional[str],
+    parent_render_id: str | None,
     component_tree_context: "ComponentTreeContext",
     on_component_tree_rendered: Callable[[str], str],
 ) -> str:
@@ -247,7 +248,7 @@ def component_post_render(
     # 6. We insert these parts back into the queue, repeating this process until we've processed all nested components.
     # 7. When we reach TextPart with `is_last=True`, then we've reached the end of the component's HTML content,
     #    and we can go one level up to continue the process with component's parent.
-    process_queue: Deque[Union[ErrorPart, TextPart, ComponentPart]] = deque()
+    process_queue: deque[ErrorPart | TextPart | ComponentPart] = deque()
 
     # `html_parts_by_component_id` holds component-specific bits of rendered HTML
     # so that we can call `on_component_rendered` hook with the correct component instance.
@@ -272,12 +273,12 @@ def component_post_render(
     # the corresponding component ID.
     #
     # Lastly we assign the child's final HTML to parent's parts, continuing the cycle.
-    html_parts_by_component_id: Dict[str, List[str]] = {}
-    content_parts: List[str] = []
+    html_parts_by_component_id: dict[str, list[str]] = {}
+    content_parts: list[str] = []
 
     # Remember which component instance + version had which parent, so we can bubble up errors
     # to the parent component.
-    child_to_parent: Dict[QueueItemId, Optional[QueueItemId]] = {}
+    child_to_parent: dict[QueueItemId, QueueItemId | None] = {}
 
     # We want to avoid having to iterate over the queue every time an error raises an error or
     # when `on_render()` returns a new HTML, making the old HTML stale.
@@ -285,21 +286,21 @@ def component_post_render(
     # So instead we keep track of which combinations of component ID + versions we should skip.
     #
     # When we then come across these instances in the main loop, we skip them.
-    ignored_components: Set[QueueItemId] = set()
+    ignored_components: set[QueueItemId] = set()
 
     # When `Component.on_render()` contains a `yield` statement, it becomes a generator.
     #
     # The generator may `yield` multiple times. So we keep track of which generator belongs to
     # which component ID.
-    generators_by_component_id: Dict[str, Optional[OnRenderGenerator]] = {}
+    generators_by_component_id: dict[str, OnRenderGenerator | None] = {}
 
-    def get_html_parts(item_id: QueueItemId) -> List[str]:
+    def get_html_parts(item_id: QueueItemId) -> list[str]:
         component_id = item_id.component_id
         if component_id not in html_parts_by_component_id:
             html_parts_by_component_id[component_id] = []
         return html_parts_by_component_id[component_id]
 
-    def pop_html_parts(item_id: QueueItemId) -> Optional[List[str]]:
+    def pop_html_parts(item_id: QueueItemId) -> list[str] | None:
         component_id = item_id.component_id
         return html_parts_by_component_id.pop(component_id, None)
 
@@ -328,10 +329,10 @@ def component_post_render(
     def parse_component_result(
         content: str,
         item_id: QueueItemId,
-        full_path: List[str],
-    ) -> List[Union[TextPart, ComponentPart]]:
+        full_path: list[str],
+    ) -> list[TextPart | ComponentPart]:
         last_index = 0
-        parts_to_process: List[Union[TextPart, ComponentPart]] = []
+        parts_to_process: list[TextPart | ComponentPart] = []
         for match in nested_comp_pattern.finditer(content):
             part_before_component = content[last_index : match.start()]
             last_index = match.end()
@@ -373,7 +374,7 @@ def component_post_render(
 
         return parts_to_process
 
-    def handle_error(item_id: QueueItemId, error: Exception, full_path: List[str]) -> None:
+    def handle_error(item_id: QueueItemId, error: Exception, full_path: list[str]) -> None:
         # Cleanup
         # Remove any HTML parts that were already rendered for this component
         pop_html_parts(item_id)
@@ -398,7 +399,7 @@ def component_post_render(
             ),
         )
 
-    def next_renderer_result(item_id: QueueItemId, error: Optional[Exception], full_path: List[str]) -> None:
+    def next_renderer_result(item_id: QueueItemId, error: Exception | None, full_path: list[str]) -> None:
         parent_id = child_to_parent[item_id]
 
         component_parts = pop_html_parts(item_id)
@@ -499,7 +500,7 @@ def component_post_render(
             content_parts.append(component_html)
 
     # Body of the iteration, scoped in a function to avoid spilling the state out of the loop.
-    def on_item(curr_item: Union[ErrorPart, TextPart, ComponentPart]) -> None:
+    def on_item(curr_item: ErrorPart | TextPart | ComponentPart) -> None:
         # NOTE: When an error is bubbling up, when the flow goes between `handle_error()`, `next_renderer_result()`,
         # and this branch, until we reach the root component, where the error is finally raised.
         #
@@ -576,10 +577,10 @@ def component_post_render(
 
 def _call_generator(
     on_render_generator: "OnRenderGenerator",
-    html: Optional[str],
-    error: Optional[Exception],
+    html: str | None,
+    error: Exception | None,
     started_generators_cache: "StartedGenerators",
-    full_path: List[str],
+    full_path: list[str],
 ) -> GeneratorResult:
     is_first_send = not started_generators_cache.get(on_render_generator, False)
     try:

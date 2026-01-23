@@ -1,6 +1,6 @@
 # ruff: noqa: T201
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, ClassVar
 
 from django_components.component import all_components
 from django_components.util.command import CommandArg, ComponentCommand
@@ -11,7 +11,7 @@ from django_components.util.misc import format_as_ascii_table, get_import_path, 
 # their descriptions are dynamically generated based on the Command class.
 class ListArgumentsDescriptor:
     # This will be called when accessing `ListCommand.arguments`
-    def __get__(self, obj: Optional["ListCommand"], cls: Type["ListCommand"]) -> List[CommandArg]:
+    def __get__(self, obj: "ListCommand | None", cls: type["ListCommand"]) -> list[CommandArg]:
         command = obj or cls
         all_cols = command.columns
         default_cols = command.default_columns
@@ -49,10 +49,10 @@ class ListCommand(ComponentCommand):
     # SUBCLASS API
     ####################
 
-    columns: ClassVar[Union[List[str], Tuple[str, ...], Set[str]]]
-    default_columns: ClassVar[Union[List[str], Tuple[str, ...], Set[str]]]
+    columns: ClassVar[list[str] | tuple[str, ...] | set[str]]
+    default_columns: ClassVar[list[str] | tuple[str, ...] | set[str]]
 
-    def get_data(self) -> List[Dict[str, Any]]:
+    def get_data(self) -> list[dict[str, Any]]:
         return []
 
     ####################
@@ -150,9 +150,9 @@ class ComponentListCommand(ListCommand):
     columns = ("name", "full_name", "path")
     default_columns = ("full_name", "path")
 
-    def get_data(self) -> List[Dict[str, Any]]:
+    def get_data(self) -> list[dict[str, Any]]:
         components = all_components()
-        data: List[Dict[str, Any]] = []
+        data: list[dict[str, Any]] = []
         for component in components:
             full_name = get_import_path(component)
             _module, _module_name, module_file_path = get_module_info(component)

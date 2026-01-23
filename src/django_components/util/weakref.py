@@ -1,20 +1,13 @@
-import sys
-from typing import Any, Dict, TypeVar, overload
+from typing import TypeVar
 from weakref import ReferenceType, finalize, ref
 
-GLOBAL_REFS: Dict[int, ReferenceType] = {}
+GLOBAL_REFS: dict[int, ReferenceType] = {}
 
 
 T = TypeVar("T")
 
-# NOTE: `ReferenceType` is NOT a generic pre-3.9
-if sys.version_info >= (3, 9):
 
-    @overload  # type: ignore[misc]
-    def cached_ref(obj: T) -> ReferenceType[T]: ...
-
-
-def cached_ref(obj: Any) -> ReferenceType:
+def cached_ref(obj: T) -> ReferenceType[T]:
     """
     Same as `weakref.ref()`, creating a weak reference to a given object.
     But unlike `weakref.ref()`, this function also caches the result,

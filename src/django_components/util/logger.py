@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 DEFAULT_TRACE_LEVEL_NUM = 5  # NOTE: MUST be lower than DEBUG which is 10
 
@@ -21,7 +21,7 @@ def setup_logging() -> None:
         logging.addLevelName(actual_trace_level_num, "TRACE")
 
 
-def _get_log_levels() -> Dict[str, int]:
+def _get_log_levels() -> dict[str, int]:
     # Use official API if possible
     if sys.version_info >= (3, 11):
         return logging.getLevelNamesMapping()
@@ -84,10 +84,10 @@ def trace_node_msg(
 def trace_component_msg(
     action: str,
     component_name: str,
-    component_id: Optional[str],
-    slot_name: Optional[str],
-    component_path: Optional[List[str]] = None,
-    slot_fills: Optional[Dict[str, Any]] = None,
+    component_id: str | None = None,
+    slot_name: str | None = None,
+    component_path: list[str] | None = None,
+    slot_fills: dict[str, Any] | None = None,
     extra: str = "",
 ) -> None:
     """

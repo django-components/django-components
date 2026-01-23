@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from django.templatetags.static import static
 from django.utils.html import format_html, html_safe
@@ -31,5 +31,5 @@ class RelativeFileWithPathObjComponent(Component):
         js = PathObj("relative_file_pathobj.js")
         css = PathObj("relative_file_pathobj.css")
 
-    def get_template_data(self, args, kwargs, slots, context) -> Dict[str, Any]:
+    def get_template_data(self, args, kwargs, slots, context) -> dict[str, Any]:
         return {"variable": kwargs["variable"]}

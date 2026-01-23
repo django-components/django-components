@@ -1,5 +1,6 @@
 import gc
-from typing import Any, Callable, Dict, List, Optional, cast
+from collections.abc import Callable
+from typing import Any, cast
 
 import pytest
 from django.http import HttpRequest, HttpResponse
@@ -78,7 +79,7 @@ class DummyExtension(ComponentExtension):
             return "3"
 
     def __init__(self) -> None:
-        self.calls: Dict[str, List[Any]] = {
+        self.calls: dict[str, list[Any]] = {
             "on_component_class_created": [],
             "on_component_class_deleted": [],
             "on_registry_created": [],
@@ -266,7 +267,7 @@ class TestExtensions:
 
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_nested_extension_config_inheritance(self):
-        component: Optional[Component] = None
+        component: Component | None = None
 
         class TestExtensionParent:
             parent_var = "from_parent"

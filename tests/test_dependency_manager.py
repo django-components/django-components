@@ -1,5 +1,5 @@
 import re
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import pytest
 from playwright.async_api import Browser, Error, Page
@@ -17,7 +17,7 @@ setup_test_config(
     },
 )
 
-urlpatterns: List = []
+urlpatterns: list = []
 
 
 async def _create_page_with_dep_manager(browser: Browser) -> Page:

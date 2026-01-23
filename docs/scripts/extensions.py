@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, List, Optional, Type
+from typing import Any
 
 import griffe
 from mkdocs_util import get_mkdocstrings_plugin_handler_options, import_object, load_config
@@ -22,9 +22,9 @@ class RuntimeBasesExtension(griffe.Extension):
         if is_skip_docstring and cls.docstring is None:
             return
 
-        runtime_cls: Type = import_object(cls)
+        runtime_cls: type = import_object(cls)
 
-        bases_formatted: List[str] = []
+        bases_formatted: list[str] = []
         for base in runtime_cls.__bases__:
             bases_formatted.append(f"<code>{get_import_path(base)}</code>")
 
@@ -46,7 +46,7 @@ class SourceCodeExtension(griffe.Extension):
         obj.docstring.value = html + obj.docstring.value
 
 
-def _format_source_code_html(relative_filepath: Path, lineno: Optional[int]) -> str:
+def _format_source_code_html(relative_filepath: Path, lineno: int | None) -> str:
     # Remove trailing slash and whitespace
     repo_url = load_config()["repo_url"].strip("/ ")
     branch_path = f"tree/{SOURCE_CODE_GIT_BRANCH}"

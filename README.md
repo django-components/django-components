@@ -402,7 +402,6 @@ Avoid needless errors with [type hints and runtime input validation](https://dja
 To opt-in to input validation, define types for component's args, kwargs, slots, and more:
 
 ```py
-from typing import Optional
 from django.template import Context
 from django_components import Component, Slot, SlotInput
 
@@ -414,10 +413,10 @@ class Button(Component):
     class Kwargs:
         variable: str
         another: int
-        maybe_var: Optional[int] = None  # May be omitted
+        maybe_var: int | None = None  # May be omitted
 
     class Slots:
-        my_slot: Optional[SlotInput] = None
+        my_slot: SlotInput | None = None
         another_slot: SlotInput
 
     def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):

@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Optional, Type, Union, cast
+from typing import Any, cast
 
 from django.template import Context, Template
 
@@ -15,7 +15,7 @@ class DynamicComponent(Component):
     The args, kwargs, and slot fills are all passed down to the underlying component.
 
     Args:
-        is (str | Type[Component]): Component that should be rendered. Either a registered name of a component,
+        is (str | type[Component]): Component that should be rendered. Either a registered name of a component,
             or a [Component](./api.md#django_components.Component) class directly. Required.
         registry (ComponentRegistry, optional): Specify the [registry](./api.md#django_components.ComponentRegistry)\
             to search for the registered name. If omitted, all registries are searched until the first match.
@@ -107,14 +107,14 @@ class DynamicComponent(Component):
     def on_render(
         self,
         context: Context,  # noqa: ARG002
-        template: Optional[Template],  # noqa: ARG002
+        template: Template | None,  # noqa: ARG002
     ) -> str:
         # Make a copy of kwargs so we pass to the child only the kwargs that are
         # actually used by the child component.
         cleared_kwargs = self.raw_kwargs.copy()
 
-        registry: Optional[ComponentRegistry] = cleared_kwargs.pop("registry", None)
-        comp_name_or_class: Union[str, Type[Component]] = cleared_kwargs.pop("is", None)
+        registry: ComponentRegistry | None = cleared_kwargs.pop("registry", None)
+        comp_name_or_class: str | type[Component] = cleared_kwargs.pop("is", None)
         if not comp_name_or_class:
             raise TypeError(f"Component '{self.name}' is missing a required argument 'is'")
 
@@ -135,10 +135,10 @@ class DynamicComponent(Component):
 
     def _resolve_component(
         self,
-        comp_name_or_class: Union[str, Type[Component], Any],
-        registry: Optional[ComponentRegistry] = None,
-    ) -> Type[Component]:
-        component_cls: Optional[Type[Component]] = None
+        comp_name_or_class: str | type[Component] | Any,
+        registry: ComponentRegistry | None = None,
+    ) -> type[Component]:
+        component_cls: type[Component] | None = None
 
         if not isinstance(comp_name_or_class, str):
             # NOTE: When Django template is resolving the variable that refers to the
@@ -147,7 +147,7 @@ class DynamicComponent(Component):
             if inspect.isclass(comp_name_or_class):
                 component_cls = comp_name_or_class
             else:
-                component_cls = cast("Type[Component]", comp_name_or_class.__class__)
+                component_cls = cast("type[Component]", comp_name_or_class.__class__)
 
         elif registry:
             component_cls = registry.get(comp_name_or_class)

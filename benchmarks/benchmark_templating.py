@@ -4,7 +4,7 @@
 import re
 from pathlib import Path
 from types import ModuleType
-from typing import Literal
+from typing import Literal, TypeAlias
 
 # Fix for for https://github.com/airspeed-velocity/asv_runner/pull/44
 import benchmarks.monkeypatch_asv  # noqa: F401
@@ -15,10 +15,10 @@ DJC_ISOLATED_VS_NON_GROUP = "isolated vs django modes"
 OTHER_GROUP = "Other"
 
 
-DjcContextMode = Literal["isolated", "django"]
-TemplatingRenderer = Literal["django", "django-components", "none"]
-TemplatingTestSize = Literal["lg", "sm"]
-TemplatingTestType = Literal[
+DjcContextMode: TypeAlias = Literal["isolated", "django"]
+TemplatingRenderer: TypeAlias = Literal["django", "django-components", "none"]
+TemplatingTestSize: TypeAlias = Literal["lg", "sm"]
+TemplatingTestType: TypeAlias = Literal[
     "first",  # Testing performance of the first time the template is rendered
     "subsequent",  # Testing performance of the subsequent times the template is rendered
     "startup",  # Testing performance of the startup time (e.g. defining classes and templates)

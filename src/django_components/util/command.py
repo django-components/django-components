@@ -1,26 +1,21 @@
 import sys
 from argparse import Action, ArgumentParser
+from collections.abc import Callable, Sequence
 from dataclasses import asdict, dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
-    List,
     Literal,
-    Optional,
     Protocol,
-    Sequence,
-    Type,
+    TypeAlias,
     TypeVar,
-    Union,
 )
 
 if TYPE_CHECKING:
     from argparse import _ArgumentGroup, _FormatterClass
 
 
-TClass = TypeVar("TClass", bound=Type[Any])
+TClass = TypeVar("TClass", bound=type[Any])
 
 
 # Mark object as related to extension commands so we can place these in
@@ -34,7 +29,7 @@ def mark_extension_command_api(obj: TClass) -> TClass:
 # Argparse typing
 #############################
 
-CommandLiteralAction = Literal[
+CommandLiteralAction: TypeAlias = Literal[
     "append",
     "append_const",
     "count",
@@ -64,11 +59,11 @@ class CommandArg:
     [`ArgumentParser.add_argument()`](https://docs.python.org/3/library/argparse.html#the-add-argument-method)
     """
 
-    name_or_flags: Union[str, Sequence[str]]
+    name_or_flags: str | Sequence[str]
     """Either a name or a list of option strings, e.g. 'foo' or '-f', '--foo'."""
-    action: Optional[Union[CommandLiteralAction, Action]] = None
+    action: CommandLiteralAction | Action | None = None
     """The basic type of action to be taken when this argument is encountered at the command line."""
-    nargs: Optional[Union[int, Literal["*", "+", "?"]]] = None
+    nargs: int | Literal["*", "+", "?"] | None = None
     """The number of command-line arguments that should be consumed."""
     const: Any = None
     """A constant value required by some action and nargs selections."""
@@ -76,19 +71,19 @@ class CommandArg:
     """
     The value produced if the argument is absent from the command line and if it is absent from the namespace object.
     """
-    type: Optional[Union[Type, Callable[[str], Any]]] = None
+    type: "type | Callable[[str], Any] | None" = None
     """The type to which the command-line argument should be converted."""
-    choices: Optional[Sequence[Any]] = None
+    choices: Sequence[Any] | None = None
     """A sequence of the allowable values for the argument."""
-    required: Optional[bool] = None
+    required: bool | None = None
     """Whether or not the command-line option may be omitted (optionals only)."""
-    help: Optional[str] = None
+    help: str | None = None
     """A brief description of what the argument does."""
-    metavar: Optional[str] = None
+    metavar: str | None = None
     """A name for the argument in usage messages."""
-    dest: Optional[str] = None
+    dest: str | None = None
     """The name of the attribute to be added to the object returned by parse_args()."""
-    version: Optional[str] = None
+    version: str | None = None
     """
     The version string to be added to the object returned by parse_args().
 
@@ -99,7 +94,7 @@ class CommandArg:
 
     # NOTE: Support for deprecated was added in Python 3.13
     # See https://docs.python.org/3/library/argparse.html#deprecated
-    deprecated: Optional[bool] = None
+    deprecated: bool | None = None
     """
     Whether or not use of the argument is deprecated.
 
@@ -121,12 +116,12 @@ class CommandArgGroup:
     [`ArgumentParser.add_argument_group()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_argument_group)
     """
 
-    title: Optional[str] = None
+    title: str | None = None
     """
     Title for the argument group in help output; by default “positional arguments” if description is provided,
     otherwise uses title for positional arguments.
     """
-    description: Optional[str] = None
+    description: str | None = None
     """
     Description for the argument group in help output, by default None
     """
@@ -147,43 +142,43 @@ class CommandSubcommand:
     [`ArgumentParser.add_subparsers.add_parser()`](https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers)
     """
 
-    title: Optional[str] = None
+    title: str | None = None
     """
     Title for the sub-parser group in help output; by default “subcommands” if description is provided,
     otherwise uses title for positional arguments.
     """
-    description: Optional[str] = None
+    description: str | None = None
     """
     Description for the sub-parser group in help output, by default `None`.
     """
-    prog: Optional[str] = None
+    prog: str | None = None
     """
     Usage information that will be displayed with sub-command help, by default the name of the program
     and any positional arguments before the subparser argument.
     """
-    parser_class: Optional[Type[ArgumentParser]] = None
+    parser_class: type[ArgumentParser] | None = None
     """
     Class which will be used to create sub-parser instances, by default the class of
     the current parser (e.g. `ArgumentParser`).
     """
-    action: Optional[Union[CommandLiteralAction, Action]] = None
+    action: CommandLiteralAction | Action | None = None
     """
     The basic type of action to be taken when this argument is encountered at the command line.
     """
-    dest: Optional[str] = None
+    dest: str | None = None
     """
     Name of the attribute under which sub-command name will be stored; by default `None`
     and no value is stored.
     """
-    required: Optional[bool] = None
+    required: bool | None = None
     """
     Whether or not a subcommand must be provided, by default `False` (added in 3.7)
     """
-    help: Optional[str] = None
+    help: str | None = None
     """
     Help for sub-parser group in help output, by default `None`.
     """
-    metavar: Optional[str] = None
+    metavar: str | None = None
     """
     String presenting available subcommands in help; by default it is None and
     presents subcommands in form `{cmd1, cmd2, ..}`.
@@ -203,31 +198,31 @@ class CommandParserInput:
     constructor.
     """
 
-    prog: Optional[str] = None
+    prog: str | None = None
     """The name of the program (default: `os.path.basename(sys.argv[0])`)"""
-    usage: Optional[str] = None
+    usage: str | None = None
     """The string describing the program usage (default: generated from arguments added to parser)"""
-    description: Optional[str] = None
+    description: str | None = None
     """Text to display before the argument help (by default, no text)"""
-    epilog: Optional[str] = None
+    epilog: str | None = None
     """Text to display after the argument help (by default, no text)"""
-    parents: Optional[Sequence[ArgumentParser]] = None
+    parents: Sequence[ArgumentParser] | None = None
     """A list of ArgumentParser objects whose arguments should also be included"""
-    formatter_class: Optional[Type["_FormatterClass"]] = None
+    formatter_class: type["_FormatterClass"] | None = None
     """A class for customizing the help output"""
-    prefix_chars: Optional[str] = None
+    prefix_chars: str | None = None
     """The set of characters that prefix optional arguments (default: `-`)"""
-    fromfile_prefix_chars: Optional[str] = None
+    fromfile_prefix_chars: str | None = None
     """The set of characters that prefix files from which additional arguments should be read (default: `None`)"""
-    argument_default: Optional[Any] = None
+    argument_default: Any | None = None
     """The global default value for arguments (default: `None`)"""
-    conflict_handler: Optional[str] = None
+    conflict_handler: str | None = None
     """The strategy for resolving conflicting optionals (usually unnecessary)"""
-    add_help: Optional[bool] = None
+    add_help: bool | None = None
     """Add a -h/--help option to the parser (default: `True`)"""
-    allow_abbrev: Optional[bool] = None
+    allow_abbrev: bool | None = None
     """Allows long options to be abbreviated if the abbreviation is unambiguous. (default: `True`)"""
-    exit_on_error: Optional[bool] = None
+    exit_on_error: bool | None = None
     """Determines whether or not ArgumentParser exits with error info when an error occurs. (default: `True`)"""
 
     def asdict(self) -> dict:
@@ -322,32 +317,32 @@ class ComponentCommand:
 
     name: str
     """The name of the command - this is what is used to call the command"""
-    help: Optional[str] = None
+    help: str | None = None
     """The help text for the command"""
-    arguments: Sequence[Union[CommandArg, CommandArgGroup]] = ()
+    arguments: Sequence[CommandArg | CommandArgGroup] = ()
     """argparse arguments for the command"""
-    subcommands: Sequence[Type["ComponentCommand"]] = ()
+    subcommands: Sequence[type["ComponentCommand"]] = ()
     """Subcommands for the command"""
 
-    handle: Optional[CommandHandler] = None
+    handle: CommandHandler | None = None
     """
     The function that is called when the command is run. If `None`, the command will
     print the help message.
     """
 
-    parser_input: Optional[CommandParserInput] = None
+    parser_input: CommandParserInput | None = None
     """
     The input to use when creating the `ArgumentParser` for this command. If `None`,
     the default values will be used.
     """
-    subparser_input: Optional[CommandSubcommand] = None
+    subparser_input: CommandSubcommand | None = None
     """
     The input to use when this command is a subcommand installed with `add_subparser()`.
     If `None`, the default values will be used.
     """
 
 
-def setup_parser_from_command(command: Type[ComponentCommand]) -> ArgumentParser:
+def setup_parser_from_command(command: type[ComponentCommand]) -> ArgumentParser:
     """
     Create an `ArgumentParser` instance from a `ComponentCommand`.
 
@@ -375,7 +370,7 @@ def setup_parser_from_command(command: Type[ComponentCommand]) -> ArgumentParser
 # Recursively setup the parser and its subcommands
 def _setup_parser_from_command(
     parser: ArgumentParser,
-    command: Type[ComponentCommand],
+    command: type[ComponentCommand],
 ) -> ArgumentParser:
     # Attach the command to the data returned by `parser.parse_args()`, so we know
     # which command was matched.
@@ -385,7 +380,7 @@ def _setup_parser_from_command(
     for arg in command.arguments:
         if isinstance(arg, CommandArgGroup):
             group_data = arg.asdict()
-            group_args: List[Dict] = group_data.pop("arguments")
+            group_args: list[dict] = group_data.pop("arguments")
             arg_group = parser.add_argument_group(**group_data)
             for group_arg in group_args:
                 # NOTE: Seems that dataclass's `asdict()` calls `asdict()` also on the
@@ -401,7 +396,7 @@ def _setup_parser_from_command(
     if command.subcommands:
         subparsers = parser.add_subparsers(title="subcommands")
         for subcommand in command.subcommands:
-            subparser_data: Dict[str, Any] = {}
+            subparser_data: dict[str, Any] = {}
             if getattr(subcommand, "subparser_input", None) and subcommand.subparser_input:
                 subparser_data = subcommand.subparser_input.asdict()
 
@@ -416,7 +411,7 @@ def _setup_parser_from_command(
     return parser
 
 
-def _setup_command_arg(parser: Union[ArgumentParser, "_ArgumentGroup"], arg: dict) -> None:
+def _setup_command_arg(parser: "ArgumentParser | _ArgumentGroup", arg: dict) -> None:
     # NOTE: Support for deprecated was added in Python 3.13
     # See https://docs.python.org/3/library/argparse.html#deprecated
     if sys.version_info < (3, 13) and "deprecated" in arg:

@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from django.http import HttpResponse
 
@@ -27,5 +27,5 @@ class RelativeFileComponent(Component):
                 kwargs={"variable": "GET"},
             )
 
-    def get_template_data(self, args, kwargs, slots, context) -> Dict[str, Any]:
+    def get_template_data(self, args, kwargs, slots, context) -> dict[str, Any]:
         return {"variable": kwargs["variable"]}

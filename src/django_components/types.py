@@ -1,6 +1,6 @@
 """Helper types for IDEs."""
 
-from typing_extensions import Annotated
+from typing import Annotated
 
 css = Annotated[str, "css"]
 django_html = Annotated[str, "django_html"]

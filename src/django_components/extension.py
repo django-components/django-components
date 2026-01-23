@@ -1,19 +1,12 @@
-import sys
+from collections.abc import Callable
 from functools import wraps
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
-    Dict,
-    List,
     NamedTuple,
-    Optional,
-    Set,
-    Tuple,
-    Type,
+    TypeAlias,
     TypeVar,
-    Union,
 )
 from weakref import ReferenceType, ref
 
@@ -34,15 +27,11 @@ if TYPE_CHECKING:
     from django_components.slots import Slot, SlotNode, SlotResult
 
 
-# NOTE: `ReferenceType` is NOT a generic pre-3.9
-if sys.version_info >= (3, 9):
-    ComponentInstanceRef = ReferenceType["Component"]
-else:
-    ComponentInstanceRef = ReferenceType
+ComponentInstanceRef: TypeAlias = ReferenceType["Component"]
 
 
 TCallable = TypeVar("TCallable", bound=Callable)
-TClass = TypeVar("TClass", bound=Type[Any])
+TClass = TypeVar("TClass", bound=type[Any])
 
 
 ################################################
@@ -62,13 +51,13 @@ def mark_extension_hook_api(cls: TClass) -> TClass:
 
 @mark_extension_hook_api
 class OnComponentClassCreatedContext(NamedTuple):
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The created Component class"""
 
 
 @mark_extension_hook_api
 class OnComponentClassDeletedContext(NamedTuple):
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The to-be-deleted Component class"""
 
 
@@ -90,7 +79,7 @@ class OnComponentRegisteredContext(NamedTuple):
     """The registry the component was registered to"""
     name: str
     """The name the component was registered under"""
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The registered Component class"""
 
 
@@ -100,7 +89,7 @@ class OnComponentUnregisteredContext(NamedTuple):
     """The registry the component was unregistered from"""
     name: str
     """The name the component was registered under"""
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The unregistered Component class"""
 
 
@@ -108,15 +97,15 @@ class OnComponentUnregisteredContext(NamedTuple):
 class OnComponentInputContext(NamedTuple):
     component: "Component"
     """The Component instance that received the input and is being rendered"""
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The Component class"""
     component_id: str
     """The unique identifier for this component instance"""
-    args: List
+    args: list
     """List of positional arguments passed to the component"""
-    kwargs: Dict
+    kwargs: dict
     """Dictionary of keyword arguments passed to the component"""
-    slots: Dict[str, "Slot"]
+    slots: dict[str, "Slot"]
     """Dictionary of slot definitions"""
     context: Context
     """The Django template Context object"""
@@ -126,18 +115,18 @@ class OnComponentInputContext(NamedTuple):
 class OnComponentDataContext(NamedTuple):
     component: "Component"
     """The Component instance that is being rendered"""
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The Component class"""
     component_id: str
     """The unique identifier for this component instance"""
     # TODO_V1 - Remove `context_data`
-    context_data: Dict
+    context_data: dict
     """Deprecated. Use `template_data` instead. Will be removed in v1.0."""
-    template_data: Dict
+    template_data: dict
     """Dictionary of template data from `Component.get_template_data()`"""
-    js_data: Dict
+    js_data: dict
     """Dictionary of JavaScript data from `Component.get_js_data()`"""
-    css_data: Dict
+    css_data: dict
     """Dictionary of CSS data from `Component.get_css_data()`"""
 
 
@@ -145,13 +134,13 @@ class OnComponentDataContext(NamedTuple):
 class OnComponentRenderedContext(NamedTuple):
     component: "Component"
     """The Component instance that is being rendered"""
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The Component class"""
     component_id: str
     """The unique identifier for this component instance"""
-    result: Optional[str]
+    result: str | None
     """The rendered component, or `None` if rendering failed"""
-    error: Optional[Exception]
+    error: Exception | None
     """The error that occurred during rendering, or `None` if rendering was successful"""
 
 
@@ -159,7 +148,7 @@ class OnComponentRenderedContext(NamedTuple):
 class OnSlotRenderedContext(NamedTuple):
     component: "Component"
     """The Component instance that contains the `{% slot %}` tag"""
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The Component class that contains the `{% slot %}` tag"""
     component_id: str
     """The unique identifier for this component instance"""
@@ -179,19 +168,19 @@ class OnSlotRenderedContext(NamedTuple):
 
 @mark_extension_hook_api
 class OnTemplateLoadedContext(NamedTuple):
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The Component class whose template was loaded"""
     content: str
     """The template string"""
-    origin: Optional[Origin]
+    origin: Origin | None
     """The origin of the template"""
-    name: Optional[str]
+    name: str | None
     """The name of the template"""
 
 
 @mark_extension_hook_api
 class OnTemplateCompiledContext(NamedTuple):
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The Component class whose template was loaded"""
     template: Template
     """The compiled template object"""
@@ -199,7 +188,7 @@ class OnTemplateCompiledContext(NamedTuple):
 
 @mark_extension_hook_api
 class OnCssLoadedContext(NamedTuple):
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The Component class whose CSS was loaded"""
     content: str
     """The CSS content (string)"""
@@ -207,7 +196,7 @@ class OnCssLoadedContext(NamedTuple):
 
 @mark_extension_hook_api
 class OnJsLoadedContext(NamedTuple):
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The Component class whose JS was loaded"""
     content: str
     """The JS content (string)"""
@@ -257,11 +246,11 @@ class ExtensionComponentConfig:
     subclasses of `ExtensionComponentConfig`.
     """
 
-    component_cls: Type["Component"]
+    component_cls: type["Component"]
     """The [`Component`](./api.md#django_components.Component) class that this extension is defined on."""
 
     # TODO_v1 - Remove, superseded by `component_cls`
-    component_class: Type["Component"]
+    component_class: type["Component"]
     """The [`Component`](./api.md#django_components.Component) class that this extension is defined on."""
 
     @property
@@ -278,18 +267,18 @@ class ExtensionComponentConfig:
         so there is no component instance available when running extension's methods.
         In such cases, this attribute will be `None`.
         """
-        component: Optional[Component] = None
+        component: Component | None = None
         if self._component_ref is not None:
             component = self._component_ref()
         if component is None:
             raise RuntimeError("Component has been garbage collected")
         return component
 
-    def __init__(self, component: "Optional[Component]") -> None:
+    def __init__(self, component: "Component | None") -> None:
         # NOTE: Use weak reference to avoid a circular reference between the component instance
         # and the extension class.
         if component is not None:
-            self._component_ref: Optional[ComponentInstanceRef] = ref(component)
+            self._component_ref: ComponentInstanceRef | None = ref(component)
         else:
             # NOTE: Some extensions like Storybook run outside of the component lifecycle,
             #       so there is no component instance available when running extension's methods.
@@ -297,7 +286,7 @@ class ExtensionComponentConfig:
 
 
 # TODO_v1 - Delete
-BaseExtensionClass = ExtensionComponentConfig
+BaseExtensionClass: TypeAlias = ExtensionComponentConfig
 """
 Deprecated. Will be removed in v1.0. Use
 [`ComponentConfig`](./api.md#django_components.ExtensionComponentConfig) instead.
@@ -306,7 +295,7 @@ Deprecated. Will be removed in v1.0. Use
 
 # TODO_V1 - Delete, meta class was needed only for backwards support for ExtensionClass.
 class ExtensionMeta(type):
-    def __new__(mcs, name: Any, bases: Tuple, attrs: Dict) -> Any:
+    def __new__(mcs, name: Any, bases: tuple, attrs: dict) -> Any:
         # Rename `ExtensionClass` to `ComponentConfig`
         if "ExtensionClass" in attrs:
             attrs["ComponentConfig"] = attrs.pop("ExtensionClass")
@@ -444,7 +433,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     ```
     """
 
-    ComponentConfig: ClassVar[Type[ExtensionComponentConfig]] = ExtensionComponentConfig
+    ComponentConfig: ClassVar[type[ExtensionComponentConfig]] = ExtensionComponentConfig
     """
     Base class that the "component-level" extension config nested within
     a [`Component`](./api.md#django_components.Component) class will inherit from.
@@ -482,7 +471,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     This setting decides what the extension class will inherit from.
     """
 
-    commands: ClassVar[List[Type[ComponentCommand]]] = []
+    commands: ClassVar[list[type[ComponentCommand]]] = []
     """
     List of commands that can be run by the extension.
 
@@ -542,7 +531,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     ```
     """
 
-    urls: ClassVar[List[URLRoute]] = []
+    urls: ClassVar[list[URLRoute]] = []
 
     ###########################
     # Misc
@@ -688,7 +677,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     # Component render hooks
     ###########################
 
-    def on_component_input(self, ctx: OnComponentInputContext) -> Optional[str]:
+    def on_component_input(self, ctx: OnComponentInputContext) -> str | None:
         """
         Called when a [`Component`](./api.md#django_components.Component) was triggered to render,
         but before a component's context and data methods are invoked.
@@ -760,7 +749,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         ```
         """
 
-    def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
+    def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
         """
         Called when a [`Component`](./api.md#django_components.Component) was rendered, including
         all its child components.
@@ -785,7 +774,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         from django_components import ComponentExtension, OnComponentRenderedContext
 
         class MyExtension(ComponentExtension):
-            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
+            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
                 # Append a comment to the component's rendered output
                 return ctx.result + "<!-- MyExtension comment -->"
         ```
@@ -796,7 +785,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         from django_components import ComponentExtension, OnComponentRenderedContext
 
         class MyExtension(ComponentExtension):
-            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
+            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
                 # Raise a new exception
                 raise Exception("Error message")
         ```
@@ -807,7 +796,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         from django_components import ComponentExtension, OnComponentRenderedContext
 
         class MyExtension(ComponentExtension):
-            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> Optional[str]:
+            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
                 if ctx.error is not None:
                     # The component raised an exception
                     print(f"Error: {ctx.error}")
@@ -821,7 +810,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     # Template / JS / CSS hooks
     ##########################
 
-    def on_template_loaded(self, ctx: OnTemplateLoadedContext) -> Optional[str]:
+    def on_template_loaded(self, ctx: OnTemplateLoadedContext) -> str | None:
         """
         Called when a Component's template is loaded as a string.
 
@@ -839,7 +828,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         from django_components import ComponentExtension, OnTemplateLoadedContext
 
         class MyExtension(ComponentExtension):
-            def on_template_loaded(self, ctx: OnTemplateLoadedContext) -> Optional[str]:
+            def on_template_loaded(self, ctx: OnTemplateLoadedContext) -> str | None:
                 # Modify the template
                 return ctx.content.replace("Hello", "Hi")
         ```
@@ -867,7 +856,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         ```
         """
 
-    def on_css_loaded(self, ctx: OnCssLoadedContext) -> Optional[str]:
+    def on_css_loaded(self, ctx: OnCssLoadedContext) -> str | None:
         """
         Called when a Component's CSS is loaded as a string.
 
@@ -885,13 +874,13 @@ class ComponentExtension(metaclass=ExtensionMeta):
         from django_components import ComponentExtension, OnCssLoadedContext
 
         class MyExtension(ComponentExtension):
-            def on_css_loaded(self, ctx: OnCssLoadedContext) -> Optional[str]:
+            def on_css_loaded(self, ctx: OnCssLoadedContext) -> str | None:
                 # Modify the CSS
                 return ctx.content.replace("Hello", "Hi")
         ```
         """
 
-    def on_js_loaded(self, ctx: OnJsLoadedContext) -> Optional[str]:
+    def on_js_loaded(self, ctx: OnJsLoadedContext) -> str | None:
         """
         Called when a Component's JS is loaded as a string.
 
@@ -909,7 +898,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         from django_components import ComponentExtension, OnCssLoadedContext
 
         class MyExtension(ComponentExtension):
-            def on_js_loaded(self, ctx: OnJsLoadedContext) -> Optional[str]:
+            def on_js_loaded(self, ctx: OnJsLoadedContext) -> str | None:
                 # Modify the JS
                 return ctx.content.replace("Hello", "Hi")
         ```
@@ -919,7 +908,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     # Tags lifecycle hooks
     ##########################
 
-    def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
+    def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> str | None:
         """
         Called when a [`{% slot %}`](./template_tags.md#slot) tag was rendered.
 
@@ -933,7 +922,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         from django_components import ComponentExtension, OnSlotRenderedContext
 
         class MyExtension(ComponentExtension):
-            def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
+            def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> str | None:
                 # Append a comment to the slot's rendered output
                 return ctx.result + "<!-- MyExtension comment -->"
         ```
@@ -951,7 +940,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         from django_components import ComponentExtension, OnSlotRenderedContext
 
         class MyExtension(ComponentExtension):
-            def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
+            def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> str | None:
                 # Access slot metadata
                 slot_node = ctx.slot_node
                 slot_owner = slot_node.template_component
@@ -983,16 +972,16 @@ class ExtensionManager:
 
     def __init__(self) -> None:
         self._initialized = False
-        self._events: List[Tuple[str, Any]] = []
-        self._url_resolvers: Dict[str, URLResolver] = {}
+        self._events: list[tuple[str, Any]] = []
+        self._url_resolvers: dict[str, URLResolver] = {}
         # Keep track of which URLRoute (framework-agnostic) maps to which URLPattern (Django-specific)
-        self._route_to_url: Dict[URLRoute, Union[URLPattern, URLResolver]] = {}
+        self._route_to_url: dict[URLRoute, URLPattern | URLResolver] = {}
 
     @property
-    def extensions(self) -> List[ComponentExtension]:
+    def extensions(self) -> list[ComponentExtension]:
         return app_settings.EXTENSIONS
 
-    def _init_component_class(self, component_cls: Type["Component"]) -> None:
+    def _init_component_class(self, component_cls: type["Component"]) -> None:
         # If not yet initialized, this class will be initialized later once we run `_init_app`
         if not self._initialized:
             return
@@ -1070,7 +1059,7 @@ class ExtensionManager:
             if component_ext_subclass:
                 bases_list.insert(0, component_ext_subclass)
 
-            bases: Tuple[Type, ...] = tuple(bases_list)
+            bases: tuple[type, ...] = tuple(bases_list)
 
             # Allow component-level extension class to access the owner `Component` class that via
             # `component_cls`.
@@ -1128,8 +1117,8 @@ class ExtensionManager:
 
         # Populate the `urlpatterns` with URLs specified by the extensions
         # TODO_V3 - Django-specific logic - replace with hook
-        urls: List[URLResolver] = []
-        seen_names: Set[str] = set()
+        urls: list[URLResolver] = []
+        seen_names: set[str] = set()
 
         from django_components import Component  # noqa: PLC0415
 
@@ -1210,14 +1199,14 @@ class ExtensionManager:
                 return extension
         raise ValueError(f"Extension {name} not found")
 
-    def get_extension_command(self, name: str, command_name: str) -> Type[ComponentCommand]:
+    def get_extension_command(self, name: str, command_name: str) -> type[ComponentCommand]:
         extension = self.get_extension(name)
         for command in extension.commands:
             if command.name == command_name:
                 return command
         raise ValueError(f"Command {command_name} not found in extension {name}")
 
-    def add_extension_urls(self, name: str, urls: List[URLRoute]) -> None:
+    def add_extension_urls(self, name: str, urls: list[URLRoute]) -> None:
         if not self._initialized:
             raise RuntimeError("Cannot add extension URLs before initialization")
 
@@ -1228,7 +1217,7 @@ class ExtensionManager:
         did_add_urls = False
 
         # Allow to add only those routes that are not yet added
-        for route, urlpattern in zip(urls, new_urls):
+        for route, urlpattern in zip(urls, new_urls, strict=False):
             if route in self._route_to_url:
                 raise ValueError(f"URLRoute {route} already exists")
             self._route_to_url[route] = urlpattern
@@ -1238,7 +1227,7 @@ class ExtensionManager:
         if did_add_urls:
             self._lazy_populate_resolver()
 
-    def remove_extension_urls(self, name: str, urls: List[URLRoute]) -> None:
+    def remove_extension_urls(self, name: str, urls: list[URLRoute]) -> None:
         if not self._initialized:
             raise RuntimeError("Cannot remove extension URLs before initialization")
 
@@ -1301,7 +1290,7 @@ class ExtensionManager:
     # Component render hooks
     ###########################
 
-    def on_component_input(self, ctx: OnComponentInputContext) -> Optional[str]:
+    def on_component_input(self, ctx: OnComponentInputContext) -> str | None:
         for extension in self.extensions:
             result = extension.on_component_input(ctx)
             # The extension short-circuited the rendering process to return this
@@ -1316,7 +1305,7 @@ class ExtensionManager:
     def on_component_rendered(
         self,
         ctx: OnComponentRenderedContext,
-    ) -> Optional["OnComponentRenderedResult"]:
+    ) -> "OnComponentRenderedResult | None":
         for extension in self.extensions:
             try:
                 result = extension.on_component_rendered(ctx)
@@ -1358,7 +1347,7 @@ class ExtensionManager:
                 ctx = ctx._replace(content=content)
         return ctx.content
 
-    def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> Optional[str]:
+    def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> str | None:
         for extension in self.extensions:
             result = extension.on_slot_rendered(ctx)
             if result is not None:

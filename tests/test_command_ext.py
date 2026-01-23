@@ -1,5 +1,4 @@
 import re
-import sys
 from io import StringIO
 from textwrap import dedent
 from unittest.mock import patch
@@ -12,12 +11,6 @@ from django_components.testing import djc_test
 from .testutils import setup_test_config
 
 setup_test_config()
-
-# NOTE: Argparse changed how the optional args are displayed in Python 3.11+
-if sys.version_info >= (3, 10):
-    OPTIONS_TITLE = "options"
-else:
-    OPTIONS_TITLE = "optional arguments"
 
 
 class EmptyExtension(ComponentExtension):
@@ -75,16 +68,16 @@ class TestExtensionsCommand:
         assert (
             output
             == dedent(
-                f"""
-                usage: components ext [-h] {{list,run}} ...
+                """
+                usage: components ext [-h] {list,run} ...
 
                 Run extension commands.
 
-                {OPTIONS_TITLE}:
+                options:
                   -h, --help  show this help message and exit
 
                 subcommands:
-                  {{list,run}}
+                  {list,run}
                     list      List all extensions.
                     run       Run a command added by an extension.
                 """,
@@ -212,16 +205,16 @@ class TestExtensionsRunCommand:
         assert (
             output
             == dedent(
-                f"""
-                usage: components ext run [-h] {{dummy}} ...
+                """
+                usage: components ext run [-h] {dummy} ...
 
                 Run a command added by an extension.
 
-                {OPTIONS_TITLE}:
+                options:
                   -h, --help  show this help message and exit
 
                 subcommands:
-                  {{dummy}}
+                  {dummy}
                     dummy     Run commands added by the 'dummy' extension.
                 """,
             ).lstrip()
@@ -239,16 +232,16 @@ class TestExtensionsRunCommand:
         assert (
             output
             == dedent(
-                f"""
-                usage: components ext run dummy [-h] {{dummy_cmd}} ...
+                """
+                usage: components ext run dummy [-h] {dummy_cmd} ...
 
                 Run commands added by the 'dummy' extension.
 
-                {OPTIONS_TITLE}:
+                options:
                   -h, --help   show this help message and exit
 
                 subcommands:
-                  {{dummy_cmd}}
+                  {dummy_cmd}
                     dummy_cmd  Dummy command description.
                 """,
             ).lstrip()
@@ -266,16 +259,16 @@ class TestExtensionsRunCommand:
         assert (
             output
             == dedent(
-                f"""
-                usage: components ext run dummy [-h] {{dummy_cmd}} ...
+                """
+                usage: components ext run dummy [-h] {dummy_cmd} ...
 
                 Run commands added by the 'dummy' extension.
 
-                {OPTIONS_TITLE}:
+                options:
                   -h, --help   show this help message and exit
 
                 subcommands:
-                  {{dummy_cmd}}
+                  {dummy_cmd}
                     dummy_cmd  Dummy command description.
                 """,
             ).lstrip()

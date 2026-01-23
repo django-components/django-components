@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict, Optional
 
 import django
 from django.conf import settings
@@ -18,8 +17,8 @@ PARAMETRIZE_CONTEXT_BEHAVIOR = (
 
 
 def setup_test_config(
-    components: Optional[Dict] = None,
-    extra_settings: Optional[Dict] = None,
+    components: dict | None = None,
+    extra_settings: dict | None = None,
 ) -> None:
     if settings.configured:
         return
