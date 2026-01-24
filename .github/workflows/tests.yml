@@ -46,13 +46,14 @@ jobs:
       # Cache Playwright browsers (~500MB) to speed up CI, because it takes ~3 mins to download them on Windows.
       # Cache persists across all jobs and workflow runs until the cache key changes
       # Cache key includes OS and uv.lock hash, so it invalidates when dependencies change
+      # See https://playwright.dev/docs/browsers#managing-browser-binaries
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         id: playwright-cache
         with:
           path: |
             ~/.cache/ms-playwright
-            %USERPROFILE%\AppData\Local\ms-playwright
+            C:\Users\runneradmin\AppData\Local\ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
             playwright-${{ runner.os }}-
@@ -95,13 +96,14 @@ jobs:
       # Cache Playwright browsers (~500MB) to speed up CI, because it takes ~3 mins to download them on Windows.
       # Cache persists across all jobs and workflow runs until the cache key changes
       # Cache key includes OS and uv.lock hash, so it invalidates when dependencies change
+      # See https://playwright.dev/docs/browsers#managing-browser-binaries
       - name: Cache Playwright browsers
         uses: actions/cache@v4
         id: playwright-cache
         with:
           path: |
             ~/.cache/ms-playwright
-            %USERPROFILE%\AppData\Local\ms-playwright
+            C:\Users\runneradmin\AppData\Local\ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('uv.lock') }}
           restore-keys: |
             playwright-${{ runner.os }}-
