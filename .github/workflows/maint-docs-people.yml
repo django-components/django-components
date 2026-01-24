@@ -19,17 +19,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
       - name: Install dependencies
-        run: pip install -U PyGithub pyyaml pydantic pydantic-settings httpx
-        shell: bash
+        run: |
+          uv sync --group dev
 
       - name: Update Django Components People
-        run: python ./docs/scripts/people.py
-        shell: bash
+        run: |
+          uv run python ./docs/scripts/people.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

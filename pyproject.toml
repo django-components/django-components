@@ -63,6 +63,7 @@ dev = [
     "types-requests",
     "whitenoise",
     "pydantic",
+    "pydantic-settings",
     "pygments",
     "pygments-djc",
     "asv",
@@ -71,6 +72,8 @@ dev = [
     "virtualenv==20.35.4",
     "typing-extensions>=4.12.2",
     "pathspec",
+    "PyGithub",
+    "pyyaml",
 ]
 
 # CI dependencies - install with `uv sync --group ci`
