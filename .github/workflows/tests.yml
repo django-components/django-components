@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Main test job - runs tests across all Python/Django/OS combinations
   build:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -41,12 +42,75 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --group ci
+
+      # NOTE: WINDOWS ONLY - Installing system dependencies for Playwright browsers takes ~3-4 mins.
+      # See https://github.com/django-components/django-components/pull/1554
+      # See https://playwright.dev/docs/browsers#managing-browser-binaries
       - name: Install Playwright browsers
         run: |
           # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
           uv run playwright install chromium firefox webkit --with-deps
       - name: Run tests
         run: uv run tox
+
+  # Coverage job - runs tests with coverage on a single Python version
+  # NOTE: The steps are the same as the build job.
+  coverage:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.14"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # NOTE: WINDOWS ONLY - Installing system dependencies for Playwright browsers takes ~3-4 mins.
+      # See https://github.com/django-components/django-components/pull/1554
+      # See https://playwright.dev/docs/browsers#managing-browser-binaries
+      - name: Install Playwright browsers
+        run: |
+          # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
+          uv run playwright install chromium firefox webkit --with-deps
+      # Run the actual tests with coverage
+      - name: Run coverage
+        run: uv run tox -e coverage
+
+  # Linting job - runs ruff and mypy checks
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.14"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --group ci
+
+      - name: Run linting checks
+        run: uv run tox -e ruff,mypy
 
   # Verify that docs build
   test_docs:
