@@ -8,8 +8,7 @@ Always reference these instructions first and fallback to search or bash command
 
 ### Initial Setup
 - Install development dependencies:
-  - `pip install -r requirements-dev.txt` -- installs all dev dependencies including pytest, ruff, etc.
-  - `pip install -e .` -- install the package in development mode
+  - `uv sync --group dev` -- installs all dev dependencies including pytest, ruff, etc. (uses uv for dependency management)
 - Install Playwright for browser testing (optional, may timeout):
   - `playwright install chromium firefox webkit --with-deps` -- NEVER CANCEL: Can take 10+ minutes due to large download. Set timeout to 15+ minutes.
 
@@ -61,10 +60,9 @@ The package provides custom Django management commands:
 - `tests/` -- comprehensive test suite with 1000+ tests
 - `sampleproject/` -- working Django project demonstrating component usage
 - `docs/` -- documentation source (uses mkdocs)
-- `requirements-dev.txt` -- development dependencies (validated to work)
-- `requirements-docs.txt` -- documentation building dependencies
 - `pyproject.toml` -- package configuration and dependencies
 - `tox.ini` -- test environment configuration for multiple Python/Django versions
+- `uv.lock` -- dependency lock file for uv
 
 ### Key Files to Check When Making Changes
 - Always check the sample project works after making changes to core functionality
@@ -94,7 +92,7 @@ The package provides custom Django management commands:
 - All core functionality works without additional network access once dependencies are installed
 
 ### Development Workflow
-1. Install dependencies: `pip install -r requirements-dev.txt && pip install -e .`
+1. Install dependencies: `uv sync --group dev`
 2. Make changes to source code in `src/django_components/`
 3. Run tests: `python -m pytest tests/test_component.py` (or specific test files)
 4. Run linting: `ruff check .`

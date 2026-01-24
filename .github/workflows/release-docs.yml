@@ -47,21 +47,22 @@ jobs:
           git config user.name components-release-bot
           git config user.email "components-release-bot@users.noreply.github.com"
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-          cache: 'pip'
 
       - name: Install dependencies
         run: |
-            python -m pip install --upgrade pip wheel
+            uv sync --group docs
             # NOTE: pin virtualenv to <20.31 until asv fixes it.
             # See https://github.com/airspeed-velocity/asv/issues/1484
-            python -m pip install -q pre-commit asv virtualenv==20.30
-            python -m pip install -r requirements-docs.txt
-            # Install django-components locally
-            python -m pip install -e .
+            uv pip install --system pre-commit asv virtualenv==20.30
 
       ###########################################
       # RECORD BENCHMARK - ONLY ON PUSH TO MASTER
@@ -95,7 +96,7 @@ jobs:
           # 1. First create the virtual environment, so that asv generates the directories where
           #    the monkeypatch can be applied.
           echo "Creating virtual environment..."
-          asv setup -v || true
+          uv run asv setup -v || true
           echo "Virtual environment created."
           # 2. Now let's apply the monkeypatch by appending it to the `timeraw.py` files.
           # First find all `timeraw.py` files
@@ -112,7 +113,7 @@ jobs:
           # We assume that the CI machine has a name that is unique and stable.
           # See https://github.com/airspeed-velocity/asv/issues/796#issuecomment-1188431794
           echo "Preparing benchmarks profile..."
-          asv machine --yes --machine ci-linux
+          uv run asv machine --yes --machine ci-linux
           echo "Benchmarks profile DONE."
 
           # Run benchmarks for the current tag
@@ -124,14 +125,14 @@ jobs:
           #       TO the start of the branch history.
           #       With it, we run benchmarks ONLY FOR the tag's commit.
           echo "Running benchmarks for tag ${TAG}..."
-          asv run master^! -v
+          uv run asv run master^! -v
           echo "Benchmarks for tag ${TAG} DONE."
 
           # Generate benchmarks site
           # This should save it in `docs/benchmarks/`, so we can then use it when
           # building docs site with `mkdocs`.
           echo "Generating benchmarks site..."
-          asv publish
+          uv run asv publish
           echo "Benchmarks site DONE."
 
           # Commit benchmark results
@@ -171,7 +172,7 @@ jobs:
         run: |
           # TODO: Enable strict mode once docs are clean
           echo "Strict check of docs disabled."
-          # mkdocs build --strict
+          # uv run mkdocs build --strict
 
       - name: Build & deploy "dev" docs for a new commit to master
         if: github.event_name == 'push' && github.ref_type != 'tag'
@@ -183,7 +184,7 @@ jobs:
           git checkout master
 
           export SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
+          uv run mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
 
       - name: Build & deploy docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
@@ -196,5 +197,5 @@ jobs:
           git pull origin gh-pages
           git checkout master
 
-          mike deploy --push --update-aliases $REF_NAME latest
-          mike set-default latest --push
+          uv run mike deploy --push --update-aliases $REF_NAME latest
+          uv run mike set-default latest --push
