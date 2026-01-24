@@ -43,32 +43,13 @@ jobs:
         run: |
           uv sync --group ci
 
-      # Cache Playwright browsers (~500MB) to speed up CI, because it takes ~3 mins to download them on Windows.
-      # Cache persists across all jobs and workflow runs until the cache key changes
-      # Cache key includes OS and uv.lock hash, so it invalidates when dependencies change
+      # NOTE: WINDOWS ONLY - Installing system dependencies for Playwright browsers takes ~3-4 mins.
+      # See https://github.com/django-components/django-components/pull/1554
       # See https://playwright.dev/docs/browsers#managing-browser-binaries
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: |
-            ~/.cache/ms-playwright
-            C:\Users\runneradmin\AppData\Local\ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-      # This runs on cache miss (browsers not cached)
       - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
           # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
           uv run playwright install chromium firefox webkit --with-deps
-      # This runs on cache hit (browsers cached)
-      - name: Install Playwright system dependencies (if cached)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: |
-          # Only install system dependencies if browsers are cached
-          uv run playwright install-deps chromium firefox webkit
       - name: Run tests
         run: uv run tox
 
@@ -93,32 +74,13 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # Cache Playwright browsers (~500MB) to speed up CI, because it takes ~3 mins to download them on Windows.
-      # Cache persists across all jobs and workflow runs until the cache key changes
-      # Cache key includes OS and uv.lock hash, so it invalidates when dependencies change
+      # NOTE: WINDOWS ONLY - Installing system dependencies for Playwright browsers takes ~3-4 mins.
+      # See https://github.com/django-components/django-components/pull/1554
       # See https://playwright.dev/docs/browsers#managing-browser-binaries
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: |
-            ~/.cache/ms-playwright
-            C:\Users\runneradmin\AppData\Local\ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-      # This runs on cache miss (browsers not cached)
       - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: |
           # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
           uv run playwright install chromium firefox webkit --with-deps
-      # This runs on cache hit (browsers cached)
-      - name: Install Playwright system dependencies (if cached)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: |
-          # Only install system dependencies if browsers are cached
-          uv run playwright install-deps chromium firefox webkit
       # Run the actual tests with coverage
       - name: Run coverage
         run: uv run tox -e coverage
