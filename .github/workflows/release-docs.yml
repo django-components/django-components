@@ -4,10 +4,10 @@ on:
   push:
     tags:
       # for versions 0.### (before 1.0.0)
-      - '0.[0-9]+'
+      - "0.[0-9]+"
       # after 1.0.0
-      - '[0-9]+.[0-9]+.[0-9]+'
-    branches: 
+      - "[0-9]+.[0-9]+.[0-9]+"
+    branches:
       - master
   workflow_dispatch:
 
@@ -15,14 +15,13 @@ jobs:
   docs:
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
-      contents: write  # to let mkdocs write the new docs
-      pages: write     # to deploy to Pages
-      id-token: write  # to verify the deployment originates from an appropriate source
+      contents: write # to let mkdocs write the new docs
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
     runs-on: ubuntu-latest
     # Only run in original repo (not in forks)
     if: github.repository == 'django-components/django-components'
     steps:
-
       ##############################
       # SETUP
       ##############################
@@ -59,10 +58,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-            uv sync --group docs
-            # NOTE: pin virtualenv to <20.31 until asv fixes it.
-            # See https://github.com/airspeed-velocity/asv/issues/1484
-            uv pip install --system pre-commit asv virtualenv==20.30
+          uv sync --group docs
+          # NOTE: pin virtualenv to <20.31 until asv fixes it.
+          # See https://github.com/airspeed-velocity/asv/issues/1484
+          uv pip install --system pre-commit asv virtualenv==20.30
 
       ###########################################
       # RECORD BENCHMARK - ONLY ON PUSH TO MASTER
@@ -163,6 +162,11 @@ jobs:
           # required for "mike deploy" command below which pushes to gh-pages
           git config user.name github-actions
           git config user.email github-actions@github.com
+
+      - name: Install dependencies
+        run: |
+          # Re-install dependencies after second checkout to ensure virtual environment is available
+          uv sync --group docs
 
       # Conditions make sure to select the right step, depending on the job trigger.
       # Only one of the steps below will run at a time. The others will be skipped.
