@@ -449,7 +449,7 @@ def _setup_djc_global_state(
 
     app_settings._load_settings()
     extensions._initialized = False
-    extensions._init_app()
+    extensions._init_app(app_settings.EXTENSIONS)
 
 
 def _clear_djc_global_state(

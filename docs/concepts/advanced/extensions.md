@@ -41,6 +41,7 @@ Extensions can define methods to hook into lifecycle events, such as:
 - Component creation or deletion
 - Un/registering a component
 - Creating or deleting a registry
+- Extension instantiation
 - Pre-processing data passed to a component on render
 - Post-processing data returned from [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
   and others.

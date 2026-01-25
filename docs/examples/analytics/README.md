@@ -35,7 +35,7 @@ Instead, you can define the analytics logic as an [extension](../../concepts/adv
 To do that, we can use the [`on_component_rendered()`](../../reference/extension_hooks.md#django_components.extension.ComponentExtension.on_component_rendered) hook to capture all errors.
 
 ```python
-from django_components.extension import ComponentExtension, OnComponentRenderedContext
+from django_components import ComponentExtension, OnComponentRenderedContext
 
 class ErrorTrackingExtension(ComponentExtension):
     name = "sentry_error_tracker"

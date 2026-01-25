@@ -1,5 +1,6 @@
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from functools import wraps
+from importlib import import_module
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -7,6 +8,7 @@ from typing import (
     NamedTuple,
     TypeAlias,
     TypeVar,
+    cast,
 )
 from weakref import ReferenceType, ref
 
@@ -47,6 +49,12 @@ TClass = TypeVar("TClass", bound=type[Any])
 def mark_extension_hook_api(cls: TClass) -> TClass:
     cls._extension_hook_api = True
     return cls
+
+
+@mark_extension_hook_api
+class OnExtensionCreatedContext(NamedTuple):
+    extension: "ComponentExtension"
+    """The created extension"""
 
 
 @mark_extension_hook_api
@@ -547,6 +555,28 @@ class ComponentExtension(metaclass=ExtensionMeta):
             cls.class_name = snake_to_pascal(cls.name)
 
     ###########################
+    # Extension lifecycle hooks
+    ###########################
+
+    def on_extension_created(self, ctx: OnExtensionCreatedContext) -> None:
+        """
+        Called when a new [`ComponentExtension`](./api.md#django_components.ComponentExtension) instance is created.
+
+        Use this hook to perform any initialization or validation of the extension instance.
+
+        **Example:**
+
+        ```python
+        from django_components import ComponentExtension, OnExtensionCreatedContext
+
+        class MyExtension(ComponentExtension):
+            def on_extension_created(self, ctx: OnExtensionCreatedContext) -> None:
+                # Add a new attribute to the extension instance
+                ctx.extension.my_attr = "my_value"
+        ```
+        """
+
+    ###########################
     # Component lifecycle hooks
     ###########################
 
@@ -972,14 +1002,28 @@ class ExtensionManager:
 
     def __init__(self) -> None:
         self._initialized = False
+        self.extensions: list[ComponentExtension] = []
         self._events: list[tuple[str, Any]] = []
         self._url_resolvers: dict[str, URLResolver] = {}
         # Keep track of which URLRoute (framework-agnostic) maps to which URLPattern (Django-specific)
         self._route_to_url: dict[URLRoute, URLPattern | URLResolver] = {}
 
-    @property
-    def extensions(self) -> list[ComponentExtension]:
-        return app_settings.EXTENSIONS
+    def _init_extensions(
+        self,
+        extensions: Sequence[type[ComponentExtension] | str | ComponentExtension],
+    ) -> list[ComponentExtension]:
+        extension_instances: list[ComponentExtension] = []
+        for extension in extensions:
+            if isinstance(extension, str):
+                import_path, class_name = extension.rsplit(".", 1)
+                extension_module = import_module(import_path)
+                extension = cast("type[ComponentExtension]", getattr(extension_module, class_name))  # noqa: PLW2901
+
+            # Create instance if it's a class, otherwise use the instance as is
+            extension_instance = extension() if isinstance(extension, type) else extension
+            extension_instances.append(extension_instance)
+
+        return extension_instances
 
     def _init_component_class(self, component_cls: type["Component"]) -> None:
         # If not yet initialized, this class will be initialized later once we run `_init_app`
@@ -1109,10 +1153,12 @@ class ExtensionManager:
             extension_instance = used_ext_class(component)
             setattr(component, extension.name, extension_instance)
 
-    def _init_app(self) -> None:
+    def _init_app(self, extensions: Sequence[type[ComponentExtension] | str]) -> None:
+        """Initialize the extension manager with the given extensions."""
         if self._initialized:
             return
 
+        self.extensions = self._init_extensions(extensions)
         self._initialized = True
 
         # Populate the `urlpatterns` with URLs specified by the extensions
@@ -1153,6 +1199,9 @@ class ExtensionManager:
 
         # Rebuild URL resolver cache to be able to resolve the new routes by their names.
         self._lazy_populate_resolver()
+
+        # Only after Django URL resolver is populated, it's safe to call the `on_extension_created` hook.
+        self.on_extension_created()
 
         # Flush stored events
         #
@@ -1251,6 +1300,14 @@ class ExtensionManager:
             if found_index != -1:
                 all_urls.pop(index)
                 urls_to_remove.pop(found_index)
+
+    #############################
+    # Extension lifecycle hooks
+    #############################
+
+    def on_extension_created(self) -> None:
+        for extension in self.extensions:
+            extension.on_extension_created(OnExtensionCreatedContext(extension))
 
     #############################
     # Component lifecycle hooks
@@ -1355,7 +1412,7 @@ class ExtensionManager:
         return ctx.result
 
 
-# NOTE: This is a singleton which is takes the extensions from `app_settings.EXTENSIONS`
+# NOTE: This is a singleton which receives extensions via `_init_app()` call from `apps.py`
 extensions = ExtensionManager()
 
 

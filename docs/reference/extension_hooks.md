@@ -166,6 +166,23 @@ name | type | description
 `component_cls` | [`type['Component']`](api.md#django_components.Component) | The Component class whose CSS was loaded
 `content` | `str` | The CSS content (string)
 
+::: django_components.extension.ComponentExtension.on_extension_created
+    options:
+      heading_level: 3
+      show_root_heading: true
+      show_signature: true
+      separate_signature: true
+      show_symbol_type_heading: false
+      show_symbol_type_toc: false
+      show_if_no_docstring: true
+      show_labels: false
+
+**Available data:**
+
+name | type | description
+--|--|--
+`extension` | [`ComponentExtension`](api.md#django_components.Component) | The created extension
+
 ::: django_components.extension.ComponentExtension.on_js_loaded
     options:
       heading_level: 3
@@ -314,6 +331,21 @@ name | type | description
       show_if_no_docstring: true
 
 ::: django_components.extension.OnComponentUnregisteredContext
+    options:
+      heading_level: 3
+      show_if_no_docstring: true
+
+::: django_components.extension.OnCssLoadedContext
+    options:
+      heading_level: 3
+      show_if_no_docstring: true
+
+::: django_components.extension.OnExtensionCreatedContext
+    options:
+      heading_level: 3
+      show_if_no_docstring: true
+
+::: django_components.extension.OnJsLoadedContext
     options:
       heading_level: 3
       show_if_no_docstring: true
