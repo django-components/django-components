@@ -347,6 +347,9 @@ All three data methods have access to the Component's [Render API](render_api.md
 - [`self.registry`](render_api.md#template-tag-metadata) - The [`ComponentRegistry`](../../reference/api.md#django_components.ComponentRegistry) instance
 - [`self.registered_name`](render_api.md#template-tag-metadata) - The name under which the component was registered
 - [`self.outer_context`](render_api.md#template-tag-metadata) - The context outside of the [`{% component %}`](../../reference/template_tags.md#component) tag
+- [`self.parent`](render_api.md#parent) - The parent component instance (or `None` if root)
+- [`self.root`](render_api.md#root) - The root component instance (or `self` if root)
+- [`self.ancestors`](render_api.md#ancestors) - An iterator of all ancestor component instances
 - `self.deps_strategy` - The strategy for rendering dependencies
 
 ## Type hints

@@ -595,6 +595,7 @@ class ComponentContext:
     default_slot: str | None
     outer_context: Context | None
     tree: ComponentTreeContext
+    root_id: str | None  # ID of the root component in this tree
 
 
 def on_component_garbage_collected(component_id: str) -> None:
@@ -2359,6 +2360,8 @@ class Component(metaclass=ComponentMeta):
         request: HttpRequest | None = None,
         node: "ComponentNode | None" = None,
         id: str | None = None,  # noqa: A002
+        parent: "Component | None" = None,
+        root: "Component | None" = None,
     ) -> None:
         # TODO_v1 - Remove this whole block in v1. This is for backwards compatibility with pre-v0.140
         #           where one could do:
@@ -2432,6 +2435,8 @@ class Component(metaclass=ComponentMeta):
         self.outer_context: Context | None = outer_context
         self.registry = default(registry, registry_)
         self.node = node
+        self.parent = parent
+        self.root = root or self
 
         # Run finalizer when component is garbage collected
         finalize(self, on_component_garbage_collected, self.id)
@@ -3018,6 +3023,95 @@ class Component(metaclass=ComponentMeta):
             return {}
         return gen_context_processors_data(self.context, request)
 
+    parent: "Component | None"
+    """
+    The parent component instance of the current component.
+
+    This is part of the [Render API](../concepts/fundamentals/render_api.md).
+
+    Returns the parent [`Component`](api.md#django_components.Component) instance if this component
+    is nested within another component, or `None` if this is the root component.
+
+    **Example:**
+
+    ```py
+    class Theme(Component):
+        ...
+
+    class Table(Component):
+        def on_render_before(self, context, template):
+            if self.parent is not None:
+                # This component is nested in another component
+                parent_type = type(self.parent).__name__
+                ...
+    ```
+    """
+
+    root: "Component"
+    """
+    The root component instance (top-most ancestor) of the current component.
+
+    This is part of the [Render API](../concepts/fundamentals/render_api.md).
+
+    Returns the root [`Component`](api.md#django_components.Component) instance in the component tree.
+    If this component is the root component, returns `self`.
+
+    **Example:**
+
+    ```py
+    class Theme(Component):
+        ...
+
+    class Table(Component):
+        def get_template_data(self, args, kwargs, slots, context):
+            # Access root component's data
+            root_kwargs = self.root.kwargs
+            ...
+    ```
+    """
+
+    @property
+    def ancestors(self) -> Generator["Component", None, None]:
+        """
+        An iterator that yields all ancestor component instances, walking up the tree.
+
+        This is part of the [Render API](../concepts/fundamentals/render_api.md).
+
+        Yields [`Component`](api.md#django_components.Component) instances starting from the parent component,
+        then the parent's parent, and so on, up to (but not including) the root component.
+
+        **Example:**
+
+        ```py
+        class Theme(Component):
+            ...
+
+        class MarkdownEditor(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                # Check if this component is nested in a Theme component
+                is_nested_in_theme = any(
+                    isinstance(comp, Theme) for comp in self.ancestors
+                )
+                if is_nested_in_theme:
+                    css_fix = "width: 200px; display: flex"
+                else:
+                    css_fix = ""
+
+                return {
+                    "css_fix": css_fix,
+                }
+        ```
+
+        Raises:
+            RuntimeError: If accessed outside of component rendering context.
+
+        """
+        # Start from the parent and walk up the tree using the parent attribute
+        current = self.parent
+        while current is not None:
+            yield current
+            current = current.parent
+
     # #####################################
     # MISC
     # #####################################
@@ -3507,6 +3601,36 @@ class Component(metaclass=ComponentMeta):
         if not isinstance(context, (Context, RequestContext)):
             context = RequestContext(request, context) if request else Context(context)
 
+        # Throughout the component tree, we pass down the info about the components' parents.
+        # This is used for correctly resolving slot fills, correct rendering order,
+        # or CSS scoping.
+        parent_id, parent_comp_ctx = _get_parent_component_context(context)
+        if parent_comp_ctx is not None:
+            component_path = [*parent_comp_ctx.component_path, component_name]
+            component_tree_context = parent_comp_ctx.tree
+        else:
+            component_path = [component_name]
+            component_tree_context = ComponentTreeContext(
+                component_attrs={},
+                on_component_intermediate_callbacks={},
+                on_component_rendered_callbacks={},
+                started_generators=WeakKeyDictionary(),
+            )
+
+        root_id = render_id if parent_comp_ctx is None else parent_comp_ctx.root_id
+
+        # Set parent and root as direct attributes on the component instance.
+        # This creates strong references that keep parent/root alive as long as children are alive.
+        if parent_id is not None:
+            parent_component = component_instance_cache[parent_id]
+        else:
+            parent_component = None
+
+        if root_id is not None and root_id != render_id:
+            root_component = component_instance_cache[root_id]
+        else:
+            root_component = None
+
         component = comp_cls(
             id=render_id,
             args=args_list,
@@ -3520,6 +3644,8 @@ class Component(metaclass=ComponentMeta):
             registry=registry,
             registered_name=registered_name,
             node=node,
+            parent=parent_component,
+            root=root_component,
         )
 
         # Allow plugins to modify or validate the inputs
@@ -3558,22 +3684,6 @@ class Component(metaclass=ComponentMeta):
             {BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())},  # type: ignore[union-attr]
         )
 
-        # We pass down the components the info about the component's parent.
-        # This is used for correctly resolving slot fills, correct rendering order,
-        # or CSS scoping.
-        parent_id, parent_comp_ctx = _get_parent_component_context(context)
-        if parent_comp_ctx is not None:
-            component_path = [*parent_comp_ctx.component_path, component_name]
-            component_tree_context = parent_comp_ctx.tree
-        else:
-            component_path = [component_name]
-            component_tree_context = ComponentTreeContext(
-                component_attrs={},
-                on_component_intermediate_callbacks={},
-                on_component_rendered_callbacks={},
-                started_generators=WeakKeyDictionary(),
-            )
-
         trace_component_msg(
             "COMP_PREP_START",
             component_name=component_name,
@@ -3606,6 +3716,7 @@ class Component(metaclass=ComponentMeta):
             # NOTE: This is only a SNAPSHOT of the outer context.
             outer_context=snapshot_context(outer_context) if outer_context is not None else None,
             tree=component_tree_context,
+            root_id=root_id,
         )
 
         # Instead of passing the ComponentContext directly through the Context, the entry on the Context

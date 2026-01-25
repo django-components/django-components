@@ -53,6 +53,11 @@ The Render API includes:
     - [`self.context`](#context) - The context for the current render call
     - [`self.deps_strategy`](../advanced/rendering_js_css.md#dependencies-strategies) - The strategy for rendering dependencies
 
+- Component tree navigation:
+    - [`self.parent`](#parent) - The parent component instance (or `None` if root)
+    - [`self.root`](#root) - The root component instance (or `self` if root)
+    - [`self.ancestors`](#ancestors) - An iterator of all ancestor component instances
+
 - Request-related:
     - [`self.request`](#request-and-context-processors) - The request object (if available)
     - [`self.context_processors_data`](#request-and-context-processors) - Data from Django's context processors
@@ -228,6 +233,73 @@ Whether the context variables defined in `context` are available to the template
 
 - In `"isolated"` context behavior mode, the template will NOT have access to this context,
     and data MUST be passed via component's args and kwargs.
+
+## Component tree navigation
+
+When components are nested, you can navigate the component tree using `parent`, `root`, and `ancestors` properties.
+
+### Parent
+
+The [`self.parent`](../../reference/api.md#django_components.Component.parent) property returns the parent component instance if this component is nested within another component, or `None` if this is the root component.
+
+**Example:**
+
+```python
+class Theme(Component):
+    ...
+
+class Table(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        if self.parent is not None:
+            # This component is nested in another component
+            parent_type = type(self.parent).__name__
+            ...
+```
+
+### Root
+
+The [`self.root`](../../reference/api.md#django_components.Component.root) property returns the root component instance (top-most ancestor) in the component tree. If this component is the root component, it returns `self`.
+
+**Example:**
+
+```python
+class Theme(Component):
+    ...
+
+class Table(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        # Access root component's data
+        root_kwargs = self.root.kwargs
+        ...
+```
+
+### Ancestors
+
+The [`self.ancestors`](../../reference/api.md#django_components.Component.ancestors) property returns an iterator that yields all ancestor component instances, walking up the tree. It starts from the parent component, then the parent's parent, and so on, up to the root component.
+
+The `ancestors` list does not contain the current component itself.
+
+**Example:**
+
+```python
+class Theme(Component):
+    ...
+
+class MarkdownEditor(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        # Check if this component is nested in a Theme component
+        is_nested_in_theme = any(
+            isinstance(comp, Theme) for comp in self.ancestors
+        )
+        if is_nested_in_theme:
+            css_fix = "width: 200px; display: flex"
+        else:
+            css_fix = ""
+
+        return {
+            "css_fix": css_fix,
+        }
+```
 
 ## Component ID
 

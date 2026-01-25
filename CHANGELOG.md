@@ -12,6 +12,34 @@ Added support for Django 6.0.
 
 #### Feat
 
+- **Component tree navigation: `parent`, `root`, and `ancestors` properties.**
+
+    Components can now access their parent component, root component, and all ancestors
+    during rendering. These properties are part of the Render API and allow components
+    to navigate the component tree.
+
+    - `Component.parent` - Returns the parent component instance, or `None` if this is the root component.
+    - `Component.root` - Returns the root component instance (top-most ancestor), or `self` if this is the root.
+    - `Component.ancestors` - Returns an iterator that yields all ancestor component instances, walking up the tree.
+
+    **Example:**
+
+    ```python
+    class Theme(Component):
+        ...
+
+    class Table(Component):
+        def get_template_data(self, args, kwargs, slots, context):
+            if self.parent is not None:
+                # This component is nested in another component
+                # Access parent's data
+                if isinstance(self.parent, Theme):
+                    theme_color = self.parent.kwargs.get("color", "default")
+                    ...
+    ```
+
+    See [#1252](https://github.com/django-components/django-components/issues/1252)
+
 - **New `on_extension_created` hook for extensions.**
 
     New hook is called when the extension class is instantiated during Django startup.
