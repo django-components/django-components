@@ -3621,12 +3621,16 @@ class Component(metaclass=ComponentMeta):
 
         # Set parent and root as direct attributes on the component instance.
         # This creates strong references that keep parent/root alive as long as children are alive.
-        if parent_id is not None:
+        # NOTE: `parent_id` may be not found in `component_instance_cache` if we are rendering
+        #       an orphaned slot function (AKA slot function that we've taken out of the render context)
+        if parent_id is not None and parent_id in component_instance_cache:
             parent_component = component_instance_cache[parent_id]
         else:
             parent_component = None
 
-        if root_id is not None and root_id != render_id:
+        # NOTE: `root_id` may be not found in `component_instance_cache` if we are rendering
+        #       an orphaned slot function (AKA slot function that we've taken out of the render context)
+        if root_id is not None and root_id != render_id and root_id in component_instance_cache:
             root_component = component_instance_cache[root_id]
         else:
             root_component = None
