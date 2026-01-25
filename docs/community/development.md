@@ -311,7 +311,7 @@ The CI workflow runs when:
 
 ### Examples
 
-The [examples page](../../examples) is populated from entries in `docs/examples/`.
+The [examples page](../examples/index.md) is populated from entries in `docs/examples/`.
 
 These examples have special folder layout:
 

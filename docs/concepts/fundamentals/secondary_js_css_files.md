@@ -3,7 +3,7 @@
 Each component can define extra or "secondary" CSS / JS files using the nested [`Component.Media`](../../reference/api.md#django_components.Component.Media) class,
 by setting [`Component.Media.js`](../../reference/api.md#django_components.ComponentMediaInput.js) and [`Component.Media.css`](../../reference/api.md#django_components.ComponentMediaInput.css).
 
-The [main HTML / JS / CSS files](../html_js_css_files) are limited to 1 per component. This is not the case for the secondary files,
+The [main HTML / JS / CSS files](html_js_css_files.md) are limited to 1 per component. This is not the case for the secondary files,
 where components can have many of them.
 
 There is also no special behavior or post-processing for these secondary files, they are loaded as is.
@@ -60,19 +60,19 @@ This `Media` class behaves similarly to
 - **Bypass formatting** - A [`SafeString`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.SafeString),
   or a function (with `__html__` method) is considered an already-formatted HTML tag, skipping both static file
   resolution and rendering with `media_class.render_js()` or `media_class.render_css()`.
-- **Inheritance** - You can set [`extend`](../../../reference/api#django_components.ComponentMediaInput.extend) to configure
+- **Inheritance** - You can set [`extend`](../../reference/api.md#django_components.ComponentMediaInput.extend) to configure
     whether to inherit JS / CSS from parent components. See [Media inheritance](#media-inheritance).
 
 However, there's a few differences from Django's Media class:
 
 1. Our Media class accepts various formats for the JS and CSS files: either a single file, a list,
-   or (CSS-only) a dictonary (See [`ComponentMediaInput`](../../../reference/api#django_components.ComponentMediaInput)).
+   or (CSS-only) a dictonary (See [`ComponentMediaInput`](../../reference/api.md#django_components.ComponentMediaInput)).
 2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`,
    [`SafeString`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.SafeString), or a function
-   (See [`ComponentMediaInputPath`](../../../reference/api#django_components.ComponentMediaInputPath)).
+   (See [`ComponentMediaInputPath`](../../reference/api.md#django_components.ComponentMediaInputPath)).
 3. Individual JS / CSS files can be glob patterns, e.g. `*.js` or `styles/**/*.css`.
-4. If you set [`Media.extend`](../../../reference/api/#django_components.ComponentMediaInput.extend) to a list,
-   it should be a list of [`Component`](../../../reference/api/#django_components.Component) classes.
+4. If you set [`Media.extend`](../../reference/api.md#django_components.ComponentMediaInput.extend) to a list,
+   it should be a list of [`Component`](../../reference/api.md#django_components.Component) classes.
 
 ```py
 from components.layout import LayoutComp
@@ -203,7 +203,7 @@ print(MyComponent.media._js)  # ["script.js", "other1.js", "other2.js"]
 
 ### Accessing Media files
 
-To access the files that you defined under [`Component.Media`](../../../reference/api#django_components.Component.Media),
+To access the files that you defined under [`Component.Media`](../../reference/api.md#django_components.Component.Media),
 use [`Component.media`](../../reference/api.md#django_components.Component.media) (lowercase).
 
 This is consistent behavior with
@@ -258,7 +258,7 @@ you can configure [`Component.media_class`](../../reference/api.md#django_compon
 
 ## File paths
 
-Unlike the [main HTML / JS / CSS files](../html_js_css_files), the path definition for the secondary files are quite ergonomic.
+Unlike the [main HTML / JS / CSS files](html_js_css_files.md), the path definition for the secondary files are quite ergonomic.
 
 ### Relative to component
 
@@ -368,7 +368,7 @@ File paths can be any of:
 - `SafeData` (`__html__` method)
 - `Callable` that returns any of the above, evaluated at class creation (`__new__`)
 
-To help with typing the union, use [`ComponentMediaInputPath`](../../../reference/api#django_components.ComponentMediaInputPath).
+To help with typing the union, use [`ComponentMediaInputPath`](../../reference/api.md#django_components.ComponentMediaInputPath).
 
 ```py
 from pathlib import Path

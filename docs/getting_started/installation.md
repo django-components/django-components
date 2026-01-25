@@ -94,7 +94,7 @@ If you want to use JS or CSS with components, you will need to:
     and [`{% component_css_dependencies %}`](../reference/template_tags.md#component_js_dependencies).
 
     By default, the JS `<script>` and CSS `<link>` tags are automatically inserted
-    into the HTML (See [Default JS / CSS locations](../../concepts/advanced/rendering_js_css/#default-js-css-locations)).
+    into the HTML (See [Default JS / CSS locations](../concepts/advanced/rendering_js_css.md#default-js-css-locations)).
 
     ```django
     <!doctype html>
@@ -114,7 +114,7 @@ If you want to use JS or CSS with components, you will need to:
    
     If you want to change the cache backend, set the [`COMPONENTS.cache`](../reference/settings.md#django_components.app_settings.ComponentsSettings.cache) setting.
 
-    Read more in [Caching](../../guides/setup/caching).
+    Read more in [Caching](../guides/setup/caching.md).
 
 ## Optional
 

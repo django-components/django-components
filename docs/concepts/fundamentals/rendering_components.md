@@ -6,13 +6,13 @@ Django Components provides three main methods to render components:
 
 - [`{% component %}` tag](#component-tag) - Renders the component within your Django templates
 - [`Component.render()` method](#render-method) - Renders the component to a string
-- [`Component.render_to_response()` method](#render-to-response-method) - Renders the component and wraps it in an HTTP response
+- [`Component.render_to_response()` method](#render_to_response-method) - Renders the component and wraps it in an HTTP response
 
 ## `{% component %}` tag
 
-Use the [`{% component %}`](../../../reference/template_tags#component) tag to render a component within your Django templates.
+Use the [`{% component %}`](../../reference/template_tags.md#component) tag to render a component within your Django templates.
 
-The [`{% component %}`](../../../reference/template_tags#component) tag takes:
+The [`{% component %}`](../../reference/template_tags.md#component) tag takes:
 
 - Component's registered name as the first positional argument,
 - Followed by any number of positional and keyword arguments.
@@ -24,8 +24,8 @@ The [`{% component %}`](../../../reference/template_tags#component) tag takes:
 </div>
 ```
 
-To pass in slots content, you can insert [`{% fill %}`](../../../reference/template_tags#fill) tags,
-directly within the [`{% component %}`](../../../reference/template_tags#component) tag to "fill" the slots:
+To pass in slots content, you can insert [`{% fill %}`](../../reference/template_tags.md#fill) tags,
+directly within the [`{% component %}`](../../reference/template_tags.md#component) tag to "fill" the slots:
 
 ```django
 {% component "my_table" rows=rows headers=headers %}
@@ -35,7 +35,7 @@ directly within the [`{% component %}`](../../../reference/template_tags#compone
 {% endcomponent %}
 ```
 
-You can even nest [`{% fill %}`](../../../reference/template_tags#fill) tags within
+You can even nest [`{% fill %}`](../../reference/template_tags.md#fill) tags within
 [`{% if %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#if),
 [`{% for %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#for)
 and other tags:
@@ -59,7 +59,7 @@ and other tags:
     {% button name="John" job="Developer" / %}
     ```
 
-    You can do so by setting the "shorthand" [Tag formatter](../../advanced/tag_formatters) in the settings:
+    You can do so by setting the "shorthand" [Tag formatter](../advanced/tag_formatters.md) in the settings:
 
     ```python
     # settings.py
@@ -71,11 +71,11 @@ and other tags:
 !!! info "Extended template tag syntax"
 
     Unlike regular Django template tags, django-components' tags offer extra features like
-    defining literal lists and dicts, and more. Read more about [Template tag syntax](../template_tag_syntax).
+    defining literal lists and dicts, and more. Read more about [Template tag syntax](template_tag_syntax.md).
 
 ### Registering components
 
-For a component to be renderable with the [`{% component %}`](../../../reference/template_tags#component) tag, it must be first registered with the [`@register()`](../../../reference/api/#django_components.register) decorator.
+For a component to be renderable with the [`{% component %}`](../../reference/template_tags.md#component) tag, it must be first registered with the [`@register()`](../../reference/api.md#django_components.register) decorator.
 
 For example, if you register a component under the name `"button"`:
 
@@ -100,16 +100,16 @@ Then you can render this component by using its registered name `"button"` in th
 {% component "button" name="John" job="Developer" / %}
 ```
 
-As you can see above, the args and kwargs passed to the [`{% component %}`](../../../reference/template_tags#component) tag correspond
+As you can see above, the args and kwargs passed to the [`{% component %}`](../../reference/template_tags.md#component) tag correspond
 to the component's input.
 
-For more details, read [Registering components](../../advanced/component_registry).
+For more details, read [Registering components](../advanced/component_registry.md).
 
 !!! note "Why do I need to register components?"
 
     TL;DR: To be able to share components as libraries, and because components can be registed with multiple registries / libraries.
 
-    Django-components allows to [share components across projects](../../advanced/component_libraries).
+    Django-components allows to [share components across projects](../advanced/component_libraries.md).
 
     However, different projects may use different settings. For example, one project may prefer the "long" format:
 
@@ -135,7 +135,7 @@ For more details, read [Registering components](../../advanced/component_registr
 ### Rendering templates
 
 If you have embedded the component in a Django template using the
-[`{% component %}`](../../reference/template_tags#component) tag:
+[`{% component %}`](../../reference/template_tags.md#component) tag:
 
 ```django title="[project root]/templates/my_template.html"
 {% load component_tags %}
@@ -189,7 +189,7 @@ can access only the data that was explicitly passed to it:
 ```
 
 Alternatively, you can set all components to be isolated by default, by setting
-[`context_behavior`](../../../reference/settings#django_components.app_settings.ComponentsSettings.context_behavior)
+[`context_behavior`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.context_behavior)
 to `"isolated"` in your settings:
 
 ```python
@@ -201,9 +201,9 @@ COMPONENTS = {
 
 ## `render()` method
 
-The [`Component.render()`](../../../reference/api/#django_components.Component.render) method renders a component to a string.
+The [`Component.render()`](../../reference/api.md#django_components.Component.render) method renders a component to a string.
 
-This is the equivalent of calling the [`{% component %}`](../template_tags#component) tag.
+This is the equivalent of calling the [`{% component %}`](../../reference/template_tags.md#component) tag.
 
 ```python
 from django_components import Component, SlotInput
@@ -236,27 +236,27 @@ Button.render(
 )
 ```
 
-[`Component.render()`](../../../reference/api/#django_components.Component.render) accepts the following arguments:
+[`Component.render()`](../../reference/api.md#django_components.Component.render) accepts the following arguments:
 
 - `args` - Positional arguments to pass to the component (as a list or tuple)
 - `kwargs` - Keyword arguments to pass to the component (as a dictionary)
 - `slots` - Slot content to pass to the component (as a dictionary)
 - `context` - Django context for rendering (can be a dictionary or a `Context` object)
 - `deps_strategy` - [Dependencies rendering strategy](#dependencies-rendering) (default: `"document"`)
-- `request` - [HTTP request object](../http_request), used for context processors (optional)
+- `request` - [HTTP request object](http_request.md), used for context processors (optional)
 
 All arguments are optional. If not provided, they default to empty values or sensible defaults.
 
-See the API reference for [`Component.render()`](../../../reference/api/#django_components.Component.render)
+See the API reference for [`Component.render()`](../../reference/api.md#django_components.Component.render)
 for more details on the arguments.
 
 ## `render_to_response()` method
 
-The [`Component.render_to_response()`](../../../reference/api/#django_components.Component.render_to_response)
-method works just like [`Component.render()`](../../../reference/api/#django_components.Component.render),
+The [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
+method works just like [`Component.render()`](../../reference/api.md#django_components.Component.render),
 but wraps the result in an HTTP response.
 
-It accepts all the same arguments as [`Component.render()`](../../../reference/api/#django_components.Component.render).
+It accepts all the same arguments as [`Component.render()`](../../reference/api.md#django_components.Component.render).
 
 Any extra arguments are passed to the [`HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpResponse)
 constructor.
@@ -311,10 +311,10 @@ def profile_view(request, user_id):
 
 ### Custom response classes
 
-By default, [`Component.render_to_response()`](../../../reference/api/#django_components.Component.render_to_response)
+By default, [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
 returns a standard Django [`HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpResponse).
 
-You can customize this by setting the [`response_class`](../../../reference/api/#django_components.Component.response_class)
+You can customize this by setting the [`response_class`](../../reference/api.md#django_components.Component.response_class)
 attribute on your component:
 
 ```python
@@ -335,43 +335,43 @@ assert isinstance(response, MyHttpResponse)
 
 The rendered HTML may be used in different contexts (browser, email, etc), and each may need different handling of JS and CSS scripts.
 
-[`render()`](../../../reference/api/#django_components.Component.render) and [`render_to_response()`](../../../reference/api/#django_components.Component.render_to_response)
+[`render()`](../../reference/api.md#django_components.Component.render) and [`render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
 accept a `deps_strategy` parameter, which controls where and how the JS / CSS are inserted into the HTML.
 
-The `deps_strategy` parameter is ultimately passed to [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
+The `deps_strategy` parameter is ultimately passed to [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies).
 
-Learn more about [Rendering JS / CSS](../../advanced/rendering_js_css).
+Learn more about [Rendering JS / CSS](../advanced/rendering_js_css.md).
 
 There are six dependencies rendering strategies:
 
-- [`document`](../../advanced/rendering_js_css#document) (default)
-    - Smartly inserts JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) or into `<head>` and `<body>` tags.
+- [`document`](../advanced/rendering_js_css.md#document) (default)
+    - Smartly inserts JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies)) or into `<head>` and `<body>` tags.
     - Requires the HTML to be rendered in a JS-enabled browser.
     - Inserts extra script for managing fragments.
-- [`fragment`](../../advanced/rendering_js_css#fragment)
+- [`fragment`](../advanced/rendering_js_css.md#fragment)
     - A lightweight HTML fragment to be inserted into a document with AJAX.
     - Fragment will fetch its own JS / CSS dependencies when inserted into the page.
     - Requires the HTML to be rendered in a JS-enabled browser.
-- [`simple`](../../advanced/rendering_js_css#simple)
-    - Smartly insert JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) or into `<head>` and `<body>` tags.
+- [`simple`](../advanced/rendering_js_css.md#simple)
+    - Smartly insert JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies)) or into `<head>` and `<body>` tags.
     - No extra script loaded.
-- [`prepend`](../../advanced/rendering_js_css#prepend)
+- [`prepend`](../advanced/rendering_js_css.md#prepend)
     - Insert JS / CSS before the rendered HTML.
-    - Ignores the placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) and any `<head>`/`<body>` HTML tags.
+    - Ignores the placeholders ([`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies)) and any `<head>`/`<body>` HTML tags.
     - No extra script loaded.
-- [`append`](../../advanced/rendering_js_css#append)
+- [`append`](../advanced/rendering_js_css.md#append)
     - Insert JS / CSS after the rendered HTML.
-    - Ignores the placeholders ([`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies)) and any `<head>`/`<body>` HTML tags.
+    - Ignores the placeholders ([`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies)) and any `<head>`/`<body>` HTML tags.
     - No extra script loaded.
-- [`ignore`](../../advanced/rendering_js_css#ignore)
+- [`ignore`](../advanced/rendering_js_css.md#ignore)
     - HTML is left as-is. You can still process it with a different strategy later with
-      [`render_dependencies()`](../../../reference/api/#django_components.render_dependencies).
+      [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies).
     - Used for inserting rendered HTML into other components.
 
 !!! info
 
     You can use the `"prepend"` and `"append"` strategies to force to output JS / CSS for components
-    that don't have neither the placeholders like [`{% component_js_dependencies %}`](../../../reference/template_tags#component_js_dependencies), nor any `<head>`/`<body>` HTML tags:
+    that don't have neither the placeholders like [`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies), nor any `<head>`/`<body>` HTML tags:
 
     ```py
     rendered = Calendar.render_to_response(
@@ -397,15 +397,15 @@ There are six dependencies rendering strategies:
 
 ## Passing context
 
-The [`render()`](../../../reference/api/#django_components.Component.render) and [`render_to_response()`](../../../reference/api/#django_components.Component.render_to_response) methods accept an optional `context` argument.
+The [`render()`](../../reference/api.md#django_components.Component.render) and [`render_to_response()`](../../reference/api.md#django_components.Component.render_to_response) methods accept an optional `context` argument.
 This sets the context within which the component is rendered.
 
-When a component is rendered within a template with the [`{% component %}`](../../../reference/template_tags#component)
+When a component is rendered within a template with the [`{% component %}`](../../reference/template_tags.md#component)
 tag, this will be automatically set to the
 [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
 instance that is used for rendering the template.
 
-When you call [`Component.render()`](../../../reference/api/#django_components.Component.render) directly from Python,
+When you call [`Component.render()`](../../reference/api.md#django_components.Component.render) directly from Python,
 there is no context object, so you can ignore this input most of the time.
 Instead, use `args`, `kwargs`, and `slots` to pass data to the component.
 
@@ -413,7 +413,7 @@ However, you can pass
 [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
 to the `context` argument, so that the component will gain access to the request object and will use
 [context processors](https://docs.djangoproject.com/en/5.2/ref/templates/api/#using-requestcontext).
-Read more on [Working with HTTP requests](../http_request).
+Read more on [Working with HTTP requests](http_request.md).
 
 ```py
 Button.render(
@@ -423,7 +423,7 @@ Button.render(
 
 For advanced use cases, you can use `context` argument to "pre-render" the component in Python, and then
 pass the rendered output as plain string to the template. With this, the inner component is rendered as if
-it was within the template with [`{% component %}`](../../../reference/template_tags#component).
+it was within the template with [`{% component %}`](../../reference/template_tags.md#component).
 
 ```py
 class Button(Component):
@@ -443,7 +443,7 @@ class Button(Component):
 !!! warning
 
     Whether the variables defined in `context` are actually available in the template depends on the
-    [context behavior mode](../../../reference/settings#django_components.app_settings.ComponentsSettings.context_behavior):
+    [context behavior mode](../../reference/settings.md#django_components.app_settings.ComponentsSettings.context_behavior):
 
     - In `"django"` context behavior mode, the template will have access to the keys of this context.
 
@@ -471,16 +471,16 @@ class Button(Component):
 
 ## Typing render methods
 
-Neither [`Component.render()`](../../../reference/api/#django_components.Component.render)
-nor [`Component.render_to_response()`](../../../reference/api/#django_components.Component.render_to_response)
+Neither [`Component.render()`](../../reference/api.md#django_components.Component.render)
+nor [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
 are typed, due to limitations of Python's type system.
 
 To add type hints, you can wrap the inputs
-in component's [`Args`](../../../reference/api/#django_components.Component.Args),
-[`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
-and [`Slots`](../../../reference/api/#django_components.Component.Slots) classes.
+in component's [`Args`](../../reference/api.md#django_components.Component.Args),
+[`Kwargs`](../../reference/api.md#django_components.Component.Kwargs),
+and [`Slots`](../../reference/api.md#django_components.Component.Slots) classes.
 
-Read more on [Typing and validation](../../fundamentals/typing_and_validation).
+Read more on [Typing and validation](typing_and_validation.md).
 
 ```python
 from django_components import Component, Slot, SlotInput
@@ -535,7 +535,7 @@ outer_html = OuterComponent.render(
 )
 ```
 
-The key here is setting [`deps_strategy="ignore"`](../../advanced/rendering_js_css#ignore) for the inner component. This prevents duplicate
+The key here is setting [`deps_strategy="ignore"`](../advanced/rendering_js_css.md#ignore) for the inner component. This prevents duplicate
 rendering of JS / CSS dependencies when the outer component is rendered.
 
 When `deps_strategy="ignore"`:
@@ -544,11 +544,11 @@ When `deps_strategy="ignore"`:
 - The component's content is rendered as-is
 - The outer component will take care of including all needed dependencies
 
-Read more about [Rendering JS / CSS](../../advanced/rendering_js_css).
+Read more about [Rendering JS / CSS](../advanced/rendering_js_css.md).
 
 ## Dynamic components
 
-Django components defines a special "dynamic" component ([`DynamicComponent`](../../../reference/components#django_components.components.dynamic.DynamicComponent)).
+Django components defines a special "dynamic" component ([`DynamicComponent`](../../reference/components.md#django_components.components.dynamic.DynamicComponent)).
 
 Normally, you have to hard-code the component name in the template:
 
@@ -592,7 +592,7 @@ DynamicComponent.render(
 
 By default, the dynamic component is registered under the name `"dynamic"`. In case of a conflict,
 you can set the
-[`COMPONENTS.dynamic_component_name`](../../../reference/settings#django_components.app_settings.ComponentsSettings.dynamic_component_name)
+[`COMPONENTS.dynamic_component_name`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.dynamic_component_name)
 setting to change the name used for the dynamic components.
 
 ```py
@@ -617,7 +617,7 @@ After which you will be able to use the dynamic component with the new name:
 Django-components provides a seamless integration with HTML fragments with AJAX ([HTML over the wire](https://hotwired.dev/)),
 whether you're using jQuery, HTMX, AlpineJS, vanilla JavaScript, or other.
 
-This is achieved by the combination of the [`"document"`](../../advanced/rendering_js_css#document)
-and [`"fragment"`](../../advanced/rendering_js_css#fragment) dependencies rendering strategies.
+This is achieved by the combination of the [`"document"`](../advanced/rendering_js_css.md#document)
+and [`"fragment"`](../advanced/rendering_js_css.md#fragment) dependencies rendering strategies.
 
-Read more about [HTML fragments](../../advanced/html_fragments) and [Rendering JS / CSS](../../advanced/rendering_js_css).
+Read more about [HTML fragments](../advanced/html_fragments.md) and [Rendering JS / CSS](../advanced/rendering_js_css.md).

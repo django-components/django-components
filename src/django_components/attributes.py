@@ -66,7 +66,7 @@ class HtmlAttrsNode(BaseNode):
     ```
 
     See more usage examples in
-    [HTML attributes](../../concepts/fundamentals/html_attributes#examples-for-html_attrs).
+    [HTML attributes](../concepts/fundamentals/html_attributes.md).
     """
 
     tag = "html_attrs"
@@ -94,7 +94,7 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
     """
     Format a dict of attributes into an HTML attributes string.
 
-    Read more about [HTML attributes](../../concepts/fundamentals/html_attributes).
+    Read more about [HTML attributes](../concepts/fundamentals/html_attributes.md).
 
     **Example:**
 
@@ -124,7 +124,7 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
 # TODO_V1 - Remove in v1, keep only `format_attributes` going forward
 attributes_to_string = format_attributes
 """
-Deprecated. Use [`format_attributes`](../api#django_components.format_attributes) instead.
+Deprecated. Use [`format_attributes`](api.md#django_components.format_attributes) instead.
 """
 
 
@@ -139,7 +139,7 @@ def merge_attributes(*attrs: dict) -> dict:
     - The `class` and `style` keys are handled specially, similar to
       [how Vue does it](https://vuejs.org/api/render-function#mergeprops).
 
-    Read more about [HTML attributes](../../concepts/fundamentals/html_attributes).
+    Read more about [HTML attributes](../concepts/fundamentals/html_attributes.md).
 
     **Example:**
 

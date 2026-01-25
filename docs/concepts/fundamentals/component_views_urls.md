@@ -1,7 +1,7 @@
 _New in version 0.34_
 
 _Note: Since 0.92, `Component` is no longer a subclass of Django's `View`. Instead, the nested
-[`Component.View`](../../../reference/api#django_components.Component.View) class is a subclass of Django's `View`._
+[`Component.View`](../../reference/api.md#django_components.Component.View) class is a subclass of Django's `View`._
 
 ---
 
@@ -11,13 +11,13 @@ django-components has a suite of features that help you write and manage views a
 
 - For each component, you can define methods for handling HTTP requests (GET, POST, etc.) - `get()`, `post()`, etc.
 
-- Use [`Component.as_view()`](../../../reference/api#django_components.Component.as_view) to be able to use your Components with Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/). This works the same way as [`View.as_view()`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View.as_view).
+- Use [`Component.as_view()`](../../reference/api.md#django_components.Component.as_view) to be able to use your Components with Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/). This works the same way as [`View.as_view()`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View.as_view).
 
-- Or use [`get_component_url()`](../../../reference/api#django_components.get_component_url) to retrieve the component URL - an anonymous HTTP endpoint that triggers the component's handlers without having to register the component in `urlpatterns`.
+- Or use [`get_component_url()`](../../reference/api.md#django_components.get_component_url) to retrieve the component URL - an anonymous HTTP endpoint that triggers the component's handlers without having to register the component in `urlpatterns`.
 
-    To expose a component, simply define a handler, or explicitly expose/hide the component with [`Component.View.public = True/False`](../../../reference/api#django_components.ComponentView.public).
+    To expose a component, simply define a handler, or explicitly expose/hide the component with [`Component.View.public = True/False`](../../reference/api.md#django_components.ComponentView.public).
 
-- In addition, [`Component`](../../../reference/api#django_components.Component) has a [`render_to_response()`](../../../reference/api#django_components.Component.render_to_response) method that renders the component template based on the provided input and returns an `HttpResponse` object.
+- In addition, [`Component`](../../reference/api.md#django_components.Component) has a [`render_to_response()`](../../reference/api.md#django_components.Component.render_to_response) method that renders the component template based on the provided input and returns an `HttpResponse` object.
 
 ## Define handlers
 
@@ -84,7 +84,7 @@ class Calendar(Component):
 
 ### Acccessing component class
 
-You can access the component class from within the View methods by using the [`View.component_cls`](../../../reference/api#django_components.ComponentView.component_cls) attribute:
+You can access the component class from within the View methods by using the [`View.component_cls`](../../reference/api.md#django_components.ComponentView.component_cls) attribute:
 
 ```py
 class Calendar(Component):
@@ -99,7 +99,7 @@ class Calendar(Component):
 
 To register the component as a route / endpoint in Django, add an entry to your
 [`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/).
-In place of the view function, create a view object with [`Component.as_view()`](../../../reference/api#django_components.Component.as_view):
+In place of the view function, create a view object with [`Component.as_view()`](../../reference/api.md#django_components.Component.as_view):
 
 ```python title="[project root]/urls.py"
 from django.urls import path
@@ -110,7 +110,7 @@ urlpatterns = [
 ]
 ```
 
-[`Component.as_view()`](../../../reference/api#django_components.Component.as_view)
+[`Component.as_view()`](../../reference/api.md#django_components.Component.as_view)
 internally calls [`View.as_view()`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.View.as_view), passing the component
 class as one of the arguments.
 
@@ -122,7 +122,7 @@ Each component class has its own URL that triggers the component's HTTP handlers
 
 This way you don't have to mix your app URLs with component URLs.
 
-To obtain the component's URL, use [`get_component_url()`](../../../reference/api#django_components.get_component_url):
+To obtain the component's URL, use [`get_component_url()`](../../reference/api.md#django_components.get_component_url):
 
 ```py
 from django_components import get_component_url
@@ -132,7 +132,7 @@ url = get_component_url(MyComponent)
 
 The component is automatically registered in `urlpatterns` when you define a handler.
 
-You can also explicitly enable/disable the component's URL with [`Component.View.public`](../../../reference/api#django_components.ComponentView.public):
+You can also explicitly enable/disable the component's URL with [`Component.View.public`](../../reference/api.md#django_components.ComponentView.public):
 
 ```py
 class MyComponent(Component):
@@ -146,7 +146,7 @@ class MyComponent(Component):
 
 !!! info "Query parameters and fragment"
 
-    If you need to pass query parameters or a fragment to the component URL, you can do so by passing the `query` and `fragment` arguments to [`get_component_url()`](../../../reference/api#django_components.get_component_url):
+    If you need to pass query parameters or a fragment to the component URL, you can do so by passing the `query` and `fragment` arguments to [`get_component_url()`](../../reference/api.md#django_components.get_component_url):
 
     ```py
     url = get_component_url(
@@ -165,7 +165,7 @@ class MyComponent(Component):
 
 ### Modifying the route path
 
-You can customize the component URL route by overriding [`Component.View.get_route_path()`](../../../reference/api#django_components.ComponentView.get_route_path). This allows you to add route parameters to your component URLs:
+You can customize the component URL route by overriding [`Component.View.get_route_path()`](../../reference/api.md#django_components.ComponentView.get_route_path). This allows you to add route parameters to your component URLs:
 
 ```py
 from django_components import Component, get_component_url
@@ -187,4 +187,4 @@ url = get_component_url(
 # /components/ext/view/users/john/42/
 ```
 
-When you define route parameters in `get_route_path()`, you can pass `args` and `kwargs` to [`get_component_url()`](../../../reference/api#django_components.get_component_url) to fill those parameters. Both `args` and `kwargs` are passed to Django's `reverse()` function.
+When you define route parameters in `get_route_path()`, you can pass `args` and `kwargs` to [`get_component_url()`](../../reference/api.md#django_components.get_component_url) to fill those parameters. Both `args` and `kwargs` are passed to Django's `reverse()` function.

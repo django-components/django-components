@@ -60,8 +60,8 @@ ComponentMediaInputPath: TypeAlias = (
     str | bytes | SafeData | Path | os.PathLike | Callable[[], str | bytes | SafeData | Path | os.PathLike]
 )
 """
-A type representing an entry in [Media.js](../api#django_components.ComponentMediaInput.js)
-or [Media.css](../api#django_components.ComponentMediaInput.css).
+A type representing an entry in [Media.js](api.md#django_components.ComponentMediaInput.js)
+or [Media.css](api.md#django_components.ComponentMediaInput.css).
 
 If an entry is a [SafeString](https://dev.to/doridoro/django-safestring-afj) (or has `__html__` method),
 then entry is assumed to be a formatted HTML tag. Otherwise, it's assumed to be a path to a file.
@@ -94,7 +94,7 @@ class MyComponent
 # ```
 class ComponentMediaInput(Protocol):
     """
-    Defines JS and CSS media files associated with a [`Component`](../api#django_components.Component).
+    Defines JS and CSS media files associated with a [`Component`](api.md#django_components.Component).
 
     ```py
     class MyTable(Component):
@@ -121,7 +121,7 @@ class ComponentMediaInput(Protocol):
         | None
     ) = None
     """
-    CSS files associated with a [`Component`](../api#django_components.Component).
+    CSS files associated with a [`Component`](api.md#django_components.Component).
 
     - If a string, it's assumed to be a path to a CSS file.
 
@@ -132,7 +132,7 @@ class ComponentMediaInput(Protocol):
         - A list, each entry is assumed to be a path to a CSS file.
 
     Each entry can be a string, bytes, SafeString, PathLike, or a callable that returns one of the former
-    (see [`ComponentMediaInputPath`](../api#django_components.ComponentMediaInputPath)).
+    (see [`ComponentMediaInputPath`](api.md#django_components.ComponentMediaInputPath)).
 
     Examples:
     ```py
@@ -168,14 +168,14 @@ class ComponentMediaInput(Protocol):
 
     js: ComponentMediaInputPath | list[ComponentMediaInputPath] | None = None
     """
-    JS files associated with a [`Component`](../api#django_components.Component).
+    JS files associated with a [`Component`](api.md#django_components.Component).
 
     - If a string, it's assumed to be a path to a JS file.
 
     - If a list, each entry is assumed to be a path to a JS file.
 
     Each entry can be a string, bytes, SafeString, PathLike, or a callable that returns one of the former
-    (see [`ComponentMediaInputPath`](../api#django_components.ComponentMediaInputPath)).
+    (see [`ComponentMediaInputPath`](api.md#django_components.ComponentMediaInputPath)).
 
     Examples:
     ```py
@@ -205,7 +205,7 @@ class ComponentMediaInput(Protocol):
     - If `False`, the component does not inherit the media files from the parent component.
     - If a list of components classes, the component inherits the media files ONLY from these specified components.
 
-    Read more in [Media inheritance](../../concepts/fundamentals/secondary_js_css_files/#media-inheritance) section.
+    Read more in [Media inheritance](../concepts/fundamentals/secondary_js_css_files.md#media-inheritance) section.
 
     **Example:**
 

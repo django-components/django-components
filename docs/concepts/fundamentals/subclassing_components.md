@@ -57,8 +57,8 @@ class CustomCard(BaseCard):
 The [`Component.Media`](../../reference/api.md#django_components.Component.Media) nested class follows Django's media inheritance rules:
 
 - If both parent and child define a `Media` class, the child's media will automatically include both its own and the parent's JS and CSS files.
-- This behavior can be configured using the [`extend`](../../reference/api.md#django_components.Component.Media.extend) attribute in the Media class, similar to Django's forms.
-  Read more on this in [Media inheritance](./secondary_js_css_files/#media-inheritance).
+- This behavior can be configured using the [`extend`](../../reference/api.md#django_components.ComponentMediaInput.extend) attribute in the Media class, similar to Django's forms.
+  Read more on this in [Media inheritance](secondary_js_css_files.md#media-inheritance).
 
 For example:
 

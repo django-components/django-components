@@ -28,13 +28,13 @@ The entrypoint for the 'components' commands.
 
 **Subcommands:**
 
-- [`create`](../commands#components-`create`)
+- [`create`](#components-create)
     - Create a new django component.
-- [`upgrade`](../commands#components-`upgrade`)
+- [`upgrade`](#components-upgrade)
     - Upgrade django components syntax from '{% component_block ... %}' to '{% component ... %}'.
-- [`ext`](../commands#components-`ext`)
+- [`ext`](#components-ext)
     - Run extension commands.
-- [`list`](../commands#components-`list`)
+- [`list`](#components-list)
     - List all components created in this project.
 
 
@@ -54,9 +54,7 @@ python manage.py components ext run <extension> <command>
 ## `components create`
 
 ```txt
-usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose]
-              [--dry-run]
-              name
+usage: python manage.py components create [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose] [--dry-run] name
 
 ```
 
@@ -159,7 +157,7 @@ usage: python manage.py components upgrade [-h] [--path PATH]
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/upgrade.py#L13" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/upgrade.py#L14" target="_blank">See source code</a>
 
 
 
@@ -198,9 +196,9 @@ Run extension commands.
 
 **Subcommands:**
 
-- [`list`](../commands#components-ext-`list`)
+- [`list`](#components-ext-list)
     - List all extensions.
-- [`run`](../commands#components-ext-`run`)
+- [`run`](#components-ext-run)
     - Run a command added by an extension.
 
 
@@ -238,7 +236,7 @@ List all extensions.
 - `--columns COLUMNS`
     - Comma-separated list of columns to show. Available columns: name. Defaults to `--columns name`.
 - `-s`, `--simple`
-    - Only show table data, without headers. Use this option for generating machine- readable output.
+    - Only show table data, without headers. Use this option for generating machine-readable output.
 
 
 
@@ -317,7 +315,7 @@ Run a command added by an extension.
 
 
 
-Run a command added by an [extension](../../concepts/advanced/extensions).
+Run a command added by an [extension](../concepts/advanced/extensions.md).
 
 Each extension can add its own commands, which will be available to run with this command.
 
@@ -386,7 +384,7 @@ usage: python manage.py components list [-h] [--all] [--columns COLUMNS] [-s]
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/list.py#L89" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/commands/list.py#L90" target="_blank">See source code</a>
 
 
 
@@ -401,7 +399,7 @@ List all components created in this project.
 - `--columns COLUMNS`
     - Comma-separated list of columns to show. Available columns: name, full_name, path. Defaults to `--columns full_name,path`.
 - `-s`, `--simple`
-    - Only show table data, without headers. Use this option for generating machine- readable output.
+    - Only show table data, without headers. Use this option for generating machine-readable output.
 
 
 
@@ -463,15 +461,14 @@ ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAc
 ## `upgradecomponent`
 
 ```txt
-usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
-                        [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
-                        [--skip-checks]
+usage: upgradecomponent [-h] [--path PATH] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH]
+                        [--traceback] [--no-color] [--force-color] [--skip-checks]
 
 ```
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/upgradecomponent.py#L89" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/upgradecomponent.py#L90" target="_blank">See source code</a>
 
 
 
@@ -502,24 +499,21 @@ Deprecated. Use `components upgrade` instead.
 
 
 
-
-**Deprecated**. Use [`components upgrade`](../commands#components-upgrade) instead.
-
+**Deprecated**. Use [`components upgrade`](commands.md#components-upgrade) instead.
 
 ## `startcomponent`
 
 ```txt
-usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force]
-                      [--verbose] [--dry-run] [--version] [-v {0,1,2,3}] [--settings SETTINGS]
-                      [--pythonpath PYTHONPATH] [--traceback] [--no-color] [--force-color]
-                      [--skip-checks]
+usage: startcomponent [-h] [--path PATH] [--js JS] [--css CSS] [--template TEMPLATE] [--force] [--verbose]
+                      [--dry-run] [--version] [-v {0,1,2,3}] [--settings SETTINGS] [--pythonpath PYTHONPATH]
+                      [--traceback] [--no-color] [--force-color] [--skip-checks]
                       name
 
 ```
 
 
 
-<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/startcomponent.py#L89" target="_blank">See source code</a>
+<a href="https://github.com/django-components/django-components/tree/master/src/django_components/management/commands/startcomponent.py#L90" target="_blank">See source code</a>
 
 
 
@@ -567,7 +561,5 @@ Deprecated. Use `components create` instead.
 
 
 
-
-**Deprecated**. Use [`components create`](../commands#components-create) instead.
-
+**Deprecated**. Use [`components create`](commands.md#components-create) instead.
 

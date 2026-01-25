@@ -35,7 +35,7 @@ DependenciesStrategy: TypeAlias = Literal["document", "fragment", "simple", "pre
 """
 Type for the available strategies for rendering JS and CSS dependencies.
 
-Read more about the [dependencies strategies](../../concepts/advanced/rendering_js_css).
+Read more about the [dependencies strategies](../concepts/advanced/rendering_js_css.md).
 """
 
 DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append", "ignore")
@@ -1050,7 +1050,7 @@ class ComponentCssDependenciesNode(BaseNode):
 
     If the generated HTML does NOT contain any `{% component_css_dependencies %}` tags, CSS links
     are by default inserted into the `<head>` tag of the HTML. (See
-    [Default JS / CSS locations](../../concepts/advanced/rendering_js_css/#default-js-css-locations))
+    [Default JS / CSS locations](../concepts/advanced/rendering_js_css.md#default-js-css-locations))
 
     Note that there should be only one `{% component_css_dependencies %}` for the whole HTML document.
     If you insert this tag multiple times, ALL CSS links will be duplicately inserted into ALL these places.
@@ -1072,7 +1072,7 @@ class ComponentJsDependenciesNode(BaseNode):
 
     If the generated HTML does NOT contain any `{% component_js_dependencies %}` tags, JS scripts
     are by default inserted at the end of the `<body>` tag of the HTML. (See
-    [Default JS / CSS locations](../../concepts/advanced/rendering_js_css/#default-js-css-locations))
+    [Default JS / CSS locations](../concepts/advanced/rendering_js_css.md#default-js-css-locations))
 
     Note that there should be only one `{% component_js_dependencies %}` for the whole HTML document.
     If you insert this tag multiple times, ALL JS scripts will be duplicately inserted into ALL these places.

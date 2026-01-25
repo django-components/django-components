@@ -170,9 +170,9 @@ class BaseNode(Node, metaclass=NodeMeta):
     This class has a dual role:
 
     1. It declares how a particular template tag should be parsed - By setting the
-       [`tag`](../api#django_components.BaseNode.tag),
-       [`end_tag`](../api#django_components.BaseNode.end_tag),
-       and [`allowed_flags`](../api#django_components.BaseNode.allowed_flags) attributes:
+       [`tag`](api.md#django_components.BaseNode.tag),
+       [`end_tag`](api.md#django_components.BaseNode.end_tag),
+       and [`allowed_flags`](api.md#django_components.BaseNode.allowed_flags) attributes:
 
         ```python
         class SlotNode(BaseNode):
@@ -187,7 +187,7 @@ class BaseNode(Node, metaclass=NodeMeta):
         {% slot required %} ... {% endslot %}
         ```
 
-    2. The [`render`](../api#django_components.BaseNode.render) method is
+    2. The [`render`](api.md#django_components.BaseNode.render) method is
         the actual implementation of the template tag.
 
         This is where the tag's logic is implemented:
@@ -207,9 +207,9 @@ class BaseNode(Node, metaclass=NodeMeta):
         ```
 
     The template tag accepts parameters as defined on the
-    [`render`](../api#django_components.BaseNode.render) method's signature.
+    [`render`](api.md#django_components.BaseNode.render) method's signature.
 
-    For more info, see [`BaseNode.render()`](../api#django_components.BaseNode.render).
+    For more info, see [`BaseNode.render()`](api.md#django_components.BaseNode.render).
     """
 
     # #####################################
@@ -356,7 +356,7 @@ class BaseNode(Node, metaclass=NodeMeta):
 
     flags: dict[str, bool]
     """
-    Dictionary of all [`allowed_flags`](../api#django_components.BaseNode.allowed_flags)
+    Dictionary of all [`allowed_flags`](api.md#django_components.BaseNode.allowed_flags)
     that were set on the tag.
 
     Flags that were set are `True`, and the rest are `False`.
@@ -423,7 +423,7 @@ class BaseNode(Node, metaclass=NodeMeta):
 
     The `nodelist` will contain the `<div> ... </div>` part.
 
-    Unlike [`contents`](../api#django_components.BaseNode.contents),
+    Unlike [`contents`](api.md#django_components.BaseNode.contents),
     the `nodelist` contains the actual Nodes, not just the text.
     """
 
@@ -468,8 +468,8 @@ class BaseNode(Node, metaclass=NodeMeta):
 
     template_component: type["Component"] | None
     """
-    If the template that contains this node belongs to a [`Component`](../api#django_components.Component),
-    then this will be the [`Component`](../api#django_components.Component) class.
+    If the template that contains this node belongs to a [`Component`](api.md#django_components.Component),
+    then this will be the [`Component`](api.md#django_components.Component) class.
     """
 
     # #####################################
@@ -536,7 +536,7 @@ class BaseNode(Node, metaclass=NodeMeta):
         In other words, this method is called by Django's template parser when we encounter
         a tag that matches this node's tag, e.g. `{% component %}` or `{% slot %}`.
 
-        To register the tag, you can use [`BaseNode.register()`](../api#django_components.BaseNode.register).
+        To register the tag, you can use [`BaseNode.register()`](api.md#django_components.BaseNode.register).
         """
         # NOTE: Avoids circular import
         from django_components.template import get_component_from_origin  # noqa: PLC0415
@@ -598,10 +598,10 @@ def template_tag(
     allowed_flags: Iterable[str] | None = None,
 ) -> Callable[[Callable], Callable]:
     """
-    A simplified version of creating a template tag based on [`BaseNode`](../api#django_components.BaseNode).
+    A simplified version of creating a template tag based on [`BaseNode`](api.md#django_components.BaseNode).
 
     Instead of defining the whole class, you can just define the
-    [`render()`](../api#django_components.BaseNode.render) method.
+    [`render()`](api.md#django_components.BaseNode.render) method.
 
     ```python
     from django.template import Context, Library
@@ -626,19 +626,19 @@ def template_tag(
     {% mytag name="John" required %} ... {% endmytag %}
     ```
 
-    The given function will be wrapped in a class that inherits from [`BaseNode`](../api#django_components.BaseNode).
+    The given function will be wrapped in a class that inherits from [`BaseNode`](api.md#django_components.BaseNode).
 
     And this class will be registered with the given library.
 
     The function MUST accept at least two positional arguments: `node` and `context`
 
-    - `node` is the [`BaseNode`](../api#django_components.BaseNode) instance.
+    - `node` is the [`BaseNode`](api.md#django_components.BaseNode) instance.
     - `context` is the [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
         of the template.
 
     Any extra parameters defined on this function will be part of the tag's input parameters.
 
-    For more info, see [`BaseNode.render()`](../api#django_components.BaseNode.render).
+    For more info, see [`BaseNode.render()`](api.md#django_components.BaseNode.render).
     """
 
     def decorator(fn: Callable) -> Callable:

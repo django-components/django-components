@@ -1,9 +1,9 @@
 _New in version 0.74_:
 
-You can use the [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag to render various data
+You can use the [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag to render various data
 as `key="value"` HTML attributes.
 
-[`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag is versatile, allowing you to define HTML attributes however you need:
+[`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag is versatile, allowing you to define HTML attributes however you need:
 
 - Define attributes within the HTML template
 - Define attributes in Python code
@@ -13,7 +13,7 @@ as `key="value"` HTML attributes.
 - Remove attributes
 - Define default attributes
 
-From v0.135 onwards, [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag also supports merging [`style`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) and [`class`](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/class) attributes
+From v0.135 onwards, [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag also supports merging [`style`](https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement/style) and [`class`](https://developer.mozilla.org/en-US/docs/Web/SVG/Reference/Attribute/class) attributes
 the same way [how Vue does](https://vuejs.org/guide/essentials/class-and-style).
 
 To get started, let's consider a simple example. If you have a template:
@@ -23,26 +23,26 @@ To get started, let's consider a simple example. If you have a template:
 </div>
 ```
 
-You can rewrite it with the [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag:
+You can rewrite it with the [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag:
 
 ```django
 <div {% html_attrs class=classes data-id=my_id %}>
 </div>
 ```
 
-The [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag accepts any number of keyword arguments, which will be merged and rendered as HTML attributes:
+The [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag accepts any number of keyword arguments, which will be merged and rendered as HTML attributes:
 
 ```django
 <div class="text-red" data-id="123">
 </div>
 ```
 
-Moreover, the [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag accepts two positional arguments:
+Moreover, the [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag accepts two positional arguments:
 
 - `attrs` - a dictionary of attributes to be rendered
 - `defaults` - a dictionary of default attributes
 
-You can use this for example to allow users of your component to add extra attributes. We achieve this by capturing the extra attributes and passing them to the [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag as a dictionary:
+You can use this for example to allow users of your component to add extra attributes. We achieve this by capturing the extra attributes and passing them to the [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag as a dictionary:
 
 ```djc_py
 @register("my_comp")
@@ -122,7 +122,7 @@ In both cases, the attributes will be merged and rendered as:
         {% html_attrs attrs={"key": value} %}
         ```
 
-    - Or by defining the [dictionary keys](../template_tag_syntax/#flat-dictionaries):
+    - Or by defining the [dictionary keys](template_tag_syntax.md#flat-dictionaries):
 
         ```django
         {% html_attrs attrs:key=value %}
@@ -151,7 +151,7 @@ In HTML, boolean attributes are usually rendered with no value. Consider the exa
 <button>Click me!</button>
 ```
 
-HTML rendering with [`html_attrs`](../../../reference/template_tags#html_attrs) tag or [`format_attributes`](../../../reference/api#django_components.format_attributes) works the same way - an attribute set to `True` is rendered without the value, and an attribute set to `False` is not rendered at all.
+HTML rendering with [`html_attrs`](../../reference/template_tags.md#html_attrs) tag or [`format_attributes`](../../reference/api.md#django_components.format_attributes) works the same way - an attribute set to `True` is rendered without the value, and an attribute set to `False` is not rendered at all.
 
 So given this input:
 
@@ -212,7 +212,7 @@ Sometimes you may want to specify default values for attributes. You can pass a 
 </div>
 ```
 
-In the example above, if `attrs` contains a certain key, e.g. the `class` key, [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) will render:
+In the example above, if `attrs` contains a certain key, e.g. the `class` key, [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) will render:
 
 ```html
 <div class="{{ attrs.class }}">
@@ -220,7 +220,7 @@ In the example above, if `attrs` contains a certain key, e.g. the `class` key, [
 </div>
 ```
 
-Otherwise, [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) will render:
+Otherwise, [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) will render:
 
 ```html
 <div class="{{ defaults.class }}">
@@ -248,7 +248,7 @@ attrs = {
 }
 ```
 
-And on [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag, we set the key `class`:
+And on [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag, we set the key `class`:
 
 ```django
 <div {% html_attrs attrs class="some-class" %}>
@@ -392,11 +392,11 @@ Renders:
 
 In some cases, you want to prepare HTML attributes outside of templates.
 
-To achieve the same behavior as [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag, you can use the [`merge_attributes()`](../../../reference/api#django_components.merge_attributes) and [`format_attributes()`](../../../reference/api#django_components.format_attributes) helper functions.
+To achieve the same behavior as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag, you can use the [`merge_attributes()`](../../reference/api.md#django_components.merge_attributes) and [`format_attributes()`](../../reference/api.md#django_components.format_attributes) helper functions.
 
 ### Merging attributes
 
-[`merge_attributes()`](../../../reference/api#django_components.merge_attributes) accepts any number of dictionaries and merges them together, using the same merge strategy as [`{% html_attrs %}`](../../../reference/template_tags#html_attrs).
+[`merge_attributes()`](../../reference/api.md#django_components.merge_attributes) accepts any number of dictionaries and merges them together, using the same merge strategy as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs).
 
 ```python
 from django_components import merge_attributes
@@ -419,11 +419,11 @@ Which will output:
 
 !!! warning
 
-    Unlike [`{% html_attrs %}`](../../../reference/template_tags#html_attrs), where you can pass extra kwargs, [`merge_attributes()`](../../../reference/api#django_components.merge_attributes) requires each argument to be a dictionary.
+    Unlike [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs), where you can pass extra kwargs, [`merge_attributes()`](../../reference/api.md#django_components.merge_attributes) requires each argument to be a dictionary.
 
 ### Formatting attributes
 
-[`format_attributes()`](../../../reference/api#django_components.format_attributes) serializes attributes the same way as [`{% html_attrs %}`](../../../reference/template_tags#html_attrs) tag does.
+[`format_attributes()`](../../reference/api.md#django_components.format_attributes) serializes attributes the same way as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag does.
 
 ```py
 from django_components import format_attributes

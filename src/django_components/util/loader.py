@@ -24,12 +24,12 @@ def get_component_dirs(include_apps: bool = True) -> list[Path]:
         list[Path]: A list of directories that may contain component files.
 
     `get_component_dirs()` searches for dirs set in
-    [`COMPONENTS.dirs`](../settings#django_components.app_settings.ComponentsSettings.dirs)
+    [`COMPONENTS.dirs`](settings.md#django_components.app_settings.ComponentsSettings.dirs)
     settings. If none set, defaults to searching for a `"components"` app.
 
     In addition to that, also all installed Django apps are checked whether they contain
     directories as set in
-    [`COMPONENTS.app_dirs`](../settings#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.app_dirs`](settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
     (e.g. `[app]/components`).
 
     **Notes:**
@@ -38,7 +38,7 @@ def get_component_dirs(include_apps: bool = True) -> list[Path]:
 
     - `BASE_DIR` setting is required.
 
-    - The paths in [`COMPONENTS.dirs`](../settings#django_components.app_settings.ComponentsSettings.dirs)
+    - The paths in [`COMPONENTS.dirs`](settings.md#django_components.app_settings.ComponentsSettings.dirs)
         must be absolute paths.
 
     """
@@ -108,7 +108,7 @@ def get_component_dirs(include_apps: bool = True) -> list[Path]:
 
 
 class ComponentFileEntry(NamedTuple):
-    """Result returned by [`get_component_files()`](../api#django_components.get_component_files)."""
+    """Result returned by [`get_component_files()`](api.md#django_components.get_component_files)."""
 
     dot_path: str
     """The python import path for the module. E.g. `app.components.mycomp`"""
@@ -119,7 +119,7 @@ class ComponentFileEntry(NamedTuple):
 def get_component_files(suffix: str | None = None) -> list[ComponentFileEntry]:
     """
     Search for files within the component directories (as defined in
-    [`get_component_dirs()`](../api#django_components.get_component_dirs)).
+    [`get_component_dirs()`](api.md#django_components.get_component_dirs)).
 
     Requires `BASE_DIR` setting to be set.
 

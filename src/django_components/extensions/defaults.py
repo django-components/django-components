@@ -26,7 +26,7 @@ class Default:
     """
     Use this class to mark a field on the `Component.Defaults` class as a factory.
 
-    Read more about [Component defaults](../../concepts/fundamentals/component_defaults).
+    Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
     **Example:**
 
@@ -56,13 +56,13 @@ class ComponentDefaultField(NamedTuple):
 
 def get_component_defaults(component: "type[Component] | Component") -> dict[str, Any]:
     """
-    Generate a defaults dictionary for a [`Component`](../api#django_components.Component).
+    Generate a defaults dictionary for a [`Component`](api.md#django_components.Component).
 
-    The defaults dictionary is generated from the [`Component.Defaults`](../api#django_components.Component.Defaults)
-    and [`Component.Kwargs`](../api#django_components.Component.Kwargs) classes.
+    The defaults dictionary is generated from the [`Component.Defaults`](api.md#django_components.Component.Defaults)
+    and [`Component.Kwargs`](api.md#django_components.Component.Kwargs) classes.
     `Kwargs` take precedence over `Defaults`.
 
-    Read more about [Component defaults](../../concepts/fundamentals/component_defaults).
+    Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
     **Example:**
 
@@ -213,7 +213,7 @@ class ComponentDefaults(ExtensionComponentConfig):
 
     The fields of this class are used to set default values for the component's kwargs.
 
-    Read more about [Component defaults](../../concepts/fundamentals/component_defaults).
+    Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
     **Example:**
 

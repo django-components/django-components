@@ -28,8 +28,8 @@ This makes components more reusable and composable.
 
 Slots consists of two parts:
 
-1. [`{% slot %}`](../../../reference/template_tags#slot) tag - Inside your component you decide where you want to insert the content.
-2. [`{% fill %}`](../../../reference/template_tags#fill) tag - In the parent template (outside the component) you decide what content to insert into the slot.
+1. [`{% slot %}`](../../reference/template_tags.md#slot) tag - Inside your component you decide where you want to insert the content.
+2. [`{% fill %}`](../../reference/template_tags.md#fill) tag - In the parent template (outside the component) you decide what content to insert into the slot.
    It "fills" the slot with the specified content.
 
 Let's look at an example:
@@ -85,7 +85,7 @@ When rendered, notice that:
 
 ### Slot definition
 
-Slots are defined with the [`{% slot %}`](../../../reference/template_tags#slot) tag:
+Slots are defined with the [`{% slot %}`](../../reference/template_tags.md#slot) tag:
 
 ```django
 {% slot "name" %}
@@ -136,7 +136,7 @@ And you can even define the same slot in multiple places:
 
 ### Slot filling
 
-Fill can be defined with the [`{% fill %}`](../../../reference/template_tags#fill) tag:
+Fill can be defined with the [`{% fill %}`](../../reference/template_tags.md#fill) tag:
 
 ```django
 {% component "calendar" %}
@@ -149,7 +149,7 @@ Fill can be defined with the [`{% fill %}`](../../../reference/template_tags#fil
 {% endcomponent %}
 ```
 
-Or in Python with the [`slots`](../../../reference/api#django_components.Component.render) argument:
+Or in Python with the [`slots`](../../reference/api.md#django_components.Component.render) argument:
 
 ```py
 Calendar.render(
@@ -162,7 +162,7 @@ Calendar.render(
 
 ### Default slot
 
-You can make the syntax shorter by marking the slot as [`default`](../../../reference/template_tags#slot):
+You can make the syntax shorter by marking the slot as [`default`](../../reference/template_tags.md#slot):
 
 ```django
 {% slot "name" default %}
@@ -170,7 +170,7 @@ You can make the syntax shorter by marking the slot as [`default`](../../../refe
 {% endslot %}
 ```
 
-This allows you to fill the slot directly in the [`{% component %}`](../../../reference/template_tags#component) tag,
+This allows you to fill the slot directly in the [`{% component %}`](../../reference/template_tags.md#component) tag,
 omitting the `{% fill %}` tag:
 
 ```django
@@ -203,7 +203,7 @@ Calendar.render(
 
 !!! warning
 
-    Only one [`{% slot %}`](../../../reference/template_tags#slot) can be marked as `default`.
+    Only one [`{% slot %}`](../../reference/template_tags.md#slot) can be marked as `default`.
     But you can have multiple slots with the same name all marked as `default`.
 
     If you define multiple **different** slots as `default`, this will raise an error.
@@ -232,7 +232,7 @@ Calendar.render(
 
 !!! warning
 
-    Do NOT combine default fills with explicit named [`{% fill %}`](../../../reference/template_tags#fill) tags.
+    Do NOT combine default fills with explicit named [`{% fill %}`](../../reference/template_tags.md#fill) tags.
 
     The following component template will raise an error when rendered:
 
@@ -265,7 +265,7 @@ Calendar.render(
 
 ### Required slot
 
-You can make the slot required by adding the [`required`](../../../reference/template_tags#slot) keyword:
+You can make the slot required by adding the [`required`](../../reference/template_tags.md#slot) keyword:
 
 ```django
 {% slot "name" required %}
@@ -278,7 +278,7 @@ This will raise an error if the slot is not filled.
 ### Access fills
 
 You can access the fills with the
-[`{{ component_vars.slots.<name> }}`](../../../reference/template_vars#slots) template variable:
+[`{{ component_vars.slots.<name> }}`](../../reference/template_variables.md#django_components.component.ComponentVars.slots) template variable:
 
 ```django
 {% if component_vars.slots.my_slot %}
@@ -290,7 +290,7 @@ You can access the fills with the
 {% endif %}
 ```
 
-And in Python with the [`Component.slots`](../../../reference/api#django_components.Component.slots) property:
+And in Python with the [`Component.slots`](../../reference/api.md#django_components.Component.slots) property:
 
 ```py
 class Calendar(Component):
@@ -327,7 +327,7 @@ The slot and fill names can be set as variables. This way you can fill slots dyn
 
 You can even use [`{% if %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#std-templatetag-if)
 and [`{% for %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#std-templatetag-for)
-tags inside the [`{% component %}`](../../../reference/template_tags#component) tag to fill slots with more control:
+tags inside the [`{% component %}`](../../reference/template_tags.md#component) tag to fill slots with more control:
 
 ```django
 {% component "calendar" %}
@@ -376,8 +376,8 @@ you can pass data to the slot, and then access it in the fill.
 
 This consists of two steps:
 
-1. Passing data to [`{% slot %}`](../../../reference/template_tags#slot) tag
-2. Accessing data in [`{% fill %}`](../../../reference/template_tags#fill) tag
+1. Passing data to [`{% slot %}`](../../reference/template_tags.md#slot) tag
+2. Accessing data in [`{% fill %}`](../../reference/template_tags.md#fill) tag
 
 The data is passed to the slot as extra keyword arguments. Below we set two extra arguments: `first_name` and `job`.
 
@@ -394,7 +394,7 @@ The data is passed to the slot as extra keyword arguments. Below we set two extr
 
     `name` kwarg is already used for slot name, so you cannot pass it as slot data.
 
-To access the slot's data in the fill, use the [`data`](../../../reference/template_tags#fill) keyword. This sets the name
+To access the slot's data in the fill, use the [`data`](../../reference/template_tags.md#fill) keyword. This sets the name
 of the variable that holds the data in the fill:
 
 ```django
@@ -472,7 +472,7 @@ will be rendered if no fill is given for the slot.
 
 Sometimes you may want to keep the fallback content, but only wrap it in some other content.
 
-To do so, you can access the fallback content via the [`fallback`](../../../reference/template_tags#fill) kwarg.
+To do so, you can access the fallback content via the [`fallback`](../../reference/template_tags.md#fill) kwarg.
 This sets the name of the variable that holds the fallback content in the fill:
 
 ```django
@@ -486,7 +486,7 @@ This sets the name of the variable that holds the fallback content in the fill:
 {% endcomponent %}
 ```
 
-To access the fallback content in Python, use the [`fallback`](../../../reference/api#django_components.SlotContext.fallback)
+To access the fallback content in Python, use the [`fallback`](../../reference/api.md#django_components.SlotContext.fallback)
 attribute in [slot functions](#slot-functions).
 
 The fallback value is rendered lazily. Coerce the fallback to a string to render it.
@@ -543,10 +543,10 @@ html = slot({"name": "John"}, fallback="Hello, world!")
 ### Slot functions
 
 In Python code, slot fills can be defined as strings, functions, or
-[`Slot`](../../../reference/api#django_components.Slot) instances that wrap the two.
-Slot functions have access to slot [`data`](../../../reference/api#django_components.SlotContext.data),
-[`fallback`](../../../reference/api#django_components.SlotContext.fallback),
-and [`context`](../../../reference/api#django_components.SlotContext.context).
+[`Slot`](../../reference/api.md#django_components.Slot) instances that wrap the two.
+Slot functions have access to slot [`data`](../../reference/api.md#django_components.SlotContext.data),
+[`fallback`](../../reference/api.md#django_components.SlotContext.fallback),
+and [`context`](../../reference/api.md#django_components.SlotContext.context).
 
 ```py
 def row_slot(ctx):
@@ -569,7 +569,7 @@ Table.render(
 )
 ```
 
-Inside the component, these will all be normalized to [`Slot`](../../../reference/api#django_components.Slot) instances:
+Inside the component, these will all be normalized to [`Slot`](../../reference/api.md#django_components.Slot) instances:
 
 ```py
 class Table(Component):
@@ -580,7 +580,7 @@ class Table(Component):
         assert isinstance(slots["footer"], Slot)
 ```
 
-You can render [`Slot`](../../../reference/api#django_components.Slot) instances by simply calling them with data:
+You can render [`Slot`](../../reference/api.md#django_components.Slot) instances by simply calling them with data:
 
 ```py
 class Table(Component):
@@ -594,8 +594,8 @@ class Table(Component):
 ### Filling slots with functions
 
 You can "fill" slots by passing a string or
-[`Slot`](../../../reference/api#django_components.Slot) instance
-directly to the [`{% fill %}`](../../../reference/template_tags#fill) tag:
+[`Slot`](../../reference/api.md#django_components.Slot) instance
+directly to the [`{% fill %}`](../../reference/template_tags.md#fill) tag:
 
 ```py
 class Table(Component):
@@ -618,14 +618,14 @@ class Table(Component):
 
     Django automatically executes functions when it comes across them in templates.
 
-    Because of this you MUST wrap the function in [`Slot`](../../../reference/api#django_components.Slot)
+    Because of this you MUST wrap the function in [`Slot`](../../reference/api.md#django_components.Slot)
     instance to prevent it from being called.
 
     Read more about Django's [`do_not_call_in_templates`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#variables-and-lookups).
 
 ## Slot class
 
-The [`Slot`](../../../reference/api#django_components.Slot) class is a wrapper around a function that can be used to fill a slot.
+The [`Slot`](../../reference/api.md#django_components.Slot) class is a wrapper around a function that can be used to fill a slot.
 
 ```py
 from django_components import Component, Slot
@@ -649,7 +649,7 @@ slot2 = Slot("Hello, world!")
 
 !!! warning
 
-    Passing a [`Slot`](../../../reference/api#django_components.Slot) instance to the `Slot`
+    Passing a [`Slot`](../../reference/api.md#django_components.Slot) instance to the `Slot`
     constructor results in an error:
 
     ```py
@@ -663,7 +663,7 @@ slot2 = Slot("Hello, world!")
 
 **Python**
 
-You can render a [`Slot`](../../../reference/api#django_components.Slot) instance by simply calling it with data:
+You can render a [`Slot`](../../reference/api.md#django_components.Slot) instance by simply calling it with data:
 
 ```py
 slot = Slot(lambda ctx: f"Hello, {ctx.data['name']}!")
@@ -680,8 +680,8 @@ html = slot({"name": "John"}, fallback="Hello, world!")
 
 **Template**
 
-Alternatively, you can pass the [`Slot`](../../../reference/api#django_components.Slot) instance to the
-[`{% fill %}`](../../../reference/template_tags#fill) tag:
+Alternatively, you can pass the [`Slot`](../../reference/api.md#django_components.Slot) instance to the
+[`{% fill %}`](../../reference/template_tags.md#fill) tag:
 
 ```django
 {% fill "name" body=slot / %}
@@ -689,7 +689,7 @@ Alternatively, you can pass the [`Slot`](../../../reference/api#django_component
 
 ### Slot context
 
-If a slot function is rendered by the [`{% slot %}`](../../../reference/template_tags#slot) tag,
+If a slot function is rendered by the [`{% slot %}`](../../reference/template_tags.md#slot) tag,
 you can access the current [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
 using the `context` attribute.
 
@@ -721,15 +721,15 @@ html = slot()
 
 ### Slot metadata
 
-When accessing slots from within [`Component`](../../../reference/api#django_components.Component) methods,
-the [`Slot`](../../../reference/api#django_components.Slot) instances are populated
+When accessing slots from within [`Component`](../../reference/api.md#django_components.Component) methods,
+the [`Slot`](../../reference/api.md#django_components.Slot) instances are populated
 with extra metadata:
 
-- [`component_name`](../../../reference/api#django_components.Slot.component_name)
-- [`slot_name`](../../../reference/api#django_components.Slot.slot_name)
-- [`nodelist`](../../../reference/api#django_components.Slot.nodelist)
-- [`fill_node`](../../../reference/api#django_components.Slot.fill_node)
-- [`extra`](../../../reference/api#django_components.Slot.extra)
+- [`component_name`](../../reference/api.md#django_components.Slot.component_name)
+- [`slot_name`](../../reference/api.md#django_components.Slot.slot_name)
+- [`nodelist`](../../reference/api.md#django_components.Slot.nodelist)
+- [`fill_node`](../../reference/api.md#django_components.Slot.fill_node)
+- [`extra`](../../reference/api.md#django_components.Slot.extra)
 
 These are populated the first time a slot is passed to a component.
 
@@ -740,20 +740,20 @@ You can use these for debugging, such as printing out the slot's component name 
 
 **Fill node**
 
-Components or extensions can use [`Slot.fill_node`](../../../reference/api#django_components.Slot.fill_node)
+Components or extensions can use [`Slot.fill_node`](../../reference/api.md#django_components.Slot.fill_node)
 to handle slots differently based on whether the slot
-was defined in the template with [`{% fill %}`](../../../reference/template_tags#fill) and
-[`{% component %}`](../../../reference/template_tags#component) tags,
+was defined in the template with [`{% fill %}`](../../reference/template_tags.md#fill) and
+[`{% component %}`](../../reference/template_tags.md#component) tags,
 or in the component's Python code.
 
-If the slot was created from a [`{% fill %}`](../../../reference/template_tags#fill) tag,
-this will be the [`FillNode`](../../../reference/api#django_components.FillNode) instance.
+If the slot was created from a [`{% fill %}`](../../reference/template_tags.md#fill) tag,
+this will be the [`FillNode`](../../reference/api.md#django_components.FillNode) instance.
 
-If the slot was a default slot created from a [`{% component %}`](../../../reference/template_tags#component) tag,
-this will be the [`ComponentNode`](../../../reference/api#django_components.ComponentNode) instance.
+If the slot was a default slot created from a [`{% component %}`](../../reference/template_tags.md#component) tag,
+this will be the [`ComponentNode`](../../reference/api.md#django_components.ComponentNode) instance.
 
-You can use this to find the [`Component`](../../../reference/api#django_components.Component) in whose
-template the [`{% fill %}`](../../../reference/template_tags#fill) tag was defined:
+You can use this to find the [`Component`](../../reference/api.md#django_components.Component) in whose
+template the [`{% fill %}`](../../reference/template_tags.md#fill) tag was defined:
 
 ```python
 class MyTable(Component):
@@ -766,7 +766,7 @@ class MyTable(Component):
 
 **Extra**
 
-You can also pass any additional data along with the slot by setting it in [`Slot.extra`](../../../reference/api#django_components.Slot.extra):
+You can also pass any additional data along with the slot by setting it in [`Slot.extra`](../../reference/api.md#django_components.Slot.extra):
 
 ```py
 slot = Slot(
@@ -793,22 +793,22 @@ slot.slot_name = "name"
 slot.extra["foo"] = "bar"
 ```
 
-Read more in [Pass slot metadata](../../advanced/extensions#pass-slot-metadata).
+Read more in [Pass slot metadata](../advanced/extensions.md#pass-slot-metadata).
 
 ### Slot contents
 
-Whether you create a slot from a function, a string, or from the [`{% fill %}`](../../../reference/template_tags#fill) tags,
-the [`Slot`](../../../reference/api#django_components.Slot) class normalizes its contents to a function.
+Whether you create a slot from a function, a string, or from the [`{% fill %}`](../../reference/template_tags.md#fill) tags,
+the [`Slot`](../../reference/api.md#django_components.Slot) class normalizes its contents to a function.
 
-Use [`Slot.contents`](../../../reference/api#django_components.Slot.contents) to access the original value that was passed to the Slot constructor.
+Use [`Slot.contents`](../../reference/api.md#django_components.Slot.contents) to access the original value that was passed to the Slot constructor.
 
 ```py
 slot = Slot("Hello!")
 print(slot.contents)  # "Hello!"
 ```
 
-If the slot was created from a string or from the [`{% fill %}`](../../../reference/template_tags#fill) tags,
-the contents will be accessible also as a Nodelist under [`Slot.nodelist`](../../../reference/api#django_components.Slot.nodelist).
+If the slot was created from a string or from the [`{% fill %}`](../../reference/template_tags.md#fill) tags,
+the contents will be accessible also as a Nodelist under [`Slot.nodelist`](../../reference/api.md#django_components.Slot.nodelist).
 
 ```py
 slot = Slot("Hello!")
@@ -880,7 +880,7 @@ class MyTable(Component):
 
 ### Required and default slots
 
-Since each [`{% slot %}`](../../../reference/template_tags#slot) is tagged
+Since each [`{% slot %}`](../../reference/template_tags.md#slot) is tagged
 with [`required`](#required-slot) and [`default`](#default-slot) individually, you can have multiple slots
 with the same name but different conditions.
 
@@ -944,7 +944,7 @@ Then the component will accept fills named `header-name` and `header-age` (among
 {% endfill %}
 ```
 
-In django-components you can achieve the same, simply by using a variable or a [nested template](../template_tag_syntax#nested-templates) instead of a string literal:
+In django-components you can achieve the same, simply by using a variable or a [nested template](template_tag_syntax.md#nested-templates) instead of a string literal:
 
 ```django
 <table>
@@ -987,7 +987,7 @@ Or also use a variable:
 
 ### Spread operator
 
-Lastly, you can also pass the slot name through the [spread operator](../template_tag_syntax#spread-operator).
+Lastly, you can also pass the slot name through the [spread operator](template_tag_syntax.md#spread-operator).
 
 When you define a slot name, it's actually a shortcut for a `name` keyword argument.
 
@@ -1026,8 +1026,8 @@ class MyTable(Component):
 
 !!! info
 
-    This applies for both [`{% slot %}`](../../../reference/template_tags#slot)
-    and [`{% fill %}`](../../../reference/template_tags#fill) tags.
+    This applies for both [`{% slot %}`](../../reference/template_tags.md#slot)
+    and [`{% fill %}`](../../reference/template_tags.md#fill) tags.
 
 <!-- TODO_V1: Remove this section -->
 
@@ -1039,7 +1039,7 @@ class MyTable(Component):
 >
 > Since version 0.140, this has been deprecated and superseded with
 >
-> [`{% component_vars.slots.<name> %}`](../../../reference/template_vars#slots)
+> [`{% component_vars.slots.<name> %}`](../../reference/template_variables.md#django_components.component.ComponentVars.slots)
 >
 > The `component_vars.is_filled` variable is still available, but will be removed in v1.0.
 >

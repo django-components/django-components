@@ -22,7 +22,7 @@ class ComponentCache(ExtensionComponentConfig):
 
     The fields of this class are used to configure the component caching.
 
-    Read more about [Component caching](../../concepts/advanced/component_caching).
+    Read more about [Component caching](../concepts/advanced/component_caching.md).
 
     **Example:**
 

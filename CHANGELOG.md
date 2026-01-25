@@ -2794,9 +2794,9 @@ importing them.
 
 #### Refactor
 
-- For advanced use cases, use can omit the middleware and instead manage component JS and CSS dependencies yourself with [`render_dependencies`](https://github.com/django-components/django-components#render_dependencies-and-deep-dive-into-rendering-js--css-without-the-middleware)
+- For advanced use cases, use can omit the middleware and instead manage component JS and CSS dependencies yourself with `render_dependencies`
 
-- The [`ComponentRegistry`](../api#django_components.ComponentRegistry) settings [`RegistrySettings`](../api#django_components.RegistrySettings)
+- The `ComponentRegistry` settings `RegistrySettings`
   were lowercased to align with the global settings:
   - `RegistrySettings.CONTEXT_BEHAVIOR` -> `RegistrySettings.context_behavior`
   - `RegistrySettings.TAG_FORMATTER` -> `RegistrySettings.tag_formatter`
@@ -2804,13 +2804,13 @@ importing them.
   The old uppercase settings `CONTEXT_BEHAVIOR` and `TAG_FORMATTER` are deprecated and will be removed in v1.
 
 - The setting `reload_on_template_change` was renamed to
-  [`reload_on_file_change`](../settings#django_components.app_settings.ComponentsSettings#reload_on_file_change).
+  `reload_on_file_change`.
   And now it properly triggers server reload when any file in the component dirs change. The old name `reload_on_template_change`
   is deprecated and will be removed in v1.
 
 - The setting `forbidden_static_files` was renamed to
-  [`static_files_forbidden`](../settings#django_components.app_settings.ComponentsSettings#static_files_forbidden)
-  to align with [`static_files_allowed`](../settings#django_components.app_settings.ComponentsSettings#static_files_allowed)
+  `static_files_forbidden`
+  to align with `static_files_allowed`
   The old name `forbidden_static_files` is deprecated and will be removed in v1.
 
 ### Tags

@@ -1,13 +1,13 @@
-When a component recieves input through [`{% component %}`](../../../reference/template_tags/#component) tag,
-or the [`Component.render()`](../../../reference/api/#django_components.Component.render) or [`Component.render_to_response()`](../../../reference/api/#django_components.Component.render_to_response) methods, you can define how the input is handled, and what variables will be available to the template, JavaScript and CSS.
+When a component recieves input through [`{% component %}`](../../reference/template_tags.md#component) tag,
+or the [`Component.render()`](../../reference/api.md#django_components.Component.render) or [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response) methods, you can define how the input is handled, and what variables will be available to the template, JavaScript and CSS.
 
 ## Overview
 
 Django Components offers three key methods for passing variables to different parts of your component:
 
-- [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data) - Provides variables to your HTML template
-- [`get_js_data()`](../../../reference/api/#django_components.Component.get_js_data) - Provides variables to your JavaScript code
-- [`get_css_data()`](../../../reference/api/#django_components.Component.get_css_data) - Provides variables to your CSS styles
+- [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data) - Provides variables to your HTML template
+- [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data) - Provides variables to your JavaScript code
+- [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data) - Provides variables to your CSS styles
 
 These methods let you pre-process inputs before they're used in rendering.
 
@@ -40,9 +40,9 @@ class ProfileCard(Component):
 
 ## Template variables
 
-The [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data) method is the primary way to provide variables to your HTML template. It receives the component inputs and returns a dictionary of data that will be available in the template.
+The [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data) method is the primary way to provide variables to your HTML template. It receives the component inputs and returns a dictionary of data that will be available in the template.
 
-If [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data) returns `None`, an empty dictionary will be used.
+If [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data) returns `None`, an empty dictionary will be used.
 
 ```python
 class ProfileCard(Component):
@@ -78,9 +78,9 @@ In your template, you can then use these variables:
 
 ### Legacy `get_context_data()`
 
-The [`get_context_data()`](../../../reference/api/#django_components.Component.get_context_data) method is the legacy way to provide variables to your HTML template. It serves the same purpose as [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data) - it receives the component inputs and returns a dictionary of data that will be available in the template.
+The [`get_context_data()`](../../reference/api.md#django_components.Component.get_context_data) method is the legacy way to provide variables to your HTML template. It serves the same purpose as [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data) - it receives the component inputs and returns a dictionary of data that will be available in the template.
 
-However, [`get_context_data()`](../../../reference/api/#django_components.Component.get_context_data) has a few drawbacks:
+However, [`get_context_data()`](../../reference/api.md#django_components.Component.get_context_data) has a few drawbacks:
 
 - It does NOT receive the `slots` and `context` parameters.
 - The `args` and `kwargs` parameters are given as variadic `*args` and `**kwargs` parameters. As such, they cannot be typed.
@@ -97,8 +97,8 @@ class ProfileCard(Component):
         }
 ```
 
-There is a slight difference between [`get_context_data()`](../../../reference/api/#django_components.Component.get_context_data) and [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data)
-when rendering a component with the [`{% component %}`](../../../reference/template_tags/#component) tag.
+There is a slight difference between [`get_context_data()`](../../reference/api.md#django_components.Component.get_context_data) and [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
+when rendering a component with the [`{% component %}`](../../reference/template_tags.md#component) tag.
 
 For example if you have component that accepts kwarg `date`:
 
@@ -117,7 +117,7 @@ class MyComponent(Component):
 
 The difference is that:
 
-- With [`get_context_data()`](../../../reference/api/#django_components.Component.get_context_data), you can pass `date` either as arg or kwarg:
+- With [`get_context_data()`](../../reference/api.md#django_components.Component.get_context_data), you can pass `date` either as arg or kwarg:
 
     ```django
     ✅
@@ -125,7 +125,7 @@ The difference is that:
     {% component "my_component" some_date %}
     ```
 
-- But with [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data), `date` MUST be passed as kwarg:
+- But with [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data), `date` MUST be passed as kwarg:
 
     ```django
     ✅
@@ -137,8 +137,8 @@ The difference is that:
 
 !!! warning
 
-    [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data)
-    and [`get_context_data()`](../../../reference/api/#django_components.Component.get_context_data)
+    [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
+    and [`get_context_data()`](../../reference/api.md#django_components.Component.get_context_data)
     are mutually exclusive.
 
     If both methods return non-empty dictionaries, an error will be raised.
@@ -170,12 +170,12 @@ class ProfileCard(Component):
     By default, the `args` parameter is a list, while `kwargs` and `slots` are dictionaries.
 
     If you add typing to your component with
-    [`Args`](../../../reference/api/#django_components.Component.Args),
-    [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
-    or [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
+    [`Args`](../../reference/api.md#django_components.Component.Args),
+    [`Kwargs`](../../reference/api.md#django_components.Component.Kwargs),
+    or [`Slots`](../../reference/api.md#django_components.Component.Slots) classes,
     the respective inputs will be given as instances of these classes.
 
-    Learn more about [Component typing](../../fundamentals/typing_and_validation).
+    Learn more about [Component typing](typing_and_validation.md).
 
     ```py
     class ProfileCard(Component):
@@ -196,9 +196,9 @@ class ProfileCard(Component):
 ### `args`, `kwargs`, `slots` properties
 
 In other methods, you can access the inputs via
-[`self.args`](../../../reference/api/#django_components.Component.args),
-[`self.kwargs`](../../../reference/api/#django_components.Component.kwargs),
-and [`self.slots`](../../../reference/api/#django_components.Component.slots) properties:
+[`self.args`](../../reference/api.md#django_components.Component.args),
+[`self.kwargs`](../../reference/api.md#django_components.Component.kwargs),
+and [`self.slots`](../../reference/api.md#django_components.Component.slots) properties:
 
 ```py
 class ProfileCard(Component):
@@ -216,12 +216,12 @@ class ProfileCard(Component):
     By default, the `args` property is a list, while `kwargs` and `slots` are dictionaries.
 
     If you add typing to your component with
-    [`Args`](../../../reference/api/#django_components.Component.Args),
-    [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
-    or [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
+    [`Args`](../../reference/api.md#django_components.Component.Args),
+    [`Kwargs`](../../reference/api.md#django_components.Component.Kwargs),
+    or [`Slots`](../../reference/api.md#django_components.Component.Slots) classes,
     the respective inputs will be given as instances of these classes.
 
-    Learn more about [Component typing](../../fundamentals/typing_and_validation).
+    Learn more about [Component typing](typing_and_validation.md).
 
     ```py
     class ProfileCard(Component):
@@ -247,31 +247,31 @@ class ProfileCard(Component):
     The `input` property is deprecated and will be removed in v1.
 
     Instead, use properties defined on the
-    [`Component`](../../../reference/api/#django_components.Component) class
+    [`Component`](../../reference/api.md#django_components.Component) class
     directly like
-    [`self.context`](../../../reference/api/#django_components.Component.context).
+    [`self.context`](../../reference/api.md#django_components.Component.context).
 
     To access the unmodified inputs, use
-    [`self.raw_args`](../../../reference/api/#django_components.Component.raw_args),
-    [`self.raw_kwargs`](../../../reference/api/#django_components.Component.raw_kwargs),
-    and [`self.raw_slots`](../../../reference/api/#django_components.Component.raw_slots) properties.
+    [`self.raw_args`](../../reference/api.md#django_components.Component.raw_args),
+    [`self.raw_kwargs`](../../reference/api.md#django_components.Component.raw_kwargs),
+    and [`self.raw_slots`](../../reference/api.md#django_components.Component.raw_slots) properties.
 
 The previous two approaches allow you to access only the most important inputs.
 
 There are additional settings that may be passed to components.
-If you need to access these, you can use [`self.input`](../../../reference/api/#django_components.Component.input) property
+If you need to access these, you can use [`self.input`](../../reference/api.md#django_components.Component.input) property
 for a low-level access to all the inputs.
 
-The `input` property contains all the inputs passed to the component (instance of [`ComponentInput`](../../../reference/api/#django_components.ComponentInput)).
+The `input` property contains all the inputs passed to the component (instance of [`ComponentInput`](../../reference/api.md#django_components.ComponentInput)).
 
 This includes:
 
-- [`input.args`](../../../reference/api/#django_components.ComponentInput.args) - List of positional arguments
-- [`input.kwargs`](../../../reference/api/#django_components.ComponentInput.kwargs) - Dictionary of keyword arguments
-- [`input.slots`](../../../reference/api/#django_components.ComponentInput.slots) - Dictionary of slots. Values are normalized to [`Slot`](../../../reference/api/#django_components.Slot) instances
-- [`input.context`](../../../reference/api/#django_components.ComponentInput.context) - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
-- [`input.type`](../../../reference/api/#django_components.ComponentInput.type) - The type of the component (document, fragment)
-- [`input.render_dependencies`](../../../reference/api/#django_components.ComponentInput.render_dependencies) - Whether to render dependencies (CSS, JS)
+- [`input.args`](../../reference/api.md#django_components.ComponentInput.args) - List of positional arguments
+- [`input.kwargs`](../../reference/api.md#django_components.ComponentInput.kwargs) - Dictionary of keyword arguments
+- [`input.slots`](../../reference/api.md#django_components.ComponentInput.slots) - Dictionary of slots. Values are normalized to [`Slot`](../../reference/api.md#django_components.Slot) instances
+- [`input.context`](../../reference/api.md#django_components.ComponentInput.context) - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
+- [`input.type`](../../reference/api.md#django_components.ComponentInput.type) - The type of the component (document, fragment)
+- [`input.render_dependencies`](../../reference/api.md#django_components.ComponentInput.render_dependencies) - Whether to render dependencies (CSS, JS)
 
 ```python
 class ProfileCard(Component):
@@ -295,13 +295,13 @@ class ProfileCard(Component):
 !!! info
 
     Unlike the parameters passed to the data methods, the `args`, `kwargs`, and `slots` in `self.input` property are always lists and dictionaries,
-    regardless of whether you added typing classes to your component (like [`Args`](../../../reference/api/#django_components.Component.Args),
-    [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
-    or [`Slots`](../../../reference/api/#django_components.Component.Slots)).
+    regardless of whether you added typing classes to your component (like [`Args`](../../reference/api.md#django_components.Component.Args),
+    [`Kwargs`](../../reference/api.md#django_components.Component.Kwargs),
+    or [`Slots`](../../reference/api.md#django_components.Component.Slots)).
 
 ## Default values
 
-You can use the [`Defaults`](../../../reference/api/#django_components.Component.Defaults) and [`Kwargs`](../../../reference/api/#django_components.Component.Kwargs) classes to provide default values for your inputs.
+You can use the [`Defaults`](../../reference/api.md#django_components.Component.Defaults) and [`Kwargs`](../../reference/api.md#django_components.Component.Kwargs) classes to provide default values for your inputs.
 
 These defaults will be applied either when:
 
@@ -331,22 +331,22 @@ class ProfileCard(Component):
 
 ## Accessing Render API
 
-All three data methods have access to the Component's [Render API](../render_api), which includes:
+All three data methods have access to the Component's [Render API](render_api.md), which includes:
 
-- [`self.args`](../render_api/#args) - The positional arguments for the current render call
-- [`self.kwargs`](../render_api/#kwargs) - The keyword arguments for the current render call
-- [`self.slots`](../render_api/#slots) - The slots for the current render call
-- [`self.raw_args`](../render_api/#args) - Unmodified positional arguments for the current render call
-- [`self.raw_kwargs`](../render_api/#kwargs) - Unmodified keyword arguments for the current render call
-- [`self.raw_slots`](../render_api/#slots) - Unmodified slots for the current render call
-- [`self.context`](../render_api/#context) - The context for the current render call
-- [`self.id`](../render_api/#component-id) - The unique ID for the current render call
-- [`self.request`](../render_api/#request-and-context-processors) - The request object
-- [`self.context_processors_data`](../render_api/#request-and-context-processors) - Data from Django's context processors
-- [`self.inject()`](../render_api/#provide-inject) - Inject data into the component
-- [`self.registry`](../render_api/#template-tag-metadata) - The [`ComponentRegistry`](../../../reference/api/#django_components.ComponentRegistry) instance
-- [`self.registered_name`](../render_api/#template-tag-metadata) - The name under which the component was registered
-- [`self.outer_context`](../render_api/#template-tag-metadata) - The context outside of the [`{% component %}`](../../../reference/template_tags#component) tag
+- [`self.args`](render_api.md#args) - The positional arguments for the current render call
+- [`self.kwargs`](render_api.md#kwargs) - The keyword arguments for the current render call
+- [`self.slots`](render_api.md#slots) - The slots for the current render call
+- [`self.raw_args`](render_api.md#args) - Unmodified positional arguments for the current render call
+- [`self.raw_kwargs`](render_api.md#kwargs) - Unmodified keyword arguments for the current render call
+- [`self.raw_slots`](render_api.md#slots) - Unmodified slots for the current render call
+- [`self.context`](render_api.md#context) - The context for the current render call
+- [`self.id`](render_api.md#component-id) - The unique ID for the current render call
+- [`self.request`](render_api.md#request-and-context-processors) - The request object
+- [`self.context_processors_data`](render_api.md#request-and-context-processors) - Data from Django's context processors
+- [`self.inject()`](render_api.md#provide-inject) - Inject data into the component
+- [`self.registry`](render_api.md#template-tag-metadata) - The [`ComponentRegistry`](../../reference/api.md#django_components.ComponentRegistry) instance
+- [`self.registered_name`](render_api.md#template-tag-metadata) - The name under which the component was registered
+- [`self.outer_context`](render_api.md#template-tag-metadata) - The context outside of the [`{% component %}`](../../reference/template_tags.md#component) tag
 - `self.deps_strategy` - The strategy for rendering dependencies
 
 ## Type hints
@@ -355,14 +355,14 @@ All three data methods have access to the Component's [Render API](../render_api
 
 You can add type hints for the component inputs to ensure that the component logic is correct.
 
-For this, define the [`Args`](../../../reference/api/#django_components.Component.Args),
-[`Kwargs`](../../../reference/api/#django_components.Component.Kwargs),
-and [`Slots`](../../../reference/api/#django_components.Component.Slots) classes,
+For this, define the [`Args`](../../reference/api.md#django_components.Component.Args),
+[`Kwargs`](../../reference/api.md#django_components.Component.Kwargs),
+and [`Slots`](../../reference/api.md#django_components.Component.Slots) classes,
 and then add type hints to the data methods.
 
 This will also validate the inputs at runtime, as the type classes will be instantiated with the inputs.
 
-Read more about [Component typing](../../fundamentals/typing_and_validation).
+Read more about [Component typing](typing_and_validation.md).
 
 ```python
 from django_components import Component, SlotInput
@@ -389,9 +389,9 @@ class Button(Component):
 
 !!! note
 
-    To access "untyped" inputs, use [`self.raw_args`](../../../reference/api/#django_components.Component.raw_args),
-    [`self.raw_kwargs`](../../../reference/api/#django_components.Component.raw_kwargs),
-    and [`self.raw_slots`](../../../reference/api/#django_components.Component.raw_slots) properties.
+    To access "untyped" inputs, use [`self.raw_args`](../../reference/api.md#django_components.Component.raw_args),
+    [`self.raw_kwargs`](../../reference/api.md#django_components.Component.raw_kwargs),
+    and [`self.raw_slots`](../../reference/api.md#django_components.Component.raw_slots) properties.
 
     These are plain lists and dictionaries, even when you added typing to your component.
 
@@ -399,9 +399,9 @@ class Button(Component):
 
 In the same fashion, you can add types and validation for the data that should be RETURNED from each data method.
 
-For this, set the [`TemplateData`](../../../reference/api/#django_components.Component.TemplateData),
-[`JsData`](../../../reference/api/#django_components.Component.JsData),
-and [`CssData`](../../../reference/api/#django_components.Component.CssData) classes on the component class.
+For this, set the [`TemplateData`](../../reference/api.md#django_components.Component.TemplateData),
+[`JsData`](../../reference/api.md#django_components.Component.JsData),
+and [`CssData`](../../reference/api.md#django_components.Component.CssData) classes on the component class.
 
 For each data method, you can either return a plain dictionary with the data, or an instance of the respective data class.
 
@@ -448,7 +448,7 @@ However, if you want a looser setup, you can easily write components that accept
 of kwargs, and pass them all to the template
 (similar to [django-cotton](https://github.com/wrabit/django-cotton)).
 
-To do that, simply return the `kwargs` dictionary itself from [`get_template_data()`](../../../reference/api/#django_components.Component.get_template_data):
+To do that, simply return the `kwargs` dictionary itself from [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data):
 
 ```py
 class MyComponent(Component):
@@ -456,7 +456,7 @@ class MyComponent(Component):
         return kwargs
 ```
 
-You can do the same for [`get_js_data()`](../../../reference/api/#django_components.Component.get_js_data) and [`get_css_data()`](../../../reference/api/#django_components.Component.get_css_data), if needed:
+You can do the same for [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data) and [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data), if needed:
 
 ```py
 class MyComponent(Component):

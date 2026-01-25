@@ -15,10 +15,10 @@ By the end of this section, we want to be able to use our components in Django t
 
 ### 1. Register component
 
-First, however, we need to register our component class with [`ComponentRegistry`](../../reference/api#django_components.ComponentRegistry).
+First, however, we need to register our component class with [`ComponentRegistry`](../reference/api.md#django_components.ComponentRegistry).
 
-To register a component with a [`ComponentRegistry`](../../reference/api#django_components.ComponentRegistry),
-we will use the [`@register`](../../reference/api#django_components.register)
+To register a component with a [`ComponentRegistry`](../reference/api.md#django_components.ComponentRegistry),
+we will use the [`@register`](../reference/api.md#django_components.register)
 decorator, and give it a name under which the component will be accessible from within the template:
 
 ```python title="[project root]/components/calendar/calendar.py"
@@ -48,18 +48,18 @@ by calling `{% load component_tags %}` inside the template.
     In Django, template tags are managed by the `Library` instances. Whenever you include `{% load xxx %}`
     in your template, you are loading a `Library` instance into your template.
 
-    [`ComponentRegistry`](../../reference/api#django_components.ComponentRegistry) acts like a router
+    [`ComponentRegistry`](../reference/api.md#django_components.ComponentRegistry) acts like a router
     and connects the registered components with the associated `Library`.
 
     That way, when you include `{% load component_tags %}` in your template, you are able to "call" components
     like `{% component "calendar" / %}`.
 
     `ComponentRegistries` also make it possible to group and share components as standalone packages.
-    [Learn more here](../../concepts/advanced/component_libraries).
+    [Learn more here](../concepts/advanced/component_libraries.md).
 
 !!! note
 
-    You can create custom [`ComponentRegistry`](../../reference/api#django_components.ComponentRegistry)
+    You can create custom [`ComponentRegistry`](../reference/api.md#django_components.ComponentRegistry)
     instances, which will use different `Library` instances.
     In that case you will have to load different libraries depending on which components you want to use:
 
@@ -80,7 +80,7 @@ by calling `{% load component_tags %}` inside the template.
     ```
 
     Note that, because the tag name `component` is use by the default ComponentRegistry,
-    the custom registry was configured to use the tag `my_component` instead. [Read more here](../../concepts/advanced/component_registry)
+    the custom registry was configured to use the tag `my_component` instead. [Read more here](../concepts/advanced/component_registry.md)
 
 ### 2. Load and use the component in template
 
@@ -102,7 +102,7 @@ and render the component inside a template:
 
 !!! info
 
-    Component tags should end with `/` if they do not contain any [Slot fills](../../concepts/fundamentals/slots).
+    Component tags should end with `/` if they do not contain any [Slot fills](../concepts/fundamentals/slots.md).
     But you can also use `{% endcomponent %}` instead:
 
     ```htmldjango
@@ -157,20 +157,20 @@ and keeping your CSS and Javascript in the static directory.
 !!! info
 
     Remember that you can use
-    [`{% component_js_dependencies %}`](../../reference/template_tags#component_js_dependencies)
-    and [`{% component_css_dependencies %}`](../../reference/template_tags#component_css_dependencies)
+    [`{% component_js_dependencies %}`](../reference/template_tags.md#component_js_dependencies)
+    and [`{% component_css_dependencies %}`](../reference/template_tags.md#component_css_dependencies)
     to change where the `<script>` and `<style>` tags will be rendered
-    (See [Default JS / CSS locations](../../concepts/advanced/rendering_js_css#default-js-css-locations)).
+    (See [Default JS / CSS locations](../concepts/advanced/rendering_js_css.md#default-js-css-locations)).
 
 !!! info
 
     **How does django-components pick up registered components?**
 
-    Notice that it was enough to add [`@register`](../../reference/api#django_components.register) to the component.
+    Notice that it was enough to add [`@register`](../reference/api.md#django_components.register) to the component.
     We didn't need to import the component file anywhere to execute it.
 
     This is because django-components automatically imports all Python files found in the component directories
-    during an event called [Autodiscovery](../../concepts/fundamentals/autodiscovery).
+    during an event called [Autodiscovery](../concepts/fundamentals/autodiscovery.md).
 
     So with Autodiscovery, it's the same as if you manually imported the component files on the `ready()` hook:
 

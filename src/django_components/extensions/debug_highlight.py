@@ -69,7 +69,7 @@ class ComponentDebugHighlight(ExtensionComponentConfig):
     The fields of this class are used to configure the component debug highlighting for this component
     and its direct slots.
 
-    Read more about [Component debug highlighting](../../guides/other/troubleshooting#component-and-slot-highlighting).
+    Read more about [Component debug highlighting](../guides/other/troubleshooting.md#component-and-slot-highlighting).
 
     **Example:**
 
@@ -83,7 +83,7 @@ class ComponentDebugHighlight(ExtensionComponentConfig):
     ```
 
     To highlight ALL components and slots, set
-    [extension defaults](../../reference/settings/#django_components.app_settings.ComponentsSettings.extensions_defaults)
+    [extension defaults](settings.md#django_components.app_settings.ComponentsSettings.extensions_defaults)
     in your settings:
 
     ```python

@@ -143,7 +143,7 @@ comp_registry = ComponentRegistry(
 )
 ```
 
-These settings are [the same as the ones you can set for django_components](#available-settings).
+These settings are [the same as the ones you can set for django_components](../../reference/settings.md).
 
 In fact, when you set `COMPONENT.tag_formatter` or `COMPONENT.context_behavior`, these are forwarded to the default `ComponentRegistry`.
 

@@ -2,13 +2,13 @@
 
 A/B testing, phased rollouts, or other advanced use cases can be made easy by dynamically rendering different versions of a component.
 
-Use the [`Component.on_render()`](../../reference/api/#django_components.Component.on_render) hook, to decide which version to render based on a component parameter (or a random choice).
+Use the [`Component.on_render()`](../../reference/api.md#django_components.Component.on_render) hook, to decide which version to render based on a component parameter (or a random choice).
 
 ![A/B Testing](./images/ab_testing.png)
 
 ## How it works
 
-[`Component.on_render()`](../../reference/api/#django_components.Component.on_render) is called when the component is being rendered. This method can completely override the rendering process, so we can use it to render another component in its place.
+[`Component.on_render()`](../../reference/api.md#django_components.Component.on_render) is called when the component is being rendered. This method can completely override the rendering process, so we can use it to render another component in its place.
 
 ```py
 class OfferCard(Component):

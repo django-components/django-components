@@ -456,4 +456,4 @@ So we can rewrite the above as:
 
 Much better!
 
-To disable this behavior, set [`COMPONENTS.multiline_tag`](#multiline_tags---enabledisable-multiline-support) to `False`
+To disable this behavior, set [`COMPONENTS.multiline_tags`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.multiline_tags) to `False`

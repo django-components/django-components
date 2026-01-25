@@ -808,9 +808,9 @@ def _format_hook_type(type_str: str) -> str:
 
     # Add links to non-builtin types
     if "ComponentRegistry" in type_str:
-        type_str = f"[{type_str}](../api#django_components.ComponentRegistry)"
+        type_str = f"[{type_str}](api.md#django_components.ComponentRegistry)"
     elif "Component" in type_str:
-        type_str = f"[{type_str}](../api#django_components.Component)"
+        type_str = f"[{type_str}](api.md#django_components.Component)"
     elif "Context" in type_str:
         type_str = f"[{type_str}](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)"
 
@@ -1079,9 +1079,12 @@ def _format_command_args(cmd_parser: ArgumentParser, cmd_path: Sequence[str] | N
         for arg in args:
             # Add link to the subcommand
             if section == "subcommands":
-                name = "`" + arg["names"][0] + "`"
+                subcmd_name = arg["names"][0]
+                name = "`" + subcmd_name + "`"
                 if cmd_path:
-                    name = "[" + name + "](../commands#" + "-".join(cmd_path) + "-" + name + ")"
+                    # Generate anchor without backticks (MkDocs strips them from headings)
+                    anchor = "-".join(cmd_path) + "-" + subcmd_name
+                    name = "[" + name + "](#" + anchor + ")"
             else:
                 name = ", ".join([f"`{name}`" for name in arg["names"]])
 
@@ -1092,15 +1095,15 @@ def _format_command_args(cmd_parser: ArgumentParser, cmd_path: Sequence[str] | N
 
 
 def _is_component_cls(obj: Any) -> bool:
-    return inspect.isclass(obj) and issubclass(obj, Component) and obj is not Component
+    return _is_class(obj) and issubclass(obj, Component) and obj is not Component
 
 
 def _is_error_cls(obj: Any) -> bool:
-    return inspect.isclass(obj) and issubclass(obj, Exception) and obj is not Exception
+    return _is_class(obj) and issubclass(obj, Exception) and obj is not Exception
 
 
 def _is_tag_formatter_cls(obj: Any) -> bool:
-    return inspect.isclass(obj) and issubclass(obj, TagFormatterABC) and obj is not TagFormatterABC
+    return _is_class(obj) and issubclass(obj, TagFormatterABC) and obj is not TagFormatterABC
 
 
 def _is_tag_formatter_instance(obj: Any) -> bool:
@@ -1108,19 +1111,24 @@ def _is_tag_formatter_instance(obj: Any) -> bool:
 
 
 def _is_template_tag(obj: Any) -> bool:
-    return inspect.isclass(obj) and issubclass(obj, BaseNode)
+    return _is_class(obj) and issubclass(obj, BaseNode)
 
 
 def _is_extension_hook_api(obj: Any) -> bool:
-    return inspect.isclass(obj) and getattr(obj, "_extension_hook_api", False)
+    return _is_class(obj) and getattr(obj, "_extension_hook_api", False)
 
 
 def _is_extension_command_api(obj: Any) -> bool:
-    return inspect.isclass(obj) and getattr(obj, "_extension_command_api", False)
+    return _is_class(obj) and getattr(obj, "_extension_command_api", False)
 
 
 def _is_extension_url_api(obj: Any) -> bool:
-    return inspect.isclass(obj) and getattr(obj, "_extension_url_api", False)
+    return _is_class(obj) and getattr(obj, "_extension_url_api", False)
+
+
+def _is_class(obj: Any) -> bool:
+    is_alias = type(obj).__name__ == "GenericAlias"
+    return not is_alias and inspect.isclass(obj)
 
 
 def gen_reference() -> None:

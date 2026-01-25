@@ -58,7 +58,7 @@ class ErrorFallback(Component):
     ```
 
     If you want to print the error, you can access the `error` variable
-    as [slot data](../../concepts/fundamentals/slots/#slot-data).
+    as [slot data](../concepts/fundamentals/slots.md#slot-data).
 
     ```django
     {% component "error_fallback" %}

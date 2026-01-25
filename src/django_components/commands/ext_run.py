@@ -51,7 +51,7 @@ class SubcommandsDescriptor:
 
 class ExtRunCommand(ComponentCommand):
     """
-    Run a command added by an [extension](../../concepts/advanced/extensions).
+    Run a command added by an [extension](../concepts/advanced/extensions.md).
 
     Each extension can add its own commands, which will be available to run with this command.
 

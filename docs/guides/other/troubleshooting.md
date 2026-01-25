@@ -4,7 +4,7 @@ As larger projects get more complex, it can be hard to debug issues. Django Comp
 
 Django Components provides a visual debugging feature that helps you understand the structure and boundaries of your components and slots. When enabled, it adds a colored border and a label around each component and slot on your rendered page.
 
-To enable component and slot highlighting for all components and slots, set `highlight_components` and `highlight_slots` to `True` in [extensions defaults](../../../reference/settings/#django_components.app_settings.ComponentsSettings.extensions_defaults) in your `settings.py` file:
+To enable component and slot highlighting for all components and slots, set `highlight_components` and `highlight_slots` to `True` in [extensions defaults](../../reference/settings.md#django_components.app_settings.ComponentsSettings.extensions_defaults) in your `settings.py` file:
 
 ```python
 from django_components import ComponentsSettings

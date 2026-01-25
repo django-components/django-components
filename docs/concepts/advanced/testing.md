@@ -1,17 +1,17 @@
 _New in version 0.131_
 
-The [`@djc_test`](../../../reference/testing_api#djc_test) decorator is a powerful tool for testing components created with `django-components`. It ensures that each test is properly isolated, preventing components registered in one test from affecting others.
+The [`@djc_test`](../../reference/testing_api.md#django_components.testing.djc_test) decorator is a powerful tool for testing components created with `django-components`. It ensures that each test is properly isolated, preventing components registered in one test from affecting others.
 
 ## Usage
 
-The [`@djc_test`](../../../reference/testing_api#djc_test) decorator can be applied to functions, methods, or classes.
+The [`@djc_test`](../../reference/testing_api.md#django_components.testing.djc_test) decorator can be applied to functions, methods, or classes.
 
 When applied to a class, it decorates all methods starting with `test_`, and all nested classes starting with `Test`,
 recursively.
 
 ### Applying to a Function
 
-To apply [`djc_test`](../../../reference/testing_api#djc_test) to a function,
+To apply [`@djc_test`](../../reference/testing_api.md#django_components.testing.djc_test) to a function,
 simply decorate the function as shown below:
 
 ```python
@@ -63,7 +63,7 @@ class TestMyComponent:
 
 ### Arguments
 
-See the API reference for [`@djc_test`](../../../reference/testing_api#djc_test) for more details.
+See the API reference for [`@djc_test`](../../reference/testing_api.md#django_components.testing.djc_test) for more details.
 
 ### Setting Up Django
 
@@ -89,7 +89,7 @@ def test_my_component():
 
 ## Example: Parametrizing Context Behavior
 
-You can parametrize the [context behavior](../../../reference/settings#django_components.app_settings.ComponentsSettings.context_behavior) using [`djc_test`](../../../reference/testing_api#djc_test):
+You can parametrize the [context behavior](../../reference/settings.md#django_components.app_settings.ComponentsSettings.context_behavior) using [`djc_test`](../../reference/testing_api.md#django_components.testing.djc_test):
 
 ```python
 from django_components.testing import djc_test

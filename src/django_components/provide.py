@@ -11,13 +11,13 @@ from django_components.util.misc import gen_id
 
 class ProvideNode(BaseNode):
     """
-    The [`{% provide %}`](../template_tags#provide) tag is part of the "provider" part of
-    the [provide / inject feature](../../concepts/advanced/provide_inject).
+    The [`{% provide %}`](#provide) tag is part of the "provider" part of
+    the [provide / inject feature](../concepts/advanced/provide_inject.md).
 
     Pass kwargs to this tag to define the provider's data.
 
     Any components defined within the `{% provide %}..{% endprovide %}` tags will be able to access this data
-    with [`Component.inject()`](../api#django_components.Component.inject).
+    with [`Component.inject()`](api.md#django_components.Component.inject).
 
     This is similar to React's [`ContextProvider`](https://react.dev/learn/passing-data-deeply-with-context),
     or Vue's [`provide()`](https://vuejs.org/guide/components/provide-inject).
@@ -25,7 +25,7 @@ class ProvideNode(BaseNode):
     **Args:**
 
     - `name` (str, required): Provider name. This is the name you will then use in
-        [`Component.inject()`](../api#django_components.Component.inject).
+        [`Component.inject()`](api.md#django_components.Component.inject).
     - `**kwargs`: Any extra kwargs will be passed as the provided data.
 
     **Example:**
@@ -68,8 +68,8 @@ class ProvideNode(BaseNode):
             }
     ```
 
-    Notice that the keys defined on the [`{% provide %}`](../template_tags#provide) tag are then accessed as attributes
-    when accessing them with [`Component.inject()`](../api#django_components.Component.inject).
+    Notice that the keys defined on the [`{% provide %}`](#provide) tag are then accessed as attributes
+    when accessing them with [`Component.inject()`](api.md#django_components.Component.inject).
 
     ✅ Do this
     ```python
