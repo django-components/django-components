@@ -98,7 +98,7 @@ class ComponentDebugHighlight(ExtensionComponentConfig):
         },
     )
     ```
-    """  # noqa: E501
+    """
 
     # TODO_v1 - Remove `DEBUG_HIGHLIGHT_COMPONENTS` and `DEBUG_HIGHLIGHT_SLOTS`
     #           Instead set this as plain boolean fields.
