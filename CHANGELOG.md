@@ -2,15 +2,39 @@
 
 ## v0.147.0
 
-#### Feat
-
-- Added support for Django 6.0.
+Added support for Django 6.0.
 
 #### Breaking changes 🚨📢
 
 - Dropped support for Python 3.8 and 3.9.
 
 - Dropped support for Django 5.1.
+
+#### Feat
+
+- **New `on_extension_created` hook for extensions.**
+
+    New hook is called when the extension class is instantiated during Django startup.
+    
+    Use this hook to perform initialization logic that needs to run at server startup.
+
+    **Example:**
+
+    ```python
+    from django_components.extension import ComponentExtension, OnExtensionCreatedContext
+
+    class MyExtension(ComponentExtension):
+        name = "my_extension"
+
+        def on_extension_created(self, ctx: OnExtensionCreatedContext) -> None:
+            # Perform initialization logic
+            import_my_modules()
+            setup_global_state()
+    ```
+
+#### Fix
+
+- Add missing export of `OnCssLoadedContext` and `OnJsLoadedContext`
 
 ## v0.146.0
 

@@ -3,7 +3,6 @@ import re
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import Enum
-from importlib import import_module
 from os import PathLike
 from pathlib import Path
 from typing import (
@@ -770,9 +769,7 @@ class InternalSettings:
                 defaults.dynamic_component_name,
             ),
             libraries=default(components_settings.libraries, defaults.libraries),
-            # NOTE: Internally we store the extensions as a list of instances, but the user
-            #       can pass in either a list of classes or a list of import strings.
-            extensions=self._prepare_extensions(components_settings),  # type: ignore[arg-type]
+            extensions=self._prepare_extensions(components_settings),
             extensions_defaults=default(components_settings.extensions_defaults, defaults.extensions_defaults),
             multiline_tags=default(components_settings.multiline_tags, defaults.multiline_tags),
             reload_on_file_change=self._prepare_reload_on_file_change(components_settings),
@@ -788,46 +785,33 @@ class InternalSettings:
             self._load_settings()
         return cast("ComponentsSettings", self._settings)
 
-    def _prepare_extensions(self, new_settings: ComponentsSettings) -> list["ComponentExtension"]:
+    def _prepare_extensions(self, new_settings: ComponentsSettings) -> "Sequence[type[ComponentExtension]]":
+        # User-provided extensions
         extensions: Sequence[type[ComponentExtension] | str] = default(
             new_settings.extensions,
             cast("list[str]", defaults.extensions),
         )
 
-        # Prepend built-in extensions
+        # Prepend built-in extensions (these are always loaded)
+        from django_components.extensions.autodiscovery import AutodiscoveryExtension
         from django_components.extensions.cache import CacheExtension
         from django_components.extensions.debug_highlight import DebugHighlightExtension
         from django_components.extensions.defaults import DefaultsExtension
         from django_components.extensions.dependencies import DependenciesExtension
         from django_components.extensions.view import ViewExtension
 
-        extensions = cast(
-            "list[type[ComponentExtension]]",
-            [
-                CacheExtension,
-                DefaultsExtension,
-                DependenciesExtension,
-                ViewExtension,
-                DebugHighlightExtension,
-            ],
-        ) + list(extensions)
+        built_in_extensions = [
+            AutodiscoveryExtension,
+            CacheExtension,
+            DefaultsExtension,
+            DependenciesExtension,
+            ViewExtension,
+            DebugHighlightExtension,
+        ]
 
-        # Extensions may be passed in either as classes or import strings.
-        extension_instances: list[ComponentExtension] = []
-        for extension in extensions:
-            if isinstance(extension, str):
-                import_path, class_name = extension.rsplit(".", 1)
-                extension_module = import_module(import_path)
-                extension = cast("type[ComponentExtension]", getattr(extension_module, class_name))  # noqa: PLW2901
-
-            if isinstance(extension, type):
-                extension_instance = extension()
-            else:
-                extension_instances.append(extension)
-
-            extension_instances.append(extension_instance)
-
-        return extension_instances
+        # Combine built-in extensions with user extensions
+        all_extensions = [*built_in_extensions, *extensions]
+        return all_extensions  # type: ignore[return-value]
 
     def _prepare_reload_on_file_change(self, new_settings: ComponentsSettings) -> bool:
         val = new_settings.reload_on_file_change
@@ -891,7 +875,7 @@ class InternalSettings:
         return self._get_settings().libraries  # type: ignore[return-value]
 
     @property
-    def EXTENSIONS(self) -> list["ComponentExtension"]:
+    def EXTENSIONS(self) -> Sequence[type["ComponentExtension"] | str]:
         return self._get_settings().extensions  # type: ignore[return-value]
 
     @property

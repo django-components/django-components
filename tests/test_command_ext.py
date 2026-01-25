@@ -96,6 +96,7 @@ class TestExtensionsListCommand:
         assert output.strip() == (
             "name           \n"
             "===============\n"
+            "autodiscovery  \n"
             "cache          \n"
             "defaults       \n"
             "dependencies   \n"
@@ -115,6 +116,7 @@ class TestExtensionsListCommand:
         assert output.strip() == (
             "name           \n"
             "===============\n"
+            "autodiscovery  \n"
             "cache          \n"
             "defaults       \n"
             "dependencies   \n"
@@ -136,6 +138,7 @@ class TestExtensionsListCommand:
         assert output.strip() == (
             "name           \n"
             "===============\n"
+            "autodiscovery  \n"
             "cache          \n"
             "defaults       \n"
             "dependencies   \n"
@@ -157,6 +160,7 @@ class TestExtensionsListCommand:
         assert output.strip() == (
             "name           \n"
             "===============\n"
+            "autodiscovery  \n"
             "cache          \n"
             "defaults       \n"
             "dependencies   \n"
@@ -176,6 +180,7 @@ class TestExtensionsListCommand:
         output = out.getvalue()
 
         assert output.strip() == (
+            "autodiscovery  \n"
             "cache          \n"
             "defaults       \n"
             "dependencies   \n"

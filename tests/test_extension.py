@@ -8,11 +8,10 @@ from django.template import Context, Origin, Template
 from django.test import Client
 from django.urls import get_resolver, get_urlconf
 
-from django_components import Component, Slot, SlotNode, register, registry
-from django_components.app_settings import app_settings
-from django_components.component_registry import ComponentRegistry
-from django_components.extension import (
+from django_components import (
+    Component,
     ComponentExtension,
+    ComponentRegistry,
     ExtensionComponentConfig,
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
@@ -22,14 +21,23 @@ from django_components.extension import (
     OnComponentRenderedContext,
     OnComponentUnregisteredContext,
     OnCssLoadedContext,
+    OnExtensionCreatedContext,
     OnJsLoadedContext,
     OnRegistryCreatedContext,
     OnRegistryDeletedContext,
     OnSlotRenderedContext,
     OnTemplateCompiledContext,
     OnTemplateLoadedContext,
+    Slot,
+    SlotNode,
     URLRoute,
+    register,
+    registry,
 )
+from django_components.extension import (
+    extensions as extension_manager,
+)
+from django_components.extensions.autodiscovery import AutodiscoveryExtension
 from django_components.extensions.cache import CacheExtension
 from django_components.extensions.debug_highlight import DebugHighlightExtension
 from django_components.extensions.defaults import DefaultsExtension
@@ -80,6 +88,7 @@ class DummyExtension(ComponentExtension):
 
     def __init__(self) -> None:
         self.calls: dict[str, list[Any]] = {
+            "on_extension_created": [],
             "on_component_class_created": [],
             "on_component_class_deleted": [],
             "on_registry_created": [],
@@ -100,6 +109,9 @@ class DummyExtension(ComponentExtension):
         URLRoute(path="dummy-view/", handler=dummy_view, name="dummy"),
         URLRoute(path="dummy-view-2/<int:id>/<str:name>/", handler=dummy_view_2, name="dummy-2"),
     ]
+
+    def on_extension_created(self, ctx: OnExtensionCreatedContext) -> None:
+        self.calls["on_extension_created"].append(ctx)
 
     def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
         # NOTE: Store only component name to avoid strong references
@@ -220,13 +232,19 @@ class OverrideAssetExtension(ComponentExtension):
 class TestExtensions:
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_extensions_setting(self):
-        assert len(app_settings.EXTENSIONS) == 6
-        assert isinstance(app_settings.EXTENSIONS[0], CacheExtension)
-        assert isinstance(app_settings.EXTENSIONS[1], DefaultsExtension)
-        assert isinstance(app_settings.EXTENSIONS[2], DependenciesExtension)
-        assert isinstance(app_settings.EXTENSIONS[3], ViewExtension)
-        assert isinstance(app_settings.EXTENSIONS[4], DebugHighlightExtension)
-        assert isinstance(app_settings.EXTENSIONS[5], DummyExtension)
+        assert len(extension_manager.extensions) == 7
+        assert isinstance(extension_manager.extensions[0], AutodiscoveryExtension)
+        assert isinstance(extension_manager.extensions[1], CacheExtension)
+        assert isinstance(extension_manager.extensions[2], DefaultsExtension)
+        assert isinstance(extension_manager.extensions[3], DependenciesExtension)
+        assert isinstance(extension_manager.extensions[4], ViewExtension)
+        assert isinstance(extension_manager.extensions[5], DebugHighlightExtension)
+        assert isinstance(extension_manager.extensions[6], DummyExtension)
+
+        # Verify on_extension_created hook was called
+        dummy_ext = cast("DummyExtension", extension_manager.extensions[6])
+        assert len(dummy_ext.calls["on_extension_created"]) == 1
+        assert dummy_ext.calls["on_extension_created"][0].extension == dummy_ext
 
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_access_component_from_extension(self):
@@ -299,7 +317,7 @@ class TestExtensions:
 class TestExtensionHooks:
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_component_class_lifecycle_hooks(self):
-        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", extension_manager.extensions[6])
 
         assert len(extension.calls["on_component_class_created"]) == 0
         assert len(extension.calls["on_component_class_deleted"]) == 0
@@ -331,7 +349,7 @@ class TestExtensionHooks:
 
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_registry_lifecycle_hooks(self):
-        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", extension_manager.extensions[6])
 
         assert len(extension.calls["on_registry_created"]) == 0
         assert len(extension.calls["on_registry_deleted"]) == 0
@@ -368,7 +386,7 @@ class TestExtensionHooks:
                 return {"name": kwargs.get("name", "World")}
 
         registry.register("test_comp", TestComponent)
-        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", extension_manager.extensions[6])
 
         # Verify on_component_registered was called
         assert len(extension.calls["on_component_registered"]) == 1
@@ -406,7 +424,7 @@ class TestExtensionHooks:
         test_slots = {"content": "Some content"}
         TestComponent.render(context=test_context, args=("arg1", "arg2"), kwargs={"name": "Test"}, slots=test_slots)
 
-        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", extension_manager.extensions[6])
 
         # Verify on_component_input was called with correct args
         assert len(extension.calls["on_component_input"]) == 1
@@ -455,7 +473,7 @@ class TestExtensionHooks:
                 slots={"content": "Some content"},
             )
 
-        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", extension_manager.extensions[6])
 
         # Verify on_component_rendered was called with correct args
         assert len(extension.calls["on_component_rendered"]) == 1
@@ -484,7 +502,7 @@ class TestExtensionHooks:
 
         assert rendered == "Hello Some content!"
 
-        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", extension_manager.extensions[6])
 
         # Verify on_slot_rendered was called with correct args
         assert len(extension.calls["on_slot_rendered"]) == 1
@@ -552,7 +570,7 @@ class TestExtensionHooks:
         # Render the component to trigger all hooks
         TestComponent.render(args=(), kwargs={"name": "Test"})
 
-        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", extension_manager.extensions[6])
 
         # on_template_loaded
         assert len(extension.calls["on_template_loaded"]) == 1
@@ -595,7 +613,7 @@ class TestExtensionHooks:
         # Render the component to trigger all hooks
         TestComponent.render(args=(), kwargs={"name": "Test"})
 
-        extension = cast("DummyExtension", app_settings.EXTENSIONS[5])
+        extension = cast("DummyExtension", extension_manager.extensions[6])
 
         # on_template_loaded
         # NOTE: The template file gets picked up by 'django.template.loaders.filesystem.Loader',
