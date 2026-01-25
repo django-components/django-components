@@ -23,11 +23,11 @@ If the fragment component has any JS or CSS, django-components will:
 
 ## Document and fragment strategies
 
-Components support different ["strategies"](../../advanced/rendering_js_css#dependencies-strategies)
+Components support different ["strategies"](rendering_js_css.md#dependencies-strategies)
 for rendering JS and CSS.
 
-Two of them are used to enable HTML fragments - ["document"](../../advanced/rendering_js_css#document)
-and ["fragment"](../../advanced/rendering_js_css#fragment).
+Two of them are used to enable HTML fragments - ["document"](rendering_js_css.md#document)
+and ["fragment"](rendering_js_css.md#fragment).
 
 What's the difference?
 
@@ -43,8 +43,8 @@ of the initial page load. This means that:
 A component is rendered as a "document" when:
 
 - It is embedded inside a template as [`{% component %}`](../../reference/template_tags.md#component)
-- It is rendered with [`Component.render()`](../../../reference/api#django_components.Component.render)
-or [`Component.render_to_response()`](../../../reference/api#django_components.Component.render_to_response)
+- It is rendered with [`Component.render()`](../../reference/api.md#django_components.Component.render)
+or [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
   with the `deps_strategy` kwarg set to `"document"` (default)
 
 Example:
@@ -76,8 +76,8 @@ The component renders HTML that will be inserted into the page as a fragment, at
 
 A component is rendered as "fragment" when:
 
-- It is rendered with [`Component.render()`](../../../reference/api#django_components.Component.render)
-  or [`Component.render_to_response()`](../../../reference/api#django_components.Component.render_to_response)
+- It is rendered with [`Component.render()`](../../reference/api.md#django_components.Component.render)
+  or [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
   with the `deps_strategy` kwarg set to `"fragment"`
 
 Example:

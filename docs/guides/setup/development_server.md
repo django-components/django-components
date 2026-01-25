@@ -25,7 +25,7 @@ From relevant [StackOverflow thread](https://stackoverflow.com/a/76722393/978863
 > or in a nested sub directory of a templates directory. This is by design.
 
 To make the dev server reload on all component files, set
-[`reload_on_file_change`](../../../reference/settings#django_components.app_settings.ComponentsSettings.reload_on_file_change)
+[`reload_on_file_change`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.reload_on_file_change)
 to `True`.
 This configures Django to watch for component files too.
 

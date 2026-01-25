@@ -3,13 +3,13 @@ Components can be defined in a single file, inlining the HTML, JS and CSS within
 ## Writing single file components
 
 To do this, you can use the
-[`template`](../../../reference/api#django_components.Component.template),
-[`js`](../../../reference/api#django_components.Component.js),
-and [`css`](../../../reference/api#django_components.Component.css)
+[`template`](../../reference/api.md#django_components.Component.template),
+[`js`](../../reference/api.md#django_components.Component.js),
+and [`css`](../../reference/api.md#django_components.Component.css)
 class attributes instead of the
-[`template_file`](../../../reference/api#django_components.Component.template_file),
-[`js_file`](../../../reference/api#django_components.Component.js_file),
-and [`css_file`](../../../reference/api#django_components.Component.css_file).
+[`template_file`](../../reference/api.md#django_components.Component.template_file),
+[`js_file`](../../reference/api.md#django_components.Component.js_file),
+and [`css_file`](../../reference/api.md#django_components.Component.css_file).
 
 For example, here's the calendar component from
 the [Getting started](../../getting_started/your_first_component.md) tutorial:
@@ -86,9 +86,9 @@ If you "inline" the HTML, JS and CSS code into the Python class, you should set 
 syntax highlighting to let your code editor know that the inlined code is HTML, JS and CSS.
 
 In the examples above, we've annotated the
-[`template`](../../../reference/api#django_components.Component.template),
-[`js`](../../../reference/api#django_components.Component.js),
-and [`css`](../../../reference/api#django_components.Component.css)
+[`template`](../../reference/api.md#django_components.Component.template),
+[`js`](../../reference/api.md#django_components.Component.js),
+and [`css`](../../reference/api.md#django_components.Component.css)
 attributes with
 the `types.django_html`, `types.js` and `types.css` types. These are used for syntax highlighting in VSCode.
 
@@ -104,9 +104,9 @@ the `types.django_html`, `types.js` and `types.css` types. These are used for sy
 1. First install [Python Inline Source Syntax Highlighting](https://marketplace.visualstudio.com/items?itemName=samwillis.python-inline-source) extension, it will give you syntax highlighting for the template, CSS, and JS.
 
 2. Next, in your component, set typings of
-[`Component.template`](../../../reference/api#django_components.Component.template),
-[`Component.js`](../../../reference/api#django_components.Component.js),
-[`Component.css`](../../../reference/api#django_components.Component.css)
+[`Component.template`](../../reference/api.md#django_components.Component.template),
+[`Component.js`](../../reference/api.md#django_components.Component.js),
+[`Component.css`](../../reference/api.md#django_components.Component.css)
 to `types.django_html`, `types.css`, and `types.js` respectively. The extension will recognize these and will activate syntax highlighting.
 
 ```djc_py title="[project root]/components/calendar.py"

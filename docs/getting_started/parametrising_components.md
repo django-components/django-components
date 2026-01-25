@@ -9,8 +9,8 @@ What we want is to be able to use the Calendar component within the template lik
 
 ### 1. Understading component inputs
 
-In section [Create your first component](../your_first_component), we defined
-the [`get_template_data()`](../../reference/api#django_components.Component.get_template_data) method
+In section [Create your first component](your_first_component.md), we defined
+the [`get_template_data()`](../reference/api.md#django_components.Component.get_template_data) method
 that defines what variables will be available within the template:
 
 ```python title="[project root]/components/calendar/calendar.py"
@@ -26,7 +26,7 @@ class Calendar(Component):
         }
 ```
 
-What we didn't say is that [`get_template_data()`](../../reference/api#django_components.Component.get_template_data)
+What we didn't say is that [`get_template_data()`](../reference/api.md#django_components.Component.get_template_data)
 actually receives the args and kwargs that were passed to a component.
 
 So if we call a component with a `date` and `extra_class` keywords:
@@ -62,7 +62,7 @@ Calendar.get_template_data(
 ### 2. Define inputs
 
 Let's put this to test. We want to pass `date` and `extra_class` kwargs to the component.
-And so, we can write the [`get_template_data()`](../../reference/api#django_components.Component.get_template_data)
+And so, we can write the [`get_template_data()`](../reference/api.md#django_components.Component.get_template_data)
 method such that it expects those parameters:
 
 ```python title="[project root]/components/calendar/calendar.py"
@@ -91,7 +91,7 @@ So both following calls are valid:
 
 !!! warning
 
-    [`get_template_data()`](../../reference/api#django_components.Component.get_template_data)
+    [`get_template_data()`](../reference/api.md#django_components.Component.get_template_data)
     differentiates between positional and keyword arguments,
     so you have to make sure to pass the arguments correctly.
 
@@ -107,7 +107,7 @@ So both following calls are valid:
 
 ### 3. Process inputs
 
-The [`get_template_data()`](../../reference/api#django_components.Component.get_template_data)
+The [`get_template_data()`](../reference/api.md#django_components.Component.get_template_data)
 method is powerful, because it allows us to decouple
 component inputs from the template variables. In other words, we can pre-process
 the component inputs, and massage them into a shape that's most appropriate for
@@ -160,13 +160,13 @@ cities_by_pop = [
 ]
 ```
 
-Without the [`get_template_data()`](../../reference/api#django_components.Component.get_template_data) method,
+Without the [`get_template_data()`](../reference/api.md#django_components.Component.get_template_data) method,
 we'd have to either:
 
 1. Pre-process the data in Python before passing it to the components.
 2. Define a Django filter or template tag to take the data and process it on the spot.
 
-Instead, with [`get_template_data()`](../../reference/api#django_components.Component.get_template_data),
+Instead, with [`get_template_data()`](../reference/api.md#django_components.Component.get_template_data),
 we can keep this transformation private to this component,
 and keep the rest of the codebase clean.
 
@@ -184,7 +184,7 @@ class PopulationTable(Component):
         }
 ```
 
-Similarly we can make use of [`get_template_data()`](../../reference/api#django_components.Component.get_template_data)
+Similarly we can make use of [`get_template_data()`](../reference/api.md#django_components.Component.get_template_data)
 to pre-process the date that was given to the component:
 
 ```python title="[project root]/components/calendar/calendar.py"
@@ -223,18 +223,18 @@ the parametrized version of the component:
 ### 5. Add defaults
 
 In our example, we've set the `extra_class` to default to `"text-blue"` by setting it in the
-[`get_template_data()`](../../reference/api#django_components.Component.get_template_data)
+[`get_template_data()`](../reference/api.md#django_components.Component.get_template_data)
 method.
 
 However, you may want to use the same default value in multiple methods, like
-[`get_js_data()`](../../reference/api#django_components.Component.get_js_data)
-or [`get_css_data()`](../../reference/api#django_components.Component.get_css_data).
+[`get_js_data()`](../reference/api.md#django_components.Component.get_js_data)
+or [`get_css_data()`](../reference/api.md#django_components.Component.get_css_data).
 
 To make things easier, Components can specify their defaults. Defaults are used when
 no value is provided, or when the value is set to `None` for a particular input.
 
-To define defaults for a component, you create a nested [`Defaults`](../../reference/api#django_components.Component.Defaults) class within your
-[`Component`](../../reference/api#django_components.Component) class.
+To define defaults for a component, you create a nested [`Defaults`](../reference/api.md#django_components.Component.Defaults) class within your
+[`Component`](../reference/api.md#django_components.Component) class.
 Each attribute in the `Defaults` class represents a default value for a corresponding input.
 
 ```py
@@ -267,9 +267,9 @@ As a bonus, we will also get runtime validation of these inputs.
 
 For defining component inputs, there's 3 options:
 
-- [`Args`](../../reference/api#django_components.Component.Args) - For defining positional args passed to the component
-- [`Kwargs`](../../reference/api#django_components.Component.Kwargs) - For keyword args
-- [`Slots`](../../reference/api#django_components.Component.Slots) - For slots
+- [`Args`](../reference/api.md#django_components.Component.Args) - For defining positional args passed to the component
+- [`Kwargs`](../reference/api.md#django_components.Component.Kwargs) - For keyword args
+- [`Slots`](../reference/api.md#django_components.Component.Slots) - For slots
 
 Our calendar component is using only kwargs, so we can ignore `Args` and `Slots`.
 The new `Kwargs` class defines fields that this component accepts:
@@ -310,11 +310,11 @@ and [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
 `{% component %}` tag offers powerful features for passing inputs to components, such as:
 
-- [Python expressions](../../concepts/fundamentals/template_tag_syntax#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
-- [Literal lists and dictionaries](../../concepts/fundamentals/template_tag_syntax#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
-- [Spread operator](../../concepts/fundamentals/template_tag_syntax#spread-operator) `...` to dynamically pass args or kwargs into the template tag
-- [Nested templates](../../concepts/fundamentals/template_tag_syntax#nested-templates) like `"{{ first_name }} {{ last_name }}"`
-- [Flat dictionaries](../../concepts/fundamentals/template_tag_syntax#flat-dictionaries) `dict:key=val`
+- [Python expressions](../concepts/fundamentals/template_tag_syntax.md#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
+- [Literal lists and dictionaries](../concepts/fundamentals/template_tag_syntax.md#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
+- [Spread operator](../concepts/fundamentals/template_tag_syntax.md#spread-operator) `...` to dynamically pass args or kwargs into the template tag
+- [Nested templates](../concepts/fundamentals/template_tag_syntax.md#nested-templates) like `"{{ first_name }} {{ last_name }}"`
+- [Flat dictionaries](../concepts/fundamentals/template_tag_syntax.md#flat-dictionaries) `dict:key=val`
 
 Read more about all these features in [Template tag syntax](../concepts/fundamentals/template_tag_syntax.md).
 

@@ -2,8 +2,8 @@ _New in version 0.96_
 
 Intercept the rendering lifecycle with Component hooks.
 
-Unlike the [extension hooks](../../../reference/extension_hooks/), these are defined directly
-on the [`Component`](../../../reference/api#django_components.Component) class.
+Unlike the [extension hooks](../../reference/extension_hooks.md), these are defined directly
+on the [`Component`](../../reference/api.md#django_components.Component) class.
 
 ## Available hooks
 
@@ -17,7 +17,7 @@ def on_render_before(
 ) -> None:
 ```
 
-[`Component.on_render_before`](../../../reference/api#django_components.Component.on_render_before) runs just before the component's template is rendered.
+[`Component.on_render_before`](../../reference/api.md#django_components.Component.on_render_before) runs just before the component's template is rendered.
 
 It is called for every component, including nested ones, as part of
 the component render lifecycle.
@@ -47,7 +47,7 @@ class MyTable(Component):
 !!! warning
 
     If you want to pass data to the template, prefer using
-    [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
+    [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
     instead of this hook.
 
 !!! warning
@@ -66,7 +66,7 @@ def on_render(
 ) -> str | SafeString | OnRenderGenerator | None:
 ```
 
-[`Component.on_render`](../../../reference/api#django_components.Component.on_render) does the actual rendering.
+[`Component.on_render`](../../reference/api.md#django_components.Component.on_render) does the actual rendering.
 
 You can override this method to:
 
@@ -115,7 +115,7 @@ class MyTable(Component):
         return get_template("my_other_table.html").render(context)
 ```
 
-You can also use [`on_render()`](../../../reference/api#django_components.Component.on_render) as a router,
+You can also use [`on_render()`](../../reference/api.md#django_components.Component.on_render) as a router,
 rendering other components based on the parent component's arguments:
 
 ```py
@@ -138,7 +138,7 @@ class MyTable(Component):
 
 #### Post-processing rendered template
 
-When you render the original template in [`on_render()`](../../../reference/api#django_components.Component.on_render) as:
+When you render the original template in [`on_render()`](../../reference/api.md#django_components.Component.on_render) as:
 
 ```py
 class MyTable(Component):
@@ -242,7 +242,7 @@ At this point you can do 3 things:
 
 #### Multiple yields
 
-You can yield multiple times within the same [`on_render()`](../../../reference/api#django_components.Component.on_render) method. This is useful for complex rendering scenarios:
+You can yield multiple times within the same [`on_render()`](../../reference/api.md#django_components.Component.on_render) method. This is useful for complex rendering scenarios:
 
 ```py
 class MyTable(Component):
@@ -269,7 +269,7 @@ Each yield operation is independent and returns its own `(html, error)` tuple, a
 
 #### Example: ErrorBoundary
 
-[`on_render()`](../../../reference/api#django_components.Component.on_render) can be used to
+[`on_render()`](../../reference/api.md#django_components.Component.on_render) can be used to
 implement React's [ErrorBoundary](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary).
 
 That is, a component that catches errors in nested components and displays a fallback UI instead:
@@ -285,7 +285,7 @@ That is, a component that catches errors in nested components and displays a fal
 {% endcomponent %}
 ```
 
-To implement this, we render the fallback slot in [`on_render()`](../../../reference/api#django_components.Component.on_render)
+To implement this, we render the fallback slot in [`on_render()`](../../reference/api.md#django_components.Component.on_render)
 and return it if an error occured:
 
 ```djc_py
@@ -341,7 +341,7 @@ def on_render_after(
 ) -> str | SafeString | None:
 ```
 
-[`on_render_after()`](../../../reference/api#django_components.Component.on_render_after) runs when the component was fully rendered,
+[`on_render_after()`](../../reference/api.md#django_components.Component.on_render_after) runs when the component was fully rendered,
 including all its children.
 
 It receives the same arguments as [`on_render_before()`](#on_render_before),
@@ -350,7 +350,7 @@ plus the outcome of the rendering:
 - `result`: The rendered output of the component. `None` if the rendering failed.
 - `error`: The error that occurred during the rendering, or `None` if the rendering succeeded.
 
-[`on_render_after()`](../../../reference/api#django_components.Component.on_render_after) behaves the same way
+[`on_render_after()`](../../reference/api.md#django_components.Component.on_render_after) behaves the same way
 as the second part of [`on_render()`](#on_render) (after the `yield`).
 
 ```py
@@ -417,7 +417,7 @@ you can return a new HTML, raise a new exception, or return nothing:
 
 ## Example: Tabs
 
-You can use hooks together with [provide / inject](#how-to-use-provide--inject) to create components
+You can use hooks together with [provide / inject](provide_inject.md) to create components
 that accept a list of items via a slot.
 
 In the example below, each `tab_item` component will be rendered on a separate tab page, but they are all defined in the default slot of the `tabs` component.

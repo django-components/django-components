@@ -620,15 +620,15 @@ def register(
     type[TComponent],
 ]:
     """
-    Class decorator for registering a [component](./#django_components.Component)
-    to a [component registry](./#django_components.ComponentRegistry).
+    Class decorator for registering a [component](api.md#django_components.Component)
+    to a [component registry](api.md#django_components.ComponentRegistry).
 
     See [Registering components](../concepts/advanced/component_registry.md).
 
     Args:
         name (str): Registered name. This is the name by which the component will be accessed\
-            from within a template when using the [`{% component %}`](./template_tags.md#component) tag. Required.
-        registry (ComponentRegistry, optional): Specify the [registry](./#django_components.ComponentRegistry)\
+            from within a template when using the [`{% component %}`](template_tags.md#component) tag. Required.
+        registry (ComponentRegistry, optional): Specify the [registry](api.md#django_components.ComponentRegistry)\
             to which to register this component. If omitted, component is registered to the default registry.
 
     Raises:
@@ -644,7 +644,7 @@ def register(
         ...
     ```
 
-    Specifing [`ComponentRegistry`](./#django_components.ComponentRegistry) the component
+    Specifing [`ComponentRegistry`](api.md#django_components.ComponentRegistry) the component
     should be registered to by setting the `registry` kwarg:
 
     ```python

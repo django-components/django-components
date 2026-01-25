@@ -4,7 +4,7 @@
 
 Overview of all the extension hooks available in Django Components.
 
-Read more on [Extensions](../../concepts/advanced/extensions).
+Read more on [Extensions](../concepts/advanced/extensions.md).
 
 
 ## Hooks
@@ -24,7 +24,7 @@ Read more on [Extensions](../../concepts/advanced/extensions).
 
 name | type | description
 --|--|--
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The created Component class
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The created Component class
 
 ::: django_components.extension.ComponentExtension.on_component_class_deleted
     options:
@@ -41,7 +41,7 @@ name | type | description
 
 name | type | description
 --|--|--
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The to-be-deleted Component class
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The to-be-deleted Component class
 
 ::: django_components.extension.ComponentExtension.on_component_data
     options:
@@ -58,8 +58,8 @@ name | type | description
 
 name | type | description
 --|--|--
-`component` | [`Component`](../api#django_components.Component) | The Component instance that is being rendered
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The Component class
+`component` | [`Component`](api.md#django_components.Component) | The Component instance that is being rendered
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The Component class
 `component_id` | `str` | The unique identifier for this component instance
 `context_data` | `dict` | Deprecated. Use `template_data` instead. Will be removed in v1.0.
 `css_data` | `dict` | Dictionary of CSS data from `Component.get_css_data()`
@@ -82,12 +82,12 @@ name | type | description
 name | type | description
 --|--|--
 `args` | `list` | List of positional arguments passed to the component
-`component` | [`Component`](../api#django_components.Component) | The Component instance that received the input and is being rendered
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The Component class
+`component` | [`Component`](api.md#django_components.Component) | The Component instance that received the input and is being rendered
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The Component class
 `component_id` | `str` | The unique identifier for this component instance
 `context` | [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) | The Django template Context object
 `kwargs` | `dict` | Dictionary of keyword arguments passed to the component
-`slots` | `dict[str, Slot]` | Dictionary of slot definitions
+`slots` | `dict[str, 'Slot']` | Dictionary of slot definitions
 
 ::: django_components.extension.ComponentExtension.on_component_registered
     options:
@@ -104,9 +104,9 @@ name | type | description
 
 name | type | description
 --|--|--
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The registered Component class
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The registered Component class
 `name` | `str` | The name the component was registered under
-`registry` | [`ComponentRegistry`](../api#django_components.ComponentRegistry) | The registry the component was registered to
+`registry` | [`ComponentRegistry`](api.md#django_components.ComponentRegistry) | The registry the component was registered to
 
 ::: django_components.extension.ComponentExtension.on_component_rendered
     options:
@@ -123,8 +123,8 @@ name | type | description
 
 name | type | description
 --|--|--
-`component` | [`Component`](../api#django_components.Component) | The Component instance that is being rendered
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The Component class
+`component` | [`Component`](api.md#django_components.Component) | The Component instance that is being rendered
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The Component class
 `component_id` | `str` | The unique identifier for this component instance
 `error` | `Exception | None` | The error that occurred during rendering, or `None` if rendering was successful
 `result` | `str | None` | The rendered component, or `None` if rendering failed
@@ -144,9 +144,9 @@ name | type | description
 
 name | type | description
 --|--|--
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The unregistered Component class
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The unregistered Component class
 `name` | `str` | The name the component was registered under
-`registry` | [`ComponentRegistry`](../api#django_components.ComponentRegistry) | The registry the component was unregistered from
+`registry` | [`ComponentRegistry`](api.md#django_components.ComponentRegistry) | The registry the component was unregistered from
 
 ::: django_components.extension.ComponentExtension.on_css_loaded
     options:
@@ -163,7 +163,7 @@ name | type | description
 
 name | type | description
 --|--|--
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The Component class whose CSS was loaded
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The Component class whose CSS was loaded
 `content` | `str` | The CSS content (string)
 
 ::: django_components.extension.ComponentExtension.on_js_loaded
@@ -181,7 +181,7 @@ name | type | description
 
 name | type | description
 --|--|--
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The Component class whose JS was loaded
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The Component class whose JS was loaded
 `content` | `str` | The JS content (string)
 
 ::: django_components.extension.ComponentExtension.on_registry_created
@@ -199,7 +199,7 @@ name | type | description
 
 name | type | description
 --|--|--
-`registry` | [`ComponentRegistry`](../api#django_components.ComponentRegistry) | The created ComponentRegistry instance
+`registry` | [`ComponentRegistry`](api.md#django_components.ComponentRegistry) | The created ComponentRegistry instance
 
 ::: django_components.extension.ComponentExtension.on_registry_deleted
     options:
@@ -216,7 +216,7 @@ name | type | description
 
 name | type | description
 --|--|--
-`registry` | [`ComponentRegistry`](../api#django_components.ComponentRegistry) | The to-be-deleted ComponentRegistry instance
+`registry` | [`ComponentRegistry`](api.md#django_components.ComponentRegistry) | The to-be-deleted ComponentRegistry instance
 
 ::: django_components.extension.ComponentExtension.on_slot_rendered
     options:
@@ -233,8 +233,8 @@ name | type | description
 
 name | type | description
 --|--|--
-`component` | [`Component`](../api#django_components.Component) | The Component instance that contains the `{% slot %}` tag
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The Component class that contains the `{% slot %}` tag
+`component` | [`Component`](api.md#django_components.Component) | The Component instance that contains the `{% slot %}` tag
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The Component class that contains the `{% slot %}` tag
 `component_id` | `str` | The unique identifier for this component instance
 `result` | `SlotResult` | The rendered result of the slot
 `slot` | `Slot` | The Slot instance that was rendered
@@ -258,7 +258,7 @@ name | type | description
 
 name | type | description
 --|--|--
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The Component class whose template was loaded
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The Component class whose template was loaded
 `template` | `django.template.base.Template` | The compiled template object
 
 ::: django_components.extension.ComponentExtension.on_template_loaded
@@ -276,7 +276,7 @@ name | type | description
 
 name | type | description
 --|--|--
-`component_cls` | [`type[Component]`](../api#django_components.Component) | The Component class whose template was loaded
+`component_cls` | [`type['Component']`](api.md#django_components.Component) | The Component class whose template was loaded
 `content` | `str` | The template string
 `name` | `str | None` | The name of the template
 `origin` | `django.template.base.Origin | None` | The origin of the template

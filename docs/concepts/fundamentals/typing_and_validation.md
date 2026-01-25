@@ -14,7 +14,7 @@
 
     Input validation was NOT part of Django Components between versions 0.136 and 0.139 (inclusive).
 
-The [`Component`](../../../reference/api#django_components.Component) class optionally accepts class attributes
+The [`Component`](../../reference/api.md#django_components.Component) class optionally accepts class attributes
 that allow you to define the types of args, kwargs, slots, as well as the data returned from the data methods.
 
 Use this to add type hints to your components, to validate the inputs at runtime, and to document them.
@@ -43,25 +43,25 @@ class Button(Component):
 
 The class attributes are:
 
-- [`Args`](../../../reference/api#django_components.Component.Args) - Type for positional arguments.
-- [`Kwargs`](../../../reference/api#django_components.Component.Kwargs) - Type for keyword arguments.
-- [`Slots`](../../../reference/api#django_components.Component.Slots) - Type for slots.
-- [`TemplateData`](../../../reference/api#django_components.Component.TemplateData) - Type for data returned from [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data).
-- [`JsData`](../../../reference/api#django_components.Component.JsData) - Type for data returned from [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data).
-- [`CssData`](../../../reference/api#django_components.Component.CssData) - Type for data returned from [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data).
+- [`Args`](../../reference/api.md#django_components.Component.Args) - Type for positional arguments.
+- [`Kwargs`](../../reference/api.md#django_components.Component.Kwargs) - Type for keyword arguments.
+- [`Slots`](../../reference/api.md#django_components.Component.Slots) - Type for slots.
+- [`TemplateData`](../../reference/api.md#django_components.Component.TemplateData) - Type for data returned from [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data).
+- [`JsData`](../../reference/api.md#django_components.Component.JsData) - Type for data returned from [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data).
+- [`CssData`](../../reference/api.md#django_components.Component.CssData) - Type for data returned from [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data).
 
 You can specify as many or as few of these as you want, the rest will default to `None`.
 
 ## Typing inputs
 
-You can use [`Component.Args`](../../../reference/api#django_components.Component.Args),
-[`Component.Kwargs`](../../../reference/api#django_components.Component.Kwargs),
-and [`Component.Slots`](../../../reference/api#django_components.Component.Slots) to type the component inputs.
+You can use [`Component.Args`](../../reference/api.md#django_components.Component.Args),
+[`Component.Kwargs`](../../reference/api.md#django_components.Component.Kwargs),
+and [`Component.Slots`](../../reference/api.md#django_components.Component.Slots) to type the component inputs.
 
 When you set these input classes, the `args`, `kwargs`, and `slots` parameters of the data methods
-([`get_template_data()`](../../../reference/api#django_components.Component.get_template_data),
-[`get_js_data()`](../../../reference/api#django_components.Component.get_js_data),
-[`get_css_data()`](../../../reference/api#django_components.Component.get_css_data))
+([`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data),
+[`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data),
+[`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data))
 will be instances of these classes.
 
 This way, each component can have runtime validation of the inputs:
@@ -72,9 +72,9 @@ This way, each component can have runtime validation of the inputs:
 - When you use [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/),
   instantiating these classes will check for the presence AND type of the attributes.
 
-If you omit the [`Args`](../../../reference/api#django_components.Component.Args),
-[`Kwargs`](../../../reference/api#django_components.Component.Kwargs), or
-[`Slots`](../../../reference/api#django_components.Component.Slots) classes,
+If you omit the [`Args`](../../reference/api.md#django_components.Component.Args),
+[`Kwargs`](../../reference/api.md#django_components.Component.Kwargs), or
+[`Slots`](../../reference/api.md#django_components.Component.Slots) classes,
 or set them to `None`, the inputs will be passed as plain lists or dictionaries,
 and will not be validated.
 
@@ -159,24 +159,24 @@ class Button(Component):
 
 !!! info
 
-    Components can receive slots as strings, functions, or instances of [`Slot`](../../../reference/api#django_components.Slot).
+    Components can receive slots as strings, functions, or instances of [`Slot`](../../reference/api.md#django_components.Slot).
 
-    Internally these are all normalized to instances of [`Slot`](../../../reference/api#django_components.Slot).
+    Internally these are all normalized to instances of [`Slot`](../../reference/api.md#django_components.Slot).
 
     Therefore, the `slots` dictionary available in data methods (like
-    [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data))
-    will always be a dictionary of [`Slot`](../../../reference/api#django_components.Slot) instances.
+    [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data))
+    will always be a dictionary of [`Slot`](../../reference/api.md#django_components.Slot) instances.
 
     To correctly type this dictionary, you should set the fields of `Slots` to
-    [`Slot`](../../../reference/api#django_components.Slot) or [`SlotInput`](../../../reference/api#django_components.SlotInput):
+    [`Slot`](../../reference/api.md#django_components.Slot) or [`SlotInput`](../../reference/api.md#django_components.SlotInput):
 
-    [`SlotInput`](../../../reference/api#django_components.SlotInput) is a union of `Slot`, string, and function types.
+    [`SlotInput`](../../reference/api.md#django_components.SlotInput) is a union of `Slot`, string, and function types.
 
 ## Typing data
 
-You can use [`Component.TemplateData`](../../../reference/api#django_components.Component.TemplateData),
-[`Component.JsData`](../../../reference/api#django_components.Component.JsData),
-and [`Component.CssData`](../../../reference/api#django_components.Component.CssData) to type the data returned from [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data), [`get_js_data()`](../../../reference/api#django_components.Component.get_js_data), and [`get_css_data()`](../../../reference/api#django_components.Component.get_css_data).
+You can use [`Component.TemplateData`](../../reference/api.md#django_components.Component.TemplateData),
+[`Component.JsData`](../../reference/api.md#django_components.Component.JsData),
+and [`Component.CssData`](../../reference/api.md#django_components.Component.CssData) to type the data returned from [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data), [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data), and [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data).
 
 When you set these classes, at render time they will be instantiated with the data returned from these methods.
 
@@ -188,9 +188,9 @@ This way, each component can have runtime validation of the returned data:
 - When you use [Pydantic models](https://docs.pydantic.dev/latest/concepts/models/),
   instantiating these classes will check for the presence AND type of the attributes.
 
-If you omit the [`TemplateData`](../../../reference/api#django_components.Component.TemplateData),
-[`JsData`](../../../reference/api#django_components.Component.JsData), or
-[`CssData`](../../../reference/api#django_components.Component.CssData) classes,
+If you omit the [`TemplateData`](../../reference/api.md#django_components.Component.TemplateData),
+[`JsData`](../../reference/api.md#django_components.Component.JsData), or
+[`CssData`](../../reference/api.md#django_components.Component.CssData) classes,
 or set them to `None`, the validation and instantiation will be skipped.
 
 ```python
@@ -326,7 +326,7 @@ However, you can use any class, as long as they meet the conditions below.
 
 ### `Args` class
 
-The [`Args`](../../../reference/api#django_components.Component.Args) class
+The [`Args`](../../reference/api.md#django_components.Component.Args) class
 represents a list of positional arguments. It must meet two conditions:
 
 1. The constructor for the `Args` class must accept positional arguments.
@@ -356,11 +356,11 @@ class MyClass:
 ### Dictionary classes
 
 On the other hand, other types
-([`Kwargs`](../../../reference/api#django_components.Component.Kwargs),
-[`Slots`](../../../reference/api#django_components.Component.Slots),
-[`TemplateData`](../../../reference/api#django_components.Component.TemplateData),
-[`JsData`](../../../reference/api#django_components.Component.JsData),
-and [`CssData`](../../../reference/api#django_components.Component.CssData))
+([`Kwargs`](../../reference/api.md#django_components.Component.Kwargs),
+[`Slots`](../../reference/api.md#django_components.Component.Slots),
+[`TemplateData`](../../reference/api.md#django_components.Component.TemplateData),
+[`JsData`](../../reference/api.md#django_components.Component.JsData),
+and [`CssData`](../../reference/api.md#django_components.Component.CssData))
 represent dictionaries. They must meet these two conditions:
 
 1. The constructor must accept keyword arguments.
@@ -461,7 +461,7 @@ class Button(Component):
         pass
 ```
 
-This can get repetitive, so we added a [`Empty`](../../../reference/api#django_components.Empty) type to make it easier:
+This can get repetitive, so we added a [`Empty`](../../reference/api.md#django_components.Empty) type to make it easier:
 
 ```py
 from django_components import Component, Empty
@@ -503,7 +503,7 @@ ButtonExtra.render(
 ```
 
 The only difference is when it comes to type hints to the data methods like
-[`get_template_data()`](../../../reference/api#django_components.Component.get_template_data).
+[`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data).
 
 When you define the nested classes like `Args` and `Kwargs` directly on the class, you
 can reference them just by their class name (`Args` and `Kwargs`).
@@ -574,21 +574,21 @@ COMPONENTS = {
 
 In versions 0.92 to 0.139 (inclusive), the component typing was specified through generics.
 
-Since v0.140, the types must be specified as class attributes of the [Component](../../../reference/api#django_components.Component) class -
-[`Args`](../../../reference/api#django_components.Component.Args),
-[`Kwargs`](../../../reference/api#django_components.Component.Kwargs),
-[`Slots`](../../../reference/api#django_components.Component.Slots),
-[`TemplateData`](../../../reference/api#django_components.Component.TemplateData),
-[`JsData`](../../../reference/api#django_components.Component.JsData),
-and [`CssData`](../../../reference/api#django_components.Component.CssData).
+Since v0.140, the types must be specified as class attributes of the [Component](../../reference/api.md#django_components.Component) class -
+[`Args`](../../reference/api.md#django_components.Component.Args),
+[`Kwargs`](../../reference/api.md#django_components.Component.Kwargs),
+[`Slots`](../../reference/api.md#django_components.Component.Slots),
+[`TemplateData`](../../reference/api.md#django_components.Component.TemplateData),
+[`JsData`](../../reference/api.md#django_components.Component.JsData),
+and [`CssData`](../../reference/api.md#django_components.Component.CssData).
 
 This change was necessary to make it possible to subclass components. Subclassing with generics was otherwise too complicated. Read the discussion [here](https://github.com/django-components/django-components/issues/1122).
 
-Because of this change, the [`Component.render()`](../../../reference/api#django_components.Component.render)
+Because of this change, the [`Component.render()`](../../reference/api.md#django_components.Component.render)
 method is no longer typed.
-To type-check the inputs, you should wrap the inputs in [`Component.Args`](../../../reference/api#django_components.Component.Args),
-[`Component.Kwargs`](../../../reference/api#django_components.Component.Kwargs),
-[`Component.Slots`](../../../reference/api#django_components.Component.Slots), etc.
+To type-check the inputs, you should wrap the inputs in [`Component.Args`](../../reference/api.md#django_components.Component.Args),
+[`Component.Kwargs`](../../reference/api.md#django_components.Component.Kwargs),
+[`Component.Slots`](../../reference/api.md#django_components.Component.Slots), etc.
 
 For example, if you had a component like this:
 
@@ -636,15 +636,15 @@ The steps to migrate are:
 1. Convert all the types (`ButtonArgs`, `ButtonKwargs`, `ButtonSlots`) to subclasses
     of [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple).
 2. Move these types inside the Component class (`Button`), and rename them to `Args`, `Kwargs`, and `Slots`.
-3. If you defined typing for the data methods (like [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data)), move them inside the Component class, and rename them to `TemplateData`, `JsData`, and `CssData`.
+3. If you defined typing for the data methods (like [`get_context_data()`](../../reference/api.md#django_components.Component.get_context_data)), move them inside the Component class, and rename them to `TemplateData`, `JsData`, and `CssData`.
 4. Remove the `Component` generic.
 5. If you accessed the `args`, `kwargs`, or `slots` attributes via
-    [`self.input`](../../../reference/api#django_components.Component.input), you will need to add the type hints yourself, because [`self.input`](../../../reference/api#django_components.Component.input) is no longer typed.
+    [`self.input`](../../reference/api.md#django_components.Component.input), you will need to add the type hints yourself, because [`self.input`](../../reference/api.md#django_components.Component.input) is no longer typed.
 
-    Otherwise, you may use [`Component.get_template_data()`](../../../reference/api#django_components.Component.get_template_data) instead of [`get_context_data()`](../../../reference/api#django_components.Component.get_context_data), as `get_template_data()` receives `args`, `kwargs`, `slots` and `context` as arguments. You will still need to add the type hints yourself.
+    Otherwise, you may use [`Component.get_template_data()`](../../reference/api.md#django_components.Component.get_template_data) instead of [`get_context_data()`](../../reference/api.md#django_components.Component.get_context_data), as `get_template_data()` receives `args`, `kwargs`, `slots` and `context` as arguments. You will still need to add the type hints yourself.
 
-6. Lastly, you will need to update the [`Component.render()`](../../../reference/api#django_components.Component.render)
-    calls to wrap the inputs in [`Component.Args`](../../../reference/api#django_components.Component.Args), [`Component.Kwargs`](../../../reference/api#django_components.Component.Kwargs), and [`Component.Slots`](../../../reference/api#django_components.Component.Slots), to manually add type hints.
+6. Lastly, you will need to update the [`Component.render()`](../../reference/api.md#django_components.Component.render)
+    calls to wrap the inputs in [`Component.Args`](../../reference/api.md#django_components.Component.Args), [`Component.Kwargs`](../../reference/api.md#django_components.Component.Kwargs), and [`Component.Slots`](../../reference/api.md#django_components.Component.Slots), to manually add type hints.
 
 Thus, the code above will become:
 

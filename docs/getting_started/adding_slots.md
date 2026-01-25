@@ -25,7 +25,7 @@ implementation. And for the sake of demonstration, we'll solve this challenge wi
 
 ### 1. What are slots
 
-Components support something called [Slots](../../concepts/fundamentals/slots).
+Components support something called [Slots](../concepts/fundamentals/slots.md).
 
 When a component is used inside another template, slots allow the parent template
 to override specific parts of the child component by passing in different content.
@@ -37,13 +37,13 @@ This behavior is similar to [slots in Vue](https://vuejs.org/guide/components/sl
 In the example below we introduce two tags that work hand in hand to make this work. These are...
 
 - `{% slot <name> %}`/`{% endslot %}`: Declares a new slot in the component template.
-- `{% fill <name> %}`/`{% endfill %}`: (Used inside a [`{% component %}`](../../reference/template_tags#component)
+- `{% fill <name> %}`/`{% endfill %}`: (Used inside a [`{% component %}`](../reference/template_tags.md#component)
   tag pair.) Fills a declared slot with the specified content.
 
 ### 2. Add a slot tag
 
 Let's update our calendar component to support more customization. We'll add
-[`{% slot %}`](../../reference/template_tags#slot) tag to the template:
+[`{% slot %}`](../reference/template_tags.md#slot) tag to the template:
 
 ```htmldjango
 <div class="calendar">
@@ -58,15 +58,15 @@ Notice that:
 
 1. We named the slot `date` - so we can fill this slot by using `{% fill "date" %}`
 
-2. We also made it the [default slot](../../concepts/fundamentals/slots#default-slot).
+2. We also made it the [default slot](../concepts/fundamentals/slots.md#default-slot).
 
-3. We placed our original implementation inside the [`{% slot %}`](../../reference/template_tags#slot)
+3. We placed our original implementation inside the [`{% slot %}`](../reference/template_tags.md#slot)
    tag - this is what will be rendered when the slot is NOT overriden.
 
 ### 3. Add fill tag
 
-Now we can use [`{% fill %}`](../../reference/template_tags#fill) tags inside the
-[`{% component %}`](../../reference/template_tags#component) tags to override the `date` slot
+Now we can use [`{% fill %}`](../reference/template_tags.md#fill) tags inside the
+[`{% component %}`](../reference/template_tags.md#component) tags to override the `date` slot
 to generate the bold and italics variants:
 
 ```htmldjango
@@ -117,15 +117,15 @@ Which will render as:
         {% endcomponent %}
         ```
 
-    2. Implicitly as the [default slot](../../concepts/fundamentals/slots#default-slot) (Omitting the
-        [`{% fill %}`](../../reference/template_tags#fill) tag)
+    2. Implicitly as the [default slot](../concepts/fundamentals/slots.md#default-slot) (Omitting the
+        [`{% fill %}`](../reference/template_tags.md#fill) tag)
         ```htmldjango
         {% component "calendar" date="2024-12-13" %}
           <i> 2024-12-13 </i>
         {% endcomponent %}
         ```
 
-    3. Explicitly as the [default slot](../../concepts/fundamentals/slots#default-slot) (Setting fill name to `default`)
+    3. Explicitly as the [default slot](../concepts/fundamentals/slots.md#default-slot) (Setting fill name to `default`)
         ```htmldjango
         {% component "calendar" date="2024-12-13" %}
           {% fill "default" %}
@@ -158,7 +158,7 @@ the to `2024-12-14`, which is Saturday, our template from previous step would re
 
 The first instance rendered `2024-12-16`, while the rest rendered `2024-12-14`!
 
-Why? Remember that in the [`get_template_data()`](../../reference/api#django_components.Component.get_template_data)
+Why? Remember that in the [`get_template_data()`](../reference/api.md#django_components.Component.get_template_data)
 method of our Calendar component, we pre-process the date. If the date falls on Saturday or Sunday, we shift it to next Monday:
 
 ```python title="[project root]/components/calendar/calendar.py"
@@ -189,13 +189,13 @@ which is NOT the same as the `date` variable used inside Calendar's template.
 
 We want to use the same `date` variable that's used inside Calendar's template.
 
-Luckily, django-components allows [passing data to slots](../../concepts/fundamentals/slots#slot-data),
+Luckily, django-components allows [passing data to slots](../concepts/fundamentals/slots.md#slot-data),
 also known as [Scoped slots](https://vuejs.org/guide/components/slots#scoped-slots).
 
 This consists of two steps:
 
-1. Pass the `date` variable to the [`{% slot %}`](../../reference/template_tags#slot) tag
-2. Access the `date` variable in the [`{% fill %}`](../../reference/template_tags#fill)
+1. Pass the `date` variable to the [`{% slot %}`](../reference/template_tags.md#slot) tag
+2. Access the `date` variable in the [`{% fill %}`](../reference/template_tags.md#fill)
    tag by using the special `data` kwarg
 
 Let's update the Calendar's template:
@@ -211,7 +211,7 @@ Let's update the Calendar's template:
 
 !!! info
 
-    The [`{% slot %}`](../../reference/template_tags#slot) tag has one special kwarg, `name`. When you write
+    The [`{% slot %}`](../reference/template_tags.md#slot) tag has one special kwarg, `name`. When you write
 
     ```htmldjango
     {% slot "date" / %}
@@ -223,7 +223,7 @@ Let's update the Calendar's template:
     {% slot name="date" / %}
     ```
 
-    Other than the `name` kwarg, you can pass any extra kwargs to the [`{% slot %}`](../../reference/template_tags#slot) tag,
+    Other than the `name` kwarg, you can pass any extra kwargs to the [`{% slot %}`](../reference/template_tags.md#slot) tag,
     and these will be exposed as the slot's data.
 
     ```htmldjango
@@ -232,10 +232,10 @@ Let's update the Calendar's template:
 
 ### 6. Accessing slot data in fills
 
-Now, on the [`{% fill %}`](../../reference/template_tags#fill) tags, we can use the `data` kwarg to specify the variable under which
+Now, on the [`{% fill %}`](../reference/template_tags.md#fill) tags, we can use the `data` kwarg to specify the variable under which
 the slot data will be available.
 
-The variable from the `data` kwarg contains all the extra kwargs passed to the [`{% slot %}`](../../reference/template_tags#slot) tag.
+The variable from the `data` kwarg contains all the extra kwargs passed to the [`{% slot %}`](../reference/template_tags.md#slot) tag.
 
 So if we set `data="slot_data"`, then we can access the date variable under `slot_data.date`:
 

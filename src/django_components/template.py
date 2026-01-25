@@ -29,7 +29,7 @@ def cached_template(
     DEPRECATED. Template caching will be removed in v1.
 
     Create a Template instance that will be cached as per the
-    [`COMPONENTS.template_cache_size`](../settings#django_components.app_settings.ComponentsSettings.template_cache_size)
+    [`COMPONENTS.template_cache_size`](settings.md#django_components.app_settings.ComponentsSettings.template_cache_size)
     setting.
 
     Args:

@@ -14,7 +14,7 @@ Click me!
 {% component "button" href="..." disabled / %}
 ```
 
-You can change this behaviour in the settings under the [`COMPONENTS.tag_formatter`](#tag-formatter-setting).
+You can change this behaviour in the settings under the [`COMPONENTS.tag_formatter`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.tag_formatter).
 
 For example, if you set the tag formatter to
 

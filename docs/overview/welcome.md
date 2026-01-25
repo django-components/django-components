@@ -140,13 +140,13 @@ class Calendar(Component):
 
 It extends Django's template tags syntax with:
 
-- [Python expressions](../../concepts/fundamentals/template_tag_syntax#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
-- [Literal lists and dictionaries](../../concepts/fundamentals/template_tag_syntax#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
-- [Self-closing tags](../concepts/fundamentals/template_tag_syntax#self-closing-tags) `{% mytag / %}`
-- [Multi-line template tags](../concepts/fundamentals/template_tag_syntax#multiline-tags)
-- [Spread operator](../../concepts/fundamentals/template_tag_syntax#spread-operator) `...` to dynamically pass args or kwargs into the template tag
-- [Nested templates](../../concepts/fundamentals/template_tag_syntax#nested-templates) like `"{{ first_name }} {{ last_name }}"`
-- [Flat dictionaries](../../concepts/fundamentals/template_tag_syntax#flat-dictionaries) `dict:key=val`
+- [Python expressions](../concepts/fundamentals/template_tag_syntax.md#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
+- [Literal lists and dictionaries](../concepts/fundamentals/template_tag_syntax.md#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
+- [Self-closing tags](../concepts/fundamentals/template_tag_syntax.md#self-closing-tags) `{% mytag / %}`
+- [Multi-line template tags](../concepts/fundamentals/template_tag_syntax.md#multiline-tags)
+- [Spread operator](../concepts/fundamentals/template_tag_syntax.md#spread-operator) `...` to dynamically pass args or kwargs into the template tag
+- [Nested templates](../concepts/fundamentals/template_tag_syntax.md#nested-templates) like `"{{ first_name }} {{ last_name }}"`
+- [Flat dictionaries](../concepts/fundamentals/template_tag_syntax.md#flat-dictionaries) `dict:key=val`
 
 ```htmldjango
 {% component "table"
@@ -167,10 +167,10 @@ It extends Django's template tags syntax with:
 ```
 
 You too can define template tags with these features by using
-[`@template_tag()`](../../reference/api#django_components.template_tag)
-or [`BaseNode`](../../reference/api#django_components.BaseNode).
+[`@template_tag()`](../reference/api.md#django_components.template_tag)
+or [`BaseNode`](../reference/api.md#django_components.BaseNode).
 
-Read more on [Custom template tags](../../concepts/advanced/template_tags/).
+Read more on [Custom template tags](../concepts/advanced/template_tags.md).
 
 ### Composition with slots
 

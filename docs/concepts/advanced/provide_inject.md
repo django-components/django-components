@@ -4,8 +4,8 @@ _New in version 0.80_:
 
 This is achieved with the combination of:
 
-- [`{% provide %}`](../../../reference/template_tags/#provide) tag
-- [`Component.inject()`](../../../reference/api/#django_components.Component.inject) method
+- [`{% provide %}`](../../reference/template_tags.md#provide) tag
+- [`Component.inject()`](../../reference/api.md#django_components.Component.inject) method
 
 ## What is "prop drilling"
 
@@ -30,7 +30,7 @@ For examples of advanced uses of provide / inject, [see this discussion](https:/
 
 ## Providing data
 
-First we use the [`{% provide %}`](../../../reference/template_tags/#provide) tag to define the data we want to "provide" (make available).
+First we use the [`{% provide %}`](../../reference/template_tags.md#provide) tag to define the data we want to "provide" (make available).
 
 ```django
 {% provide "my_data" hello="hi" another=123 %}
@@ -40,11 +40,11 @@ First we use the [`{% provide %}`](../../../reference/template_tags/#provide) ta
 {% component "child" / %}  <--- Cannot access "my_data"
 ```
 
-The first argument to the [`{% provide %}`](../../../reference/template_tags/#provide) tag is the _key_ by which we can later access the data passed to this tag. The key in this case is `"my_data"`.
+The first argument to the [`{% provide %}`](../../reference/template_tags.md#provide) tag is the _key_ by which we can later access the data passed to this tag. The key in this case is `"my_data"`.
 
 The key must resolve to a valid identifier (AKA a valid Python variable name).
 
-Next you define the data you want to "provide" by passing them as keyword arguments. This is similar to how you pass data to the [`{% with %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#with) tag or the [`{% slot %}`](../../../reference/template_tags/#slot) tag.
+Next you define the data you want to "provide" by passing them as keyword arguments. This is similar to how you pass data to the [`{% with %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#with) tag or the [`{% slot %}`](../../reference/template_tags.md#slot) tag.
 
 !!! note
 
@@ -57,7 +57,7 @@ Next you define the data you want to "provide" by passing them as keyword argume
     {% endprovide %}
     ```
 
-Similarly to [slots and fills](../../fundamentals/slots/#dynamic-slots-and-fills), also provide's name argument can be set dynamically via a variable, a template expression, or a spread operator:
+Similarly to [slots and fills](../fundamentals/slots.md#dynamic-fills), also provide's name argument can be set dynamically via a variable, a template expression, or a spread operator:
 
 ```django
 {% with my_name="my_name" %}
@@ -69,10 +69,10 @@ Similarly to [slots and fills](../../fundamentals/slots/#dynamic-slots-and-fills
 
 ## Injecting data
 
-To "inject" (access) the data defined on the [`{% provide %}`](../../../reference/template_tags/#provide) tag,
-you can use the [`Component.inject()`](../../../reference/api/#django_components.Component.inject) method from within any other component methods.
+To "inject" (access) the data defined on the [`{% provide %}`](../../reference/template_tags.md#provide) tag,
+you can use the [`Component.inject()`](../../reference/api.md#django_components.Component.inject) method from within any other component methods.
 
-For a component to be able to "inject" some data, the component ([`{% component %}`](../../../reference/template_tags/#component) tag) must be nested inside the [`{% provide %}`](../../../reference/template_tags/#provide) tag.
+For a component to be able to "inject" some data, the component ([`{% component %}`](../../reference/template_tags.md#component) tag) must be nested inside the [`{% provide %}`](../../reference/template_tags.md#provide) tag.
 
 In the example from previous section, we've defined two kwargs: `hello="hi" another=123`. That means that if we now inject `"my_data"`, we get an object with 2 attributes - `hello` and `another`.
 
@@ -84,12 +84,12 @@ class ChildComponent(Component):
         print(my_data.another)  # 123
 ```
 
-First argument to [`Component.inject()`](../../../reference/api/#django_components.Component.inject) is the _key_ (or _name_) of the provided data. This
-must match the string that you used in the [`{% provide %}`](../../../reference/template_tags/#provide) tag.
+First argument to [`Component.inject()`](../../reference/api.md#django_components.Component.inject) is the _key_ (or _name_) of the provided data. This
+must match the string that you used in the [`{% provide %}`](../../reference/template_tags.md#provide) tag.
 
-If no provider with given key is found, [`inject()`](../../../reference/api/#django_components.Component.inject) raises a `KeyError`.
+If no provider with given key is found, [`inject()`](../../reference/api.md#django_components.Component.inject) raises a `KeyError`.
 
-To avoid the error, you can pass a second argument to [`inject()`](../../../reference/api/#django_components.Component.inject). This will act as a default value similar to `dict.get(key, default)`:
+To avoid the error, you can pass a second argument to [`inject()`](../../reference/api.md#django_components.Component.inject). This will act as a default value similar to `dict.get(key, default)`:
 
 ```py
 class ChildComponent(Component):
@@ -100,12 +100,12 @@ class ChildComponent(Component):
 
 !!! note
 
-    The instance returned from [`inject()`](../../../reference/api/#django_components.Component.inject) is immutable (subclass of [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)). This ensures that the data returned from [`inject()`](../../../reference/api/#django_components.Component.inject) will always
-    have all the keys that were passed to the [`{% provide %}`](../../../reference/template_tags/#provide) tag.
+    The instance returned from [`inject()`](../../reference/api.md#django_components.Component.inject) is immutable (subclass of [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)). This ensures that the data returned from [`inject()`](../../reference/api.md#django_components.Component.inject) will always
+    have all the keys that were passed to the [`{% provide %}`](../../reference/template_tags.md#provide) tag.
 
 !!! warning
 
-    [`inject()`](../../../reference/api/#django_components.Component.inject) works strictly only during render execution. If you try to call `inject()` from outside, it will raise an error.
+    [`inject()`](../../reference/api.md#django_components.Component.inject) works strictly only during render execution. If you try to call `inject()` from outside, it will raise an error.
 
 ## Full example
 

@@ -41,7 +41,7 @@ However, as a best practice, it’s recommended not to rely on accessing the out
 ## Context behavior
 
 django_components supports both Django and Vue-like behavior when it comes to passing data to and through
-components. This can be configured in [context_behavior](../../../reference/settings#context_behavior).
+components. This can be configured in [context_behavior](../../reference/settings.md#django_components.app_settings.ComponentsSettings.context_behavior).
 
 This has two modes:
 
@@ -49,14 +49,14 @@ This has two modes:
 
     The default Django template behavior.
 
-    Inside the [`{% fill %}`](../../../reference/template_tags#fill) tag, the context variables
+    Inside the [`{% fill %}`](../../reference/template_tags.md#fill) tag, the context variables
     you can access are a union of:
 
     - All the variables that were OUTSIDE the fill tag, including any\
       [`{% with %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#with) tags.
     - Any loops ([`{% for ... %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#cycle))
       that the `{% fill %}` tag is part of.
-    - Data returned from [`Component.get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
+    - Data returned from [`Component.get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
       of the component that owns the fill tag.
 
 - `"isolated"`
@@ -65,17 +65,17 @@ This has two modes:
     this is useful if you want to make sure that components don't accidentally access variables defined outside
     of the component.
 
-    Inside the [`{% fill %}`](../../../reference/template_tags#fill) tag, you can ONLY access variables from 2 places:
+    Inside the [`{% fill %}`](../../reference/template_tags.md#fill) tag, you can ONLY access variables from 2 places:
 
     - Any loops ([`{% for ... %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#cycle))
       that the `{% fill %}` tag is part of.
-    - [`Component.get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
+    - [`Component.get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
       of the component which defined the template (AKA the "root" component).
 
 !!! warning
 
     Notice that the component whose `get_template_data()` we use inside
-    [`{% fill %}`](../../../reference/template_tags#fill)
+    [`{% fill %}`](../../reference/template_tags.md#fill)
     is NOT the same across the two modes!
 
     Consider this example:
@@ -119,7 +119,7 @@ class RootComp(Component):
         return { "my_var": 123 }
 ```
 
-Then if [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
+Then if [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
 of the component `"my_comp"` returns following data:
 
 ```py
@@ -158,7 +158,7 @@ class RootComp(Component):
         return { "my_var": 123 }
 ```
 
-Then if [`get_template_data()`](../../../reference/api#django_components.Component.get_template_data)
+Then if [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
 of the component `"my_comp"` returns following data:
 
 ```py
@@ -178,4 +178,4 @@ But since `"cheese"` is not defined there, it's empty.
 !!! info
 
     Notice that the variables defined with the [`{% with %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#with)
-    tag are ignored inside the [`{% fill %}`](../../../reference/template_tags#fill) tag with the `"isolated"` mode.
+    tag are ignored inside the [`{% fill %}`](../../reference/template_tags.md#fill) tag with the `"isolated"` mode.

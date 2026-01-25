@@ -160,7 +160,7 @@ def load_gitignore(root: Path) -> pathspec.PathSpec:
             patterns = f.read().splitlines()
     # Add additional ignored paths
     patterns += IGNORED_PATHS
-    return pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+    return pathspec.PathSpec.from_lines("gitignore", patterns)
 
 
 # Recursively find all files not ignored by .gitignore

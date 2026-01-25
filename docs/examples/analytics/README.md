@@ -1,12 +1,12 @@
 # Component Analytics
 
-Use the [`Component.on_render_after()`](../../reference/api#django_components.Component.on_render_after) hook to track component analytics, such as capturing errors for a service like Sentry or other monitoring.
+Use the [`Component.on_render_after()`](../../reference/api.md#django_components.Component.on_render_after) hook to track component analytics, such as capturing errors for a service like Sentry or other monitoring.
 
 ![Analytics example](./images/analytics.png)
 
 ## Error tracking components
 
-You can create a wrapper component that uses the [`Component.on_render_after()`](../../reference/api#django_components.Component.on_render_after) hook to inspect the `error` object. If an error occurred during the rendering of its children, you can capture and send it to your monitoring service.
+You can create a wrapper component that uses the [`Component.on_render_after()`](../../reference/api.md#django_components.Component.on_render_after) hook to inspect the `error` object. If an error occurred during the rendering of its children, you can capture and send it to your monitoring service.
 
 ```django
 {% component "sentry_error_tracker" %}
@@ -32,7 +32,7 @@ Capturing analytics through components is simple, but limiting:
 
 Instead, you can define the analytics logic as an [extension](../../concepts/advanced/extensions.md). This will allow us to capture all errors, without polluting the UI.
 
-To do that, we can use the [`on_component_rendered()`](../../reference/extension_hooks/#django_components.extension.ComponentExtension.on_component_rendered) hook to capture all errors.
+To do that, we can use the [`on_component_rendered()`](../../reference/extension_hooks.md#django_components.extension.ComponentExtension.on_component_rendered) hook to capture all errors.
 
 ```python
 from django_components.extension import ComponentExtension, OnComponentRenderedContext

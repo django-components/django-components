@@ -1,9 +1,9 @@
 # Error handling
 
-The built-in [`ErrorFallback`](../../reference/components/#django_components.components.error_fallback.ErrorFallback) component catches errors during component rendering and displays fallback content instead. This is similar to React's [`ErrorBoundary`](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary) component.
+The built-in [`ErrorFallback`](../../reference/components.md#django_components.components.error_fallback.ErrorFallback) component catches errors during component rendering and displays fallback content instead. This is similar to React's [`ErrorBoundary`](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary) component.
 
 In this scenario, we have a `WeatherWidget` component that simulates fetching data from a weather API,
-which we wrap in the built-in [`ErrorFallback`](../../reference/components/#django_components.components.error_fallback.ErrorFallback) component.
+which we wrap in the built-in [`ErrorFallback`](../../reference/components.md#django_components.components.error_fallback.ErrorFallback) component.
 
 We have two cases:
 

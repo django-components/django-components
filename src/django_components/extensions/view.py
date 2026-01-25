@@ -38,16 +38,16 @@ def get_component_url(
     kwargs: Mapping[str, Any] | None = None,
 ) -> str:
     """
-    Get the URL for a [`Component`](../api#django_components.Component).
+    Get the URL for a [`Component`](api.md#django_components.Component).
 
     Raises `RuntimeError` if the component is not public.
 
     Component is public when:
 
-    - You set any of the HTTP methods in the [`Component.View`](../api#django_components.ComponentView) class,
-    - Or you explicitly set [`Component.View.public = True`](../api#django_components.ComponentView.public).
+    - You set any of the HTTP methods in the [`Component.View`](api.md#django_components.ComponentView) class,
+    - Or you explicitly set [`Component.View.public = True`](api.md#django_components.ComponentView.public).
 
-    Read more about [Component views and URLs](../../concepts/fundamentals/component_views_urls).
+    Read more about [Component views and URLs](../concepts/fundamentals/component_views_urls.md).
 
     `get_component_url()` optionally accepts `query` and `fragment` arguments.
 
@@ -82,7 +82,7 @@ def get_component_url(
     **Example with route parameters:**
 
     If your component defines a custom route path with parameters using
-    [`get_route_path()`](../api#django_components.ComponentView.get_route_path),
+    [`get_route_path()`](api.md#django_components.ComponentView.get_route_path),
     you can pass `args` and `kwargs` to fill those parameters:
 
     ```py
@@ -126,9 +126,9 @@ class ComponentView(ExtensionComponentConfig, View):
 
     Override the methods of this class to define the behavior of the component.
 
-    Read more about [Component views and URLs](../../concepts/fundamentals/component_views_urls).
+    Read more about [Component views and URLs](../concepts/fundamentals/component_views_urls.md).
 
-    The [`Component`](../api#django_components.Component) class is available
+    The [`Component`](api.md#django_components.Component) class is available
     via `self.component_cls`.
 
     **Example:**
@@ -144,13 +144,13 @@ class ComponentView(ExtensionComponentConfig, View):
 
     **Component URL:**
 
-    Use [`get_component_url()`](../api#django_components.get_component_url) to retrieve
+    Use [`get_component_url()`](api.md#django_components.get_component_url) to retrieve
     the component URL - an anonymous HTTP endpoint that triggers the component's handlers without having to register
     the component in `urlpatterns`.
 
     A component is automatically exposed when you define at least one HTTP handler. To explicitly
     expose/hide the component, use
-    [`Component.View.public = True`](../api#django_components.ComponentView.public).
+    [`Component.View.public = True`](api.md#django_components.ComponentView.public).
 
     ```py
     from django_components import Component, get_component_url
@@ -166,7 +166,7 @@ class ComponentView(ExtensionComponentConfig, View):
     This will create a URL route like `/components/ext/view/components/a1b2c3/`.
 
     The component URL route can be customized by overriding
-    [`get_route_path()`](../api#django_components.ComponentView.get_route_path).
+    [`get_route_path()`](api.md#django_components.ComponentView.get_route_path).
     """
 
     # NOTE: The `component` / `component_cls` attributes are NOT user input, but still must be declared
@@ -176,7 +176,7 @@ class ComponentView(ExtensionComponentConfig, View):
     component = cast("Component", None)
     """
     DEPRECATED: Will be removed in v1.0.
-    Use [`component_cls`](../api#django_components.ComponentView.component_cls) instead.
+    Use [`component_cls`](api.md#django_components.ComponentView.component_cls) instead.
 
     This is a dummy instance created solely for the View methods.
 
@@ -241,10 +241,10 @@ class ComponentView(ExtensionComponentConfig, View):
         The URL for the component.
 
         Raises `RuntimeError` if the component is not public.
-        See [`Component.View.public`](../api#django_components.ComponentView.public).
+        See [`Component.View.public`](api.md#django_components.ComponentView.public).
 
-        This is the same as calling [`get_component_url()`](../api#django_components.get_component_url)
-        with the current [`Component`](../api#django_components.Component) class:
+        This is the same as calling [`get_component_url()`](api.md#django_components.get_component_url)
+        with the current [`Component`](api.md#django_components.Component) class:
 
         ```py
         class MyComponent(Component):
@@ -272,7 +272,7 @@ class ComponentView(ExtensionComponentConfig, View):
     **Example:**
 
     Define the component HTTP handlers and get its URL using
-    [`get_component_url()`](../api#django_components.get_component_url):
+    [`get_component_url()`](api.md#django_components.get_component_url):
 
     ```py
     from django_components import Component, get_component_url
