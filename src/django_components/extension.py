@@ -1160,7 +1160,6 @@ class ExtensionManager:
 
         self.extensions = self._init_extensions(extensions)
         self._initialized = True
-        self.on_extension_created()
 
         # Populate the `urlpatterns` with URLs specified by the extensions
         # TODO_V3 - Django-specific logic - replace with hook
@@ -1200,6 +1199,9 @@ class ExtensionManager:
 
         # Rebuild URL resolver cache to be able to resolve the new routes by their names.
         self._lazy_populate_resolver()
+
+        # Only after Django URL resolver is populated, it's safe to call the `on_extension_created` hook.
+        self.on_extension_created()
 
         # Flush stored events
         #
