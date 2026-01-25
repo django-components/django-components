@@ -51,6 +51,23 @@ Added support for Django 6.0.
     / %}
     ```
 
+- Fixed bug where multiple attributes with the same name (e.g., `class`) were not being merged
+  correctly in `{% html_attrs %}`.
+
+    See [#1281](https://github.com/django-components/django-components/issues/1281)
+
+    Previously, when using duplicate `class` or `style` attributes with both variables and
+    literals, only the first value was used. Now all values are properly merged:
+
+    ```django
+    {% html_attrs attrs
+      class=btn_class
+      class="inline-flex w-full text-sm font-semibold"
+    %}
+    ```
+
+    Both `btn_class` and the literal string are now merged together.
+
 ## v0.146.0
 
 `django-components` is now tested across all major browsers - Chromium, Firefox, WebKit.

@@ -496,6 +496,77 @@ class TestHtmlAttrs:
         )
         assert "override-me" not in rendered
 
+    def test_duplicate_class_with_variable_and_literal(self):
+        """Test that duplicate class attributes with a variable and literal are merged correctly."""
+
+        @register("test")
+        class AttrsComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div {% html_attrs attrs
+                    class=btn_class
+                    class="inline-flex w-full text-sm"
+                  %}>
+                    content
+                </div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "attrs": kwargs.get("attrs", {}),
+                    "btn_class": "px-3 py-2 justify-center rounded-md shadow-sm",
+                }
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        assertHTMLEqual(
+            rendered,
+            """
+            <div class="px-3 py-2 justify-center rounded-md shadow-sm inline-flex w-full text-sm" data-djc-id-ca1bc3f>
+                content
+            </div>
+            """,
+        )
+
+    def test_duplicate_style_with_variable_and_literal(self):
+        """Test that duplicate style attributes with a variable and literal are merged correctly."""
+
+        @register("test")
+        class AttrsComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div {% html_attrs attrs
+                    style=base_style
+                    style="color: red; font-weight: bold;"
+                  %}>
+                    content
+                </div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "attrs": kwargs.get("attrs", {}),
+                    "base_style": "padding: 10px; margin: 5px;",
+                }
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "test" %}
+            {% endcomponent %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        # The styles should be merged, with later values taking precedence for same properties
+        assert "padding: 10px" in rendered or "padding:10px" in rendered
+        assert "margin: 5px" in rendered or "margin:5px" in rendered
+        assert "color: red" in rendered or "color:red" in rendered
+        assert "font-weight: bold" in rendered or "font-weight:bold" in rendered
+
 
 @djc_test
 class TestParseStringStyle:

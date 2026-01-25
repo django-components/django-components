@@ -274,8 +274,10 @@ def merge_repeated_kwargs(args: list[Any], kwargs: list[tuple[str, Any]]) -> tup
     kwargs_by_key: dict[str, tuple[str, Any]] = {}
     # Keep track of the index of the first occurence of a kwarg
     kwarg_indices_by_key: dict[str, int] = {}
-    # Duplicate kwargs whose values are to be merged into a single string
-    duplicate_kwargs: dict[str, list[str]] = defaultdict(list)
+    # Duplicate kwargs whose values are to be merged
+    # For 'class' and 'style', we collect values into a list for proper normalization
+    # For other attributes, we concatenate as strings
+    duplicate_kwargs: dict[str, list[Any]] = defaultdict(list)
 
     for index, kwarg in enumerate(kwargs):
         key, value = kwarg
@@ -287,14 +289,21 @@ def merge_repeated_kwargs(args: list[Any], kwargs: list[tuple[str, Any]]) -> tup
             resolved_kwargs.append(kwarg)
         # Case: A kwarg is repeated - we merge the values into a single string, with a space in between.
         else:
-            duplicate_kwargs[key].append(str(value))
+            duplicate_kwargs[key].append(value)
 
-    # Once we've gone over all kwargs, check which duplicates we have, and append the values
-    # of duplicates to the first instances of those kwargs.
+    # Once we've gone over all kwargs, check which duplicates we have, and merge them
     for key, values in duplicate_kwargs.items():
         _, orig_kwarg_value = kwargs_by_key[key]
         orig_kwarg_index = kwarg_indices_by_key[key]
-        merged_value = str(orig_kwarg_value) + " " + " ".join(values)
+
+        # For 'class' and 'style', collect values into a list so merge_attributes
+        # can properly normalize them (handling dicts, lists, etc.)
+        if key in ("class", "style"):
+            merged_value: list | str = [orig_kwarg_value, *values]
+        else:
+            # For other attributes, concatenate as strings with spaces
+            merged_value = str(orig_kwarg_value) + " " + " ".join(str(v) for v in values)
+
         resolved_kwargs[orig_kwarg_index] = (key, merged_value)
 
     return args, resolved_kwargs
