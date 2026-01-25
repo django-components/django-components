@@ -456,6 +456,7 @@ class TestTemplateExpression:
             """,
         )
 
+
 class TestSpreadOperator:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_later_spreads_can_overwrite_earlier(self, components_settings):
