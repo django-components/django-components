@@ -406,6 +406,55 @@ class TestTemplateExpression:
             """,
         )
 
+    # See https://github.com/django-components/django-components/issues/1255
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_on_separate_line(self, components_settings):
+        @register("ListItem")
+        class ListItemComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div {% html_attrs attrs %}>
+                    content
+                </div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs.get("attrs", {})}
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component "ListItem"
+                attrs:hx-trigger="click[window.location.pathname != '{{ module_url }}']"
+                attrs:class="
+                    {{ module_classes }}
+                    project-nav--item
+                    w-full mt-0 shadow
+                "
+            / %}
+        """
+
+        template = Template(template_str)
+        rendered = template.render(
+            Context(
+                {
+                    "module_url": "/test/url",
+                    "module_classes": "dynamic-class",
+                }
+            )
+        )
+
+        assertHTMLEqual(
+            rendered,
+            """
+            <div
+                class="dynamic-class mt-0 project-nav--item shadow w-full"
+                data-djc-id-ca1bc3f
+                hx-trigger="click[window.location.pathname != '/test/url']"
+            >
+                content
+            </div>
+            """,
+        )
 
 class TestSpreadOperator:
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)

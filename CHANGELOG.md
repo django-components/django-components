@@ -36,6 +36,21 @@ Added support for Django 6.0.
 
 - Add missing export of `OnCssLoadedContext` and `OnJsLoadedContext`
 
+- Fixed bug where Python expressions in template tags were not evaluated correctly
+  when the expression was on a separate line.
+
+    See [#1255](https://github.com/django-components/django-components/issues/1255)
+
+    ```django
+    {% component "ListItem"
+      attrs:class="
+        {{ module_classes }}
+        project-nav--item
+        w-full mt-0 shadow
+      "
+    / %}
+    ```
+
 ## v0.146.0
 
 `django-components` is now tested across all major browsers - Chromium, Firefox, WebKit.
