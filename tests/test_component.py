@@ -5,7 +5,7 @@ For tests focusing on the `component` tag, see `test_templatetags_component.py`
 
 import os
 import re
-from typing import Any, Literal
+from typing import Any, Literal, NamedTuple
 
 import pytest
 from django.conf import settings
@@ -860,6 +860,334 @@ class TestComponentRenderAPI:
         assert comp.registered_name == "test"
 
         assert comp.node is None
+
+    def test_parent__root_component(self):
+        """Test that parent returns None for root components."""
+        comp: Any = None
+
+        class RootComponent(Component):
+            template = "root"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal comp
+                comp = self
+                # Root component should have no parent
+                assert self.parent is None
+                return {}
+
+        RootComponent.render()
+        assert comp is not None
+        assert comp.parent is None
+
+    def test_parent__nested_component(self):
+        """Test that parent returns the correct parent component instance."""
+        grandparent_comp: Any = None
+        parent_comp: Any = None
+        child_comp: Any = None
+
+        @register("child")
+        class ChildComponent(Component):
+            template = "child"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal child_comp
+                child_comp = self
+
+                # Child should have a parent
+                assert self.parent is not None
+                assert self.parent == parent_comp
+                # Child's parent should have a parent (grandparent)
+                assert self.parent.parent == grandparent_comp
+
+        @register("parent")
+        class ParentComponent(Component):
+            template = "{% component 'child' / %}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal parent_comp
+                parent_comp = self
+
+                # Parent should have a parent (grandparent)
+                assert self.parent is not None
+                assert self.parent == grandparent_comp
+
+        class GrandparentComponent(Component):
+            template = "{% component 'parent' / %}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal grandparent_comp
+                grandparent_comp = self
+
+                # Grandparent should have no parent (it's the root)
+                assert self.parent is None
+
+        GrandparentComponent.render()
+
+        assert grandparent_comp is not None
+        assert parent_comp is not None
+        assert child_comp is not None
+        assert child_comp.parent == parent_comp
+        assert child_comp.parent is not None
+        assert parent_comp.parent == grandparent_comp
+        assert parent_comp.parent is not None
+        assert grandparent_comp.parent is None
+
+    def test_root__root_component(self):
+        """Test that root returns self for root components."""
+        comp: Any = None
+
+        class RootComponent(Component):
+            template = "root"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal comp
+                comp = self
+                # Root component should return self
+                assert self.root == self
+                return {}
+
+        RootComponent.render()
+        assert comp is not None
+        assert comp.root == comp
+
+    def test_root__nested_component(self):
+        """Test that root returns the correct root component instance."""
+        root_comp: Any = None
+        middle_comp: Any = None
+        leaf_comp: Any = None
+
+        @register("leaf")
+        class LeafComponent(Component):
+            template = "leaf"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal leaf_comp
+                leaf_comp = self
+                # Leaf should point to root
+                assert self.root == root_comp
+                return {}
+
+        @register("middle")
+        class MiddleComponent(Component):
+            template = "{% component 'leaf' / %}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal middle_comp
+                middle_comp = self
+                # Middle should also point to root
+                assert self.root == root_comp
+                return {}
+
+        class RootComponent(Component):
+            template = "{% component 'middle' / %}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal root_comp
+                root_comp = self
+                # Root should return self
+                assert self.root == self
+                return {}
+
+        RootComponent.render()
+        assert root_comp is not None
+        assert middle_comp is not None
+        assert leaf_comp is not None
+        assert leaf_comp.root == root_comp
+        assert middle_comp.root == root_comp
+        assert root_comp.root == root_comp
+
+    def test_ancestors__root_component(self):
+        """Test that ancestors is empty for root components."""
+        comp: Any = None
+
+        class RootComponent(Component):
+            template = "root"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal comp
+                comp = self
+                # Root component should have no ancestors
+                ancestors_list = list(self.ancestors)
+                assert ancestors_list == []
+                return {}
+
+        RootComponent.render()
+        assert comp is not None
+        assert list(comp.ancestors) == []
+
+    def test_ancestors__nested_component(self):
+        """Test that ancestors yields all ancestors in correct order."""
+        root_comp: Any = None
+        middle_comp: Any = None
+        leaf_comp: Any = None
+
+        @register("leaf")
+        class LeafComponent(Component):
+            template = "leaf"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal leaf_comp
+                leaf_comp = self
+                # Leaf should have middle and root as ancestors (in that order)
+                ancestors_list = list(self.ancestors)
+                assert len(ancestors_list) == 2
+                assert ancestors_list[0] == middle_comp
+                assert ancestors_list[1] == root_comp
+                return {}
+
+        @register("middle")
+        class MiddleComponent(Component):
+            template = "{% component 'leaf' / %}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal middle_comp
+                middle_comp = self
+                # Middle should have only root as ancestor
+                ancestors_list = list(self.ancestors)
+                assert len(ancestors_list) == 1
+                assert ancestors_list[0] == root_comp
+                return {}
+
+        class RootComponent(Component):
+            template = "{% component 'middle' / %}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal root_comp
+                root_comp = self
+                # Root should have no ancestors
+                ancestors_list = list(self.ancestors)
+                assert ancestors_list == []
+                return {}
+
+        RootComponent.render()
+        assert root_comp is not None
+        assert middle_comp is not None
+        assert leaf_comp is not None
+
+        # Verify ancestors from outside the render context
+        leaf_ancestors = list(leaf_comp.ancestors)
+        assert len(leaf_ancestors) == 2
+        assert leaf_ancestors[0] == middle_comp
+        assert leaf_ancestors[1] == root_comp
+
+        middle_ancestors = list(middle_comp.ancestors)
+        assert len(middle_ancestors) == 1
+        assert middle_ancestors[0] == root_comp
+
+        root_ancestors = list(root_comp.ancestors)
+        assert root_ancestors == []
+
+    def test_ancestors__same_component_at_different_levels(self):
+        """Test ancestors when the same component class appears at different levels [CompA, CompB, CompA]."""
+        comp_a_root: Any = None
+        comp_b: Any = None
+        comp_a_leaf: Any = None
+
+        @register("comp_a")
+        class CompA(Component):
+            template: types.django_html = """
+                {% if not leaf %}
+                    {% component 'comp_b' / %}
+                {% endif %}
+            """
+
+            class Kwargs(NamedTuple):
+                leaf: bool = False
+
+            def get_template_data(self, args, kwargs: Kwargs, slots, context):
+                nonlocal comp_a_root
+
+                # Root CompA
+                if not kwargs.leaf:
+                    comp_a_root = self
+                    # Root should have no ancestors
+                    ancestors_list = list(self.ancestors)
+                    assert ancestors_list == []
+                # Leaf CompA
+                else:
+                    nonlocal comp_a_leaf
+                    # This is the leaf CompA (nested inside CompB)
+                    comp_a_leaf = self
+                    # Leaf CompA should have [CompB, CompA] as ancestors
+                    ancestors_list = list(self.ancestors)
+                    assert len(ancestors_list) == 2
+                    assert ancestors_list[0] == comp_b
+                    assert ancestors_list[1] == comp_a_root
+
+                return {"leaf": kwargs.leaf}
+
+        @register("comp_b")
+        class CompB(Component):
+            template = "{% component 'comp_a' leaf=True / %}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal comp_b
+                comp_b = self
+                # CompB should have [CompA] as ancestor
+                ancestors_list = list(self.ancestors)
+
+                assert len(ancestors_list) == 1
+                assert ancestors_list[0] == comp_a_root
+
+        CompA.render(
+            kwargs=CompA.Kwargs(leaf=False),
+        )
+
+        assert comp_a_root is not None
+        assert comp_b is not None
+        assert comp_a_leaf is not None
+
+        assert comp_a_root is not comp_a_leaf
+
+        # Verify ancestors from outside the render context
+        # Leaf CompA should have [CompB, CompA] as ancestors
+        leaf_ancestors = list(comp_a_leaf.ancestors)
+        assert len(leaf_ancestors) == 2
+        assert leaf_ancestors[0] == comp_b
+        assert leaf_ancestors[1] == comp_a_root
+
+        # CompB should have [CompA] as ancestor
+        comp_b_ancestors = list(comp_b.ancestors)
+        assert len(comp_b_ancestors) == 1
+        assert comp_b_ancestors[0] == comp_a_root
+
+        # Root CompA should have no ancestors
+        root_ancestors = list(comp_a_root.ancestors)
+        assert root_ancestors == []
+
+    def test_parent_root_ancestors__type_checking(self):
+        """Test that parent, root, and ancestors work with isinstance checks."""
+        root_comp: Any = None
+        child_comp: Any = None
+
+        @register("child")
+        class ChildComponent(Component):
+            template = "child"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal child_comp
+                child_comp = self
+                return {}
+
+        class RootComponent(Component):
+            template = "{% component 'child' / %}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal root_comp
+                root_comp = self
+                return {}
+
+        RootComponent.render()
+
+        # Test isinstance checks work correctly
+        assert isinstance(child_comp.parent, RootComponent)
+        assert isinstance(child_comp.root, RootComponent)
+        assert isinstance(root_comp.root, RootComponent)
+
+        # Test ancestors iteration
+        for ancestor in child_comp.ancestors:
+            assert isinstance(ancestor, Component)
+            assert ancestor == root_comp
 
 
 @djc_test
