@@ -22,8 +22,8 @@ from django.utils.safestring import SafeString, mark_safe
 from djc_core.html_transformer import set_html_attributes
 
 from django_components.cache import get_component_media_cache
-from django_components.constants import COMP_ID_LENGTH
 from django_components.node import BaseNode
+from django_components.util.css import serialize_css_var_value
 from django_components.util.misc import is_nonempty_str
 
 if TYPE_CHECKING:
@@ -144,7 +144,7 @@ def cache_component_js_vars(comp_cls: type["Component"], js_vars: Mapping) -> st
     if not _is_script_in_cache(comp_cls, "js", input_hash):
         _cache_script(
             comp_cls=comp_cls,
-            script="",  # TODO - enable JS and CSS vars
+            script="",  # TODO - enable JS vars
             script_type="js",
             input_hash=input_hash,
         )
@@ -195,9 +195,18 @@ def cache_component_css_vars(comp_cls: type["Component"], css_vars: Mapping) -> 
 
     # Generate and cache a CSS stylesheet that contains the CSS variables.
     if not _is_script_in_cache(comp_cls, "css", input_hash):
+        formatted_vars = [f"  --{key}: {serialize_css_var_value(value)};" for key, value in css_vars.items()]
+
+        # ```css
+        # [data-djc-css-f3f3eg9] {
+        #   --my-var: red;
+        # }
+        # ```
+        input_css = "\n".join([f"/* {comp_cls.class_id} */", f"[data-djc-css-{input_hash}] {{", *formatted_vars, "}"])
+
         _cache_script(
             comp_cls=comp_cls,
-            script="",  # TODO - enable JS and CSS vars
+            script=input_css,
             script_type="css",
             input_hash=input_hash,
         )
@@ -340,36 +349,66 @@ COMPONENT_COMMENT_REGEX = re.compile(rb"<!--\s+_RENDERED\s+(?P<data>[\w\-,/]+?)\
 SCRIPT_NAME_REGEX = re.compile(
     rb"^(?P<comp_cls_id>[\w\-\./]+?),(?P<id>[\w]+?),(?P<js>[0-9a-f]*?),(?P<css>[0-9a-f]*?)$",
 )
-# E.g. `data-djc-id-ca1b2c3`
-MAYBE_COMP_ID = r'(?: data-djc-id-\w{{{COMP_ID_LENGTH}}}="")?'.format(COMP_ID_LENGTH=COMP_ID_LENGTH)  # noqa: UP032
-# E.g. `data-djc-css-99914b`
-MAYBE_COMP_CSS_ID = r'(?: data-djc-css-\w{6}="")?'
+# Patterns that allow any characters except `>` before and after the placeholder name
+# - Before `name`: empty OR non-empty ending with whitespace (to ensure proper separation)
+# - After `name`: empty OR non-empty starting with whitespace (to ensure proper separation)
+ANY_ATTRS_BEFORE = r"(?:[^>]*\s)?"
+ANY_ATTRS_AFTER = r"(?:\s[^>]*)?"
 
 PLACEHOLDER_REGEX = re.compile(
     r"{css_placeholder}|{js_placeholder}".format(
-        css_placeholder=f'<link name="{CSS_PLACEHOLDER_NAME}"{MAYBE_COMP_CSS_ID}{MAYBE_COMP_ID}/?>',
-        js_placeholder=f'<script name="{JS_PLACEHOLDER_NAME}"{MAYBE_COMP_CSS_ID}{MAYBE_COMP_ID}></script>',
-    ).encode(),
+        # NOTE: The CSS and JS placeholders may have any HTML attributes before and after
+        # the `name` attribute, as these attributes are assigned BEFORE we replace the
+        # placeholders with actual <script> / <link> tags.
+        css_placeholder=f'<link\\s+{ANY_ATTRS_BEFORE}name="{CSS_PLACEHOLDER_NAME}"{ANY_ATTRS_AFTER}/?>',
+        js_placeholder=f'<script\\s+{ANY_ATTRS_BEFORE}name="{JS_PLACEHOLDER_NAME}"{ANY_ATTRS_AFTER}></script>',
+    ).encode()
 )
 
 
 def render_dependencies(content: TContent, strategy: DependenciesStrategy = "document") -> TContent:
     """
-    Given a string that contains parts that were rendered by components,
-    this function inserts all used JS and CSS.
+    Given an HTML string (str or bytes) that contains parts that were rendered by components,
+    this function searches the HTML for the components used in the rendering,
+    and inserts the JS and CSS of the used components into the HTML.
 
-    By default, the string is parsed as an HTML and:
-    - CSS is inserted at the end of `<head>` (if present)
-    - JS is inserted at the end of `<body>` (if present)
+    Returns the edited copy of the HTML.
 
-    If you used `{% component_js_dependencies %}` or `{% component_css_dependencies %}`,
-    then the JS and CSS will be inserted only at these locations.
+    See [Rendering JS / CSS](../concepts/advanced/rendering_js_css.md).
 
-    Example:
+    **Args:**
+
+    - `content` (str | bytes): The rendered HTML string that is searched for components, and
+        into which we insert the JS and CSS tags. Required.
+
+    - `type` - Optional. Configure how to handle JS and CSS dependencies. Read more about
+        [Rendering strategies](../concepts/advanced/rendering_js_css.md#dependencies-strategies).
+
+        There are five render types:
+
+        - [`"document"`](../concepts/advanced/rendering_js_css.md#document) (default)
+            - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
+            - Inserts extra script to allow `fragment` types to work.
+            - Assumes the HTML will be rendered in a JS-enabled browser.
+        - [`"fragment"`](../concepts/advanced/rendering_js_css.md#fragment)
+            - A lightweight HTML fragment to be inserted into a document.
+            - No JS / CSS included.
+        - [`"simple"`](../concepts/advanced/rendering_js_css.md#simple)
+            - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
+            - No extra script loaded.
+        - [`"prepend"`](../concepts/advanced/rendering_js_css.md#prepend)
+            - Insert JS / CSS before the rendered HTML.
+            - No extra script loaded.
+        - [`"append"`](../concepts/advanced/rendering_js_css.md#append)
+            - Insert JS / CSS after the rendered HTML.
+            - No extra script loaded.
+
+    **Example:**
+
     ```python
     def my_view(request):
         template = Template('''
-            {% load components %}
+            {% load component_tags %}
             <!doctype html>
             <html>
                 <head></head>
@@ -551,16 +590,16 @@ def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) ->
         js_variables_hash: str | None = part_match.group("js").decode("utf-8") or None
         css_variables_hash: str | None = part_match.group("css").decode("utf-8") or None
 
-        if comp_cls_id in seen_comp_hashes:
-            continue
+        # Capture Component class metadata only once.
+        if comp_cls_id not in seen_comp_hashes:
+            comp_hashes.append(comp_cls_id)
+            seen_comp_hashes.add(comp_cls_id)
 
-        comp_hashes.append(comp_cls_id)
-        seen_comp_hashes.add(comp_cls_id)
+            # Schedule to load the `<script>` / `<link>` tags for the JS / CSS from `Component.js/css`.
+            comp_data.append((comp_cls_id, "js", None))
+            comp_data.append((comp_cls_id, "css", None))
 
-        # Schedule to load the `<script>` / `<link>` tags for the JS / CSS from `Component.js/css`.
-        comp_data.append((comp_cls_id, "js", None))
-        comp_data.append((comp_cls_id, "css", None))
-
+        # Capture Component JS/CSS variables for each instance.
         # Schedule to load the `<script>` / `<link>` tags for the JS / CSS variables.
         # Skip if no variables are defined.
         if js_variables_hash is not None:
@@ -577,6 +616,11 @@ def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) ->
         css_variables_urls_loaded,
     ) = _prepare_tags_and_urls(variables_data, strategy)
 
+    # Take Components' own JS / CSS (Component.js/css)
+    # and decide which ones should be:
+    # - Inserted into the HTML as <script> / <style> tags
+    # - Loaded with the client-side manager
+    # - Marked as already-loaded in the dependency manager
     (
         component_js_urls_to_load,
         component_css_urls_to_load,
@@ -585,6 +629,20 @@ def _process_dep_declarations(content: bytes, strategy: DependenciesStrategy) ->
         component_js_urls_loaded,
         component_css_urls_loaded,
     ) = _prepare_tags_and_urls(comp_data, strategy)
+
+    # Take JS / CSS for component variables (e.g. if component returned something
+    # from `get_js_data()` and `get_css_data()`) and decide which ones should be:
+    # - Inserted into the HTML as <script> / <style> tags
+    # - Loaded with the client-side manager
+    # - Marked as already-loaded in the dependency manager
+    (
+        js_variables_urls_to_load,
+        css_variables_urls_to_load,
+        js_variables_tags,
+        css_variables_tags,
+        js_variables_urls_loaded,
+        css_variables_urls_loaded,
+    ) = _prepare_tags_and_urls(variables_data, strategy)
 
     def get_component_media(comp_cls_id: str) -> Media:
         from django_components.component import get_component_by_class_id  # noqa: PLC0415
@@ -779,10 +837,6 @@ def _prepare_tags_and_urls(
     # so the client knows NOT to fetch them again.
     # So in that case we populate both `inlined` and `loaded` lists
     for comp_cls_id, script_type, input_hash in data:
-        # NOTE: When CSS is scoped, then EVERY component instance will have different
-        # copy of the style, because each copy will have component's ID embedded.
-        # So, in that case we inline the style into the HTML (See `_link_dependencies_with_component_html`),
-        # which means that we are NOT going to load / inline it again.
         comp_cls = get_component_by_class_id(comp_cls_id)
 
         # When strategy is "document", "simple", "prepend", or "append", we insert the actual <script> and

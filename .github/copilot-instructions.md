@@ -295,7 +295,7 @@ class ComponentCache(ComponentExtension.ExtensionClass):
         # but then still prefix it wih our own prefix, so it's clear where it comes from.
         input_hash = self.hash(*args, **kwargs)
         slot_hash = self.hash_slots(slots)
-        cache_key = CACHE_KEY_PREFIX + self.component._class_hash + ":" + input_hash + ":" + slot_hash
+        cache_key = CACHE_KEY_PREFIX + self.component.class_id + ":" + input_hash + ":" + slot_hash
         return cache_key
 
     def hash_slots(self, slots) -> str:

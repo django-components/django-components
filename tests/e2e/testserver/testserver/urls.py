@@ -8,6 +8,8 @@ from testserver.views import (
     check_js_order_in_js_view,
     check_js_order_in_media_view,
     check_js_order_vars_not_available_before_view,
+    css_vars_multiple_instances_view,
+    css_vars_sized_box_view,
     fragment_base_alpine_view,
     fragment_base_htmx_view,
     fragment_base_htmx_view__raw,
@@ -36,4 +38,6 @@ urlpatterns = [
     path("alpine/body", alpine_in_body_view),
     path("alpine/body2", alpine_in_body_view_2),
     path("alpine/invalid", alpine_in_body_vars_not_available_before_view),
+    path("css-vars/multiple", css_vars_multiple_instances_view),
+    path("css-vars/sized", css_vars_sized_box_view),
 ]
