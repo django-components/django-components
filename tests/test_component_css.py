@@ -59,7 +59,6 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <!-- _RENDERED TestComponent_415f49,ca1bc3e,,468e36 -->
             <div class="themed-button" data-djc-id-ca1bc3e data-djc-css-468e36>Button</div>
             <style>
                 .themed-button {
@@ -68,7 +67,7 @@ class TestCssVariables:
                 }
             </style>
             <style>
-/* TestComponent_415f49 */
+/* TestComponent_0c4787 */
 [data-djc-css-468e36] {
   --button_bg: #0275d8;
   --button_color: #fff;
@@ -102,7 +101,6 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <!-- _RENDERED TestComponent_f11bca,ca1bc3e,,af06fd -->
             <div class="sized-box" data-djc-id-ca1bc3e data-djc-css-af06fd>Box</div>
             <style>
                 .sized-box {
@@ -143,7 +141,6 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <!-- _RENDERED TestComponent_a1edd9,ca1bc3e,,b9e76a -->
             <div class="colored-box" data-djc-id-ca1bc3e data-djc-css-b9e76a>Box</div>
             <style>
                 .colored-box {
@@ -285,7 +282,6 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <!-- _RENDERED TestComponent_961494,ca1bc3e,,d335a4 -->
             <div class="text-box" data-djc-id-ca1bc3e data-djc-css-d335a4>Box</div>
             <style>
                 .text-box {
@@ -328,7 +324,6 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <!-- _RENDERED TestComponent_5b14a4,ca1bc3e,,413e33 -->
             <div class="sized-box" data-djc-id-ca1bc3e data-djc-css-413e33>Box</div>
             <style>
                 .sized-box {

@@ -149,16 +149,16 @@ The difference is that:
 
 ## CSS variables
 
-The [`get_css_data()`](../../../reference/api/#django_components.Component.get_css_data) method lets you pass data from your Python component to your CSS code defined in
-[`Component.css`](../../../reference/api/#django_components.Component.css)
-or [`Component.css_file`](../../../reference/api/#django_components.Component.css_file).
+The [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data) method lets you pass data from your Python component to your CSS code defined in
+[`Component.css`](../../reference/api.md#django_components.Component.css)
+or [`Component.css_file`](../../reference/api.md#django_components.Component.css_file).
 
 The returned dictionary will be converted to [CSS variables](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascading_variables/Using_CSS_custom_properties) where:
 
 - Keys are names of CSS variables
 - Values are serialized to string
 
-If [`get_css_data()`](../../../reference/api/#django_components.Component.get_css_data) returns `None`, an empty dictionary will be used.
+If [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data) returns `None`, an empty dictionary will be used.
 
 ```python
 class ThemeableButton(Component):
@@ -194,7 +194,7 @@ class ThemeableButton(Component):
 
 In your CSS file, you can access these variables by using the [`var()`](https://developer.mozilla.org/en-US/docs/Web/CSS/var) function.
 
-Use the same variable names as in the dictionary returned from [`get_css_data()`](../../../reference/api/#django_components.Component.get_css_data).
+Use the same variable names as in the dictionary returned from [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data).
 
 ```css
 .themed-button {
