@@ -119,7 +119,7 @@ class ComponentCache(ExtensionComponentConfig):
         cache_key = self.hash(args, kwargs)
         if self.include_slots:
             cache_key += ":" + self.hash_slots(slots)
-        cache_key = self.component._class_hash + ":" + cache_key
+        cache_key = self.component.class_id + ":" + cache_key
         cache_key = CACHE_KEY_PREFIX + md5(cache_key.encode()).hexdigest()  # noqa: S324
         return cache_key
 

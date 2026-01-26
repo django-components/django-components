@@ -2,7 +2,7 @@
 
 ## v0.147.0
 
-Added support for Django 6.0.
+Added support for Django 6.0, CSS variables, and component tree navigation.
 
 #### Breaking changes 🚨📢
 
@@ -11,6 +11,45 @@ Added support for Django 6.0.
 - Dropped support for Django 5.1.
 
 #### Feat
+
+- **CSS variables with `get_css_data()`**
+
+    Pass data from Python to CSS with [`get_css_data()`](../reference/api.md#django_components.Component.get_css_data).
+
+    [`get_css_data()`](../reference/api.md#django_components.Component.get_css_data) returns a dictionary. This data is automatically
+    converted to CSS custom properties and made available in your component's CSS.
+
+    In your CSS file, access these variables using `var()`.
+
+    CSS variables are automatically scoped to each component instance, allowing different
+    instances of the same component to have different variable values.
+
+    **Example:**
+
+    ```python
+    class ThemeableButton(Component):
+        template_file = "button.html"
+        css_file = "button.css"
+
+        class Kwargs:
+            theme: str = "default"
+
+        def get_css_data(self, args, kwargs: Kwargs, slots, context):
+            themes = {
+                "default": {"bg": "#f0f0f0", "color": "#333"},
+                "primary": {"bg": "#0275d8", "color": "#fff"},
+                "danger": {"bg": "#d9534f", "color": "#fff"},
+            }
+            css_vars = themes.get(kwargs.theme, themes["default"])
+            return css_vars
+    ```
+
+    ```css
+    .button {
+      background-color: var(--bg);
+      color: var(--color);
+    }
+    ```
 
 - **Component tree navigation: `parent`, `root`, and `ancestors` properties.**
 

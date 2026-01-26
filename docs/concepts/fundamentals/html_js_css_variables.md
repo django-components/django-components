@@ -147,6 +147,105 @@ The difference is that:
 
     The `get_context_data()` method will be removed in v2.
 
+## CSS variables
+
+The [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data) method lets you pass data from your Python component to your CSS code defined in
+[`Component.css`](../../reference/api.md#django_components.Component.css)
+or [`Component.css_file`](../../reference/api.md#django_components.Component.css_file).
+
+The returned dictionary will be converted to [CSS variables](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascading_variables/Using_CSS_custom_properties) where:
+
+- Keys are names of CSS variables
+- Values are serialized to string
+
+If [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data) returns `None`, an empty dictionary will be used.
+
+```python
+class ThemeableButton(Component):
+    template_file = "button.html"
+    css_file = "button.css"
+
+    class Kwargs(NamedTuple):
+        label: str
+        theme: str
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "label": kwargs.label,
+        }
+
+    def get_css_data(self, args, kwargs: Kwargs, slots, context):
+        themes = {
+            "default": {"bg": "#f0f0f0", "color": "#333", "hover_bg": "#e0e0e0"},
+            "primary": {"bg": "#0275d8", "color": "#fff", "hover_bg": "#025aa5"},
+            "danger": {"bg": "#d9534f", "color": "#fff", "hover_bg": "#c9302c"},
+        }
+
+        chosen_theme = themes.get(kwargs.theme, themes["default"])
+
+        return {
+            "button_bg": chosen_theme["bg"],
+            "button_color": chosen_theme["color"],
+            "button_hover_bg": chosen_theme["hover_bg"],
+        }
+```
+
+### Accessing CSS variables
+
+In your CSS file, you can access these variables by using the [`var()`](https://developer.mozilla.org/en-US/docs/Web/CSS/var) function.
+
+Use the same variable names as in the dictionary returned from [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data).
+
+```css
+.themed-button {
+  background-color: var(--button_bg);
+  color: var(--button_color);
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+}
+
+.themed-button:hover {
+  background-color: var(--button_hover_bg);
+}
+```
+
+!!! info
+
+    **How it works?**
+
+    When a component defines some CSS code, it will be added to the page as a separate stylesheet.
+    So all instances of the same Component class reuse this same stylesheet which references the variables:
+
+    ```css
+    .themed-button:hover {
+        background-color: var(--button_hover_bg);
+    }
+    ```
+
+    When a component defines some CSS variables, django-components generates a stylesheet to apply
+    the variables:
+
+    ```css
+    [data-djc-css-b2c3d4] {
+        --button_bg: #f0f0f0;
+        --button_color: #333;
+        --button_hover_bg: #e0e0e0;
+    }
+    ```
+
+    This stylesheet with the variables is cached on the server based on the variables' names and values.
+
+    This stylesheet is then added to the CSS dependencies of the component (as if added to `Component.Media.css`).
+    So the variables stylesheet will be loaded with the rest of the component's CSS.
+
+    The rendered component will have a corresponding `data-djc-css-b2c3d4` HTML attribute, matching the hash.
+
+    Thus, the CSS variables are dynamically applied to the component, and ONLY to this single instance (or
+    other instances that have the same variables).
+
+    This means that if you render the same component with different variables, each instance will use different CSS variables.
+
 ## Accessing component inputs
 
 The component inputs are available in 3 ways:
@@ -468,4 +567,101 @@ class MyComponent(Component):
 
     def get_css_data(self, args, kwargs, slots, context):
         return kwargs
+```
+
+## Complete example
+
+Here's a comprehensive example showing all three methods working together:
+
+```python
+from django_components import Component
+
+class ProductCard(Component):
+    template_file = "product_card.html"
+    js_file = "product_card.js"
+    css_file = "product_card.css"
+
+    def get_template_data(self, args, kwargs, slots, context):
+        product = Product.objects.get(id=kwargs["product_id"])
+        return {
+            "product": product,
+            "show_price": kwargs.get("show_price", True),
+            "is_in_stock": product.stock_count > 0,
+        }
+
+    def get_js_data(self, args, kwargs, slots, context):
+        product = Product.objects.get(id=kwargs["product_id"])
+        return {
+            "product_id": kwargs["product_id"],
+            "price": float(product.price),
+            "api_endpoint": f"/api/products/{kwargs['product_id']}/",
+        }
+
+    def get_css_data(self, args, kwargs, slots, context):
+        theme = kwargs.get("theme", "light")
+        themes = {
+            "light": {
+                "card_bg": "#ffffff",
+                "text_color": "#333333",
+                "price_color": "#e63946",
+            },
+            "dark": {
+                "card_bg": "#242424",
+                "text_color": "#f1f1f1",
+                "price_color": "#ff6b6b",
+            },
+        }
+
+        return themes.get(theme, themes["light"])
+```
+
+In your template:
+
+```django
+<div class="product-card" data-product-id="{{ product.id }}">
+    <img src="{{ product.image_url }}" alt="{{ product.name }}">
+    <h3>{{ product.name }}</h3>
+
+    {% if show_price %}
+        <p class="price">${{ product.price }}</p>
+    {% endif %}
+
+    {% if is_in_stock %}
+        <button class="add-to-cart">Add to Cart</button>
+    {% else %}
+        <p class="out-of-stock">Out of Stock</p>
+    {% endif %}
+</div>
+```
+
+JavaScript:
+
+```javascript
+document
+  .querySelector(`[data-product-id="${product_id}"]`)
+  .querySelector(".add-to-cart")
+  .addEventListener("click", () => {
+    fetch(api_endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add_to_cart", price: price }),
+    });
+  });
+```
+
+CSS:
+
+```css
+.product-card {
+  background-color: var(--card_bg);
+  color: var(--text_color);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.price {
+  color: var(--price_color);
+  font-weight: bold;
+}
 ```

@@ -26,73 +26,133 @@ With `django-components` you can support Django projects small and large without
 
 ## Quickstart
 
-A component in django-components can be as simple as a Django template and Python code to declare the component:
+A component in django-components consists of HTML, JavaScript, and CSS:
 
-```django
-{# components/calendar/calendar.html #}
-<div class="calendar">
-  Today's date is <span>{{ date }}</span>
-</div>
-```
-
-```py
-# components/calendar/calendar.py
+```python
+# components/product_card/product_card.py
 from django_components import Component, register
 
-@register("calendar")
-class Calendar(Component):
-    template_file = "calendar.html"
+@register("product_card")
+class ProductCard(Component):
+    template_file = "product_card.html"
+    js_file = "product_card.js"
+    css_file = "product_card.css"
+
+    class Kwargs:
+        product_id: int
+        show_price: bool = True
+        theme: str = "light"
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        product = Product.objects.get(id=kwargs.product_id)
+        return {
+            "product": product,
+            "show_price": kwargs.show_price,
+            "is_in_stock": product.stock_count > 0,
+        }
+
+    def get_js_data(self, args, kwargs: Kwargs, slots, context):
+        product = Product.objects.get(id=kwargs.product_id)
+        return {
+            "product_id": kwargs.product_id,
+            "price": float(product.price),
+            "api_endpoint": f"/api/products/{kwargs.product_id}/",
+        }
+
+    def get_css_data(self, args, kwargs: Kwargs, slots, context):
+        themes = {
+            "light": {
+                "card_bg": "#ffffff",
+                "text_color": "#333333",
+                "price_color": "#e63946",
+            },
+            "dark": {
+                "card_bg": "#242424",
+                "text_color": "#f1f1f1",
+                "price_color": "#ff6b6b",
+            },
+        }
+        theme_vars = themes.get(kwargs.theme, themes["light"])
+        return theme_vars
 ```
 
-Or a combination of Django template, Python, CSS, and Javascript:
+In your template:
 
-```django
-{# components/calendar/calendar.html #}
-<div class="calendar">
-  Today's date is <span>{{ date }}</span>
+```htmldjango
+{# templates/product_card/product_card.html #}
+<div class="product-card" data-product-id="{{ product.id }}">
+    <img src="{{ product.image_url }}" alt="{{ product.name }}">
+    <h3>{{ product.name }}</h3>
+
+    {% if show_price %}
+        <p class="price">${{ product.price }}</p>
+    {% endif %}
+
+    {% if is_in_stock %}
+        <button class="add-to-cart">Add to Cart</button>
+    {% else %}
+        <p class="out-of-stock">Out of Stock</p>
+    {% endif %}
 </div>
 ```
+
+JavaScript:
+
+```javascript
+// components/product_card/product_card.js
+// Access component JS variables in $onLoad callback
+$onLoad(({ product_id, price, api_endpoint }) => {
+  document
+    .querySelector(`[data-product-id="${product_id}"]`)
+    .querySelector(".add-to-cart")
+    .addEventListener("click", () => {
+      fetch(api_endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add_to_cart", price: price }),
+      });
+    });
+});
+```
+
+CSS:
 
 ```css
-/* components/calendar/calendar.css */
-.calendar {
-  width: 200px;
-  background: pink;
+/* components/product_card/product_card.css */
+/* Access component CSS variables */
+.product-card {
+  background-color: var(--card_bg);
+  color: var(--text_color);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-```
 
-```js
-/* components/calendar/calendar.js */
-document.querySelector(".calendar").onclick = () => {
-  alert("Clicked calendar!");
-};
-```
-
-```py
-# components/calendar/calendar.py
-from django_components import Component, register
-
-@register("calendar")
-class Calendar(Component):
-    template_file = "calendar.html"
-    js_file = "calendar.js"
-    css_file = "calendar.css"
-
-    def get_template_data(self, args, kwargs, slots, context):
-        return {"date": kwargs["date"]}
+.price {
+  color: var(--price_color);
+  font-weight: bold;
+}
 ```
 
 Use the component like this:
 
 ```django
-{% component "calendar" date="2024-11-06" %}{% endcomponent %}
+{% component "product_card"
+  product_id=123
+  theme="dark"
+  show_price=True
+%}
+{% endcomponent %}
 ```
 
 And this is what gets rendered:
 
 ```html
-<div class="calendar-component">
-  Today's date is <span>2024-11-06</span>
+<div class="product-card" data-product-id="123" data-djc-css-a1b2c3>
+  <img src="/media/product.jpg" alt="Awesome Product">
+  <h3>Awesome Product</h3>
+  <p class="price">$29.99</p>
+  <button class="add-to-cart">Add to Cart</button>
 </div>
 ```
 

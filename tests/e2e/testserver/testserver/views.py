@@ -371,3 +371,51 @@ def alpine_in_body_vars_not_available_before_view(_request):
     template = Template(template_str)
     rendered = template.render(Context({}))
     return HttpResponse(rendered)
+
+
+def css_vars_multiple_instances_view(_request):
+    template_str: types.django_html = """
+        {% load component_tags %}
+        <!DOCTYPE html>
+        <html>
+            <head>
+                {% component_css_dependencies %}
+            </head>
+            <body>
+                <div id="box-red">
+                    {% component 'css_vars_themed_box' color='red' / %}
+                </div>
+                <div id="box-green">
+                    {% component 'css_vars_themed_box' color='green' / %}
+                </div>
+                <div id="box-blue">
+                    {% component 'css_vars_themed_box' color='blue' / %}
+                </div>
+                {% component_js_dependencies %}
+            </body>
+        </html>
+    """
+    template = Template(template_str)
+    rendered = template.render(Context({}))
+    return HttpResponse(rendered)
+
+
+def css_vars_sized_box_view(_request):
+    template_str: types.django_html = """
+        {% load component_tags %}
+        <!DOCTYPE html>
+        <html>
+            <head>
+                {% component_css_dependencies %}
+            </head>
+            <body>
+                <div id="sized-box">
+                    {% component 'css_vars_sized_box' width='200px' height='150px' color='#0275d8' / %}
+                </div>
+                {% component_js_dependencies %}
+            </body>
+        </html>
+    """
+    template = Template(template_str)
+    rendered = template.render(Context({}))
+    return HttpResponse(rendered)

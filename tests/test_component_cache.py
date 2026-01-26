@@ -185,7 +185,7 @@ class TestComponentCache:
         component = TestComponent()
         component.render(args=(1, 2), kwargs={"key": "value"})
 
-        # The key consists of `component._class_hash`, hashed args, and hashed kwargs
+        # The key consists of `component.class_id`, hashed args, and hashed kwargs
         expected_key = "1,2:key-value"
         assert component.cache.hash([1, 2], {"key": "value"}) == expected_key
 

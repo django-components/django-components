@@ -4076,7 +4076,7 @@ class Component(metaclass=ComponentMeta):
             )
         template_data = new_template_data or legacy_template_data
 
-        # TODO - Enable JS and CSS vars - expose, and document
+        # TODO - Enable JS vars - expose, and document
         # JS data
         maybe_js_data = self.get_js_data(self.args, self.kwargs, self.slots, self.context)
         js_data = to_dict(default(maybe_js_data, {}))

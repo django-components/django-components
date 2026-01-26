@@ -211,3 +211,45 @@ class AlpineCompInJs(Component):
             }))
         });
     """
+
+
+@register("css_vars_themed_box")
+class CssVarsThemedBox(Component):
+    template: types.django_html = """
+        <div class="themed-box">Box</div>
+    """
+
+    css: types.css = """
+        .themed-box {
+            background-color: var(--bg_color);
+            width: 100px;
+            height: 100px;
+        }
+    """
+
+    def get_css_data(self, args, kwargs, slots, context):
+        return {
+            "bg_color": kwargs.get("color", "blue"),
+        }
+
+
+@register("css_vars_sized_box")
+class CssVarsSizedBox(Component):
+    template: types.django_html = """
+        <div class="sized-box">Box</div>
+    """
+
+    css: types.css = """
+        .sized-box {
+            width: var(--box_width);
+            height: var(--box_height);
+            background-color: var(--bg_color);
+        }
+    """
+
+    def get_css_data(self, args, kwargs, slots, context):
+        return {
+            "box_width": kwargs.get("width", "100px"),
+            "box_height": kwargs.get("height", "100px"),
+            "bg_color": kwargs.get("color", "red"),
+        }

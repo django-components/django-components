@@ -3,6 +3,7 @@ nav:
   - Installation: installation.md
   - Create your first component: your_first_component.md
   - Adding JS and CSS: adding_js_and_css.md
+  - Adding dependencies: adding_dependencies.md
   - Components in templates: components_in_templates.md
   - Parametrising components: parametrising_components.md
   - Adding slots: adding_slots.md

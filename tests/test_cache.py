@@ -139,9 +139,19 @@ class TestComponentMediaCache:
 
         # Check that we cache JS / CSS scripts generated from `get_js_data` / `get_css_data`
         # NOTE: The hashes is generated from the data.
-        js_vars_hash = "216ecc"
+        # js_vars_hash = "216ecc"
         css_vars_hash = "d039a3"
 
-        # TODO - Update once JS and CSS vars are enabled
-        assert test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:js:{js_vars_hash}").strip() == ""
-        assert test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:css:{css_vars_hash}").strip() == ""
+        # Verify CSS variables are cached
+        css_vars_content = test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:css:{css_vars_hash}")
+        assert css_vars_content is not None
+        assert css_vars_content.strip() != ""
+        # Verify the CSS contains the variable definition
+        assert "--color: blue;" in css_vars_content
+        assert f"[data-djc-css-{css_vars_hash}]" in css_vars_content
+
+        # TODO - Update once JS vars are enabled
+        # Verify JS variables are cached
+        # js_vars_content = test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:js:{js_vars_hash}")
+        # assert js_vars_content is not None
+        # assert js_vars_content.strip() != ""
