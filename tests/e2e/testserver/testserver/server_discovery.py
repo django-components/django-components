@@ -22,7 +22,8 @@ from django.urls import path
 try:
     import tomllib  # type: ignore[import-untyped]
 except ImportError:
-    import tomli as tomllib  # Python < 3.11
+    # Python < 3.11
+    import tomli as tomllib  # type: ignore[no-redef]
 
 logger = logging.getLogger(__name__)
 
