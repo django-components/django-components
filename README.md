@@ -100,11 +100,10 @@ JavaScript:
 
 ```javascript
 // components/product_card/product_card.js
-// Access component JS variables in $onLoad callback
-$onLoad(({ product_id, price, api_endpoint }) => {
-  document
-    .querySelector(`[data-product-id="${product_id}"]`)
-    .querySelector(".add-to-cart")
+// Access component JS variables in $onComponent callback
+$onComponent(({ product_id, price, api_endpoint }, ctx) => {
+  const containerEl = ctx.els[0];
+  containerEl.querySelector(".add-to-cart")
     .addEventListener("click", () => {
       fetch(api_endpoint, {
         method: "POST",
@@ -149,7 +148,7 @@ And this is what gets rendered:
 
 ```html
 <div class="product-card" data-product-id="123" data-djc-css-a1b2c3>
-  <img src="/media/product.jpg" alt="Awesome Product">
+  <img src="/media/product.jpg" alt="Awesome Product" />
   <h3>Awesome Product</h3>
   <p class="price">$29.99</p>
   <button class="add-to-cart">Add to Cart</button>
@@ -602,10 +601,10 @@ Our aim is to be at least as fast as Django templates.
 
 As of `0.130`, `django-components` is ~4x slower than Django templates.
 
-| | Render time|
-|----------|----------------------|
-| django | 68.9±0.6ms |
-| django-components | 259±4ms |
+|                   | Render time |
+| ----------------- | ----------- |
+| django            | 68.9±0.6ms  |
+| django-components | 259±4ms     |
 
 See the [full performance breakdown](https://django-components.github.io/django-components/latest/benchmarks/) for more information.
 

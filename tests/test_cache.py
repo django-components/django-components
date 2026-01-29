@@ -1,3 +1,5 @@
+import base64
+
 from django_components import Component, register
 from django_components.testing import djc_test
 from django_components.util.cache import LRUCache
@@ -125,13 +127,19 @@ class TestComponentMediaCache:
         assert not test_cache.has_key(f"__components:{TestSimpleComponent.class_id}:css")
 
         # Check that we cache `Component.js` / `Component.css`
-        assert (
-            test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:js").strip()
-            == "console.log('Hello from JS');"
+        assert test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:js").strip() == (
+            '{"kind": "component", '
+            '"url": null, '
+            '"content": "console.log(\'Hello from JS\');", '
+            '"attrs": {}, '
+            '"origin_class_id": "TestMediaNoVarsComponent_0fa819"}'
         )
-        assert (
-            test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:css").strip()
-            == ".novars-component { color: blue; }"
+        assert test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:css").strip() == (
+            '{"kind": "component", '
+            '"url": null, '
+            '"content": ".novars-component { color: blue; }", '
+            '"attrs": {}, '
+            '"origin_class_id": "TestMediaNoVarsComponent_0fa819"}'
         )
 
         # Render the components to trigger caching of JS/CSS variables from `get_js_data` / `get_css_data`
@@ -139,7 +147,7 @@ class TestComponentMediaCache:
 
         # Check that we cache JS / CSS scripts generated from `get_js_data` / `get_css_data`
         # NOTE: The hashes is generated from the data.
-        # js_vars_hash = "216ecc"
+        js_vars_hash = "216ecc"
         css_vars_hash = "d039a3"
 
         # Verify CSS variables are cached
@@ -150,8 +158,9 @@ class TestComponentMediaCache:
         assert "--color: blue;" in css_vars_content
         assert f"[data-djc-css-{css_vars_hash}]" in css_vars_content
 
-        # TODO - Update once JS vars are enabled
         # Verify JS variables are cached
-        # js_vars_content = test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:js:{js_vars_hash}")
-        # assert js_vars_content is not None
-        # assert js_vars_content.strip() != ""
+        js_vars_content = test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:js:{js_vars_hash}")
+        assert js_vars_content is not None
+        assert js_vars_content.strip() != ""
+        # Verify the JS contains the JSON data
+        assert base64.b64encode(b'{"message": "Hello"}').decode() in js_vars_content

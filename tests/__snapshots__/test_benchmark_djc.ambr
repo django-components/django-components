@@ -7722,7 +7722,8 @@
               <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
   
               
-              <script src="django_components/django_components.min.js"></script><script type="application/json" data-djc>{"loadedCssUrls": [], "loadedJsUrls": ["L2NvbXBvbmVudHMvY2FjaGUvQmFzZV9kMTZhNmQuanM=", "L2NvbXBvbmVudHMvY2FjaGUvQm9va21hcmtfMWZkMDFmLmpz", "L2NvbXBvbmVudHMvY2FjaGUvQm9va21hcmtzXzg3ODZmMS5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvRXhwYW5zaW9uUGFuZWxfNjkwMjM5Lmpz", "L2NvbXBvbmVudHMvY2FjaGUvRm9ybV83ODhlMTIuanM=", "L2NvbXBvbmVudHMvY2FjaGUvTGF5b3V0XzZhYmE2Yy5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdE91dHB1dEF0dGFjaG1lbnRzXzE2NGQ2NC5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdE91dHB1dERlcGVuZGVuY3lfZWVkMzI4Lmpz", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdE91dHB1dEZvcm1fODQ3YjM0Lmpz", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdFVzZXJzX2U1NTFmZC5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvVGFnc19iNzMxNTMuanM=", "L2NvbXBvbmVudHMvY2FjaGUvX1RhYnNJbXBsX2NlZWNjMS5qcw=="], "toLoadCssTags": [], "toLoadJsTags": []}</script><script>document.addEventListener('alpine:init', () => {
+              <script src="django_components/django_components.min.js"></script><script type="application/json" data-djc>{"cssUrls__markAsLoaded": [], "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvQmFzZV9kMTZhNmQuanM=", "L2NvbXBvbmVudHMvY2FjaGUvQm9va21hcmtfMWZkMDFmLmpz", "L2NvbXBvbmVudHMvY2FjaGUvQm9va21hcmtzXzg3ODZmMS5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvRXhwYW5zaW9uUGFuZWxfNjkwMjM5Lmpz", "L2NvbXBvbmVudHMvY2FjaGUvRm9ybV83ODhlMTIuanM=", "L2NvbXBvbmVudHMvY2FjaGUvTGF5b3V0XzZhYmE2Yy5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdE91dHB1dEF0dGFjaG1lbnRzXzE2NGQ2NC5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdE91dHB1dERlcGVuZGVuY3lfZWVkMzI4Lmpz", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdE91dHB1dEZvcm1fODQ3YjM0Lmpz", "L2NvbXBvbmVudHMvY2FjaGUvUHJvamVjdFVzZXJzX2U1NTFmZC5qcw==", "L2NvbXBvbmVudHMvY2FjaGUvVGFnc19iNzMxNTMuanM=", "L2NvbXBvbmVudHMvY2FjaGUvX1RhYnNJbXBsX2NlZWNjMS5qcw=="], "cssTags__toFetch": [], "jsTags__toFetch": [], "componentJsVars": [], "componentJsCalls": []}</script><script>
+          document.addEventListener('alpine:init', () => {
               // NOTE: Defined as standalone function so we can call it variable initialization
               const computeSidebarState = (prevState) => {
                   const width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
@@ -7754,7 +7755,9 @@
                       this.sidebarOpen = computeSidebarState(this.sidebarOpen);
                   },
               }));
-          });</script><script>////////////////////////////////////////////////////////////////
+          });
+      </script><script>
+          ////////////////////////////////////////////////////////////////
           // base.js
           ////////////////////////////////////////////////////////////////
   
@@ -7976,7 +7979,9 @@
                   .catch((error) => {
                       console.error(error);
                   });
-          };</script><script>const useContextMenu = (reactivity) => {
+          };
+      </script><script>
+          const useContextMenu = (reactivity) => {
               const { ref } = reactivity;
   
               const contextMenuItem = ref(null);
@@ -8049,7 +8054,9 @@
   
           document.addEventListener('alpine:init', () => {
               AlpineComposition.registerComponent(Alpine, Bookmarks);
-          });</script><script>// Define component similarly to defining Vue components
+          });
+      </script><script>
+          // Define component similarly to defining Vue components
           const Bookmark = AlpineComposition.defineComponent({
               name: "bookmark",
   
@@ -8075,7 +8082,9 @@
   
           document.addEventListener('alpine:init', () => {
               AlpineComposition.registerComponent(Alpine, Bookmark);
-          });</script><script>document.addEventListener("alpine:init", () => {
+          });
+      </script><script>
+          document.addEventListener("alpine:init", () => {
               Alpine.data("tabs", () => ({
                   // Variables
                   openTab: 1,
@@ -8146,7 +8155,9 @@
                       this.setOpenTab(newValNum);
                   },
               }));
-          });</script><script>document.addEventListener('alpine:init', () => {
+          });
+      </script><script>
+          document.addEventListener('alpine:init', () => {
               Alpine.data('project_users', () => ({
                   // Variables
                   isDeleteDialogOpen: false,
@@ -8160,7 +8171,9 @@
                       this.isDeleteDialogOpen = !!role;
                   },
               }));
-          });</script><script>document.addEventListener("alpine:init", () => {
+          });
+      </script><script>
+          document.addEventListener("alpine:init", () => {
               Alpine.data("expansion_panel", () => ({
                   // Variables
                   isOpen: false,
@@ -8185,7 +8198,9 @@
                       this.isOpen = !this.isOpen;
                   },
               }));
-          });</script><script>// Define component similarly to defining Vue components
+          });
+      </script><script>
+          // Define component similarly to defining Vue components
           const ProjectOutputForm = AlpineComposition.defineComponent({
               name: 'project_output_form',
   
@@ -8316,7 +8331,9 @@
   
           document.addEventListener('alpine:init', () => {
               AlpineComposition.registerComponent(Alpine, ProjectOutputForm);
-          });</script><script>document.addEventListener('alpine:init', () => {
+          });
+      </script><script>
+          document.addEventListener('alpine:init', () => {
               Alpine.data('form', () => {
                   const data = Alpine.reactive({
                       // Variables
@@ -8357,7 +8374,9 @@
   
                   return data;
               });
-          });</script><script>const ProjectOutputAttachments = AlpineComposition.defineComponent({
+          });
+      </script><script>
+          const ProjectOutputAttachments = AlpineComposition.defineComponent({
               name: "project_output_attachments",
   
               props: {
@@ -8382,7 +8401,9 @@
   
           document.addEventListener("alpine:init", () => {
               AlpineComposition.registerComponent(Alpine, ProjectOutputAttachments);
-          });</script><script>// Define component similarly to defining Vue components
+          });
+      </script><script>
+          // Define component similarly to defining Vue components
           const Tags = AlpineComposition.defineComponent({
               name: "tags",
   
@@ -8504,7 +8525,9 @@
   
           document.addEventListener('alpine:init', () => {
               AlpineComposition.registerComponent(Alpine, Tags);
-          });</script><script>// Define component similarly to defining Vue components
+          });
+      </script><script>
+          // Define component similarly to defining Vue components
           const ProjectOutputDependency = AlpineComposition.defineComponent({
               name: 'project_output_dependency',
   
@@ -8537,7 +8560,8 @@
   
           document.addEventListener('alpine:init', () => {
               AlpineComposition.registerComponent(Alpine, ProjectOutputDependency);
-          });</script>
+          });
+      </script>
   
               
               

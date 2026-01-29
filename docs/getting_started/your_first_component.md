@@ -73,11 +73,10 @@ In your template:
 JavaScript:
 
 ```javascript title="components/product_card/product_card.js"
-// Access component JS variables in $onLoad callback
-$onLoad(({ product_id, price, api_endpoint }) => {
-  document
-    .querySelector(`[data-product-id="${product_id}"]`)
-    .querySelector(".add-to-cart")
+// Access component JS variables in $onComponent callback
+$onComponent(({ product_id, price, api_endpoint }, ctx) => {
+  const containerEl = ctx.els[0];
+  containerEl.querySelector(".add-to-cart")
     .addEventListener("click", () => {
       fetch(api_endpoint, {
         method: "POST",

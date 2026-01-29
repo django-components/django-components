@@ -2,7 +2,7 @@
 
 ## v0.147.0
 
-Added support for Django 6.0, CSS variables, and component tree navigation.
+Added support for Django 6.0, JS and CSS variables, and component tree navigation.
 
 #### Breaking changes 🚨📢
 
@@ -11,6 +11,55 @@ Added support for Django 6.0, CSS variables, and component tree navigation.
 - Dropped support for Django 5.1.
 
 #### Feat
+
+- **JS variables with `get_js_data()`**
+
+    Pass data from Python to JavaScript with `Component.get_js_data()`.
+
+    `Component.get_js_data()` returns a dictionary. This data is automatically
+    serialized to JSON and made available to your component's JavaScript code.
+
+    In your JavaScript file, access these variables using the `$onComponent()` callback function.
+
+    JS variables are automatically scoped to each component instance. Different
+    instances of the same component can have different JS variable values.
+
+    **Example:**
+
+    ```python
+    from django_components import Component, register
+
+    @register("product_card")
+    class ProductCard(Component):
+        template_file = "product_card.html"
+        js_file = "product_card.js"
+        css_file = "product_card.css"
+
+        def get_js_data(self, args, kwargs: Kwargs, slots, context):
+            product = Product.objects.get(id=kwargs.product_id)
+            return {
+                "product_id": kwargs.product_id,
+                "price": float(product.price),
+                "api_endpoint": f"/api/products/{kwargs.product_id}/",
+            }
+    ```
+
+    ```javascript
+    // product_card.js
+
+    // Access component JS variables in $onComponent callback
+    $onComponent(({ product_id, price, api_endpoint }, ctx) => {
+      const containerEl = ctx.els[0];
+      containerEl.querySelector(".add-to-cart")
+        .addEventListener("click", () => {
+          fetch(api_endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "add_to_cart", price: price }),
+          });
+        });
+    });
+    ```
 
 - **CSS variables with `get_css_data()`**
 
@@ -45,6 +94,7 @@ Added support for Django 6.0, CSS variables, and component tree navigation.
     ```
 
     ```css
+    /* button.css */
     .button {
       background-color: var(--bg);
       color: var(--color);

@@ -73,6 +73,8 @@ class TestDependencyManager:
             "loadJs",
             "loadCss",
             "markScriptLoaded",
+            "waitForScriptsToLoad",
+            "_loadComponentScripts",
         ]
 
         await page.close()
@@ -114,15 +116,15 @@ class TestLoadScript:
             const headBeforeFirstLoad = document.head.innerHTML;
 
             // Adds a script the first time
-            manager.loadJs("<script src='/one/two'></script>");
+            manager.loadJs({'tag': 'script', 'attrs': {'src': '/one/two'}, 'content': ''});
             const bodyAfterFirstLoad = document.body.innerHTML;
 
             // Does not add it the second time
-            manager.loadJs("<script src='/one/two'></script>");
+            manager.loadJs({'tag': 'script', 'attrs': {'src': '/one/two'}, 'content': ''});
             const bodyAfterSecondLoad = document.body.innerHTML;
 
             // Adds different script
-            manager.loadJs("<script src='/four/three'></script>");
+            manager.loadJs({'tag': 'script', 'attrs': {'src': '/four/three'}, 'content': ''});
             const bodyAfterThirdLoad = document.body.innerHTML;
 
             const headAfterThirdLoad = document.head.innerHTML;
@@ -158,15 +160,15 @@ class TestLoadScript:
             const bodyBeforeFirstLoad = document.body.innerHTML;
 
             // Adds a script the first time
-            manager.loadCss("<link href='/one/two'>");
+            manager.loadCss({'tag': 'link', 'attrs': {'href': '/one/two'}, 'content': ''});
             const headAfterFirstLoad = document.head.innerHTML;
 
             // Does not add it the second time
-            manager.loadCss("<link herf='/one/two'>");
+            manager.loadCss({'tag': 'link', 'attrs': {'href': '/one/two'}, 'content': ''});
             const headAfterSecondLoad = document.head.innerHTML;
 
             // Adds different script
-            manager.loadCss("<link href='/four/three'>");
+            manager.loadCss({'tag': 'link', 'attrs': {'href': '/four/three'}, 'content': ''});
             const headAfterThirdLoad = document.head.innerHTML;
 
             const bodyAfterThirdLoad = document.body.innerHTML;
@@ -203,10 +205,10 @@ class TestLoadScript:
             manager.markScriptLoaded('css', '/one/two');
             manager.markScriptLoaded('js', '/one/three');
 
-            manager.loadCss("<link href='/one/two'>");
+            manager.loadCss({'tag': 'link', 'attrs': {'href': '/one/two'}, 'content': ''});
             const headAfterFirstLoad = document.head.innerHTML;
 
-            manager.loadJs("<script src='/one/three'></script>");
+            manager.loadJs({'tag': 'script', 'attrs': {'src': '/one/three'}, 'content': ''});
             const bodyAfterSecondLoad = document.body.innerHTML;
 
             return {
@@ -449,7 +451,7 @@ class TestCallComponent:
 
         with pytest.raises(
             Error,
-            match=re.escape("[DjangoComponents] 'my_comp': Cannot find input for hash 'input-abc'"),
+            match=re.escape("[DjangoComponents] 'my_comp': Cannot find JS variables for hash 'input-abc'"),
         ):
             await page.evaluate(test_js)
 
