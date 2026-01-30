@@ -51,3 +51,26 @@ class TestTemplateCache:
 
         template_2 = _get_component_template(comp)
         assert template_2._test_id == "123"  # type: ignore[union-attr]
+
+
+@djc_test
+class TestTemplateMonkeypatch:
+    # See https://github.com/django-components/django-components/issues/1571
+    def test_unpatched_template_class_is_patched_when_rendering_component(self):
+        # Access the Template class and remove the internal attribute used to detect patching.
+        # This simulates encountering Django's Template before django-components has patched it.
+        if hasattr(Template, "_djc_patched"):
+            delattr(Template, "_djc_patched")
+
+        class SimpleComponent(Component):
+            template = "Hello"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {}
+
+        # Render a component
+        component = SimpleComponent()
+        component.render()
+
+        # The Template class should now have been patched (attribute restored).
+        assert getattr(Template, "_djc_patched", False) is True
