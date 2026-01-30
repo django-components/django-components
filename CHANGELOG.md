@@ -135,6 +135,12 @@ Added support for Django 6.0, CSS variables, and component tree navigation.
 
     Both `btn_class` and the literal string are now merged together.
 
+- Fixed bug when `{% component %}` is used inside a `{% block %}` tag with `{% extends %}`,
+  causing context processor data to be duplicated and shadowed. Components now reuse context
+  processor data from `RequestContext` when Django has already run `bind_template()`.
+
+  See [#1569](https://github.com/django-components/django-components/issues/1569)
+
 ## v0.146.0
 
 `django-components` is now tested across all major browsers - Chromium, Firefox, WebKit.
