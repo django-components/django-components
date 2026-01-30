@@ -4,7 +4,7 @@ from weakref import WeakKeyDictionary
 
 from django.http import HttpRequest
 from django.template import Engine
-from django.template.context import BaseContext, Context
+from django.template.context import BaseContext, Context, RequestContext
 from django.template.loader_tags import BlockContext
 
 if TYPE_CHECKING:
@@ -128,6 +128,21 @@ def _copy_block_context(block_context: BlockContext) -> BlockContext:
 def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> dict[str, Any]:
     if request in context_processors_data:
         return context_processors_data[request].copy()
+
+    # Reuse context processor data from RequestContext when Django has already run
+    # bind_template() (e.g. when rendering a template that uses {% extends %}).
+    # Otherwise we would run context processors again and push a new layer that
+    # shadows the original, so get_template_data() would see the original but the
+    # component template would see the new layer.
+    # See https://github.com/django-components/django-components/issues/1569
+    if isinstance(context, RequestContext) and hasattr(context, "_processors_index"):
+        try:
+            existing = context.dicts[context._processors_index]
+        except IndexError:
+            existing = {}
+        if existing:
+            context_processors_data[request] = existing
+            return existing.copy()
 
     # TODO_REMOVE_IN_V2 - In v2, if we still support context processors,
     #     it should be set on our settings, so we wouldn't have to get the Engine for that.
