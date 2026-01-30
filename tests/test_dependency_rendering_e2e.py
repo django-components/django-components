@@ -376,7 +376,16 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="FragComp_"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
         await page.wait_for_function(
             """
             () => {
@@ -386,7 +395,6 @@ class TestE2eDependencyRendering:
                 return bg.includes('rgb(0, 0, 255)');
             }
             """,
-            timeout=1000,
         )
 
         test_js: types.js = """() => {
@@ -449,7 +457,16 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="fragment.css"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
         await page.wait_for_function(
             """
             () => {
@@ -459,7 +476,6 @@ class TestE2eDependencyRendering:
                 return bg.includes('rgb(0, 0, 255)');
             }
             """,
-            timeout=1000,
         )
 
         test_js: types.js = """() => {
@@ -522,7 +538,16 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="FragComp_"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
         await page.wait_for_function(
             """
             () => {
@@ -532,7 +557,6 @@ class TestE2eDependencyRendering:
                 return bg.includes('rgb(0, 0, 255)');
             }
             """,
-            timeout=1000,
         )
 
         test_js: types.js = """() => {
@@ -596,7 +620,16 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="FragComp_"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
         await page.wait_for_function(
             """
             () => {
@@ -662,7 +695,16 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="FragComp_"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
         await page.wait_for_function(
             """
             () => {
@@ -672,7 +714,6 @@ class TestE2eDependencyRendering:
                 return bg.includes('rgb(0, 0, 255)');
             }
             """,
-            timeout=1000,
         )
 
         test_js: types.js = """() => {
