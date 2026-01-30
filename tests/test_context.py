@@ -1,8 +1,10 @@
+import tempfile
+from pathlib import Path
 from typing import cast
 
 import pytest
 from django.http import HttpRequest
-from django.template import Context, RequestContext, Template
+from django.template import Context, RequestContext, Template, engines
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, register, registry, types
@@ -18,6 +20,15 @@ setup_test_config()
 # processor is generated only once, as each time this is called, it should generate a different ID.
 def dummy_context_processor(request):  # noqa: ARG001
     return {"dummy": gen_id()}
+
+
+# For test_context_processor_called_once_with_extends (issue #1569)
+_context_processor_call_count_1569 = [0]
+
+
+def list_context_processor_1569(request):  # noqa: ARG001
+    _context_processor_call_count_1569[0] += 1
+    return {"MY_LIST": []}
 
 
 #########################
@@ -950,6 +961,83 @@ class TestContextProcessors:
         assert parent_data["dummy"] == "a1bc3f"
         assert child_data["dummy"] == "a1bc3f"
         assert parent_data["csrf_token"] == child_data["csrf_token"]
+
+    @djc_test(
+        django_settings={
+            "TEMPLATES": [
+                {
+                    "BACKEND": "django.template.backends.django.DjangoTemplates",
+                    "DIRS": [],
+                    "OPTIONS": {
+                        "context_processors": [
+                            "tests.test_context.list_context_processor_1569",
+                        ],
+                        "loaders": [
+                            "django.template.loaders.filesystem.Loader",
+                            "django.template.loaders.app_directories.Loader",
+                        ],
+                    },
+                },
+            ],
+        },
+    )
+    def test_context_processor_called_once_with_extends(self):
+        """
+        Regression test for #1569: context processors run twice with {% extends %}.
+
+        See https://github.com/django-components/django-components/issues/1569
+        """
+        _context_processor_call_count_1569[0] = 0
+
+        @register("outer_component_1569")
+        class OuterComponent1569(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div>
+                    {% component "inner_component_1569" %}{% endcomponent %}
+                </div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                context["MY_LIST"].append("outer")
+                return {}
+
+        @register("inner_component_1569")
+        class InnerComponent1569(Component):
+            template: types.django_html = "{{ MY_LIST }}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                context["MY_LIST"].append("inner")
+                return {}
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmppath = Path(tmpdir)
+            (tmppath / "base_1569.html").write_text("""
+                {% block content %}{% endblock %}
+            """)
+            (tmppath / "child_1569.html").write_text("""
+                {% extends "base_1569.html" %}
+                {% load component_tags %}
+                {% block content %}
+                    {% component "outer_component_1569" %}{% endcomponent %}
+                {% endblock %}
+            """)
+
+            django_engine = engines["django"]
+            original_dirs = list(django_engine.engine.dirs)
+            django_engine.engine.dirs = [str(tmppath), *original_dirs]
+
+            try:
+                request = HttpRequest()
+                request.method = "GET"
+                template = django_engine.get_template("child_1569.html")
+                result = template.render({}, request)
+
+                assert _context_processor_call_count_1569[0] == 1, "Context processor should be called once, not twice"
+                assert "outer" in result, "Outer component should see shared MY_LIST"
+                assert "inner" in result, "Inner component should see shared MY_LIST"
+            finally:
+                django_engine.engine.dirs = original_dirs
 
     def test_context_processors_data_outside_of_rendering(self):
         class TestComponent(Component):
