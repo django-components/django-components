@@ -376,7 +376,18 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+            timeout=1000,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
@@ -438,7 +449,18 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+            timeout=1000,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
@@ -500,7 +522,18 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+            timeout=1000,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
@@ -563,7 +596,17 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
@@ -619,7 +662,18 @@ class TestE2eDependencyRendering:
             )
             """,
         )
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        # Wait for stylesheet to be applied (Firefox can apply later than link presence)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+            timeout=1000,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
