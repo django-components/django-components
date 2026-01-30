@@ -4,7 +4,7 @@ from typing import cast
 
 import pytest
 from django.http import HttpRequest
-from django.template import Context, RequestContext, Template, engines
+from django.template import Context, RequestContext, Template
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, register, registry, types
@@ -979,6 +979,10 @@ class TestContextProcessors:
                     },
                 },
             ],
+            # Use "django" context behavior so the component receives the same context
+            # (with MY_LIST from context processors), not an isolated copy that can
+            # miss the context-processor layer when run after test_benchmark_django.
+            "COMPONENTS": {"context_behavior": "django"},
         },
     )
     def test_context_processor_called_once_with_extends(self):
@@ -1023,21 +1027,37 @@ class TestContextProcessors:
                 {% endblock %}
             """)
 
-            django_engine = engines["django"]
-            original_dirs = list(django_engine.engine.dirs)
-            django_engine.engine.dirs = [str(tmppath), *original_dirs]
+            # Use a fresh backend built from this test's TEMPLATES so we don't depend on
+            # the global engine cache (which can be populated by test_benchmark_django or
+            # other tests with a different config). This ensures the context processor
+            # list_context_processor_1569 is used when rendering.
+            from django.template.backends.django import DjangoTemplates
 
-            try:
-                request = HttpRequest()
-                request.method = "GET"
-                template = django_engine.get_template("child_1569.html")
-                result = template.render({}, request)
+            backend = DjangoTemplates(
+                {
+                    "NAME": "django",
+                    "DIRS": [str(tmppath)],
+                    "APP_DIRS": False,
+                    "OPTIONS": {
+                        "context_processors": [
+                            "tests.test_context.list_context_processor_1569",
+                        ],
+                        "loaders": [
+                            "django.template.loaders.filesystem.Loader",
+                            "django.template.loaders.app_directories.Loader",
+                        ],
+                    },
+                }
+            )
 
-                assert _context_processor_call_count_1569[0] == 1, "Context processor should be called once, not twice"
-                assert "outer" in result, "Outer component should see shared MY_LIST"
-                assert "inner" in result, "Inner component should see shared MY_LIST"
-            finally:
-                django_engine.engine.dirs = original_dirs
+            request = HttpRequest()
+            request.method = "GET"
+            template = backend.get_template("child_1569.html")
+            result = template.render({}, request)
+
+            assert _context_processor_call_count_1569[0] == 1, "Context processor should be called once, not twice"
+            assert "outer" in result, "Outer component should see shared MY_LIST"
+            assert "inner" in result, "Inner component should see shared MY_LIST"
 
     def test_context_processors_data_outside_of_rendering(self):
         class TestComponent(Component):
