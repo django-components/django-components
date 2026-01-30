@@ -8,8 +8,8 @@ from django.template import Context, Origin, Template
 from django.template.loader import get_template as django_get_template
 
 from django_components.cache import get_template_cache
-from django_components.util.django_monkeypatch import is_cls_patched
-from django_components.util.logger import trace_component_msg
+from django_components.util.django_monkeypatch import is_cls_patched, monkeypatch_template_cls
+from django_components.util.logger import logger, trace_component_msg
 from django_components.util.misc import get_import_path, get_module_info
 
 if TYPE_CHECKING:
@@ -98,13 +98,14 @@ def prepare_component_template(
             yield template
             return
 
-        if not is_cls_patched(template):
-            raise RuntimeError(
-                "Django-components received a Template instance which was not patched."
-                "If you are using Django's Template class, check if you added django-components"
-                "to INSTALLED_APPS. If you are using a custom template class, then you need to"
-                "manually patch the class.",
+        if not is_cls_patched(type(template)):
+            logger.warning(
+                "Django-components received a Template instance which was not patched. "
+                "If you are using Django's Template class, check if you added django-components "
+                "to INSTALLED_APPS. If you are using a custom template class, then you need to "
+                "manually patch the class. Patching the template class now.",
             )
+            monkeypatch_template_cls(type(template))
 
         with _maybe_bind_template(context, template):
             yield template

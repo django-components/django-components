@@ -139,7 +139,12 @@ Added support for Django 6.0, CSS variables, and component tree navigation.
   causing context processor data to be duplicated and shadowed. Components now reuse context
   processor data from `RequestContext` when Django has already run `bind_template()`.
 
-  See [#1569](https://github.com/django-components/django-components/issues/1569)
+    See [#1569](https://github.com/django-components/django-components/issues/1569)
+
+- Fixed occasional `RuntimeError: Template not patched` multithreading / concurrency issue. When django-components receives an unpatched `Template` instance, it now
+  logs a warning and patches the template class on-the-fly instead of raising.
+
+    See [#1571](https://github.com/django-components/django-components/issues/1571)
 
 ## v0.146.0
 
