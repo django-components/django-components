@@ -443,6 +443,8 @@ export const createComponentsManager = () => {
             error,
           );
         }
+        // Re-throw the error to be handled by the caller
+        throw error;
       }
     }
 
@@ -488,7 +490,7 @@ export const createComponentsManager = () => {
     components[compClsId].push(compFn);
 
     // Check if any pending calls are now unblocked
-    _processPendingCalls();
+    return _processPendingCalls();
   };
 
   /**
@@ -506,7 +508,7 @@ export const createComponentsManager = () => {
     componentInputs[key] = dataFactory;
 
     // Check if any pending calls are now unblocked
-    _processPendingCalls();
+    return _processPendingCalls();
   };
 
   const queueComponentCall = (
@@ -545,12 +547,12 @@ export const createComponentsManager = () => {
         resolve,
         reject,
       });
-    });
 
-    // Start warning interval if we have queued calls
-    if (pendingComponentCalls.length > 0) {
+      // Start warning interval if we have queued calls
+      // NOTE: This is inside the promise in case the promise ran in a different tick.
       _startWarningInterval();
-    }
+      _processPendingCalls();
+    });
 
     return callPromise;
   };

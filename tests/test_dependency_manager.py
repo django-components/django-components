@@ -236,7 +236,7 @@ class TestCallComponent:
     async def test_calls_component_successfully(self, browser: "Browser", browser_name: "BrowserType"):
         page = await _create_page_with_dep_manager(browser)
 
-        test_js: types.js = """() => {
+        test_js: types.js = """async () => {
             const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
@@ -256,7 +256,7 @@ class TestCallComponent:
                 return { hello: 'world' };
             });
 
-            const result = manager.callComponent(compName, compId, inputHash);
+            const result = await manager.callComponent(compName, compId, inputHash);
 
             // Serialize the HTML elements
             captured.ctx.els = captured.ctx.els.map((el) => el.outerHTML);
@@ -297,8 +297,8 @@ class TestCallComponent:
             // Pretend that this HTML belongs to our component
             document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-c12345> abc </div>');
 
-            manager.registerComponent(compName, (data, ctx) => {
-                return Promise.resolve(123);
+            manager.registerComponent(compName, ({ hello }, ctx) => {
+                return Promise.resolve(hello + "_component_callback");
             });
 
             manager.registerComponentData(compName, inputHash, () => {
@@ -310,7 +310,7 @@ class TestCallComponent:
             const isPromise = `${result}` === '[object Promise]';
 
             // Wrap the whole response in Promise, so we can add extra fields
-            return Promise.resolve(result).then((res) => ({
+            return result.then((res) => ({
               result: res,
               isPromise,
             }));
@@ -318,7 +318,7 @@ class TestCallComponent:
 
         data = await page.evaluate(test_js)
 
-        assert data["result"] == 123
+        assert data["result"] == "world_component_callback"
         assert data["isPromise"] is True
 
         await page.close()
@@ -349,13 +349,15 @@ class TestCallComponent:
             });
 
             const result = manager.callComponent(compName, compId, inputHash);
-
-            return result;
+            return Promise.allSettled([result]);
         }"""
 
         data = await page.evaluate(test_js)
 
-        assert data is None
+        assert len(data) == 1
+        assert data[0]["status"] == "rejected"
+        assert isinstance(data[0]["reason"], Error)
+        assert data[0]["reason"].message == "Oops!"
 
         await page.close()
 
@@ -401,15 +403,15 @@ class TestCallComponent:
     async def test_raises_if_component_element_not_in_dom(self, browser: "Browser", browser_name: "BrowserType"):
         page = await _create_page_with_dep_manager(browser)
 
-        test_js: types.js = """() => {
+        test_js: types.js = """async () => {
             const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
             const compId = '12345';
             const inputHash = 'input-abc';
 
-            manager.registerComponent(compName, (data, ctx) => {
-                return 123;
+            manager.registerComponent(compName, ({ hello }, ctx) => {
+                return Promise.resolve(hello + "_component_callback");
             });
 
             manager.registerComponentData(compName, inputHash, () => {
@@ -417,7 +419,7 @@ class TestCallComponent:
             });
 
             // Should raise Error
-            manager.callComponent(compName, compId, inputHash);
+            await manager.callComponent(compName, compId, inputHash);
         }"""
 
         with pytest.raises(
@@ -429,10 +431,10 @@ class TestCallComponent:
         await page.close()
 
     @with_playwright
-    async def test_raises_if_input_hash_not_registered(self, browser: "Browser", browser_name: "BrowserType"):
+    async def test_callcomponent_waits_for_component_data(self, browser: "Browser", browser_name: "BrowserType"):
         page = await _create_page_with_dep_manager(browser)
 
-        test_js: types.js = """() => {
+        test_js: types.js = """async () => {
             const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
@@ -441,27 +443,42 @@ class TestCallComponent:
 
             document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-c12345> abc </div>');
 
-            manager.registerComponent(compName, (data, ctx) => {
-                return Promise.resolve(123);
+            manager.registerComponent(compName, ({ hello }, ctx) => {
+                return Promise.resolve(hello + "_component_callback");
             });
 
-            // Should raise Error
-            manager.callComponent(compName, compId, inputHash);
+            // `callComponent()` should be blocked until we register component data.
+            let isFinished = false;
+            const resultPromise = manager.callComponent(compName, compId, inputHash);
+            resultPromise.then(() => {
+                isFinished = true;
+            });
+
+            // After a short while the component call should be still blocked
+            await new Promise((r) => setTimeout(r, 20));
+            if (isFinished) {
+                throw new Error("callComponent should be still blocked");
+            }
+
+            // Only after we register component data, the call should be unblocked
+            await manager.registerComponentData(compName, inputHash, () => ({ hello: 'world' }));
+            if (!isFinished) {
+                throw new Error("callComponent should be unblocked");
+            }
+
+            return resultPromise;
         }"""
 
-        with pytest.raises(
-            Error,
-            match=re.escape("[DjangoComponents] 'my_comp': Cannot find JS variables for hash 'input-abc'"),
-        ):
-            await page.evaluate(test_js)
+        data = await page.evaluate(test_js)
+        assert data == "world_component_callback"
 
         await page.close()
 
     @with_playwright
-    async def test_raises_if_component_not_registered(self, browser: "Browser", browser_name: "BrowserType"):
+    async def test_callcomponent_waits_for_component(self, browser: "Browser", browser_name: "BrowserType"):
         page = await _create_page_with_dep_manager(browser)
 
-        test_js: types.js = """() => {
+        test_js: types.js = """async () => {
             const manager = DjangoComponents.createComponentsManager();
 
             const compName = 'my_comp';
@@ -470,18 +487,34 @@ class TestCallComponent:
 
             document.body.insertAdjacentHTML('beforeend', '<div data-djc-id-12345> abc </div>');
 
-            manager.registerComponentData(compName, inputHash, () => {
-                return { hello: 'world' };
+
+            manager.registerComponentData(compName, inputHash, () => ({ hello: 'world' }));
+
+            // `callComponent()` should be blocked until we register component data.
+            let isFinished = false;
+            const resultPromise = manager.callComponent(compName, compId, inputHash);
+            resultPromise.then(() => {
+                isFinished = true;
             });
 
-            // Should raise Error
-            manager.callComponent(compName, compId, inputHash);
+            // After a short while the component call should be still blocked
+            await new Promise((r) => setTimeout(r, 20));
+            if (isFinished) {
+                throw new Error("callComponent should be still blocked");
+            }
+
+            // Only after we register component data, the call should be unblocked
+            await manager.registerComponent(compName, ({ hello }, ctx) => {
+                return Promise.resolve(hello + "_component_callback");
+            });
+            if (!isFinished) {
+                throw new Error("callComponent should be unblocked");
+            }
+
+            return resultPromise;
         }"""
 
-        with pytest.raises(
-            Error,
-            match=re.escape("[DjangoComponents] 'my_comp': No component registered for that name"),
-        ):
-            await page.evaluate(test_js)
+        data = await page.evaluate(test_js)
+        assert data == "world_component_callback"
 
         await page.close()

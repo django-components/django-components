@@ -54,7 +54,7 @@ class TestJsVariables:
                         "cssTags__toFetch": [],
                         "jsTags__toFetch": [],
                         "componentJsVars": [["VGVzdENvbXBvbmVudF9hNjdmOWY=", "NTQ0MGU0", "eyJtZXNzYWdlIjogIkhlbGxvIGZyb20gSlMifQ=="]],
-                        "componentJsCalls": [["VGVzdENvbXBvbmVudF9hNjdmOWY=", "Y2ExYmMzZQ==", "NTQ0MGU0"]]});
+                        "componentJsCalls": []});
                 })();
             </script>
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
@@ -131,11 +131,11 @@ class TestJsVariables:
             <script type="text/javascript">
                 (function() {
                     DjangoComponents.manager._loadComponentScripts({"cssUrls__markAsLoaded": [],
-                    "jsUrls__markAsLoaded": [],
-                    "cssTags__toFetch": [],
-                    "jsTags__toFetch": [],
-                    "componentJsVars": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "YTZmZjgy", "eyJ2YWx1ZSI6IDEwfQ=="]],
-                    "componentJsCalls": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0MQ==", "YTZmZjgy"]]});
+                        "jsUrls__markAsLoaded": [],
+                        "cssTags__toFetch": [],
+                        "jsTags__toFetch": [],
+                        "componentJsVars": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "YTZmZjgy", "eyJ2YWx1ZSI6IDEwfQ=="]],
+                        "componentJsCalls": []});
                 })();
             </script>
             <script type="text/javascript">
@@ -145,9 +145,10 @@ class TestJsVariables:
                         "cssTags__toFetch": [],
                         "jsTags__toFetch": [],
                         "componentJsVars": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "YzBjYWEx", "eyJ2YWx1ZSI6IDIwfQ=="]],
-                        "componentJsCalls": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0Mg==", "YzBjYWEx"]]});
+                        "componentJsCalls": []});
                 })();
-            </script><script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
+            </script>
+            <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
                 "jsUrls__markAsLoaded": [],
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
@@ -210,7 +211,7 @@ class TestJsVariables:
                         "jsTags__toFetch": [],
                         "componentJsVars": [["VGVzdENvbXBvbmVudF8yZTY4MDY=", "N2FjZmI5",
                             "eyJsYXQiOiA0MC43MTI4LCAibG5nIjogLTc0LjAwNiwgInpvb20iOiAxMywgIm1hcmtlcnMiOiBbeyJsYXQiOiA0MC43MTI4LCAibG5nIjogLTc0LjAwNiwgInRpdGxlIjogIk1hcmtlciAxIn0sIHsibGF0IjogNDAuNzU4LCAibG5nIjogLTczLjk4NTUsICJ0aXRsZSI6ICJNYXJrZXIgMiJ9XX0="]],
-                        "componentJsCalls": [["VGVzdENvbXBvbmVudF8yZTY4MDY=", "Y2ExYmMzZQ==", "N2FjZmI5"]]});
+                        "componentJsCalls": []});
                 })();
             </script>
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
@@ -299,37 +300,32 @@ class TestJsVariables:
         assertHTMLEqual(
             """
             <div class="user-widget" data-djc-id-ca1bc3e="">User Widget</div>
-                <script src="django_components/django_components.min.js"></script>
-                <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                    "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF84MTFlNzAuYmEyZDkxLmpz",
-                        "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF84MTFlNzAuanM="],
-                        "cssTags__toFetch": [],
-                        "jsTags__toFetch": [],
-                        "componentJsVars": [],
-                        "componentJsCalls": []}</script>
-                <script>
-                    DjangoComponents.manager.registerComponent("TestComponent_811e70", ({ user_id, api_key }) => {
-                        fetch(`/api/users/${user_id}`, {
-                            headers: { 'Authorization': `Bearer ${api_key}` }
-                        });
+            <script src="django_components/django_components.min.js"></script>
+            <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
+                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF84MTFlNzAuYmEyZDkxLmpz",
+                    "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF84MTFlNzAuanM="],
+                "cssTags__toFetch": [],
+                "jsTags__toFetch": [],
+                "componentJsVars": [],
+                "componentJsCalls": []}</script>
+            <script>
+                DjangoComponents.manager.registerComponent("TestComponent_811e70", ({ user_id, api_key }) => {
+                    fetch(`/api/users/${user_id}`, {
+                        headers: { 'Authorization': `Bearer ${api_key}` }
                     });
-                </script>
-                <script type="text/javascript">
-                    (function() {
-                        DjangoComponents.manager._loadComponentScripts({"cssUrls__markAsLoaded": [],
-                            "jsUrls__markAsLoaded": [],
-                            "cssTags__toFetch": [],
-                            "jsTags__toFetch": [],
-                            "componentJsVars": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "YmEyZDkx", "eyJ1c2VyX2lkIjogMTIzLCAiYXBpX2tleSI6ICJzZWNyZXQta2V5In0="]],
-                            "componentJsCalls": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "Y2ExYmMzZQ==", "YmEyZDkx"]]});
-                    })();
-                </script>
-                <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                    "jsUrls__markAsLoaded": [],
-                    "cssTags__toFetch": [],
-                    "jsTags__toFetch": [],
-                    "componentJsVars": [],
-                    "componentJsCalls": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "Y2ExYmMzZQ==", "YmEyZDkx"]]}</script>
+                });
+            </script>
+            <script type="text/javascript">
+                (function() {
+                    DjangoComponents.manager._loadComponentScripts({"cssUrls__markAsLoaded": [], "jsUrls__markAsLoaded": [], "cssTags__toFetch": [], "jsTags__toFetch": [], "componentJsVars": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "YmEyZDkx", "eyJ1c2VyX2lkIjogMTIzLCAiYXBpX2tleSI6ICJzZWNyZXQta2V5In0="]], "componentJsCalls": []});
+                })();
+            </script>
+            <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
+                "jsUrls__markAsLoaded": [],
+                "cssTags__toFetch": [],
+                "jsTags__toFetch": [],
+                "componentJsVars": [],
+                "componentJsCalls": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "Y2ExYmMzZQ==", "YmEyZDkx"]]}</script>
             """,  # noqa: E501
             rendered,
         )
