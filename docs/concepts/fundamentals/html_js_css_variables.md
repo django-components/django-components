@@ -223,8 +223,8 @@ If you render multiple instances of the same component with different JS data, e
 
 ```python
 # Render multiple instances
-{% component "InteractiveMap" location_id=1 %}{% endcomponent %}
-{% component "InteractiveMap" location_id=2 %}{% endcomponent %}
+{% component "Calendar" date=some_date %}{% endcomponent %}
+{% component "Calendar" date=other_date %}{% endcomponent %}
 ```
 
 Each instance will have its `$onComponent()` callback called with the data specific to that instance's `get_js_data()` return value.

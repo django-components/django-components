@@ -40,7 +40,7 @@ export interface TagJson {
  * Usage:
  *
  * ```js
- * DjangoComponents.registerComponent("table", async (data, { id, name, els }) => {
+ * DjangoComponents.manager.registerComponent("table", async (data, { id, name, els }) => {
  *   ...
  * });
  * ```
@@ -48,34 +48,42 @@ export interface TagJson {
  * Multiple callbacks can be registered for the same component:
  *
  * ```js
- * DjangoComponents.registerComponent("table", async (data, { id, name, els }) => {
+ * DjangoComponents.manager.registerComponent("table", async (data, { id, name, els }) => {
  *   // First callback
  * });
- * DjangoComponents.registerComponent("table", async (data, { id, name, els }) => {
+ * DjangoComponents.manager.registerComponent("table", async (data, { id, name, els }) => {
  *   // Second callback - will be called after the first
  * });
  * ```
  *
  * ```js
- * DjangoComponents.registerComponentData("table", "3d09cf", () => {
+ * DjangoComponents.manager.registerComponentData("table", "3d09cf", () => {
  *   return JSON.parse('{ "abc": 123 }');
  * });
  * ```
  *
  * ```js
- * DjangoComponents.callComponent("table", 12345, "3d09cf");
+ * DjangoComponents.manager.callComponent("table", 12345, "3d09cf");
  * ```
  *
  * ```js
- * DjangoComponents.loadJs({ tag: 'script', attrs: { src: '/abc/def' }, content: 'console.log("Hello, world!");' });
+ * DjangoComponents.manager.loadJs({
+ *   tag: 'script',
+ *   attrs: { src: '/abc/def' },
+ *   content: 'console.log("Hello, world!");'
+ * });
  * ```
  *
  * ```js
- * DjangoComponents.loadCss({ tag: 'link', attrs: { href: '/abc/def', rel: 'stylesheet' }, content: '' });
+ * DjangoComponents.manager.loadCss({
+ *   tag: 'link',
+ *   attrs: { href: '/abc/def', rel: 'stylesheet' },
+ *   content: ''
+ * });
  * ```
  *
  * ```js
- * DjangoComponents.markScriptLoaded("js", '/abc/def');
+ * DjangoComponents.manager.markScriptLoaded("js", '/abc/def');
  * ```
  */
 export const createComponentsManager = () => {
@@ -476,7 +484,7 @@ export const createComponentsManager = () => {
    * @param compFn - The callback function to call when the component is instantiated.
    *
    * @example
-   * DjangoComponents.registerComponent("table", async (data, { id, name, els }) => {
+   * DjangoComponents.manager.registerComponent("table", async (data, { id, name, els }) => {
    *   ...
    * });
    */
@@ -495,7 +503,7 @@ export const createComponentsManager = () => {
 
   /**
    * @example
-   * DjangoComponents.registerComponentData("table", "a1b2c3", () => {{
+   * DjangoComponents.manager.registerComponentData("table", "a1b2c3", () => {{
    *   return JSON.parse('{ "a": 2 }');
    * }});
    */

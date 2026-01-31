@@ -41,7 +41,7 @@ class TestJsVariables:
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
                 "componentJsVars": [],
-                "componentJsCalls": []}</script>
+                "componentJsCalls": [["VGVzdENvbXBvbmVudF9hNjdmOWY=", "Y2ExYmMzZQ==", "NTQ0MGU0"]]}</script>
             <script>
                 DjangoComponents.manager.registerComponent("TestComponent_a67f9f", ({ message }) => {
                     console.log(message);
@@ -57,12 +57,6 @@ class TestJsVariables:
                         "componentJsCalls": []});
                 })();
             </script>
-            <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": [],
-                "cssTags__toFetch": [],
-                "jsTags__toFetch": [],
-                "componentJsVars": [],
-                "componentJsCalls": [["VGVzdENvbXBvbmVudF9hNjdmOWY=", "Y2ExYmMzZQ==", "NTQ0MGU0"]]}</script>
             """,  # noqa: E501
             rendered,
         )
@@ -122,7 +116,8 @@ class TestJsVariables:
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
                 "componentJsVars": [],
-                "componentJsCalls": []}</script>
+                "componentJsCalls": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0MQ==", "YTZmZjgy"],
+                    ["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0Mg==", "YzBjYWEx"]]}</script>
             <script>
                 DjangoComponents.manager.registerComponent("TestComponentRegistered_ce45d4", ({ value }) => {
                     console.log('Value:', value);
@@ -148,13 +143,6 @@ class TestJsVariables:
                         "componentJsCalls": []});
                 })();
             </script>
-            <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": [],
-                "cssTags__toFetch": [],
-                "jsTags__toFetch": [],
-                "componentJsVars": [],
-                "componentJsCalls": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0MQ==", "YTZmZjgy"],
-                    ["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0Mg==", "YzBjYWEx"]]}</script>
             """,  # noqa: E501
             rendered,
         )
@@ -196,7 +184,7 @@ class TestJsVariables:
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
                 "componentJsVars": [],
-                "componentJsCalls": []}</script>
+                "componentJsCalls": [["VGVzdENvbXBvbmVudF8yZTY4MDY=", "Y2ExYmMzZQ==", "N2FjZmI5"]]}</script>
             <script>
                 DjangoComponents.manager.registerComponent("TestComponent_2e6806", ({ lat, lng, zoom, markers }) => {
                     console.log(`Map at ${lat}, ${lng}, zoom: ${zoom}`);
@@ -214,12 +202,6 @@ class TestJsVariables:
                         "componentJsCalls": []});
                 })();
             </script>
-            <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": [],
-                "cssTags__toFetch": [],
-                "jsTags__toFetch": [],
-                "componentJsVars": [],
-                "componentJsCalls": [["VGVzdENvbXBvbmVudF8yZTY4MDY=", "Y2ExYmMzZQ==", "N2FjZmI5"]]}</script>
             """,
             rendered,
         )
@@ -251,18 +233,12 @@ class TestJsVariables:
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
                 "componentJsVars": [],
-                "componentJsCalls": []}</script>
+                "componentJsCalls": [["VGVzdENvbXBvbmVudF9hOGI3NjY=", "Y2ExYmMzZQ==", null]]}</script>
             <script>
                 DjangoComponents.manager.registerComponent("TestComponent_a8b766", () => {
                     console.log('No data');
                 });
             </script>
-            <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": [],
-                "cssTags__toFetch": [],
-                "jsTags__toFetch": [],
-                "componentJsVars": [],
-                "componentJsCalls": [["VGVzdENvbXBvbmVudF9hOGI3NjY=", "Y2ExYmMzZQ==", null]]}</script>
             """,
             rendered,
         )
@@ -307,7 +283,7 @@ class TestJsVariables:
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
                 "componentJsVars": [],
-                "componentJsCalls": []}</script>
+                "componentJsCalls": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "Y2ExYmMzZQ==", "YmEyZDkx"]]}</script>
             <script>
                 DjangoComponents.manager.registerComponent("TestComponent_811e70", ({ user_id, api_key }) => {
                     fetch(`/api/users/${user_id}`, {
@@ -317,15 +293,14 @@ class TestJsVariables:
             </script>
             <script type="text/javascript">
                 (function() {
-                    DjangoComponents.manager._loadComponentScripts({"cssUrls__markAsLoaded": [], "jsUrls__markAsLoaded": [], "cssTags__toFetch": [], "jsTags__toFetch": [], "componentJsVars": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "YmEyZDkx", "eyJ1c2VyX2lkIjogMTIzLCAiYXBpX2tleSI6ICJzZWNyZXQta2V5In0="]], "componentJsCalls": []});
+                    DjangoComponents.manager._loadComponentScripts({"cssUrls__markAsLoaded": [],
+                        "jsUrls__markAsLoaded": [],
+                        "cssTags__toFetch": [],
+                        "jsTags__toFetch": [],
+                        "componentJsVars": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "YmEyZDkx", "eyJ1c2VyX2lkIjogMTIzLCAiYXBpX2tleSI6ICJzZWNyZXQta2V5In0="]],
+                        "componentJsCalls": []});
                 })();
             </script>
-            <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": [],
-                "cssTags__toFetch": [],
-                "jsTags__toFetch": [],
-                "componentJsVars": [],
-                "componentJsCalls": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "Y2ExYmMzZQ==", "YmEyZDkx"]]}</script>
             """,  # noqa: E501
             rendered,
         )

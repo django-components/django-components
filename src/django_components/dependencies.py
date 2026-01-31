@@ -999,7 +999,6 @@ def _process_dep_declarations(
     # NOTE: No exec script for the "simple"|"prepend"|"append"|"ignore" mode,
     #       as they are NOT using the dependency manager.
     if strategy == "document":
-        # This script is loaded EARLY to ensure we load the JS/CSS from various sources
         exec_script = _gen_exec_script(
             output_type="json",
             script_kind="core",  # Indicate not to mess with this script
@@ -1008,18 +1007,6 @@ def _process_dep_declarations(
             css_tags__fetch_in_client=[],
             js_urls__mark_loaded_in_client=js_urls__mark_loaded_in_client,
             css_urls__mark_loaded_in_client=css_urls__mark_loaded_in_client,
-            comp_calls=[],
-            comp_js_vars=[],
-        )
-        # This script is loaded LATE to trigger component calls after everything else is loaded
-        calls_script = _gen_exec_script(
-            output_type="json",
-            script_kind="core",  # Indicate not to mess with this script
-            script_origin_class_id=None,
-            js_tags__fetch_in_client=[],
-            css_tags__fetch_in_client=[],
-            js_urls__mark_loaded_in_client=[],
-            css_urls__mark_loaded_in_client=[],
             comp_calls=comp_calls,
             comp_js_vars=[],
         )
@@ -1038,10 +1025,8 @@ def _process_dep_declarations(
             comp_calls=comp_calls,
             comp_js_vars=[],
         )
-        calls_script = None
     else:
         exec_script = None
-        calls_script = None
 
     # Core scripts without which the rest wouldn't work
     core_script_tags: list[Script | Style] = []
@@ -1074,8 +1059,6 @@ def _process_dep_declarations(
         # JS variables
         # Loaded after `Component.js`, because `Component.js` defines the variables callbacks
         *component_js_vars__inline,
-        # This triggers component calls after everything else is loaded
-        *([calls_script] if calls_script else []),
     ]
 
     final_styles = cast(
