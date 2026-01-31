@@ -1112,8 +1112,8 @@ def _postprocess_media_tags(
     url_to_obj: dict[str, Script | Style] = {}
 
     for tag in tags:
-        # Parse tag name and attributes
-        tag_name, parsed_attrs = _parse_html_tag_attrs(tag)
+        # Parse tag name, attributes, and optional content (so we can parse e.g. <script>...</script>)
+        tag_name, parsed_attrs, _ = _parse_html_tag_attrs(tag)
 
         # Validate tag name matches expected type
         if script_type == "js":
@@ -1173,46 +1173,59 @@ def _postprocess_media_tags(
     return result
 
 
-def _parse_html_tag_attrs(tag_str: str) -> tuple[str, dict[str, str | bool]]:
-    """
-    Parse HTML tag attributes from a tag string.
+class TagAttrParser(html.parser.HTMLParser):
+    """Parse a single HTML tag (and optional content) to tag name, attributes, and content."""
 
-    Returns a tuple of (tag_name, attrs) where:
+    def __init__(self) -> None:
+        super().__init__()
+        self.tag_name: str | None = None
+        self.attrs: dict[str, str | bool] = {}
+        self.content_parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if self.tag_name is not None:
+            raise ValueError(
+                f"HTML string contains multiple tags. Expected a single tag but found multiple: "
+                f"'<{self.tag_name}>' and '<{tag}>'"
+            )
+
+        self.tag_name = tag
+        # Convert list of (name, value) tuples to dict
+        # If value is None, it's a boolean attribute
+        for name, value in attrs:
+            if value is None:
+                self.attrs[name] = True
+            else:
+                self.attrs[name] = value
+
+    def handle_data(self, data: str) -> None:
+        """Capture content inside the tag (e.g. for <script>...</script> or <style>...</style>)."""
+        self.content_parts.append(data)
+
+
+def _parse_html_tag_attrs(tag_str: str) -> tuple[str, dict[str, str | bool], str]:
+    """
+    Parse HTML tag attributes and optional content from a tag string.
+
+    Handles both URL-based tags and tags with inline content, e.g.:
+    - <script src="https://..."></script> or <link href="https://...">
+    - <script>....</script> or <style>...</style>
+
+    Returns a tuple of (tag_name, attrs, content) where:
     - tag_name: The name of the HTML tag (e.g., "script", "link", "style")
     - attrs: A dict of attributes where:
       - Boolean attributes (no value) have value True
       - Attributes with values have their string values
+    - content: The raw text content inside the tag, or "" if none (e.g. for <link>)
     """
-
-    class TagAttrParser(html.parser.HTMLParser):
-        def __init__(self) -> None:
-            super().__init__()
-            self.tag_name: str | None = None
-            self.attrs: dict[str, str | bool] = {}
-
-        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
-            if self.tag_name is not None:
-                raise ValueError(
-                    f"HTML string contains multiple tags. Expected a single tag but found multiple: "
-                    f"'<{self.tag_name}>' and '<{tag}>'"
-                )
-
-            self.tag_name = tag
-            # Convert list of (name, value) tuples to dict
-            # If value is None, it's a boolean attribute
-            for name, value in attrs:
-                if value is None:
-                    self.attrs[name] = True
-                else:
-                    self.attrs[name] = value
-
     parser = TagAttrParser()
     parser.feed(tag_str.strip())
 
     if not parser.tag_name:
         raise ValueError(f"Failed to parse HTML tag attributes: no opening tag found in '{tag_str}'")
 
-    return (parser.tag_name, parser.attrs)
+    content = "".join(parser.content_parts)
+    return (parser.tag_name, parser.attrs, content)
 
 
 def _prepare_scripts_and_urls(

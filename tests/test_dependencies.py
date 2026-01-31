@@ -9,6 +9,7 @@ import re
 
 import pytest
 from django.template import Context, Template
+from django.utils.safestring import mark_safe
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, registry, render_dependencies, types
@@ -583,6 +584,38 @@ class TestRenderDependencies:
             ),
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
+
+    def test_raises_if_media_js_entry_is_inline_script(self):
+        """Component.Media.js with mark_safe('<script>...</script>') raises RuntimeError."""
+
+        class ComponentWithInlineMediaJs(SimpleComponent):
+            class Media:
+                css = "style.css"
+                js = [mark_safe("<script>alert('inline');</script>")]
+
+        registry.register(name="test", component=ComponentWithInlineMediaJs)
+
+        with pytest.raises(
+            RuntimeError,
+            match=r"One of entries for `Component\.Media\.js` media is missing a value for attribute 'src'",
+        ):
+            ComponentWithInlineMediaJs.render(kwargs={"variable": "foo"})
+
+    def test_raises_if_media_css_entry_is_inline_style(self):
+        """Component.Media.css with mark_safe('<style>...</style>') raises RuntimeError."""
+
+        class ComponentWithInlineMediaCss(SimpleComponent):
+            class Media:
+                css = {"all": [mark_safe("<style>.x { color: red; }</style>")]}
+                js = "script.js"
+
+        registry.register(name="test", component=ComponentWithInlineMediaCss)
+
+        with pytest.raises(
+            RuntimeError,
+            match=r"Expected '<link>' tag but got '<style>'",
+        ):
+            ComponentWithInlineMediaCss.render(kwargs={"variable": "foo"})
 
 
 @djc_test
