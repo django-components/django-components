@@ -186,6 +186,77 @@ pytest
 tox -e py310
 ```
 
+### E2E Test Server Configuration
+
+When writing E2E tests, it consists of 2 parts:
+
+1. Define endpoints on a Django test server that runs during tests and serves the pages/components/files that we want to fetch and render in the browser.
+2. The actual code that uses Playwright browser automation to test the logic.
+
+The Django test server is defined `tests/e2e/testserver/`.
+
+But this means splitting your logic across 2 places. To avoid this, you can co-locate the code with your test file using the `server()` function pattern.
+
+Define a `server()` function in your test file that returns a dictionary mapping URL paths to view functions. The Django test server will automatically discover and register these during startup:
+
+```py
+# tests/test_component_js_e2e.py
+from django.http import HttpResponse
+from django.template import Context, Template
+from django_components import Component, register, types
+from django_components.testing import djc_test
+from tests.e2e.utils import TEST_SERVER_URL, with_playwright
+
+def server():
+    """
+    Define server-side components and views for E2E tests.
+    
+    This function is automatically discovered and called by the testserver
+    to register URL patterns, views, and components.
+    """
+    @register("my_component")
+    class MyComponent(Component):
+        template: types.django_html = """
+            <div id="my-component">Hello</div>
+        """
+        
+        js: types.js = """
+            console.log("Component loaded");
+        """
+    
+    def my_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {% component 'my_component' / %}
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)
+    
+    return {
+        "/my-page": my_view,
+    }
+
+@djc_test
+class MyTest:
+    @with_playwright
+    async def test_my_component(self, browser: Browser, browser_name: BrowserType):
+        page = await browser.new_page()
+        await page.goto(f"{TEST_SERVER_URL}/my-page")
+        # Your test assertions here
+```
+
+This pattern eliminates the need to manually update `testserver/urls.py`, `testserver/views.py`, and `testserver/components/__init__.py` when adding new E2E tests.
+
 ## Snapshot tests
 
 Some tests rely on snapshot testing with [syrupy](https://github.com/syrupy-project/syrupy) to test the HTML output of the components.

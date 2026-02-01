@@ -122,7 +122,7 @@ def get_last_index(lst: list[Any], key: Callable[[Any], bool]) -> int | None:
     return None
 
 
-def is_nonempty_str(txt: str | None) -> bool:
+def is_nonempty_str(txt: str | None) -> TypeGuard[str]:
     return txt is not None and bool(txt.strip())
 
 
@@ -317,3 +317,19 @@ def convert_class_to_namedtuple(cls: type[Any]) -> type[tuple[Any, ...]]:
         setattr(tuple_cls, name, value)
 
     return tuple_cls
+
+
+def extract_regex_matches(s: bytes, pattern: re.Pattern) -> tuple[bytes, list[re.Match[bytes]]]:
+    """
+    Extract all matches from a bytes string using a regex pattern.
+
+    Returns the string without the matched parts, and a list of matches.
+    """
+    matches: list[re.Match[bytes]] = []
+
+    def on_replace_match(match: re.Match[bytes]) -> bytes:
+        matches.append(match)
+        return b""
+
+    content = pattern.sub(on_replace_match, s)
+    return (content, matches)

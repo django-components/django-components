@@ -122,10 +122,10 @@ class TestDependencyRendering:
         assert rendered.count("<link") == 1  # 1 placeholder link
         assert rendered.count("<style") == 0
 
-        assert "loadedJsUrls" not in rendered
-        assert "loadedCssUrls" not in rendered
-        assert "toLoadJsTags" not in rendered
-        assert "toLoadCssTags" not in rendered
+        assert "jsUrls__markAsLoaded" not in rendered
+        assert "cssUrls__markAsLoaded" not in rendered
+        assert "jsTags__toFetch" not in rendered
+        assert "cssTags__toFetch" not in rendered
 
         assert rendered.strip() == (
             '<script name="JS_PLACEHOLDER"></script>\n            <link name="CSS_PLACEHOLDER">'
@@ -147,10 +147,10 @@ class TestDependencyRendering:
         assert rendered.count("<link") == 0  # No CSS
         assert rendered.count("<style") == 0
 
-        assert "loadedJsUrls" not in rendered
-        assert "loadedCssUrls" not in rendered
-        assert "toLoadJsTags" not in rendered
-        assert "toLoadCssTags" not in rendered
+        assert "jsUrls__markAsLoaded" not in rendered
+        assert "cssUrls__markAsLoaded" not in rendered
+        assert "jsTags__toFetch" not in rendered
+        assert "cssTags__toFetch" not in rendered
 
         assert rendered.strip() == '<script name="JS_PLACEHOLDER"></script>'
 
@@ -184,7 +184,7 @@ class TestDependencyRendering:
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        assert rendered.count('<link href="style.css" media="all" rel="stylesheet">') == 1  # Media.css
+        assert rendered.count('<link media="all" rel="stylesheet" href="style.css">') == 1  # Media.css
         assert rendered.count("<link") == 1
         assert rendered.count("<style") == 0
         assert rendered.count("<script") == 3
@@ -194,10 +194,12 @@ class TestDependencyRendering:
         assertInHTML(
             """
             <script type="application/json" data-djc>
-                {"loadedCssUrls": ["c3R5bGUuY3Nz"],
-                "loadedJsUrls": ["c2NyaXB0Lmpz"],
-                "toLoadCssTags": [],
-                "toLoadJsTags": []}
+                {"cssUrls__markAsLoaded": ["c3R5bGUuY3Nz"],
+                "jsUrls__markAsLoaded": ["c2NyaXB0Lmpz"],
+                "cssTags__toFetch": [],
+                "jsTags__toFetch": [],
+                "componentJsVars": [],
+                "componentJsCalls": []}
             </script>
             """,
             rendered,
@@ -219,7 +221,7 @@ class TestDependencyRendering:
         # Dependency manager script
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
-        assert rendered.count('<link href="style.css" media="all" rel="stylesheet">') == 1  # Media.css
+        assert rendered.count('<link media="all" rel="stylesheet" href="style.css">') == 1  # Media.css
         assert rendered.count("<link") == 1
         assert rendered.count("<style") == 0
         assert rendered.count("<script") == 3
@@ -229,10 +231,12 @@ class TestDependencyRendering:
         assertInHTML(
             """
             <script type="application/json" data-djc>
-                {"loadedCssUrls": ["c3R5bGUuY3Nz"],
-                "loadedJsUrls": ["c2NyaXB0Lmpz"],
-                "toLoadCssTags": [],
-                "toLoadJsTags": []}
+                {"cssUrls__markAsLoaded": ["c3R5bGUuY3Nz"],
+                "jsUrls__markAsLoaded": ["c2NyaXB0Lmpz"],
+                "cssTags__toFetch": [],
+                "jsTags__toFetch": [],
+                "componentJsVars": [],
+                "componentJsCalls": []}
             </script>
             """,
             rendered,
@@ -270,7 +274,7 @@ class TestDependencyRendering:
         assert rendered.count("<style") == 0
         assert rendered.count("<script") == 0  # No JS scripts
 
-        assert rendered.count('<link href="style.css" media="all" rel="stylesheet">') == 1  # Media.css
+        assert rendered.count('<link media="all" rel="stylesheet" href="style.css">') == 1  # Media.css
 
     def test_single_component_js_dependencies(self):
         registry.register(name="test", component=SimpleComponent)
@@ -295,10 +299,12 @@ class TestDependencyRendering:
         assertInHTML(
             """
             <script type="application/json" data-djc>
-                {"loadedCssUrls": ["c3R5bGUuY3Nz"],
-                "loadedJsUrls": ["c2NyaXB0Lmpz"],
-                "toLoadCssTags": [],
-                "toLoadJsTags": []}
+                {"cssUrls__markAsLoaded": ["c3R5bGUuY3Nz"],
+                "jsUrls__markAsLoaded": ["c2NyaXB0Lmpz"],
+                "cssTags__toFetch": [],
+                "jsTags__toFetch": [],
+                "componentJsVars": [],
+                "componentJsCalls": []}
             </script>
             """,
             rendered,
@@ -353,10 +359,12 @@ class TestDependencyRendering:
         assertInHTML(
             """
             <script type="application/json" data-djc>
-                {"loadedCssUrls": ["c3R5bGUuY3Nz", "c3R5bGUyLmNzcw=="],
-                "loadedJsUrls": ["c2NyaXB0Lmpz", "c2NyaXB0Mi5qcw=="],
-                "toLoadCssTags": [],
-                "toLoadJsTags": []}
+                {"cssUrls__markAsLoaded": ["c3R5bGUuY3Nz", "c3R5bGUyLmNzcw=="],
+                "jsUrls__markAsLoaded": ["c2NyaXB0Lmpz", "c2NyaXB0Mi5qcw=="],
+                "cssTags__toFetch": [],
+                "jsTags__toFetch": [],
+                "componentJsVars": [],
+                "componentJsCalls": []}
             </script>
             """,
             rendered,
@@ -382,10 +390,10 @@ class TestDependencyRendering:
         assert rendered.count("<link") == 1  # 1 placeholder link
         assert rendered.count("<style") == 0
 
-        assert "loadedJsUrls" not in rendered
-        assert "loadedCssUrls" not in rendered
-        assert "toLoadJsTags" not in rendered
-        assert "toLoadCssTags" not in rendered
+        assert "jsUrls__markAsLoaded" not in rendered
+        assert "cssUrls__markAsLoaded" not in rendered
+        assert "jsTags__toFetch" not in rendered
+        assert "cssTags__toFetch" not in rendered
 
         assert rendered.strip() == (
             '<script name="JS_PLACEHOLDER"></script>\n            <link name="CSS_PLACEHOLDER">'
@@ -472,18 +480,20 @@ class TestDependencyRendering:
         assertInHTML(
             """
             <script type="application/json" data-djc>
-                {"loadedCssUrls": ["L2NvbXBvbmVudHMvY2FjaGUvT3RoZXJDb21wb25lbnRfNjMyOWFlLmNzcw==",
+                {"cssUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvT3RoZXJDb21wb25lbnRfNjMyOWFlLmNzcw==",
                     "L2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50TmVzdGVkX2YwMmQzMi5jc3M=",
                     "c3R5bGUuY3Nz",
                     "c3R5bGUyLmNzcw==",
                     "eHl6MS5jc3M="],
-                "loadedJsUrls": ["L2NvbXBvbmVudHMvY2FjaGUvT3RoZXJDb21wb25lbnRfNjMyOWFlLmpz",
+                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvT3RoZXJDb21wb25lbnRfNjMyOWFlLmpz",
                     "L2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50TmVzdGVkX2YwMmQzMi5qcw==",
                     "c2NyaXB0Lmpz",
                     "c2NyaXB0Mi5qcw==",
                     "eHl6MS5qcw=="],
-                "toLoadCssTags": [],
-                "toLoadJsTags": []}
+                "cssTags__toFetch": [],
+                "jsTags__toFetch": [],
+                "componentJsVars": [],
+                "componentJsCalls": []}
             </script>
             """,
             rendered,
@@ -666,7 +676,7 @@ class TestDependencyRendering:
             count=1,
         )
 
-        assert rendered.count("<script") == 4  # manager + loader + 2 OtherComponent
+        assert rendered.count("<script") == 4  # manager + deps + 2 OtherComponent
         assert rendered.count("<link") == 1  # 1 OtherComponent
         assert rendered.count("<style") == 1  # 1 Style
 

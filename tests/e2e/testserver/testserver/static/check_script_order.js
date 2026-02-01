@@ -3,13 +3,13 @@
 // - script.js               - testMsg
 // - script2.js              - testMsg2
 // Components:
-// - SimpleComponent         - testSimpleComponent
-// - SimpleComponentNested   - testSimpleComponentNested
-// - OtherComponent          - testOtherComponent
+// - InnerComponent         - testInnerComponent
+// - OuterComponent         - testOuterComponent
+// - OtherComponent         - testOtherComponent
 
 globalThis.checkVars = {
-    testSimpleComponent: globalThis.testSimpleComponent,
-    testSimpleComponentNested: globalThis.testSimpleComponentNested,
+    testInnerComponent: globalThis.testInnerComponent,
+    testOuterComponent: globalThis.testOuterComponent,
     testOtherComponent: globalThis.testOtherComponent,
     testMsg: globalThis.testMsg,
     testMsg2: globalThis.testMsg2,

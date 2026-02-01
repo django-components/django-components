@@ -147,6 +147,214 @@ The difference is that:
 
     The `get_context_data()` method will be removed in v2.
 
+## JS variables
+
+You can pass dynamic data from your Python component to your JavaScript using JS variables.
+This is done using the [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data) method.
+
+The dictionary returned from `get_js_data()` will be serialized to JSON and made available to your component's JavaScript code.
+
+To access these variables in your JavaScript, use the special `$onComponent()` callback function. `$onComponent()` is called when the component's JavaScript is loaded.
+
+`$onComponent()` is a special function that is only available within the component's JavaScript code ([`Component.js`](../../reference/api.md#django_components.Component.js) or [`Component.js_file`](../../reference/api.md#django_components.Component.js_file)).
+
+If [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data) returns `None`, an empty dictionary will be used.
+
+```python
+from django_components import Component
+
+class Calendar(Component):
+    template_file = "calendar.html"
+    js_file = "calendar.js"
+    css_file = "calendar.css"
+
+    class Kwargs:
+        date: str = "1970-01-01"
+        theme: str = "light"
+        timezone: str = "UTC"
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "date": kwargs.date,
+        }
+
+    def get_js_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "date": kwargs.date,
+            "timezone": kwargs.timezone,
+        }
+```
+
+### Accessing JS variables
+
+In your JavaScript file, you can access these variables by passing a callback to a special `$onComponent()` function.
+
+The `$onComponent()` function is provided by django-components and will be called automatically when your component's JavaScript is loaded. The callback receives the data returned from [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data) as its first argument.
+
+Code **outside** of `$onComponent()` will run immediately when the component's JavaScript is loaded.
+
+Code **inside** of `$onComponent()` will run when the component is initialized.
+
+```js
+// This code runs only once
+const someGlobalVariable = "Hello, world!";
+
+// This code runs for each instance of the component
+$onComponent(({ date, timezone }, { els }) => {
+  console.log(`Calendar initialized for date: ${date}, timezone: ${timezone}`);
+
+  const containerEl = els[0];
+
+  // Use the variables to update the component's DOM
+  const dateEl = containerEl.querySelector(".calendar-date");
+  if (dateEl) {
+    dateEl.textContent = date;
+  }
+  const tzEl = containerEl.querySelector(".calendar-timezone");
+  if (tzEl) {
+    tzEl.textContent = timezone;
+  }
+});
+```
+
+**Multiple instances:**
+
+If you render multiple instances of the same component with different JS data, each instance will receive its own data:
+
+```python
+# Render multiple instances
+{% component "Calendar" date=some_date %}{% endcomponent %}
+{% component "Calendar" date=other_date %}{% endcomponent %}
+```
+
+Each instance will have its `$onComponent()` callback called with the data specific to that instance's `get_js_data()` return value.
+
+!!! warn
+
+    `$onComponent()` is NOT a global function. It is a special function that is only available within the component's JavaScript code ([`Component.js`](../../reference/api.md#django_components.Component.js) or [`Component.js_file`](../../reference/api.md#django_components.Component.js_file)).
+
+!!! info
+
+    Multiple callbacks can be registered for the same component:
+
+    ```js
+    $onComponent(async (data, { id, name, els }) => {
+      // First callback
+    });
+    $onComponent(async (data, { id, name, els }) => {
+      // Second callback - will be called after the first
+    });
+    ```
+
+!!! info
+
+    Components' `$onComponent()` callbacks are called in the order in which the components are found in the HTML.
+
+### `$onComponent()` callback function
+
+The `$onComponent()` callback function is a special function that is only available within the component's JavaScript code (`Component.js` or `Component.js_file`).
+
+It is called when the component's JavaScript is loaded.
+
+It receives the data returned from `get_js_data()` as its first argument, and the component context as its second argument.
+
+```js
+$onComponent(async (data, { id, name, els }) => {
+  // ...
+});
+```
+
+The component context contains the following properties:
+
+- `id` - `string`: The unique ID of the component instance (e.g. `"c1a2b3c"`).
+- `name` - `string`: The name of the component class (e.g. `"MyComponent"`).
+- `els` - `HTMLElement[]`: The list of DOM elements of the component instance.
+
+### Integrating with other JavaScript libraries
+
+`$onComponent()` allows you to connect your components to other JavaScript libraries.
+
+For example, here's how you can integrate with Alpine.js:
+
+1. Define a "container" Alpine component in your JavaScript code.
+
+    This will receive the data from django-components and store it in its reactive state:
+
+    ```js
+    document.addEventListener("alpine:init", () => {
+      Alpine.data("alpine_test", () => ({
+        someValue: 123,
+      }));
+    });
+    ```
+
+2. Render your component with `x-data` directive.
+
+    ```html
+    <div x-data="alpine_test">
+      <button @click="() => alert('Value is: ' + someValue)">
+        Show value
+      </button>
+    </div>
+    ```
+
+3. Use `$onComponent()` to update the state of the "container" Alpine component.
+
+    Use the `els` parameter to access the DOM elements of the component instance.
+
+    And use the `__x` AlpineJS internal attribute to access the Alpine component's reactive data.
+
+    ```js
+    $onComponent(({ value }, { id, name, els }) => {
+      // els[0] is the root element of the component
+      // (e.g. the one with x-data)
+      const alpineEl = els[0];
+
+      // Pass the value from django-components
+      // to AlpineJS as component's reactive data
+      alpineEl.__x.$data.someValue = value;
+    });
+    ```
+
+4. Define a django-components component that puts it all together and renders the "container" Alpine component.
+
+    ```djc_py
+    class AlpineTest(Component):
+        template = """
+            <div x-data="alpine_test">
+                <button @click="() => { alert('Value is: ' + someValue) }">
+                    Show value
+                </button>
+            </div>
+        """
+
+        js = """
+            // Define the Alpine component
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('alpine_test', () => ({
+                    someValue: 123,
+                }))
+            });
+
+            // Update the state of the "container" Alpine component.
+            // Use `$onComponent()` to access django-components' data.
+            $onComponent(({ value }, { id, name, els }) => {
+                // els[0] is the root element of the component
+                // (e.g. the one with x-data)
+                const alpineEl = els[0];
+
+                // Pass the value from django-components
+                // to AlpineJS as component's reactive data
+                alpineEl.__x.$data.someValue = value;
+            });
+        """
+
+        def get_js_data(self, args, kwargs, slots, context):
+            return {
+                "value": 456,
+            }
+    ```
+
 ## CSS variables
 
 The [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data) method lets you pass data from your Python component to your CSS code defined in
@@ -637,16 +845,17 @@ In your template:
 JavaScript:
 
 ```javascript
-document
-  .querySelector(`[data-product-id="${product_id}"]`)
-  .querySelector(".add-to-cart")
-  .addEventListener("click", () => {
-    fetch(api_endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "add_to_cart", price: price }),
+$onComponent(({ product_id, price, api_endpoint }, ctx) => {
+  const containerEl = ctx.els[0];
+  containerEl.querySelector(".add-to-cart")
+    .addEventListener("click", () => {
+      fetch(api_endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add_to_cart", price: price }),
+      });
     });
-  });
+});
 ```
 
 CSS:

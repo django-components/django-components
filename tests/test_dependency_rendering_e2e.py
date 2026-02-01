@@ -43,7 +43,7 @@ class TestE2eDependencyRendering:
 
             return {
                 bodyHTML,
-                componentJsMsg: globalThis.testSimpleComponent,
+                componentJsMsg: globalThis.testInnerComponent,
                 scriptJsMsg: globalThis.testMsg,
                 innerFontSize,
                 myStyleBg,
@@ -102,8 +102,8 @@ class TestE2eDependencyRendering:
 
             return {
                 bodyHTML,
-                component1JsMsg: globalThis.testSimpleComponent,
-                component2JsMsg: globalThis.testSimpleComponentNested,
+                component1JsMsg: globalThis.testInnerComponent,
+                component2JsMsg: globalThis.testOuterComponent,
                 component3JsMsg: globalThis.testOtherComponent,
                 scriptJs1Msg: globalThis.testMsg,
                 scriptJs2Msg: globalThis.testMsg2,
@@ -196,8 +196,8 @@ class TestE2eDependencyRendering:
 
             return {
                 bodyHTML,
-                component1JsMsg: globalThis.testSimpleComponent,
-                component2JsMsg: globalThis.testSimpleComponentNested,
+                component1JsMsg: globalThis.testInnerComponent,
+                component2JsMsg: globalThis.testOuterComponent,
                 component3JsMsg: globalThis.testOtherComponent,
                 scriptJs1Msg: globalThis.testMsg,
                 scriptJs2Msg: globalThis.testMsg2,
@@ -238,7 +238,7 @@ class TestE2eDependencyRendering:
                 r"<\/strong>\s*"
                 r"<\/div>\s*"
                 r'<div class="my-style">123<\/div>\s*'
-                r'<div class="my-style2">xyz<\/div>\s*',
+                r'<div class="my-style2">xyz<\/div>\s*'
             ).search(data["bodyHTML"])
             is not None
         )
@@ -279,8 +279,8 @@ class TestE2eDependencyRendering:
         data = await page.evaluate(test_js)
 
         # Check components' inlined JS got loaded
-        assert data["testSimpleComponent"] == "kapowww!"
-        assert data["testSimpleComponentNested"] == "bongo!"
+        assert data["testInnerComponent"] == "kapowww!"
+        assert data["testOuterComponent"] == "bongo!"
         assert data["testOtherComponent"] == "wowzee!"
 
         # Check JS from Media.js got loaded
@@ -306,8 +306,8 @@ class TestE2eDependencyRendering:
 
         # Check components' inlined JS got loaded
         # NOTE: The Media JS are loaded BEFORE the components' JS, so they should be empty
-        assert data["testSimpleComponent"] is None
-        assert data["testSimpleComponentNested"] is None
+        assert data["testInnerComponent"] is None
+        assert data["testOuterComponent"] is None
         assert data["testOtherComponent"] is None
 
         # Check JS from Media.js
@@ -334,8 +334,8 @@ class TestE2eDependencyRendering:
         data = await page.evaluate(test_js)
 
         # Check components' inlined JS got loaded
-        assert data["testSimpleComponent"] is None
-        assert data["testSimpleComponentNested"] is None
+        assert data["testInnerComponent"] is None
+        assert data["testOuterComponent"] is None
         assert data["testOtherComponent"] is None
 
         # Check JS from Media.js got loaded
@@ -370,9 +370,32 @@ class TestE2eDependencyRendering:
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
         await page.wait_for_function(
-            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')",
+            """
+            () => document.head.innerHTML.includes(
+              '<link media="all" rel="stylesheet" href="/components/cache/FragComp_'
+            )
+            """,
         )
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="FragComp_"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
@@ -427,8 +450,33 @@ class TestE2eDependencyRendering:
 
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
-        await page.wait_for_function("() => document.head.innerHTML.includes('<link href=\"/static/fragment.css\"')")
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        await page.wait_for_function(
+            """
+            () => document.head.innerHTML.includes(
+              '<link media="all" rel="stylesheet" href="/static/fragment.css"'
+            )
+            """,
+        )
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="fragment.css"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
@@ -484,9 +532,32 @@ class TestE2eDependencyRendering:
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
         await page.wait_for_function(
-            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')",
+            """
+            () => document.head.innerHTML.includes(
+              '<link media="all" rel="stylesheet" href="/components/cache/FragComp_'
+            )
+            """,
         )
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="FragComp_"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
@@ -543,9 +614,32 @@ class TestE2eDependencyRendering:
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
         await page.wait_for_function(
-            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')",
+            """
+            () => document.head.innerHTML.includes(
+              '<link media="all" rel="stylesheet" href="/components/cache/FragComp_'
+            )
+            """,
         )
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="FragComp_"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
@@ -595,9 +689,32 @@ class TestE2eDependencyRendering:
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
         await page.wait_for_function(
-            "() => document.head.innerHTML.includes('<link href=\"/components/cache/FragComp_')",
+            """
+            () => document.head.innerHTML.includes(
+              '<link media="all" rel="stylesheet" href="/components/cache/FragComp_'
+            )
+            """,
         )
-        await page.wait_for_timeout(100)  # NOTE: For CI we need to wait a bit longer
+        # Wait for stylesheet to load (CI can be slow; link in DOM ≠ fetch complete)
+        await page.wait_for_function(
+            """
+            () => {
+                const link = document.querySelector('link[href*="FragComp_"]');
+                return link && link.sheet !== null;
+            }
+            """,
+        )
+        # Wait for stylesheet to be applied (Firefox can apply later than link load)
+        await page.wait_for_function(
+            """
+            () => {
+                const fragEl = document.querySelector(".frag");
+                if (!fragEl) return false;
+                const bg = globalThis.getComputedStyle(fragEl).getPropertyValue('background');
+                return bg.includes('rgb(0, 0, 255)');
+            }
+            """,
+        )
 
         test_js: types.js = """() => {
             const targetEl = document.querySelector("#target");
@@ -627,6 +744,9 @@ class TestE2eDependencyRendering:
 
         await page.close()
 
+
+@djc_test
+class TestE2eAlpineCompat:
     @with_playwright
     async def test_alpine__head(self, browser: "Browser", browser_name: "BrowserType"):
         single_comp_url = TEST_SERVER_URL + "/alpine/head"

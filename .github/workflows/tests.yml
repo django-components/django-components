@@ -43,6 +43,17 @@ jobs:
         run: |
           uv sync --group ci
 
+      # TODO: DELETEME
+      # Workaround: Yarn Debian repo switched GPG key (Jan 2026); old key in images breaks apt-get update.
+      # See https://github.com/yarnpkg/yarn/issues/9218
+      # Remove this step once CI images ship with the updated Yarn APT key or Yarn repo is no longer enabled by default.
+      - name: Disable broken third-party apt repos (e.g. Yarn) before Playwright install
+        if: runner.os == 'Linux'
+        run: |
+          # Playwright's --with-deps runs apt-get update; a broken/unsigned Yarn repo breaks it.
+          sudo rm -f /etc/apt/sources.list.d/yarn.list 2>/dev/null || true
+      # DELETEME_END
+
       # NOTE: WINDOWS ONLY - Installing system dependencies for Playwright browsers takes ~3-4 mins.
       # See https://github.com/django-components/django-components/pull/1554
       # See https://playwright.dev/docs/browsers#managing-browser-binaries
@@ -73,6 +84,17 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
+
+      # TODO: DELETEME
+      # Workaround: Yarn Debian repo switched GPG key (Jan 2026); old key in images breaks apt-get update.
+      # See https://github.com/yarnpkg/yarn/issues/9218
+      # Remove this step once CI images ship with the updated Yarn APT key or Yarn repo is no longer enabled by default.
+      - name: Disable broken third-party apt repos (e.g. Yarn) before Playwright install
+        if: runner.os == 'Linux'
+        run: |
+          # Playwright's --with-deps runs apt-get update; a broken/unsigned Yarn repo breaks it.
+          sudo rm -f /etc/apt/sources.list.d/yarn.list 2>/dev/null || true
+      # DELETEME_END
 
       # NOTE: WINDOWS ONLY - Installing system dependencies for Playwright browsers takes ~3-4 mins.
       # See https://github.com/django-components/django-components/pull/1554

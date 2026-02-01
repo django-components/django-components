@@ -205,7 +205,7 @@ automatically embed the associated JS and CSS.
     (e.g. `[your apps]/components` dir and `[project root]/components`)
     3. Relative to any of the directories defined by `STATICFILES_DIRS`.
 
-!!! info title="Special role of `css` and `js`"
+!!! info "Special role of `css` and `js`"
 
     The "primary" JS and CSS you that specify via `js/css` and `js_file/css_file` have special role in many of django-components' features:
 
@@ -215,7 +215,77 @@ automatically embed the associated JS and CSS.
 
     This is not true for JS and CSS defined in `Media.js/css`, where the linked JS / CSS are rendered as is.
 
-### 5. CSS variables
+### 5. JS variables
+
+You can pass dynamic data from your Python component to your JavaScript using JS variables.
+This is done using the [`get_js_data()`](../reference/api.md#django_components.Component.get_js_data) method.
+
+The dictionary returned from `get_js_data()` will be serialized to JSON and made available to your component's JavaScript code.
+
+To access these variables in your JavaScript, use the special `$onComponent()` callback function. `$onComponent()` is called when the component's JavaScript is loaded.
+
+`$onComponent()` is a special function that is only available within the component's JavaScript code ([`Component.js`](../reference/api.md#django_components.Component.js) or [`Component.js_file`](../reference/api.md#django_components.Component.js_file)).
+
+Let's update our calendar component to pass data to JavaScript:
+
+```python title="[project root]/components/calendar/calendar.py"
+from django_components import Component
+
+class Calendar(Component):
+    template_file = "calendar.html"
+    js_file = "calendar.js"
+    css_file = "calendar.css"
+
+    class Kwargs:
+        date: str = "1970-01-01"
+        theme: str = "light"
+        timezone: str = "UTC"
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "date": kwargs.date,
+        }
+
+    # New!
+    def get_js_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "date": kwargs.date,
+            "timezone": kwargs.timezone,
+        }
+```
+
+Now update your JavaScript to use these variables. The callback receives the data from `get_js_data()`. Use it to update the DOM or pass it to your own logic:
+
+```js title="[project root]/components/calendar/calendar.js"
+$onComponent(({ date, timezone }, { els }) => {
+  console.log(`Calendar initialized for date: ${date}, timezone: ${timezone}`);
+
+  const containerEl = els[0];
+
+  // Use the variables to update the component's DOM
+  const dateEl = containerEl.querySelector(".calendar-date");
+  if (dateEl) {
+    dateEl.textContent = date;
+  }
+  const tzEl = containerEl.querySelector(".calendar-timezone");
+  if (tzEl) {
+    tzEl.textContent = timezone;
+  }
+});
+```
+
+When you render the component, django-components will automatically:
+
+1. Call `get_js_data()` to get the JS variables
+2. Serialize the data to JSON
+3. Register the data with the component's dependency manager
+4. Call `$onComponent()` callbacks with the appropriate data when the JavaScript loads
+
+Each component instance will receive its own JS variables based on the data returned from `get_js_data()`.
+
+[Learn more](../concepts/fundamentals/html_js_css_variables.md#js-variables) about JS variables.
+
+### 6. CSS variables
 
 You can pass dynamic data from your Python component to your CSS using CSS variables.
 This is done using the [`get_css_data()`](../reference/api.md#django_components.Component.get_css_data) method.

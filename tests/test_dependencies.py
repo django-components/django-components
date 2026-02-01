@@ -9,6 +9,7 @@ import re
 
 import pytest
 from django.template import Context, Template
+from django.utils.safestring import mark_safe
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, registry, render_dependencies, types
@@ -57,9 +58,13 @@ class TestDependenciesLegacy:
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
             'Variable: <strong data-djc-id-ca1bc3e="">foo</strong>\n'
-            '    <script src="script.js"></script><script>console.log("xyz");</script><style>.xyz {\n'
+            '    <script src="script.js"></script><script>\n'
+            '        console.log("xyz");\n'
+            "    </script><style>\n"
+            "        .xyz {\n"
             "            color: red;\n"
-            '        }</style><link href="style.css" media="all" rel="stylesheet">'
+            "        }\n"
+            '    </style><link media="all" rel="stylesheet" href="style.css">'
         )
 
 
@@ -156,9 +161,13 @@ class TestRenderDependencies:
         assert rendered.strip() == (
             'Variable: <strong data-djc-id-ca1bc41="">foo</strong>\n'
             "    \n"
-            '        <script src="script.js"></script><script>console.log("xyz");</script><style>.xyz {\n'
+            '        <script src="script.js"></script><script>\n'
+            '        console.log("xyz");\n'
+            "    </script><style>\n"
+            "        .xyz {\n"
             "            color: red;\n"
-            '        }</style><link href="style.css" media="all" rel="stylesheet">'
+            "        }\n"
+            '    </style><link media="all" rel="stylesheet" href="style.css">'
         )
 
     # Check that `Component.render()` renders dependencies
@@ -249,7 +258,7 @@ class TestRenderDependencies:
         assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
         assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
 
-        assert rendered.count('<link href="style.css" media="all" rel="stylesheet">') == 1  # Media.css
+        assert rendered.count('<link media="all" rel="stylesheet" href="style.css">') == 1  # Media.css
         assert rendered.count("<link") == 1
         assert rendered.count("<style") == 1
 
@@ -513,31 +522,31 @@ class TestRenderDependencies:
                         <td class="whitespace-nowrap w-fit text-center px-4 w-px"
                             aria-colindex="1">
                             1
-                            Variable: <strong data-djc-id-ca1bc3f>hi</strong>
+                            Variable: <strong data-djc-id-ca1bc3f="">hi</strong>
                         </td>
                     </tr>
                 </tbody>
             </table>
             <script>
-                (() => {
-                    if (!globalThis.DjangoComponents) {
-                        const s = document.createElement('script');
-                        s.src = "django_components/django_components.min.js";
-                        document.head.appendChild(s);
-                    }
-                    // Remove this loader script
-                    if (document.currentScript) document.currentScript.remove();
-                })();
-            </script>
-            <script type="application/json" data-djc>
-                {"loadedCssUrls": [],
-                "loadedJsUrls": [],
-                "toLoadCssTags": ["PGxpbmsgaHJlZj0ic3R5bGUuY3NzIiBtZWRpYT0iYWxsIiByZWw9InN0eWxlc2hlZXQiPg==",
-                    "PGxpbmsgaHJlZj0iL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5jc3MiIG1lZGlhPSJhbGwiIHJlbD0ic3R5bGVzaGVldCI+"],
-                "toLoadJsTags": ["PHNjcmlwdCBzcmM9InNjcmlwdC5qcyI+PC9zY3JpcHQ+",
-                "PHNjcmlwdCBzcmM9Ii9jb21wb25lbnRzL2NhY2hlL1NpbXBsZUNvbXBvbmVudF8zMTEwOTcuanMiPjwvc2NyaXB0Pg=="]}
-            </script>
-        """
+            (() => {
+                if (!globalThis.DjangoComponents) {
+                    const s = document.createElement('script');
+                    s.src = "django_components/django_components.min.js";
+                    document.head.appendChild(s);
+                }
+                // Remove this loader script
+                if (document.currentScript) document.currentScript.remove();
+            })();
+        </script>
+        <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
+            "jsUrls__markAsLoaded": [],
+            "cssTags__toFetch": ["eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAic3R5bGUuY3NzIn0sICJjb250ZW50IjogIiJ9",
+                "eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5jc3MifSwgImNvbnRlbnQiOiAiIn0="],
+            "jsTags__toFetch": ["eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAic2NyaXB0LmpzIn0sICJjb250ZW50IjogIiJ9",
+                "eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5qcyJ9LCAiY29udGVudCI6ICIifQ=="],
+            "componentJsVars": [],
+            "componentJsCalls": []}</script>
+        """  # noqa: E501
 
         assertHTMLEqual(expected, rendered)
 
@@ -552,7 +561,7 @@ class TestRenderDependencies:
         with pytest.raises(
             RuntimeError,
             match=re.escape(
-                "Content of `Component.js` for component 'ComponentWithScript' contains '</script>' end tag.",
+                "Script for component 'ComponentWithScript_ab2b78' contains '<script>' end tag.",
             ),
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
@@ -571,10 +580,42 @@ class TestRenderDependencies:
         with pytest.raises(
             RuntimeError,
             match=re.escape(
-                "Content of `Component.css` for component 'ComponentWithScript' contains '</style>' end tag.",
+                "Style for component 'ComponentWithScript_a51788' contains '<style>' end tag.",
             ),
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
+
+    def test_raises_if_media_js_entry_is_inline_script(self):
+        """Component.Media.js with mark_safe('<script>...</script>') raises RuntimeError."""
+
+        class ComponentWithInlineMediaJs(SimpleComponent):
+            class Media:
+                css = "style.css"
+                js = [mark_safe("<script>alert('inline');</script>")]
+
+        registry.register(name="test", component=ComponentWithInlineMediaJs)
+
+        with pytest.raises(
+            RuntimeError,
+            match=r"One of entries for `Component\.Media\.js` media is missing a value for attribute 'src'",
+        ):
+            ComponentWithInlineMediaJs.render(kwargs={"variable": "foo"})
+
+    def test_raises_if_media_css_entry_is_inline_style(self):
+        """Component.Media.css with mark_safe('<style>...</style>') raises RuntimeError."""
+
+        class ComponentWithInlineMediaCss(SimpleComponent):
+            class Media:
+                css = {"all": [mark_safe("<style>.x { color: red; }</style>")]}
+                js = "script.js"
+
+        registry.register(name="test", component=ComponentWithInlineMediaCss)
+
+        with pytest.raises(
+            RuntimeError,
+            match=r"Expected '<link>' tag but got '<style>'",
+        ):
+            ComponentWithInlineMediaCss.render(kwargs={"variable": "foo"})
 
 
 @djc_test
@@ -707,10 +748,14 @@ class TestDependenciesStrategySimple:
 
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
-            '<script src="script.js"></script><script>console.log("xyz");</script>\n'
-            "            <style>.xyz {\n"
+            '<script src="script.js"></script><script>\n'
+            '        console.log("xyz");\n'
+            "    </script>\n"
+            "            <style>\n"
+            "        .xyz {\n"
             "            color: red;\n"
-            '        }</style><link href="style.css" media="all" rel="stylesheet">\n'
+            "        }\n"
+            '    </style><link media="all" rel="stylesheet" href="style.css">\n'
             "            \n"
             '        Variable: <strong data-djc-id-ca1bc41="">foo</strong>'
         )
@@ -859,9 +904,13 @@ class TestDependenciesStrategyPrepend:
 
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
-            '<script src="script.js"></script><script>console.log("xyz");</script><style>.xyz {\n'
+            '<script src="script.js"></script><script>\n'
+            '        console.log("xyz");\n'
+            "    </script><style>\n"
+            "        .xyz {\n"
             "            color: red;\n"
-            '        }</style><link href="style.css" media="all" rel="stylesheet">\n'
+            "        }\n"
+            '    </style><link media="all" rel="stylesheet" href="style.css">\n'
             "            \n"
             "            \n"
             "            \n"
@@ -1015,9 +1064,13 @@ class TestDependenciesStrategyAppend:
         assert rendered.strip() == (
             'Variable: <strong data-djc-id-ca1bc41="">foo</strong>\n'
             "    \n"
-            '        <script src="script.js"></script><script>console.log("xyz");</script><style>.xyz {\n'
+            '        <script src="script.js"></script><script>\n'
+            '        console.log("xyz");\n'
+            "    </script><style>\n"
+            "        .xyz {\n"
             "            color: red;\n"
-            '        }</style><link href="style.css" media="all" rel="stylesheet">'
+            "        }\n"
+            '    </style><link media="all" rel="stylesheet" href="style.css">'
         )
 
     def test_multiple_components_dependencies(self):
