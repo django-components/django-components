@@ -464,7 +464,12 @@ def server():
 
                     <div id="target">OLD</div>
 
-                    <button id="loader" hx-get="/fragment/frag?frag={{ frag }}" hx-swap="outerHTML" hx-target="#target">
+                    <button
+                        id="loader"
+                        hx-get="/fragment/frag?frag={{ frag }}"
+                        hx-swap="outerHTML"
+                        hx-target="#target"
+                    >
                       Click me!
                     </button>
 
@@ -491,7 +496,12 @@ def server():
 
                     <div id="target">OLD</div>
 
-                    <button id="loader" hx-get="/fragment/frag?frag={{ frag }}" hx-swap="outerHTML" hx-target="#target">
+                    <button
+                        id="loader"
+                        hx-get="/fragment/frag?frag={{ frag }}"
+                        hx-swap="outerHTML"
+                        hx-target="#target"
+                    >
                       Click me!
                     </button>
 
