@@ -1,10 +1,15 @@
 import re
+import sys
 from dataclasses import dataclass
 from typing import NamedTuple, TypedDict
 
 import pytest
 from django.template import Context
-from typing_extensions import NotRequired
+
+if sys.version_info >= (3, 11):
+    from typing import NotRequired
+else:
+    from typing_extensions import NotRequired
 
 from django_components import Component, Empty, Slot, SlotInput
 from django_components.testing import djc_test

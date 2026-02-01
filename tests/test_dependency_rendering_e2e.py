@@ -6,8 +6,11 @@ in an actual browser.
 import re
 from typing import TYPE_CHECKING
 
+from django.http import HttpResponse
+from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
+from django_components import Component, register, types
 from django_components.testing import djc_test
 from tests.e2e.utils import TEST_SERVER_URL, with_playwright
 from tests.testutils import setup_test_config
@@ -15,14 +18,520 @@ from tests.testutils import setup_test_config
 if TYPE_CHECKING:
     from playwright.async_api import Browser
 
-    from django_components import types
     from tests.e2e.utils import BrowserType
 
 setup_test_config()
 
 
-# NOTE: All views, components,  and associated JS and CSS are defined in
-# `tests/e2e/testserver/testserver`
+def server():
+    """Define server-side components and views for E2E tests"""
+
+    # Components (order: inner first so outer can use it)
+    @register("inner")
+    class InnerComponent(Component):
+        template: types.django_html = """
+            Variable: <strong class="inner">{{ variable }}</strong>
+        """
+        css: types.css = """
+            .inner {
+                font-size: 4px;
+            }
+        """
+        js: types.js = """
+            globalThis.testInnerComponent = 'kapowww!'
+        """
+
+        class Defaults:
+            variable2 = "default"
+
+        def get_template_data(self, args, kwargs, slots, context):
+            return {
+                "variable": kwargs["variable"],
+                "variable2": kwargs["variable2"],
+            }
+
+        class Media:
+            css = "style.css"
+            js = "script.js"
+
+    @register("outer")
+    class OuterComponent(Component):
+        template: types.django_html = """
+            {% load component_tags %}
+            <div class="outer">
+                {% component "inner" variable=variable / %}
+                {% slot "default" default / %}
+            </div>
+        """
+        css: types.css = """
+            .outer {
+                font-size: 40px;
+            }
+        """
+        js: types.js = """
+            globalThis.testOuterComponent = 'bongo!'
+        """
+
+        def get_template_data(self, args, kwargs, slots, context):
+            return {"variable": kwargs["variable"]}
+
+        class Media:
+            css = ["style.css", "style2.css"]
+            js = "script2.js"
+
+    @register("other")
+    class OtherComponent(Component):
+        template: types.django_html = """
+            XYZ: <strong class="other">{{ variable }}</strong>
+        """
+        css: types.css = """
+            .other {
+                display: flex;
+            }
+        """
+        js: types.js = """
+            globalThis.testOtherComponent = 'wowzee!'
+        """
+
+        def get_template_data(self, args, kwargs, slots, context):
+            return {"variable": kwargs["variable"]}
+
+        class Media:
+            css = "style.css"
+            js = "script.js"
+
+    @register("check_script_order_in_js")
+    class CheckScriptOrderInJs(Component):
+        template = "<check_script_order>"
+        js: types.js = """
+            globalThis.checkVars = {
+                testInnerComponent,
+                testOuterComponent,
+                testOtherComponent,
+                testMsg,
+                testMsg2,
+            };
+        """
+
+    @register("check_script_order_in_media")
+    class CheckScriptOrderInMedia(Component):
+        template = "<check_script_order>"
+
+        class Media:
+            js = "check_script_order.js"
+
+    @register("frag_comp")
+    class FragComp(Component):
+        template: types.django_html = """
+            <div class="frag">
+                123
+                <span id="frag-text"></span>
+            </div>
+        """
+        js = """
+            document.querySelector('#frag-text').textContent = 'xxx';
+        """
+        css = """
+            .frag {
+                background: blue;
+            }
+        """
+
+    @register("frag_media")
+    class FragMedia(Component):
+        template = """
+            <div class="frag">
+                123
+                <span id="frag-text"></span>
+            </div>
+        """
+
+        class Media:
+            js = "fragment.js"
+            css = "fragment.css"
+
+    @register("alpine_test_in_media")
+    class AlpineCompInMedia(Component):
+        template: types.django_html = """
+            <div x-data="alpine_test">
+                ALPINE_TEST:
+                <div x-text="somevalue"></div>
+            </div>
+        """
+
+        class Media:
+            js = "alpine_test.js"
+
+    @register("alpine_test_in_js")
+    class AlpineCompInJs(Component):
+        template: types.django_html = """
+            <div x-data="alpine_test">
+                ALPINE_TEST:
+                <div x-text="somevalue"></div>
+            </div>
+        """
+        js: types.js = """
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('alpine_test', () => ({
+                    somevalue: 123,
+                }))
+            });
+        """
+
+    # Views
+    def single_component_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {% component 'inner' variable='foo' / %}
+                    <div class="my-style">123</div>
+                    <div class="my-style2">xyz</div>
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def multiple_components_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {% component 'outer' variable='variable' %}
+                        {% component 'other' variable='variable_inner' / %}
+                    {% endcomponent %}
+                    <div class="my-style">123</div>
+                    <div class="my-style2">xyz</div>
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def alpine_in_head_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                    <script defer src="https://unpkg.com/alpinejs"></script>
+                </head>
+                <body>
+                    {% component 'alpine_test_in_media' / %}
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def alpine_in_body_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {% component 'alpine_test_in_media' / %}
+                    {% component_js_dependencies %}
+                    <script src="https://unpkg.com/alpinejs"></script>
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def alpine_in_body_view_2(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {% component 'alpine_test_in_js' / %}
+                    {% component_js_dependencies %}
+                    <script src="https://unpkg.com/alpinejs"></script>
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def alpine_in_body_vars_not_available_before_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {% component 'alpine_test_in_js' / %}
+                    {# Alpine loaded BEFORE components JS #}
+                    <script src="https://unpkg.com/alpinejs"></script>
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def check_js_order_in_js_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {% component 'outer' variable='variable' %}
+                        {% component 'other' variable='variable_inner' / %}
+                    {% endcomponent %}
+                    {# check_script_order_in_media is AFTER the other components #}
+                    {% component 'check_script_order_in_js' / %}
+                    abc
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def check_js_order_in_media_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {% component 'outer' variable='variable' %}
+                        {% component 'other' variable='variable_inner' / %}
+                    {% endcomponent %}
+                    {# check_script_order_in_media is AFTER the other components #}
+                    {% component 'check_script_order_in_media' / %}
+                    abc
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def check_js_order_vars_not_available_before_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {# check_script_order_in_media is BEFORE the other components #}
+                    {% component 'check_script_order_in_media' / %}
+                    {% component 'outer' variable='variable' %}
+                        {% component 'other' variable='variable_inner' / %}
+                    {% endcomponent %}
+                    abc
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def fragment_base_js_view(request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                </head>
+                <body>
+                    {% component 'inner' variable='foo' / %}
+
+                    <div id="target">OLD</div>
+
+                    <button id="loader">
+                      Click me!
+                    </button>
+                    <script>
+                        const frag = "{{ frag }}";
+                        document.querySelector('#loader').addEventListener('click', function () {
+                            fetch(`/fragment/frag?frag=${frag}`)
+                                .then(response => response.text())
+                                .then(html => {
+                                    console.log({ fragment: html })
+                                    const target = document.querySelector('#target');
+                                    const a = new DOMParser().parseFromString(html, "text/html");
+                                    target.replaceWith(...a.body.childNodes);
+                                    for (const script of a.querySelectorAll('script')) {
+                                        const newScript = document.createElement('script');
+                                        newScript.textContent = script.textContent;
+                                        newScript.async = false;
+                                        document.body.appendChild(newScript);
+                                    }
+                                });
+                        });
+                    </script>
+
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        frag = request.GET["frag"]
+        rendered = template.render(Context({"frag": frag}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def fragment_base_alpine_view(request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                    <script defer src="https://unpkg.com/alpinejs"></script>
+                </head>
+                <body x-data="{
+                    htmlVar: 'OLD',
+                    loadFragment: function () {
+                        const frag = '{{ frag }}';
+                        fetch(`/fragment/frag?frag=${frag}`)
+                            .then(response => response.text())
+                            .then(html => {
+                                console.log({ fragment: html });
+                                this.htmlVar = html;
+                            });
+                    }
+                }">
+                    {% component 'inner' variable='foo' / %}
+
+                    <div id="target" x-html="htmlVar">OLD</div>
+
+                    <button id="loader" @click="loadFragment">
+                      Click me!
+                    </button>
+
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        frag = request.GET["frag"]
+        rendered = template.render(Context({"frag": frag}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def fragment_base_htmx_view(request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+                </head>
+                <body>
+                    {% component 'inner' variable='foo' / %}
+
+                    <div id="target">OLD</div>
+
+                    <button id="loader" hx-get="/fragment/frag?frag={{ frag }}" hx-swap="outerHTML" hx-target="#target">
+                      Click me!
+                    </button>
+
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        frag = request.GET["frag"]
+        rendered = template.render(Context({"frag": frag}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def fragment_base_htmx_view__raw(request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    {% component_css_dependencies %}
+                    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+                </head>
+                <body>
+                    {% component 'inner' variable='foo' / %}
+
+                    <div id="target">OLD</div>
+
+                    <button id="loader" hx-get="/fragment/frag?frag={{ frag }}" hx-swap="outerHTML" hx-target="#target">
+                      Click me!
+                    </button>
+
+                    {% component_js_dependencies %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        frag = request.GET["frag"]
+        rendered = template.render(
+            Context({"frag": frag, "DJC_DEPS_STRATEGY": "ignore"}),
+        )
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
+    def fragment_view(request):
+        fragment_type = request.GET["frag"]
+        if fragment_type == "comp":
+            return FragComp.render_to_response(deps_strategy="fragment")
+        if fragment_type == "media":
+            return FragMedia.render_to_response(deps_strategy="fragment")
+        raise ValueError("Invalid fragment type")
+
+    return {
+        "/single/": single_component_view,
+        "/multi/": multiple_components_view,
+        "/alpine/head": alpine_in_head_view,
+        "/alpine/body": alpine_in_body_view,
+        "/alpine/body2": alpine_in_body_view_2,
+        "/alpine/invalid": alpine_in_body_vars_not_available_before_view,
+        "/js-order/js": check_js_order_in_js_view,
+        "/js-order/media": check_js_order_in_media_view,
+        "/js-order/invalid": check_js_order_vars_not_available_before_view,
+        "/fragment/base/alpine": fragment_base_alpine_view,
+        "/fragment/base/htmx": fragment_base_htmx_view,
+        "/fragment/base/htmx_raw": fragment_base_htmx_view__raw,
+        "/fragment/base/js": fragment_base_js_view,
+        "/fragment/frag": fragment_view,
+    }
+
+
 @djc_test
 class TestE2eDependencyRendering:
     @with_playwright
