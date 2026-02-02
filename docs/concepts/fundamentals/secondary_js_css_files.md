@@ -45,7 +45,7 @@ class Calendar(Component):
   in constrast to it.
 
   Instead we should go over all features / behaviours of the `Media` class.
-  
+
   We should also make `Media` class into a separate extension,
   and then have a separate page on "Secondary JS / CSS files".
  -->
@@ -64,7 +64,7 @@ This `Media` class behaves similarly to
   or a function (with `__html__` method) is considered an already-formatted HTML tag, skipping both static file
   resolution and rendering with `media_class.render_js()` or `media_class.render_css()`.
 - **Inheritance** - You can set [`extend`](../../reference/api.md#django_components.ComponentMediaInput.extend) to configure
-    whether to inherit JS / CSS from parent components. See [Media inheritance](#media-inheritance).
+  whether to inherit JS / CSS from parent components. See [Media inheritance](#media-inheritance).
 
 However, there's a few differences from Django's Media class:
 
@@ -123,9 +123,9 @@ class MyComponent(Component):
 Which will render the following HTML:
 
 ```html
-<link href="/static/path/to/style1.css" media="all" rel="stylesheet">
-<link href="/static/path/to/style2.css" media="print" rel="stylesheet">
-<link href="/static/path/to/style3.css" media="print" rel="stylesheet">
+<link href="/static/path/to/style1.css" media="all" rel="stylesheet" />
+<link href="/static/path/to/style2.css" media="print" rel="stylesheet" />
+<link href="/static/path/to/style3.css" media="print" rel="stylesheet" />
 ```
 
 !!! note
@@ -369,13 +369,15 @@ File paths can be any of:
 - `bytes`
 - `PathLike` (`__fspath__` method)
 - `SafeData` (`__html__` method)
+- `Script`
+- `Style`
 - `Callable` that returns any of the above, evaluated at class creation (`__new__`)
 
 To help with typing the union, use [`ComponentMediaInputPath`](../../reference/api.md#django_components.ComponentMediaInputPath).
 
 ```py
 from pathlib import Path
-
+from django_components import Script, Style
 from django.utils.safestring import mark_safe
 
 class SimpleComponent(Component):
@@ -383,6 +385,7 @@ class SimpleComponent(Component):
         css = [
             mark_safe('<link href="/static/calendar/style1.css" rel="stylesheet" />'),
             Path("calendar/style1.css"),
+            Style(content=".x { color: red; }"),
             "calendar/style2.css",
             b"calendar/style3.css",
             lambda: "calendar/style4.css",
@@ -390,6 +393,7 @@ class SimpleComponent(Component):
         js = [
             mark_safe('<script src="/static/calendar/script1.js"></script>'),
             Path("calendar/script1.js"),
+            Script(content="console.log('inline');", wrap=False),
             "calendar/script2.js",
             b"calendar/script3.js",
             lambda: "calendar/script4.js",

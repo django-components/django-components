@@ -62,6 +62,27 @@
         - When `Style.url` is set, renders as `<link>`, otherwise as `<style>` with
         inline `content`.
 
+- **Use `Script` and `Style` objects in `Component.Media.js` / `Component.Media.css`**
+
+    You can now put [`Script`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.Script)
+    and [`Style`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.Style)
+    objects directly in [`Component.Media.js`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.ComponentMediaInput.js)
+    and [`Component.Media.css`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.ComponentMediaInput.css).
+
+    ```python
+    from django_components import Component, Script, Style, register
+
+    @register("calendar")
+    class Calendar(Component):
+        class Media:
+            js = [
+                Script(content="console.log('inline');")
+            ]
+            css = [
+                Style(content=".x { color: red; }")
+            ]
+    ```
+
 ## v0.147.0
 
 Added support for Django 6.0, JS and CSS variables, and component tree navigation.

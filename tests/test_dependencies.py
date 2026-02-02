@@ -602,8 +602,8 @@ class TestRenderDependencies:
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
 
-    def test_raises_if_media_js_entry_is_inline_script(self):
-        """Component.Media.js with mark_safe('<script>...</script>') raises RuntimeError."""
+    def test_media_js_allows_inline_script_without_src(self):
+        """Component.Media.js accepts inline <script>...</script> (no src) via SafeString/__html__."""
 
         class ComponentWithInlineMediaJs(SimpleComponent):
             class Media:
@@ -612,14 +612,18 @@ class TestRenderDependencies:
 
         registry.register(name="test", component=ComponentWithInlineMediaJs)
 
-        with pytest.raises(
-            RuntimeError,
-            match=r"One of entries for `Component\.Media\.js` media is missing a value for attribute 'src'",
-        ):
-            ComponentWithInlineMediaJs.render(kwargs={"variable": "foo"})
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% component 'test' variable='foo' / %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        assertInHTML("<script>alert('inline');</script>", rendered)
 
-    def test_raises_if_media_css_entry_is_inline_style(self):
-        """Component.Media.css with mark_safe('<style>...</style>') raises RuntimeError."""
+    def test_media_css_allows_inline_style_without_link(self):
+        """Component.Media.css accepts inline <style>...</style> (no href) via SafeString/__html__."""
 
         class ComponentWithInlineMediaCss(SimpleComponent):
             class Media:
@@ -628,11 +632,15 @@ class TestRenderDependencies:
 
         registry.register(name="test", component=ComponentWithInlineMediaCss)
 
-        with pytest.raises(
-            RuntimeError,
-            match=r"Expected '<link>' tag but got '<style>'",
-        ):
-            ComponentWithInlineMediaCss.render(kwargs={"variable": "foo"})
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% component 'test' variable='foo' / %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        assertInHTML("<style>.x { color: red; }</style>", rendered)
 
 
 @djc_test

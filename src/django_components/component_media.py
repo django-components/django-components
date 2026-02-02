@@ -24,6 +24,7 @@ from django.forms.widgets import Media as MediaCls
 from django.template import Template
 from django.utils.safestring import SafeData
 
+from django_components.dependencies import Script, Style
 from django_components.extension import OnCssLoadedContext, OnJsLoadedContext, extensions
 from django_components.template import ensure_unique_template, load_component_template
 from django_components.util.loader import get_component_dirs, resolve_file
@@ -57,29 +58,48 @@ UNSET = Unset()
 
 
 ComponentMediaInputPath: TypeAlias = (
-    str | bytes | SafeData | Path | os.PathLike | Callable[[], str | bytes | SafeData | Path | os.PathLike]
+    str
+    | bytes
+    | SafeData
+    | Path
+    | os.PathLike
+    | Script
+    | Style
+    | Callable[
+        [],
+        str | bytes | SafeData | Path | os.PathLike | Script | Style,
+    ]
 )
 """
 A type representing an entry in [Media.js](api.md#django_components.ComponentMediaInput.js)
 or [Media.css](api.md#django_components.ComponentMediaInput.css).
 
-If an entry is a [SafeString](https://dev.to/doridoro/django-safestring-afj) (or has `__html__` method),
-then entry is assumed to be a formatted HTML tag. Otherwise, it's assumed to be a path to a file.
+If an entry is a [SafeString](https://dev.to/doridoro/django-safestring-afj),
+a [Script](api.md#django_components.Script),
+a [Style](api.md#django_components.Style),
+or any object with `__html__` method, it is treated as
+a pre-rendered tag and output as-is. Otherwise, it's assumed to be a path to a file.
 
 **Example:**
 
 ```py
-class MyComponent
+from django_components import Script, Style
+
+class MyComponent(Component):
     class Media:
         js = [
             "path/to/script.js",
             b"script.js",
             SafeString("<script src='path/to/script.js'></script>"),
+            Script(content="console.log('inline');"),
+            Script(url="/static/analytics.js", content=None),
         ]
         css = [
             Path("path/to/style.css"),
             lambda: "path/to/style.css",
             lambda: Path("path/to/style.css"),
+            Style(content=".x { color: red; }"),
+            Style(url="/static/print.css", content=None, attrs={"media": "print"}),
         ]
 ```
 """
