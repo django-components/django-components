@@ -459,8 +459,8 @@ class TestDependencyRendering:
             <script src="script2.js"></script>
             <script src="script.js"></script>
             <script src="xyz1.js"></script>
-            <script>console.log("Hello");</script>
-            <script>console.log("xyz");</script>
+            <script>(function() { console.log("Hello"); })();</script>
+            <script>(function() { console.log("xyz"); })();</script>
             """,
             rendered,
             count=1,

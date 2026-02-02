@@ -21,6 +21,7 @@ from django_components import (
     OnComponentRenderedContext,
     OnComponentUnregisteredContext,
     OnCssLoadedContext,
+    OnDependenciesContext,
     OnExtensionCreatedContext,
     OnJsLoadedContext,
     OnRegistryCreatedContext,
@@ -28,11 +29,15 @@ from django_components import (
     OnSlotRenderedContext,
     OnTemplateCompiledContext,
     OnTemplateLoadedContext,
+    Script,
     Slot,
     SlotNode,
+    Style,
     URLRoute,
     register,
     registry,
+    render_dependencies,
+    types,
 )
 from django_components.extension import (
     extensions as extension_manager,
@@ -98,6 +103,7 @@ class DummyExtension(ComponentExtension):
             "on_component_input": [],
             "on_component_data": [],
             "on_component_rendered": [],
+            "on_dependencies": [],
             "on_slot_rendered": [],
             "on_template_loaded": [],
             "on_template_compiled": [],
@@ -143,6 +149,9 @@ class DummyExtension(ComponentExtension):
 
     def on_component_rendered(self, ctx: OnComponentRenderedContext) -> None:
         self.calls["on_component_rendered"].append(ctx)
+
+    def on_dependencies(self, ctx: OnDependenciesContext) -> None:
+        self.calls["on_dependencies"].append(ctx)
 
     def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> None:
         self.calls["on_slot_rendered"].append(ctx)
@@ -226,6 +235,59 @@ class OverrideAssetExtension(ComponentExtension):
 
     def on_css_loaded(self, ctx):
         return "OVERRIDDEN CSS"
+
+
+class ModifyDependenciesExtension(ComponentExtension):
+    """Extension that adds a Script and a Style in on_dependencies to verify they appear in HTML."""
+
+    name = "modify_dependencies_extension"
+
+    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list[Script], list[Style]]:
+        scripts = list(ctx.scripts)
+        styles = list(ctx.styles)
+
+        # Modify existing scripts and styles
+        for script in scripts:
+            if script.kind == "extra":
+                script.wrap = False
+        for style in styles:
+            if style.kind == "extra":
+                style.attrs["media"] = "print"
+
+        # Add new scripts (inline content)
+        scripts.append(
+            Script(
+                kind="extra",
+                content="// extension-injected script",
+                attrs={},
+                wrap=False,
+            )
+        )
+        styles.append(
+            Style(
+                kind="extra",
+                content="/* extension-injected style */",
+                attrs={},
+            )
+        )
+        # Add new scripts (external URL)
+        scripts.append(
+            Script(
+                kind="extra",
+                url="/static/analytics.js",
+                content=None,
+                attrs={},
+            )
+        )
+        styles.append(
+            Style(
+                kind="extra",
+                url="/static/print.css",
+                content=None,
+                attrs={"media": "print"},
+            )
+        )
+        return (scripts, styles)
 
 
 @djc_test
@@ -599,6 +661,12 @@ class TestExtensionHooks:
         assert ctx4.component_cls == TestComponent
         assert ctx4.content == "body { color: red; }"
 
+        # on_dependencies is called when JS/CSS are finalized before rendering to HTML
+        assert len(extension.calls["on_dependencies"]) == 1
+        deps_ctx: OnDependenciesContext = extension.calls["on_dependencies"][0]
+        assert len(deps_ctx.scripts) >= 1
+        assert len(deps_ctx.styles) >= 1
+
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_asset_hooks__file(self):
         @register("test_comp_hooks")
@@ -665,6 +733,30 @@ class TestExtensionHooks:
         assert TestComponent.template == "OVERRIDDEN TEMPLATE"
         assert TestComponent.js == "OVERRIDDEN JS"
         assert TestComponent.css == "OVERRIDDEN CSS"
+
+    @djc_test(components_settings={"extensions": [ModifyDependenciesExtension]})
+    def test_on_dependencies_modifications_propagate_to_html(self):
+        """Changes to scripts/styles in on_dependencies appear in the final HTML."""
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% component "mod_comp" / %}
+        """
+
+        @register("mod_comp")
+        class CompWithDeps(Component):
+            template: types.django_html = "<div>Hi</div>"
+            js: types.js = "console.log('component');"
+            css: types.css = ".x { color: red; }"
+
+        template = Template(template_str)
+        raw = template.render(Context({"DJC_DEPS_STRATEGY": "ignore"}))
+        rendered = render_dependencies(raw)
+
+        # Extension adds a script and a style; they must appear in the output
+        assert "// extension-injected script" in rendered
+        assert "/* extension-injected style */" in rendered
 
 
 @djc_test

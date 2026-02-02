@@ -22,6 +22,6 @@ urlpatterns = [
 ## List of URLs
 
 
-- `components/cache/<str:comp_cls_id>.<str:input_hash>.<str:script_type>`
+- `components/cache/<str:comp_cls_id>.<str:variables_hash>.<str:script_type>`
 
 - `components/cache/<str:comp_cls_id>.<str:script_type>`

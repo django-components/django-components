@@ -54,7 +54,7 @@ class TestMainMedia:
             rendered,
         )
         assertInHTML(
-            "<script>console.log('HTML and JS only');</script>",
+            "<script>(function() { console.log('HTML and JS only'); })();</script>",
             rendered,
         )
 
@@ -114,7 +114,7 @@ class TestMainMedia:
             rendered,
         )
         assertInHTML(
-            '<script>console.log("JS file");</script>',
+            '<script>(function() { console.log("JS file"); })();</script>',
             rendered,
         )
 
@@ -175,7 +175,7 @@ class TestMainMedia:
             rendered,
         )
         assertInHTML(
-            '<script>/* Used in `MainMediaTest` tests in `test_component_media.py` */\nconsole.log("HTML and JS only");</script>',
+            '<script>(function() { /* Used in `MainMediaTest` tests in `test_component_media.py` */\nconsole.log("HTML and JS only"); })();</script>',
             rendered,
         )
 

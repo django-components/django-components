@@ -26,6 +26,7 @@ from djc_core.html_transformer import set_html_attributes
 
 from django_components.attributes import format_attributes
 from django_components.cache import get_component_media_cache
+from django_components.extension import OnDependenciesContext, extensions
 from django_components.node import BaseNode
 from django_components.util.css import serialize_css_var_value
 from django_components.util.misc import extract_regex_matches, is_nonempty_str
@@ -45,75 +46,107 @@ Read more about the [dependencies strategies](../concepts/advanced/rendering_js_
 DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append", "ignore")
 
 
-ScriptKind: TypeAlias = Literal["component", "variables", "core", "extra"]
+DependencyKind: TypeAlias = Literal["component", "variables", "core", "extra"]
+"""
+Type for the kind of [`Dependency`](api.md#django_components.Dependency) objects.
+
+- `"core"`: Required for Django Components library to work.
+- `"component"`: Dependency from a component's `Component.js` or `Component.css`.
+- `"variables"`: Dependency from a component's JS/CSS variables.
+- `"extra"`: Any other dependencies, e.g. from `Component.Media.js/css`.
+"""
+
+# JavaScript MIME type essence and legacy types (classic script).
+# See https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types#textjavascript
+_JAVASCRIPT_MIME_TYPES = frozenset(
+    {
+        "text/javascript",
+        "application/javascript",
+        "application/ecmascript",
+        "application/x-ecmascript",
+        "application/x-javascript",
+        "text/ecmascript",
+        "text/javascript1.0",
+        "text/javascript1.1",
+        "text/javascript1.2",
+        "text/javascript1.3",
+        "text/javascript1.4",
+        "text/javascript1.5",
+        "text/jscript",
+        "text/livescript",
+        "text/x-ecmascript",
+        "text/x-javascript",
+    }
+)
+
+
+def _script_type_should_wrap(attrs: dict[str, str | bool]) -> bool:
+    """
+    Return True if inline script content should be wrapped in an IIFE.
+
+    Wrap when: no type, empty type, or a JavaScript MIME type (classic script).
+
+    Do not wrap when: type is "importmap", "module", "speculationrules", or any other value.
+
+    See https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type
+    """
+    type_val = attrs.get("type")
+
+    # No type attribute, or empty type attribute
+    if type_val is None:
+        return True
+    # Boolean attribute - same as no type attribute
+    if isinstance(type_val, bool):
+        return True
+
+    type_str = (type_val.strip().lower() if isinstance(type_val, str) else str(type_val)).strip()
+
+    # "text/javascript", etc
+    if type_str == "" or type_str in _JAVASCRIPT_MIME_TYPES:  # noqa: SIM103
+        return True
+    # "importmap", "module", "speculationrules", etc are not classic JS
+    return False
 
 
 @dataclass
-class Script:
+class Dependency:
     """
-    Represents a `<script>` tag with content and attributes.
+    Base class for JS/CSS dependency that will be rendered as `<script>`, `<style>`,
+    or `<link>` tag.
 
-    **Attributes:**
+    The content of the dependency (JS/CSS) can be either:
 
-        - kind: The kind of script.
-        - content: The script content (can be `None` for external scripts)
-        - url: If set, will render as `<script src="...">`. Otherwise renders as `<script>...</script>`.
-        - attrs: HTML attributes (values can be `True` for boolean attributes)
-        - origin_class_id: The class ID of the component that originated this script.
+    - Inlined as content (`<script>...</script>` or `<style>...</style>`)
+    - Fetched from a URL (`<script src="...">` or `<link rel="stylesheet" href="...">`)
+
+    Read more about [Rendering JS and CSS](../concepts/advanced/rendering_js_css.md).
     """
 
-    kind: ScriptKind
-    """
-    Script categories:
-
-    - "core": Required for Django Components library to work.
-    - "component": Script from a component's `Component.js` or `Component.css`.
-    - "variables": Script from a component's JS/CSS variables.
-    - "extra": Any other scripts, e.g. from `Component.Media.js/css`.
-    """
     content: str | None
-    """Text inside the `<script>` tag. Can be `None` for external scripts."""
+    """Text inside the `<script>` or `<style>` tag. Can be `None` for external dependencies."""
     url: str | None = None
-    """If set, will render as `<script src="...">`. Otherwise renders as `<script>...</script>`.
-    """
+    """If set, will render as `<script src="...">` or `<link rel="stylesheet" href="...">`.
+    Otherwise renders as `<script>...</script>` or `<style>...</style>`."""
     attrs: dict[str, str | bool] = field(default_factory=dict)
     """Extra HTML attributes (values can be `True` for boolean attributes)"""
+    kind: DependencyKind = "extra"
+    """
+    Metadata about the kind of dependency:
+
+    - `"core"`: Required for Django Components library to work.
+    - `"component"`: Dependency from a component's `Component.js` or `Component.css`.
+    - `"variables"`: Dependency from a component's JS/CSS variables.
+    - `"extra"`: Any other dependencies, e.g. from `Component.Media.js/css`.
+    """
     origin_class_id: str | None = None
-    """The class ID of the component that originated this script."""
-
-    def to_json(self) -> dict:
-        return {
-            "kind": self.kind,
-            "url": self.url,
-            "content": self.content,
-            "attrs": self.attrs,
-            "origin_class_id": self.origin_class_id,
-        }
-
-    @classmethod
-    def from_json(cls, data: dict) -> "Script":
-        return cls(
-            kind=data.get("kind", "component"),
-            content=data.get("content"),
-            url=data.get("url"),
-            attrs=data.get("attrs", {}),
-            origin_class_id=data.get("origin_class_id"),
-        )
+    """The class ID of the component that originated this dependency."""
 
     def _render(self) -> tuple[str, dict[str, str | bool], str]:
-        """Shared rendering logic that for rendering."""
-        self._check_validity()
-
-        if self.url:
-            all_attrs = {**self.attrs, "src": self.url}
-        else:
-            all_attrs = self.attrs
-        tag_name = "script"
-        content = self.content or ""
-        return (tag_name, all_attrs, content)
+        """Return (tag_name, all_attrs, content). Override in subclasses."""
+        raise NotImplementedError
 
     def render(self) -> SafeString:
-        """Render as HTML tag"""
+        """Render as HTML tag."""
         tag_name, all_attrs, content = self._render()
         attrs_str = format_attributes(all_attrs)
         attrs_prefix = " " + attrs_str if attrs_str else ""
@@ -130,52 +163,164 @@ class Script:
 
     def _check_validity(self) -> None:
         if self.url and self.content:
-            raise ValueError(f"{self._err_msg()} cannot have both `src` and `content` attributes")
+            raise ValueError(f"{self._err_msg()} cannot have both `src`/`href` and `content`")
         if not self.url and not self.content:
-            raise ValueError(f"{self._err_msg()} must have either `src` or `content` attribute")
+            raise ValueError(f"{self._err_msg()} must have either `src`/`href` or `content`")
 
+        # The script content CANNOT contain its own closing tag
+        # e.g. JS code CANNOT contain `</script>`
         tag_name = self.__class__.__name__.lower()
-        end_tag_substr = f"</{tag_name}"  # e.g. </script or </style
-        end_tag = f"<{tag_name}>"  # e.g. </script> or </style>
+        end_tag_substr = f"</{tag_name}"
         if self.content and end_tag_substr in self.content:
             raise RuntimeError(
-                f"{self._err_msg()} contains '{end_tag}' end tag. This is not allowed, as it would break the HTML.",
+                f"{self._err_msg()} contains '{end_tag_substr}>' end tag. This is not allowed.",
             )
 
     def _err_msg(self) -> str:
         if self.origin_class_id:
-            err_prefix = f"{self.__class__.__name__} for component '{self.origin_class_id}'"
-        else:
-            err_prefix = f"{self.__class__.__name__}"
-        return err_prefix
+            return f"{self.__class__.__name__} for component '{self.origin_class_id}'"
+        return self.__class__.__name__
 
 
 @dataclass
-class Style(Script):
+class Script(Dependency):
     """
-    Represents a `<style>` tag or `<link>` tag for stylesheets.
+    Represents a `<script>` tag with content and attributes.
 
-    **Attributes:**
+    Modify this object to change the attributes or content of the rendered `<script>` tag.
 
-        - kind: The kind of style.
-        - content: The CSS content (can be `None` for external stylesheets)
-        - url: If set, will render as `<link rel="stylesheet" href="...">`. Otherwise renders as `<style>...</style>`.
-        - attrs: HTML attributes (values can be `True` for boolean attributes)
-        - origin_class_id: The class ID of the component that originated this style.
+    If `Script.url` is set, renders as `<script src="...">`, otherwise renders as `<script>...</script>`.
 
-    If `url` is in attrs, renders as `<link rel="stylesheet" href="...">`.
-    Otherwise renders as `<style>...</style>`.
+    **Example:**
+
+    ```python
+    from django_components import Script
+
+    script = Script(
+        content="console.log('Hello, world!');",
+        attrs={"type": "module"},
+        wrap=False,
+    )
+    ```
+
+    becomes
+
+    ```html
+    <script type="module">
+        console.log('Hello, world!');
+    </script>
+    ```
     """
 
-    # Redefine fields with updated docstrings (otherwise the field values are the same as for `Script`)
-    content: str | None
-    """Text inside the `<style>` tag. Can be `None` for external stylesheets."""
-    url: str | None = None
-    """If set, will render as `<link rel="stylesheet" href="...">`. Otherwise renders as `<style>...</style>`."""
-    attrs: dict[str, str | bool] = field(default_factory=dict)
-    """Extra HTML attributes (values can be `True` for boolean attributes)"""
-    origin_class_id: str | None = None
-    """The class ID of the component that originated this style."""
+    wrap: bool = True
+    """
+    If True, wrap the JS content in a self-executing function.
+    Only applies when the script type is absent or a JS MIME type.
+
+    See https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script/type
+
+    **Example**
+
+    ```python
+    from django_components import Script
+
+    Script(
+        content="console.log('Hello, world!');",
+        wrap=True,
+    )
+    ```
+
+    becomes
+
+    ```html
+    <script>
+        (function() {
+            console.log("Hello, world!");
+        })();
+    </script>
+    ```
+    """
+
+    def to_json(self) -> dict:
+        return {
+            "kind": self.kind,
+            "url": self.url,
+            "content": self.content,
+            "attrs": self.attrs,
+            "wrap": self.wrap,
+            "origin_class_id": self.origin_class_id,
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> "Script":
+        return cls(
+            kind=data["kind"],
+            content=data["content"],
+            url=data["url"],
+            attrs=data["attrs"],
+            wrap=data["wrap"],
+            origin_class_id=data["origin_class_id"],
+        )
+
+    def _render(self) -> tuple[str, dict[str, str | bool], str]:
+        self._check_validity()
+        if self.url:
+            all_attrs = {**self.attrs, "src": self.url}
+            content = ""
+        else:
+            all_attrs = self.attrs
+            content = self.content or ""
+            if content and self.wrap and _script_type_should_wrap(all_attrs):
+                content = f"(function() {{\n{content}\n}})();"
+        return ("script", all_attrs, content)
+
+
+@dataclass
+class Style(Dependency):
+    """
+    Represents a `<style>` tag or `<link rel="stylesheet">` tag for stylesheets.
+
+    Modify this object to change the attributes or content of the rendered `<link>` or `<style>` tag.
+
+    If `Style.url` is set, renders as `<link rel="stylesheet" href="...">`,
+    otherwise renders as `<style>...</style>`.
+
+    **Example:**
+
+    ```python
+    from django_components import Style
+
+    style = Style(
+        url="/static/style.css",
+        attrs={"media": "print"},
+    )
+    ```
+
+    becomes
+
+    ```html
+    <link rel="stylesheet" href="/static/style.css" media="print">
+    ```
+    """
+
+    def to_json(self) -> dict:
+        return {
+            "kind": self.kind,
+            "url": self.url,
+            "content": self.content,
+            "attrs": self.attrs,
+            "origin_class_id": self.origin_class_id,
+        }
+
+    @classmethod
+    def from_json(cls, data: dict) -> "Style":
+        return cls(
+            kind=data["kind"],
+            content=data["content"],
+            url=data["url"],
+            attrs=data["attrs"],
+            origin_class_id=data["origin_class_id"],
+        )
 
     def _render(self) -> tuple[str, dict[str, str | bool], str]:
         """Shared rendering logic that for rendering."""
@@ -666,10 +811,17 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
     else:
         content_ = cast("bytes", content)
 
-    content_, js_dependencies, css_dependencies = _process_dep_declarations(content_, strategy)
+    content_, scripts, styles = _process_dep_declarations(content_, strategy)
 
-    js_deps_bytes = "".join([script.render() for script in js_dependencies]).encode("utf-8")
-    css_deps_bytes = "".join([style.render() for style in css_dependencies]).encode("utf-8")
+    scripts, styles = extensions.on_dependencies(
+        OnDependenciesContext(
+            scripts=scripts,
+            styles=styles,
+        )
+    )
+
+    js_deps_bytes = "".join([script.render() for script in scripts]).encode("utf-8")
+    css_deps_bytes = "".join([style.render() for style in styles]).encode("utf-8")
 
     # Replace the placeholders with the actual content
     # If strategy in (`document`, 'simple'), we insert the JS and CSS directly into the HTML,
@@ -756,16 +908,16 @@ def _pre_loader_js() -> Script:
     even on pages that weren't rendered with the "document" strategy.
     """
     manager_url = static("django_components/django_components.min.js")
+    if '"' in manager_url:
+        raise ValueError("Manager URL cannot contain quotes")
     content = f"""
-        (() => {{
-            if (!globalThis.DjangoComponents) {{
-                const s = document.createElement('script');
-                s.src = "{manager_url}";
-                document.head.appendChild(s);
-            }}
-            // Remove this loader script
-            if (document.currentScript) document.currentScript.remove();
-        }})();
+        if (!globalThis.DjangoComponents) {{
+            const s = document.createElement('script');
+            s.src = "{manager_url}";
+            document.head.appendChild(s);
+        }}
+        // Remove this loader script
+        if (document.currentScript) document.currentScript.remove();
     """
 
     return Script(
@@ -773,6 +925,7 @@ def _pre_loader_js() -> Script:
         content=content,
         url=None,
         attrs={},
+        wrap=True,
         origin_class_id=None,
     )
 
@@ -1036,30 +1189,29 @@ def _process_dep_declarations(
     elif strategy == "fragment":
         # For fragments, inline a script that conditionally injects the dependency manager
         # if it's not already loaded.
-        #
-        # TODO: Eventually we want to parametrize how the `<script>` tag is rendered
-        # (e.g. to use `type="module"`, `defer`, or csp nonce) based on which component
-        # it was defined in.
         core_script_tags.append(_pre_loader_js())
 
-    final_scripts: list[Script] = [
-        # JS by us
-        *core_script_tags,
-        # This makes calls to the JS dependency manager
-        # and loads JS from `Media.js` and `Component.js` if fragment
-        *([exec_script] if exec_script else []),
-        # JS from `Media.js`
-        # Loaded before `Component.js` because these are "dependencies"
-        # NOTE: When strategy in ("document", "simple", "prepend", "append"), the initial JS is inserted
-        # directly into the HTML so the scripts are executed at proper order. In the dependency manager,
-        # we only mark those scripts as loaded.
-        *(js_tags__fetch_in_client if strategy in ("document", "simple", "prepend", "append") else []),
-        # JS from `Component.js` (if not fragment)
-        *component_js__inline,
-        # JS variables
-        # Loaded after `Component.js`, because `Component.js` defines the variables callbacks
-        *component_js_vars__inline,
-    ]
+    final_scripts = cast(
+        "list[Script]",
+        [
+            # JS by us
+            *core_script_tags,
+            # This makes calls to the JS dependency manager
+            # and loads JS from `Media.js` and `Component.js` if fragment
+            *([exec_script] if exec_script else []),
+            # JS from `Media.js`
+            # Loaded before `Component.js` because these are "dependencies"
+            # NOTE: When strategy in ("document", "simple", "prepend", "append"), the initial JS is inserted
+            # directly into the HTML so the scripts are executed at proper order. In the dependency manager,
+            # we only mark those scripts as loaded.
+            *(js_tags__fetch_in_client if strategy in ("document", "simple", "prepend", "append") else []),
+            # JS from `Component.js` (if not fragment)
+            *component_js__inline,
+            # JS variables
+            # Loaded after `Component.js`, because `Component.js` defines the variables callbacks
+            *component_js_vars__inline,
+        ],
+    )
 
     final_styles = cast(
         "list[Style]",
@@ -1132,7 +1284,7 @@ def _postprocess_media_tags(
 
         # Create Script or Style object with all parsed attributes
         if script_type == "js":
-            script_obj = Script(
+            script_obj: Script | Style = Script(
                 kind="extra",
                 url=url,
                 content=None,
@@ -1310,7 +1462,7 @@ def get_script(
         # - Component scripts (`Component.js` or `Component.css`)
         # - Variables scripts (from `get_js_data()` or `get_css_data()`)
         # And if we were given `variables_hash`, we know we were trying to get a variables script.
-        kind: ScriptKind = "variables" if variables_hash is not None else "component"
+        kind: DependencyKind = "variables" if variables_hash is not None else "component"
 
         # Backward compatibility: old format was just a string
         if script_type == "js":
@@ -1329,7 +1481,7 @@ def get_script_url(
     comp_cls: type["Component"],
     variables_hash: str | None,
 ) -> Script | Style:
-    kind: ScriptKind = "component" if variables_hash is None else "variables"
+    kind: DependencyKind = "component" if variables_hash is None else "variables"
     url = reverse(
         CACHE_ENDPOINT_NAME,
         kwargs={
@@ -1362,7 +1514,7 @@ def get_script_url(
 
 def _gen_exec_script(
     output_type: Literal["script", "json"],
-    script_kind: ScriptKind,
+    script_kind: DependencyKind,
     script_origin_class_id: str | None,
     js_tags__fetch_in_client: list[Script | Style],
     css_tags__fetch_in_client: list[Script | Style],
@@ -1465,11 +1617,10 @@ def _gen_exec_script(
             kind=script_kind,
             origin_class_id=script_origin_class_id,
             content=f"""
-            (function() {{
-                DjangoComponents.manager._loadComponentScripts({exec_script_content});
-            }})();
+            DjangoComponents.manager._loadComponentScripts({exec_script_content});
             """,
             attrs={"type": "text/javascript"},
+            wrap=True,
         )
     return exec_script
 

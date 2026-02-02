@@ -1,5 +1,67 @@
 # Release notes
 
+## v0.148.0
+
+#### Feat
+
+- **JS from `Component.js` is now scoped by default**
+
+    Until now, if you assigned a variable or declared a function in your `Component.js` code, it would be available in the global scope. This could cause conflicts with other scripts on the page.
+
+    Now, the JS code is scoped, so you can't accidentally assign global variables or functions.
+
+    To define global variables or functions, you should instead use the `globalThis` keyword:
+
+    ```javascript
+    globalThis.myGlobalVariable = "Hello, world!";
+
+    globalThis.myGlobalFunction = () => {
+        console.log("Hello, world!");
+    };
+    ```
+
+- **Override JS/CSS rendering with the `on_dependencies` extension hook**
+
+    Say you want to add a CSP nonce to all scripts, or render scripts as `type="module"`.
+
+    Before, you had to subclass a `Media` class to intercept how JS and CSS scripts are rendered.
+    But this did not capture ALL JS and CSS scripts that are rendered.
+
+    Now, there is a new [`on_dependencies`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.ComponentExtension.on_dependencies) extension hook that you can use to modify JS and CSS scripts before they are rendered.
+
+    This hook exposes JS/CSS scripts as `Script` and `Style` objects, so you can modify them before they are rendered.
+
+    You can add or remove attributes, add or remove entire scripts, and more. See [Modifying JS / CSS scripts](https://django-components.github.io/django-components/0.148.0/concepts/advanced/rendering_js_css#modifying-js--css-scripts) for more details.
+
+    ```python
+    from django_components import ComponentExtension, OnDependenciesContext, Script, Style
+
+    class MyExtension(ComponentExtension):
+        def on_dependencies(self, ctx: OnDependenciesContext):
+            scripts = list(ctx.scripts)
+            styles = list(ctx.styles)
+
+            # Set nonce attribute on all JS scripts
+            for script in scripts:
+                script.attrs["nonce"] = "1234567890"
+
+            return (scripts, styles)
+    ```
+
+- **`Dependency`, `Script`, and `Style` helper classes**
+
+    Instead of modifying the JS and CSS scripts as raw strings like `<script>` and `<style>`,
+    the JS and CSS dependencies are represented by helper objects:
+
+    - [`Script`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.Script)
+        - Represents a `<script>` tag.
+        - Set `Script.wrap = False` to prevent classic JS from being wrapped in an IIFE.
+
+    - [`Style`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.Style)
+        - Represents a `<style>` tag or a `<link rel="stylesheet">` tag.
+        - When `Style.url` is set, renders as `<link>`, otherwise as `<style>` with
+        inline `content`.
+
 ## v0.147.0
 
 Added support for Django 6.0, JS and CSS variables, and component tree navigation.
@@ -63,9 +125,9 @@ Added support for Django 6.0, JS and CSS variables, and component tree navigatio
 
 - **CSS variables with `get_css_data()`**
 
-    Pass data from Python to CSS with [`get_css_data()`](../reference/api.md#django_components.Component.get_css_data).
+    Pass data from Python to CSS with [`get_css_data()`](https://django-components.github.io/django-components/0.147.0/reference/api#django_components.Component.get_css_data).
 
-    [`get_css_data()`](../reference/api.md#django_components.Component.get_css_data) returns a dictionary. This data is automatically
+    [`get_css_data()`](https://django-components.github.io/django-components/0.147.0/reference/api#django_components.Component.get_css_data) returns a dictionary. This data is automatically
     converted to CSS custom properties and made available in your component's CSS.
 
     In your CSS file, access these variables using `var()`.

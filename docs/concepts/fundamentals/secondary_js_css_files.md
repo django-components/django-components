@@ -10,6 +10,9 @@ There is also no special behavior or post-processing for these secondary files, 
 
 You can use these for third-party libraries, or for shared CSS / JS files.
 
+To modify how JS/CSS is rendered into `<script>`, `<style>`, or `<link>` tags (e.g. add attributes,
+reorder, or inject scripts), see [Modifying JS / CSS scripts](../advanced/rendering_js_css.md#modifying-js-css-scripts).
+
 These must be set as paths, URLs, or [custom objects](#paths-as-objects).
 
 ```py

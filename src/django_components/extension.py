@@ -25,6 +25,7 @@ from django_components.util.routing import URLRoute
 if TYPE_CHECKING:
     from django_components import Component
     from django_components.component_registry import ComponentRegistry
+    from django_components.dependencies import Script, Style
     from django_components.perfutil.component import OnComponentRenderedResult
     from django_components.slots import Slot, SlotNode, SlotResult
 
@@ -208,6 +209,14 @@ class OnJsLoadedContext(NamedTuple):
     """The Component class whose JS was loaded"""
     content: str
     """The JS content (string)"""
+
+
+@mark_extension_hook_api
+class OnDependenciesContext(NamedTuple):
+    scripts: list["Script"]
+    """List of JS scripts to load"""
+    styles: list["Style"]
+    """List of CSS styles to load"""
 
 
 ################################################
@@ -978,6 +987,81 @@ class ComponentExtension(metaclass=ExtensionMeta):
         ```
         """
 
+    ###########################
+    # Dependencies (JS and CSS)
+    ###########################
+
+    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Script"], list["Style"]] | None:
+        """
+        Called when a rendered HTML is being finalized, after all dependencies (JS and CSS) were collected,
+        and before they are rendered as `<script>` and `<link>` tags.
+
+        Use this hook to access or modify the JS/CSS dependencies, for example to:
+
+        - Modify or add dependencies
+        - Render `<script>` tags JS modules with `type="module"`
+        - Add CSP nonce to the dependencies
+
+        To modify the dependencies, return a tuple of `(scripts, styles)`.
+
+        Where:
+
+        - `scripts` is a list of [`Script`](api.md#django_components.Script) objects.
+        - `styles` is a list of [`Style`](api.md#django_components.Style) objects.
+
+        **Example:**
+
+        ```python
+        from django_components import (
+            ComponentExtension,
+            OnDependenciesContext,
+            Script,
+            Style,
+        )
+
+        class MyExtension(ComponentExtension):
+            def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Script"], list["Style"]]:
+                scripts = ctx.scripts
+                styles = ctx.styles
+
+                # Modify existing scripts and styles
+                for script in scripts:
+                    if script.kind == "extra":
+                        script.wrap = False
+                for style in styles:
+                    if style.kind == "extra":
+                        style.attrs["media"] = "print"
+
+                # Add extra JS and CSS dependencies (inline content)
+                scripts.append(
+                    Script(
+                        content="console.log('extension-injected script');",
+                        wrap=False,
+                    )
+                )
+                styles.append(
+                    Style(
+                        content="body { background-color: red; }",
+                    )
+                )
+                # Add extra JS and CSS dependencies (external URL)
+                scripts.append(
+                    Script(
+                        url="/static/analytics.js",
+                        content=None,
+                    )
+                )
+                styles.append(
+                    Style(
+                        url="/static/print.css",
+                        content=None,
+                        attrs={"media": "print"},
+                    )
+                )
+                return (scripts, styles)
+        ```
+        """
+
 
 # Decorator to store events in `ExtensionManager._events` when django_components is not yet initialized.
 def store_events(func: TCallable) -> TCallable:
@@ -1410,6 +1494,18 @@ class ExtensionManager:
             if result is not None:
                 ctx = ctx._replace(result=result)
         return ctx.result
+
+    ##########################
+    # Dependencies (JS and CSS)
+    ##########################
+
+    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Script"], list["Style"]]:
+        for extension in self.extensions:
+            maybe_dependencies = extension.on_dependencies(ctx)
+            if maybe_dependencies is not None:
+                scripts, styles = maybe_dependencies
+                ctx = ctx._replace(scripts=scripts, styles=styles)
+        return ctx.scripts, ctx.styles
 
 
 # NOTE: This is a singleton which receives extensions via `_init_app()` call from `apps.py`
