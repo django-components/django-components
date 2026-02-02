@@ -52,6 +52,9 @@ You can use these for third-party libraries, or for shared CSS / JS files.
 
 Read more about [Secondary JS / CSS files](secondary_js_css_files.md).
 
+To modify how JS/CSS is rendered into `<script>`, `<style>`, or `<link>` tags (e.g. add attributes,
+reorder, or inject scripts), see [Modifying JS / CSS scripts](../advanced/rendering_js_css.md#modifying-js-css-scripts).
+
 !!! warning
 
     You **cannot** use both inlined code **and** separate file for a single language type (HTML, CSS, JS).
@@ -193,7 +196,7 @@ class Table(Component):
 ### Template-less components
 
 Since you can use [`Component.on_render()`](../../reference/api.md#django_components.Component.on_render)
-to render *other* components, there is no need to define a template for the component.
+to render _other_ components, there is no need to define a template for the component.
 
 So even an empty component like this is valid:
 

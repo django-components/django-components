@@ -320,6 +320,37 @@ def server():
         rendered = template.render(Context({}))
         return HttpResponse(rendered)  # type: ignore[arg-type]
 
+    @register("js_no_global_leak")
+    class JsNoGlobalLeakComponent(Component):
+        """Component whose JS assigns a variable that must NOT appear on global scope."""
+
+        template: types.django_html = """
+            <div id="js-no-global-leak-container">
+                <div id="js-no-global-leak-marker" class="marker">not run</div>
+            </div>
+        """
+
+        js: types.js = """
+            const djcE2eNoGlobalLeak = 123;
+            const marker = document.querySelector('#js-no-global-leak-marker');
+            if (marker) marker.textContent = 'script ran';
+        """
+
+    def js_no_global_leak_view(_request):
+        template_str: types.django_html = """
+            {% load component_tags %}
+            <!DOCTYPE html>
+            <html>
+                <head></head>
+                <body>
+                    {% component 'js_no_global_leak' / %}
+                </body>
+            </html>
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+        return HttpResponse(rendered)  # type: ignore[arg-type]
+
     def js_vars_multiple_instances_view(_request):
         template_str: types.django_html = """
             {% load component_tags %}
@@ -355,6 +386,7 @@ def server():
     return {
         "/js-vars/document/no-vars": js_no_vars_component_view,
         "/js-vars/document/vars": js_vars_multiple_instances_view,
+        "/js-vars/document/no-global-leak": js_no_global_leak_view,
         "/js-vars/fragment/base": js_fragment_base_view,
         "/js-vars/fragment/fragment": js_fragment_view,
     }
@@ -424,6 +456,30 @@ class TestJsVariablesE2E:
         # Verify click handler (set up inside $onComponent) worked
         assert data["clickResultText"] == "Button click handler worked!"
         assert "rgb(212, 237, 218)" in data["clickResultBg"] or "#d4edda" in data["clickResultBg"]
+
+        await page.close()
+
+    @with_playwright
+    async def test_component_js_variable_not_in_global_scope(
+        self,
+        browser: "Browser",
+        browser_name: "BrowserType",
+    ):
+        """Component.js that assigns a variable must NOT pollute global scope (window)."""
+        url = TEST_SERVER_URL + "/js-vars/document/no-global-leak"
+
+        page = await browser.new_page()
+        await page.goto(url)
+
+        await page.wait_for_timeout(500)
+
+        # Verify script ran (marker set by component JS)
+        marker_text = await page.evaluate("() => document.querySelector('#js-no-global-leak-marker')?.textContent")
+        assert marker_text == "script ran"
+
+        # Variable assigned in Component.js must NOT be on window
+        global_has_var = await page.evaluate("() => typeof window.djcE2eNoGlobalLeak !== 'undefined'")
+        assert global_has_var is False, "Variable djcE2eNoGlobalLeak from Component.js must not be on global scope"
 
         await page.close()
 

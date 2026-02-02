@@ -132,6 +132,7 @@ class TestComponentMediaCache:
             '"url": null, '
             '"content": "console.log(\'Hello from JS\');", '
             '"attrs": {}, '
+            '"wrap": true, '
             '"origin_class_id": "TestMediaNoVarsComponent_0fa819"}'
         )
         assert test_cache.get(f"__components:{TestMediaNoVarsComponent.class_id}:css").strip() == (

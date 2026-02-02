@@ -62,7 +62,7 @@ Then:
   or in [`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies).
 
 - CSS from `MyButton.css` and `MyButton.Media.css` will be rendered at the default place (`<head>`),
-or in [`{% component_css_dependencies %}`](../../reference/template_tags.md#component_css_dependencies).
+  or in [`{% component_css_dependencies %}`](../../reference/template_tags.md#component_css_dependencies).
 
 And if you don't specify `{% component_dependencies %}` tags, it is the equivalent of:
 
@@ -340,15 +340,145 @@ html = MyComponent.render(deps_strategy="ignore")
 html = AnotherComponent.render(slots={"content": html})
 ```
 
+## Modifying JS / CSS scripts
+
+Before JS and CSS dependencies are rendered into `<script>`, `<style>`, and `<link>` tags,
+they are passed through the [`on_dependencies`](../../reference/api.md#django_components.ComponentExtension.on_dependencies) extension hook.
+
+You can use this hook to add, remove, or modify [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects,
+so that the final HTML reflects your changes.
+
+Use cases include:
+
+- Adding a custom `<script>` or `<style>` (e.g. analytics, CSP nonce)
+- Removing or reordering scripts or styles
+- Changing attributes on scripts (e.g. `type="module"`) or styles
+
+**Example:**
+
+In the extension `on_dependencies` hook, you can modify the lists of `Script` and `Style` objects that will be rendered.
+
+Return a tuple `(scripts, styles)` to replace the lists that will be rendered.
+
+Return `None` to leave dependencies unchanged.
+
+See [Extensions](extensions.md) for how to register and configure extensions.
+
+```python
+from django_components import ComponentExtension, OnDependenciesContext, Script, Style
+
+class MyExtension(ComponentExtension):
+    name = "my_extension"
+
+    def on_dependencies(self, ctx: OnDependenciesContext):
+        scripts = list(ctx.scripts)
+        styles = list(ctx.styles)
+
+        # Modify existing scripts and styles
+        for script in scripts:
+            if script.kind == "extra":
+                script.wrap = False
+        for style in styles:
+            if style.kind == "extra":
+                style.attrs["media"] = "print"
+
+        # Add new scripts (inline content)
+        scripts.append(
+            # <script type="module">console.log('my custom script');</script>
+            Script(
+                content="console.log('my custom script');",
+                attrs={"type": "module"},
+                wrap=False,
+            )
+        )
+        styles.append(
+            # <style nonce="1234567890">body { background-color: red; }</style>
+            Style(
+                content="body { background-color: red; }",
+                attrs={"nonce": "1234567890"},
+            )
+        )
+        # Add new scripts (external URL)
+        scripts.append(
+            # <script src="/static/analytics.js"></script>
+            Script(
+                url="/static/analytics.js",
+                content=None,
+            )
+        )
+        styles.append(
+            # <link rel="stylesheet" href="/static/print.css" media="print">
+            Style(
+                url="/static/print.css",
+                content=None,
+                attrs={"media": "print"},
+            )
+        )
+        return (scripts, styles)
+```
+
+### Wrapping inline JS in a self-executing function
+
+By default, inline JavaScript in component scripts is wrapped in a [**self-executing (IIFE)**](https://developer.mozilla.org/en-US/docs/Glossary/IIFE) function
+so that variables do not leak into the global scope.
+
+Whether a given `<script>` is wrapped depends on [`Script.wrap`](../../reference/api.md#django_components.Script) (default `True`) and the script's `type` attribute.
+
+To disable wrapping for a specific script, set
+[`Script.wrap`](../../reference/api.md#django_components.Script) to `False`.
+
+```python
+script = Script(
+    content="console.log('Hello');",
+    wrap=False,
+)
+```
+
+**Wrapped (classic JS):**
+
+- No `type` attribute, e.g. `<script>`
+- Empty `type`, e.g. `<script type="">`
+- JavaScript MIME types, e.g. `type="text/javascript"` or `type="application/javascript"`
+
+These are treated as classic scripts and are wrapped when `Script.wrap` is `True`:
+
+```html
+<script>
+  (function () {
+    console.log("Hello");
+    const x = 1; /* not on window */
+  })();
+</script>
+```
+
+**Not wrapped:**
+
+Anything else is not wrapped. This includes:
+
+- `type="module"` - ES modules have their own scope
+- `type="importmap"` - import map JSON, not executable JS
+- `type="speculationrules"` - speculation rules JSON
+- `type="application/json"` or any other non-JS type - data blocks are not executed as script
+- `Script.wrap=False` - wrapping is disabled for that script
+
+Example of a script that is _not_ wrapped (module):
+
+```html
+<script type="module">
+  import { foo } from "./app.js";
+  console.log(foo);
+</script>
+```
+
 ## Manually rendering JS / CSS
 
 When rendering templates or components, django-components covers all the traditional ways how components
 or templates can be rendered:
 
--  [`Component.render()`](../../reference/api.md#django_components.Component.render)
--  [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
--  [`Template.render()`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template.render)
--  [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.2/topics/http/shortcuts/#render)
+- [`Component.render()`](../../reference/api.md#django_components.Component.render)
+- [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
+- [`Template.render()`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template.render)
+- [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.2/topics/http/shortcuts/#render)
 
 This way you don't need to manually handle rendering of JS / CSS.
 

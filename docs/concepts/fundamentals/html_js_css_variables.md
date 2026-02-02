@@ -13,6 +13,9 @@ These methods let you pre-process inputs before they're used in rendering.
 
 Each method handles the data independently - you can define different data for the template, JS, and CSS.
 
+To modify how JS/CSS is rendered into `<script>`, `<style>`, or `<link>` tags (e.g. add attributes,
+reorder, or inject scripts), see [Modifying JS / CSS scripts](../advanced/rendering_js_css.md#modifying-js-css-scripts).
+
 ```python
 class ProfileCard(Component):
     class Kwargs:

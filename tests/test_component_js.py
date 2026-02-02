@@ -1,7 +1,7 @@
 from django.template import Context, Template
 from pytest_django.asserts import assertHTMLEqual
 
-from django_components import Component, register, types
+from django_components import Component, Script, register, types
 from django_components.testing import djc_test
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
@@ -43,9 +43,11 @@ class TestJsVariables:
                 "componentJsVars": [],
                 "componentJsCalls": [["VGVzdENvbXBvbmVudF9hNjdmOWY=", "Y2ExYmMzZQ==", "NTQ0MGU0"]]}</script>
             <script>
+            (function() {
                 DjangoComponents.manager.registerComponent("TestComponent_a67f9f", ({ message }) => {
                     console.log(message);
                 });
+            })();
             </script>
             <script type="text/javascript">
                 (function() {
@@ -119,9 +121,11 @@ class TestJsVariables:
                 "componentJsCalls": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0MQ==", "YTZmZjgy"],
                     ["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0Mg==", "YzBjYWEx"]]}</script>
             <script>
+            (function() {
                 DjangoComponents.manager.registerComponent("TestComponentRegistered_ce45d4", ({ value }) => {
                     console.log('Value:', value);
                 });
+            })();
             </script>
             <script type="text/javascript">
                 (function() {
@@ -186,10 +190,12 @@ class TestJsVariables:
                 "componentJsVars": [],
                 "componentJsCalls": [["VGVzdENvbXBvbmVudF8yZTY4MDY=", "Y2ExYmMzZQ==", "N2FjZmI5"]]}</script>
             <script>
+            (function() {
                 DjangoComponents.manager.registerComponent("TestComponent_2e6806", ({ lat, lng, zoom, markers }) => {
                     console.log(`Map at ${lat}, ${lng}, zoom: ${zoom}`);
                     console.log(`Markers: ${markers.length}`);
                 });
+            })();
             </script>
             <script type="text/javascript">
                 (function() {
@@ -235,9 +241,11 @@ class TestJsVariables:
                 "componentJsVars": [],
                 "componentJsCalls": [["VGVzdENvbXBvbmVudF9hOGI3NjY=", "Y2ExYmMzZQ==", null]]}</script>
             <script>
+            (function() {
                 DjangoComponents.manager.registerComponent("TestComponent_a8b766", () => {
                     console.log('No data');
                 });
+            })();
             </script>
             """,
             rendered,
@@ -285,11 +293,13 @@ class TestJsVariables:
                 "componentJsVars": [],
                 "componentJsCalls": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "Y2ExYmMzZQ==", "YmEyZDkx"]]}</script>
             <script>
+            (function() {
                 DjangoComponents.manager.registerComponent("TestComponent_811e70", ({ user_id, api_key }) => {
                     fetch(`/api/users/${user_id}`, {
                         headers: { 'Authorization': `Bearer ${api_key}` }
                     });
                 });
+            })();
             </script>
             <script type="text/javascript">
                 (function() {
@@ -304,3 +314,101 @@ class TestJsVariables:
             """,  # noqa: E501
             rendered,
         )
+
+
+@djc_test
+class TestScriptWrapRules:
+    """Test that inline JS scripts are wrapped in an IIFE only for normal/classic script types."""
+
+    def test_script_with_no_type_attr_is_wrapped(self):
+        script = Script(kind="component", content="const x = 1;", attrs={})
+        html = script.render()
+        assert "(function() {" in html
+        assert "})();" in html
+        assert "const x = 1;" in html
+
+    def test_script_with_empty_type_is_wrapped(self):
+        script = Script(kind="component", content="const x = 1;", attrs={"type": ""})
+        html = script.render()
+        assert "(function() {" in html
+        assert "})();" in html
+
+    def test_script_with_text_javascript_is_wrapped(self):
+        script = Script(
+            kind="component",
+            content="const x = 1;",
+            attrs={"type": "text/javascript"},
+        )
+        html = script.render()
+        assert "(function() {" in html
+        assert "})();" in html
+
+    def test_script_with_application_javascript_is_wrapped(self):
+        script = Script(
+            kind="component",
+            content="const x = 1;",
+            attrs={"type": "application/javascript"},
+        )
+        html = script.render()
+        assert "(function() {" in html
+        assert "})();" in html
+
+    def test_script_with_type_module_is_not_wrapped(self):
+        script = Script(
+            kind="component",
+            content="const x = 1;",
+            attrs={"type": "module"},
+        )
+        html = script.render()
+        assert "(function() {" not in html
+        assert "const x = 1;" in html
+
+    def test_script_with_type_importmap_is_not_wrapped(self):
+        script = Script(
+            kind="component",
+            content='{"imports": {}}',
+            attrs={"type": "importmap"},
+        )
+        html = script.render()
+        assert "(function() {" not in html
+
+    def test_script_with_type_speculationrules_is_not_wrapped(self):
+        script = Script(
+            kind="component",
+            content='{"prefetch": []}',
+            attrs={"type": "speculationrules"},
+        )
+        html = script.render()
+        assert "(function() {" not in html
+
+    def test_script_with_type_application_json_is_not_wrapped(self):
+        script = Script(
+            kind="component",
+            content='{"data": true}',
+            attrs={"type": "application/json"},
+        )
+        html = script.render()
+        assert "(function() {" not in html
+        assert '{"data": true}' in html
+
+    def test_script_with_wrap_false_is_not_wrapped(self):
+        script = Script(
+            kind="component",
+            content="const x = 1;",
+            attrs={},
+            wrap=False,
+        )
+        html = script.render()
+        assert "(function() {" not in html
+        assert "const x = 1;" in html
+
+    def test_script_with_src_is_not_wrapped(self):
+        script = Script(
+            kind="component",
+            url="/static/app.js",
+            content=None,
+            attrs={},
+        )
+        html = script.render()
+        assert "(function() {" not in html
+        assert 'src="/static/app.js"' in html

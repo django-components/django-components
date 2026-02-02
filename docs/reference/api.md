@@ -79,6 +79,14 @@
     options:
       show_if_no_docstring: true
 
+::: django_components.Dependency
+    options:
+      show_if_no_docstring: true
+
+::: django_components.DependencyKind
+    options:
+      show_if_no_docstring: true
+
 ::: django_components.Empty
     options:
       show_if_no_docstring: true
@@ -100,6 +108,10 @@
       show_if_no_docstring: true
 
 ::: django_components.RegistrySettings
+    options:
+      show_if_no_docstring: true
+
+::: django_components.Script
     options:
       show_if_no_docstring: true
 
@@ -136,6 +148,10 @@
       show_if_no_docstring: true
 
 ::: django_components.SlotResult
+    options:
+      show_if_no_docstring: true
+
+::: django_components.Style
     options:
       show_if_no_docstring: true
 

@@ -58,9 +58,10 @@ class TestDependenciesLegacy:
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
             'Variable: <strong data-djc-id-ca1bc3e="">foo</strong>\n'
-            '    <script src="script.js"></script><script>\n'
+            '    <script src="script.js"></script><script>(function() {\n\n'
             '        console.log("xyz");\n'
-            "    </script><style>\n"
+            "    \n"
+            "})();</script><style>\n"
             "        .xyz {\n"
             "            color: red;\n"
             "        }\n"
@@ -99,7 +100,11 @@ class TestRenderDependencies:
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
         assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
-        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML(
+            '<script>(function() { console.log("xyz"); })();</script>',
+            rendered,
+            count=1,
+        )  # Inlined JS
 
         assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
 
@@ -124,7 +129,11 @@ class TestRenderDependencies:
             rendered,
             count=1,
         )  # Inlined CSS
-        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML(
+            '<script>(function() { console.log("xyz"); })();</script>',
+            rendered,
+            count=1,
+        )  # Inlined JS
 
         assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
         assert rendered.count("<link") == 1
@@ -151,7 +160,11 @@ class TestRenderDependencies:
             rendered,
             count=1,
         )  # Inlined CSS
-        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML(
+            '<script>(function() { console.log("xyz"); })();</script>',
+            rendered,
+            count=1,
+        )  # Inlined JS
 
         assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
         assert rendered.count("<link") == 1
@@ -161,9 +174,10 @@ class TestRenderDependencies:
         assert rendered.strip() == (
             'Variable: <strong data-djc-id-ca1bc41="">foo</strong>\n'
             "    \n"
-            '        <script src="script.js"></script><script>\n'
+            '        <script src="script.js"></script><script>(function() {\n\n'
             '        console.log("xyz");\n'
-            "    </script><style>\n"
+            "    \n"
+            "})();</script><style>\n"
             "        .xyz {\n"
             "            color: red;\n"
             "        }\n"
@@ -192,7 +206,11 @@ class TestRenderDependencies:
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
         assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
-        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML(
+            '<script>(function() { console.log("xyz"); })();</script>',
+            rendered,
+            count=1,
+        )  # Inlined JS
 
         assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered, count=1)  # Media.css
         assert rendered.count("<link") == 1
@@ -256,7 +274,11 @@ class TestRenderDependencies:
         assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
 
         assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
-        assertInHTML('<script>console.log("xyz");</script>', rendered, count=1)  # Inlined JS
+        assertInHTML(
+            '<script>(function() { console.log("xyz"); })();</script>',
+            rendered,
+            count=1,
+        )  # Inlined JS
 
         assert rendered.count('<link media="all" rel="stylesheet" href="style.css">') == 1  # Media.css
         assert rendered.count("<link") == 1
@@ -303,7 +325,7 @@ class TestRenderDependencies:
             count=1,
         )
         assertInHTML(
-            '<script>console.log("xyz");</script>',
+            '<script>(function() { console.log("xyz"); })();</script>',
             rendered_body,
             count=1,
         )
@@ -354,7 +376,7 @@ class TestRenderDependencies:
             count=1,
         )
         assertInHTML(
-            '<script>console.log("xyz");</script>',
+            '<script>(function() { console.log("xyz"); })();</script>',
             rendered_head,
             count=1,
         )
@@ -376,17 +398,15 @@ class TestRenderDependencies:
             rendered,
             """
             <thead>
-            <script>
-                (() => {
-                    if (!globalThis.DjangoComponents) {
-                        const s = document.createElement('script');
-                        s.src = "django_components/django_components.min.js";
-                        document.head.appendChild(s);
-                    }
-                    // Remove this loader script
-                    if (document.currentScript) document.currentScript.remove();
-                })();
-            </script>
+            <script>(function() {
+                if (!globalThis.DjangoComponents) {
+                    const s = document.createElement('script');
+                    s.src = "django_components/django_components.min.js";
+                    document.head.appendChild(s);
+                }
+                // Remove this loader script
+                if (document.currentScript) document.currentScript.remove();
+            })();</script>
             """,
         )
 
@@ -445,17 +465,15 @@ class TestRenderDependencies:
                     </tr>
                 </tbody>
             </table>
-            <script>
-                (() => {
-                    if (!globalThis.DjangoComponents) {
-                        const s = document.createElement('script');
-                        s.src = "django_components/django_components.min.js";
-                        document.head.appendChild(s);
-                    }
-                    // Remove this loader script
-                    if (document.currentScript) document.currentScript.remove();
-                })();
-            </script>
+            <script>(function() {
+                if (!globalThis.DjangoComponents) {
+                    const s = document.createElement('script');
+                    s.src = "django_components/django_components.min.js";
+                    document.head.appendChild(s);
+                }
+                // Remove this loader script
+                if (document.currentScript) document.currentScript.remove();
+            })();</script>
         """
 
         assertHTMLEqual(expected, rendered)
@@ -527,8 +545,7 @@ class TestRenderDependencies:
                     </tr>
                 </tbody>
             </table>
-            <script>
-            (() => {
+            <script>(function() {
                 if (!globalThis.DjangoComponents) {
                     const s = document.createElement('script');
                     s.src = "django_components/django_components.min.js";
@@ -536,16 +553,16 @@ class TestRenderDependencies:
                 }
                 // Remove this loader script
                 if (document.currentScript) document.currentScript.remove();
-            })();
-        </script>
-        <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-            "jsUrls__markAsLoaded": [],
-            "cssTags__toFetch": ["eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAic3R5bGUuY3NzIn0sICJjb250ZW50IjogIiJ9",
-                "eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5jc3MifSwgImNvbnRlbnQiOiAiIn0="],
-            "jsTags__toFetch": ["eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAic2NyaXB0LmpzIn0sICJjb250ZW50IjogIiJ9",
-                "eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5qcyJ9LCAiY29udGVudCI6ICIifQ=="],
-            "componentJsVars": [],
-            "componentJsCalls": []}</script>
+
+                })();</script>
+            <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
+                "jsUrls__markAsLoaded": [],
+                "cssTags__toFetch": ["eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAic3R5bGUuY3NzIn0sICJjb250ZW50IjogIiJ9",
+                    "eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5jc3MifSwgImNvbnRlbnQiOiAiIn0="],
+                "jsTags__toFetch": ["eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAic2NyaXB0LmpzIn0sICJjb250ZW50IjogIiJ9",
+                    "eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5qcyJ9LCAiY29udGVudCI6ICIifQ=="],
+                "componentJsVars": [],
+                "componentJsCalls": []}</script>
         """  # noqa: E501
 
         assertHTMLEqual(expected, rendered)
@@ -561,7 +578,7 @@ class TestRenderDependencies:
         with pytest.raises(
             RuntimeError,
             match=re.escape(
-                "Script for component 'ComponentWithScript_ab2b78' contains '<script>' end tag.",
+                "Script for component 'ComponentWithScript_ab2b78' contains '</script>' end tag.",
             ),
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
@@ -580,7 +597,7 @@ class TestRenderDependencies:
         with pytest.raises(
             RuntimeError,
             match=re.escape(
-                "Style for component 'ComponentWithScript_a51788' contains '<style>' end tag.",
+                "Style for component 'ComponentWithScript_a51788' contains '</style>' end tag.",
             ),
         ):
             ComponentWithScript.render(kwargs={"variable": "foo"})
@@ -661,7 +678,7 @@ class TestDependenciesStrategyDocument:
             count=1,
         )
         assertInHTML(
-            '<script>console.log("xyz");</script>',
+            '<script>(function() { console.log("xyz"); })();</script>',
             rendered_body,
             count=1,
         )
@@ -712,7 +729,7 @@ class TestDependenciesStrategyDocument:
             count=1,
         )
         assertInHTML(
-            '<script>console.log("xyz");</script>',
+            '<script>(function() { console.log("xyz"); })();</script>',
             rendered_head,
             count=1,
         )
@@ -748,9 +765,10 @@ class TestDependenciesStrategySimple:
 
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
-            '<script src="script.js"></script><script>\n'
+            '<script src="script.js"></script><script>(function() {\n\n'
             '        console.log("xyz");\n'
-            "    </script>\n"
+            "    \n"
+            "})();</script>\n"
             "            <style>\n"
             "        .xyz {\n"
             "            color: red;\n"
@@ -863,8 +881,8 @@ class TestDependenciesStrategySimple:
             <script src="script2.js"></script>
             <script src="script.js"></script>
             <script src="xyz1.js"></script>
-            <script>console.log("Hello");</script>
-            <script>console.log("xyz");</script>
+            <script>(function() { console.log("Hello"); })();</script>
+            <script>(function() { console.log("xyz"); })();</script>
             """,
             rendered,
             count=1,
@@ -904,9 +922,10 @@ class TestDependenciesStrategyPrepend:
 
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
-            '<script src="script.js"></script><script>\n'
+            '<script src="script.js"></script><script>(function() {\n\n'
             '        console.log("xyz");\n'
-            "    </script><style>\n"
+            "    \n"
+            "})();</script><style>\n"
             "        .xyz {\n"
             "            color: red;\n"
             "        }\n"
@@ -1021,8 +1040,8 @@ class TestDependenciesStrategyPrepend:
             <script src="script2.js"></script>
             <script src="script.js"></script>
             <script src="xyz1.js"></script>
-            <script>console.log("Hello");</script>
-            <script>console.log("xyz");</script>
+            <script>(function() { console.log("Hello"); })();</script>
+            <script>(function() { console.log("xyz"); })();</script>
             """,
             rendered,
             count=1,
@@ -1064,9 +1083,10 @@ class TestDependenciesStrategyAppend:
         assert rendered.strip() == (
             'Variable: <strong data-djc-id-ca1bc41="">foo</strong>\n'
             "    \n"
-            '        <script src="script.js"></script><script>\n'
+            '        <script src="script.js"></script><script>(function() {\n\n'
             '        console.log("xyz");\n'
-            "    </script><style>\n"
+            "    \n"
+            "})();</script><style>\n"
             "        .xyz {\n"
             "            color: red;\n"
             "        }\n"
@@ -1176,8 +1196,8 @@ class TestDependenciesStrategyAppend:
             <script src="script2.js"></script>
             <script src="script.js"></script>
             <script src="xyz1.js"></script>
-            <script>console.log("Hello");</script>
-            <script>console.log("xyz");</script>
+            <script>(function() { console.log("Hello"); })();</script>
+            <script>(function() { console.log("xyz"); })();</script>
             """,
             rendered,
             count=1,
