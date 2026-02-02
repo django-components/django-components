@@ -12,7 +12,6 @@ from django_components import (
     Component,
     ComponentExtension,
     ComponentRegistry,
-    Dependency,
     ExtensionComponentConfig,
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
@@ -151,7 +150,7 @@ class DummyExtension(ComponentExtension):
     def on_component_rendered(self, ctx: OnComponentRenderedContext) -> None:
         self.calls["on_component_rendered"].append(ctx)
 
-    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list[Dependency], list[Dependency]] | None:
+    def on_dependencies(self, ctx: OnDependenciesContext) -> None:
         self.calls["on_dependencies"].append(ctx)
 
     def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> None:
@@ -243,7 +242,7 @@ class ModifyDependenciesExtension(ComponentExtension):
 
     name = "modify_dependencies_extension"
 
-    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list[Dependency], list[Dependency]]:
+    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list[Script], list[Style]]:
         scripts = list(ctx.scripts)
         styles = list(ctx.styles)
 

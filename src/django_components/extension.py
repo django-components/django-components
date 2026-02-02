@@ -25,7 +25,7 @@ from django_components.util.routing import URLRoute
 if TYPE_CHECKING:
     from django_components import Component
     from django_components.component_registry import ComponentRegistry
-    from django_components.dependencies import Dependency
+    from django_components.dependencies import Script, Style
     from django_components.perfutil.component import OnComponentRenderedResult
     from django_components.slots import Slot, SlotNode, SlotResult
 
@@ -213,9 +213,9 @@ class OnJsLoadedContext(NamedTuple):
 
 @mark_extension_hook_api
 class OnDependenciesContext(NamedTuple):
-    scripts: list["Dependency"]
+    scripts: list["Script"]
     """List of JS scripts to load"""
-    styles: list["Dependency"]
+    styles: list["Style"]
     """List of CSS styles to load"""
 
 
@@ -991,7 +991,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     # Dependencies (JS and CSS)
     ###########################
 
-    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Dependency"], list["Dependency"]] | None:
+    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Script"], list["Style"]] | None:
         """
         Called when a rendered HTML is being finalized, after all dependencies (JS and CSS) were collected,
         and before they are rendered as `<script>` and `<link>` tags.
@@ -1013,7 +1013,6 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         ```python
         from django_components import (
-            Dependency,
             ComponentExtension,
             OnDependenciesContext,
             Script,
@@ -1021,7 +1020,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         )
 
         class MyExtension(ComponentExtension):
-            def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Dependency"], list["Dependency"]]:
+            def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Script"], list["Style"]]:
                 scripts = ctx.scripts
                 styles = ctx.styles
 
@@ -1500,7 +1499,7 @@ class ExtensionManager:
     # Dependencies (JS and CSS)
     ##########################
 
-    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Dependency"], list["Dependency"]]:
+    def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Script"], list["Style"]]:
         for extension in self.extensions:
             maybe_dependencies = extension.on_dependencies(ctx)
             if maybe_dependencies is not None:

@@ -1191,24 +1191,27 @@ def _process_dep_declarations(
         # if it's not already loaded.
         core_script_tags.append(_pre_loader_js())
 
-    final_scripts = cast("list[Script]", [
-        # JS by us
-        *core_script_tags,
-        # This makes calls to the JS dependency manager
-        # and loads JS from `Media.js` and `Component.js` if fragment
-        *([exec_script] if exec_script else []),
-        # JS from `Media.js`
-        # Loaded before `Component.js` because these are "dependencies"
-        # NOTE: When strategy in ("document", "simple", "prepend", "append"), the initial JS is inserted
-        # directly into the HTML so the scripts are executed at proper order. In the dependency manager,
-        # we only mark those scripts as loaded.
-        *(js_tags__fetch_in_client if strategy in ("document", "simple", "prepend", "append") else []),
-        # JS from `Component.js` (if not fragment)
-        *component_js__inline,
-        # JS variables
-        # Loaded after `Component.js`, because `Component.js` defines the variables callbacks
-        *component_js_vars__inline,
-    ])
+    final_scripts = cast(
+        "list[Script]",
+        [
+            # JS by us
+            *core_script_tags,
+            # This makes calls to the JS dependency manager
+            # and loads JS from `Media.js` and `Component.js` if fragment
+            *([exec_script] if exec_script else []),
+            # JS from `Media.js`
+            # Loaded before `Component.js` because these are "dependencies"
+            # NOTE: When strategy in ("document", "simple", "prepend", "append"), the initial JS is inserted
+            # directly into the HTML so the scripts are executed at proper order. In the dependency manager,
+            # we only mark those scripts as loaded.
+            *(js_tags__fetch_in_client if strategy in ("document", "simple", "prepend", "append") else []),
+            # JS from `Component.js` (if not fragment)
+            *component_js__inline,
+            # JS variables
+            # Loaded after `Component.js`, because `Component.js` defines the variables callbacks
+            *component_js_vars__inline,
+        ],
+    )
 
     final_styles = cast(
         "list[Style]",
@@ -1281,7 +1284,7 @@ def _postprocess_media_tags(
 
         # Create Script or Style object with all parsed attributes
         if script_type == "js":
-            script_obj = Script(
+            script_obj: Script | Style = Script(
                 kind="extra",
                 url=url,
                 content=None,

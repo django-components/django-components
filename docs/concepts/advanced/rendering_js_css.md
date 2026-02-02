@@ -434,24 +434,13 @@ script = Script(
 )
 ```
 
-**Wrapped (classic JS):**
+**Wrapping is applied when:**
 
 - No `type` attribute, e.g. `<script>`
 - Empty `type`, e.g. `<script type="">`
 - JavaScript MIME types, e.g. `type="text/javascript"` or `type="application/javascript"`
 
-These are treated as classic scripts and are wrapped when `Script.wrap` is `True`:
-
-```html
-<script>
-  (function () {
-    console.log("Hello");
-    const x = 1; /* not on window */
-  })();
-</script>
-```
-
-**Not wrapped:**
+**Wrapping is NOT applied when:**
 
 Anything else is not wrapped. This includes:
 
@@ -459,16 +448,6 @@ Anything else is not wrapped. This includes:
 - `type="importmap"` - import map JSON, not executable JS
 - `type="speculationrules"` - speculation rules JSON
 - `type="application/json"` or any other non-JS type - data blocks are not executed as script
-- `Script.wrap=False` - wrapping is disabled for that script
-
-Example of a script that is _not_ wrapped (module):
-
-```html
-<script type="module">
-  import { foo } from "./app.js";
-  console.log(foo);
-</script>
-```
 
 ## Manually rendering JS / CSS
 
