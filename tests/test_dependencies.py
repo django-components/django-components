@@ -13,6 +13,7 @@ from django.utils.safestring import mark_safe
 from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, registry, render_dependencies, types
+from django_components.dependencies import Script, Style
 from django_components.testing import djc_test
 
 from .testutils import setup_test_config
@@ -61,11 +62,11 @@ class TestDependenciesLegacy:
             '    <script src="script.js"></script><script>(function() {\n\n'
             '        console.log("xyz");\n'
             "    \n"
-            "})();</script><style>\n"
+            '})();</script><link media="all" rel="stylesheet" href="style.css"><style>\n'
             "        .xyz {\n"
             "            color: red;\n"
             "        }\n"
-            '    </style><link media="all" rel="stylesheet" href="style.css">'
+            "    </style>"
         )
 
 
@@ -177,11 +178,11 @@ class TestRenderDependencies:
             '        <script src="script.js"></script><script>(function() {\n\n'
             '        console.log("xyz");\n'
             "    \n"
-            "})();</script><style>\n"
+            '})();</script><link media="all" rel="stylesheet" href="style.css"><style>\n'
             "        .xyz {\n"
             "            color: red;\n"
             "        }\n"
-            '    </style><link media="all" rel="stylesheet" href="style.css">'
+            "    </style>"
         )
 
     # Check that `Component.render()` renders dependencies
@@ -308,8 +309,8 @@ class TestRenderDependencies:
         assertInHTML(
             """
             <head>
-                <style>.xyz { color: red; }</style>
                 <link href="style.css" media="all" rel="stylesheet">
+                <style>.xyz { color: red; }</style>
             </head>
             """,
             rendered,
@@ -359,8 +360,8 @@ class TestRenderDependencies:
             <body>
                 Variable: <strong data-djc-id-ca1bc41>foo</strong>
 
-                <style>.xyz { color: red; }</style>
                 <link href="style.css" media="all" rel="stylesheet">
+                <style>.xyz { color: red; }</style>
             </body>
             """,
             rendered,
@@ -642,6 +643,67 @@ class TestRenderDependencies:
         rendered = template.render(Context({}))
         assertInHTML("<style>.x { color: red; }</style>", rendered)
 
+    def test_component_on_dependencies_return_value_used(self):
+        """Component.on_dependencies(cls, scripts, styles) return value replaces instance scripts/styles."""
+
+        class ComponentWithOnDependencies(SimpleComponent):
+            @classmethod
+            def on_dependencies(cls, scripts, styles):
+                # Append an extra inline script and style
+                extra_script = Script(
+                    kind="extra",
+                    content="console.log('from on_dependencies');",
+                    attrs={},
+                    wrap=False,
+                )
+                extra_style = Style(
+                    kind="extra",
+                    content=".from-hook { color: green; }",
+                    attrs={},
+                )
+                return ([*scripts, extra_script], [*styles, extra_style])
+
+        registry.register(name="test", component=ComponentWithOnDependencies)
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% component 'test' variable='foo' / %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+
+        # Original component JS/CSS still present
+        assertInHTML('<script>(function() { console.log("xyz"); })();</script>', rendered)
+        assertInHTML("<style>.xyz { color: red; }</style>", rendered)
+        # Extra from on_dependencies
+        assertInHTML("<script>console.log('from on_dependencies');</script>", rendered)
+        assertInHTML("<style>.from-hook { color: green; }</style>", rendered)
+
+    def test_component_on_dependencies_return_none_keeps_original(self):
+        """Component.on_dependencies returning None keeps original scripts/styles."""
+
+        class ComponentWithOnDependenciesNoOp(SimpleComponent):
+            @classmethod
+            def on_dependencies(cls, scripts, styles):  # noqa: ARG003
+                return None
+
+        registry.register(name="test", component=ComponentWithOnDependenciesNoOp)
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% component_js_dependencies %}
+            {% component_css_dependencies %}
+            {% component 'test' variable='foo' / %}
+        """
+        template = Template(template_str)
+        rendered = template.render(Context({}))
+
+        # Same as without hook
+        assertInHTML('<script>(function() { console.log("xyz"); })();</script>', rendered)
+        assertInHTML("<style>.xyz { color: red; }</style>", rendered)
+
 
 @djc_test
 class TestDependenciesStrategyDocument:
@@ -669,8 +731,8 @@ class TestDependenciesStrategyDocument:
         assertInHTML(
             """
             <head>
-                <style>.xyz { color: red; }</style>
                 <link href="style.css" media="all" rel="stylesheet">
+                <style>.xyz { color: red; }</style>
             </head>
             """,
             rendered,
@@ -720,8 +782,7 @@ class TestDependenciesStrategyDocument:
             <body>
                 Variable: <strong data-djc-id-ca1bc41>foo</strong>
 
-                <style>.xyz { color: red; }</style>
-                <link href="style.css" media="all" rel="stylesheet">
+                <link media="all" rel="stylesheet" href="style.css"><style>.xyz { color: red; }</style>
             </body>
             """,
             rendered,
@@ -777,11 +838,11 @@ class TestDependenciesStrategySimple:
             '        console.log("xyz");\n'
             "    \n"
             "})();</script>\n"
-            "            <style>\n"
+            '            <link media="all" rel="stylesheet" href="style.css"><style>\n'
             "        .xyz {\n"
             "            color: red;\n"
             "        }\n"
-            '    </style><link media="all" rel="stylesheet" href="style.css">\n'
+            "    </style>\n"
             "            \n"
             '        Variable: <strong data-djc-id-ca1bc41="">foo</strong>'
         )
@@ -933,11 +994,11 @@ class TestDependenciesStrategyPrepend:
             '<script src="script.js"></script><script>(function() {\n\n'
             '        console.log("xyz");\n'
             "    \n"
-            "})();</script><style>\n"
+            '})();</script><link media="all" rel="stylesheet" href="style.css"><style>\n'
             "        .xyz {\n"
             "            color: red;\n"
             "        }\n"
-            '    </style><link media="all" rel="stylesheet" href="style.css">\n'
+            "    </style>\n"
             "            \n"
             "            \n"
             "            \n"
@@ -1094,11 +1155,11 @@ class TestDependenciesStrategyAppend:
             '        <script src="script.js"></script><script>(function() {\n\n'
             '        console.log("xyz");\n'
             "    \n"
-            "})();</script><style>\n"
+            '})();</script><link media="all" rel="stylesheet" href="style.css"><style>\n'
             "        .xyz {\n"
             "            color: red;\n"
             "        }\n"
-            '    </style><link media="all" rel="stylesheet" href="style.css">'
+            "    </style>"
         )
 
     def test_multiple_components_dependencies(self):

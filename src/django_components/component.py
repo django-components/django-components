@@ -25,7 +25,7 @@ from django_components.component_registry import ComponentRegistry
 from django_components.component_registry import registry as registry_
 from django_components.component_render import OnRenderGenerator, component_context_cache, render_with_error_trace
 from django_components.context import make_isolated_context_copy
-from django_components.dependencies import DependenciesStrategy
+from django_components.dependencies import DependenciesStrategy, Script, Style
 from django_components.extension import (
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
@@ -2084,6 +2084,37 @@ class Component(metaclass=ComponentMeta):
                         print(f"Error: {error}")
             ```
         """
+
+    @classmethod
+    def on_dependencies(
+        cls,
+        scripts: list[Script],  # noqa: ARG003
+        styles: list[Style],  # noqa: ARG003
+    ) -> tuple[list[Script], list[Style]] | None:
+        """
+        Hook called once per rendered component instance with that component's
+        [`Script`](api.md#django_components.Script)/[`Style`](api.md#django_components.Style) list.
+
+        The list includes [`Component.js`](api.md#django_components.Component.js)/[`Component.css`](api.md#django_components.Component.css)
+        CSS/JS variables, and [`Component.Media.js`](api.md#django_components.ComponentMediaInput.js)/[`Component.Media.css`](api.md#django_components.ComponentMediaInput.css).
+
+        Return `(new_scripts, new_styles)` to replace the list for this instance;
+        return `None` (default) to keep the original list.
+
+        **Example:**
+
+        ```py
+        class MyButton(Component):
+            @classmethod
+            def on_dependencies(cls, scripts, styles):
+                # Add a nonce to every inline style for this component
+                for style in styles:
+                    if style.content and "nonce" not in style.attrs:
+                        style.attrs["nonce"] = get_current_nonce()
+                return (scripts, styles)
+        ```
+        """  # noqa: E501
+        return None
 
     # #####################################
     # PUBLIC API - BUILT-IN EXTENSIONS
