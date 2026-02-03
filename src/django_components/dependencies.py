@@ -1299,7 +1299,7 @@ def _postprocess_media_tags(
                 # External script with src
                 if url in url_to_obj:
                     continue
-                script_obj = Script(
+                script_obj: Script | Style = Script(
                     kind="extra",
                     url=url,
                     content=None,

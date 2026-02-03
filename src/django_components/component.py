@@ -3406,7 +3406,6 @@ class Component(metaclass=ComponentMeta):
         return template_data, js_data, css_data
 
 
-
 # Perf
 # Each component may use different start and end tags. We represent this
 # as individual subclasses of `ComponentNode`. However, multiple components
@@ -3604,7 +3603,8 @@ class ComponentNode(BaseNode):
         else:
             inner_context = context
 
-        output = component_cls._render_with_error_trace(
+        output = render_with_error_trace(
+            comp_cls=component_cls,
             context=inner_context,
             args=args,
             kwargs=kwargs,

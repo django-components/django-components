@@ -51,9 +51,9 @@ OnComponentRenderedResult: TypeAlias = tuple[str | None, Exception | None]
 
 
 OnRenderGenerator: TypeAlias = Generator[
-    SlotResult | Callable[[], SlotResult] | None,
-    tuple[SlotResult | None, Exception | None],
-    SlotResult | None,
+    "SlotResult | Callable[[], SlotResult] | None",
+    "tuple[SlotResult | None, Exception | None]",
+    "SlotResult | None",
 ]
 """
 This is the signature of the [`Component.on_render()`](api.md#django_components.Component.on_render)
@@ -221,8 +221,8 @@ def render_impl(
     make context copy, and defer actual template render via a generator.
     """
     # Import here to avoid circular import (component_render <-> component)
-    from django_components.component import ComponentVars
-    from django_components.slots import normalize_slot_fills
+    from django_components.component import ComponentVars  # noqa: PLC0415
+    from django_components.slots import normalize_slot_fills  # noqa: PLC0415
 
     ######################################
     # 1. Handle inputs
@@ -473,6 +473,7 @@ def render_impl(
                 COMPONENT_IS_NESTED_KEY: comp_is_nested,
                 # NOTE: Public API for variables accessible from within a component's template
                 # See https://github.com/django-components/django-components/issues/280#issuecomment-2081180940
+                # TODO_V1 - Replace this with Component instance, removing the need for ComponentVars
                 "component_vars": ComponentVars(
                     args=component.args,
                     kwargs=component.kwargs,
@@ -538,7 +539,6 @@ def render_impl(
         component=component,
         template=template,
         context=context_snapshot,
-        component_path=component_path,
     )
 
     # This callback is called with the value that was yielded from `Component.on_render()`.
@@ -673,8 +673,7 @@ def make_renderer_generator(
     component: "Component",
     template: Template | None,
     context: Context,
-    component_path: list[str],
-) -> Any:
+) -> OnRenderGenerator | None:
     """
     Convert Component.on_render() to a generator function so rendering can be
     deferred and done top-down without recursion limits.
@@ -1174,7 +1173,7 @@ def component_post_render(
                     item_id.component_id
                 ]
                 # NOTE: [1:] because the root component will be yet again added to the error's
-                # `components` list in `_render_with_error_trace` so we remove the first element from the path.
+                # `components` list in `render_with_error_trace` so we remove the first element from the path.
                 with with_component_error_message(full_path[1:]):
                     new_html = on_component_intermediate(new_html)
 
