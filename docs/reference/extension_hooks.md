@@ -181,8 +181,8 @@ name | type | description
 
 name | type | description
 --|--|--
-`scripts` | `list['Dependency']` | List of JS scripts to load
-`styles` | `list['Dependency']` | List of CSS styles to load
+`scripts` | `list['Script']` | List of JS scripts to load
+`styles` | `list['Style']` | List of CSS styles to load
 
 ::: django_components.extension.ComponentExtension.on_extension_created
     options:

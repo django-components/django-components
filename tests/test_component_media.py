@@ -16,6 +16,7 @@ from pytest_django.asserts import assertHTMLEqual, assertInHTML
 
 from django_components import Component, autodiscover, registry, render_dependencies, types
 from django_components.component_media import UNSET, ComponentMedia
+from django_components.dependencies import Script, Style
 from django_components.testing import djc_test
 
 from .testutils import setup_test_config
@@ -654,6 +655,38 @@ class TestMediaPathAsObject:
 
         assertInHTML('<script src="path/to/script.js"></script>', rendered)
         assertInHTML('<script src="path/to/script2.js"></script>', rendered)
+
+    def test_script_and_style_in_media(self):
+        class SimpleComponent(Component):
+            template = """
+                {% load component_tags %}
+                {% component_js_dependencies %}
+                {% component_css_dependencies %}
+            """
+
+            class Media:
+                js = [
+                    "path/to/script.js",
+                    Script(kind="extra", content="console.log('inline');", attrs={}, wrap=False),
+                    Script(kind="extra", url="/static/analytics.js", content=None, attrs={}),
+                ]
+                css = {
+                    "all": [
+                        "path/to/style.css",
+                        Style(kind="extra", content=".x { color: red; }", attrs={}),
+                        Style(kind="extra", url="/static/print.css", content=None, attrs={"media": "print"}),
+                    ],
+                }
+
+        rendered = SimpleComponent.render()
+
+        assertInHTML('<script src="path/to/script.js"></script>', rendered)
+        assertInHTML("<script>console.log('inline');</script>", rendered)
+        assertInHTML('<script src="/static/analytics.js"></script>', rendered)
+
+        assertInHTML('<link href="path/to/style.css" media="all" rel="stylesheet">', rendered)
+        assertInHTML("<style>.x { color: red; }</style>", rendered)
+        assertInHTML('<link href="/static/print.css" media="print" rel="stylesheet">', rendered)
 
     def test_bytes(self):
         """

@@ -152,6 +152,10 @@ class Dependency:
         attrs_prefix = " " + attrs_str if attrs_str else ""
         return mark_safe(f"<{tag_name}{attrs_prefix}>{content}</{tag_name}>")  # type: ignore[return-value]
 
+    def __html__(self) -> SafeString:
+        """Return rendered HTML so Script/Style can be used in Component.Media.js/css as `SafeString`."""
+        return self.render()
+
     def render_json(self) -> dict[str, str | dict[str, str | bool]]:
         """Render as JSON object with tag, attrs, and content fields."""
         tag_name, all_attrs, content = self._render()
@@ -180,6 +184,12 @@ class Dependency:
         if self.origin_class_id:
             return f"{self.__class__.__name__} for component '{self.origin_class_id}'"
         return self.__class__.__name__
+
+    def __hash__(self) -> int:
+        return id(self)
+
+    def __eq__(self, other: object) -> bool:
+        return self is other
 
 
 @dataclass
@@ -274,6 +284,12 @@ class Script(Dependency):
                 content = f"(function() {{\n{content}\n}})();"
         return ("script", all_attrs, content)
 
+    def __hash__(self) -> int:
+        return id(self)
+
+    def __eq__(self, other: object) -> bool:
+        return self is other
+
 
 @dataclass
 class Style(Dependency):
@@ -347,6 +363,12 @@ class Style(Dependency):
         else:
             html = f"<style{attrs_prefix}>{content}</style>"
         return mark_safe(html)  # type: ignore[return-value]
+
+    def __hash__(self) -> int:
+        return id(self)
+
+    def __eq__(self, other: object) -> bool:
+        return self is other
 
 
 class ComponentJsVars(NamedTuple):
@@ -1246,9 +1268,12 @@ def _postprocess_media_tags(
     """
     url_to_obj: dict[str, Script | Style] = {}
 
+    if script_type not in ("js", "css"):
+        raise ValueError(f"Invalid script type: {script_type}")
+
     for tag in tags:
         # Parse tag name, attributes, and optional content (so we can parse e.g. <script>...</script>)
-        tag_name, parsed_attrs, _ = _parse_html_tag_attrs(tag)
+        tag_name, parsed_attrs, tag_content = _parse_html_tag_attrs(tag)
 
         # Validate tag name matches expected type
         if script_type == "js":
@@ -1260,40 +1285,53 @@ def _postprocess_media_tags(
                 )
             attr_name = "src"
         else:  # css
-            if tag_name != "link":
+            if tag_name not in ("link", "style"):
                 raise RuntimeError(
                     f"One of entries for `Component.Media.{script_type}` media has incorrect tag name. "
-                    f"Expected '<link>' tag but got '<{tag_name}>'.\n"
+                    f"Expected '<link>' or '<style>' tag but got '<{tag_name}>'.\n"
                     f"Got:\n{tag}",
                 )
             attr_name = "href"
 
-        # Extract the URL from attrs
-        url = parsed_attrs.pop(attr_name, None)
-        if not url or url is True:
-            raise RuntimeError(
-                f"One of entries for `Component.Media.{script_type}` media is missing a "
-                f"value for attribute '{attr_name}'. If there is content inlined inside the `<{tag_name}>` tags, "
-                f"you must move the content to a `.{script_type}` file and reference it via '{attr_name}'.\n"
-                f"Got:\n{tag}",
-            )
-
-        # Skip duplicates (keep first occurrence)
-        if url in url_to_obj:
-            continue
-
-        # Create Script or Style object with all parsed attributes
         if script_type == "js":
-            script_obj: Script | Style = Script(
-                kind="extra",
-                url=url,
-                content=None,
-                attrs=parsed_attrs,
-                origin_class_id=None,
-            )
-        else:
-            # For CSS, create Style object that will render as <link>
-            # Note: href is used for <link> tags, but we store it as url
+            url = parsed_attrs.pop(attr_name, None)
+            if url and url is not True:
+                # External script with src
+                if url in url_to_obj:
+                    continue
+                script_obj: Script | Style = Script(
+                    kind="extra",
+                    url=url,
+                    content=None,
+                    attrs=parsed_attrs,
+                    origin_class_id=None,
+                )
+                url_to_obj[url] = script_obj
+            else:
+                # Inline <script>...</script> (wrap=False so we don't re-wrap when rendering)
+                dedup_key = f"inline:{tag_content}" if tag_content else f"inline:{id(tag)}"
+                if dedup_key in url_to_obj:
+                    continue
+                script_obj = Script(
+                    kind="extra",
+                    url=None,
+                    content=tag_content,
+                    attrs=parsed_attrs,
+                    origin_class_id=None,
+                    wrap=False,
+                )
+                url_to_obj[dedup_key] = script_obj
+        # css: <link> or <style>
+        elif tag_name == "link":
+            url = parsed_attrs.pop(attr_name, None)
+            if not url or url is True:
+                raise RuntimeError(
+                    f"One of entries for `Component.Media.{script_type}` media is missing a "
+                    f"value for attribute '{attr_name}'.\n"
+                    f"Got:\n{tag}",
+                )
+            if url in url_to_obj:
+                continue
             script_obj = Style(
                 kind="extra",
                 url=url,
@@ -1301,7 +1339,20 @@ def _postprocess_media_tags(
                 attrs=parsed_attrs,
                 origin_class_id=None,
             )
-        url_to_obj[url] = script_obj
+            url_to_obj[url] = script_obj
+        else:
+            # <style> with inline content
+            dedup_key = f"inline:{tag_content}" if tag_content else f"inline:{id(tag)}"
+            if dedup_key in url_to_obj:
+                continue
+            script_obj = Style(
+                kind="extra",
+                url=None,
+                content=tag_content,
+                attrs=parsed_attrs,
+                origin_class_id=None,
+            )
+            url_to_obj[dedup_key] = script_obj
 
     # Ensure consistent order
     result = list(url_to_obj.values())
@@ -1542,13 +1593,13 @@ def _gen_exec_script(
     def map_to_base64(lst: Sequence[str]) -> list[str]:
         return [to_base64(tag) for tag in lst]
 
-    # Extract URLs from Script/Style objects for base64 encoding
+    # Extract URLs from Script/Style objects for base64 encoding.
+    # Inline scripts/styles (no URL) are skipped; only URL-based resources are marked as loaded.
     def extract_urls(script_objects: list[Script | Style]) -> list[str]:
         urls = []
         for obj in script_objects:
-            if not obj.url:
-                raise ValueError(f"Script/Style object must have a URL, but got {obj}")
-            urls.append(obj.url)
+            if obj.url:
+                urls.append(obj.url)
         return urls
 
     def render_tags(script_objects: list[Script | Style]) -> list[str]:
