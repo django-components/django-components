@@ -18,6 +18,12 @@ jobs:
           REPO: ${{ github.repository }}
           TS: ${{ github.event.release.published_at }}
         run: |
+          # Discord embed description limit is 4096 characters; truncate body to avoid webhook rejection
+          TRUNC_SUFFIX=$'\n\n_… See release link for full changelog._'
+          MAX_BODY=4000
+          if [ ${#BODY} -gt "$MAX_BODY" ]; then
+            BODY="${BODY:0:$MAX_BODY}${TRUNC_SUFFIX}"
+          fi
           payload=$(jq -n \
             --arg name "$NAME" \
             --arg url "$URL" \
