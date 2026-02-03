@@ -1202,12 +1202,12 @@ def _process_dep_declarations(
     # NOTE: Sorting of these is mainly to keep predictable order in tests.
     all_scripts_mark_as_loaded = sorted(
         _dedupe_by_url_or_content(all_scripts_mark_as_loaded),
-        key=lambda x: x.url if x.url else "",
+        key=lambda x: x.url or "",
     )
 
     all_styles_mark_as_loaded = sorted(
         _dedupe_by_url_or_content(all_styles_mark_as_loaded),
-        key=lambda x: x.url if x.url else "",
+        key=lambda x: x.url or "",
     )
 
     ##################################################################
