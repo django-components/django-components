@@ -1,4 +1,4 @@
-# ruff: noqa: ARG002, N804, N805
+# ruff: noqa: ARG002, N805
 from collections.abc import Callable, Generator, Mapping
 from dataclasses import dataclass, is_dataclass
 from inspect import signature
@@ -11,38 +11,24 @@ from typing import (
     TypeAlias,
     cast,
 )
-from weakref import ReferenceType, WeakKeyDictionary, WeakValueDictionary, finalize, ref
+from weakref import ReferenceType, WeakValueDictionary, finalize
 
 from django.forms.widgets import Media as MediaCls
 from django.http import HttpRequest, HttpResponse
 from django.template.base import NodeList, Parser, Template, Token
-from django.template.context import Context, RequestContext
-from django.template.loader_tags import BLOCK_CONTEXT_KEY, BlockContext
-from django.test.signals import template_rendered
+from django.template.context import Context
 from djc_core.template_parser import TagAttr
 
 from django_components.app_settings import ContextBehavior
 from django_components.component_media import ComponentMediaInput, ComponentMediaMeta
 from django_components.component_registry import ComponentRegistry
 from django_components.component_registry import registry as registry_
-from django_components.constants import COMP_ID_PREFIX
-from django_components.context import _COMPONENT_CONTEXT_KEY, COMPONENT_IS_NESTED_KEY, make_isolated_context_copy
-from django_components.dependencies import (
-    DependenciesStrategy,
-    cache_component_css,
-    cache_component_css_vars,
-    cache_component_js,
-    cache_component_js_vars,
-    insert_component_dependencies_comment,
-    set_component_attrs_for_js_and_css,
-)
-from django_components.dependencies import render_dependencies as _render_dependencies
+from django_components.component_render import OnRenderGenerator, component_context_cache, render_with_error_trace
+from django_components.context import make_isolated_context_copy
+from django_components.dependencies import DependenciesStrategy
 from django_components.extension import (
     OnComponentClassCreatedContext,
     OnComponentClassDeletedContext,
-    OnComponentDataContext,
-    OnComponentInputContext,
-    OnComponentRenderedContext,
     extensions,
 )
 from django_components.extensions.cache import ComponentCache
@@ -50,13 +36,7 @@ from django_components.extensions.debug_highlight import ComponentDebugHighlight
 from django_components.extensions.defaults import ComponentDefaults
 from django_components.extensions.view import ComponentView, ViewFn
 from django_components.node import BaseNode
-from django_components.perfutil.component import (
-    OnComponentRenderedResult,
-    component_context_cache,
-    component_instance_cache,
-    component_post_render,
-)
-from django_components.perfutil.provide import register_provide_reference, unlink_component_from_provide_on_gc
+from django_components.perfutil.provide import unlink_component_from_provide_on_gc
 from django_components.provide import get_injected_context_var
 from django_components.slots import (
     Slot,
@@ -64,19 +44,15 @@ from django_components.slots import (
     SlotName,
     SlotResult,
     _is_extracting_fill,
-    normalize_slot_fills,
     resolve_fills,
 )
-from django_components.template import cache_component_template_file, prepare_component_template
-from django_components.util.context import gen_context_processors_data, snapshot_context
-from django_components.util.exception import component_error_message
-from django_components.util.logger import trace_component_msg
+from django_components.template import cache_component_template_file
+from django_components.util.context import gen_context_processors_data
 from django_components.util.misc import (
     convert_class_to_namedtuple,
     default,
-    gen_id,
+    gen_component_id,
     hash_comp_cls,
-    is_generator,
     to_dict,
 )
 from django_components.util.weakref import cached_ref
@@ -99,84 +75,6 @@ COMP_ONLY_FLAG = "only"
 
 AllComponents: TypeAlias = list[ReferenceType[type["Component"]]]
 CompHashMapping: TypeAlias = WeakValueDictionary[str, type["Component"]]
-ComponentRef: TypeAlias = ReferenceType["Component"]
-StartedGenerators: TypeAlias = WeakKeyDictionary["OnRenderGenerator", bool]
-
-
-OnRenderGenerator: TypeAlias = Generator[
-    SlotResult | Callable[[], SlotResult] | None,
-    tuple[SlotResult | None, Exception | None],
-    SlotResult | None,
-]
-"""
-This is the signature of the [`Component.on_render()`](api.md#django_components.Component.on_render)
-method if it yields (and thus returns a generator).
-
-When `on_render()` is a generator then it:
-
-- Yields a rendered template (string or `None`) or a lambda function to be called later.
-
-- Receives back a tuple of `(final_output, error)`.
-
-    The final output is the rendered template that now has all its children rendered too.
-    May be `None` if you yielded `None` earlier.
-
-    The error is `None` if the rendering was successful. Otherwise the error is set
-    and the output is `None`.
-
-- Can yield multiple times within the same method for complex rendering scenarios
-
-- At the end it may return a new string to override the final rendered output.
-
-**Example:**
-
-```py
-from django_components import Component, OnRenderGenerator
-
-class MyTable(Component):
-    def on_render(
-        self,
-        context: Context,
-        template: Template | None,
-    ) -> OnRenderGenerator:
-        # Do something BEFORE rendering template
-        # Same as `Component.on_render_before()`
-        context["hello"] = "world"
-
-        # Yield a function that renders the template
-        # to receive fully-rendered template or error.
-        html, error = yield lambda: template.render(context)
-
-        # Do something AFTER rendering template, or post-process
-        # the rendered template.
-        # Same as `Component.on_render_after()`
-        if html is not None:
-            return html + "<p>Hello</p>"
-```
-
-**Multiple yields example:**
-
-```py
-class MyTable(Component):
-    def on_render(self, context, template) -> OnRenderGenerator:
-        # First yield
-        with context.push({"mode": "header"}):
-            header_html, header_error = yield lambda: template.render(context)
-
-        # Second yield
-        with context.push({"mode": "body"}):
-            body_html, body_error = yield lambda: template.render(context)
-
-        # Third yield
-        footer_html, footer_error = yield "Footer content"
-
-        # Process all results
-        if header_error or body_error or footer_error:
-            return "Error occurred during rendering"
-
-        return f"{header_html}\n{body_html}\n{footer_html}"
-```
-"""
 
 
 # Keep track of all the Component classes created, so we can clean up after tests
@@ -471,14 +369,6 @@ class ComponentVars(NamedTuple):
     """  # noqa: E501
 
 
-def _gen_component_id() -> str:
-    return COMP_ID_PREFIX + gen_id()
-
-
-def _get_component_name(cls: type["Component"], registered_name: str | None = None) -> str:
-    return default(registered_name, cls.__name__)
-
-
 # Descriptor to pass getting/setting of `template_name` onto `template_file`
 class ComponentTemplateNameDescriptor:
     def __get__(self, instance: "Component | None", cls: type["Component"]) -> Any:
@@ -568,36 +458,6 @@ class ComponentMeta(ComponentMediaMeta):
         extensions.on_component_class_deleted(OnComponentClassDeletedContext(comp_cls))
 
 
-# Internal data that's shared across the entire component tree
-@dataclass
-class ComponentTreeContext:
-    # HTML attributes that are passed from parent to child components
-    component_attrs: dict[str, list[str]]
-    # When we render a component, the root component, together with all the nested Components,
-    # shares these dictionaries for storing callbacks.
-    # These callbacks are called from within `component_post_render`
-    on_component_intermediate_callbacks: dict[str, Callable[[str | None], str | None]]
-    on_component_rendered_callbacks: dict[str, Callable[[str | None, Exception | None], OnComponentRenderedResult]]
-    # Track which generators have been started. We need this info because the input to
-    # `Generator.send()` changes when calling it the first time vs subsequent times.
-    # Moreover, we can't simply store this directly on the generator object themselves
-    # (e.g. `generator.started = True`), because generator object does not allow setting
-    # extra attributes.
-    started_generators: StartedGenerators
-
-
-# Internal data that are made available within the component's template
-@dataclass
-class ComponentContext:
-    component: ComponentRef
-    component_path: list[str]
-    template_name: str | None
-    default_slot: str | None
-    outer_context: Context | None
-    tree: ComponentTreeContext
-    root_id: str | None  # ID of the root component in this tree
-
-
 def on_component_garbage_collected(component_id: str) -> None:
     """Finalizer function to be called when a Component object is garbage collected."""
     unlink_component_from_provide_on_gc(component_id)
@@ -606,7 +466,7 @@ def on_component_garbage_collected(component_id: str) -> None:
 
 class Component(metaclass=ComponentMeta):
     # #####################################
-    # PUBLIC API (Configurable by users)
+    # PUBLIC API - JS/CSS/HTML (Configurable by users)
     # #####################################
 
     Args: ClassVar[type | None] = None
@@ -2226,7 +2086,7 @@ class Component(metaclass=ComponentMeta):
         """
 
     # #####################################
-    # BUILT-IN EXTENSIONS
+    # PUBLIC API - BUILT-IN EXTENSIONS
     # #####################################
 
     # NOTE: These are the classes and instances added by defaults extensions. These fields
@@ -2310,149 +2170,8 @@ class Component(metaclass=ComponentMeta):
     """
     debug_highlight: ComponentDebugHighlight
 
-    # #####################################
-    # MISC
-    # #####################################
-
-    class_id: ClassVar[str]
-    """
-    Unique ID of the component class, e.g. `MyComponent_ab01f2`.
-
-    This is derived from the component class' module import path, e.g. `path.to.my.MyComponent`.
-    """
-
-    # TODO_V1 - Remove this in v1
-    @property
-    def _class_hash(self) -> str:
-        """Deprecated. Use `Component.class_id` instead."""
-        return self.class_id
-
-    _template: Template | None = None
-    """
-    Cached [`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
-    instance for the [`Component`](api.md#django_components.Component),
-    created from
-    [`Component.template`](#django_components.Component.template) or
-    [`Component.template_file`](#django_components.Component.template_file).
-    """
-
-    # TODO_v3 - Django-specific property to prevent calling the instance as a function.
-    do_not_call_in_templates: ClassVar[bool] = True
-    """
-    Django special property to prevent calling the instance as a function
-    inside Django templates.
-
-    Read more about Django's
-    [`do_not_call_in_templates`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#variables-and-lookups).
-    """
-
-    # TODO_v1 - Change params order to match `Component.render()`
-    def __init__(
-        self,
-        registered_name: str | None = None,
-        outer_context: Context | None = None,
-        registry: ComponentRegistry | None = None,  # noqa: F811
-        context: Context | None = None,
-        args: Any | None = None,
-        kwargs: Any | None = None,
-        slots: Any | None = None,
-        deps_strategy: DependenciesStrategy | None = None,
-        request: HttpRequest | None = None,
-        node: "ComponentNode | None" = None,
-        id: str | None = None,  # noqa: A002
-        parent: "Component | None" = None,
-        root: "Component | None" = None,
-    ) -> None:
-        # TODO_v1 - Remove this whole block in v1. This is for backwards compatibility with pre-v0.140
-        #           where one could do:
-        #           `MyComp("my_comp").render(kwargs={"a": 1})`.
-        #           Instead, the new syntax is:
-        #           `MyComp.render(registered_name="my_comp", kwargs={"a": 1})`.
-        # NOTE: We check for `id` as a proxy to decide if the component was instantiated by django-components
-        #       or by the user. The `id` is set when a Component is instantiated from within `Component.render()`.
-        if id is None:
-            # Update the `render()` and `render_to_response()` methods to so they use the `registered_name`,
-            # `outer_context`, and `registry` as passed to the constructor.
-            #
-            # To achieve that, we want to re-assign the class methods as instance methods that pass the instance
-            # attributes to the class methods.
-            # For that we have to "unwrap" the class methods via __func__.
-            # See https://stackoverflow.com/a/76706399/9788634
-            def primed_render(self: Component, *args: Any, **kwargs: Any) -> Any:
-                return self.__class__.render(
-                    *args,
-                    **{
-                        "registered_name": registered_name,
-                        "outer_context": outer_context,
-                        "registry": registry,
-                        **kwargs,
-                    },
-                )
-
-            def primed_render_to_response(self: Component, *args: Any, **kwargs: Any) -> Any:
-                return self.__class__.render_to_response(
-                    *args,
-                    **{
-                        "registered_name": registered_name,
-                        "outer_context": outer_context,
-                        "registry": registry,
-                        **kwargs,
-                    },
-                )
-
-            self.render_to_response = MethodType(primed_render_to_response, self)  # type: ignore[method-assign]
-            self.render = MethodType(primed_render, self)  # type: ignore[method-assign]
-
-        deps_strategy = cast("DependenciesStrategy", default(deps_strategy, "document"))
-
-        self.id = default(id, _gen_component_id, factory=True)  # type: ignore[arg-type]
-        self.name = _get_component_name(self.__class__, registered_name)
-        self.registered_name: str | None = registered_name
-        self.args = default(args, [])
-        self.kwargs = default(kwargs, {})
-        self.slots = default(slots, {})
-        self.raw_args: list[Any] = self.args if isinstance(self.args, list) else list(self.args)
-        self.raw_kwargs: dict[str, Any] = self.kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)
-        self.raw_slots: dict[str, Slot] = self.slots if isinstance(self.slots, dict) else to_dict(self.slots)
-        self.context = default(context, Context())
-        # TODO_v1 - Remove `is_filled`, superseded by `Component.slots`
-        self.is_filled = SlotIsFilled(to_dict(self.slots))
-        # TODO_v1 - Remove `Component.input`
-        self.input = ComponentInput(
-            context=self.context,
-            # NOTE: Convert args / kwargs / slots to plain lists / dicts
-            args=cast("list", args if isinstance(self.args, list) else list(self.args)),
-            kwargs=cast("dict", kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)),
-            slots=cast("dict", slots if isinstance(self.slots, dict) else to_dict(self.slots)),
-            deps_strategy=deps_strategy,
-            # TODO_v1 - Remove, superseded by `deps_strategy`
-            type=deps_strategy,
-            # TODO_v1 - Remove, superseded by `deps_strategy`
-            render_dependencies=deps_strategy != "ignore",
-        )
-        self.deps_strategy = deps_strategy
-        self.request = request
-        self.outer_context: Context | None = outer_context
-        self.registry = default(registry, registry_)
-        self.node = node
-        self.parent = parent
-        self.root = root or self
-
-        # Run finalizer when component is garbage collected
-        finalize(self, on_component_garbage_collected, self.id)
-
-        extensions._init_component_instance(self)
-
-    def __init_subclass__(cls, **kwargs: Any) -> None:
-        cls.class_id = hash_comp_cls(cls)
-        comp_cls_id_mapping[cls.class_id] = cls
-
-        ALL_COMPONENTS.append(cached_ref(cls))  # type: ignore[arg-type]
-        extensions._init_component_class(cls)
-        extensions.on_component_class_created(OnComponentClassCreatedContext(cls))
-
     ########################################
-    # INSTANCE PROPERTIES
+    # PUBLIC API - INSTANCE PROPERTIES (RENDER API)
     ########################################
 
     name: str
@@ -3113,7 +2832,7 @@ class Component(metaclass=ComponentMeta):
             current = current.parent
 
     # #####################################
-    # MISC
+    # PUBLIC API - MISC
     # #####################################
 
     def inject(self, key: str, default: Any | None = None) -> Any:
@@ -3184,10 +2903,6 @@ class Component(metaclass=ComponentMeta):
             return inner_view(request, *args, **kwargs)
 
         return outer_view
-
-    # #####################################
-    # RENDERING
-    # #####################################
 
     @classmethod
     def render_to_response(
@@ -3492,7 +3207,8 @@ class Component(metaclass=ComponentMeta):
         if not render_dependencies:
             deps_strategy = "ignore"
 
-        return cls._render_with_error_trace(
+        return render_with_error_trace(
+            comp_cls=cls,
             context=context,
             args=args,
             kwargs=kwargs,
@@ -3506,556 +3222,151 @@ class Component(metaclass=ComponentMeta):
             node=node,
         )
 
-    # This is the internal entrypoint for the render function
-    @classmethod
-    def _render_with_error_trace(
-        cls,
-        context: dict[str, Any] | Context | None = None,
-        args: Any | None = None,
-        kwargs: Any | None = None,
-        slots: Any | None = None,
-        deps_strategy: DependenciesStrategy = "document",
-        request: HttpRequest | None = None,
-        outer_context: Context | None = None,
-        # TODO_v2 - Remove `registered_name` and `registry`
-        registry: ComponentRegistry | None = None,  # noqa: F811
-        registered_name: str | None = None,
-        node: "ComponentNode | None" = None,
-    ) -> str:
-        component_name = _get_component_name(cls, registered_name)
-        render_id = _gen_component_id()
+    # #####################################
+    # INTERNAL
+    # #####################################
 
-        # Modify the error to display full component path (incl. slots)
-        with component_error_message([component_name]):
-            try:
-                return cls._render_impl(
-                    render_id=render_id,
-                    context=context,
-                    args=args,
-                    kwargs=kwargs,
-                    slots=slots,
-                    deps_strategy=deps_strategy,
-                    request=request,
-                    outer_context=outer_context,
-                    # TODO_v2 - Remove `registered_name` and `registry`
-                    registry=registry,
-                    registered_name=registered_name,
-                    node=node,
-                )
-            except Exception as e:
-                # Clean up if rendering fails
-                component_instance_cache.pop(render_id, None)
-                raise e from None
+    class_id: ClassVar[str]
+    """
+    Unique ID of the component class, e.g. `MyComponent_ab01f2`.
 
-    @classmethod
-    def _render_impl(
-        comp_cls,
-        render_id: str,
-        context: dict[str, Any] | Context | None = None,
-        args: Any | None = None,
-        kwargs: Any | None = None,
-        slots: Any | None = None,
-        deps_strategy: DependenciesStrategy = "document",
-        request: HttpRequest | None = None,
-        outer_context: Context | None = None,
-        # TODO_v2 - Remove `registered_name` and `registry`
-        registry: ComponentRegistry | None = None,  # noqa: F811
-        registered_name: str | None = None,
-        node: "ComponentNode | None" = None,
-    ) -> str:
-        ######################################
-        # 1. Handle inputs
-        ######################################
+    This is derived from the component class' module import path, e.g. `path.to.my.MyComponent`.
+    """
 
-        # Allow to pass down Request object via context.
-        # `context` may be passed explicitly via `Component.render()` and `Component.render_to_response()`,
-        # or implicitly via `{% component %}` tag.
-        if request is None and context:
-            # If the context is `RequestContext`, it has `request` attribute
-            request = getattr(context, "request", None)
-            # Check if this is a nested component and whether parent has request
-            if request is None:
-                _, parent_comp_ctx = _get_parent_component_context(context)
-                if parent_comp_ctx:
-                    parent_comp = parent_comp_ctx.component()
-                    request = parent_comp and parent_comp.request
+    # TODO_V1 - Remove this in v1
+    @property
+    def _class_hash(self) -> str:
+        """Deprecated. Use `Component.class_id` instead."""
+        return self.class_id
 
-        component_name = _get_component_name(comp_cls, registered_name)
+    _template: Template | None = None
+    """
+    Cached [`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
+    instance for the [`Component`](api.md#django_components.Component),
+    created from
+    [`Component.template`](#django_components.Component.template) or
+    [`Component.template_file`](#django_components.Component.template_file).
+    """
 
-        # Allow to provide no args/kwargs/slots/context
-        # NOTE: We make copies of args / kwargs / slots, so that plugins can modify them
-        # without affecting the original values.
-        args_list: list[Any] = list(default(args, []))
-        kwargs_dict = to_dict(default(kwargs, {}))
-        slots_dict = normalize_slot_fills(
-            to_dict(default(slots, {})),
-            component_name=component_name,
-        )
-        # Use RequestContext if request is provided, so that child non-component template tags
-        # can access the request object too.
-        context = context if context is not None else (RequestContext(request) if request else Context())
+    # TODO_v3 - Django-specific property to prevent calling the instance as a function.
+    do_not_call_in_templates: ClassVar[bool] = True
+    """
+    Django special property to prevent calling the instance as a function
+    inside Django templates.
 
-        # Allow to provide a dict instead of Context
-        # NOTE: This if/else is important to avoid nested Contexts,
-        # See https://github.com/django-components/django-components/issues/414
-        if not isinstance(context, (Context, RequestContext)):
-            context = RequestContext(request, context) if request else Context(context)
+    Read more about Django's
+    [`do_not_call_in_templates`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#variables-and-lookups).
+    """
 
-        # Throughout the component tree, we pass down the info about the components' parents.
-        # This is used for correctly resolving slot fills, correct rendering order,
-        # or CSS scoping.
-        parent_id, parent_comp_ctx = _get_parent_component_context(context)
-        if parent_comp_ctx is not None:
-            component_path = [*parent_comp_ctx.component_path, component_name]
-            component_tree_context = parent_comp_ctx.tree
-        else:
-            component_path = [component_name]
-            component_tree_context = ComponentTreeContext(
-                component_attrs={},
-                on_component_intermediate_callbacks={},
-                on_component_rendered_callbacks={},
-                started_generators=WeakKeyDictionary(),
-            )
-
-        root_id = render_id if parent_comp_ctx is None else parent_comp_ctx.root_id
-
-        # Set parent and root as direct attributes on the component instance.
-        # This creates strong references that keep parent/root alive as long as children are alive.
-        # NOTE: `parent_id` may be not found in `component_instance_cache` if we are rendering
-        #       an orphaned slot function (AKA slot function that we've taken out of the render context)
-        if parent_id is not None and parent_id in component_instance_cache:
-            parent_component = component_instance_cache[parent_id]
-        else:
-            parent_component = None
-
-        # NOTE: `root_id` may be not found in `component_instance_cache` if we are rendering
-        #       an orphaned slot function (AKA slot function that we've taken out of the render context)
-        if root_id is not None and root_id != render_id and root_id in component_instance_cache:
-            root_component = component_instance_cache[root_id]
-        else:
-            root_component = None
-
-        component = comp_cls(
-            id=render_id,
-            args=args_list,
-            kwargs=kwargs_dict,
-            slots=slots_dict,
-            context=context,
-            request=request,
-            deps_strategy=deps_strategy,
-            outer_context=outer_context,
-            # TODO_v2 - Remove `registered_name` and `registry`
-            registry=registry,
-            registered_name=registered_name,
-            node=node,
-            parent=parent_component,
-            root=root_component,
-        )
-
-        # Allow plugins to modify or validate the inputs
-        result_override = extensions.on_component_input(
-            OnComponentInputContext(
-                component=component,
-                component_cls=comp_cls,
-                component_id=render_id,
-                args=args_list,
-                kwargs=kwargs_dict,
-                slots=slots_dict,
-                context=context,
-            ),
-        )
-
-        # The component rendering was short-circuited by an extension, skipping
-        # the rest of the rendering process. This may be for example a cached content.
-        if result_override is not None:
-            return result_override
-
-        # If user doesn't specify `Args`, `Kwargs`, `Slots` types, then we pass them in as plain
-        # dicts / lists.
-        component.args = comp_cls.Args(*args_list) if comp_cls.Args is not None else args_list
-        component.kwargs = comp_cls.Kwargs(**kwargs_dict) if comp_cls.Kwargs is not None else kwargs_dict
-        component.slots = comp_cls.Slots(**slots_dict) if comp_cls.Slots is not None else slots_dict
-
-        ######################################
-        # 2. Prepare component state
-        ######################################
-
-        context_processors_data = component.context_processors_data
-
-        # Required for compatibility with Django's {% extends %} tag
-        # See https://github.com/django-components/django-components/pull/859
-        context.render_context.push(  # type: ignore[union-attr]
-            {BLOCK_CONTEXT_KEY: context.render_context.get(BLOCK_CONTEXT_KEY, BlockContext())},  # type: ignore[union-attr]
-        )
-
-        trace_component_msg(
-            "COMP_PREP_START",
-            component_name=component_name,
-            component_id=render_id,
-            slot_name=None,
-            component_path=component_path,
-            extra=(
-                f"Received {len(args_list)} args, {len(kwargs_dict)} kwargs, {len(slots_dict)} slots,"
-                f" Available slots: {slots_dict}"
-            ),
-        )
-
-        # Register the component to provide
-        register_provide_reference(context, component)
-
-        # This is data that will be accessible (internally) from within the component's template.
-        # NOTE: Be careful with the context - Do not store a strong reference to the component,
-        #       because that would prevent the component from being garbage collected.
-        # TODO: Test that ComponentContext and Component are garbage collected after render.
-        component_ctx = ComponentContext(
-            component=ref(component),
-            component_path=component_path,
-            # Template name is set only once we've resolved the component's Template instance.
-            template_name=None,
-            # This field will be modified from within `SlotNodes.render()`:
-            # - The `default_slot` will be set to the first slot that has the `default` attribute set.
-            # - If multiple slots have the `default` attribute set, yet have different name, then
-            #   we will raise an error.
-            default_slot=None,
-            # NOTE: This is only a SNAPSHOT of the outer context.
-            outer_context=snapshot_context(outer_context) if outer_context is not None else None,
-            tree=component_tree_context,
-            root_id=root_id,
-        )
-
-        # Instead of passing the ComponentContext directly through the Context, the entry on the Context
-        # contains only a key to retrieve the ComponentContext from `component_context_cache`.
-        #
-        # This way, the flow is easier to debug. Because otherwise, if you tried to print out
-        # or inspect the Context object, your screen would be filled with the deeply nested ComponentContext objects.
-        # But now, the printed Context may simply look like this:
-        # `[{ "True": True, "False": False, "None": None }, {"_DJC_COMPONENT_CTX": "c1A2b3c"}]`
-        component_context_cache[render_id] = component_ctx
-
-        ######################################
-        # 3. Call data methods
-        ######################################
-
-        template_data, js_data, css_data = component._call_data_methods(args_list, kwargs_dict)
-
-        extensions.on_component_data(
-            OnComponentDataContext(
-                component=component,
-                component_cls=comp_cls,
-                component_id=render_id,
-                # TODO_V1 - Remove `context_data`
-                context_data=template_data,
-                template_data=template_data,
-                js_data=js_data,
-                css_data=css_data,
-            ),
-        )
-
-        # Check if template_data doesn't conflict with context_processors_data
-        # See https://github.com/django-components/django-components/issues/1482
-        # NOTE: This is done after on_component_data so extensions can modify the data first.
-        if context_processors_data:
-            for key in template_data:
-                if key in context_processors_data:
-                    raise ValueError(
-                        f"Variable '{key}' defined in component '{component_name}' conflicts "
-                        "with the same variable from context processors. Rename the variable in the component."
-                    )
-
-        # Cache component's JS and CSS scripts, in case they have been evicted from the cache.
-        cache_component_js(comp_cls, force=False)
-        cache_component_css(comp_cls, force=False)
-
-        # Create JS/CSS scripts that will load the JS/CSS variables into the page.
-        js_input_hash = cache_component_js_vars(comp_cls, js_data) if js_data else None
-        css_input_hash = cache_component_css_vars(comp_cls, css_data) if css_data else None
-
-        #############################################################################
-        # 4. Make Context copy
-        #
-        # NOTE: To support infinite recursion, we make a copy of the context.
-        #       This way we don't have to call the whole component tree in one go recursively,
-        #       but instead can render one component at a time.
-        #############################################################################
-
-        # TODO_v1 - Currently we have to pass `template_data` to `prepare_component_template()`,
-        #     so that `get_template_string()`, `get_template_name()`, and `get_template()`
-        #     have access to the data from `get_template_data()`.
-        #
-        #     Because of that there is one layer of `Context.update()` called inside `prepare_component_template()`.
-        #
-        #     Once `get_template_string()`, `get_template_name()`, and `get_template()` are removed,
-        #     we can remove that layer of `Context.update()`, and NOT pass `template_data`
-        #     to `prepare_component_template()`.
-        #
-        #     Then we can simply apply `template_data` to the context in the same layer
-        #     where we apply `context_processor_data` and `component_vars`.
-        with prepare_component_template(component, template_data) as template:
-            # Set `_DJC_COMPONENT_IS_NESTED` based on whether we're currently INSIDE
-            # the `{% extends %}` tag.
-            # Part of fix for https://github.com/django-components/django-components/issues/508
-            # See django_monkeypatch.py
-            if template is not None:
-                comp_is_nested = bool(context.render_context.get(BLOCK_CONTEXT_KEY))  # type: ignore[union-attr]
-            else:
-                comp_is_nested = False
-
-            # Capture the template name so we can print better error messages (currently used in slots)
-            component_ctx.template_name = template.name if template else None
-
-            with context.update(  # type: ignore[union-attr]
-                {
-                    # Make data from context processors available inside templates
-                    **context_processors_data,
-                    # Private context fields
-                    _COMPONENT_CONTEXT_KEY: render_id,
-                    COMPONENT_IS_NESTED_KEY: comp_is_nested,
-                    # NOTE: Public API for variables accessible from within a component's template
-                    # See https://github.com/django-components/django-components/issues/280#issuecomment-2081180940
-                    "component_vars": ComponentVars(
-                        args=component.args,
-                        kwargs=component.kwargs,
-                        slots=component.slots,
-                        # TODO_v1 - Remove this, superseded by `component_vars.slots`
-                        #
-                        # For users, we expose boolean variables that they may check
-                        # to see if given slot was filled, e.g.:
-                        # `{% if variable > 8 and component_vars.is_filled.header %}`
-                        is_filled=component.is_filled,
-                    ),
-                },
-            ):
-                # Make a "snapshot" of the context as it was at the time of the render call.
-                #
-                # Previously, we recursively called `Template.render()` as this point, but due to recursion
-                # this was limiting the number of nested components to only about 60 levels deep.
-                #
-                # Now, we make a flat copy, so that the context copy is static and doesn't change even if
-                # we leave the `with context.update` blocks.
-                #
-                # This makes it possible to render nested components with a queue, avoiding recursion limits.
-                context_snapshot = snapshot_context(context)
-
-        # Cleanup
-        context.render_context.pop()  # type: ignore[union-attr]
-
-        trace_component_msg(
-            "COMP_PREP_END",
-            component_name=component_name,
-            component_id=render_id,
-            slot_name=None,
-            component_path=component_path,
-        )
-
-        ######################################
-        # 5. Render component
-        #
-        # NOTE: To support infinite recursion, we don't directly call `Template.render()`.
-        #       Instead, we defer rendering of the component - we prepare a generator function
-        #       that will be called when the rendering process reaches this component.
-        ######################################
-
-        trace_component_msg(
-            "COMP_RENDER_START",
-            component_name=component.name,
-            component_id=component.id,
-            slot_name=None,
-            component_path=component_path,
-        )
-
-        component.on_render_before(context_snapshot, template)
-
-        # Emit signal that the template is about to be rendered
-        if template is not None:
-            template_rendered.send(sender=template, template=template, context=context_snapshot)
-
-        # Instead of rendering component at the time we come across the `{% component %}` tag
-        # in the template, we defer rendering in order to scalably handle deeply nested components.
-        #
-        # See `_make_renderer_generator()` for more details.
-        renderer_generator = component._make_renderer_generator(
-            template=template,
-            context=context_snapshot,
-            component_path=component_path,
-        )
-
-        # This callback is called with the value that was yielded from `Component.on_render()`.
-        # It may be called multiple times for the same component, e.g. if `Component.on_render()`
-        # contains multiple `yield` keywords.
-        def on_component_intermediate(html_content: str | None) -> str | None:
-            # HTML attributes passed from parent to current component.
-            # NOTE: Is `None` for the root component.
-            curr_comp_attrs = component_tree_context.component_attrs.get(render_id, None)
-
-            if html_content:
-                # Add necessary HTML attributes to work with JS and CSS variables
-                html_content, child_components_attrs = set_component_attrs_for_js_and_css(
-                    html_content=html_content,
-                    component_id=render_id,
-                    css_input_hash=css_input_hash,
-                    root_attributes=curr_comp_attrs,
-                )
-
-                # Store the HTML attributes that will be passed from this component to its children's components
-                component_tree_context.component_attrs.update(child_components_attrs)
-
-            return html_content
-
-        component_tree_context.on_component_intermediate_callbacks[render_id] = on_component_intermediate
-
-        # `on_component_rendered` is triggered when a component is rendered.
-        # The component's parent(s) may not be fully rendered yet.
-        #
-        # NOTE: Inside `on_component_rendered`, we access the component indirectly via `component_instance_cache`.
-        # This is so that the function does not directly hold a strong reference to the component instance,
-        # so that the component instance can be garbage collected.
-        component_instance_cache[render_id] = component
-
-        # NOTE: This is called only once for a single component instance.
-        def on_component_rendered(
-            html: str | None,
-            error: Exception | None,
-        ) -> OnComponentRenderedResult:
-            # NOTE: We expect `on_component_rendered` to be called only once,
-            #       so we can release the strong reference to the component instance.
-            #       This way, the component instance will persist only if the user keeps a reference to it.
-            component = component_instance_cache.pop(render_id, None)
-            if component is None:
-                raise RuntimeError("Component has been garbage collected")
-
-            # Allow the user to either:
-            # - Override/modify the rendered HTML by returning new value
-            # - Raise an exception to discard the HTML and bubble up error
-            # - Or don't return anything (or return `None`) to use the original HTML / error
-            try:
-                maybe_output = component.on_render_after(context_snapshot, template, html, error)
-                if maybe_output is not None:
-                    html = maybe_output
-                    error = None
-            except Exception as new_error:  # noqa: BLE001
-                error = new_error
-                html = None
-
-            # Prepend an HTML comment to instruct how and what JS and CSS scripts are associated with it.
-            # E.g. `<!-- _RENDERED table,123,a92ef298,bd002c3 -->`
-            if html is not None:
-                html = insert_component_dependencies_comment(
-                    html,
-                    component_cls=comp_cls,
-                    component_id=render_id,
-                    js_input_hash=js_input_hash,
-                    css_input_hash=css_input_hash,
-                )
-
-            # Allow extensions to either:
-            # - Override/modify the rendered HTML by returning new value
-            # - Raise an exception to discard the HTML and bubble up error
-            # - Or don't return anything (or return `None`) to use the original HTML / error
-            result = extensions.on_component_rendered(
-                OnComponentRenderedContext(
-                    component=component,
-                    component_cls=comp_cls,
-                    component_id=render_id,
-                    result=html,
-                    error=error,
-                ),
-            )
-
-            if result is not None:
-                html, error = result
-
-            trace_component_msg(
-                "COMP_RENDER_END",
-                component_name=component_name,
-                component_id=render_id,
-                slot_name=None,
-                component_path=component_path,
-            )
-
-            return html, error
-
-        component_tree_context.on_component_rendered_callbacks[render_id] = on_component_rendered
-
-        # This is triggered after a full component tree was rendered, we resolve
-        # all inserted HTML comments into <script> and <link> tags.
-        def on_component_tree_rendered(html: str) -> str:
-            html = _render_dependencies(html, deps_strategy)
-            return html
-
-        return component_post_render(
-            renderer=renderer_generator,
-            render_id=render_id,
-            component_name=component_name,
-            parent_render_id=parent_id,
-            component_tree_context=component_tree_context,
-            on_component_tree_rendered=on_component_tree_rendered,
-        )
-
-    # Convert `Component.on_render()` to a generator function.
-    #
-    # By encapsulating components' output as a generator, we can render components top-down,
-    # starting from root component, and moving down.
-    #
-    # This allows us to pass HTML attributes from parent to children.
-    # Because by the time we get to a child component, its parent was already rendered.
-    #
-    # This whole setup makes it possible for multiple components to resolve to the same HTML element.
-    # E.g. if CompA renders CompB, and CompB renders a <div>, then the <div> element will have
-    # IDs of both CompA and CompB.
-    # ```html
-    # <div djc-id-a1b3cf djc-id-f3d3cf>...</div>
-    # ```
-    def _make_renderer_generator(
+    # TODO_v1 - Change params order to match `Component.render()`
+    def __init__(
         self,
-        template: Template | None,
-        context: Context,
-        component_path: list[str],
-    ) -> OnRenderGenerator | None:
-        component = self
+        registered_name: str | None = None,
+        outer_context: Context | None = None,
+        registry: ComponentRegistry | None = None,  # noqa: F811
+        context: Context | None = None,
+        args: Any | None = None,
+        kwargs: Any | None = None,
+        slots: Any | None = None,
+        deps_strategy: DependenciesStrategy | None = None,
+        request: HttpRequest | None = None,
+        node: "ComponentNode | None" = None,
+        id: str | None = None,  # noqa: A002
+        parent: "Component | None" = None,
+        root: "Component | None" = None,
+    ) -> None:
+        # TODO_v1 - Remove this whole block in v1. This is for backwards compatibility with pre-v0.140
+        #           where one could do:
+        #           `MyComp("my_comp").render(kwargs={"a": 1})`.
+        #           Instead, the new syntax is:
+        #           `MyComp.render(registered_name="my_comp", kwargs={"a": 1})`.
+        # NOTE: We check for `id` as a proxy to decide if the component was instantiated by django-components
+        #       or by the user. The `id` is set when a Component is instantiated from within `Component.render()`.
+        if id is None:
+            # Update the `render()` and `render_to_response()` methods to so they use the `registered_name`,
+            # `outer_context`, and `registry` as passed to the constructor.
+            #
+            # To achieve that, we want to re-assign the class methods as instance methods that pass the instance
+            # attributes to the class methods.
+            # For that we have to "unwrap" the class methods via __func__.
+            # See https://stackoverflow.com/a/76706399/9788634
+            def primed_render(self: Component, *args: Any, **kwargs: Any) -> Any:
+                return self.__class__.render(
+                    *args,
+                    **{
+                        "registered_name": registered_name,
+                        "outer_context": outer_context,
+                        "registry": registry,
+                        **kwargs,
+                    },
+                )
 
-        # Convert the component's HTML to a generator function.
-        #
-        # To access the *final* output (with all its children rendered) from within `Component.on_render()`,
-        # users may convert it to a generator by including a `yield` keyword. If they do so, the part of code
-        # AFTER the yield will be called once when the component's HTML is fully rendered.
-        #
-        # ```
-        # class MyTable(Component):
-        #     def on_render(self, context, template):
-        #         html, error = yield lamba: template.render(context)
-        #         return html + "<p>Hello</p>"
-        # ```
-        #
-        # However, the way Python works is that when you call a function that contains `yield` keyword,
-        # the function is NOT executed immediately. Instead it returns a generator object.
-        #
-        # On the other hand, if it's a regular function, the function is executed immediately.
-        #
-        # We must be careful not to execute the function immediately, because that will cause the
-        # entire component tree to be rendered recursively. Instead we want to defer the execution
-        # and render nested components via a flat stack, as done in `perfutils/component.py`.
-        # That allows us to create component trees of any depth, without hitting recursion limits.
-        #
-        # So we create a wrapper generator function that we KNOW is a generator when called.
-        def inner_generator() -> OnRenderGenerator:
-            # NOTE: May raise
-            html_content_or_generator = component.on_render(context, template)
-            # If we DIDN'T raise an exception
-            if html_content_or_generator is None:
-                return None
-            # Generator function (with `yield`) - yield multiple times with the result
-            elif is_generator(html_content_or_generator):
-                generator = cast("OnRenderGenerator", html_content_or_generator)
-                result = yield from generator
-                # If the generator had a return statement, `result` will contain that value.
-                # So we pass the return value through.
-                return result
-            # String (or other unknown type) - yield once with the result
-            else:
-                yield html_content_or_generator
-                return None
+            def primed_render_to_response(self: Component, *args: Any, **kwargs: Any) -> Any:
+                return self.__class__.render_to_response(
+                    *args,
+                    **{
+                        "registered_name": registered_name,
+                        "outer_context": outer_context,
+                        "registry": registry,
+                        **kwargs,
+                    },
+                )
 
-        return inner_generator()
+            self.render_to_response = MethodType(primed_render_to_response, self)  # type: ignore[method-assign]
+            self.render = MethodType(primed_render, self)  # type: ignore[method-assign]
+
+        deps_strategy = cast("DependenciesStrategy", default(deps_strategy, "document"))
+
+        self.id = default(id, gen_component_id, factory=True)  # type: ignore[arg-type]
+        self.name = self._get_component_name(registered_name)
+        self.registered_name: str | None = registered_name
+        self.args = default(args, [])
+        self.kwargs = default(kwargs, {})
+        self.slots = default(slots, {})
+        self.raw_args: list[Any] = self.args if isinstance(self.args, list) else list(self.args)
+        self.raw_kwargs: dict[str, Any] = self.kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)
+        self.raw_slots: dict[str, Slot] = self.slots if isinstance(self.slots, dict) else to_dict(self.slots)
+        self.context = default(context, Context())
+        # TODO_v1 - Remove `is_filled`, superseded by `Component.slots`
+        self.is_filled = SlotIsFilled(to_dict(self.slots))
+        # TODO_v1 - Remove `Component.input`
+        self.input = ComponentInput(
+            context=self.context,
+            # NOTE: Convert args / kwargs / slots to plain lists / dicts
+            args=cast("list", args if isinstance(self.args, list) else list(self.args)),
+            kwargs=cast("dict", kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)),
+            slots=cast("dict", slots if isinstance(self.slots, dict) else to_dict(self.slots)),
+            deps_strategy=deps_strategy,
+            # TODO_v1 - Remove, superseded by `deps_strategy`
+            type=deps_strategy,
+            # TODO_v1 - Remove, superseded by `deps_strategy`
+            render_dependencies=deps_strategy != "ignore",
+        )
+        self.deps_strategy = deps_strategy
+        self.request = request
+        self.outer_context: Context | None = outer_context
+        self.registry = default(registry, registry_)
+        self.node = node
+        self.parent = parent
+        self.root = root or self
+
+        # Run finalizer when component is garbage collected
+        finalize(self, on_component_garbage_collected, self.id)
+
+        extensions._init_component_instance(self)
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        cls.class_id = hash_comp_cls(cls)
+        comp_cls_id_mapping[cls.class_id] = cls
+
+        ALL_COMPONENTS.append(cached_ref(cls))  # type: ignore[arg-type]
+        extensions._init_component_class(cls)
+        extensions.on_component_class_created(OnComponentClassCreatedContext(cls))
+
+    @classmethod
+    def _get_component_name(cls, registered_name: str | None = None) -> str:
+        """Internal: resolve display name for this component (registered name or class name)."""
+        return default(registered_name, cls.__name__)
 
     def _call_data_methods(
         self,
@@ -4093,6 +3404,7 @@ class Component(metaclass=ComponentMeta):
             self.CssData(**css_data)
 
         return template_data, js_data, css_data
+
 
 
 # Perf
@@ -4307,19 +3619,3 @@ class ComponentNode(BaseNode):
         )
 
         return output
-
-
-def _get_parent_component_context(
-    context: Context | Mapping,
-) -> tuple[None, None] | tuple[str, ComponentContext]:
-    parent_id = context.get(_COMPONENT_CONTEXT_KEY, None)
-    if parent_id is None:
-        return None, None
-
-    # NOTE: This may happen when slots are rendered outside of the component's render context.
-    # See https://github.com/django-components/django-components/issues/1189
-    if parent_id not in component_context_cache:
-        return None, None
-
-    parent_comp_ctx = component_context_cache[parent_id]
-    return parent_id, parent_comp_ctx

@@ -21,7 +21,6 @@ from django_components.component import (
     ComponentInput,
     ComponentNode,
     ComponentVars,
-    OnRenderGenerator,
     all_components,
     get_component_by_class_id,
 )
@@ -35,6 +34,7 @@ from django_components.component_registry import (
     registry,
     all_registries,
 )
+from django_components.component_render import OnRenderGenerator
 from django_components.dependencies import DependenciesStrategy, render_dependencies
 from django_components.extension import (
     ComponentExtension,

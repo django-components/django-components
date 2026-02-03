@@ -25,8 +25,8 @@ from django_components.util.routing import URLRoute
 if TYPE_CHECKING:
     from django_components import Component
     from django_components.component_registry import ComponentRegistry
+    from django_components.component_render import OnComponentRenderedResult
     from django_components.dependencies import Script, Style
-    from django_components.perfutil.component import OnComponentRenderedResult
     from django_components.slots import Slot, SlotNode, SlotResult
 
 

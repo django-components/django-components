@@ -17,7 +17,7 @@ from typing import (
 )
 from urllib import parse
 
-from django_components.constants import UID_LENGTH
+from django_components.constants import COMP_ID_PREFIX, UID_LENGTH
 from django_components.util.nanoid import generate
 
 if TYPE_CHECKING:
@@ -39,6 +39,11 @@ def gen_id() -> str:
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",
         size=UID_LENGTH,
     )
+
+
+def gen_component_id() -> str:
+    """Generate a unique ID for a component instance (e.g. for render_id)."""
+    return COMP_ID_PREFIX + gen_id()
 
 
 def is_str_wrapped_in_quotes(s: str) -> bool:
