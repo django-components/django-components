@@ -165,8 +165,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # Re-install dependencies after second checkout to ensure virtual environment is available
-          uv sync --group docs
+          # Re-install dependencies after second checkout to ensure virtual environment is available.
+          # Use --frozen so uv does not update uv.lock; otherwise `git checkout gh-pages` may fail.
+          uv sync --frozen --group docs
 
       # Conditions make sure to select the right step, depending on the job trigger.
       # Only one of the steps below will run at a time. The others will be skipped.
@@ -181,6 +182,8 @@ jobs:
       - name: Build & deploy "dev" docs for a new commit to master
         if: github.event_name == 'push' && github.ref_type != 'tag'
         run: |
+          # Discard any local changes (e.g. to uv.lock) so checkout gh-pages succeeds
+          git restore uv.lock 2>/dev/null || true
           # Fetch and checkout gh-pages to ensure we have the latest version
           git fetch origin gh-pages
           git checkout gh-pages
@@ -195,6 +198,8 @@ jobs:
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
+          # Discard any local changes (e.g. to uv.lock) so checkout gh-pages succeeds
+          git restore uv.lock 2>/dev/null || true
           # Fetch and checkout gh-pages to ensure we have the latest version
           git fetch origin gh-pages
           git checkout gh-pages
