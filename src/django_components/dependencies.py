@@ -16,7 +16,6 @@ from typing import (
     cast,
 )
 
-from django.forms import Media
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseNotFound
 from django.template import Context, TemplateSyntaxError
 from django.templatetags.static import static
@@ -35,7 +34,11 @@ if TYPE_CHECKING:
     from django_components.component import Component
 
 
+TDep = TypeVar("TDep", bound="Dependency")
+
+
 ScriptType: TypeAlias = Literal["css", "js"]
+InternalDependenciesStrategy: TypeAlias = Literal["document", "fragment", "simple"]
 DependenciesStrategy: TypeAlias = Literal["document", "fragment", "simple", "prepend", "append", "ignore"]
 """
 Type for the available strategies for rendering JS and CSS dependencies.
@@ -285,10 +288,23 @@ class Script(Dependency):
         return ("script", all_attrs, content)
 
     def __hash__(self) -> int:
+        # Identify by URL or content, fallback to object ID
+        if self.url:
+            return hash((type(self).__name__, self.url))
+        if self.content is not None:
+            return hash((type(self).__name__, self.content))
         return id(self)
 
     def __eq__(self, other: object) -> bool:
-        return self is other
+        if type(self) is not type(other) or not isinstance(other, Script):
+            return False
+
+        # Compare by URL or content, fallback to object equality
+        if self.url and other.url:
+            return self.url == other.url
+        if not self.url and not other.url and self.content is not None and other.content is not None:
+            return self.content == other.content
+        return id(self) == id(other)
 
 
 @dataclass
@@ -365,10 +381,23 @@ class Style(Dependency):
         return mark_safe(html)  # type: ignore[return-value]
 
     def __hash__(self) -> int:
+        # Identify by URL or content, fallback to object ID
+        if self.url:
+            return hash((type(self).__name__, self.url))
+        if self.content is not None:
+            return hash((type(self).__name__, self.content))
         return id(self)
 
     def __eq__(self, other: object) -> bool:
-        return self is other
+        if type(self) is not type(other) or not isinstance(other, Style):
+            return False
+
+        # Compare by URL or content, fallback to object equality
+        if self.url and other.url:
+            return self.url == other.url
+        if not self.url and not other.url and self.content is not None and other.content is not None:
+            return self.content == other.content
+        return id(self) == id(other)
 
 
 class ComponentJsVars(NamedTuple):
@@ -833,7 +862,13 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
     else:
         content_ = cast("bytes", content)
 
-    content_, scripts, styles = _process_dep_declarations(content_, strategy)
+    # TODO - Strategies should be only "document" | "fragment" | "simple".
+    #        "prepend" | "append" should be NOT strategies, but instead optional insertion positions.
+    internal_strategy: InternalDependenciesStrategy = (
+        cast("InternalDependenciesStrategy", strategy) if strategy in ("document", "fragment", "simple") else "simple"
+    )
+
+    content_, scripts, styles = _process_dep_declarations(content_, internal_strategy)
 
     scripts, styles = extensions.on_dependencies(
         OnDependenciesContext(
@@ -974,7 +1009,7 @@ def _pre_loader_js() -> Script:
 # 6. And lastly, we generate a JS script that will load / mark as loaded the JS and CSS
 #    as categorized in previous step.
 def _process_dep_declarations(
-    content: bytes, strategy: DependenciesStrategy
+    content: bytes, strategy: InternalDependenciesStrategy
 ) -> tuple[bytes, list[Script], list[Style]]:
     """
     Process a textual content that may include metadata on rendered components.
@@ -988,39 +1023,34 @@ def _process_dep_declarations(
     """
     from django_components.component import get_component_by_class_id  # noqa: PLC0415
 
+    if strategy in ("document", "simple"):
+        should_inline_scripts = True
+    elif strategy == "fragment":
+        should_inline_scripts = False
+    else:
+        raise ValueError(f"Unexpected strategy '{strategy}' passed to _process_dep_declarations")
+
     # Extract all matched instances of `<!-- _RENDERED ... -->` while also removing them from the text
     content, matches = extract_regex_matches(content, COMPONENT_COMMENT_REGEX)
 
-    # Track which component CLASSES have been rendered, so that we can load
-    # the JS and CSS scripts from their `Component.Media.js/css`.
-    # These are included only once per component class.
-    # NOTE: Using dict instead of set because Python's sets do NOT preserve order.
-    comp_class_ids: dict[str, bool] = {}
-    # Track which component INSTANCES defined JS or CSS variables.
-    # JS and CSS are kept as separate entries in the list, even for the same component instance.
-    # Used so that we can add `<script>` and `<style>` tags that will load the variables in the browser.
-    variables_data: list[VariableData] = []
     # Track which component INSTANCES should have JS-side code executed.
     # This is used to add `$onComponent` callbacks to the dependency manager.
     #
-    # This is similar to the "JS" entries in `variables_data`, but not quite the same:
-    # - `variables_data` identifies entries by the hash of the stringified variables.
-    # - `comp_calls` identifies entries by the component class ID and instance ID.
-    # So if 2 different components return the same JS variables, they will have the same JS hash,
-    # and will reuse the same payload-bearing `<script>` tag.
-    # And conversely, if 2 instances of the same component class return different JS variables,
-    # they will have different JS hashes, and will have their own payload-bearing `<script>` tag.
-    # These "payload-bearing `<script>` tags" are defined in `variables_data`.
+    # This is DIFFERENT from the JS/CSS variables. A call may/may not have variables.
+    # And if multiple calls have the same variables, they will have the same JS hash,
+    # even if they belong to different Component classes.
     #
     # OTOH, each component instance will have its own `$onComponent` callback, and thus its own
-    # `comp_calls` entry, irrespective of whether it shares the payload with another or not.
+    # `comp_calls` entry, irrespective of whether it has the same JS variables with another or not.
     #
-    # With this design, the payload scripts are cached and loaded onto the browser only once.
+    # With this design, the JS/CSS variables scripts are cached and loaded onto the browser only once.
+    # You can define a massive JSON for variables, and it will be loaded from the server only once.
     comp_calls: list[ComponentCall] = []
 
     # Process individual parts. Each part is like a CSV row of `name,id,js,css`.
     # E.g. something like this:
     # `table_10bac31,1234,a92ef298,a92ef298`
+    instance_rows: list[tuple[str, str, str | None, str | None]] = []
     for match in matches:
         raw_data = match.group("data")
         data_match = SCRIPT_NAME_REGEX.match(raw_data)
@@ -1033,144 +1063,158 @@ def _process_dep_declarations(
         js_variables_hash: str | None = data_match.group("js").decode("utf-8") or None
         css_variables_hash: str | None = data_match.group("css").decode("utf-8") or None
 
-        # Capture Component class metadata only once.
-        if not comp_class_ids.get(comp_cls_id):
-            comp_class_ids[comp_cls_id] = True
+        instance_rows.append((comp_cls_id, comp_id, js_variables_hash, css_variables_hash))
 
+    ##################################################################
+    # Core JS/CSS -- Always include these, regardless of the strategy.
+    ##################################################################
+
+    core_scripts: list[Script] = []
+    if strategy == "document":
+        # For full documents, load manager as a normal external <script src="...">
+        core_scripts.append(_core_js())
+    elif strategy == "fragment":
+        # For fragments, inline a script that conditionally injects the dependency manager
+        # if it's not already loaded.
+        core_scripts.append(_pre_loader_js())
+
+    core_styles: list[Style] = []
+
+    ##################################################################
+    # Component JS/CSS -- Code + variables + Media JS/CSS
+    ##################################################################
+
+    all_scripts: list[Script] = []
+    all_styles: list[Style] = []
+
+    # All JS/CSS that we will mark as "already loaded" in the dependency manager.
+    # This includes JS/CSS from Component.js/css, JS/CSS variables, and JS/CSS from Component.Media.js/css.
+    # But only if strategy is "document" | "simple" | "prepend" | "append".
+    # Empty for "fragment" because client-side manager is meant to load these dependencies dynamically.
+    all_scripts_mark_as_loaded: list[Script] = []
+    all_styles_mark_as_loaded: list[Style] = []
+
+    for comp_cls_id, comp_id, js_hash, css_hash in instance_rows:
+        instance_scripts, instance_styles, scripts_mark_as_loaded, styles_mark_as_loaded = (
+            _get_instance_scripts_and_styles(comp_cls_id, comp_id, js_hash, css_hash, should_inline_scripts)
+        )
         comp_cls = get_component_by_class_id(comp_cls_id)
 
-        # Capture Component JS/CSS variables for each instance.
-        # Schedule to load the `<script>` / `<link>` tags for the JS / CSS variables.
-        # Skip if no variables are defined or if the component class does not have JS/CSS code.
-        if is_nonempty_str(comp_cls.css) and css_variables_hash:
-            variables_data.append(VariableData(comp_cls_id, "css", css_variables_hash))
+        # NOTE: Users may break their rendering if they remove the existing "component"
+        #       and "variables" scripts from their `Component.on_dependencies` hook.
+        result = comp_cls.on_dependencies(
+            cast("list[Script]", instance_scripts),
+            cast("list[Style]", instance_styles),
+        )
+        if result is not None:
+            instance_scripts, instance_styles = result
+
+        all_scripts.extend(instance_scripts)
+        all_styles.extend(instance_styles)
+        all_scripts_mark_as_loaded.extend(scripts_mark_as_loaded)
+        all_styles_mark_as_loaded.extend(styles_mark_as_loaded)
 
         if is_nonempty_str(comp_cls.js) and "$onComponent" in comp_cls.js:
-            if js_variables_hash is not None and is_nonempty_str(comp_cls.js):
-                variables_data.append(VariableData(comp_cls_id, "js", js_variables_hash))
             # Add component instance to the queue of calls to `$onComponent` callbacks
-            comp_calls.append(ComponentCall(comp_cls_id, comp_id, js_variables_hash))
+            comp_calls.append(ComponentCall(comp_cls_id, comp_id, js_hash))
 
-    # Format class IDs for _prepare_scripts_and_urls
-    # This represents the JS / CSS from `Component.js/css`.
-    comp_data: list[VariableData] = []
-    for comp_cls_id in comp_class_ids:
-        comp_data.append(VariableData(comp_cls_id, "js", None))
-        comp_data.append(VariableData(comp_cls_id, "css", None))
+    ##################################################################
+    # Categorize
+    ##################################################################
 
-    # Take Components' own JS / CSS (Component.js/css)
-    # and decide which ones should be:
+    # For each JS/CSS object, decide which ones should be:
     # - Inserted into the HTML as <script> / <style> tags
     # - Loaded with the client-side manager
     # - Marked as already-loaded in the dependency manager
-    (
-        component_js__inline,
-        component_css__inline,
-        component_js__fetch_in_client,
-        component_css__fetch_in_client,
-        component_js__mark_loaded_in_client,
-        component_css__mark_loaded_in_client,
-    ) = _prepare_scripts_and_urls(comp_data, strategy)
+    deps_js__inline: list[Script] = []
+    deps_js__fetch_in_client: list[Script] = []
+    deps_css__inline: list[Style] = []
+    deps_css__fetch_in_client: list[Style] = []
+    component_js__inline: list[Script] = []
+    component_css__inline: list[Style] = []
+    component_js__fetch_in_client: list[Script] = []
+    component_css__fetch_in_client: list[Style] = []
 
-    # Take JS / CSS for component variables (e.g. if component returned something
-    # from `get_js_data()` and `get_css_data()`) and decide which ones should be:
-    # - Inserted into the HTML as <script> / <style> tags
-    # - Loaded with the client-side manager
-    # - Marked as already-loaded in the dependency manager
-    (
-        component_js_vars__inline,
-        component_css_vars__inline,
-        component_js_vars__fetch_in_client,
-        component_css_vars__fetch_in_client,
-        component_js_vars__mark_loaded_in_client,
-        component_css_vars__mark_loaded_in_client,
-    ) = _prepare_scripts_and_urls(variables_data, strategy)
+    # When we get here, the `script` is already either:
+    # - `<script src="...">` if using "fragment" strategy
+    # - `<script>...</script>` if using other strategies
+    # However, this applies only to Scripts from `Component.js` or variables.
+    # The scripts from `Component.Media.js/css` may be either inline or fetched.
+    for script in all_scripts:
+        if script.kind in ("component", "variables"):
+            # JS from `Component.js` or variables
+            if should_inline_scripts:
+                component_js__inline.append(script)
+            else:
+                component_js__fetch_in_client.append(script)
+        elif script.kind == "extra":
+            # Component.Media.js
+            if should_inline_scripts:
+                deps_js__inline.append(script)
+            else:
+                deps_js__fetch_in_client.append(script)
+        elif script.kind == "core":
+            # User's `Component.on_dependencies` hook may introduce new core JS/CSS.
+            # in which case we run it after our core JS/CSS
+            core_scripts.append(script)
+        else:
+            raise ValueError(f"Unknown script kind: {script.kind}")
 
-    #############################
-    # Legacy code start
-    # TODO_V1 - Replace. Instead of using Media class to render scripts/styles to string,
-    # and then parsing them into Script/Style, the `Component.(Media` or `Component.Dependencies`)
-    # should give us `Script/Style` objects directly.
-    # TODO_V1 - Add. Users should be given a hook/method (both on Component and Extension level)
-    # to access all Script/Style objects prepared for rendering, allowing the user to modify/create/delete them.
-    #############################
+    # When we get here, the `style` is already either:
+    # - `<link rel="stylesheet" href="...">` if using "fragment" strategy
+    # - `<style>...</style>` if using other strategies
+    # However, this applies only to Styles from `Component.css` or variables.
+    # The styles from `Component.Media.css` may be either inline or fetched.
+    for style in all_styles:
+        if style.kind in ("component", "variables"):
+            # CSS from `Component.css` or variables
+            if should_inline_scripts:
+                component_css__inline.append(style)
+            else:
+                component_css__fetch_in_client.append(style)
+        elif style.kind == "extra":
+            # Component.Media.css
+            if should_inline_scripts:
+                deps_css__inline.append(style)
+            else:
+                deps_css__fetch_in_client.append(style)
+        elif style.kind == "core":
+            # User's `Component.on_dependencies` hook may introduce new core JS/CSS.
+            # in which case we run it after our core JS/CSS
+            core_styles.append(style)
+        else:
+            raise ValueError(f"Unknown style kind: {style.kind}")
 
-    def get_component_media(comp_cls_id: str) -> Media | None:
-        comp_cls = get_component_by_class_id(comp_cls_id)
-        return comp_cls.media
+    ##################################################################
+    # Dedupe
+    # If multiple Script/Style objects link to the same JS/CSS (URL or content),
+    # we go with the first one that we come across.
+    ##################################################################
 
-    all_medias = [
-        # JS / CSS files from Component.Media.js/css.
-        *[get_component_media(comp_cls_id) for comp_cls_id in comp_class_ids],
-    ]
+    # Ensure that the JS/CSS from `Component.Media.js/css` are loaded BEFORE the JS/CSS from `Component.js/css`.
+    # NOTE: We do NOT want to fully sort these to preserve the relative order
+    #       (components defined earlier in the HTML should be executed earlier).
+    all_js__inline = _dedupe_by_url_or_content([*deps_js__inline, *component_js__inline])
+    all_js__fetch_in_client = _dedupe_by_url_or_content([*deps_js__fetch_in_client, *component_js__fetch_in_client])
+    all_css__inline = _dedupe_by_url_or_content([*deps_css__inline, *component_css__inline])
+    all_css__fetch_in_client = _dedupe_by_url_or_content([*deps_css__fetch_in_client, *component_css__fetch_in_client])
 
-    # Once we have ALL JS and CSS URLs that we want to fetch, we can convert them to
-    # <script> and <link> tags. Note that this is done by the user-provided Media classes.
-    # fmt: off
-    media_css_tags = [
-        tag
-        for media in all_medias if media is not None
-        for tag in cast("list[SafeString]", media.render_css())
-    ]
-    media_js_tags = [
-        tag
-        for media in all_medias if media is not None
-        for tag in cast("list[SafeString]", media.render_js())
-    ]
-    # fmt: on
-
-    # Postprocess all <script> and <link> tags to 1) dedupe, 2) parse into Script/Style objects.
-    # For the deduplication, if multiple components link to the same JS/CSS, but they
-    # render the <script> or <link> tag differently, we go with the first tag that we come across.
-    media_css_objects = _postprocess_media_tags("css", media_css_tags)
-    media_js_objects = _postprocess_media_tags("js", media_js_tags)
-
-    css_tags__fetch_in_client = [
-        *media_css_objects,
-        *component_css__fetch_in_client,
-        *component_css_vars__fetch_in_client,
-    ]
-    js_tags__fetch_in_client = [
-        *media_js_objects,
-        *component_js__fetch_in_client,
-        *component_js_vars__fetch_in_client,
-    ]
-
-    #############################
-    # Legacy code end
-    #############################
-
-    css_urls__mark_loaded_in_client: list[Style | Script] = sorted(
-        [
-            *component_css__mark_loaded_in_client,
-            *component_css_vars__mark_loaded_in_client,
-            # NOTE: When rendering a "document", the initial CSS is inserted directly into the HTML
-            # to avoid a flash of unstyled content. In such case, the "fetch in client" CSS is actually already
-            # loaded, so we have to mark those scripts as loaded in the dependency manager.
-            # NOTE: We do NOT do this for "simple" | "prepend" | "append", because client-side deps manager
-            #       is OFF in those cases.
-            #       And we do NOT add this for "fragment" because client-side deps manager is meant to load these
-            #       dependencies dynamically.
-            *(css_tags__fetch_in_client if strategy == "document" else []),
-        ],
-        key=lambda x: x.url if x.url else "",
-    )
-    js_urls__mark_loaded_in_client: list[Script | Style] = sorted(
-        [
-            *component_js__mark_loaded_in_client,
-            *component_js_vars__mark_loaded_in_client,
-            # NOTE: When rendering a "document", the initial JS is inserted directly into the HTML
-            # so the scripts are executed at proper order. In such case, the "fetch in client" JS is actually already
-            # loaded, so we have to mark those scripts as loaded in the dependency manager.
-            # NOTE: We do NOT do this for "simple" | "prepend" | "append", because client-side deps manager
-            #       is OFF in those cases.
-            #       And we do NOT add this for "fragment" because client-side deps manager is meant to load these
-            #       dependencies dynamically.
-            *(js_tags__fetch_in_client if strategy == "document" else []),
-        ],
-        key=lambda x: x.url if x.url else "",
+    # NOTE: Sorting of these is mainly to keep predictable order in tests.
+    all_scripts_mark_as_loaded = sorted(
+        _dedupe_by_url_or_content(all_scripts_mark_as_loaded),
+        key=lambda x: x.url or "",
     )
 
+    all_styles_mark_as_loaded = sorted(
+        _dedupe_by_url_or_content(all_styles_mark_as_loaded),
+        key=lambda x: x.url or "",
+    )
+
+    ##################################################################
+    # Generate exec script -- This tells the client-side manager which JS/CSS to load
+    ##################################################################
+
+    # Document - All JS/CSS already inlined, just let the dependency manager know.
     # NOTE: No exec script for the "simple"|"prepend"|"append"|"ignore" mode,
     #       as they are NOT using the dependency manager.
     if strategy == "document":
@@ -1180,21 +1224,19 @@ def _process_dep_declarations(
             script_origin_class_id=None,
             js_tags__fetch_in_client=[],
             css_tags__fetch_in_client=[],
-            js_urls__mark_loaded_in_client=js_urls__mark_loaded_in_client,
-            css_urls__mark_loaded_in_client=css_urls__mark_loaded_in_client,
+            js_urls__mark_loaded_in_client=all_scripts_mark_as_loaded,
+            css_urls__mark_loaded_in_client=all_styles_mark_as_loaded,
             comp_calls=comp_calls,
             comp_js_vars=[],
         )
-    # In case of fragments, we merge the exec and calls scripts into a single script
-    # so that client-side manager knows that it needs to wait for fragment's JS/CSS to load
-    # before executing the component calls.
+    # Fragment - No JS/CSS inlined, tell the dependency manager which JS/CSS to load
     elif strategy == "fragment":
         exec_script = _gen_exec_script(
             output_type="json",
             script_kind="core",  # Indicate not to mess with this script
             script_origin_class_id=None,
-            js_tags__fetch_in_client=js_tags__fetch_in_client,
-            css_tags__fetch_in_client=css_tags__fetch_in_client,
+            js_tags__fetch_in_client=all_js__fetch_in_client,
+            css_tags__fetch_in_client=all_css__fetch_in_client,
             js_urls__mark_loaded_in_client=[],
             css_urls__mark_loaded_in_client=[],
             comp_calls=comp_calls,
@@ -1203,126 +1245,227 @@ def _process_dep_declarations(
     else:
         exec_script = None
 
-    # Core scripts without which the rest wouldn't work
-    core_script_tags: list[Script | Style] = []
-    if strategy == "document":
-        # For full documents, load manager as a normal external <script src="...">
-        core_script_tags.append(_core_js())
-    elif strategy == "fragment":
-        # For fragments, inline a script that conditionally injects the dependency manager
-        # if it's not already loaded.
-        core_script_tags.append(_pre_loader_js())
+    final_scripts = [
+        # JS by us
+        *core_scripts,
+        # This makes calls to the JS dependency manager
+        # and loads JS from `Media.js` and `Component.js` if fragment
+        *([exec_script] if exec_script else []),
+        *all_js__inline,
+    ]
 
-    final_scripts = cast(
-        "list[Script]",
-        [
-            # JS by us
-            *core_script_tags,
-            # This makes calls to the JS dependency manager
-            # and loads JS from `Media.js` and `Component.js` if fragment
-            *([exec_script] if exec_script else []),
-            # JS from `Media.js`
-            # Loaded before `Component.js` because these are "dependencies"
-            # NOTE: When strategy in ("document", "simple", "prepend", "append"), the initial JS is inserted
-            # directly into the HTML so the scripts are executed at proper order. In the dependency manager,
-            # we only mark those scripts as loaded.
-            *(js_tags__fetch_in_client if strategy in ("document", "simple", "prepend", "append") else []),
-            # JS from `Component.js` (if not fragment)
-            *component_js__inline,
-            # JS variables
-            # Loaded after `Component.js`, because `Component.js` defines the variables callbacks
-            *component_js_vars__inline,
-        ],
-    )
-
-    final_styles = cast(
-        "list[Style]",
-        [
-            # CSS by us
-            # <NONE>
-            # CSS from `Component.css` (if not fragment)
-            *component_css__inline,
-            # CSS variables
-            *component_css_vars__inline,
-            # CSS from `Media.css` (plus from `Component.css` if fragment)
-            # NOTE: Similarly to JS, the initial CSS is loaded outside of the dependency
-            #       manager, and only marked as loaded, to avoid a flash of unstyled content.
-            *css_tags__fetch_in_client,
-        ],
-    )
+    final_styles = [
+        # CSS by us
+        *core_styles,
+        # CSS from `Media.css`, `Component.css` and CSS variables (if not fragment)
+        *all_css__inline,
+    ]
 
     return (content, final_scripts, final_styles)
 
 
-# Detect duplicates by URLs, extract URLs, and sort by URLs
+def _get_instance_scripts_and_styles(
+    comp_cls_id: str,
+    comp_id: str,  # noqa: ARG001
+    js_hash: str | None,
+    css_hash: str | None,
+    should_inline_scripts: bool,
+) -> tuple[list[Script], list[Style], list[Script], list[Style]]:
+    """
+    Get the Script/Style lists for a single component instance
+    (Component.js/css + variables + Media.js/css).
+    """
+    from django_components.component import get_component_by_class_id  # noqa: PLC0415
+
+    comp_cls = get_component_by_class_id(comp_cls_id)
+    instance_scripts: list[Script] = []
+    instance_styles: list[Style] = []
+
+    # NOTE: When rendering a "document", the initial JS is inserted directly into the HTML
+    #       so the scripts are executed at proper order. In such case, we want to prevent
+    #       the dependency manager from fetching and executing the code second time.
+    #       So we collect which scripts/styles we should "mark as loaded" in the dependency manager.
+    # NOTE: We do NOT do this for "simple" | "prepend" | "append", because client-side deps manager
+    #       is OFF in those cases.
+    #       And we do NOT add this for "fragment" because client-side deps manager is meant to load
+    #       these dependencies dynamically.
+    scripts_mark_as_loaded: list[Script] = []
+    styles_mark_as_loaded: list[Style] = []
+
+    ##############################
+    # Component's own JS/CSS (Component.js/css)
+    ##############################
+
+    # Component JS
+    if is_nonempty_str(comp_cls.js):
+        if should_inline_scripts:
+            comp_js = cast("Script | None", get_script("js", comp_cls, None))
+            if comp_js is not None:
+                instance_scripts.append(comp_js)
+                comp_js_url = cast("Script", get_script_url("js", comp_cls, None))
+                scripts_mark_as_loaded.append(comp_js_url)
+        else:
+            comp_js_url = cast("Script", get_script_url("js", comp_cls, None))
+            instance_scripts.append(comp_js_url)
+
+    # Component CSS
+    if is_nonempty_str(comp_cls.css):
+        if should_inline_scripts:
+            comp_css = cast("Style | None", get_script("css", comp_cls, None))
+            if comp_css is not None:
+                instance_styles.append(comp_css)
+                comp_css_url = cast("Style", get_script_url("css", comp_cls, None))
+                styles_mark_as_loaded.append(comp_css_url)
+        else:
+            comp_css_url = cast("Style", get_script_url("css", comp_cls, None))
+            instance_styles.append(comp_css_url)
+
+    ##############################
+    # Component JS/CSS variables
+    # Skip if no variables are defined or if the component class does not have JS/CSS code.
+    ##############################
+
+    # Variables JS
+    if js_hash is not None and is_nonempty_str(comp_cls.js) and "$onComponent" in comp_cls.js:
+        if should_inline_scripts:
+            comp_vars_js = cast("Script | None", get_script("js", comp_cls, js_hash))
+            if comp_vars_js is not None:
+                instance_scripts.append(comp_vars_js)
+                comp_vars_js_url = cast("Script", get_script_url("js", comp_cls, js_hash))
+                scripts_mark_as_loaded.append(comp_vars_js_url)
+        else:
+            comp_vars_js_url = cast("Script", get_script_url("js", comp_cls, js_hash))
+            instance_scripts.append(comp_vars_js_url)
+
+    # Variables CSS
+    if css_hash is not None and is_nonempty_str(comp_cls.css):
+        if should_inline_scripts:
+            comp_vars_css = cast("Style | None", get_script("css", comp_cls, css_hash))
+            if comp_vars_css is not None:
+                instance_styles.append(comp_vars_css)
+                comp_vars_css_url = cast("Style", get_script_url("css", comp_cls, css_hash))
+                styles_mark_as_loaded.append(comp_vars_css_url)
+        else:
+            comp_vars_css_url = cast("Style", get_script_url("css", comp_cls, css_hash))
+            instance_styles.append(comp_vars_css_url)
+
+    #############################
+    # JS/CSS from Component.Media.js/css
+    #
+    # Legacy code start
+    # TODO_V1 - Replace. Instead of using Media class to render scripts/styles to string,
+    # and then parsing them into Script/Style, the `Component.(Media` or `Component.Dependencies`)
+    # should give us `Script/Style` objects directly.
+    # TODO_V1 - Add. Users should be given a hook/method (both on Component and Extension level)
+    # to access all Script/Style objects prepared for rendering, allowing the user to modify/create/delete them.
+    #############################
+
+    # JS / CSS files from Component.Media.js/css.
+    comp_cls = get_component_by_class_id(comp_cls_id)
+    media = comp_cls.media
+
+    # Some entries in `Component.Media.js/css` may be SafeString / SafeData objects.
+    # That means that it's some objects with `__html__()` method. And calling this method
+    # should yield the final string for the `<script>` or `<style>` HTML tag.
+    #
+    # Howver, in our API we want to expose the JS and CSS as `Script` and `Style` objects.
+    # And so, we need to parse the string into a `Script` or `Style` object.
+    media_css_tags = cast("list[SafeString]", media.render_css()) if media else []
+    media_js_tags = cast("list[SafeString]", media.render_js()) if media else []
+
+    media_css_objects = [
+        cast("Style", _parse_dependency_from_string("css", media_css_tag, comp_cls_id))
+        for media_css_tag in media_css_tags
+    ]
+    media_js_objects = [
+        cast("Script", _parse_dependency_from_string("js", media_js_tag, comp_cls_id))
+        for media_js_tag in media_js_tags
+    ]
+
+    instance_scripts.extend(cast("list[Script]", media_js_objects))
+    instance_styles.extend(cast("list[Style]", media_css_objects))
+
+    if should_inline_scripts:
+        scripts_mark_as_loaded.extend(media_js_objects)
+        styles_mark_as_loaded.extend(media_css_objects)
+
+    #############################
+    # Legacy code end
+    #############################
+
+    return (instance_scripts, instance_styles, scripts_mark_as_loaded, styles_mark_as_loaded)
+
+
+def _dedupe_by_url_or_content(items: Sequence[TDep]) -> list[TDep]:
+    """
+    Deduplicate Script/Style list by url or content (first occurrence wins).
+
+    Uses Script/Style __hash__ and __eq__: same url or same content (when no url)
+    are considered duplicates.
+    """
+    return list(dict.fromkeys(items))
+
+
 # TODO_V1: This function won't be used anymore. Remove it.
-def _postprocess_media_tags(
+def _parse_dependency_from_string(
     script_type: ScriptType,
-    tags: list[str] | list[SafeString],
-) -> list[Script | Style]:
+    tag: str | SafeString,
+    component_class_id: str,
+) -> Script | Style:
     """
-    Parse HTML tags from `Component.Media` into `Script`/`Style` objects.
+    Parse an HTML tag string from `Component.Media` into `Script`/`Style` object.
 
-    Extracts all attributes from each tag and creates `Script` or `Style` objects.
-    Deduplicates by URL and sorts by URL.
+    Extracts all attributes from the tag and creates `Script` or `Style` object.
     """
-    url_to_obj: dict[str, Script | Style] = {}
-
     if script_type not in ("js", "css"):
         raise ValueError(f"Invalid script type: {script_type}")
 
-    for tag in tags:
-        # Parse tag name, attributes, and optional content (so we can parse e.g. <script>...</script>)
-        tag_name, parsed_attrs, tag_content = _parse_html_tag_attrs(tag)
+    # Parse tag name, attributes, and optional content (so we can parse e.g. <script>...</script>)
+    tag_name, parsed_attrs, tag_content = _parse_html_tag_attrs(tag)
 
-        # Validate tag name matches expected type
-        if script_type == "js":
-            if tag_name != "script":
-                raise RuntimeError(
-                    f"One of entries for `Component.Media.{script_type}` media has incorrect tag name. "
-                    f"Expected '<script>' tag but got '<{tag_name}>'.\n"
-                    f"Got:\n{tag}",
-                )
-            attr_name = "src"
-        else:  # css
-            if tag_name not in ("link", "style"):
-                raise RuntimeError(
-                    f"One of entries for `Component.Media.{script_type}` media has incorrect tag name. "
-                    f"Expected '<link>' or '<style>' tag but got '<{tag_name}>'.\n"
-                    f"Got:\n{tag}",
-                )
-            attr_name = "href"
+    # Validate tag name matches expected type
+    if script_type == "js":
+        if tag_name != "script":
+            raise RuntimeError(
+                f"One of entries for `Component.Media.{script_type}` media has incorrect tag name. "
+                f"Expected '<script>' tag but got '<{tag_name}>'.\n"
+                f"Got:\n{tag}",
+            )
+        attr_name = "src"
+    else:  # css
+        if tag_name not in ("link", "style"):
+            raise RuntimeError(
+                f"One of entries for `Component.Media.{script_type}` media has incorrect tag name. "
+                f"Expected '<link>' or '<style>' tag but got '<{tag_name}>'.\n"
+                f"Got:\n{tag}",
+            )
+        attr_name = "href"
 
-        if script_type == "js":
-            url = parsed_attrs.pop(attr_name, None)
-            if url and url is not True:
-                # External script with src
-                if url in url_to_obj:
-                    continue
-                script_obj: Script | Style = Script(
-                    kind="extra",
-                    url=url,
-                    content=None,
-                    attrs=parsed_attrs,
-                    origin_class_id=None,
-                )
-                url_to_obj[url] = script_obj
-            else:
-                # Inline <script>...</script> (wrap=False so we don't re-wrap when rendering)
-                dedup_key = f"inline:{tag_content}" if tag_content else f"inline:{id(tag)}"
-                if dedup_key in url_to_obj:
-                    continue
-                script_obj = Script(
-                    kind="extra",
-                    url=None,
-                    content=tag_content,
-                    attrs=parsed_attrs,
-                    origin_class_id=None,
-                    wrap=False,
-                )
-                url_to_obj[dedup_key] = script_obj
-        # css: <link> or <style>
-        elif tag_name == "link":
+    if script_type == "js":
+        url = parsed_attrs.pop(attr_name, None)
+        if url and url is not True:
+            # External script with src <script src="...">
+            script_obj: Script | Style = Script(
+                kind="extra",
+                url=url,
+                content=None,
+                attrs=parsed_attrs,
+                origin_class_id=component_class_id,
+            )
+        else:
+            # Inline <script>...</script> (wrap=False so we don't re-wrap when rendering)
+            script_obj = Script(
+                kind="extra",
+                url=None,
+                content=tag_content,
+                attrs=parsed_attrs,
+                origin_class_id=component_class_id,
+                wrap=False,
+            )
+    # css: <link> or <style>
+    else:  # noqa: PLR5501
+        if tag_name == "link":
+            # <link href="...">
             url = parsed_attrs.pop(attr_name, None)
             if not url or url is True:
                 raise RuntimeError(
@@ -1330,33 +1473,24 @@ def _postprocess_media_tags(
                     f"value for attribute '{attr_name}'.\n"
                     f"Got:\n{tag}",
                 )
-            if url in url_to_obj:
-                continue
             script_obj = Style(
                 kind="extra",
                 url=url,
                 content=None,
                 attrs=parsed_attrs,
-                origin_class_id=None,
+                origin_class_id=component_class_id,
             )
-            url_to_obj[url] = script_obj
         else:
-            # <style> with inline content
-            dedup_key = f"inline:{tag_content}" if tag_content else f"inline:{id(tag)}"
-            if dedup_key in url_to_obj:
-                continue
+            # <style>...</style> with inline content
             script_obj = Style(
                 kind="extra",
                 url=None,
                 content=tag_content,
                 attrs=parsed_attrs,
-                origin_class_id=None,
+                origin_class_id=component_class_id,
             )
-            url_to_obj[dedup_key] = script_obj
 
-    # Ensure consistent order
-    result = list(url_to_obj.values())
-    return result
+    return script_obj
 
 
 class TagAttrParser(html.parser.HTMLParser):
@@ -1412,82 +1546,6 @@ def _parse_html_tag_attrs(tag_str: str) -> tuple[str, dict[str, str | bool], str
 
     content = "".join(parser.content_parts)
     return (parser.tag_name, parser.attrs, content)
-
-
-def _prepare_scripts_and_urls(
-    data: list[VariableData],
-    strategy: DependenciesStrategy,
-) -> tuple[
-    list[Script | Style],
-    list[Script | Style],
-    list[Script | Style],
-    list[Script | Style],
-    list[Script | Style],
-    list[Script | Style],
-]:
-    from django_components.component import get_component_by_class_id  # noqa: PLC0415
-
-    # JS / CSS that we should insert into the HTML
-    js_scripts__inline: list[Script | Style] = []
-    css_scripts__inline: list[Script | Style] = []
-    # JS / CSS that the client-side dependency managers should load
-    js_urls__fetch_in_client: list[Script | Style] = []
-    css_urls__fetch_in_client: list[Script | Style] = []
-    # JS / CSS that we want to mark as loaded in the dependency manager
-    js_urls__mark_loaded_in_client: list[Script | Style] = []
-    css_urls__mark_loaded_in_client: list[Script | Style] = []
-
-    # When `strategy="document"`, we insert the actual <script> and <style> tags into the HTML.
-    # But even in that case we still need to call `DjangoComponents.manager.markScriptLoaded`,
-    # so the client knows NOT to fetch them again.
-    # So in that case we populate both `inlined` and `loaded` lists
-    for comp_cls_id, script_type, variables_hash in data:
-        comp_cls = get_component_by_class_id(comp_cls_id)
-
-        # When strategy is "document", "simple", "prepend", or "append", we insert the actual <script> and
-        # <style> tags into the HTML.
-        #
-        # But in case of strategy == "document" we still need to call `DjangoComponents.manager.markScriptLoaded`,
-        # so the client knows NOT to fetch the scripts again.
-        # So in that case we populate both `inlined` and `loaded` lists
-        if strategy == "document":
-            # NOTE: Skip fetching of inlined JS/CSS if it's not defined or empty for given component
-            if script_type == "js" and is_nonempty_str(comp_cls.js):
-                # NOTE: If `variables_hash` is `None`, then we get the component's JS/CSS
-                #       (e.g. `/components/cache/table.js`).
-                #       And if `variables_hash` is given, we get the component's JS/CSS variables
-                #       (e.g. `/components/cache/table.0ab2c3.js`).
-                js_scripts__inline.append(get_script("js", comp_cls, variables_hash))  # type: ignore[arg-type]
-                js_urls__mark_loaded_in_client.append(get_script_url("js", comp_cls, variables_hash))
-
-            if script_type == "css" and is_nonempty_str(comp_cls.css):
-                css_scripts__inline.append(get_script("css", comp_cls, variables_hash))  # type: ignore[arg-type]
-                css_urls__mark_loaded_in_client.append(get_script_url("css", comp_cls, variables_hash))
-
-        elif strategy in ("simple", "prepend", "append"):
-            if script_type == "js" and is_nonempty_str(comp_cls.js):
-                js_scripts__inline.append(get_script("js", comp_cls, variables_hash))  # type: ignore[arg-type]
-
-            if script_type == "css" and is_nonempty_str(comp_cls.css):
-                css_scripts__inline.append(get_script("css", comp_cls, variables_hash))  # type: ignore[arg-type]
-
-        # When a fragment, then scripts are NOT inserted into the HTML,
-        # and instead we fetch and load them all via our JS dependency manager.
-        elif strategy == "fragment":
-            if script_type == "js" and is_nonempty_str(comp_cls.js):
-                js_urls__fetch_in_client.append(get_script_url("js", comp_cls, variables_hash))
-
-            if script_type == "css" and is_nonempty_str(comp_cls.css):
-                css_urls__fetch_in_client.append(get_script_url("css", comp_cls, variables_hash))
-
-    return (
-        js_scripts__inline,
-        css_scripts__inline,
-        js_urls__fetch_in_client,
-        css_urls__fetch_in_client,
-        js_urls__mark_loaded_in_client,
-        css_urls__mark_loaded_in_client,
-    )
 
 
 def get_script(
@@ -1567,10 +1625,10 @@ def _gen_exec_script(
     output_type: Literal["script", "json"],
     script_kind: DependencyKind,
     script_origin_class_id: str | None,
-    js_tags__fetch_in_client: list[Script | Style],
-    css_tags__fetch_in_client: list[Script | Style],
-    js_urls__mark_loaded_in_client: list[Script | Style],
-    css_urls__mark_loaded_in_client: list[Script | Style],
+    js_tags__fetch_in_client: list[Script],
+    css_tags__fetch_in_client: list[Style],
+    js_urls__mark_loaded_in_client: list[Script],
+    css_urls__mark_loaded_in_client: list[Style],
     comp_js_vars: list[ComponentJsVars],
     comp_calls: list[ComponentCall],
 ) -> Script | None:
@@ -1595,14 +1653,14 @@ def _gen_exec_script(
 
     # Extract URLs from Script/Style objects for base64 encoding.
     # Inline scripts/styles (no URL) are skipped; only URL-based resources are marked as loaded.
-    def extract_urls(script_objects: list[Script | Style]) -> list[str]:
+    def extract_urls(script_objects: Sequence[Script | Style]) -> list[str]:
         urls = []
         for obj in script_objects:
             if obj.url:
                 urls.append(obj.url)
         return urls
 
-    def render_tags(script_objects: list[Script | Style]) -> list[str]:
+    def render_tags(script_objects: Sequence[Script | Style]) -> list[str]:
         tags: list[str] = []
         for obj in script_objects:
             tags.append(json.dumps(obj.render_json()))

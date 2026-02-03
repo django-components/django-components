@@ -44,7 +44,8 @@ Extensions can define methods to hook into lifecycle events, such as:
 - Extension instantiation
 - Pre-processing data passed to a component on render
 - Post-processing data returned from [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
-  and others.
+- JS/CSS dependencies (e.g. add nonce, reorder scripts)
+- and others.
 
 See the full list in [Extension Hooks Reference](../../reference/extension_hooks.md).
 
@@ -96,6 +97,7 @@ class MyTable(Component):
 ```
 
 <!-- TODO - LINK TO IT ONCE RELEASED -->
+
 ### Example: Storybook integration
 
 The Storybook integration (work in progress) is an extension that is configured by a `Storybook` nested class.
@@ -601,7 +603,7 @@ python manage.py components ext run my_ext hello John --shout
     If a command doesn't have the [`handle`](../../reference/extension_commands.md#django_components.ComponentCommand.handle)
     method defined, the command will print a help message and exit.
 
-### Argument groups 
+### Argument groups
 
 Arguments can be grouped using [`CommandArgGroup`](../../reference/extension_commands.md#django_components.CommandArgGroup)
 to provide better organization and help messages.

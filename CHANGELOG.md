@@ -20,7 +20,30 @@
     };
     ```
 
-- **Override JS/CSS rendering with the `on_dependencies` extension hook**
+- **`Component.on_dependencies` hook to override JS/CSS rendering**
+
+    You can override [`Component.on_dependencies`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.Component.on_dependencies) (a **classmethod**) to modify the JS/CSS dependencies emitted by that component only - for example to inject a CSP nonce, change attributes, or wrap inline JS.
+
+    The hook receives lists of [`Script`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.Script) and [`Style`](https://django-components.github.io/django-components/0.148.0/reference/api#django_components.Style) objects for this component (from `Component.js`/`Component.css`, [JS/CSS variables](https://django-components.github.io/django-components/0.148.0/concepts/fundamentals/html_js_css_variables), and Media). Return `(new_scripts, new_styles)` to replace them, or `None` to leave them unchanged.
+
+    To modify **all** dependencies for the whole page, use the [extension hook](https://django-components.github.io/django-components/0.148.0/reference/extension_hooks#django_components.extension.ComponentExtension.on_dependencies) instead.
+
+    **Example:**
+
+    ```python
+    from django_components import Component, Script, Style
+
+    class MyButton(Component):
+        @classmethod
+        def on_dependencies(cls, scripts, styles):
+            # Add a nonce to every inline style for this component
+            for style in styles:
+                if style.content and "nonce" not in style.attrs:
+                    style.attrs["nonce"] = get_current_nonce()
+            return (scripts, styles)
+    ```
+
+- **`ComponentExtension.on_dependencies` hook to override JS/CSS rendering**
 
     Say you want to add a CSP nonce to all scripts, or render scripts as `type="module"`.
 
@@ -82,6 +105,12 @@
                 Style(content=".x { color: red; }")
             ]
     ```
+
+#### Refactor
+
+- `Component.Media.js/css` now render BEFORE `Component.js/css`, instead of after.
+
+    This is so that `Component.Media.js/css` behave more like dependencies.
 
 ## v0.147.0
 

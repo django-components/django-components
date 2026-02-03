@@ -195,7 +195,7 @@ def _apply_defaults(kwargs: dict, defaults: list["ComponentDefaultField"]) -> No
     """
     for default_field in defaults:
         # Defaults are applied only to missing or `None` values
-        given_value = kwargs.get(default_field.key, None)
+        given_value = kwargs.get(default_field.key)
         if given_value is not None:
             continue
 

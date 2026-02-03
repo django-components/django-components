@@ -415,6 +415,56 @@ you can return a new HTML, raise a new exception, or return nothing:
                 track_rendering_error(error)
     ```
 
+### `on_dependencies`
+
+```py
+@classmethod
+def on_dependencies(
+    cls,
+    scripts: list[Script],
+    styles: list[Style],
+) -> tuple[list[Script], list[Style]] | None:
+```
+
+[`Component.on_dependencies`](../../reference/api.md#django_components.Component.on_dependencies) is a **classmethod** hook that allows you to modify the JS / CSS dependencies emitted by this component only.
+
+These are the `<script>` and `<style>` tags that will be rendered for this component.
+
+The JS / CSS are available as lists of [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects.
+
+The JS / CSS dependencies include:
+
+- The component's [`Component.js`](../../reference/api.md#django_components.Component.js) / [`Component.css`](../../reference/api.md#django_components.Component.css)
+- The component's [JS/CSS variables](../fundamentals/html_js_css_variables.md)
+- Media dependencies ([`Component.Media.js`](../../reference/api.md#django_components.ComponentMediaInput.js) / [`Component.Media.css`](../../reference/api.md#django_components.ComponentMediaInput.css))
+
+To override the dependencies, return a tuple of `(new_scripts, new_styles)`.
+
+Return `None` (default) to leave them unchanged.
+
+Use this hook to add, remove, or reorder scripts and styles for this component only - for example to inject a CSP nonce, change attributes, or wrap inline JS.
+
+!!! note
+
+    To modify **all** dependencies (including Media) for the whole page, use the [extension hook](../../reference/extension_hooks.md#django_components.extension.ComponentExtension.on_dependencies) instead.
+
+**Example:**
+
+```py
+from django_components import Component, Script, Style
+
+class MyButton(Component):
+    # ...
+
+    @classmethod
+    def on_dependencies(cls, scripts, styles):
+        # Add a nonce to every inline style for this component
+        for style in styles:
+            if style.content and "nonce" not in style.attrs:
+                style.attrs["nonce"] = get_current_nonce()
+        return (scripts, styles)
+```
+
 ## Example: Tabs
 
 You can use hooks together with [provide / inject](provide_inject.md) to create components

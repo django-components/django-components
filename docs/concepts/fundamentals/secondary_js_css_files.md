@@ -445,6 +445,34 @@ class Calendar(Component):
         ]
 ```
 
+### `Script` and `Style` in Media
+
+You can use [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects from `django_components` directly in [`Component.Media.js`](../../reference/api.md#django_components.ComponentMediaInput.js) and [`Component.Media.css`](../../reference/api.md#django_components.ComponentMediaInput.css). This lets you add inline JS/CSS or external URLs with custom attributes (e.g. `type="module"`, `nonce`) without building HTML strings.
+
+```py
+from django_components import Component, Script, Style
+
+@register("calendar")
+class Calendar(Component):
+    class Media:
+        js = [
+            "calendar/script.js",  # path as usual
+            Script(
+                content="console.log('inline');",
+                attrs={"type": "module"},
+                wrap=False,
+            ),
+            Script(url="/static/analytics.js", content=None),
+        ]
+        css = [
+            "calendar/style.css",
+            Style(content=".print-only { display: none; }", attrs={"media": "print"}),
+            Style(url="/static/print.css", content=None, attrs={"media": "print"}),
+        ]
+```
+
+See [Modifying JS / CSS scripts](../advanced/rendering_js_css.md#modifying-js-css-scripts) for more on `Script`/`Style` and the `on_dependencies` hooks.
+
 ### Rendering paths
 
 As part of the rendering process, the secondary JS / CSS files are resolved and rendered into `<link>` and `<script>` HTML tags, so they can be inserted into the render.

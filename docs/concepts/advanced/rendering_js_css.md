@@ -343,9 +343,12 @@ html = AnotherComponent.render(slots={"content": html})
 ## Modifying JS / CSS scripts
 
 Before JS and CSS dependencies are rendered into `<script>`, `<style>`, and `<link>` tags,
-they are passed through the [`on_dependencies`](../../reference/api.md#django_components.ComponentExtension.on_dependencies) extension hook.
+they can be modified in two places:
 
-You can use this hook to add, remove, or modify [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects,
+1. **Per component:** Each component's dependencies are passed through that component's [`Component.on_dependencies()`](../../reference/api.md#django_components.Component.on_dependencies) hook. This includes the component's [`Component.js`](../../reference/api.md#django_components.Component.js) / [`Component.css`](../../reference/api.md#django_components.Component.css) and [JS/CSS variables](../fundamentals/html_js_css_variables.md). See [Component hooks: on_dependencies](hooks.md#on_dependencies).
+2. **Globally:** The combined list of all dependencies is then passed through the [`ComponentExtension.on_dependencies`](../../reference/api.md#django_components.ComponentExtension.on_dependencies) extension hook.
+
+You can use these hooks to add, remove, or modify [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects,
 so that the final HTML reflects your changes.
 
 Use cases include:
@@ -354,15 +357,40 @@ Use cases include:
 - Removing or reordering scripts or styles
 - Changing attributes on scripts (e.g. `type="module"`) or styles
 
+### Component hook: `on_dependencies`
+
+[`Component.on_dependencies`](../../reference/api.md#django_components.Component.on_dependencies) is a **classmethod** hook that allows you to modify the JS / CSS dependencies emitted by this component only.
+
+These are the `<script>` and `<style>` tags that will be rendered for this component.
+
+The JS / CSS are available as lists of [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects.
+
 **Example:**
 
-In the extension `on_dependencies` hook, you can modify the lists of `Script` and `Style` objects that will be rendered.
+```python
+from django_components import Component, Script, Style
 
-Return a tuple `(scripts, styles)` to replace the lists that will be rendered.
+class MyButton(Component):
+    # ...
 
-Return `None` to leave dependencies unchanged.
+    @classmethod
+    def on_dependencies(cls, scripts, styles):
+        # Add a nonce to every inline style for this component
+        for style in styles:
+            if style.content and "nonce" not in style.attrs:
+                style.attrs["nonce"] = get_current_nonce()
+        return (scripts, styles)
+```
 
-See [Extensions](extensions.md) for how to register and configure extensions.
+Full details and more examples are in [Component hooks](hooks.md#on_dependencies).
+
+### Extension hook: `on_dependencies`
+
+In the [`ComponentExtension.on_dependencies`](../../reference/extension_hooks.md#django_components.extension.ComponentExtension.on_dependencies) hook, you can modify the **entire** list of [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects that will be rendered (all components and Media).
+
+Return a tuple `(scripts, styles)` to replace the lists that will be rendered, or `None` to leave dependencies unchanged.
+
+**Example:**
 
 ```python
 from django_components import ComponentExtension, OnDependenciesContext, Script, Style
@@ -373,49 +401,14 @@ class MyExtension(ComponentExtension):
     def on_dependencies(self, ctx: OnDependenciesContext):
         scripts = list(ctx.scripts)
         styles = list(ctx.styles)
-
-        # Modify existing scripts and styles
-        for script in scripts:
-            if script.kind == "extra":
-                script.wrap = False
+        # Add a nonce to every inline style
         for style in styles:
-            if style.kind == "extra":
-                style.attrs["media"] = "print"
-
-        # Add new scripts (inline content)
-        scripts.append(
-            # <script type="module">console.log('my custom script');</script>
-            Script(
-                content="console.log('my custom script');",
-                attrs={"type": "module"},
-                wrap=False,
-            )
-        )
-        styles.append(
-            # <style nonce="1234567890">body { background-color: red; }</style>
-            Style(
-                content="body { background-color: red; }",
-                attrs={"nonce": "1234567890"},
-            )
-        )
-        # Add new scripts (external URL)
-        scripts.append(
-            # <script src="/static/analytics.js"></script>
-            Script(
-                url="/static/analytics.js",
-                content=None,
-            )
-        )
-        styles.append(
-            # <link rel="stylesheet" href="/static/print.css" media="print">
-            Style(
-                url="/static/print.css",
-                content=None,
-                attrs={"media": "print"},
-            )
-        )
+            if style.content and "nonce" not in style.attrs:
+                style.attrs["nonce"] = get_current_nonce()
         return (scripts, styles)
 ```
+
+See [Extensions](extensions.md) for how to register and configure extensions.
 
 ### Wrapping inline JS in a self-executing function
 

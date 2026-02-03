@@ -5,7 +5,7 @@ associated with components, and how we render them.
 
 ## Starting conditions
 
-1. First of all, when we consider a component, it has two kind of dependencies - the "inlined" JS and CSS, and additional linked JS and CSS via `Media.js/css`:
+1. First of all, when we consider a component, it has two kind of dependencies - the "inlined" JS and CSS (from `Component.js` / `Component.css`), and additional JS and CSS via `Media.js/css` (paths, URLs, or [`Script`](../../reference/api.md#django_components.Script) / [`Style`](../../reference/api.md#django_components.Style) objects):
 
     ```djc_py
     from django_components import Component, types
@@ -172,7 +172,7 @@ This is how we achieve that:
 
     2. Look up the corresponding component class.
 
-    3. Get the component's inlined JS / CSS from `Component.js/css`, and linked JS / CSS from `Component.Media.js/css`.
+    3. Get the component's inlined JS / CSS from `Component.js/css`, and secondary JS / CSS from `Component.Media.js/css` (paths, URLs, or `Script`/`Style` objects).
 
     4. Generate JS script that loads the JS / CSS dependencies.
 
@@ -180,7 +180,7 @@ This is how we achieve that:
 
     6. To avoid the [flash of unstyled content](https://en.wikipedia.org/wiki/Flash_of_unstyled_content), we need place the styles into the HTML instead of dynamically loading them from within a JS script. The CSS is placed either at the end of `<head>`, or in place of `{% component_dependencies %}` / `{% component_css_dependencies %}`
 
-    7. We cache the component's inlined JS and CSS, so they can be fetched via an URL, so the inlined JS / CSS an be treated the same way as the JS / CSS dependencies set in `Component.Media.js/css`.
+    7. We cache the component's inlined JS and CSS, so they can be fetched via an URL, so the inlined JS / CSS can be treated the same way as the JS / CSS dependencies set in `Component.Media.js/css`. Dependencies can be modified before rendering (e.g. add nonce, reorder) via the [Component hook](../../concepts/advanced/hooks.md#on_dependencies) `on_dependencies` or the [extension hook](../../reference/extension_hooks.md#django_components.extension.ComponentExtension.on_dependencies).
         - NOTE: While this is currently not entirely necessary, it opens up the doors for allowing plugins to post-process the inlined JS and CSS. Because after it has been post-processed, we need to store it somewhere.
 
 3. Server returns the post-processed HTML.

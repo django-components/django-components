@@ -2284,7 +2284,7 @@ def expansion_panel(context: Context, data: ExpansionPanelData):
             "content_attrs": data.content_attrs,
             "icon_position": data.icon_position,
             "init_data": init_data,
-            "panel_id": data.panel_id if data.panel_id else False,
+            "panel_id": data.panel_id or False,
             "expand_icon_data": expand_icon_data,
             "slot_header": data.slot_header,
             "slot_content": data.slot_content,

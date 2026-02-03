@@ -7,7 +7,7 @@ This `Media` class behaves similarly to [Django's Media class](https://docs.djan
 with a few differences:
 
 1. Our Media class accepts various formats for the JS and CSS files: either a single file, a list, or (CSS-only) a dictonary (see below).
-2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`, [`SafeString`](https://dev.to/doridoro/django-safestring-afj), or a function.
+2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`, [`SafeString`](https://dev.to/doridoro/django-safestring-afj), [`Script`](../reference/api.md#django_components.Script), [`Style`](../reference/api.md#django_components.Style), or a function.
 3. Individual JS / CSS files can be glob patterns, e.g. `*.js` or `styles/**/*.css`.
 4. If you set [`Media.extend`](../reference/api.md#django_components.ComponentMediaInput.extend) to a list,
    it should be a list of [`Component`](../reference/api.md#django_components.Component) classes.
