@@ -7,8 +7,7 @@ from django.template import Context, Template, TemplateSyntaxError
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, types
-from django_components.component import ComponentContext
-from django_components.perfutil.component import component_context_cache, component_instance_cache
+from django_components.component_render import ComponentContext, component_context_cache, component_instance_cache
 from django_components.perfutil.provide import component_provides, provide_cache, provide_references
 from django_components.testing import djc_test
 

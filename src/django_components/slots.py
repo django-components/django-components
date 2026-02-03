@@ -24,10 +24,10 @@ from django.utils.html import conditional_escape
 from django.utils.safestring import SafeString, mark_safe
 
 from django_components.app_settings import ContextBehavior
+from django_components.component_render import component_context_cache
 from django_components.context import _COMPONENT_CONTEXT_KEY, _INJECT_CONTEXT_KEY_PREFIX, COMPONENT_IS_NESTED_KEY
 from django_components.extension import OnSlotRenderedContext, extensions
 from django_components.node import BaseNode
-from django_components.perfutil.component import component_context_cache
 from django_components.util.exception import add_slot_to_error_message
 from django_components.util.logger import trace_component_msg
 from django_components.util.misc import default, get_index, get_last_index, is_identifier
