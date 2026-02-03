@@ -2347,7 +2347,7 @@ class TestComponentHook:
 
         class SimpleComponent(Component):
             def on_render(self, context: Context, template: Template):
-                _html, error = yield lambda: broken_template()
+                _html, error = yield broken_template
                 error.args = ("ERROR MODIFIED",)
 
         with pytest.raises(

@@ -258,7 +258,7 @@ def plain_variable_value(
         token_val = token(content, start_index, line, col)
         value_token = token_val
     # Extract root variable name (everything before first dot, or entire content if no dot)
-    root_var = content.split(".")[0] if "." in content else content
+    root_var = content.split(".", maxsplit=1)[0] if "." in content else content
     used_var_start_index = start_index + len(spread) if spread is not None else start_index
     used_var_col = col + len(spread) if spread is not None else col
     used_var_token = token(root_var, used_var_start_index, line, used_var_col)

@@ -2197,7 +2197,7 @@ class ExpansionPanel(Component):
             "content_attrs": content_attrs,
             "icon_position": icon_position,
             "init_data": init_data,
-            "panel_id": panel_id if panel_id else False,
+            "panel_id": panel_id or False,
         }
 
     template: types.django_html = """
