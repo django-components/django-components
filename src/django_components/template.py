@@ -272,7 +272,8 @@ def _get_component_template(component: "Component") -> Template | None:
         # treat Templates AND their nodelists as IMMUTABLE.
         template = component.__class__._component_media._template  # type: ignore[attr-defined]
         # Race condition: treat UNSET as None
-        from django_components.component_media import UNSET
+        # See https://github.com/django-components/django-components/pull/1588
+        from django_components.component_media import UNSET  # noqa: PLC0415
 
         if template is UNSET:
             template = None
