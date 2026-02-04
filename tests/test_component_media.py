@@ -1792,3 +1792,71 @@ class TestSubclassingMedia:
             '<script src="other2.js"></script>\n'
             '<script src="other1.js"></script>'
         )
+
+
+@djc_test
+class TestUnsetTemplateBug:
+    """Test for race condition where _template remains UNSET."""
+
+    def test_race_condition_with_threading(self):
+        """Thread 1 sets resolved_template=True, Thread 2 renders before _template is set."""
+        import threading
+        from unittest.mock import patch
+
+        from django_components.component_media import _load_media as original_load_media
+
+        thread1_paused = threading.Event()
+        thread1_resume = threading.Event()
+        thread2_done = threading.Event()
+        thread2_error = [None]
+        thread2_result = [None]
+
+        class IconComponent(Component):
+            template = "<svg>icon</svg>"
+
+        def patched_load_media(comp_cls, comp_media, asset_type):
+            if asset_type == "template" and comp_cls is IconComponent:
+                comp_media.resolved_template = True
+                thread1_paused.set()
+                thread1_resume.wait()
+            return original_load_media(comp_cls, comp_media, asset_type)
+
+        def thread1_work():
+            with patch("django_components.component_media._load_media", patched_load_media):
+                _ = IconComponent.template
+
+        def thread2_work():
+            try:
+                thread2_result[0] = IconComponent.render()
+            except Exception as e:
+                thread2_error[0] = e
+            finally:
+                thread2_done.set()
+
+        IconComponent._component_media.resolved_template = False
+        IconComponent._component_media._template = UNSET
+
+        t1 = threading.Thread(target=thread1_work)
+        t1.start()
+        thread1_paused.wait(timeout=5)
+
+        assert IconComponent._component_media.resolved_template is True
+        assert IconComponent._component_media._template is UNSET
+
+        t2 = threading.Thread(target=thread2_work)
+        t2.start()
+        thread2_done.wait(timeout=5)
+
+        thread1_resume.set()
+        t1.join(timeout=5)
+        t2.join(timeout=5)
+
+        if thread2_error[0] is not None:
+            error = thread2_error[0]
+            if "'Unset' object" in str(error) or "Unset" in str(error):
+                pytest.fail(f"Race condition bug: {error}")
+            raise error
+
+        assert thread2_result[0] is not None
+        assert isinstance(thread2_result[0], str)
+

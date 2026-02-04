@@ -626,19 +626,19 @@ def _load_media(
             assert isinstance(self.media, MyMedia)
     ```
     """
+    # Skip base Component class
+    if get_import_path(comp_cls) == "django_components.component.Component":
+        return
+
     if asset_type == "template":
-        if comp_media.resolved_template:
+        # Retry if _template is still UNSET (race condition)
+        if comp_media.resolved_template and comp_media._template is not UNSET:
             return
-        else:
-            comp_media.resolved_template = True
+        comp_media.resolved_template = True
     elif asset_type == "non-template":
         if comp_media.resolved_files:
             return
         comp_media.resolved_files = True
-
-    # Do not resolve if this is a base class
-    if get_import_path(comp_cls) == "django_components.component.Component":
-        return
 
     comp_dirs = get_component_dirs()
 
