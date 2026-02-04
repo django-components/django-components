@@ -1306,3 +1306,49 @@ class TestDependenciesStrategyRaw:
             "            <!-- _RENDERED SimpleComponent_311097,ca1bc41,, -->\n"
             '        Variable: <strong data-djc-id-ca1bc41="">foo</strong>'
         )
+
+
+@djc_test
+class TestDependenciesStrategyDefault:
+    def test_nested_render_defaults_deps_strategy_to_ignore(self):
+        """
+        When a component is rendered from Python inside another component (e.g. inside `get_template_data`),
+        deps_strategy defaults to 'ignore' so explicit deps_strategy='ignore' is not required.
+        See https://github.com/django-components/django-components/issues/1463
+        """
+
+        class Inner(Component):
+            template: types.django_html = '<span class="inner">inner</span>'
+            css: types.css = ".some-class { color: red; }"
+            js: types.js = "console.log('inner');"
+
+        class Outer(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="outer">{{ content }}</div>
+                {% component_js_dependencies %}
+                {% component_css_dependencies %}
+            """
+            css: types.css = ".some-class { color: blue; }"
+            js: types.js = "console.log('outer');"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                # No deps_strategy passed - should default to "ignore" when nested
+                content = Inner.render()
+
+                # Presence of the placeholder indicates that deps_strategy defaulted to "ignore"
+                assert "<!-- _RENDERED" in content
+                assert "<style>.some-class { color: red; }</style>" not in content
+                assert "<script>console.log('inner');</script>" not in content
+
+                return {"content": content}
+
+        rendered = Outer.render()
+
+        assert "<!-- _RENDERED" not in rendered
+        # Inner's CSS and JS
+        assert "<style>.some-class { color: red; }</style>" in rendered
+        assert "<script>(function() {\nconsole.log('inner');\n})();</script>" in rendered
+        # Outer's CSS and JS
+        assert "<style>.some-class { color: blue; }</style>" in rendered
+        assert "<script>(function() {\nconsole.log('outer');\n})();</script>" in rendered

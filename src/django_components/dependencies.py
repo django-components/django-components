@@ -799,12 +799,13 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
     - `content` (str | bytes): The rendered HTML string that is searched for components, and
         into which we insert the JS and CSS tags. Required.
 
-    - `type` - Optional. Configure how to handle JS and CSS dependencies. Read more about
+    - `strategy` - Optional. Configure how to handle JS and CSS dependencies. Default is
+        ``"document"``. Read more about
         [Rendering strategies](../concepts/advanced/rendering_js_css.md#dependencies-strategies).
 
-        There are five render types:
+        There are six strategies:
 
-        - [`"document"`](../concepts/advanced/rendering_js_css.md#document) (default)
+        - [`"document"`](../concepts/advanced/rendering_js_css.md#document) (default for top-level)
             - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
             - Inserts extra script to allow `fragment` types to work.
             - Assumes the HTML will be rendered in a JS-enabled browser.
@@ -820,6 +821,8 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
         - [`"append"`](../concepts/advanced/rendering_js_css.md#append)
             - Insert JS / CSS after the rendered HTML.
             - No extra script loaded.
+        - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore) (default when nested)
+            - Returns the content unchanged (no JS / CSS inserted).
 
     **Example:**
 

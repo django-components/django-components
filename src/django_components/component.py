@@ -2942,7 +2942,7 @@ class Component(metaclass=ComponentMeta):
         args: Any | None = None,
         kwargs: Any | None = None,
         slots: Any | None = None,
-        deps_strategy: DependenciesStrategy = "document",
+        deps_strategy: DependenciesStrategy | None = None,
         # TODO_v1 - Remove, superseded by `deps_strategy`
         type: DependenciesStrategy | None = None,  # noqa: A002
         # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
@@ -3032,7 +3032,7 @@ class Component(metaclass=ComponentMeta):
         args: Any | None = None,
         kwargs: Any | None = None,
         slots: Any | None = None,
-        deps_strategy: DependenciesStrategy = "document",
+        deps_strategy: DependenciesStrategy | None = None,
         # TODO_v1 - Remove, superseded by `deps_strategy`
         type: DependenciesStrategy | None = None,  # noqa: A002
         # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
@@ -3135,10 +3135,10 @@ class Component(metaclass=ComponentMeta):
                 def render(self, context, template):
                     # Pass `context` to Icon component so it is rendered
                     # as if nested within Button.
+                    # When nested, deps_strategy defaults to "ignore"
                     icon = Icon.render(
                         context=context,
                         args=["icon-name"],
-                        deps_strategy="ignore",
                     )
                     # Update context with icon
                     with context.update({"icon": icon}):
@@ -3158,7 +3158,7 @@ class Component(metaclass=ComponentMeta):
 
             There are six strategies:
 
-            - [`"document"`](../concepts/advanced/rendering_js_css.md#document) (default)
+            - [`"document"`](../concepts/advanced/rendering_js_css.md#document) (default for top-level)
                 - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
                 - Requires the HTML to be rendered in a JS-enabled browser.
                 - Inserts extra script for managing fragments.
@@ -3175,7 +3175,7 @@ class Component(metaclass=ComponentMeta):
             - [`"append"`](../concepts/advanced/rendering_js_css.md#append)
                 - Insert JS / CSS after the rendered HTML.
                 - No extra script loaded.
-            - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore)
+            - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore) (default when nested)
                 - HTML is left as-is. You can still process it with a different strategy later with
                   [`render_dependencies()`](api.md#django_components.render_dependencies).
                 - Used for inserting rendered HTML into other components.
@@ -3184,6 +3184,26 @@ class Component(metaclass=ComponentMeta):
             [context processors](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context.update).
 
             Read more about [Working with HTTP requests](../concepts/fundamentals/http_request.md).
+
+        **Behavior inside `get_template_data()`:**
+
+        When you pre-render a component in Python, and pass it into another component's `get_template_data()`,
+        you should set `deps_strategy="ignore"` to avoid rendering the dependencies twice.
+
+        django-components makes this easier for you.
+        When you call `Component.render()` from Python inside another component (e.g. in `get_template_data()`),
+        `deps_strategy` defaults to `"ignore"` instead of `"document"`.
+
+        ```py
+        class Outer(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                # defaults to "ignore" when nested
+                content = Inner.render()
+                return {"content": content}
+
+        # `deps_strategy` defaults to "document" when top-level
+        rendered = Outer.render()
+        ```
 
         **Type hints:**
 
@@ -3227,7 +3247,7 @@ class Component(metaclass=ComponentMeta):
         """
         # TODO_v1 - Remove, superseded by `deps_strategy`
         if type is not None:
-            if deps_strategy != "document":
+            if deps_strategy is not None:
                 raise ValueError(
                     "Component.render() received both `type` and `deps_strategy` arguments. "
                     "Only one should be given. The `type` argument is deprecated. Use `deps_strategy` instead.",

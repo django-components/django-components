@@ -1,6 +1,8 @@
 import re
 from collections import deque
 from collections.abc import Callable, Generator, Mapping
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeAlias, cast
 from weakref import ReferenceType, WeakKeyDictionary, ref
@@ -156,13 +158,72 @@ class ComponentContext:
     root_id: str | None  # ID of the root component in this tree
 
 
+# We want to track whether we are inside a component rendering logic.
+#
+# One use case is to skip the need to pass `deps_strategy="ignore"` explicitly when
+# rendering a component nested in another's `get_template_data()`:
+#
+# ```py
+# class Inner(Component):
+#     template: types.django_html = '<span class="inner">inner</span>'
+#
+# class Outer(Component):
+#     def get_template_data(self, args, kwargs, slots, context):
+#         content = Inner.render()
+#         return {"content": content}
+#
+# rendered = Outer.render()
+# ```
+#
+# To keep track of this, every time we step into `Component.render()`, we push a sentinel value
+# onto the stack. When we finish rendering the current Component, we pop the sentinel value off the stack.
+#
+# See https://github.com/django-components/django-components/issues/1463
+_component_render_stack: ContextVar[list[Any] | None] = ContextVar(
+    "djc_component_render_stack",
+    default=None,
+)
+
+
+def _is_inside_component_render() -> bool:
+    """True if we are currently inside a component render (e.g. inside get_template_data)."""
+    stack = _component_render_stack.get()
+    return stack is not None and len(stack) > 0
+
+
+@contextmanager
+def _render_stack(
+    deps_strategy: DependenciesStrategy | None,
+) -> Generator[DependenciesStrategy, None, None]:
+    """
+    Manage populating and emptying the component render stack,
+    and resolving of the default `deps_strategy` when nested.
+    """
+    # Outside of Component context, we default to "document" deps_strategy,
+    # so that the rendered HTML can be served from the server directly.
+    # But when inside another component, we set the default to "ignore" so that
+    # the dependencies are not rendered twice.
+    if deps_strategy is None:
+        deps_strategy = "ignore" if _is_inside_component_render() else "document"
+
+    stack = _component_render_stack.get()
+    if stack is None:
+        stack = []
+        _component_render_stack.set(stack)
+    stack.append(None)  # sentinel
+    try:
+        yield deps_strategy
+    finally:
+        stack.pop()
+
+
 def render_with_error_trace(
     comp_cls: type["Component"],
     context: dict[str, Any] | Context | None = None,
     args: Any | None = None,
     kwargs: Any | None = None,
     slots: Any | None = None,
-    deps_strategy: DependenciesStrategy = "document",
+    deps_strategy: DependenciesStrategy | None = None,
     request: HttpRequest | None = None,
     outer_context: Context | None = None,
     # TODO_v2 - Remove `registered_name` and `registry`
@@ -172,43 +233,44 @@ def render_with_error_trace(
 ) -> str:
     """
     Internal entrypoint for the render function.
-    Wraps render_impl with error trace and cleanup.
+    Wraps `_render_impl` with error trace and cleanup.
     """
     component_name = comp_cls._get_component_name(registered_name)
-    render_id = gen_component_id()
 
     # Modify the error to display full component path (incl. slots)
     with with_component_error_message([component_name]):
-        try:
-            return render_impl(
-                comp_cls=comp_cls,
-                render_id=render_id,
-                context=context,
-                args=args,
-                kwargs=kwargs,
-                slots=slots,
-                deps_strategy=deps_strategy,
-                request=request,
-                outer_context=outer_context,
-                # TODO_v2 - Remove `registered_name` and `registry`
-                registry=registry,
-                registered_name=registered_name,
-                node=node,
-            )
-        except Exception as e:
-            # Clean up if rendering fails
-            component_instance_cache.pop(render_id, None)
-            raise e from None
+        render_id = gen_component_id()
+        with _render_stack(deps_strategy) as deps_strategy_with_default:
+            try:
+                return _render_impl(
+                    comp_cls=comp_cls,
+                    render_id=render_id,
+                    context=context,
+                    args=args,
+                    kwargs=kwargs,
+                    slots=slots,
+                    deps_strategy=deps_strategy_with_default,
+                    request=request,
+                    outer_context=outer_context,
+                    # TODO_v2 - Remove `registered_name` and `registry`
+                    registry=registry,
+                    registered_name=registered_name,
+                    node=node,
+                )
+            except Exception as e:
+                # Clean up if rendering fails
+                component_instance_cache.pop(render_id, None)
+                raise e from None
 
 
-def render_impl(
+def _render_impl(
     comp_cls: type["Component"],
     render_id: str,
+    deps_strategy: DependenciesStrategy,
     context: dict[str, Any] | Context | None = None,
     args: Any | None = None,
     kwargs: Any | None = None,
     slots: Any | None = None,
-    deps_strategy: DependenciesStrategy = "document",
     request: HttpRequest | None = None,
     outer_context: Context | None = None,
     # TODO_v2 - Remove `registered_name` and `registry`

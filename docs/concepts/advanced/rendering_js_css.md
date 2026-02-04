@@ -140,7 +140,7 @@ fragment = render(request, "my_component.html", ctx=ctx)
 
 There are six dependencies strategies:
 
-- [`document`](#document) (default)
+- [`document`](#document) (default for top-level)
     - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
     - Requires the HTML to be rendered in a JS-enabled browser.
     - Inserts extra script for managing fragments.
@@ -157,7 +157,7 @@ There are six dependencies strategies:
 - [`append`](#append)
     - Insert JS / CSS after the rendered HTML.
     - No extra script loaded.
-- [`ignore`](#ignore)
+- [`ignore`](#ignore) (default when nested)
     - HTML is left as-is. You can still process it with a different strategy later with
       [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies).
     - Used for inserting rendered HTML into other components.
@@ -338,6 +338,34 @@ This is useful when you want to insert rendered HTML into another component.
 ```python
 html = MyComponent.render(deps_strategy="ignore")
 html = AnotherComponent.render(slots={"content": html})
+```
+
+### Behavior inside `get_template_data()`
+
+When you pre-render a component in Python, and pass it into another component's `get_template_data()`,
+you should pass `deps_strategy="ignore"` to the render function to avoid rendering the dependencies twice.
+
+```py
+class Outer(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        content = Inner.render(deps_strategy="ignore")
+        return {"content": content}
+```
+
+django-components makes this easier for you. When you
+are inside another component, the `deps_strategy` defaults to `"ignore"` automatically.
+
+Top-level renders still default to `"document"`.
+
+```py
+class Outer(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        # defaults to "ignore" when nested
+        content = Inner.render()
+        return {"content": content}
+
+# `deps_strategy` defaults to "document" when top-level
+rendered = Outer.render()
 ```
 
 ## Modifying JS / CSS scripts

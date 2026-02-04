@@ -44,8 +44,8 @@ A component is rendered as a "document" when:
 
 - It is embedded inside a template as [`{% component %}`](../../reference/template_tags.md#component)
 - It is rendered with [`Component.render()`](../../reference/api.md#django_components.Component.render)
-or [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
-  with the `deps_strategy` kwarg set to `"document"` (default)
+  or [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
+  with the `deps_strategy` kwarg set to `"document"` (default for top-level renders)
 
 Example:
 

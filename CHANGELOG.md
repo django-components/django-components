@@ -110,7 +110,37 @@
 
 - `Component.Media.js/css` now render BEFORE `Component.js/css`, instead of after.
 
-    This is so that `Component.Media.js/css` behave more like dependencies.
+- **Rendering components in Python is now simpler: No explicit `deps_strategy` needed when nested**
+
+    When you pre-render a component in Python, and pass it into another component's `get_template_data()`,
+    you should pass `deps_strategy="ignore"` to the render function to avoid rendering the dependencies twice.
+
+    django-components now makes this easier for you.
+
+    When you call `Component.render()` from Python inside another component (e.g. in `get_template_data()`),
+    you no longer need to pass `deps_strategy="ignore"` to the inner Component. This is set automatically be default.
+
+    Top-level renders still default to `"document"`.
+    
+    See [issue #1463](https://github.com/django-components/django-components/issues/1463).
+
+    Before:
+
+    ```py
+    class Outer(Component):
+        def get_template_data(self, args, kwargs, slots, context):
+            content = Inner.render(deps_strategy="ignore")
+            return {"content": content}
+    ```
+
+    After:
+
+    ```py
+    class Outer(Component):
+        def get_template_data(self, args, kwargs, slots, context):
+            content = Inner.render()  # no deps_strategy needed!
+            return {"content": content}
+    ```
 
 ## v0.147.0
 

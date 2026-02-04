@@ -242,7 +242,7 @@ Button.render(
 - `kwargs` - Keyword arguments to pass to the component (as a dictionary)
 - `slots` - Slot content to pass to the component (as a dictionary)
 - `context` - Django context for rendering (can be a dictionary or a `Context` object)
-- `deps_strategy` - [Dependencies rendering strategy](#dependencies-rendering) (default: `"document"`)
+- `deps_strategy` - [Dependencies rendering strategy](#dependencies-rendering) (default: `"document"` for top-level; `"ignore"` when nested)
 - `request` - [HTTP request object](http_request.md), used for context processors (optional)
 
 All arguments are optional. If not provided, they default to empty values or sensible defaults.
@@ -344,7 +344,7 @@ Learn more about [Rendering JS / CSS](../advanced/rendering_js_css.md).
 
 There are six dependencies rendering strategies:
 
-- [`document`](../advanced/rendering_js_css.md#document) (default)
+- [`document`](../advanced/rendering_js_css.md#document) (default for top-level)
     - Smartly inserts JS / CSS into placeholders ([`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies)) or into `<head>` and `<body>` tags.
     - Requires the HTML to be rendered in a JS-enabled browser.
     - Inserts extra script for managing fragments.
@@ -363,7 +363,7 @@ There are six dependencies rendering strategies:
     - Insert JS / CSS after the rendered HTML.
     - Ignores the placeholders ([`{% component_js_dependencies %}`](../../reference/template_tags.md#component_js_dependencies)) and any `<head>`/`<body>` HTML tags.
     - No extra script loaded.
-- [`ignore`](../advanced/rendering_js_css.md#ignore)
+- [`ignore`](../advanced/rendering_js_css.md#ignore) (default when nested)
     - HTML is left as-is. You can still process it with a different strategy later with
       [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies).
     - Used for inserting rendered HTML into other components.
@@ -433,7 +433,6 @@ class Button(Component):
         icon = Icon.render(
             context=context,
             args=["icon-name"],
-            deps_strategy="ignore",
         )
         # Update context with icon
         with context.update({"icon": icon}):
