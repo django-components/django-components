@@ -106,6 +106,17 @@
             ]
     ```
 
+#### Fix
+
+- Fixed race condition where `Component._template` was not set correctly when rendering multiple components in parallel.
+
+    See [#1587](https://github.com/django-components/django-components/issues/1587)
+
+    ```python
+    class MyComponent(Component):
+        template = "<div>Hello, world!</div>"
+    ```
+
 #### Refactor
 
 - `Component.Media.js/css` now render BEFORE `Component.js/css`, instead of after.
