@@ -199,7 +199,8 @@ class CacheExtension(ComponentExtension):
             return
 
         if ctx.error is not None:
+            self.render_id_to_cache_key.pop(ctx.component_id, None)
             return
 
-        cache_key = self.render_id_to_cache_key[ctx.component_id]
+        cache_key = self.render_id_to_cache_key.pop(ctx.component_id)
         cache_instance.set_entry(cache_key, ctx.result)

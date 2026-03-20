@@ -7,6 +7,8 @@ from django.template import Template
 from django.template.context import Context
 
 from django_components import Component, register
+from django_components.extension import extensions as extension_manager
+from django_components.extensions.cache import CacheExtension
 from django_components.testing import djc_test
 
 from .testutils import setup_test_config
@@ -347,3 +349,55 @@ class TestComponentCache:
                 kwargs={"input": "cake"},
                 slots={"content": lambda _ctx: "ONE"},
             )
+
+
+@djc_test(
+    django_settings={
+        "CACHES": {
+            "default": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            },
+        },
+    },
+)
+class TestCacheRenderIdCleanup:
+    """Test that render_id_to_cache_key entries are cleaned up after rendering."""
+
+    def _get_cache_ext(self) -> CacheExtension:
+        for ext in extension_manager.extensions:
+            if isinstance(ext, CacheExtension):
+                return ext
+        raise RuntimeError("CacheExtension not found")
+
+    def test_render_id_cleaned_up_after_successful_render(self):
+        class TestComponent(Component):
+            template = "Hello {{ name }}"
+
+            class Cache:
+                enabled = True
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "world")}
+
+        cache_ext = self._get_cache_ext()
+
+        TestComponent.render(kwargs={"name": "world"})
+
+        assert len(cache_ext.render_id_to_cache_key) == 0
+
+    def test_render_id_cleaned_up_after_render_error(self):
+        class ErrorComponent(Component):
+            template = "Hello"
+
+            class Cache:
+                enabled = True
+
+            def on_render(self, context, template):
+                raise ValueError("deliberate error")
+
+        cache_ext = self._get_cache_ext()
+
+        with pytest.raises(ValueError, match="deliberate error"):
+            ErrorComponent.render()
+
+        assert len(cache_ext.render_id_to_cache_key) == 0
