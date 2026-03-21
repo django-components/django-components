@@ -361,8 +361,6 @@ class TestComponentCache:
     },
 )
 class TestCacheRenderIdCleanup:
-    """Test that render_id_to_cache_key entries are cleaned up after rendering."""
-
     def _get_cache_ext(self) -> CacheExtension:
         for ext in extension_manager.extensions:
             if isinstance(ext, CacheExtension):
@@ -403,9 +401,6 @@ class TestCacheRenderIdCleanup:
         assert len(cache_ext.render_id_to_cache_key) == 0
 
     def test_render_id_not_stored_on_cache_hit(self):
-        """On cache hit, on_component_rendered is never called, so the entry
-        must not be stored in the first place."""
-
         class CacheHitComponent(Component):
             template = "Hello {{ name }}"
 
@@ -421,6 +416,6 @@ class TestCacheRenderIdCleanup:
         CacheHitComponent.render(kwargs={"name": "world"})
         assert len(cache_ext.render_id_to_cache_key) == 0
 
-        # Second render is a cache hit — must not leak
+        # Second render is a cache hit - must not leak
         CacheHitComponent.render(kwargs={"name": "world"})
         assert len(cache_ext.render_id_to_cache_key) == 0
