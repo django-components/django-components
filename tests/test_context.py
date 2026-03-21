@@ -1115,6 +1115,38 @@ class TestContextProcessors:
         with pytest.raises(ValueError, match="Variable 'request' defined in component 'TestComponent' conflicts"):
             TestComponent.render(request=HttpRequest())
 
+    def test_context_processors_data_not_in_global_dict(self):
+        from django_components.util.context import _REQUEST_ATTR
+
+        class TestComponent(Component):
+            template: types.django_html = """Hello"""
+
+        request = HttpRequest()
+        TestComponent.render(request=request)
+
+        # The data should be cached on the request itself, not in a global dict
+        assert hasattr(request, _REQUEST_ATTR)
+
+    def test_context_processors_data_cached_across_components(self):
+        from django_components.util.context import _REQUEST_ATTR
+
+        @register("test_parent_leak")
+        class ParentComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% component "test_child_leak" / %}
+            """
+
+        @register("test_child_leak")
+        class ChildComponent(Component):
+            template: types.django_html = """Hello"""
+
+        request = HttpRequest()
+        ParentComponent.render(request=request)
+
+        # Data is cached on request - only computed once for both components
+        assert hasattr(request, _REQUEST_ATTR)
+
 
 @djc_test
 class TestOuterContextProperty:

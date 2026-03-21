@@ -1,6 +1,5 @@
 import copy
 from typing import TYPE_CHECKING, Any
-from weakref import WeakKeyDictionary
 
 from django.http import HttpRequest
 from django.template import Engine
@@ -10,9 +9,7 @@ from django.template.loader_tags import BlockContext
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-# We cache the context processors data for each request, so that we don't have to
-# generate it for each component.
-context_processors_data: WeakKeyDictionary[HttpRequest, dict[str, Any]] = WeakKeyDictionary()
+_REQUEST_ATTR = "_djc_context_processors_data"
 
 
 class CopiedDict(dict):
@@ -126,8 +123,15 @@ def _copy_block_context(block_context: BlockContext) -> BlockContext:
 # `RequestContext.bind_template()`, but without depending on a Template object.
 # See https://github.com/django/django/blame/2d34ebe49a25d0974392583d5bbd954baf742a32/django/template/context.py#L255
 def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> dict[str, Any]:
-    if request in context_processors_data:
-        return context_processors_data[request].copy()
+    # NOTE: We cache the context processors data on the request object itself, so that
+    # we don't have to re-generate it for each component within the same request.
+    # Previously this used a module-level WeakKeyDictionary keyed by request, but that
+    # leaked because the cached value (context processor output) holds strong references
+    # back to the request (e.g. via django.template.context_processors.request), preventing
+    # the weak key from ever being collected.
+    cached = getattr(request, _REQUEST_ATTR, None)
+    if cached is not None:
+        return cached.copy()
 
     # Reuse context processor data from RequestContext when Django has already run
     # bind_template() (e.g. when rendering a template that uses {% extends %}).
@@ -141,7 +145,7 @@ def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> d
         except IndexError:
             existing = {}
         if existing:
-            context_processors_data[request] = existing
+            setattr(request, _REQUEST_ATTR, existing)
             return existing.copy()
 
     # TODO_REMOVE_IN_V2 - In v2, if we still support context processors,
@@ -164,6 +168,6 @@ def gen_context_processors_data(context: BaseContext, request: HttpRequest) -> d
         except TypeError as e:
             raise TypeError(f"Context processor {processor.__qualname__} didn't return a dictionary.") from e
 
-    context_processors_data[request] = processors_data
+    setattr(request, _REQUEST_ATTR, processors_data)
 
     return processors_data
