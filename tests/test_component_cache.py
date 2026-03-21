@@ -401,3 +401,26 @@ class TestCacheRenderIdCleanup:
             ErrorComponent.render()
 
         assert len(cache_ext.render_id_to_cache_key) == 0
+
+    def test_render_id_not_stored_on_cache_hit(self):
+        """On cache hit, on_component_rendered is never called, so the entry
+        must not be stored in the first place."""
+
+        class CacheHitComponent(Component):
+            template = "Hello {{ name }}"
+
+            class Cache:
+                enabled = True
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "world")}
+
+        cache_ext = self._get_cache_ext()
+
+        # First render populates the cache
+        CacheHitComponent.render(kwargs={"name": "world"})
+        assert len(cache_ext.render_id_to_cache_key) == 0
+
+        # Second render is a cache hit — must not leak
+        CacheHitComponent.render(kwargs={"name": "world"})
+        assert len(cache_ext.render_id_to_cache_key) == 0
