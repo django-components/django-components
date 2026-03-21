@@ -1,4 +1,6 @@
+import gc
 import tempfile
+import weakref
 from pathlib import Path
 from typing import cast
 
@@ -1114,6 +1116,24 @@ class TestContextProcessors:
 
         with pytest.raises(ValueError, match="Variable 'request' defined in component 'TestComponent' conflicts"):
             TestComponent.render(request=HttpRequest())
+
+    def test_request_is_gc_after_render(self):
+        class TestComponent(Component):
+            template: types.django_html = """Hello"""
+
+        request = HttpRequest()
+        ref = weakref.ref(request)
+
+        TestComponent.render(request=request)
+
+        del request
+        # Two passes: first collects the component (triggering cleanup of
+        # component_context_cache via weak ref finalizer), second collects the
+        # now-orphaned context snapshot that has internal reference cycles.
+        gc.collect()
+        gc.collect()
+
+        assert ref() is None
 
 
 @djc_test
