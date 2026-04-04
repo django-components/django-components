@@ -184,12 +184,15 @@ class CacheExtension(ComponentExtension):
             return None
 
         cache_key = cache_instance.get_cache_key(ctx.args, ctx.kwargs, ctx.slots)
-        self.render_id_to_cache_key[ctx.component_id] = cache_key
 
         # If cache entry exists, return it. This will short-circuit the rendering process.
         cached_result = cache_instance.get_entry(cache_key)
         if cached_result is not None:
             return cached_result
+
+        # NOTE: Store the mapping only on cache miss, because on cache hit the rendering
+        # is short-circuited and on_component_rendered (which pops the entry) is never called.
+        self.render_id_to_cache_key[ctx.component_id] = cache_key
         return None
 
     # Save the rendered component to cache
@@ -199,7 +202,8 @@ class CacheExtension(ComponentExtension):
             return
 
         if ctx.error is not None:
+            self.render_id_to_cache_key.pop(ctx.component_id, None)
             return
 
-        cache_key = self.render_id_to_cache_key[ctx.component_id]
+        cache_key = self.render_id_to_cache_key.pop(ctx.component_id)
         cache_instance.set_entry(cache_key, ctx.result)
