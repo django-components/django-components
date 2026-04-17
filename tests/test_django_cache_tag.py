@@ -24,6 +24,9 @@ setup_test_config()
             "default": {
                 "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
             },
+            "altcache": {
+                "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            },
         },
     },
 )
@@ -133,3 +136,197 @@ class TestCacheTagCompatibility:
         # so its data-djc-id changes between renders.  The inner span comes from the
         # cache and is identical to the first render.
         assert '<span data-djc-id-ca1bc41="">inner</span>' in second
+
+    def test_expire_time_as_variable(self):
+        """
+        expire_time can be a context variable rather than a literal integer.
+        The component should still be cached correctly.
+        """
+        render_count = 0
+
+        class SimpleComponent(Component):
+            template: types.django_html = "<b>hello</b>"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal render_count
+                render_count += 1
+                return {}
+
+        class OuterComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% cache timeout "expire_var" %}
+                    {% component "simple" / %}
+                {% endcache %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"timeout": 500}
+
+        registry.register("simple", SimpleComponent)
+        registry.register("outer", OuterComponent)
+
+        tpl = Template('{% load component_tags %}{% component "outer" / %}')
+
+        first = tpl.render(Context({}))
+        assert render_count == 1
+        assert "<b" in first and "hello" in first
+
+        second = tpl.render(Context({}))
+        assert render_count == 1, "Component should not re-render on cache hit"
+
+    def test_expire_time_none(self):
+        """
+        expire_time=None means cache indefinitely (no timeout).
+        The component should be cached and not re-render on a subsequent call.
+        """
+        render_count = 0
+
+        class SimpleComponent(Component):
+            template: types.django_html = "<b>forever</b>"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal render_count
+                render_count += 1
+                return {}
+
+        class OuterComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% cache None "expire_none" %}
+                    {% component "simple" / %}
+                {% endcache %}
+            """
+
+        registry.register("simple", SimpleComponent)
+        registry.register("outer", OuterComponent)
+
+        tpl = Template('{% load component_tags %}{% component "outer" / %}')
+
+        first = tpl.render(Context({}))
+        assert render_count == 1
+        assert "forever" in first
+
+        second = tpl.render(Context({}))
+        assert render_count == 1, "Component should not re-render when cached with no timeout"
+
+    def test_vary_on_single_variable(self):
+        """
+        A single vary_on variable causes separate cache entries per unique value.
+        Each distinct value renders the component once; repeating a value hits the cache.
+        """
+        render_count = 0
+
+        class GreetComponent(Component):
+            template: types.django_html = "<span>{{ name }}</span>"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal render_count
+                render_count += 1
+                return {"name": kwargs["name"]}
+
+        class OuterComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% cache 500 "vary_single" user %}
+                    {% component "greet" name=user / %}
+                {% endcache %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"user": kwargs["user"]}
+
+        registry.register("greet", GreetComponent)
+        registry.register("outer", OuterComponent)
+
+        tpl = Template('{% load component_tags %}{% component "outer" user=user / %}')
+
+        tpl.render(Context({"user": "alice"}))
+        assert render_count == 1
+
+        tpl.render(Context({"user": "bob"}))
+        assert render_count == 2, "Different vary_on value should cause a cache miss"
+
+        tpl.render(Context({"user": "alice"}))
+        assert render_count == 2, "Repeated vary_on value should hit the cache"
+
+        tpl.render(Context({"user": "bob"}))
+        assert render_count == 2, "Repeated vary_on value should hit the cache"
+
+    def test_vary_on_multiple_variables(self):
+        """
+        Multiple vary_on variables all participate in the cache key.
+        Only the exact same combination of values is a cache hit.
+        """
+        render_count = 0
+
+        class ItemComponent(Component):
+            template: types.django_html = "<li>{{ lang }}/{{ section }}</li>"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal render_count
+                render_count += 1
+                return {"lang": kwargs["lang"], "section": kwargs["section"]}
+
+        class OuterComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% cache 500 "vary_multi" lang section %}
+                    {% component "item" lang=lang section=section / %}
+                {% endcache %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"lang": kwargs["lang"], "section": kwargs["section"]}
+
+        registry.register("item", ItemComponent)
+        registry.register("outer", OuterComponent)
+
+        tpl = Template('{% load component_tags %}{% component "outer" lang=lang section=section / %}')
+
+        tpl.render(Context({"lang": "en", "section": "home"}))
+        assert render_count == 1
+
+        tpl.render(Context({"lang": "en", "section": "about"}))
+        assert render_count == 2, "Different second vary_on value should miss"
+
+        tpl.render(Context({"lang": "fr", "section": "home"}))
+        assert render_count == 3, "Different first vary_on value should miss"
+
+        tpl.render(Context({"lang": "en", "section": "home"}))
+        assert render_count == 3, "Same combination should hit the cache"
+
+    def test_using_named_cache_backend(self):
+        """
+        using="altcache" routes storage to the named cache backend.
+        The component should still be cached and not re-render on a hit.
+        """
+        render_count = 0
+
+        class SimpleComponent(Component):
+            template: types.django_html = "<b>alt</b>"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal render_count
+                render_count += 1
+                return {}
+
+        class OuterComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% cache 500 "using_alt" using="altcache" %}
+                    {% component "simple" / %}
+                {% endcache %}
+            """
+
+        registry.register("simple", SimpleComponent)
+        registry.register("outer", OuterComponent)
+
+        tpl = Template('{% load component_tags %}{% component "outer" / %}')
+
+        first = tpl.render(Context({}))
+        assert render_count == 1
+        assert "alt" in first
+
+        second = tpl.render(Context({}))
+        assert render_count == 1, "Component should not re-render on cache hit via named backend"
