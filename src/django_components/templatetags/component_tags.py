@@ -1,6 +1,7 @@
 import django.template
 
 from django_components.attributes import HtmlAttrsNode
+from django_components.cache_tag import do_djc_cache
 from django_components.component import ComponentNode
 from django_components.dependencies import ComponentCssDependenciesNode, ComponentJsDependenciesNode
 from django_components.provide import ProvideNode
@@ -26,6 +27,10 @@ FillNode.register(register)
 HtmlAttrsNode.register(register)
 ProvideNode.register(register)
 SlotNode.register(register)
+
+# Override Django's built-in {% cache %} tag with a component-aware version.
+# See django_components/cache_tag.py for details.
+register.tag("cache", do_djc_cache)
 
 
 # For an intuitive use via Python imports, the tags are aliased to the function name.
