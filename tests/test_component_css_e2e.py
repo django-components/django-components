@@ -289,7 +289,17 @@ class TestE2eCssVariables:
         url = TEST_SERVER_URL + "/css-vars/document/no-vars"
 
         page = await browser.new_page()
-        await page.goto(url)
+        await page.goto(url, wait_until="domcontentloaded")
+        await page.wait_for_function("""() => {
+            const box = document.querySelector('#css-no-vars-container.css-static-box');
+            if (!box) {
+                return false;
+            }
+
+            const style = globalThis.getComputedStyle(box);
+            return style.getPropertyValue('background-color') === 'rgb(233, 236, 239)'
+                && style.getPropertyValue('width') === '100px';
+        }""")
 
         test_js: types.js = """() => {
             const box = document.querySelector('#css-no-vars-container.css-static-box');
@@ -328,7 +338,22 @@ class TestE2eCssVariables:
         url = TEST_SERVER_URL + "/css-vars/document/vars"
 
         page = await browser.new_page()
-        await page.goto(url)
+        await page.goto(url, wait_until="domcontentloaded")
+        await page.wait_for_function("""() => {
+            const boxRed = document.querySelector('#box-red .themed-box');
+            const boxGreen = document.querySelector('#box-green .themed-box');
+            const boxBlue = document.querySelector('#box-blue .themed-box');
+            if (!boxRed || !boxGreen || !boxBlue) {
+                return false;
+            }
+
+            const redBg = globalThis.getComputedStyle(boxRed).getPropertyValue('background-color');
+            const greenBg = globalThis.getComputedStyle(boxGreen).getPropertyValue('background-color');
+            const blueBg = globalThis.getComputedStyle(boxBlue).getPropertyValue('background-color');
+            return redBg === 'rgb(255, 0, 0)'
+                && greenBg === 'rgb(0, 128, 0)'
+                && blueBg === 'rgb(0, 0, 255)';
+        }""")
 
         test_js: types.js = """() => {
             const boxRed = document.querySelector('#box-red .themed-box');
@@ -391,7 +416,18 @@ class TestE2eCssVariables:
         url = TEST_SERVER_URL + "/css-vars/document/sized"
 
         page = await browser.new_page()
-        await page.goto(url)
+        await page.goto(url, wait_until="domcontentloaded")
+        await page.wait_for_function("""() => {
+            const box = document.querySelector('#sized-box .sized-box');
+            if (!box) {
+                return false;
+            }
+
+            const style = globalThis.getComputedStyle(box);
+            return style.getPropertyValue('width') === '200px'
+                && style.getPropertyValue('height') === '150px'
+                && style.getPropertyValue('background-color') === 'rgb(2, 117, 216)';
+        }""")
 
         test_js: types.js = """() => {
             const box = document.querySelector('#sized-box .sized-box');
@@ -445,7 +481,16 @@ class TestE2eCssVariables:
             btn.setAttribute('data-fragment-type', 'no-vars');
         }""")
         await page.click("#load-fragment-btn")
-        await page.wait_for_timeout(500)
+        await page.wait_for_function("""() => {
+            const fragment = document.querySelector('#css-fragment-no-vars');
+            if (!fragment) {
+                return false;
+            }
+
+            const style = globalThis.getComputedStyle(fragment);
+            return style.getPropertyValue('background-color') === 'rgb(231, 241, 255)'
+                && style.borderColor !== 'rgba(0, 0, 0, 0)';
+        }""")
 
         test_js: types.js = """() => {
             const fragment = document.querySelector('#css-fragment-no-vars');
@@ -489,7 +534,16 @@ class TestE2eCssVariables:
             btn.setAttribute('data-fragment-type', 'with-vars');
         }""")
         await page.click("#load-fragment-btn")
-        await page.wait_for_timeout(500)
+        await page.wait_for_function("""() => {
+            const fragment = document.querySelector('#css-fragment-with-vars');
+            if (!fragment) {
+                return false;
+            }
+
+            const style = globalThis.getComputedStyle(fragment);
+            return style.getPropertyValue('background-color') === 'rgb(212, 237, 218)'
+                && style.borderColor !== 'rgba(0, 0, 0, 0)';
+        }""")
 
         test_js: types.js = """() => {
             const fragment = document.querySelector('#css-fragment-with-vars');
