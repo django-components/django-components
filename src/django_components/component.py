@@ -2950,7 +2950,7 @@ class Component(metaclass=ComponentMeta):
         request: HttpRequest | None = None,
         outer_context: Context | None = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: ComponentRegistry | None = None,  # noqa: F811
+        registry: ComponentRegistry | None = None,
         registered_name: str | None = None,
         node: "ComponentNode | None" = None,
         **response_kwargs: Any,
@@ -3040,7 +3040,7 @@ class Component(metaclass=ComponentMeta):
         request: HttpRequest | None = None,
         outer_context: Context | None = None,
         # TODO_v2 - Remove `registered_name` and `registry`
-        registry: ComponentRegistry | None = None,  # noqa: F811
+        registry: ComponentRegistry | None = None,
         registered_name: str | None = None,
         node: "ComponentNode | None" = None,
     ) -> str:
@@ -3314,7 +3314,7 @@ class Component(metaclass=ComponentMeta):
         self,
         registered_name: str | None = None,
         outer_context: Context | None = None,
-        registry: ComponentRegistry | None = None,  # noqa: F811
+        registry: ComponentRegistry | None = None,
         context: Context | None = None,
         args: Any | None = None,
         kwargs: Any | None = None,
@@ -3566,7 +3566,7 @@ class ComponentNode(BaseNode):
         self,
         # ComponentNode inputs
         name: str,
-        registry: ComponentRegistry,  # noqa: F811
+        registry: ComponentRegistry,
         # BaseNode inputs
         params: list[TagAttr],
         filters: dict[str, Callable[[Any, Any], Any]],
@@ -3600,7 +3600,7 @@ class ComponentNode(BaseNode):
         cls,
         parser: Parser,
         token: Token,
-        registry: ComponentRegistry,  # noqa: F811
+        registry: ComponentRegistry,
         name: str,
         start_tag: str,
         end_tag: str,

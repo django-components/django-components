@@ -320,8 +320,8 @@ def _gen_default_settings_section(app_settings_filepath: str) -> str:
     # Remove single line from both ends to remove comments and the snippet strings
     defaults_snippet_lines = defaults_snippet.split("\n")[1:-1]
 
-    # Also remove escape/formatter comments at the end of the lines like
-    # `# noqa` or `# type: ignore`
+    # Also remove escape/formatter comments at the end of lines, such as Ruff
+    # and type-checker ignore comments.
     comment_re = re.compile(r"#\s+(?:type\:|noqa)")
 
     # Some settings are dynamic in a sense that their value depends on the Django settings,
