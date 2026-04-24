@@ -16,11 +16,31 @@ from tests.e2e.utils import TEST_SERVER_URL, with_playwright
 from tests.testutils import setup_test_config
 
 if TYPE_CHECKING:
-    from playwright.async_api import Browser
+    from playwright.async_api import Browser, Page
 
     from tests.e2e.utils import BrowserType
 
 setup_test_config()
+
+
+async def _click_htmx_fragment_loader(page: "Page") -> None:
+    await page.wait_for_function(
+        """
+        () => {
+            if (!globalThis.htmx) {
+                return false;
+            }
+
+            globalThis.htmx.process(document.body);
+            return true;
+        }
+        """,
+    )
+
+    async with page.expect_response(
+        lambda response: "/fragment/frag?frag=" in response.url and response.status == 200,
+    ):
+        await page.locator("#loader").click()
 
 
 def server():
@@ -1128,7 +1148,7 @@ class TestE2eDependencyRendering:
         assert data_before["fragHtml"] is None
 
         # Clicking button should load and insert the fragment
-        await page.locator("button").click()
+        await _click_htmx_fragment_loader(page)
 
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
@@ -1203,7 +1223,7 @@ class TestE2eDependencyRendering:
         assert data_before["fragHtml"] is None
 
         # Clicking button should load and insert the fragment
-        await page.locator("button").click()
+        await _click_htmx_fragment_loader(page)
 
         # Wait until both JS and CSS are loaded
         await page.locator(".frag").wait_for(state="visible")
