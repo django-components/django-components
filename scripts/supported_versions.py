@@ -75,7 +75,7 @@ def filter_dict(d: dict, filter_fn: Callable[[Any], bool]) -> dict:
 
 
 def cut_by_content(content: str, cut_from: str, cut_to: str) -> str:
-    return content.split(cut_from)[1].split(cut_to)[0]
+    return content.split(cut_from, maxsplit=1)[1].split(cut_to, maxsplit=1)[0]
 
 
 def keys_from_content(content: str) -> list[str]:
