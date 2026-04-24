@@ -797,6 +797,9 @@ class SlotNode(BaseNode):
                 context.dicts,
                 lambda d: _COMPONENT_CONTEXT_KEY in d and d[_COMPONENT_CONTEXT_KEY] == component_id,
             )
+            if curr_index is None:
+                raise RuntimeError(f"Component with id '{component_id}' was not found in the context stack.")
+
             parent_index = get_last_index(context.dicts[:curr_index], lambda d: _COMPONENT_CONTEXT_KEY in d)
 
             # NOTE: There's an edge case when our component `hui3q2` appears at the start of the stack:
