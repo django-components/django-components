@@ -14,8 +14,21 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
-        os: [ubuntu-latest, windows-latest]
+        include:
+          - python-version: "3.10"
+            os: ubuntu-latest
+          - python-version: "3.11"
+            os: ubuntu-latest
+          - python-version: "3.12"
+            os: ubuntu-latest
+          - python-version: "3.13"
+            os: ubuntu-latest
+          - python-version: "3.14"
+            os: ubuntu-latest
+          - python-version: "3.10"
+            os: windows-latest
+          - python-version: "3.14"
+            os: windows-latest
 
     steps:
       # Configure git to handle long paths
@@ -43,6 +56,32 @@ jobs:
         run: |
           uv sync --group ci
 
+      - name: Run tests
+        run: uv run tox
+
+  e2e:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.14"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --group ci
+
       # TODO: DELETEME
       # Workaround: Yarn Debian repo switched GPG key (Jan 2026); old key in images breaks apt-get update.
       # See https://github.com/yarnpkg/yarn/issues/9218
@@ -54,15 +93,38 @@ jobs:
           sudo rm -f /etc/apt/sources.list.d/yarn.list 2>/dev/null || true
       # DELETEME_END
 
-      # NOTE: WINDOWS ONLY - Installing system dependencies for Playwright browsers takes ~3-4 mins.
-      # See https://github.com/django-components/django-components/pull/1554
-      # See https://playwright.dev/docs/browsers#managing-browser-binaries
-      - name: Install Playwright browsers
+      - name: Install Playwright browser
         run: |
-          # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
-          uv run playwright install chromium firefox webkit --with-deps
-      - name: Run tests
-        run: uv run tox
+          uv run playwright install chromium --with-deps
+
+      - name: Run E2E tests
+        run: uv run tox -e e2e
+
+  benchmark_snapshots:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.14"]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          uv sync --group ci
+
+      - name: Run benchmark snapshot tests
+        run: uv run tox -e benchmark_snapshot
 
   # Coverage job - runs tests with coverage on a single Python version
   # NOTE: The steps are the same as the build job.
@@ -85,24 +147,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      # TODO: DELETEME
-      # Workaround: Yarn Debian repo switched GPG key (Jan 2026); old key in images breaks apt-get update.
-      # See https://github.com/yarnpkg/yarn/issues/9218
-      # Remove this step once CI images ship with the updated Yarn APT key or Yarn repo is no longer enabled by default.
-      - name: Disable broken third-party apt repos (e.g. Yarn) before Playwright install
-        if: runner.os == 'Linux'
-        run: |
-          # Playwright's --with-deps runs apt-get update; a broken/unsigned Yarn repo breaks it.
-          sudo rm -f /etc/apt/sources.list.d/yarn.list 2>/dev/null || true
-      # DELETEME_END
-
-      # NOTE: WINDOWS ONLY - Installing system dependencies for Playwright browsers takes ~3-4 mins.
-      # See https://github.com/django-components/django-components/pull/1554
-      # See https://playwright.dev/docs/browsers#managing-browser-binaries
-      - name: Install Playwright browsers
-        run: |
-          # See https://playwright.dev/python/docs/intro#installing-playwright-pytest
-          uv run playwright install chromium firefox webkit --with-deps
       # Run the actual tests with coverage
       - name: Run coverage
         run: uv run tox -e coverage
