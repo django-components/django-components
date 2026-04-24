@@ -445,7 +445,16 @@ class TestE2eCssVariables:
             btn.setAttribute('data-fragment-type', 'no-vars');
         }""")
         await page.click("#load-fragment-btn")
-        await page.wait_for_timeout(500)
+        await page.wait_for_function("""() => {
+            const fragment = document.querySelector('#css-fragment-no-vars');
+            if (!fragment) {
+                return false;
+            }
+
+            const style = globalThis.getComputedStyle(fragment);
+            return style.getPropertyValue('background-color') === 'rgb(231, 241, 255)'
+                && style.borderColor !== 'rgba(0, 0, 0, 0)';
+        }""")
 
         test_js: types.js = """() => {
             const fragment = document.querySelector('#css-fragment-no-vars');
@@ -489,7 +498,16 @@ class TestE2eCssVariables:
             btn.setAttribute('data-fragment-type', 'with-vars');
         }""")
         await page.click("#load-fragment-btn")
-        await page.wait_for_timeout(500)
+        await page.wait_for_function("""() => {
+            const fragment = document.querySelector('#css-fragment-with-vars');
+            if (!fragment) {
+                return false;
+            }
+
+            const style = globalThis.getComputedStyle(fragment);
+            return style.getPropertyValue('background-color') === 'rgb(212, 237, 218)'
+                && style.borderColor !== 'rgba(0, 0, 0, 0)';
+        }""")
 
         test_js: types.js = """() => {
             const fragment = document.querySelector('#css-fragment-with-vars');
