@@ -52,6 +52,7 @@ dev = [
     "django-template-partials",
     "tox",
     "pytest",
+    "pytest-xdist",
     "pytest-django",
     "pytest-asyncio==1.3.0",
     "syrupy",
@@ -80,6 +81,7 @@ dev = [
 ci = [
     "tox",
     "tox-gh-actions",
+    "pytest-xdist",
     "playwright",
     "requests",
     "types-requests",
@@ -113,7 +115,9 @@ docs = [
     "mkdocstrings",
     "mkdocstrings-python",
     "pymdown-extensions",
-    "pygments",
+    # Pygments 2.20 breaks mkdocstrings signature rendering by rejecting the
+    # None filename value passed through pymdownx.highlight.
+    "pygments<2.20",
     "pygments-djc",
     "django>=4.2",
     "djc-core>=1.3.0",
@@ -136,6 +140,10 @@ namespaces = false
 [tool.pytest.ini_options]
 testpaths = ["tests", "docs/examples"]
 asyncio_mode = "auto"
+markers = [
+    "e2e: browser-based end-to-end tests that need the Django test server",
+    "benchmark_snapshot: large benchmark-render snapshot tests",
+]
 
 ###########################################
 # FORMATTING & TYPE-CHECKING TOOLS

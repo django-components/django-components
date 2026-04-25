@@ -1,12 +1,13 @@
 # ruff: noqa: T201
 
 import functools
+import os
 import subprocess
 import sys
 import time
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias, cast
 
 import pytest
 import requests
@@ -16,8 +17,16 @@ TEST_SERVER_PORT = "8000"
 TEST_SERVER_URL = f"http://127.0.0.1:{TEST_SERVER_PORT}"
 
 
-BROWSER_NAMES = ["chromium", "firefox", "webkit"]
 BrowserType: TypeAlias = Literal["chromium", "firefox", "webkit"]
+_DEFAULT_BROWSER_NAMES: list[BrowserType] = ["chromium", "firefox", "webkit"]
+BROWSER_NAMES: list[BrowserType] = []
+for raw_browser_name in os.environ.get("DJC_TEST_BROWSERS", ",".join(_DEFAULT_BROWSER_NAMES)).split(","):
+    browser_name = raw_browser_name.strip()
+    if not browser_name:
+        continue
+    if browser_name not in _DEFAULT_BROWSER_NAMES:
+        raise ValueError(f"Unknown browser: {browser_name}")
+    BROWSER_NAMES.append(cast("BrowserType", browser_name))
 
 
 async def _launch_browser(playwright: Playwright, browser_name: BrowserType) -> Browser:
@@ -44,8 +53,10 @@ def with_playwright(test_func: Callable[..., Any]) -> Callable[..., Any]:
 
     # NOTE: Using `browser` and `browser_name` as fixtures means that the test will be run
     #       once per browser type (chromium, firefox, webkit).
-    @functools.wraps(test_func)
+    @pytest.mark.e2e
+    @pytest.mark.usefixtures("django_dev_server")
     @pytest.mark.asyncio(scope="session")  # Needed to run the test in async mode
+    @functools.wraps(test_func)
     async def wrapper(self: Any, browser: Browser, browser_name: BrowserType, *args: Any, **kwargs: Any) -> Any:
         # Test
         await test_func(self, *args, browser=browser, browser_name=browser_name, **kwargs)
