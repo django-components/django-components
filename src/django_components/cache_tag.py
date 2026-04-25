@@ -31,10 +31,43 @@ render root and performs full two-pass assembly inline, producing complete HTML
 gets cached and returned on subsequent hits.
 """
 
-from django.template import Context
-from django.templatetags.cache import CacheNode, do_cache
+from collections.abc import Generator
 
+from django.template import Context
+from django.template.base import Parser, Token
+from django.templatetags.cache import CacheNode, do_cache
+from django.templatetags.cache import register as django_cache_register
+
+from django_components.component_render import component_context_cache, component_post_render
 from django_components.context import _COMPONENT_CONTEXT_KEY
+from django_components.util.misc import gen_id
+
+
+def _assemble_cached_fragment(context: Context, value: str) -> str:
+    component_id = context.get(_COMPONENT_CONTEXT_KEY)
+    if component_id is None:
+        return value
+
+    component_ctx = component_context_cache.get(component_id)
+    if component_ctx is None:
+        return value
+
+    render_id = gen_id()
+
+    def render_fragment() -> Generator[str, None, None]:
+        yield value
+
+    component_ctx.tree.on_component_intermediate_callbacks[render_id] = lambda html: html
+    component_ctx.tree.on_component_rendered_callbacks[render_id] = lambda html, error: (html, error)
+
+    return component_post_render(
+        renderer=render_fragment(),
+        render_id=render_id,
+        component_name="cache",
+        parent_render_id=None,
+        component_tree_context=component_ctx.tree,
+        on_component_tree_rendered=lambda html: html,
+    )
 
 
 class DjcCacheNode(CacheNode):
@@ -82,17 +115,20 @@ class DjcCacheNode(CacheNode):
         if value is not None:
             return value
 
-        # Cache miss: clear _COMPONENT_CONTEXT_KEY so every {% component %} inside
-        # acts as a render root and returns complete, assembled HTML.
-        with context.update({_COMPONENT_CONTEXT_KEY: None}):
-            value = self.nodelist.render(context)
+        value = self.nodelist.render(context)
+        value = _assemble_cached_fragment(context, value)
 
         fragment_cache.set(cache_key, value, expire_time)
         return value
 
 
-def do_djc_cache(parser, token):
+def do_djc_cache(parser: Parser, token: Token) -> DjcCacheNode:
     """Identical to Django's {% cache %} parser, but produces a DjcCacheNode."""
     node = do_cache(parser, token)
     node.__class__ = DjcCacheNode
     return node
+
+
+# Patch Django's cache library too, so explicit `{% load cache %}` keeps using
+# the component-aware implementation regardless of tag library load order.
+django_cache_register.tag("cache", do_djc_cache)

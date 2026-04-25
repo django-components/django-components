@@ -137,6 +137,80 @@ class TestCacheTagCompatibility:
         # cache and is identical to the first render.
         assert '<span data-djc-id-ca1bc41="">inner</span>' in second
 
+    def test_nested_component_cache_hit_with_explicit_cache_load(self):
+        """
+        Explicitly loading Django's `cache` library after `component_tags` should
+        still use the component-aware cache implementation.
+        """
+        render_count = 0
+
+        class InnerComponent(Component):
+            template: types.django_html = "<span>inner</span>"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                nonlocal render_count
+                render_count += 1
+                return {}
+
+        class OuterComponent(Component):
+            template: types.django_html = """
+                {% load component_tags cache %}
+                <div>
+                    {% cache 500 "nested_hit_explicit_cache" %}
+                        {% component "inner_explicit_cache" / %}
+                    {% endcache %}
+                </div>
+            """
+
+        registry.register("inner_explicit_cache", InnerComponent)
+        registry.register("outer_explicit_cache", OuterComponent)
+
+        outer_tpl = Template('{% load component_tags %}{% component "outer_explicit_cache" / %}')
+
+        first = outer_tpl.render(Context({}))
+        assert render_count == 1
+        assertHTMLEqual(
+            first,
+            '<div data-djc-id-ca1bc3f=""><span data-djc-id-ca1bc41="">inner</span></div>',
+        )
+
+        second = outer_tpl.render(Context({}))
+        assert render_count == 1, "InnerComponent should NOT re-render on cache hit"
+        assert '<span data-djc-id-ca1bc41="">inner</span>' in second
+
+    def test_cache_with_slot_inside_component(self):
+        """
+        Caching a fragment that contains {% slot %} should preserve the component
+        context while rendering the cache body.
+        """
+
+        class OuterComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div>
+                    {% cache 500 "slot_fragment" %}
+                        {% slot "content" default %}fallback{% endslot %}
+                    {% endcache %}
+                </div>
+            """
+
+        registry.register("outer_slot_cache", OuterComponent)
+
+        template = Template(
+            """
+            {% load component_tags %}
+            {% component "outer_slot_cache" %}
+                {% fill "content" %}HELLO{% endfill %}
+            {% endcomponent %}
+            """
+        )
+
+        first = template.render(Context({}))
+        assert "HELLO" in first
+
+        second = template.render(Context({}))
+        assert "HELLO" in second
+
     def test_expire_time_as_variable(self):
         """
         expire_time can be a context variable rather than a literal integer.
@@ -170,9 +244,10 @@ class TestCacheTagCompatibility:
 
         first = tpl.render(Context({}))
         assert render_count == 1
-        assert "<b" in first and "hello" in first
+        assert "<b" in first
+        assert "hello" in first
 
-        second = tpl.render(Context({}))
+        tpl.render(Context({}))
         assert render_count == 1, "Component should not re-render on cache hit"
 
     def test_expire_time_none(self):
@@ -207,7 +282,7 @@ class TestCacheTagCompatibility:
         assert render_count == 1
         assert "forever" in first
 
-        second = tpl.render(Context({}))
+        tpl.render(Context({}))
         assert render_count == 1, "Component should not re-render when cached with no timeout"
 
     def test_vary_on_single_variable(self):
@@ -328,5 +403,5 @@ class TestCacheTagCompatibility:
         assert render_count == 1
         assert "alt" in first
 
-        second = tpl.render(Context({}))
+        tpl.render(Context({}))
         assert render_count == 1, "Component should not re-render on cache hit via named backend"
