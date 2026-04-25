@@ -31,14 +31,12 @@ render root and performs full two-pass assembly inline, producing complete HTML
 gets cached and returned on subsequent hits.
 """
 
-from collections.abc import Generator
-
 from django.template import Context
 from django.template.base import Parser, Token
 from django.templatetags.cache import CacheNode, do_cache
 from django.templatetags.cache import register as django_cache_register
 
-from django_components.component_render import component_context_cache, component_post_render
+from django_components.component_render import OnRenderGenerator, component_context_cache, component_post_render
 from django_components.context import _COMPONENT_CONTEXT_KEY
 from django_components.util.misc import gen_id
 
@@ -54,8 +52,9 @@ def _assemble_cached_fragment(context: Context, value: str) -> str:
 
     render_id = gen_id()
 
-    def render_fragment() -> Generator[str, None, None]:
-        yield value
+    def render_fragment() -> OnRenderGenerator:
+        _ = yield value
+        return None
 
     component_ctx.tree.on_component_intermediate_callbacks[render_id] = lambda html: html
     component_ctx.tree.on_component_rendered_callbacks[render_id] = lambda html, error: (html, error)
