@@ -132,7 +132,7 @@
     you no longer need to pass `deps_strategy="ignore"` to the inner Component. This is set automatically be default.
 
     Top-level renders still default to `"document"`.
-    
+
     See [issue #1463](https://github.com/django-components/django-components/issues/1463).
 
     Before:
@@ -285,7 +285,7 @@ Added support for Django 6.0, JS and CSS variables, and component tree navigatio
 - **New `on_extension_created` hook for extensions.**
 
     New hook is called when the extension class is instantiated during Django startup.
-    
+
     Use this hook to perform initialization logic that needs to run at server startup.
 
     **Example:**
@@ -564,7 +564,7 @@ These arguments are passed to Django's `reverse()` function.
 
     Now, django-components can detect the defaults from `Component.Kwargs` and apply
     them. So you can merge `Component.Kwargs` with `Component.Defaults`:
-    
+
     ```python
     class ProfileCard(Component):
         class Kwargs:
@@ -605,7 +605,7 @@ These arguments are passed to Django's `reverse()` function.
 - Simpler syntax for defining component inputs:
 
     When defining `Args`, `Kwargs`, `Slots`, `JsData`, `CssData`, `TemplateData`, these data classes now don't have to subclass any other class.
-    
+
     If they are not subclassing (nor `@dataclass`), these data classes will be automatically converted to `NamedTuples`:
 
     Before - the `Args`, `Kwargs`, and `Slots` (etc..) had to be NamedTuples, dataclasses, or Pydantic models:
@@ -795,18 +795,18 @@ _05 Oct 2025_
             # First yield
             with context.push({"mode": "header"}):
                 header_html, header_error = yield lambda: template.render(context)
-            
+
             # Second yield
             with context.push({"mode": "body"}):
                 body_html, body_error = yield lambda: template.render(context)
-            
+
             # Third yield
             footer_html, footer_error = yield "Footer content"
-            
+
             # Process all results
             if header_error or body_error or footer_error:
                 return "Error occurred during rendering"
-            
+
             return f"{header_html}\n{body_html}\n{footer_html}"
     ```
 
@@ -1141,7 +1141,7 @@ Summary:
     Next, the `render_dependencies` parameter was added to match `Component.render()`.
 
     Lastly:
-    
+
     - Previously, any extra ARGS and KWARGS were passed to the `response_class`.
     - Now, only extra KWARGS will be passed to the `response_class`.
 
@@ -1641,7 +1641,7 @@ Summary:
     ) -> None:
         pass
     ```
-    
+
     After:
 
     ```py
@@ -1725,7 +1725,7 @@ Summary:
   use `component_cls`.
 
     Previously this field was named `component_class`. The old name is deprecated and will be removed in v1.
-  
+
    `ComponentExtension.ExtensionClass` attribute was renamed to `ComponentConfig`.
 
     The old name is deprecated and will be removed in v1.
@@ -1863,7 +1863,7 @@ Summary:
 
     The debug highlighting feature was re-implemented as an extension.
     As such, the recommended way for enabling it has changed:
-    
+
     Before:
 
     ```python
@@ -2164,7 +2164,7 @@ Summary:
 
     This is mostly useful for extensions, which can use this to detect if the given Component
     comes from a `{% component %}` tag or from a different source (such as `Component.render()`).
-    
+
     `Component.node` is `None` if the component is created by `Component.render()` (but you
     can pass in the `node` kwarg yourself).
 
@@ -2385,7 +2385,7 @@ _20 Apr 2025_
 - Multiple extensions with the same name (case-insensitive) now raise an error
 
 - Extension names (case-insensitive) also MUST NOT conflict with existing Component class API.
-  
+
     So if you name an extension `render`, it will conflict with the `render()` method of the `Component` class,
     and thus raise an error.
 
@@ -2420,7 +2420,7 @@ _09 Apr 2025_
 - It's now easier to create URLs for component views.
 
     Before, you had to call `Component.as_view()` and pass that to `urlpatterns`.
-    
+
     Now this can be done for you if you set `Component.Url.public` to `True`:
 
     ```py
@@ -2527,7 +2527,7 @@ _31 Mar 2025_
 
 - Add defaults for the component inputs with the `Component.Defaults` nested class. Defaults
   are applied if the argument is not given, or if it set to `None`.
-  
+
   For lists, dictionaries, or other objects, wrap the value in `Default()` class to mark it as a factory
   function:
 
@@ -2776,19 +2776,19 @@ If you see any broken links or other issues, please report them in [#922](https:
   - Accepting args, kwargs, and flags.
 
   - Allowing literal lists and dicts as inputs as:
-  
+
      `key=[1, 2, 3]` or `key={"a": 1, "b": 2}`
   - Using template tags tag inputs as:
-  
+
     `{% my_tag key="{% lorem 3 w %}" / %}`
   - Supporting the flat dictionary definition:
-  
+
      `attr:key=value`
   - Spreading args and kwargs with `...`:
-  
+
      `{% my_tag ...args ...kwargs / %}`
   - Being able to call the template tag as:
-  
+
      `{% my_tag %} ... {% endmy_tag %}` or `{% my_tag / %}`
 
 
@@ -2848,7 +2848,7 @@ _07 Jan 2025_
 #### Refactor
 
 - The canonical way to define a template file was changed from `template_name` to `template_file`, to align with the rest of the API.
-  
+
     `template_name` remains for backwards compatibility. When you get / set `template_name`,
     internally this is proxied to `template_file`.
 
@@ -2860,7 +2860,7 @@ _07 Jan 2025_
 
 - Component's HTML / CSS / JS are now resolved and loaded lazily. That is, if you specify `template_name`/`template_file`,
   `js_file`, `css_file`, or `Media.js/css`, the file paths will be resolved only once you:
-  
+
     1. Try to access component's HTML / CSS / JS, or
     2. Render the component.
 
@@ -3020,7 +3020,7 @@ _02 Dec 2024_
 
 #### Fix
 
-- Fix integration with ManifestStaticFilesStorage on Windows by resolving component filepaths 
+- Fix integration with ManifestStaticFilesStorage on Windows by resolving component filepaths
  (like `Component.template_name`) to POSIX paths.
 
 ## v0.114
@@ -3113,7 +3113,7 @@ _25 Nov 2024_
 #### Feat
 
 - Intellisense and mypy validation for settings:
-  
+
   Instead of defining the `COMPONENTS` settings as a plain dict, you can use `ComponentsSettings`:
 
   ```py
@@ -3180,7 +3180,7 @@ importing them.
 
 - Fills can now be defined within loops (`{% for %}`) or other tags (like `{% with %}`),
   or even other templates using `{% include %}`.
-  
+
   Following is now possible
 
   ```django
@@ -3205,7 +3205,7 @@ importing them.
 
   But in that case you could not access the slot data or the default content, like it's possible
   for named fills:
-  
+
   ```django
   {% component "child" %}
     {% fill name="header" data="data" %}
@@ -3265,7 +3265,7 @@ importing them.
 
 - Slots can now be defined within loops (`{% for %}`) or other tags (like `{% with %}`),
   or even other templates using `{% include %}`.
-  
+
   Previously, following would cause the kwarg `name` to be an empty string:
 
   ```django
@@ -3278,7 +3278,7 @@ importing them.
 
 - When you define multiple slots with the same name inside a template,
   you now have to set the `default` and `required` flags individually.
-  
+
   ```htmldjango
   <div class="calendar-component">
       <div class="header">
@@ -3289,7 +3289,7 @@ importing them.
       </div>
   </div>
   ```
-  
+
   This means you can also have multiple slots with the same name but
   different conditions.
 
@@ -3369,7 +3369,7 @@ importing them.
 
 - Components no longer raise an error if there are extra slot fills
 
-- Components will raise error when a slot is doubly-filled. 
+- Components will raise error when a slot is doubly-filled.
 
   E.g. if we have a component with a default slot:
 
