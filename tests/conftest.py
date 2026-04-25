@@ -10,10 +10,22 @@ if TYPE_CHECKING:
     from _pytest.fixtures import FixtureRequest
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def django_dev_server():
     """Fixture to run Django development server in the background."""
     yield from run_django_dev_server()
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    for item in items:
+        path = item.path
+        if path.name in {
+            "test_benchmark_django.py",
+            "test_benchmark_django_small.py",
+            "test_benchmark_djc.py",
+            "test_benchmark_djc_small.py",
+        }:
+            item.add_marker(pytest.mark.benchmark_snapshot)
 
 
 @pytest_asyncio.fixture(scope="session")
