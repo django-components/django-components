@@ -70,7 +70,7 @@ dev = [
     "asv",
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
-    "virtualenv==21.2.4",
+    "virtualenv==21.3.0",
     "typing-extensions>=4.12.2",
     "pathspec",
     "PyGithub",
@@ -89,7 +89,7 @@ ci = [
     "asv",
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
-    "virtualenv==21.2.4",
+    "virtualenv==21.3.0",
     "pytest-asyncio",
     "pytest-django",
     "typing-extensions>=4.12.2",
