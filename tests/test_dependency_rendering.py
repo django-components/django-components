@@ -681,3 +681,22 @@ class TestDependencyRendering:
         assert rendered.count("<style") == 1  # 1 Style
 
         registry.library.tags.pop("inclusion_tag")
+
+    # See https://github.com/django-components/django-components/issues/1603
+    def test_dependencies_with_component_in_inclusion_tag_returning_none(self):
+        registry.register(name="test_component", component=OtherComponent)
+
+        @registry.library.inclusion_tag("component_inside_include_sub.html")
+        def inclusion_tag():
+            return None
+
+        template_str: types.django_html = """
+            {% load component_tags %}
+            {% inclusion_tag %}
+        """
+        template = Template(template_str)
+        rendered: str = template.render(Context({}))
+
+        assert "XYZ:" in rendered
+
+        registry.library.tags.pop("inclusion_tag")
