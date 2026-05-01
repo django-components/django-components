@@ -1,6 +1,6 @@
 We track the performance of `django-components` using [ASV](https://asv.readthedocs.io/en/stable/).
 
-See the [benchmarks dashboard](../../benchmarks).
+See the [benchmarks dashboard](https://django-components.github.io/django-components/latest/benchmarks/).
 
 Our aim is to be at least as fast as Django templates.
 

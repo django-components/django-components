@@ -175,9 +175,7 @@ jobs:
       - name: Check docs in pull requests with strict mode
         if: github.event_name == 'pull_request'
         run: |
-          # TODO: Enable strict mode once docs are clean
-          echo "Strict check of docs disabled."
-          # uv run mkdocs build --strict
+          uv run mkdocs build --strict
 
       - name: Build & deploy "dev" docs for a new commit to master
         if: github.event_name == 'push' && github.ref_type != 'tag'

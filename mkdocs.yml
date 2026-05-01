@@ -12,8 +12,7 @@ dev_addr: "127.0.0.1:9000"
 site_dir: site
 docs_dir: docs
 
-# TODO - There's about 15 errors preventing strict mode from being enabled.
-# strict: true
+strict: true
 
 watch:
   - src

@@ -74,6 +74,7 @@ dev = [
     "pathspec",
     "PyGithub",
     "pyyaml",
+    "beautifulsoup4>=4.14.3",
 ]
 
 # CI dependencies - install with `uv sync --group ci`
@@ -93,6 +94,7 @@ ci = [
     "pytest-django",
     "typing-extensions>=4.12.2",
     "pathspec",
+    "beautifulsoup4>=4.14.3",
 ]
 
 # Docs dependencies - install with `uv sync --group docs`

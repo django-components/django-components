@@ -14,13 +14,14 @@ class DynamicComponent(Component):
 
     The args, kwargs, and slot fills are all passed down to the underlying component.
 
-    Args:
-        is (str | type[Component]): Component that should be rendered. Either a registered name of a component,
-            or a [Component](./api.md#django_components.Component) class directly. Required.
-        registry (ComponentRegistry, optional): Specify the [registry](./api.md#django_components.ComponentRegistry)\
-            to search for the registered name. If omitted, all registries are searched until the first match.
-        *args: Additional data passed to the component.
-        **kwargs: Additional data passed to the component.
+    **Arguments:**
+
+    * `is` (`str | type[Component]`): Component that should be rendered. Either a registered name of a component,
+      or a [Component](./api.md#django_components.Component) class directly. Required.
+    * `registry` (`ComponentRegistry`, optional): Specify the [registry](./api.md#django_components.ComponentRegistry)
+      to search for the registered name. If omitted, all registries are searched until the first match.
+    * `*args`: Additional data passed to the component.
+    * `**kwargs`: Additional data passed to the component.
 
     **Slots:**
 

@@ -505,6 +505,7 @@ def main() -> None:
 
     # Format the errors into a table
     output_summary(errors, args.output or None)
+    sys.exit(1)
 
 
 if __name__ == "__main__":

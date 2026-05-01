@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/django-components/django-components/master/assets/logo/logo-black-on-white.svg" alt="django-components" style="max-width: 100%; background: white; color: black;">
 
-[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](/django-components/latest/benchmarks/)
+[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](https://django-components.github.io/django-components/latest/benchmarks/)
 
 `django-components` combines Django's templating system with the modularity seen
 in modern frontend frameworks like Vue or React.
@@ -205,13 +205,13 @@ class Calendar(Component):
 
 It extends Django's template tags syntax with:
 
-- [Python expressions](../concepts/fundamentals/template_tag_syntax.md#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
-- [Literal lists and dictionaries](../concepts/fundamentals/template_tag_syntax.md#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
-- [Self-closing tags](../concepts/fundamentals/template_tag_syntax.md#self-closing-tags) `{% mytag / %}`
-- [Multi-line template tags](../concepts/fundamentals/template_tag_syntax.md#multiline-tags)
-- [Spread operator](../concepts/fundamentals/template_tag_syntax.md#spread-operator) `...` to dynamically pass args or kwargs into the template tag
-- [Nested templates](../concepts/fundamentals/template_tag_syntax.md#nested-templates) like `"{{ first_name }} {{ last_name }}"`
-- [Flat dictionaries](../concepts/fundamentals/template_tag_syntax.md#flat-dictionaries) `dict:key=val`
+- [Python expressions](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
+- [Literal lists and dictionaries](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
+- [Self-closing tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#self-closing-tags) `{% mytag / %}`
+- [Multi-line template tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#multiline-tags)
+- [Spread operator](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#spread-operator) `...` to dynamically pass args or kwargs into the template tag
+- [Nested templates](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#nested-templates) like `"{{ first_name }} {{ last_name }}"`
+- [Flat dictionaries](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#flat-dictionaries) `dict:key=val`
 
 ```htmldjango
 {% component "table"
@@ -232,10 +232,10 @@ It extends Django's template tags syntax with:
 ```
 
 You too can define template tags with these features by using
-[`@template_tag()`](../reference/api.md#django_components.template_tag)
-or [`BaseNode`](../reference/api.md#django_components.BaseNode).
+[`@template_tag()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.template_tag)
+or [`BaseNode`](https://django-components.github.io/django-components/latest/reference/api/#django_components.BaseNode).
 
-Read more on [Custom template tags](../concepts/advanced/template_tags.md).
+Read more on [Custom template tags](https://django-components.github.io/django-components/latest/concepts/advanced/template_tags/).
 
 ### Composition with slots
 
