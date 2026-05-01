@@ -320,6 +320,35 @@ class TestTemplateExpression:
         # fmt: on
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_multinode_expression_in_component_preserves_render_error_in_debug(self, components_settings):
+        def explode(value, _arg=None):
+            raise ValueError(f"boom: {value}")
+
+        registry.library.filter("explode_1597", explode)
+
+        @register("test")
+        class SimpleComponent(Component):
+            template: types.django_html = "{{ value }}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"value": kwargs["value"]}
+
+        template = Template(
+            """
+            {% load component_tags %}
+            {% component 'test' value="prefix {{ value|explode_1597 }}" / %}
+            """
+        )
+
+        old_debug = template.engine.debug
+        template.engine.debug = True
+        try:
+            with pytest.raises(ValueError, match="boom: bad"):
+                template.render(Context({"value": "bad"}))
+        finally:
+            template.engine.debug = old_debug
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_ignores_invalid_tag(self, components_settings):
         registry.library.tag(noop)
 
