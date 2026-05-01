@@ -357,7 +357,15 @@ class ComponentRegistry:
         self._registry[name] = entry
 
         # If the component class is deleted, unregister it from this registry.
-        finalize(entry.cls, lambda: self.unregister(name) if name in self._registry else None)
+        # Use the object ID so the finalizer does not keep the class alive.
+        registered_cls_object_id = id(entry.cls)
+
+        def unregister_component() -> None:
+            current_entry = self._registry.get(name)
+            if current_entry is not None and id(current_entry.cls) == registered_cls_object_id:
+                self.unregister(name)
+
+        finalize(entry.cls, unregister_component)
 
         extensions.on_component_registered(
             OnComponentRegisteredContext(
