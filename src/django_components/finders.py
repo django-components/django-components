@@ -97,18 +97,16 @@ class ComponentsFileSystemFinder(BaseFinder):
         """Look for files in the extra locations as defined in COMPONENTS.dirs."""
         # Handle deprecated `all` parameter:
         # - In Django 5.2, the `all` parameter was deprecated in favour of `find_all`.
-        # - Between Django 5.2 (inclusive) and 6.1 (exclusive), the `all` parameter was still
-        #   supported, but an error was raised if both were provided.
+        # - Between Django 5.2 and 6.1, the `all` parameter was still supported, but
+        #   an error was raised if both were provided.
         # - In Django 6.1, the `all` parameter was removed.
         #
         # See https://github.com/django/django/blob/5.2/django/contrib/staticfiles/finders.py#L58C9-L58C37
         # And https://github.com/django-components/django-components/issues/1119
-        if DJANGO_VERSION >= (5, 2) and DJANGO_VERSION < (6, 1):
+        if DJANGO_VERSION < (6, 1):
             find_all = self._check_deprecated_find_param(**kwargs)
-        elif DJANGO_VERSION >= (6, 1):
-            find_all = kwargs.get("find_all", False)
         else:
-            find_all = kwargs.get("all", False)
+            find_all = kwargs.get("find_all", False)
 
         matches: list[str] = []
         for prefix, root in self.locations:
