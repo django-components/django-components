@@ -2,12 +2,14 @@
 #
 # `.nav.yml` is provided by https://lukasgeiter.github.io/mkdocs-awesome-nav
 nav:
+  - Home: README.md
   - overview
   - Getting Started: getting_started
   - "Documentation: Concepts": concepts
   - "Documentation: API Reference": reference
   - "Documentation: Guides": guides
   - "Documentation: Upgrading": upgrading
+  - Migrating from safer_staticfiles: migrating_from_safer_staticfiles.md
   - plugins
   - examples
   - community

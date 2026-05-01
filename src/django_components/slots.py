@@ -145,8 +145,9 @@ class SlotFunc(Protocol, Generic[TSlotData]):
 
     Read more about [Slot functions](../concepts/fundamentals/slots.md#slot-functions).
 
-    Args:
-        ctx (SlotContext): Single named tuple that holds the slot data and metadata.
+    **Arguments:**
+
+    * `ctx` (`SlotContext`): Single named tuple that holds the slot data and metadata.
 
     Returns:
         (str | SafeString): The rendered slot content.

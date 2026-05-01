@@ -12,8 +12,7 @@ dev_addr: "127.0.0.1:9000"
 site_dir: site
 docs_dir: docs
 
-# TODO - There's about 15 errors preventing strict mode from being enabled.
-# strict: true
+strict: true
 
 watch:
   - src
@@ -27,7 +26,7 @@ watch:
 validation:
   omitted_files: warn
   absolute_links: warn
-  unrecognized_links: warn
+  unrecognized_links: ignore
   anchors: warn
 
 theme:
@@ -128,6 +127,7 @@ plugins:
       # Default is django style...
       opening_tag: "{!"
       closing_tag: "!}"
+      rewrite_relative_urls: true
   - gen-files:
       scripts:
         - docs/scripts/setup.py

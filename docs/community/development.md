@@ -541,13 +541,24 @@ The `generate` command will print to the terminal all the places that need updat
 
 ### Updating link references
 
-The `scripts/validate_links.py` script can be used to update the link references.
+Docs links are checked in two places:
+
+1. MkDocs validates internal links, relative links, anchors, and navigation entries during the docs build.
+2. The `scripts/validate_links.py` script validates external URLs and fragments, and can update URL references.
+
+Run the MkDocs check before changing documentation links:
+
+```sh
+uv run mkdocs build --strict
+```
+
+The external link checker exits with a non-zero status when it finds invalid URLs or fragments:
 
 ```sh
 python scripts/validate_links.py
 ```
 
-When new version of Django is released, you can use the script to update the URLs pointing to the Django documentation.
+When a new version of Django is released, you can also use the script to update URLs pointing to the Django documentation.
 
 First, you need to update the `URL_REWRITE_MAP` in the script to point to the new version of Django.
 
