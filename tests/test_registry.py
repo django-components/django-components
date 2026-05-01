@@ -1,3 +1,5 @@
+import gc
+
 import pytest
 from django.template import Context, Engine, Library, Template
 from pytest_django.asserts import assertHTMLEqual
@@ -35,6 +37,16 @@ class MockComponent2(Component):
 class MockComponentView(Component):
     def get(self, request, *args, **kwargs):
         pass
+
+
+def gen_reimported_component():
+    return type(
+        "ReimportedComponent",
+        (Component,),
+        {
+            "__module__": "tests.components.reimported_component",
+        },
+    )
 
 
 @djc_test
@@ -131,6 +143,22 @@ class TestComponentRegistry:
             custom_registry.register(name="testcomponent", component=MockComponentView)
         except AlreadyRegistered:
             pytest.fail("Should not raise AlreadyRegistered")
+
+    def test_stale_component_finalizer_does_not_unregister_replacement(self):
+        custom_registry = ComponentRegistry()
+
+        component_v1 = gen_reimported_component()
+        custom_registry.register(name="testcomponent", component=component_v1)
+
+        component_v2 = gen_reimported_component()
+        assert component_v1 is not component_v2
+        assert component_v1.class_id == component_v2.class_id
+
+        custom_registry.register(name="testcomponent", component=component_v2)
+        del component_v1
+        gc.collect()
+
+        assert custom_registry.get("testcomponent") is component_v2
 
     def test_simple_unregister(self):
         custom_registry = ComponentRegistry()
