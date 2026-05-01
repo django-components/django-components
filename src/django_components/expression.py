@@ -101,7 +101,13 @@ class StringifiedNode(Node):
     def __init__(self, wrapped_node: Node) -> None:
         super().__init__()
         self.wrapped_node = wrapped_node
+        if hasattr(wrapped_node, "token"):
+            self.token = wrapped_node.token
+        if hasattr(wrapped_node, "origin"):
+            self.origin = wrapped_node.origin
 
     def render(self, context: Context) -> str:
+        if not hasattr(self, "origin") and context.render_context.template is not None:
+            self.origin = context.render_context.template.origin
         result = self.wrapped_node.render(context)
         return str(result)
