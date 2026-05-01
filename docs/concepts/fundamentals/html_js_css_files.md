@@ -257,7 +257,9 @@ You can define the JS directly in your Python code using the [`js`](../../refere
 ```djc_py
 class Button(Component):
     js = """
-        console.log("Hello, world!");
+        $onComponent(({ text }) => {
+            console.log(`Button text: ${text}`);
+        });
     """
 
     def get_js_data(self, args, kwargs, slots, context):
@@ -279,8 +281,13 @@ class Button(Component):
 ```
 
 ```django title="button.js"
-console.log("Hello, world!");
+$onComponent(({ text }) => {
+  console.log(`Button text: ${text}`);
+});
 ```
+
+The data returned from [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data)
+is available inside the component's JS through [`$onComponent()`](html_js_css_variables.md#oncomponent-callback-function).
 
 ## CSS
 
@@ -309,15 +316,18 @@ class Button(Component):
 
     def get_css_data(self, args, kwargs, slots, context):
         return {
-            "text": kwargs.get("text", "Click me"),
+            "color": kwargs.get("color", "red"),
         }
 ```
 
 ```django title="button.css"
 .btn {
-    color: red;
+    color: var(--color);
 }
 ```
+
+The data returned from [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data)
+is exposed to the component's CSS as custom properties, so the `color` key is read with `var(--color)`.
 
 ## File paths
 
