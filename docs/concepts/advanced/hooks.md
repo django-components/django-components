@@ -112,8 +112,16 @@ class MyTable(Component):
         )
 
         # Render a template
-        return get_template("my_other_table.html").render(context)
+        return get_template("my_other_table.html").template.render(context)
 ```
+
+When rendering a template loaded with Django's
+[`get_template()`](https://docs.djangoproject.com/en/5.2/topics/templates/#django.template.loader.get_template),
+use `.template.render(context)` so the underlying
+[`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
+receives the same
+[`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
+that was passed to `on_render()`.
 
 You can also use [`on_render()`](../../reference/api.md#django_components.Component.on_render) as a router,
 rendering other components based on the parent component's arguments:
