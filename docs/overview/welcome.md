@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/django-components/django-components/master/assets/logo/logo-black-on-white.svg" alt="django-components" style="max-width: 100%; background: white; color: black;">
 
-[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](https://django-components.github.io/django-components/latest/benchmarks/)
+[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](../benchmarks/)
 
 `django-components` combines Django's templating system with the modularity seen
 in modern frontend frameworks like Vue or React.
@@ -205,13 +205,13 @@ class Calendar(Component):
 
 It extends Django's template tags syntax with:
 
-- [Python expressions](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
-- [Literal lists and dictionaries](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
-- [Self-closing tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#self-closing-tags) `{% mytag / %}`
-- [Multi-line template tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#multiline-tags)
-- [Spread operator](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#spread-operator) `...` to dynamically pass args or kwargs into the template tag
-- [Nested templates](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#nested-templates) like `"{{ first_name }} {{ last_name }}"`
-- [Flat dictionaries](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax/#flat-dictionaries) `dict:key=val`
+- [Python expressions](../concepts/fundamentals/template_tag_syntax.md#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
+- [Literal lists and dictionaries](../concepts/fundamentals/template_tag_syntax.md#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
+- [Self-closing tags](../concepts/fundamentals/template_tag_syntax.md#self-closing-tags) `{% mytag / %}`
+- [Multi-line template tags](../concepts/fundamentals/template_tag_syntax.md#multiline-tags)
+- [Spread operator](../concepts/fundamentals/template_tag_syntax.md#spread-operator) `...` to dynamically pass args or kwargs into the template tag
+- [Nested templates](../concepts/fundamentals/template_tag_syntax.md#nested-templates) like `"{{ first_name }} {{ last_name }}"`
+- [Flat dictionaries](../concepts/fundamentals/template_tag_syntax.md#flat-dictionaries) `dict:key=val`
 
 ```htmldjango
 {% component "table"
@@ -232,18 +232,18 @@ It extends Django's template tags syntax with:
 ```
 
 You too can define template tags with these features by using
-[`@template_tag()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.template_tag)
-or [`BaseNode`](https://django-components.github.io/django-components/latest/reference/api/#django_components.BaseNode).
+[`@template_tag()`](../reference/api.md#django_components.template_tag)
+or [`BaseNode`](../reference/api.md#django_components.BaseNode).
 
-Read more on [Custom template tags](https://django-components.github.io/django-components/latest/concepts/advanced/template_tags/).
+Read more on [Custom template tags](../concepts/advanced/template_tags.md).
 
 ### Composition with slots
 
 - Render components inside templates with
-  [`{% component %}`](https://django-components.github.io/django-components/latest/reference/template_tags#component) tag.
-- Compose them with [`{% slot %}`](https://django-components.github.io/django-components/latest/reference/template_tags#slot)
-  and [`{% fill %}`](https://django-components.github.io/django-components/latest/reference/template_tags#fill) tags.
-- Vue-like slot system, including [scoped slots](https://django-components.github.io/django-components/latest/concepts/fundamentals/slots/#scoped-slots).
+  [`{% component %}`](../reference/template_tags.md#component) tag.
+- Compose them with [`{% slot %}`](../reference/template_tags.md#slot)
+  and [`{% fill %}`](../reference/template_tags.md#fill) tags.
+- Vue-like slot system, including [scoped slots](../concepts/fundamentals/slots.md#slot-data).
 
 ```htmldjango
 {% component "Layout"
@@ -279,10 +279,10 @@ Read more on [Custom template tags](https://django-components.github.io/django-c
 
 When you render a component, you can access everything about the component:
 
-- Component input: [args, kwargs, slots and context](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#component-inputs)
+- Component input: [args, kwargs, slots and context](../concepts/fundamentals/render_api.md#component-inputs)
 - Component's template, CSS and JS
-- Django's [context processors](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#request-and-context-processors)
-- Unique [render ID](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#component-id)
+- Django's [context processors](../concepts/fundamentals/render_api.md#request-and-context-processors)
+- Unique [render ID](../concepts/fundamentals/render_api.md#component-id)
 
 ```python
 class Table(Component):
@@ -328,7 +328,7 @@ rendered = Table.render(
 
 ### Granular HTML attributes
 
-Use the [`{% html_attrs %}`](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/) template tag to render HTML attributes.
+Use the [`{% html_attrs %}`](../concepts/fundamentals/html_attributes.md) template tag to render HTML attributes.
 
 It supports:
 
@@ -349,9 +349,9 @@ It supports:
 >
 ```
 
-[`{% html_attrs %}`](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/) offers a Vue-like granular control for
-[`class`](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/#merging-class-attributes)
-and [`style`](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/#merging-style-attributes)
+[`{% html_attrs %}`](../concepts/fundamentals/html_attributes.md) offers a Vue-like granular control for
+[`class`](../concepts/fundamentals/html_attributes.md#merging-class-attributes)
+and [`style`](../concepts/fundamentals/html_attributes.md#merging-style-attributes)
 HTML attributes,
 where you can use a dictionary to manage each class name or style property separately.
 
@@ -378,7 +378,7 @@ where you can use a dictionary to manage each class name or style property separ
 %}
 ```
 
-Read more about [HTML attributes](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/).
+Read more about [HTML attributes](../concepts/fundamentals/html_attributes.md).
 
 ### HTML fragment support
 
@@ -386,9 +386,9 @@ Read more about [HTML attributes](https://django-components.github.io/django-com
 
 - Components's JS and CSS files are loaded automatically when the fragment is inserted into the DOM.
 
-- Components can be [exposed as Django Views](https://django-components.github.io/django-components/latest/concepts/fundamentals/component_views_urls/) with `get()`, `post()`, `put()`, `patch()`, `delete()` methods
+- Components can be [exposed as Django Views](../concepts/fundamentals/component_views_urls.md) with `get()`, `post()`, `put()`, `patch()`, `delete()` methods
 
-- Automatically create an endpoint for a component with [`Component.View.public`](https://django-components.github.io/django-components/latest/concepts/fundamentals/component_views_urls/#register-urls-automatically)
+- Automatically create an endpoint for a component with [`Component.View.public`](../concepts/fundamentals/component_views_urls.md#register-urls-automatically)
 
 ```py
 # components/calendar/calendar.py
@@ -423,10 +423,10 @@ path("calendar/", Calendar.as_view())
 
 `django-components` supports the provide / inject pattern, similarly to React's [Context Providers](https://react.dev/learn/passing-data-deeply-with-context) or Vue's [provide / inject](https://vuejs.org/guide/components/provide-inject):
 
-- Use the [`{% provide %}`](https://django-components.github.io/django-components/latest/reference/template_tags/#provide) tag to provide data to the component tree
-- Use the [`Component.inject()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.Component.inject) method to inject data into the component
+- Use the [`{% provide %}`](../reference/template_tags.md#provide) tag to provide data to the component tree
+- Use the [`Component.inject()`](../reference/api.md#django_components.Component.inject) method to inject data into the component
 
-Read more about [Provide / Inject](https://django-components.github.io/django-components/latest/concepts/advanced/provide_inject).
+Read more about [Provide / Inject](../concepts/advanced/provide_inject.md).
 
 ```django
 <body>
@@ -450,7 +450,7 @@ class Header(Component):
 
 ### Input validation and static type hints
 
-Avoid needless errors with [type hints and runtime input validation](https://django-components.github.io/django-components/latest/concepts/fundamentals/typing_and_validation/).
+Avoid needless errors with [type hints and runtime input validation](../concepts/fundamentals/typing_and_validation.md).
 
 To opt-in to input validation, define types for component's args, kwargs, slots:
 
@@ -479,8 +479,8 @@ class Button(Component):
 ```
 
 To have type hints when calling
-[`Button.render()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.Component.render) or
-[`Button.render_to_response()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.Component.render_to_response),
+[`Button.render()`](../reference/api.md#django_components.Component.render) or
+[`Button.render_to_response()`](../reference/api.md#django_components.Component.render_to_response),
 wrap the inputs in their respective `Args`, `Kwargs`, and `Slots` classes:
 
 ```py
@@ -499,7 +499,7 @@ Button.render(
 
 ### Extensions
 
-Django-components functionality can be extended with [Extensions](https://django-components.github.io/django-components/latest/concepts/advanced/extensions/).
+Django-components functionality can be extended with [Extensions](../concepts/advanced/extensions.md).
 Extensions allow for powerful customization and integrations. They can:
 
 - Tap into lifecycle events, such as when a component is created, deleted, or registered
@@ -522,7 +522,7 @@ Some of the planned extensions include:
 
 ### Caching
 
-- [Components can be cached](https://django-components.github.io/django-components/latest/concepts/advanced/component_caching/) using Django's cache framework.
+- [Components can be cached](../concepts/advanced/component_caching.md) using Django's cache framework.
 - Caching rules can be configured on a per-component basis.
 - Components are cached based on their input. Or you can write custom caching logic.
 
@@ -540,7 +540,7 @@ class MyComponent(Component):
 
 ### Simple testing
 
-- Write tests for components with [`@djc_test`](https://django-components.github.io/django-components/latest/concepts/advanced/testing/) decorator.
+- Write tests for components with [`@djc_test`](../concepts/advanced/testing.md) decorator.
 - The decorator manages global state, ensuring that tests don't leak.
 - If using `pytest`, the decorator allows you to parametrize Django or Components settings.
 - The decorator also serves as a stand-in for Django's [`@override_settings`](https://docs.djangoproject.com/en/5.2/topics/testing/tools/#django.test.override_settings).
