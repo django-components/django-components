@@ -189,7 +189,7 @@ jobs:
           git checkout master
 
           export SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          uv run mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
+          CI=false uv run mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
 
       - name: Build & deploy docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
@@ -204,5 +204,5 @@ jobs:
           git pull origin gh-pages
           git checkout master
 
-          uv run mike deploy --push --update-aliases $REF_NAME latest
+          CI=false uv run mike deploy --push --update-aliases $REF_NAME latest
           uv run mike set-default latest --push
