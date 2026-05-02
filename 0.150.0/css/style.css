@@ -1,0 +1,63 @@
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: bold !important;
+}
+
+.md-typeset h2 {
+  border-top: 1px solid var(--md-typeset-color);
+  padding-top: 40px;
+}
+
+.md-typeset h3 {
+  /* Original styling */
+  font-size: 1.25em;
+  font-weight: 400;
+  letter-spacing: -.01em;
+  line-height: 1.5;
+  margin: 1.6em 0 0.8em;
+
+  /* Custom */
+  border-top: 0.5px solid var(--md-typeset-color);
+  padding-top: 40px;
+}
+
+.md-nav__item--section {
+  margin-top: 32px;
+}
+
+/* People */
+
+.user-list {
+  display: flex;
+  justify-content: center;
+  padding-top: 2em;
+  gap: 2.5em;
+  flex-wrap: wrap;
+  list-style-type: none;
+  text-align: center;
+}
+
+.user a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 18px;
+}
+
+.user .avatar-wrapper {
+  width: 6em;
+  height: 6em;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.title {
+  margin: 8px 0 4px 0;
+}
+
+.info {
+  font-size: 16px;
+}

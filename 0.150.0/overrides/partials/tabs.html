@@ -1,0 +1,213 @@
+{# This overrides the tabs partial from mkdocs-material v9.6.17 #}
+{# https://github.com/squidfunk/mkdocs-material/blob/c89a66bf39bb7f472e925753367ff8e464e0d683/src/templates/partials/tabs.html #}
+
+{#- This macro populates the `grouped_dict`. It doesn't render any HTML. -#}
+{% macro group_tabs(nav, grouped_dict) %}
+  {% for nav_item in nav %}
+    {#- If tab title contains a colon, split it into group and title. -#}
+    {% if ': ' in nav_item.title %}
+      {% set parts = nav_item.title.split(': ', 1) %}
+      {% set group_name = parts[0] %}
+      {% set title = parts[1] %}
+      {% set is_group = True %}
+      {% else %}
+      {% set group_name = nav_item.title %}
+      {% set title = nav_item.title %}
+      {% set is_group = False %}
+    {% endif %}
+
+    {% if group_name not in grouped_dict %}
+      {% set group = {"title": group_name, "url": "", "active": False, "is_group": is_group, "items": []} %}
+      {% set _ = grouped_dict.update({group_name: group}) %}
+    {% else %}
+      {% set group = grouped_dict[group_name] %}
+    {% endif %}
+
+    {# Make copies of the nav items, so we can modify the titles #}
+    {% if is_group %}
+      {% set item_copy = {"title": title, "url": nav_item.url, "active": nav_item.active, "children": nav_item.children} %}
+      {% set _ = group["items"].append(item_copy) %}
+    {% else %}
+      {% set _ = group["items"].append(nav_item) %}
+    {% endif %}
+    
+    {% if nav_item.__class__.__name__ == "Page" and nav_item.active %}
+      {% set _ = group.update({"active": True}) %}
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+
+{# Taken from mkdocs-material v9.6.17 #}
+{# https://github.com/squidfunk/mkdocs-material/blob/c89a66bf39bb7f472e925753367ff8e464e0d683/src/templates/partials/tabs-item.html#L67 #}
+{% macro render_group_tab(group) %}
+  <!-- Determine classes -->
+  {% set class = "md-tabs__item" %}
+  {% if group.active %}
+    {% set class = class ~ " md-tabs__item--active" %}
+  {% endif %}
+
+  <li class="{{ class }}" data-tab-group="{{ group.title }}">
+    <a
+      href="#"
+      class="md-tabs__link"
+      style="cursor: pointer;"
+    >
+      {{ group.title }}
+    </a>
+  </li>
+{% endmacro %}
+
+{# Define the dictionary that will hold the grouped tabs #}
+{# And then call the macro to populate the dictionary. This call produces no output. #}
+{% set grouped_nav = {} %}
+{{ group_tabs(nav, grouped_nav) }}
+
+{# -------------- ACTUAL RENDER STARTS HERE -------------- #}
+
+{% import "partials/tabs-item.html" as item with context %}
+
+<!-- Navigation tabs -->
+<nav
+  class="md-tabs"
+  aria-label="{{ lang.t('tabs') }}"
+  data-md-component="tabs"
+>
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      {% for nav_group in grouped_nav.values() %}
+        {% if nav_group["is_group"] %}
+          {{ render_group_tab(nav_group) }}
+        {% else %}
+          {{ item.render(nav_group["items"][0]) }}
+        {% endif %}
+      {% endfor %}
+    </ul>
+    {% for nav_group in grouped_nav.values() %}
+      {% if nav_group["is_group"] %}
+        <ul class="md-tabs__list tabs-hidden" data-tab-group="{{ nav_group.title }}">
+          {% for nav_item in nav_group["items"] %}
+            {{ item.render(nav_item) }}
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endfor %}
+  </div>
+</nav>
+
+<script>
+  // Set up event listeners, so that, if user clicks on a top-level tab group,
+  // then we will show the sub-tabs for that group only.
+  (() => {
+    const topLevelTabGroups = document.querySelectorAll('li[data-tab-group]');
+    topLevelTabGroups.forEach(li => {
+      li._tabGroupHoverTimeout = null;
+      const linkGroup = li.dataset.tabGroup;
+
+      // Allow to permanently open/close the tab group by clicking.
+      li.addEventListener('click', () => {
+        li._tabGroupIsOpen ? selectTabGroup(null) : selectTabGroup(linkGroup);
+        li._tabGroupIsOpen = !li._tabGroupIsOpen;
+
+        if (li._tabGroupIsOpen && li._tabGroupHoverTimeout) {
+          clearTimeout(li._tabGroupHoverTimeout);
+          li._tabGroupHoverTimeout = null;
+        }
+      });
+
+      // Allow to temporarily open the tab group by hovering over it.
+      li.addEventListener('mouseenter', () => {
+        if (li._tabGroupHoverTimeout) {
+          clearTimeout(li._tabGroupHoverTimeout);
+          li._tabGroupHoverTimeout = null;
+        }
+
+        if (li._tabGroupIsOpen) return;
+
+        selectTabGroup(linkGroup);
+      });
+      li.addEventListener('mouseleave', () => {
+        if (li._tabGroupIsOpen) return;
+
+        delayedCloseTabGroup(li);
+      });
+    });
+
+    // Also add listeners to the sub-tabs container, so that if user moves
+    // cursor from the top-level group to sub-tabs, then the container will remain open.
+    const subTabsContainers = document.querySelectorAll('ul[data-tab-group]');
+    subTabsContainers.forEach(ul => {
+      ul.addEventListener('mouseenter', () => {
+        const tabGroup = ul.dataset.tabGroup;
+        const toggle = document.querySelector(`li[data-tab-group="${tabGroup}"]`);
+
+        if (toggle._tabGroupIsOpen || toggle._tabGroupHoverTimeout === null) return;
+
+        clearTimeout(toggle._tabGroupHoverTimeout);
+        toggle._tabGroupHoverTimeout = null;
+      });
+
+      ul.addEventListener('mouseleave', () => {
+        const tabGroup = ul.dataset.tabGroup;
+        const toggle = document.querySelector(`li[data-tab-group="${tabGroup}"]`);
+
+        if (toggle._tabGroupIsOpen) return;
+
+        delayedCloseTabGroup(toggle);
+      });
+    });
+
+    function selectTabGroup(groupName) {
+      const tabGroups = document.querySelectorAll('ul[data-tab-group]');
+      for (const tabGroupEl of tabGroups) {
+        const tabGroup = tabGroupEl.dataset.tabGroup;
+        if (tabGroup === groupName) {
+          tabGroupEl.classList.remove('tabs-hidden');
+        } else {
+          tabGroupEl.classList.add('tabs-hidden');
+        }
+      }
+    }
+
+    function delayedCloseTabGroup(toggle) {
+      toggle._tabGroupHoverTimeout = setTimeout(() => {
+        if (toggle._tabGroupIsOpen || toggle._tabGroupHoverTimeout === null) {
+          toggle._tabGroupHoverTimeout = null;
+          return;
+        };
+
+        toggle._tabGroupHoverTimeout = null;
+        selectTabGroup(null);
+      }, 100);
+    }
+  })();
+</script>
+
+<style>
+/* Styles for animated tabs visibility */
+.md-tabs__list {
+  transition: max-height 0.3s ease-in-out;
+  overflow: hidden;
+  max-height: 100px;
+}
+
+/* Collapse the tabs when the attribute is present */
+.md-tabs__list.tabs-hidden {
+  max-height: 0;
+}
+
+/* Custom styling for the sub-tabs */
+.md-tabs__list[data-tab-group] {
+  position: absolute;
+  width: 100%;
+  max-width: 61rem;
+  background-color: var(--md-primary-fg-color);
+  border-top: 1px var(--md-primary-fg-color--dark) solid;
+}
+.md-tabs__list[data-tab-group] .md-tabs__item {
+  height: 2.1rem;
+} 
+.md-tabs__list[data-tab-group] .md-tabs__link {
+  font-size: 0.63rem;
+  margin-top: 0.7rem;
+}
+</style>
