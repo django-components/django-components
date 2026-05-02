@@ -161,6 +161,10 @@ plugins:
       redirect_maps:
         # 'old.md': 'new.md'
         'README.md': 'overview/welcome.md'
+        'release_notes.md': 'releases/index.md'
+        'concepts/fundamentals/defining_js_css_html_files.md': 'concepts/fundamentals/html_js_css_files.md'
+        'overview/contributing.md': 'community/contributing.md'
+        'overview/development.md': 'community/development.md'
   - minify:
       minify_html: true
   - mkdocstrings:
