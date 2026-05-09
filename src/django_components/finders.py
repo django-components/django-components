@@ -16,7 +16,7 @@ from django_components.util.loader import get_component_dirs
 from django_components.util.misc import any_regex_match, no_regex_match
 
 # To keep track on which directories the finder has searched the static files.
-searched_locations = []
+searched_locations: list[str] = []
 
 
 # Custom Finder for staticfiles that searches for all files within the directories
