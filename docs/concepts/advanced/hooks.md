@@ -294,7 +294,7 @@ That is, a component that catches errors in nested components and displays a fal
 ```
 
 To implement this, we render the fallback slot in [`on_render()`](../../reference/api.md#django_components.Component.on_render)
-and return it if an error occured:
+and return it if an error occurred:
 
 ```djc_py
 from django.template import Context, Template

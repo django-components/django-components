@@ -1905,7 +1905,7 @@ class TestComponentRender:
         with pytest.raises(
             TypeError,
             match=re.escape(
-                "An error occured while rendering components Root > parent > provider > provider(slot:content) > broken:\n"  # noqa: E501
+                "An error occurred while rendering components Root > parent > provider > provider(slot:content) > broken:\n"  # noqa: E501
                 "tuple indices must be integers or slices, not str",
             ),
         ):
@@ -1927,7 +1927,7 @@ class TestComponentRender:
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
-                "An error occured while rendering components Other:\n"
+                "An error occurred while rendering components Other:\n"
                 "Invalid block tag on line 4: 'endif', expected 'endcomponent'",
             ),
         ):
@@ -1948,7 +1948,7 @@ class TestComponentRender:
         with pytest.raises(
             TemplateSyntaxError,
             match=re.escape(
-                "An error occured while rendering components Other:\nUnclosed tag on line 3: 'component'",
+                "An error occurred while rendering components Other:\nUnclosed tag on line 3: 'component'",
             ),
         ):
             Other.render()
@@ -2351,7 +2351,7 @@ class TestComponentHook:
                 error.args = ("ERROR MODIFIED",)
 
         with pytest.raises(
-            ValueError, match=re.escape("An error occured while rendering components SimpleComponent:\nERROR MODIFIED")
+            ValueError, match=re.escape("An error occurred while rendering components SimpleComponent:\nERROR MODIFIED")
         ):
             SimpleComponent.render()
 
@@ -2364,7 +2364,7 @@ class TestComponentHook:
                 error.args = ("ERROR MODIFIED",)
 
         with pytest.raises(
-            ValueError, match=re.escape("An error occured while rendering components SimpleComponent2:\nBROKEN")
+            ValueError, match=re.escape("An error occurred while rendering components SimpleComponent2:\nBROKEN")
         ):
             SimpleComponent2.render()
 
@@ -2438,7 +2438,7 @@ class TestComponentHook:
         # NOTE: Exceptions are stubborn, comparison evaluates to False even with the same message.
         assert results[0][0] is None
         assert isinstance(results[0][1], ValueError)
-        assert results[0][1].args[0] == "An error occured while rendering components broken:\nBROKEN"
+        assert results[0][1].args[0] == "An error occurred while rendering components broken:\nBROKEN"
 
         # NOTE: It's important that all the results are wrapped in `<div>`
         #       so we can check if the djc-id attribute was set.

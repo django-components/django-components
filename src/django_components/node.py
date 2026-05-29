@@ -699,7 +699,7 @@ def _modify_typeerror_message(error: TypeError, current_file: str) -> None:
     # Try to figure out if the error occurred when calling the `BaseNode.render()` method
     # (the one to which we supplied the `self` and `context`), or in a nested function,
     # by inspecting the traceback.
-    # If error occured in a nested function, we do NOT modify this error message.
+    # If error occurred in a nested function, we do NOT modify this error message.
     tb = error.__traceback__
     should_modify = True
     if tb is not None:

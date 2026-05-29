@@ -6,7 +6,7 @@ def set_component_error_message(err: Exception, component_path: list[str]) -> No
     """
     Format the error message to include the component path. E.g.
     ```
-    KeyError: "An error occured while rendering components MyPage > MyComponent > MyComponent(slot:content)
+    KeyError: "An error occurred while rendering components MyPage > MyComponent > MyComponent(slot:content)
     ```
     """
     if not hasattr(err, "_components"):
@@ -18,12 +18,12 @@ def set_component_error_message(err: Exception, component_path: list[str]) -> No
     # Format component path as
     # "MyPage > MyComponent > MyComponent(slot:content) > Base(slot:tab)"
     comp_path = " > ".join(components)
-    prefix = f"An error occured while rendering components {comp_path}:\n"
+    prefix = f"An error occurred while rendering components {comp_path}:\n"
 
     # Access the exception's message, see https://stackoverflow.com/a/75549200/9788634
     if len(err.args) and err.args[0] is not None:
         orig_msg = str(err.args[0])
-        if components and "An error occured while rendering components" in orig_msg:
+        if components and "An error occurred while rendering components" in orig_msg:
             orig_msg = str(err.args[0]).split("\n", 1)[-1]
     else:
         # When the exception has no message, it may be that the exception
@@ -45,7 +45,7 @@ def with_component_error_message(component_path: list[str]) -> Generator[None, N
     If an error occurs within the context, format the error message to include
     the component path. E.g.
     ```
-    KeyError: "An error occured while rendering components MyPage > MyComponent > MyComponent(slot:content)
+    KeyError: "An error occurred while rendering components MyPage > MyComponent > MyComponent(slot:content)
     ```
     """
     try:
@@ -65,7 +65,7 @@ def add_slot_to_error_message(component_name: str, slot_name: str) -> Generator[
     the slots to the component path in the error message, e.g.:
 
     ```
-    KeyError: "An error occured while rendering components MyPage > MyComponent > MyComponent(slot:content)
+    KeyError: "An error occurred while rendering components MyPage > MyComponent > MyComponent(slot:content)
     ```
     """
     try:
