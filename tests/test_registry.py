@@ -144,21 +144,89 @@ class TestComponentRegistry:
         except AlreadyRegistered:
             pytest.fail("Should not raise AlreadyRegistered")
 
-    def test_stale_component_finalizer_does_not_unregister_replacement(self):
+    def test_register_different_class_with_same_class_id_raises(self):
+        # Two distinct class objects with identical `class_id` is the exact #1598
+        # scenario. Replacement must require an explicit unregister.
+        custom_registry = ComponentRegistry()
+
+        component_v1 = gen_reimported_component()
+        component_v2 = gen_reimported_component()
+        assert component_v1 is not component_v2
+        assert component_v1.class_id == component_v2.class_id
+
+        custom_registry.register(name="testcomponent", component=component_v1)
+        with pytest.raises(AlreadyRegistered):
+            custom_registry.register(name="testcomponent", component=component_v2)
+
+        # Original entry is untouched.
+        assert custom_registry.get("testcomponent") is component_v1
+
+    def test_unregister_then_reregister_with_replacement_class_succeeds(self):
         custom_registry = ComponentRegistry()
 
         component_v1 = gen_reimported_component()
         custom_registry.register(name="testcomponent", component=component_v1)
 
-        component_v2 = gen_reimported_component()
-        assert component_v1 is not component_v2
-        assert component_v1.class_id == component_v2.class_id
+        custom_registry.unregister(name="testcomponent")
 
+        component_v2 = gen_reimported_component()
         custom_registry.register(name="testcomponent", component=component_v2)
+        assert custom_registry.get("testcomponent") is component_v2
+
+        # Exactly one finalizer is tracked for the live entry.
+        assert len(custom_registry._finalizers) == 1
+
+        # Garbage-collecting the prior class object must NOT touch the live entry,
+        # since `unregister()` detached its finalizer.
         del component_v1
         gc.collect()
-
         assert custom_registry.get("testcomponent") is component_v2
+
+    def test_unregister_detaches_finalizer(self):
+        custom_registry = ComponentRegistry()
+        custom_registry.register(name="testcomponent", component=MockComponent)
+        assert "testcomponent" in custom_registry._finalizers
+
+        custom_registry.unregister(name="testcomponent")
+        assert "testcomponent" not in custom_registry._finalizers
+
+    def test_node_subcls_cache_is_per_registry(self):
+        # Each registry owns its own `_node_subcls_cache`. Replaces the previous
+        # module-global `component_node_subclasses_by_name` that pinned both the
+        # subclass and the registry forever.
+        library_a = Library()
+        library_b = Library()
+        registry_a = ComponentRegistry(library=library_a)
+        registry_b = ComponentRegistry(library=library_b)
+
+        assert registry_a._node_subcls_cache == {}
+        assert registry_b._node_subcls_cache == {}
+        assert registry_a._node_subcls_cache is not registry_b._node_subcls_cache
+
+    def test_module_global_node_subcls_cache_no_longer_exists(self):
+        # Pre-fix, `django_components.component` exposed a module-global
+        # `component_node_subclasses_by_name` that pinned subclasses + registries
+        # forever. The cache now lives per-registry. Catch any accidental
+        # reintroduction of the global.
+        import django_components.component as component_module
+
+        assert not hasattr(component_module, "component_node_subclasses_by_name")
+
+    def test_node_subcls_cache_populated_on_parse(self):
+        library = Library()
+        registry_local = ComponentRegistry(library=library)
+        registry_local.register("simple", MockComponent)
+
+        engine = Engine.get_default()
+        engine.template_builtins.append(library)
+        try:
+            assert registry_local._node_subcls_cache == {}
+            Template("{% component 'simple' / %}")
+            # `_register_to_library` uses `formatter.start_tag(comp_name)`, which
+            # for the default formatter returns "component" regardless of comp_name.
+            assert list(registry_local._node_subcls_cache.keys()) == ["component"]
+        finally:
+            engine.template_builtins.remove(library)
 
     def test_simple_unregister(self):
         custom_registry = ComponentRegistry()

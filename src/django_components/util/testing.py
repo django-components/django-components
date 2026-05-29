@@ -20,7 +20,7 @@ from django.template.loaders.base import Loader
 from django.test import override_settings
 
 from django_components import ComponentsSettings
-from django_components.component import ALL_COMPONENTS, Component, component_node_subclasses_by_name
+from django_components.component import ALL_COMPONENTS, Component
 from django_components.component_registry import ALL_REGISTRIES, ComponentRegistry
 from django_components.extension import extensions
 from django_components.perfutil.provide import provide_cache
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from django_components.component_media import ComponentMedia
 
 RegistryRef: TypeAlias = ReferenceType[ComponentRegistry]
-RegistriesCopies: TypeAlias = list[tuple[ReferenceType[ComponentRegistry], list[str]]]
+RegistriesCopies: TypeAlias = list[tuple[ReferenceType[ComponentRegistry], dict[str, type[Component]]]]
 InitialComponents: TypeAlias = list[ReferenceType[type[Component]]]
 
 
@@ -331,7 +331,13 @@ def djc_test(
                     reg = reg_ref()
                     if not reg:
                         continue
-                    _all_registries_copies.append((reg_ref, list(reg._registry.keys())))
+                    _all_registries_copies.append(
+                        (reg_ref, {name: entry.cls for name, entry in reg._registry.items()}),
+                    )
+
+                # Snapshot which modules were already imported before the test ran.
+                # See `_clear_djc_global_state` for why this matters.
+                _initial_sys_modules = frozenset(sys.modules)
 
                 # Prepare global state
                 _setup_djc_global_state(gen_id_patcher, csrf_token_patcher)
@@ -342,6 +348,7 @@ def djc_test(
                         csrf_token_patcher,
                         _all_components,  # type: ignore[arg-type]
                         _all_registries_copies,
+                        _initial_sys_modules,
                         gc_collect,
                     )
 
@@ -457,6 +464,7 @@ def _clear_djc_global_state(
     csrf_token_patcher: CsrfTokenPatcher,
     initial_components: InitialComponents,
     initial_registries_copies: RegistriesCopies,
+    initial_sys_modules: frozenset[str],
     gc_collect: bool = False,
 ) -> None:
     gen_id_patcher.stop()
@@ -485,9 +493,6 @@ def _clear_djc_global_state(
 
     if provide_cache:
         provide_cache.clear()
-
-    # Remove cached Node subclasses
-    component_node_subclasses_by_name.clear()
 
     # Clean up any loaded media (HTML, JS, CSS)
     for comp_cls_ref in ALL_COMPONENTS:
@@ -522,30 +527,48 @@ def _clear_djc_global_state(
         if is_ref_deleted or registry_ref not in initial_registries_set:
             del ALL_REGISTRIES[len(ALL_REGISTRIES) - index - 1]
 
-    # For the remaining registries, unregistr components that were registered
-    # during tests.
-    # NOTE: The approach below does NOT take into account:
-    # - If a component was UNregistered during the test
-    # - If a previously-registered component was overwritten with different registration.
-    for reg_ref, init_keys in initial_registries_copies:
+    # For the remaining registries, restore the registry contents to their pre-test state:
+    # - Unregister keys that were added during the test
+    # - Restore any initial entry that was removed or replaced during the test
+    #   (re-applying with the original class object so tests that swap out a registration
+    #   for new settings - e.g. re-running `ComponentsConfig.ready()` - don't leak the
+    #   substituted entry into the next test)
+    for reg_ref, init_entries in initial_registries_copies:
         registry_original = reg_ref()
         if not registry_original:
             continue
 
-        # Get the keys that were registered during the test
-        initial_registered_keys = set(init_keys)
+        # Remove keys that were added during the test.
         after_test_registered_keys = set(registry_original._registry.keys())
-        keys_registered_during_test = after_test_registered_keys - initial_registered_keys
-        # Remove them
+        keys_registered_during_test = after_test_registered_keys - init_entries.keys()
         for key in keys_registered_during_test:
             registry_original.unregister(key)
 
-    # Delete autoimported modules from memory, so the module
-    # is executed also the next time one of the tests calls `autodiscover`.
+        # Restore initial entries that were removed or replaced during the test.
+        for name, original_cls in init_entries.items():
+            current_entry = registry_original._registry.get(name)
+            if current_entry is None:
+                registry_original.register(name, original_cls)
+            elif current_entry.cls is not original_cls:
+                registry_original.unregister(name)
+                registry_original.register(name, original_cls)
+
+        # Drop the parsed ComponentNode subclass cache. Otherwise a follow-up test
+        # that uses the same start_tag with a different end_tag (e.g. via a custom
+        # tag_formatter) would trip the "different end tags" RuntimeError in
+        # `ComponentNode.parse()`.
+        registry_original._node_subcls_cache.clear()
+
+    # Drop modules that the test brought in itself, so a later test sees a clean import.
+    # Modules that were already in `sys.modules` before the test ran are left alone -
+    # popping them would force `importlib.import_module()` to re-execute the file on
+    # the next test, creating a new class object with the same `class_id` as the old one
+    # (the precondition behind #1598).
     from django_components.autodiscovery import LOADED_MODULES  # noqa: PLC0415
 
     for mod in LOADED_MODULES:
-        sys.modules.pop(mod, None)
+        if mod not in initial_sys_modules:
+            sys.modules.pop(mod, None)
     LOADED_MODULES.clear()
 
     # Clear extensions caches

@@ -82,6 +82,14 @@ class TestImportLibraries:
         },
     )
     def test_import_libraries_map_modules(self):
+        # Strict `register()` requires explicit unregister before a reimport produces
+        # a fresh class object under the same name.
+        all_components = registry.all().copy()
+        if "single_file_component" in all_components:
+            registry.unregister("single_file_component")
+        if "multi_file_component" in all_components:
+            registry.unregister("multi_file_component")
+
         # Ensure that the modules are executed again after import
         if "tests.components.single_file" in sys.modules:
             del sys.modules["tests.components.single_file"]
@@ -95,3 +103,40 @@ class TestImportLibraries:
             pytest.fail("Autodiscover should not raise AlreadyRegistered exception")
 
         assert seen == ["tests.components.single_file", "tests.components.multi_file.multi_file"]
+
+
+@djc_test
+class TestSysModulesIsolation:
+    """
+    Regression coverage for #1598: modules present before a @djc_test should not be
+    re-executed by the test teardown.
+    """
+
+    def test_modules_present_before_test_are_not_reimported(self):
+        # Ensure the target module is in `sys.modules` before any @djc_test cycle
+        # touches it. This is the precondition the fix must preserve.
+        import importlib
+
+        importlib.import_module("tests.components.single_file")
+
+        module_before = sys.modules.get("tests.components.single_file")
+        assert module_before is not None
+        module_id_before = id(module_before)
+
+        @djc_test
+        def inner_test() -> None:
+            from django_components.autodiscovery import autodiscover
+
+            autodiscover(map_module=lambda p: "tests." + p if p.startswith("components") else p)
+
+        # Run two cycles - prior to the fix, the first teardown would pop the module from
+        # `sys.modules`, and the second setup's `autodiscover` would re-execute it.
+        inner_test()  # type: ignore[call-arg]
+        inner_test()  # type: ignore[call-arg]
+
+        module_after = sys.modules.get("tests.components.single_file")
+        assert module_after is not None
+        assert id(module_after) == module_id_before, (
+            "tests.components.single_file was re-executed across @djc_test cycles; "
+            "the sys.modules snapshot in _clear_djc_global_state should have prevented this."
+        )

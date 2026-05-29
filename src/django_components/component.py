@@ -3457,14 +3457,6 @@ class Component(metaclass=ComponentMeta):
         return template_data, js_data, css_data
 
 
-# Perf
-# Each component may use different start and end tags. We represent this
-# as individual subclasses of `ComponentNode`. However, multiple components
-# may use the same start & end tag combination, e.g. `{% component %}` and `{% endcomponent %}`.
-# So we cache the already-created subclasses to be reused.
-component_node_subclasses_by_name: dict[str, tuple[type["ComponentNode"], ComponentRegistry]] = {}
-
-
 class ComponentNode(BaseNode):
     """
     Renders one of the components that was previously registered with
@@ -3608,23 +3600,16 @@ class ComponentNode(BaseNode):
         # Set the component-specific start and end tags by subclassing the BaseNode
         subcls_name = cls.__name__ + "_" + name
 
-        # We try to reuse the same subclass for the same start tag, so we can
-        # avoid creating a new subclass for each time `{% component %}` is called.
-        if start_tag not in component_node_subclasses_by_name:
-            subcls: type[ComponentNode] = type(subcls_name, (cls,), {"tag": start_tag, "end_tag": end_tag})
-            component_node_subclasses_by_name[start_tag] = (subcls, registry)
-
-            # Remove the cache entry when either the registry or the component are deleted
-            finalize(subcls, lambda: component_node_subclasses_by_name.pop(start_tag, None))
-            finalize(registry, lambda: component_node_subclasses_by_name.pop(start_tag, None))
-
-        cached_subcls, cached_registry = component_node_subclasses_by_name[start_tag]
-
-        if cached_registry is not registry:
-            raise RuntimeError(
-                f"Detected two Components from different registries using the same start tag '{start_tag}'",
-            )
-        if cached_subcls.end_tag != end_tag:
+        # Reuse the same subclass for the same start tag inside this registry, so we
+        # don't create a fresh subclass per `{% component %}` token. Cached per-registry
+        # rather than module-globally: lifetime follows the registry's own, and two
+        # registries can reuse the same start_tag without colliding.
+        cache = registry._node_subcls_cache
+        cached_subcls: type[ComponentNode] | None = cache.get(start_tag)
+        if cached_subcls is None:
+            cached_subcls = type(subcls_name, (cls,), {"tag": start_tag, "end_tag": end_tag})
+            cache[start_tag] = cached_subcls
+        elif cached_subcls.end_tag != end_tag:
             raise RuntimeError(
                 f"Detected two Components using the same start tag '{start_tag}' but with different end tags",
             )
@@ -3633,7 +3618,7 @@ class ComponentNode(BaseNode):
         node: ComponentNode = super(cls, cached_subcls).parse(  # type: ignore[attr-defined]
             parser,
             token,
-            registry=cached_registry,
+            registry=registry,
             name=name,
         )
         return node
