@@ -351,13 +351,13 @@ class TestErrorFallbackComponent:
         if components_settings["context_behavior"] == "django":
             expected1 = """
                 OUTER_CONTENT_START
-                INNER_FALLBACK: An error occured while rendering components error_fallback > broken: INNER_FAIL
+                INNER_FALLBACK: An error occurred while rendering components error_fallback > broken: INNER_FAIL
                 OUTER_CONTENT_END
             """
         else:
             expected1 = """
                 OUTER_CONTENT_START
-                INNER_FALLBACK: An error occured while rendering components error_fallback(slot:content) > broken: INNER_FAIL
+                INNER_FALLBACK: An error occurred while rendering components error_fallback(slot:content) > broken: INNER_FAIL
                 OUTER_CONTENT_END
             """  # noqa: E501
         assertHTMLEqual(rendered1, expected1)
@@ -365,11 +365,11 @@ class TestErrorFallbackComponent:
         rendered2 = template.render(Context({"should_outer_fail": True}))
         if components_settings["context_behavior"] == "django":
             expected2 = """
-                OUTER_FALLBACK: An error occured while rendering components broken: OUTER_FAIL
+                OUTER_FALLBACK: An error occurred while rendering components broken: OUTER_FAIL
             """
         else:
             expected2 = """
-                OUTER_FALLBACK: An error occured while rendering components error_fallback(slot:content) > broken: OUTER_FAIL
+                OUTER_FALLBACK: An error occurred while rendering components error_fallback(slot:content) > broken: OUTER_FAIL
             """  # noqa: E501
         assertHTMLEqual(rendered2, expected2)
 
@@ -377,10 +377,10 @@ class TestErrorFallbackComponent:
         rendered3 = template.render(Context({"should_inner_fallback_fail": True}))
         if components_settings["context_behavior"] == "django":
             expected3 = """
-                OUTER_FALLBACK: An error occured while rendering components error_fallback > broken > broken: INNER_FALLBACK_FAIL
+                OUTER_FALLBACK: An error occurred while rendering components error_fallback > broken > broken: INNER_FALLBACK_FAIL
             """  # noqa: E501
         else:
             expected3 = """
-                OUTER_FALLBACK: An error occured while rendering components error_fallback(slot:content) > error_fallback > error_fallback(slot:fallback) > broken: INNER_FALLBACK_FAIL
+                OUTER_FALLBACK: An error occurred while rendering components error_fallback(slot:content) > error_fallback > error_fallback(slot:fallback) > broken: INNER_FALLBACK_FAIL
             """  # noqa: E501
         assertHTMLEqual(rendered3, expected3)

@@ -55,7 +55,7 @@ When an error occurs, the error message will show the path to the component that
 caused the error. E.g.
 
 ```
-KeyError: "An error occured while rendering components MyPage > MyLayout > MyComponent > Childomponent(slot:content)
+KeyError: "An error occurred while rendering components MyPage > MyLayout > MyComponent > ChildComponent(slot:content)
 ```
 
 The error message contains also the slot paths, so if you have a template like this:
@@ -77,7 +77,7 @@ The error message contains also the slot paths, so if you have a template like t
 Then the error message will show the path to the component that caused the error:
 
 ```
-KeyError: "An error occured while rendering components my_page > layout > layout(slot:content) > my_page(slot:content) > table > table(slot:header) > table_header > table_header(slot:content)
+KeyError: "An error occurred while rendering components my_page > layout > layout(slot:content) > my_page(slot:content) > table > table(slot:header) > table_header > table_header(slot:content)
 ```
 
 ## Debug and trace logging
