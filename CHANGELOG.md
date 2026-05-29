@@ -1,5 +1,15 @@
 # Release notes
 
+## v0.150.1
+
+#### Fix
+
+- **Template expression errors now point at the correct source line in debug mode**
+
+    Multi-node template expressions (e.g. `value="prefix {{ x }}"` passed to a component) are wrapped in an internal `StringifiedNode` node that previously carried no template origin. As a result, Django's debug-mode traceback annotator could not locate the failing source line. The host template's origin is now threaded through to these nodes, so errors raised inside such expressions are annotated against the correct template file.
+
+    This builds on [#1597](https://github.com/django-components/django-components/issues/1597) and [#1635](https://github.com/django-components/django-components/pull/1635).
+
 ## v0.150.0
 
 _2026-05-02_

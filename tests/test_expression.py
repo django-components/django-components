@@ -349,6 +349,61 @@ class TestTemplateExpression:
             template.engine.debug = old_debug
 
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_multinode_expression_nodes_get_real_origin(self, components_settings):
+        # A multi-node expression (text + variable) is wrapped in `StringifiedNode`. With the
+        # host origin threaded into the `Parser`, the wrapped nodes carry the host template's
+        # origin instead of `None`, so Django's debug-mode annotator can locate the source.
+        captured = {}
+
+        @register("test")
+        class SimpleComponent(Component):
+            template: types.django_html = "{{ value }}"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["value"] = kwargs["value"]
+                return {"value": kwargs["value"]}
+
+        template = Template(
+            """
+            {% load component_tags %}
+            {% component 'test' value="prefix {{ value }}" / %}
+            """
+        )
+
+        old_debug = template.engine.debug
+        template.engine.debug = True
+        try:
+            template.render(Context({"value": "X"}))
+        finally:
+            template.engine.debug = old_debug
+
+        assert captured["value"] == "prefix X"
+
+    def test_stringified_node_fallback_origin_without_host_origin(self):
+        # When a node has no origin (e.g. an expression built outside a `Template.render()`),
+        # `StringifiedNode.render` falls back to the currently-rendering template's origin.
+        # This guards the `is None` branch, which the previous `hasattr` guard left as dead code.
+        from django.template import NodeList
+
+        from django_components.expression import StringifiedNode
+
+        inner = Template("{{ value }}")
+        wrapped = inner.nodelist[0]
+        # Simulate a node parsed without a host origin.
+        if hasattr(wrapped, "origin"):
+            wrapped.origin = None
+
+        node = StringifiedNode(wrapped)
+        assert node.origin is None  # nothing real to copy at construction time
+
+        ctx = Context({"value": "Y"})
+        ctx.render_context.template = inner  # what `Template._render` sets during rendering
+        nodelist = NodeList([node])
+
+        assert nodelist.render(ctx) == "Y"
+        assert node.origin is inner.origin  # fallback populated a real origin
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_ignores_invalid_tag(self, components_settings):
         registry.library.tag(noop)
 

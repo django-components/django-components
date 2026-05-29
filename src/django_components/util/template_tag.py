@@ -156,10 +156,16 @@ def resolve_template_string(
     tags: Mapping[str, Callable],
     expr: str,
 ) -> Any:
+    # During rendering, `context.template` is the host template (set via `Context.bind_template`).
+    # Pass its origin so nested expression nodes can be annotated against the correct source file
+    # when an error is raised. Guarded with `getattr` so a plain-dict context (no `.template`)
+    # degrades gracefully to `None`.
+    origin = getattr(getattr(context, "template", None), "origin", None)
     return TemplateExpression(
         expr_str=expr,
         filters=filters,
         tags=tags,
+        origin=origin,
     ).resolve(context)
 
 
