@@ -144,21 +144,51 @@ class TestComponentRegistry:
         except AlreadyRegistered:
             pytest.fail("Should not raise AlreadyRegistered")
 
-    def test_stale_component_finalizer_does_not_unregister_replacement(self):
+    def test_register_different_class_with_same_class_id_raises(self):
+        # Two distinct class objects with identical `class_id` is the exact #1598
+        # scenario. Replacement must require an explicit unregister.
+        custom_registry = ComponentRegistry()
+
+        component_v1 = gen_reimported_component()
+        component_v2 = gen_reimported_component()
+        assert component_v1 is not component_v2
+        assert component_v1.class_id == component_v2.class_id
+
+        custom_registry.register(name="testcomponent", component=component_v1)
+        with pytest.raises(AlreadyRegistered):
+            custom_registry.register(name="testcomponent", component=component_v2)
+
+        # Original entry is untouched.
+        assert custom_registry.get("testcomponent") is component_v1
+
+    def test_unregister_then_reregister_with_replacement_class_succeeds(self):
         custom_registry = ComponentRegistry()
 
         component_v1 = gen_reimported_component()
         custom_registry.register(name="testcomponent", component=component_v1)
 
-        component_v2 = gen_reimported_component()
-        assert component_v1 is not component_v2
-        assert component_v1.class_id == component_v2.class_id
+        custom_registry.unregister(name="testcomponent")
 
+        component_v2 = gen_reimported_component()
         custom_registry.register(name="testcomponent", component=component_v2)
+        assert custom_registry.get("testcomponent") is component_v2
+
+        # Exactly one finalizer is tracked for the live entry.
+        assert len(custom_registry._finalizers) == 1
+
+        # Garbage-collecting the prior class object must NOT touch the live entry,
+        # since `unregister()` detached its finalizer.
         del component_v1
         gc.collect()
-
         assert custom_registry.get("testcomponent") is component_v2
+
+    def test_unregister_detaches_finalizer(self):
+        custom_registry = ComponentRegistry()
+        custom_registry.register(name="testcomponent", component=MockComponent)
+        assert "testcomponent" in custom_registry._finalizers
+
+        custom_registry.unregister(name="testcomponent")
+        assert "testcomponent" not in custom_registry._finalizers
 
     def test_simple_unregister(self):
         custom_registry = ComponentRegistry()

@@ -240,6 +240,10 @@ class ComponentRegistry:
     ) -> None:
         self._registry: dict[str, ComponentRegistryEntry] = {}  # component name -> component_entry mapping
         self._tags: dict[str, set[str]] = {}  # tag -> list[component names]
+        # `finalize` handle per registered name, so we can `.detach()` the previous
+        # one when the entry is replaced or removed. Without this, stale finalizers
+        # would fire later and pop the wrong entry from `self._registry` (see #1598).
+        self._finalizers: dict[str, finalize] = {}
         self._library = library
         self._settings = settings
 
@@ -325,6 +329,14 @@ class ComponentRegistry:
         {% endcomponent %}
         ```
 
+        `register()` is additive. Calling it again with the exact same class object
+        is a no-op. Calling it with any other class - even one whose
+        [`class_id`](./api.md#django_components.Component.class_id) collides with the
+        existing one - raises
+        [`AlreadyRegistered`](./exceptions.md#django_components.AlreadyRegistered).
+        Call [`unregister()`](#django_components.ComponentRegistry.unregister) first
+        if you intend to replace the registered class.
+
         Args:
             name (str): The name under which the component will be registered. Required.
             component (type[Component]): The component class to register. Required.
@@ -332,7 +344,7 @@ class ComponentRegistry:
         **Raises:**
 
         - [`AlreadyRegistered`](./exceptions.md#django_components.AlreadyRegistered)
-        if a different component was already registered under the same name.
+        if `name` is already registered with any class other than `component` itself.
 
         **Example:**
 
@@ -341,9 +353,18 @@ class ComponentRegistry:
         ```
 
         """
-        existing_component = self._registry.get(name)
-        if existing_component and existing_component.cls.class_id != component.class_id:
-            raise AlreadyRegistered(f'The component "{name}" has already been registered')
+        existing_entry = self._registry.get(name)
+        if existing_entry is not None:
+            if existing_entry.cls is component:
+                # Same class object - re-registration is a no-op. Happens naturally
+                # when `autodiscover()` / `import_libraries()` run more than once and
+                # touch the same module (whose `@register` decorator was already
+                # evaluated on first import).
+                return
+            raise AlreadyRegistered(
+                f'The component "{name}" has already been registered. '
+                f'Call `registry.unregister("{name}")` before registering a different class.',
+            )
 
         entry = self._register_to_library(name, component)
 
@@ -357,7 +378,9 @@ class ComponentRegistry:
         self._registry[name] = entry
 
         # If the component class is deleted, unregister it from this registry.
-        # Use the object ID so the finalizer does not keep the class alive.
+        # The id-check inside the callback is defense-in-depth - the primary mechanism
+        # for avoiding stale finalizer fires is `.detach()` on entry removal, see
+        # `unregister()` below.
         registered_cls_object_id = id(entry.cls)
 
         def unregister_component() -> None:
@@ -365,7 +388,7 @@ class ComponentRegistry:
             if current_entry is not None and id(current_entry.cls) == registered_cls_object_id:
                 self.unregister(name)
 
-        finalize(entry.cls, unregister_component)
+        self._finalizers[name] = finalize(entry.cls, unregister_component)
 
         extensions.on_component_registered(
             OnComponentRegisteredContext(
@@ -427,6 +450,12 @@ class ComponentRegistry:
 
         entry = self._registry[name]
         del self._registry[name]
+
+        # Detach the finalizer so it cannot later fire and pop a replacement entry
+        # registered under the same name.
+        stale_finalizer = self._finalizers.pop(name, None)
+        if stale_finalizer is not None:
+            stale_finalizer.detach()
 
         extensions.on_component_unregistered(
             OnComponentUnregisteredContext(

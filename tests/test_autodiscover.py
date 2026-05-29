@@ -82,6 +82,14 @@ class TestImportLibraries:
         },
     )
     def test_import_libraries_map_modules(self):
+        # Strict `register()` requires explicit unregister before a reimport produces
+        # a fresh class object under the same name.
+        all_components = registry.all().copy()
+        if "single_file_component" in all_components:
+            registry.unregister("single_file_component")
+        if "multi_file_component" in all_components:
+            registry.unregister("multi_file_component")
+
         # Ensure that the modules are executed again after import
         if "tests.components.single_file" in sys.modules:
             del sys.modules["tests.components.single_file"]

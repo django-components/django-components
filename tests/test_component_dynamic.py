@@ -156,6 +156,11 @@ class TestDynamicComponent:
     def test_shorthand_formatter(self, components_settings):
         from django_components.apps import ComponentsConfig
 
+        # `ComponentsConfig.ready()` re-registers "dynamic" so it picks up the new
+        # tag_formatter. Strict `register()` requires an explicit unregister first.
+        if registry.has("dynamic"):
+            registry.unregister("dynamic")
+
         ComponentsConfig.ready(None)  # type: ignore[arg-type]
 
         registry.register(name="test", component=self._gen_simple_component())
@@ -179,6 +184,11 @@ class TestDynamicComponent:
     )
     def test_component_name_is_configurable(self, components_settings):
         from django_components.apps import ComponentsConfig
+
+        # See `test_shorthand_formatter` for why `ComponentsConfig.ready()` needs an
+        # explicit unregister under the strict `register()` contract.
+        if registry.has("dynamic"):
+            registry.unregister("dynamic")
 
         ComponentsConfig.ready(None)  # type: ignore[arg-type]
 
