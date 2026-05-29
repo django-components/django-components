@@ -190,6 +190,44 @@ class TestComponentRegistry:
         custom_registry.unregister(name="testcomponent")
         assert "testcomponent" not in custom_registry._finalizers
 
+    def test_node_subcls_cache_is_per_registry(self):
+        # Each registry owns its own `_node_subcls_cache`. Replaces the previous
+        # module-global `component_node_subclasses_by_name` that pinned both the
+        # subclass and the registry forever.
+        library_a = Library()
+        library_b = Library()
+        registry_a = ComponentRegistry(library=library_a)
+        registry_b = ComponentRegistry(library=library_b)
+
+        assert registry_a._node_subcls_cache == {}
+        assert registry_b._node_subcls_cache == {}
+        assert registry_a._node_subcls_cache is not registry_b._node_subcls_cache
+
+    def test_module_global_node_subcls_cache_no_longer_exists(self):
+        # Pre-fix, `django_components.component` exposed a module-global
+        # `component_node_subclasses_by_name` that pinned subclasses + registries
+        # forever. The cache now lives per-registry. Catch any accidental
+        # reintroduction of the global.
+        import django_components.component as component_module  # noqa: PLC0415
+
+        assert not hasattr(component_module, "component_node_subclasses_by_name")
+
+    def test_node_subcls_cache_populated_on_parse(self):
+        library = Library()
+        registry_local = ComponentRegistry(library=library)
+        registry_local.register("simple", MockComponent)
+
+        engine = Engine.get_default()
+        engine.template_builtins.append(library)
+        try:
+            assert registry_local._node_subcls_cache == {}
+            Template("{% component 'simple' / %}")
+            # `_register_to_library` uses `formatter.start_tag(comp_name)`, which
+            # for the default formatter returns "component" regardless of comp_name.
+            assert list(registry_local._node_subcls_cache.keys()) == ["component"]
+        finally:
+            engine.template_builtins.remove(library)
+
     def test_simple_unregister(self):
         custom_registry = ComponentRegistry()
         custom_registry.register(name="testcomponent", component=MockComponent)

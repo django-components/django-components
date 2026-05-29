@@ -20,7 +20,7 @@ from django.template.loaders.base import Loader
 from django.test import override_settings
 
 from django_components import ComponentsSettings
-from django_components.component import ALL_COMPONENTS, Component, component_node_subclasses_by_name
+from django_components.component import ALL_COMPONENTS, Component
 from django_components.component_registry import ALL_REGISTRIES, ComponentRegistry
 from django_components.extension import extensions
 from django_components.perfutil.provide import provide_cache
@@ -494,9 +494,6 @@ def _clear_djc_global_state(
     if provide_cache:
         provide_cache.clear()
 
-    # Remove cached Node subclasses
-    component_node_subclasses_by_name.clear()
-
     # Clean up any loaded media (HTML, JS, CSS)
     for comp_cls_ref in ALL_COMPONENTS:
         comp_cls = comp_cls_ref()
@@ -555,6 +552,12 @@ def _clear_djc_global_state(
             elif current_entry.cls is not original_cls:
                 registry_original.unregister(name)
                 registry_original.register(name, original_cls)
+
+        # Drop the parsed ComponentNode subclass cache. Otherwise a follow-up test
+        # that uses the same start_tag with a different end_tag (e.g. via a custom
+        # tag_formatter) would trip the "different end tags" RuntimeError in
+        # `ComponentNode.parse()`.
+        registry_original._node_subcls_cache.clear()
 
     # Drop modules that the test brought in itself, so a later test sees a clean import.
     # Modules that were already in `sys.modules` before the test ran are left alone -

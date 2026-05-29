@@ -244,6 +244,11 @@ class ComponentRegistry:
         # one when the entry is replaced or removed. Without this, stale finalizers
         # would fire later and pop the wrong entry from `self._registry` (see #1598).
         self._finalizers: dict[str, finalize] = {}
+        # start_tag -> ComponentNode subclass. Cache reused on every template parse
+        # so we don't create a fresh subclass per `{% component %}` token. Per-registry,
+        # so the cache dies with the registry instead of pinning it forever via a
+        # module-global dict.
+        self._node_subcls_cache: dict[str, type] = {}
         self._library = library
         self._settings = settings
 
