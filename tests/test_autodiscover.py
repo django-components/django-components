@@ -95,3 +95,35 @@ class TestImportLibraries:
             pytest.fail("Autodiscover should not raise AlreadyRegistered exception")
 
         assert seen == ["tests.components.single_file", "tests.components.multi_file.multi_file"]
+
+
+@djc_test
+class TestSysModulesIsolation:
+    """Regression coverage for #1598: modules present before a @djc_test should not be
+    re-executed by the test teardown."""
+
+    def test_modules_present_before_test_are_not_reimported(self):
+        # The module must be imported before any @djc_test cycle touches it.
+        import tests.components.single_file  # noqa: PLC0415
+
+        module_before = sys.modules.get("tests.components.single_file")
+        assert module_before is not None
+        module_id_before = id(module_before)
+
+        @djc_test
+        def inner_test() -> None:
+            from django_components.autodiscovery import autodiscover  # noqa: PLC0415
+
+            autodiscover(map_module=lambda p: "tests." + p if p.startswith("components") else p)
+
+        # Run two cycles - prior to the fix, the first teardown would pop the module from
+        # `sys.modules`, and the second setup's `autodiscover` would re-execute it.
+        inner_test()
+        inner_test()
+
+        module_after = sys.modules.get("tests.components.single_file")
+        assert module_after is not None
+        assert id(module_after) == module_id_before, (
+            "tests.components.single_file was re-executed across @djc_test cycles; "
+            "the sys.modules snapshot in _clear_djc_global_state should have prevented this."
+        )

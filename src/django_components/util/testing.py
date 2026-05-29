@@ -333,6 +333,10 @@ def djc_test(
                         continue
                     _all_registries_copies.append((reg_ref, list(reg._registry.keys())))
 
+                # Snapshot which modules were already imported before the test ran.
+                # See `_clear_djc_global_state` for why this matters.
+                _initial_sys_modules = frozenset(sys.modules)
+
                 # Prepare global state
                 _setup_djc_global_state(gen_id_patcher, csrf_token_patcher)
 
@@ -342,6 +346,7 @@ def djc_test(
                         csrf_token_patcher,
                         _all_components,  # type: ignore[arg-type]
                         _all_registries_copies,
+                        _initial_sys_modules,
                         gc_collect,
                     )
 
@@ -457,6 +462,7 @@ def _clear_djc_global_state(
     csrf_token_patcher: CsrfTokenPatcher,
     initial_components: InitialComponents,
     initial_registries_copies: RegistriesCopies,
+    initial_sys_modules: frozenset[str],
     gc_collect: bool = False,
 ) -> None:
     gen_id_patcher.stop()
@@ -540,12 +546,16 @@ def _clear_djc_global_state(
         for key in keys_registered_during_test:
             registry_original.unregister(key)
 
-    # Delete autoimported modules from memory, so the module
-    # is executed also the next time one of the tests calls `autodiscover`.
+    # Drop modules that the test brought in itself, so a later test sees a clean import.
+    # Modules that were already in `sys.modules` before the test ran are left alone -
+    # popping them would force `importlib.import_module()` to re-execute the file on
+    # the next test, creating a new class object with the same `class_id` as the old one
+    # (the precondition behind #1598).
     from django_components.autodiscovery import LOADED_MODULES  # noqa: PLC0415
 
     for mod in LOADED_MODULES:
-        sys.modules.pop(mod, None)
+        if mod not in initial_sys_modules:
+            sys.modules.pop(mod, None)
     LOADED_MODULES.clear()
 
     # Clear extensions caches
