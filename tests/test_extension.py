@@ -545,7 +545,8 @@ class TestExtensionHooks:
         assert isinstance(rendered_call.component_id, str)
         assert rendered_call.result is None
         assert isinstance(rendered_call.error, Exception)
-        assert str(rendered_call.error) == "An error occurred while rendering components TestComponent:\nOopsie woopsie"
+        expected_error = "An error occurred while rendering components TestComponent:\nOopsie woopsie"
+        assert str(rendered_call.error) == expected_error
 
     @djc_test(components_settings={"extensions": [DummyExtension]})
     def test_on_slot_rendered(self):

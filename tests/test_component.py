@@ -2351,7 +2351,8 @@ class TestComponentHook:
                 error.args = ("ERROR MODIFIED",)
 
         with pytest.raises(
-            ValueError, match=re.escape("An error occurred while rendering components SimpleComponent:\nERROR MODIFIED")
+            ValueError,
+            match=re.escape("An error occurred while rendering components SimpleComponent:\nERROR MODIFIED"),
         ):
             SimpleComponent.render()
 
