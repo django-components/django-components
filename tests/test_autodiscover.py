@@ -107,12 +107,17 @@ class TestImportLibraries:
 
 @djc_test
 class TestSysModulesIsolation:
-    """Regression coverage for #1598: modules present before a @djc_test should not be
-    re-executed by the test teardown."""
+    """
+    Regression coverage for #1598: modules present before a @djc_test should not be
+    re-executed by the test teardown.
+    """
 
     def test_modules_present_before_test_are_not_reimported(self):
-        # The module must be imported before any @djc_test cycle touches it.
-        import tests.components.single_file  # noqa: PLC0415
+        # Ensure the target module is in `sys.modules` before any @djc_test cycle
+        # touches it. This is the precondition the fix must preserve.
+        import importlib
+
+        importlib.import_module("tests.components.single_file")
 
         module_before = sys.modules.get("tests.components.single_file")
         assert module_before is not None
@@ -120,14 +125,14 @@ class TestSysModulesIsolation:
 
         @djc_test
         def inner_test() -> None:
-            from django_components.autodiscovery import autodiscover  # noqa: PLC0415
+            from django_components.autodiscovery import autodiscover
 
             autodiscover(map_module=lambda p: "tests." + p if p.startswith("components") else p)
 
         # Run two cycles - prior to the fix, the first teardown would pop the module from
         # `sys.modules`, and the second setup's `autodiscover` would re-execute it.
-        inner_test()
-        inner_test()
+        inner_test()  # type: ignore[call-arg]
+        inner_test()  # type: ignore[call-arg]
 
         module_after = sys.modules.get("tests.components.single_file")
         assert module_after is not None

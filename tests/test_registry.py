@@ -208,7 +208,7 @@ class TestComponentRegistry:
         # `component_node_subclasses_by_name` that pinned subclasses + registries
         # forever. The cache now lives per-registry. Catch any accidental
         # reintroduction of the global.
-        import django_components.component as component_module  # noqa: PLC0415
+        import django_components.component as component_module
 
         assert not hasattr(component_module, "component_node_subclasses_by_name")
 

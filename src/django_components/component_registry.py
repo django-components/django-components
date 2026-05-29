@@ -31,9 +31,15 @@ TComponent = TypeVar("TComponent", bound="Component")
 
 class AlreadyRegistered(Exception):
     """
-    Raised when you try to register a [Component](./api.md#django_components.Component),
-    but it's already registered with given
+    Raised when you try to register a [Component](./api.md#django_components.Component)
+    under a name that is already registered with the given
     [ComponentRegistry](./api.md#django_components.ComponentRegistry).
+
+    Re-registering the exact same class object under the same name is a no-op
+    and does NOT raise - so calling `autodiscover()` or `import_libraries()`
+    more than once is safe. Any *other* class under that name raises and you
+    must call [`unregister()`](./api.md#django_components.ComponentRegistry.unregister)
+    first to replace the existing registration.
     """
 
 
