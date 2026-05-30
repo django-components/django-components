@@ -1,5 +1,7 @@
+import gc
 import re
 import time
+import weakref
 
 import pytest
 from django.core.cache import caches
@@ -7,8 +9,8 @@ from django.template import Template
 from django.template.context import Context
 
 from django_components import Component, register
+from django_components.extension import ComponentExtension, OnComponentInputContext
 from django_components.extension import extensions as extension_manager
-from django_components.extensions.cache import CacheExtension
 from django_components.testing import djc_test
 
 from .testutils import setup_test_config
@@ -351,6 +353,26 @@ class TestComponentCache:
             )
 
 
+class ShortCircuitExtension(ComponentExtension):
+    """
+    Test extension that short-circuits the render from `on_component_input`, and records
+    weakrefs to the components it sees so a test can assert they are garbage-collected.
+
+    Because user extensions are always ordered after the built-in `CacheExtension`, this
+    reproduces the scenario where `CacheExtension.on_component_input` has already run (and
+    stored its key) but `on_component_rendered` never fires for the component.
+    """
+
+    name = "short_circuit"
+
+    def __init__(self) -> None:
+        self.seen_component_refs: list[weakref.ReferenceType] = []
+
+    def on_component_input(self, ctx: OnComponentInputContext) -> str:
+        self.seen_component_refs.append(weakref.ref(ctx.component))
+        return "SHORT_CIRCUITED"
+
+
 @djc_test(
     django_settings={
         "CACHES": {
@@ -360,34 +382,8 @@ class TestComponentCache:
         },
     },
 )
-class TestCacheRenderIdCleanup:
-    def _get_cache_ext(self) -> CacheExtension:
-        for ext in extension_manager.extensions:
-            if isinstance(ext, CacheExtension):
-                return ext
-        raise RuntimeError("CacheExtension not found")
-
-    def test_render_id_cleaned_up(self):
-        class TestComponent(Component):
-            template = "Hello {{ name }}"
-
-            class Cache:
-                enabled = True
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {"name": kwargs.get("name", "world")}
-
-        cache_ext = self._get_cache_ext()
-
-        # Cache miss
-        TestComponent.render(kwargs={"name": "world"})
-        assert len(cache_ext.render_id_to_cache_key) == 0
-
-        # Cache hit
-        TestComponent.render(kwargs={"name": "world"})
-        assert len(cache_ext.render_id_to_cache_key) == 0
-
-    def test_render_id_cleaned_up_on_error(self):
+class TestCacheRenderKeyLifecycle:
+    def test_error_does_not_cache(self):
         class ErrorComponent(Component):
             template = "Hello"
 
@@ -397,9 +393,49 @@ class TestCacheRenderIdCleanup:
             def on_render(self, context, template):
                 raise ValueError("deliberate error")
 
-        cache_ext = self._get_cache_ext()
-
         with pytest.raises(ValueError, match="deliberate error"):
             ErrorComponent.render()
 
-        assert len(cache_ext.render_id_to_cache_key) == 0
+        # Nothing should have been written to the cache on the error path.
+        assert len(caches["default"]._cache) == 0  # type: ignore[attr-defined]
+
+    @djc_test(components_settings={"extensions": [ShortCircuitExtension]})
+    def test_no_leak_when_later_extension_short_circuits(self):
+        """
+        Regression test for the leak where `CacheExtension.on_component_input` stored a key
+        on a cache miss, but a later extension short-circuited the render so
+        `on_component_rendered` never ran to release it.
+
+        The key now lives on the per-component-instance config, so it must be released
+        together with the component. We assert that by checking the component instances are
+        garbage-collected.
+        """
+
+        class TestComponent(Component):
+            template = "Hello {{ name }}"
+
+            class Cache:
+                enabled = True
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"name": kwargs.get("name", "world")}
+
+        short_circuit_ext = None
+        for ext in extension_manager.extensions:
+            if isinstance(ext, ShortCircuitExtension):
+                short_circuit_ext = ext
+                break
+        assert short_circuit_ext is not None
+
+        for i in range(5):
+            output = TestComponent.render(kwargs={"name": f"n{i}"})
+            assert output == "SHORT_CIRCUITED"
+
+        # The extension saw all 5 components on a cache miss (CacheExtension ran first and
+        # stashed a key on each component's config).
+        assert len(short_circuit_ext.seen_component_refs) == 5
+
+        gc.collect()
+
+        # None of the components (and thus none of the stashed cache keys) are retained.
+        assert all(ref() is None for ref in short_circuit_ext.seen_component_refs)
