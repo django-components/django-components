@@ -120,6 +120,28 @@ tox -e py310
 
 NOTE: See the available environments in `tox.ini`.
 
+### Selecting tests by marker
+
+The suite is split into three lanes via pytest markers. The default test run skips the two heavyweight lanes:
+
+- `@pytest.mark.e2e` — browser-based end-to-end tests. Applied automatically by the `@with_playwright` decorator, so you don't tag tests by hand.
+- `@pytest.mark.benchmark_snapshot` — heavy benchmark snapshot tests (the four `test_benchmark_*.py` files). Applied automatically by `pytest_collection_modifyitems` in [`tests/conftest.py`](https://github.com/django-components/django-components/blob/master/tests/conftest.py) based on filename, so new tests added to those files are picked up without further configuration.
+
+You can target a single lane:
+
+```sh
+# Just the fast unit tests (the default — skips E2E and benchmark)
+pytest -m "not e2e and not benchmark_snapshot"
+
+# Just the E2E tests
+tox -e e2e
+
+# Just the benchmark snapshot tests
+tox -e benchmark_snapshot
+```
+
+The default `tox` env (e.g. `tox -e py314-django52`) runs the unit-test lane in parallel with `pytest-xdist` (`-n auto`). One exception: `tests/test_templatetags_provide.py` is force-run serially because it asserts on shared template-cache state that the parallel workers would race on.
+
 ## Linting and formatting
 
 To check linting rules, run:
@@ -175,16 +197,34 @@ class MyTest:
 You will need to install Playwright to run these tests. If you've already run `uv sync --group dev`, Playwright should be installed. Then install the browsers:
 
 ```sh
+# All three browsers (matches the default local behavior)
 playwright install chromium firefox webkit --with-deps
+
+# Or, if you only want to run against one browser, install just that one
+playwright install chromium --with-deps
 ```
 
-After Playwright is ready, run the tests the same way as before:
+After Playwright is ready, run the E2E lane:
 
 ```sh
-pytest
-# Or for specific Python version
-tox -e py310
+tox -e e2e
+# Or, without tox:
+pytest -m e2e
 ```
+
+### Selecting which browsers E2E tests run against
+
+By default, `@with_playwright` parametrizes each test across Chromium, Firefox, and WebKit. To limit which browsers are used (e.g. when you've only installed one), set the `DJC_TEST_BROWSERS` environment variable:
+
+```sh
+# Only run against Chromium
+DJC_TEST_BROWSERS=chromium tox -e e2e
+
+# Run against Chromium and Firefox
+DJC_TEST_BROWSERS=chromium,firefox pytest -m e2e
+```
+
+The PR-time `e2e` lane sets `DJC_TEST_BROWSERS=chromium` for speed. A separate weekly workflow (`.github/workflows/tests-cross-browser.yml`) runs the suite against Chromium, Firefox, and WebKit in parallel and catches browser-specific regressions. Running locally without the variable uses all three browsers.
 
 ### E2E Test Server Configuration
 
@@ -272,6 +312,55 @@ Or with tox:
 ```sh
 tox -e py310 -- --snapshot-update
 ```
+
+## How CI runs your tests
+
+GitHub Actions splits the test suite across multiple jobs in [`.github/workflows/tests.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/tests.yml). The split exists so that expensive setup (Playwright browsers, heavy benchmark renders) happens once per CI run instead of once per Python/OS cell.
+
+### The job lanes
+
+| Job | Matrix | When | What it runs | Tox env |
+| --- | --- | --- | --- | --- |
+| `build` | Ubuntu × Python 3.10–3.14, plus Windows × Python 3.10 and 3.14 | Every push / PR | Unit tests in parallel with `pytest-xdist`. Skips E2E and benchmark markers. No Playwright install. | `tox` |
+| `e2e` | Ubuntu × Python 3.14 | Every push / PR | Only `@pytest.mark.e2e` tests. Installs Chromium only. Sets `DJC_TEST_BROWSERS=chromium`. | `tox -e e2e` |
+| `benchmark_snapshots` | Ubuntu × Python 3.14 | Every push / PR | Only `@pytest.mark.benchmark_snapshot` tests. | `tox -e benchmark_snapshot` |
+| `coverage` | Ubuntu × Python 3.14 | Every push / PR | Unit-test lane with coverage, fails under 75%. | `tox -e coverage` |
+| `ruff`, `mypy` | Ubuntu × Python 3.14 | Every push / PR | Lint and type-check. | `tox -e ruff`, `tox -e mypy` |
+| `e2e_cross_browser` | Ubuntu × Python 3.14 × `{chromium, firefox, webkit}` | Weekly cron (Mon 06:00 UTC) + manual dispatch | E2E suite against each browser, one cell per browser. Chromium is included as a baseline. On scheduled failures, files or comments on a tracking issue labeled `ci-cross-browser-failure`. See [`tests-cross-browser.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/tests-cross-browser.yml). | `tox -e e2e` (with `DJC_TEST_BROWSERS=<browser>`) |
+
+### When the weekly cross-browser run fails
+
+When the scheduled run (not a manual dispatch) fails, a notification job opens or updates a GitHub issue labeled `ci-cross-browser-failure`. The first failure creates the issue; subsequent failures add a comment to the same issue instead of opening a new one. Close the issue manually once the cross-browser run is green again — the next failure after the issue is closed will open a new one.
+
+Triage flow when you see one of these issues:
+
+1. Open the linked workflow run and check which matrix cells (chromium / firefox / webkit) failed.
+2. If **only firefox or webkit** failed, the bug is browser-specific. Reproduce locally with `DJC_TEST_BROWSERS=firefox tox -e e2e` (after installing that browser).
+3. If **chromium also failed**, the PR-time `e2e` lane would have caught the same thing on the next push, so the most likely cause is flakiness or an environmental regression (Playwright version, browser binary, runner image).
+
+### Windows coverage is smoke-only
+
+The Windows matrix runs Python 3.10 and 3.14 only, not the full Python range. The intent is to catch path-handling regressions on Windows without paying full matrix cost. A Windows-specific failure on Python 3.11/3.12/3.13 will not appear in CI.
+
+### How tests get sorted into lanes
+
+- E2E tests get the `e2e` marker from the `@with_playwright` decorator, which also pulls in the `django_dev_server` fixture. So writing `@with_playwright` is the only thing you need to do to route a test into the E2E lane.
+- Benchmark tests get the `benchmark_snapshot` marker automatically based on file name (the four `test_benchmark_*.py` files), via a `pytest_collection_modifyitems` hook in `tests/conftest.py`. Adding a new test inside one of those files is enough.
+- Everything else is a "unit test" and runs in the default lane.
+
+### Local equivalents
+
+The same `tox` envs CI uses are available locally:
+
+```sh
+tox -e py314-django52       # unit-test lane, single cell
+tox -e e2e                  # E2E lane (needs playwright install first)
+tox -e benchmark_snapshot   # benchmark snapshot lane
+tox -e coverage             # unit-test lane with coverage
+tox -e ruff,mypy            # lint and type-check
+```
+
+Running `pytest` directly (no `tox`) runs everything in your local venv, including E2E and benchmark tests, so plain `pytest` does *more* than the CI unit-test lane does. Use `pytest -m "not e2e and not benchmark_snapshot"` to match the CI unit lane.
 
 ## Dev server
 

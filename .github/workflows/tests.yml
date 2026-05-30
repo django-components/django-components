@@ -98,6 +98,10 @@ jobs:
           uv run playwright install chromium --with-deps
 
       - name: Run E2E tests
+        # Restrict to chromium on PR-time runs for speed. The weekly
+        # tests-cross-browser.yml workflow exercises firefox and webkit.
+        env:
+          DJC_TEST_BROWSERS: chromium
         run: uv run tox -e e2e
 
   benchmark_snapshots:
