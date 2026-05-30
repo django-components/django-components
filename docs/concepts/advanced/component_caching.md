@@ -179,3 +179,93 @@ class MyComponent(Component):
 ```
 
 In this example, the component's rendered output is cached for 5 minutes using the `my_cache` backend.
+
+## Using Django's `{% cache %}` tag with components
+
+You can wrap Django's
+[`{% cache %}` tag](https://docs.djangoproject.com/en/5.2/topics/cache/#template-fragment-caching)
+around `{% component %}` calls:
+
+```django
+{% load component_tags %}
+{% cache 500 "homepage_sidebar" %}
+    {% component "user_links" / %}
+    {% component "recent_posts" / %}
+{% endcache %}
+```
+
+It works out of the box; loading `component_tags` installs a component-aware
+version of `{% cache %}` automatically.
+
+Use `{% cache %}` to cache a *region* of a template (possibly with several
+components inside). Use `Component.Cache` (above) to cache a *single
+component* by its inputs.
+
+### Things to watch out for
+
+A cache entry is the **first render's** output, replayed verbatim on every
+subsequent hit. A few cases where that bites you:
+
+#### Clicking a button fires the handler more than once
+
+If you embed the same `{% cache %}` block in two places on one page (e.g. a
+sidebar in both the header and footer, both with the same cache key), the
+inner component's client-side wiring ends up duplicated. A `click` or
+`input` handler from `Component.js` will fire N times per event, where N is
+the number of embeddings.
+
+❌ Don't:
+
+```django
+{# Header and footer, both with the same key #}
+{% cache 500 "search_box" %}{% component "search_input" / %}{% endcache %}
+...
+{% cache 500 "search_box" %}{% component "search_input" / %}{% endcache %}
+```
+
+✅ Do: use a distinct cache key per position, or only cache fragments that
+appear once per page.
+
+#### After a deploy, components silently lose their JS/CSS variables
+
+If your fragment cache is a persistent backend (Redis, memcached) and your
+components define `get_js_data()` or `get_css_data()`, the data those
+methods produce can vanish from the page after a server restart. The HTML
+still renders normally and no errors are logged, but the per-instance JS
+or CSS variables are gone.
+
+This happens because djc stores the actual variable values in a separate
+cache that is **per-process and in-memory by default**. After a restart,
+the cached fragment refers to variable data the new process no longer has.
+
+✅ Do: set the
+[`cache` setting](../../reference/settings.md#django_components.app_settings.ComponentsSettings.cache)
+to the same persistent backend you use for the fragment cache, so the
+variables survive restarts.
+
+#### Every user sees the first user's data
+
+```django
+{# Cache key includes user.id but NOT user.locale #}
+{% cache 500 "user_panel" user.id %}
+    {% component "user_panel" user=user / %}
+{% endcache %}
+```
+
+If the component's output depends on `user.locale` (or any input not in
+`vary_on`), the first user's locale freezes into the cache. Every other
+user with the same `user.id` sees that locale until the entry expires.
+
+✅ Do: include every input that affects the rendered output in `vary_on`.
+This is true of any Django fragment cache, but with components it can also
+affect client-side behavior, not just visible markup.
+
+### Importing djc patches Django's `{% cache %}` globally
+
+Importing `django_components` replaces Django's built-in `{% cache %}` tag
+for the whole Python process, including in plain (non-component) templates.
+
+Behavior is unchanged outside a component render: the patched tag delegates
+to Django's original implementation. The only observable difference is for
+third-party code that checks `type(node) is CacheNode` — it will see djc's
+subclass instead.
