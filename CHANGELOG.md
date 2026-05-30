@@ -18,9 +18,7 @@
 
 - **Fixed a component cache memory leak**
 
-    The component cache could retain an internal entry per render when another extension short-circuited a cached component's render. Such entries are now released together with the component.
-
-    See [#1607](https://github.com/django-components/django-components/issues/1607).
+    See [#1648](https://github.com/django-components/django-components/issues/1648).
 
 #### Refactor
 
