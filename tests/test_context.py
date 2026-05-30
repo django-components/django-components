@@ -1,4 +1,5 @@
 import gc
+import sys
 import tempfile
 import weakref
 from pathlib import Path
@@ -1117,6 +1118,10 @@ class TestContextProcessors:
         with pytest.raises(ValueError, match="Variable 'request' defined in component 'TestComponent' conflicts"):
             TestComponent.render(request=HttpRequest())
 
+    @pytest.mark.skipif(
+        sys.implementation.name != "cpython",
+        reason="Relies on CPython refcount + generational GC ordering across two collect passes.",
+    )
     def test_request_is_gc_after_render(self):
         class TestComponent(Component):
             template: types.django_html = """Hello"""

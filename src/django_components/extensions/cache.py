@@ -100,6 +100,13 @@ class ComponentCache(ExtensionComponentConfig):
     The name of the cache to use. If `None`, the default cache will be used.
     """
 
+    # Cache key for the in-progress render. Set in `CacheExtension.on_component_input` on a
+    # cache miss, and read back in `CacheExtension.on_component_rendered`. Stored here (on the
+    # per-component-instance config) rather than in a dict on the extension, so that the entry
+    # is released together with the component instead of leaking when another extension
+    # short-circuits the render. See `CacheExtension.on_component_rendered`.
+    _render_cache_key: str | None = None
+
     def get_entry(self, cache_key: str) -> Any:
         cache = self.get_cache()
         return cache.get(cache_key)
@@ -175,9 +182,6 @@ class CacheExtension(ComponentExtension):
 
     ComponentConfig = ComponentCache
 
-    def __init__(self, *_args: Any, **_kwargs: Any) -> None:
-        self.render_id_to_cache_key: dict[str, str] = {}
-
     def on_component_input(self, ctx: OnComponentInputContext) -> Any | None:
         cache_instance = ctx.component.cache
         if not cache_instance.enabled:
@@ -190,9 +194,13 @@ class CacheExtension(ComponentExtension):
         if cached_result is not None:
             return cached_result
 
-        # NOTE: Store the mapping only on cache miss, because on cache hit the rendering
-        # is short-circuited and on_component_rendered (which pops the entry) is never called.
-        self.render_id_to_cache_key[ctx.component_id] = cache_key
+        # Cache miss - remember the key so `on_component_rendered` can store the result under it.
+        #
+        # NOTE: We stash the key on the per-component-instance config rather than in a dict on the
+        # extension. This way the key is released together with the component, instead of leaking
+        # when another extension's `on_component_input` short-circuits the render after ours has
+        # run (in which case `on_component_rendered` never fires for this component).
+        cache_instance._render_cache_key = cache_key
         return None
 
     # Save the rendered component to cache
@@ -201,9 +209,14 @@ class CacheExtension(ComponentExtension):
         if not cache_instance.enabled:
             return
 
+        # Don't cache the result if rendering raised.
         if ctx.error is not None:
-            self.render_id_to_cache_key.pop(ctx.component_id, None)
             return
 
-        cache_key = self.render_id_to_cache_key.pop(ctx.component_id)
+        # The key is set in `on_component_input` only on a cache miss. A cache hit short-circuits
+        # the render before this hook runs, so reaching here with no key means there's nothing
+        # to store.
+        cache_key = cache_instance._render_cache_key
+        if cache_key is None:
+            return
         cache_instance.set_entry(cache_key, ctx.result)
