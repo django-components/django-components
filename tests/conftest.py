@@ -16,6 +16,12 @@ def django_dev_server():
     yield from run_django_dev_server()
 
 
+# Auto-tag every test in the four benchmark files with `@pytest.mark.benchmark_snapshot`.
+# The marker is what the CI lane split keys off: the default tox env runs with
+# `-m "not benchmark_snapshot"` and the dedicated `benchmark_snapshot` tox env runs
+# with `-m benchmark_snapshot`. Doing the tagging here (instead of decorating each
+# test) means new tests added to these files are picked up automatically and the
+# "what counts as a benchmark" rule lives in one place.
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     for item in items:
         path = item.path

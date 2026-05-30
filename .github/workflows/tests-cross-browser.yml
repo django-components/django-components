@@ -1,0 +1,117 @@
+name: Cross-browser E2E tests
+
+# Weekly run of the E2E suite against Chromium, Firefox, and WebKit.
+#
+# The PR-time `e2e` lane in tests.yml only runs Chromium for speed. This
+# workflow is the safety net that catches browser-specific regressions
+# (e.g. a Firefox-only quirk in how `window.Components` is populated).
+#
+# Chromium is included as a baseline cell so that, when a failure shows up,
+# you can tell whether the bug is browser-specific (chromium passes, the
+# other(s) fail) or a generic E2E regression (chromium also fails — likely
+# the same thing the PR-time lane would have caught).
+
+on:
+  schedule:
+    # Mondays at 06:00 UTC.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  e2e_cross_browser:
+    runs-on: ubuntu-latest
+    strategy:
+      # One browser failing should not cancel the others — we want
+      # independent red/green per browser to make triage easy.
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group ci
+
+      # TODO: DELETEME
+      # Workaround: Yarn Debian repo switched GPG key (Jan 2026); old key in images breaks apt-get update.
+      # See https://github.com/yarnpkg/yarn/issues/9218
+      # Remove this step once CI images ship with the updated Yarn APT key or Yarn repo is no longer enabled by default.
+      - name: Disable broken third-party apt repos (e.g. Yarn) before Playwright install
+        run: |
+          # Playwright's --with-deps runs apt-get update; a broken/unsigned Yarn repo breaks it.
+          sudo rm -f /etc/apt/sources.list.d/yarn.list 2>/dev/null || true
+      # DELETEME_END
+
+      - name: Install Playwright browser
+        run: |
+          uv run playwright install ${{ matrix.browser }} --with-deps
+
+      - name: Run E2E tests
+        env:
+          DJC_TEST_BROWSERS: ${{ matrix.browser }}
+        run: uv run tox -e e2e
+
+  # File or update a tracking issue when the scheduled run fails. Only runs
+  # on `schedule` events, so manually-dispatched test runs don't open noisy
+  # issues. One open issue per outage: if an issue with the tracking label
+  # already exists, this job adds a comment; otherwise it creates a new one.
+  notify_failure:
+    needs: e2e_cross_browser
+    if: failure() && github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          LABEL: ci-cross-browser-failure
+        run: |
+          set -euo pipefail
+
+          TITLE="Weekly cross-browser E2E run failed"
+          BODY=$(cat <<'EOF'
+          The scheduled cross-browser E2E run failed.
+
+          Check the matrix cells (chromium / firefox / webkit) in the run
+          to see which browsers failed. If chromium passes and one of the
+          others fails, the bug is browser-specific. If chromium also
+          fails, the PR-time e2e lane would have caught it too, so
+          this is likely flakiness or an environmental regression.
+
+          This issue is reused for subsequent failures while open. Close
+          it once the cross-browser run is green again.
+          EOF
+          )
+          # Append the runtime-specific lines separately so $RUN_URL and date expand correctly.
+          BODY="$BODY
+
+          - Run: $RUN_URL
+          - Triggered: $(date -u +"%Y-%m-%d %H:%M UTC")
+          - Workflow: .github/workflows/tests-cross-browser.yml"
+
+          # Strip leading whitespace from the heredoc indentation, and trailing newline from jq output.
+          existing=$(gh issue list --state open --label "$LABEL" --json number --jq '.[0].number // empty' | xargs)
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Another scheduled run failed: $RUN_URL ($(date -u +%Y-%m-%d))"
+          else
+            gh label create "$LABEL" \
+              --description "Cross-browser E2E workflow failure tracking" \
+              --color B60205 \
+              --force >/dev/null
+            gh issue create --title "$TITLE" --body "$BODY" --label "$LABEL"
+          fi
