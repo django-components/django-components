@@ -497,6 +497,61 @@ class LoggerExtension(ComponentExtension):
         logger.log(...)
 ```
 
+### Storing data for a single render
+
+Sometimes an extension needs to remember something at the start of a component's render and
+use it again at the end. For example, you might compute a value in `on_component_input` and
+read it back in `on_component_rendered`.
+
+A natural first attempt is to keep a dictionary on the extension, with one entry per component:
+
+```python
+# ❌ Don't do this:
+class CacheLikeExtension(ComponentExtension):
+    name = "cache_like"
+
+    def __init__(self):
+        self.keys_by_id = {}
+
+    def on_component_input(self, ctx: OnComponentInputContext):
+        # Remember a value for this component...
+        self.keys_by_id[ctx.component_id] = compute_key(ctx)
+
+    def on_component_rendered(self, ctx: OnComponentRenderedContext):
+        # ...and read (and remove) it once the component finishes rendering.
+        key = self.keys_by_id.pop(ctx.component_id)
+        ...
+```
+
+The problem is that `on_component_rendered` does not always run. A component's render can be
+skipped - for example when the [cache extension](./component_caching.md) returns an
+already-cached result, or when another extension chooses to skip rendering. When a render is
+skipped, `on_component_rendered` is not called, so the entry added in `on_component_input` is
+never removed. The dictionary then keeps growing, one leftover entry per skipped render. That
+is a memory leak.
+
+Instead, store the value somewhere that is thrown away once the component is done rendering.
+Every component gets its own config object for your extension, available as
+`component.<extension_name>`, which is a good place to keep it:
+
+```python
+# ✅ Do this:
+class CacheLikeExtension(ComponentExtension):
+    name = "cache_like"
+
+    def on_component_input(self, ctx: OnComponentInputContext):
+        # `ctx.component.cache_like` is this component's config object for the
+        # `cache_like` extension. Storing the value here ties it to the component.
+        ctx.component.cache_like.render_key = compute_key(ctx)
+
+    def on_component_rendered(self, ctx: OnComponentRenderedContext):
+        key = ctx.component.cache_like.render_key
+        ...
+```
+
+Because that config object is discarded together with the component, nothing is left behind to
+leak, even when `on_component_rendered` is skipped.
+
 ## Extension commands
 
 Extensions in django-components can define custom commands that can be executed via the Django management command interface. This allows for powerful automation and customization capabilities.

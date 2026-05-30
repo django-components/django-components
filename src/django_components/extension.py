@@ -737,6 +737,29 @@ class ComponentExtension(metaclass=ExtensionMeta):
         You can use this to implement a caching mechanism for components, or define components
         that will be rendered conditionally.
 
+        !!! warning
+
+            When any extension short-circuits a component (by returning a non-null value), the
+            rest of that component's render is skipped, including
+            [`on_component_data`](./extension_hooks.md#django_components.extension.ComponentExtension.on_component_data)
+            and
+            [`on_component_rendered`](./extension_hooks.md#django_components.extension.ComponentExtension.on_component_rendered).
+
+            Extensions run in order, and the built-in extensions (including the cache) run before
+            user extensions. So your `on_component_input` may run even when a later extension
+            short-circuits the same component.
+
+            In practice this means: if you save something at the start of a render (here, in
+            `on_component_input`) so you can use or remove it later in `on_component_rendered`,
+            that later hook might never run. And if you saved it in a dictionary that lives on
+            your extension, nothing ever removes that entry, so the dictionary grows by one with
+            every skipped render. That is a memory leak.
+
+            To avoid this, store anything you need for a single render on the component itself,
+            or on something that lives only as long as the component (such as its config object
+            for your extension, or `Slot.extra`). It is then discarded automatically once the
+            component is done, whether or not `on_component_rendered` runs.
+
         **Example:**
 
         ```python
