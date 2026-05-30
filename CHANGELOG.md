@@ -16,6 +16,12 @@
 
     See [#1598](https://github.com/django-components/django-components/issues/1598) / [#1630](https://github.com/django-components/django-components/pull/1630).
 
+- **Fixed a component cache memory leak**
+
+    The component cache could retain an internal entry per render when another extension short-circuited a cached component's render. Such entries are now released together with the component.
+
+    See [#1607](https://github.com/django-components/django-components/issues/1607).
+
 #### Refactor
 
 - **`ComponentRegistry.register()` raises `AlreadyRegistered` on any replacement**
