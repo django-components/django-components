@@ -12,6 +12,10 @@ off mkdocs/mkdocstrings/Material and onto a docs site **built with
 django-components itself**, so live component examples can be embedded inline
 in documentation pages.
 
+> **Implementing? Start with [DESIGN_djc_docs_site_features.md](DESIGN_djc_docs_site_features.md).**
+>
+> The features file is the **catalogue of every buildable feature** across this doc and all spikes (11.5, 11.7, 11.8, 11.9, 11.10, 11.11, 11.12), with phase assignment, effort, criticality, and source spec. It's the **survival layer** — if a feature isn't in it, it'll get lost when agent context fills. This doc carries the architecture and rationale; the features file carries the work list.
+
 ---
 
 ## 1. Why we're considering this
@@ -329,37 +333,53 @@ See §11.7 — even though we're persisting to `master`, there are still pieces 
 
 ### 4.7 Markdown processing pipeline
 
+> **Spike done. See §11.4 for the full investigation, including library choice, directive-vs-tag debate, the `--8<--` audit, and a concrete prototype.**
+
 **Question Juro asked:** is the order "markdown → HTML, then Django templates"? What's the best practice?
 
-**Answer.** The widely-used pattern across Hugo, Eleventy, Jekyll, and 11ty is **shortcodes-first, markdown-second, layout-last**. Concretely, three passes:
+**Answer.** The widely-used pattern across Hugo, Eleventy, Jekyll, and 11ty is **shortcodes-first, markdown-second, layout-last**. Our shape (revised after the spike): **fence-protection pre-pass → Django template engine → python-markdown → DocPage layout**.
 
 ```
 content/foo.md
-    -> [Pass 1] Render markdown source as a Django template (only the page body — no layout yet)
-        - Django template tags like {% example "name" %}, {% docstring "django_components.Component" %},
-          {% include_file "..." %} expand to markdown snippets and/or block-level HTML
-        - This is the only place Django sees the page body
-    -> [Pass 2] Markdown to HTML
-        - markdown-it-py (CommonMark + extensions: fences, tables, footnotes, anchors, admonitions)
-        - With `html=true` so block-level HTML emitted by Pass 1 is passed through untouched
-        - Pygments highlights all fenced code blocks (incl. djc_py)
-        - Heading slugification + TOC extraction happens here
-    -> [Pass 3] Wrap the page HTML inside the DocPage Django component layout
-        - DocPage takes {content_html, title, toc, breadcrumbs, edit_url, version} as inputs
-        - This is the only place the page chrome (nav, sidebar, footer, dark mode, search bar) is added
+    -> [Pre-pass] Fence-protection scanner (~80 LOC)
+        - Walk the source line-by-line
+        - Wrap every code region (``` fences, ~~~ fences, 4-space indented, `inline code`) in
+          {% verbatim %}...{% endverbatim %}
+        - This is Django's official "treat as literal" escape mechanism
+    -> [Pass 1] Django template engine (FULL engine, not a narrow expander)
+        - {% load docs_extras component_tags %} is auto-injected
+        - Any Django tag works in markdown:
+            {% component "table" rows=... %}                              <-- djc
+            {% example "fragments" %}                                     <-- docs sugar
+            {% docstring "django_components.Component" %}                 <-- docs sugar
+            {% include_file "path" %}                                     <-- docs sugar
+            {% version %}                                          <-- docs sugar
+            {% if %}, {% for %}, {% with %}                               <-- core Django
+        - Output: markdown body where every tag has expanded to markdown text
+          or block-level HTML (separated by blank lines)
+        - Inside {% verbatim %} blocks, every {% %} pattern is emitted literally
+    -> [Pass 2] python-markdown -> HTML
+        - Extensions match today's mkdocs config (pymdownx.highlight, pymdownx.superfences,
+          pymdownx.snippets, pymdownx.magiclink, admonition, md_in_html, toc, ...)
+        - md_in_html ensures block-level HTML from Pass 1 passes through untouched
+        - toc.permalink="¤" with pymdownx.slugs.slugify(case="lower") preserves today's anchors
+        - Pygments highlights all fences (incl. djc_py via the pygments_djc lexer we own)
+    -> [Pass 3] DocPage layout wrap
+        - Render DocPage component with (content_html, title, toc, breadcrumbs, edit_url, version)
+        - Only place page chrome (nav, sidebar, footer, dark mode, search bar) is added
     -> sanitize + minify
-    -> write to site/<path>.html
+    -> write to docs/v/<version>/<path>.html
 ```
 
 Why this order:
 
-- **Pass 1 must be first** because `{% example %}` emits the HTML for a tabbed widget that contains rendered components — markdown-it-py must see that HTML as block-level HTML and leave it alone (not parse it as if `<div>` openings were lists, etc.).
-- **Pass 1's output must be markdown-compatible**, not arbitrary HTML inline with markdown text. The rule for `{% example %}` is: emit a top-level `<div>...</div>` block separated by blank lines. CommonMark treats that as a raw HTML block and passes it through. Inline tags (`{% ref %}` for cross-references, `{% icon %}`) should emit markdown text or inline HTML.
+- **Pre-pass first** because Django's template engine would otherwise tokenize `{% example %}` *inside* a code fence and execute it. Wrapping every code region in `{% verbatim %}` is Django's official "treat as literal" escape mechanism and removes the problem cleanly.
+- **Django (Pass 1) before markdown (Pass 2)** because `{% example %}` emits the HTML for a tabbed widget that contains rendered components — python-markdown must see that HTML as block-level HTML and leave it alone (not parse it as if `<div>` openings were lists, etc.). Pass 1's output is markdown-compatible: top-level `<div>...</div>` blocks separated by blank lines, which `md_in_html` passes through untouched.
 - **Pass 3 (layout) cannot run before Pass 2** because the layout needs the rendered TOC and heading IDs.
 
-The alternative — "markdown → HTML first, Django templates on the HTML output" — is what we'd have to do if we wanted Django to substitute into a *post-rendered* page. It's harder because we'd be reaching into HTML to find substitution points, and we lose the ability to emit markdown that participates in the parse.
+**Where's the line between "directive" and "Django template tag"?** There is no line. Every tag in markdown is a Django template tag. "Docs sugar" tags (`{% example %}`, `{% docstring %}`, `{% include_file %}`, `{% version %}`, `{% image %}`) are convenience `simple_tag` definitions in `docs_extras.py`. djc tags like `{% component %}` work because Django loads the `django_components` template library like any other Django app. This was the key insight from the spike, in response to Juro's feedback.
 
-If we discover a `{% example %}` use case where the embedded component output itself contains markdown that needs to be parsed, we'd add a Pass 2.5 (another markdown pass on the component output) — but most likely the embedded output is HTML for a finished widget, so this won't be needed.
+**How does a docs tag wire up to a Django component?** Via `simple_tag` implementations that call `Component.render(...)` in Python and return the resulting HTML string. See §11.4.E for the concrete pattern. djc v1/v2 components are not invoked via JSX-style `<ApiReference>` HTML tags — they're invoked via `{% component %}` in templates or `.render()` in Python, and that's the mechanism used here.
 
 Each piece is small and replaceable. None of the pieces is novel.
 
@@ -436,47 +456,187 @@ Recommended next move: **spike the proof of concept**, then come back to this do
 
 We don't replace mkdocs in one PR. We run both side-by-side until the new site reaches parity, then cut over.
 
-**Phase 1 — scaffold + one section.** Build `docs_site/` with one section (e.g. `getting_started/`) ported. Markdown → HTML → static output works end-to-end. No interactive examples yet. *Output:* a directory we can `python -m http.server`. *Time estimate:* ~1-2 weeks of focused work.
+> **The catalogue of every buildable feature lives in [DESIGN_djc_docs_site_features.md](DESIGN_djc_docs_site_features.md).** This section carries the **narrative**: what each phase is for, why this order, what's deliberately out of scope. The features file carries the **inventory**: every feature, with phase assignment, effort, criticality, and source spec.
+>
+> Rule of thumb: when implementing a phase, **read the corresponding section in the features file first** — that's your work list. Then come back here for the framing. Anything that's not in the features file is not in this plan; if something is missing, **add it to the features file** so the next agent picks it up.
 
-**Phase 2 — the `{% example %}` tag.** Port [docs/examples/](docs/examples/) and the fragment pre-rendering. Pick fragments as the first real example. Prove that a doc page can embed a real interactive component. *Output:* a live fragments example in the new site. *Time estimate:* ~1 week.
+### Phase shape
 
-**Phase 3 — the rest of the markdown pages.** Mechanical port of `concepts/`, `guides/`, `community/`, etc. Mostly markdown copy-paste; the tricky bits are the cross-page links and the `mkdocs-macros` people.md page. *Output:* feature-equivalent docs minus API reference. *Time estimate:* ~1-2 weeks.
+Each phase is **sharply focused**: one mental model, one deliverable. Resist the temptation to bundle "while we're in there" work — the old §8 read like a brief but actually committed each phase to building 20-30 features in parallel. The new shape is finer-grained so the agent doing the work can hold the whole phase in head at once.
 
-**Phase 4 — API reference.** Build the griffe → component adapter. Reuse [docs/scripts/extensions.py](docs/scripts/extensions.py) verbatim. *Output:* `reference/*` parity. *Time estimate:* ~1 week.
+### Phase 0 — Pre-work in `src/`
 
-**Phase 5a — theming.** Light / dark CSS tokens, palette, dark-mode toggle component. Needs to land before search because the search modal is theme-sensitive (input, results, hover, focus rings) — see §11.1.G.1. *Output:* theme tokens consumed by all components built so far. *Time estimate:* ~3-4 days.
+**Goal:** clean source-of-truth before the migration starts. Codemods inside the existing codebase, NOT new features.
 
-**Phase 5b — versioning + social cards.** `docs/v/<version>/` layout per §4.6, `version_picker` component, OG-image generation. Open question (§11.1.G.1): is versioning a hard prerequisite for search v1? Almost certainly no — per-version search is just one Pagefind bundle per version dir — but confirm during implementation. *Output:* multi-version-ready site + social cards. *Time estimate:* ~1 week.
+**Sharp focus:** sweep `src/django_components/` and `docs/` for the legacy patterns that would block griffe later. Stop when the sweeps land — do not start `docs_site/` yet.
 
-**Phase 5c — search v1.** Pagefind integration, `SearchInput` / `SearchModal` / `SearchResultList` components per §11.1.G.5, plus `?h=` on-page highlight. Includes the delayed-spinner fallback. *Output:* parity with Material's day-to-day search UX. *Time estimate:* ~5-7 days.
+**Key features:** [hand-typed link codemod](DESIGN_djc_docs_site_features.md#phase-0--pre-work-in-srcdjango_components-before-any-docs_site-code), [Google-section codemod](DESIGN_djc_docs_site_features.md#phase-0--pre-work-in-srcdjango_components-before-any-docs_site-code), docstring-convention documentation.
 
-**Phase 5d — feature-parity audit + selective port.** Before cutover, hold a deliberate gate: sit with three columns side by side — (1) our current Material/mkdocs docs site, (2) Zensical's current feature list (see §11.2 "What we'd give up"), (3) what our new Django docs site actually does today. For each row, decide one of: **port**, **skip** (we don't want it), **defer** (post-cutover follow-up). The reason this is a separate phase: it's the only realistic moment to catch silent regressions before users see them. Each prior phase optimizes for getting the next thing working, not for completeness.
+**Estimate:** ~3-4 days.
 
-Concrete steps:
+### Phase 1 — Foundation: render ONE page end-to-end
 
-1. **Build the matrix.** Walk the [Zensical feature inventory](https://zensical.org/compatibility/features/) row by row. For each, fill in "today (Material)", "today (new site)", and "user-visible? load-bearing?". Drop trivial rows; keep anything a docs reader could notice.
-2. **Decide per row.** Three buckets: port now (cutover blocker), defer (post-cutover follow-up, file an issue), skip (we don't want it). Default to *skip* when in doubt — Phase 5a-c already covered the load-bearing polish.
-3. **Implement the "port now" set.** Each item should be small (none should exceed half a day; if one does, it probably belongs in "defer" and should be re-scoped).
-4. **Walk the live site cold.** Pretend to be a first-time reader. Compare the same tasks side by side on Material vs the new site (home → search a term → land on an API page → navigate to a related concept → toggle dark mode → switch versions). Note anything that feels worse. Fix or file.
-5. **File deferred items as a tracked backlog** so they don't get lost after cutover.
+**Goal:** a single page (e.g. `getting_started/index.md`) renders through the 3-pass pipeline to a static file in `docs/v/<version>/`, with full `<head>` metadata. No nav chrome yet, no API reference, no examples.
 
-What this phase explicitly is NOT: a chance to rethink the design. We do not redesign anything in Phase 5d. We only port and polish. *Output:* a documented decision per Material/Zensical feature + a small batch of cutover-blocking polish landed. *Time estimate:* ~4-6 days (depends entirely on how much "port now" comes out of step 2; the audit itself is 1-2 days).
+**Sharp focus:** the pipeline itself (fence-protect → Django → markdown → DocPage), the file layout, and the metadata story. Resist building chrome.
 
-**Phase 6 — cutover.** Switch the GitHub Pages deploy from mkdocs to the new build. Delete mkdocs config and dependencies. Leave a redirect for any moved URLs. *Time estimate:* ~2 days.
+**Why this scope:** the riskiest piece of the whole migration is "does our 3-pass pipeline produce sensible HTML?" If the answer is no, every later phase shifts. Get to "one good page in a browser" first.
 
-**Phase 7 — search v2 (post-cutover).** Autocomplete, recent searches, filters/scoping, typo-recovery fallback (borrowing Emil's scoring algo per §11.1.C). *Output:* power-user polish. *Time estimate:* ~3-4 days.
+**Out of scope:** API reference (Phase 4), examples (Phase 2), sidebar/header chrome (Phase 3a), search (Phase 5a), versioning manifest (Phase 5b), SEO polish (Phase 5c).
 
-**Phase 8 — search v3 (deferred).** Search-result analytics. **Blocked** on picking an analytics target (Plausible / GoatCounter / Cloudflare Worker / self-hosted endpoint). Separate design decision; park until we know where the data should go.
+**Estimate:** ~2 weeks.
 
-**Total estimate (Phases 1-6, the actual migration):** ~8-10 weeks of effort (Phase 5d adds ~1 week). Search v2/v3 add to that whenever we choose to do them. Can all be split across many PRs and many calendar weeks.
+### Phase 2 — `{% example %}` end-to-end (the killer feature)
 
-A key property of this plan: **at every phase, the old mkdocs site is still the canonical published site.** We do not break docs while we're rebuilding them. We only switch the deploy in Phase 6.
+**Goal:** one example (suggested: `fragments`) renders interactively in a docs page, with code + page + live-render tabs, with pre-rendered fragments fetched correctly.
+
+**Sharp focus:** prove the live-component + fragment-pre-render trick. Resist building all examples (those are content port, Phase 3b).
+
+**Why this scope:** the second-biggest risk after the pipeline. If `{% example %}` doesn't work or feels bad, the whole "docs site built with django-components" premise weakens.
+
+**Out of scope:** the other examples; chrome; any non-example tag.
+
+**Estimate:** ~1 week.
+
+### Phase 3a — Theme + core chrome
+
+**Goal:** a markdown page renders with header + sidebar + right-rail TOC + code blocks + dark mode, on desktop.
+
+**Sharp focus:** the visual system. Tokens, layout, typography, code blocks, admonitions. No content port yet, no API reference, no mobile.
+
+**Why this scope:** every later phase consumes these primitives. Land them before tons of content moves through. Mobile is split off because it's a separate mental model.
+
+**Out of scope:** mobile breakpoints (3b), content port (3b), Pagefind UI (5a).
+
+**Estimate:** ~1 week.
+
+### Phase 3b — Mass content port + responsive + content-layer guardrails
+
+**Goal:** every existing markdown page renders correctly under the new pipeline + chrome, desktop + mobile. All content-layer guardrails wired into CI.
+
+**Sharp focus:** content fidelity, mobile breakpoints, and the guardrails that protect day-to-day content edits (link check, anchor check, fence validator, snapshot tests).
+
+**Out of scope:** API reference (Phase 4), Pagefind (5a), versioning (5b), SEO polish (5c).
+
+**Estimate:** ~1-2 weeks.
+
+### Phase 4 — API reference (the big one)
+
+**Goal:** feature parity with mkdocstrings on the 14 current reference pages, with the discovery → rendering split, dual anchors, full cross-ref resolution.
+
+**Sharp focus:** mkdocstrings replacement. Resist anything that isn't on the reference path.
+
+**Why this scope:** the largest single piece of new code in the migration (~66 features per inventory). Two sub-deliverables internally: (a) proof-of-concept on `exceptions.md` first to validate the contract, then (b) escalate to one massive `Component` class entry to exercise all sub-components. Only after both proofs land do we generalize to all 14 pages.
+
+**Out of scope:** search, versioning, anything not on the API reference path.
+
+**Estimate:** ~3-4 weeks.
+
+### Phase 5a — Search
+
+**Goal:** Pagefind-powered search with custom UI feels at least as good as Material's search.
+
+**Sharp focus:** search only. Resist versioning, SEO, social cards.
+
+**Why this sub-phase:** depends on theming (Phase 3a) for modal aesthetics. Doesn't depend on versioning — per-version search is just one Pagefind bundle per version dir.
+
+**Estimate:** ~5-7 days.
+
+### Phase 5b — Versioning
+
+**Goal:** `docs-build` + `docs-build-all` + `version_picker` + `versions.json` flow works end-to-end, with `docs/v/<version>/` committed to `master`.
+
+**Sharp focus:** versioning only. The full `docs-build` replaces the Phase-1 MVP build command.
+
+**Estimate:** ~1 week.
+
+### Phase 5c — SEO + AIO + chrome polish
+
+**Goal:** every SEO/AIO feature wired. Site is Lighthouse-clean and AI-bot-friendly. Social cards generated. HTML minified.
+
+**Sharp focus:** discoverability + polish only. Cutover Audit (Phase 5d) is a separate phase because audit is a different mental mode than building.
+
+**Estimate:** ~1 week.
+
+### Phase 5d — Feature-parity audit + selective port
+
+**Goal:** before cutover, hold a deliberate gate. Sit with three columns side by side — (1) our current Material/mkdocs site, (2) Zensical's current feature list (see §11.2 "What we'd give up"), (3) what our new site actually does. For each row, decide one of: **port**, **skip**, **defer**.
+
+**Sharp focus:** auditing, NOT redesigning. The reason this is a separate phase: it's the only realistic moment to catch silent regressions before users see them. Each prior phase optimized for getting the next thing working, not for completeness.
+
+**Concrete steps:**
+
+1. **Build the matrix.** Walk the [Zensical feature inventory](https://zensical.org/compatibility/features/) row by row. For each: "today (Material)", "today (new site)", "user-visible? load-bearing?". Drop trivial rows.
+2. **Decide per row.** Port now / defer / skip. Default to *skip* — Phase 3-5c already covered the load-bearing polish.
+3. **Implement the port-now set.** Each item should be ≤half a day; if not, re-scope as defer.
+4. **Walk the live site cold.** Pretend to be a first-time reader. Compare: home → search a term → land on an API page → navigate to a related concept → toggle dark mode → switch versions. Note anything that feels worse. Fix or file.
+5. **File deferred items as a tracked backlog.**
+
+What this phase is NOT: a chance to rethink the design. We do not redesign in Phase 5d. We only port and polish.
+
+**Estimate:** ~4-6 days (the audit itself is 1-2 days; the rest depends on the port-now set).
+
+### Phase 6 — Cutover
+
+**Goal:** GitHub Pages serves from `master/docs/v/`. Old `gh-pages` retained for rollback. Inbound URLs preserved.
+
+**Sharp focus:** cutover and only cutover.
+
+**Estimate:** ~2 days.
+
+### Phase 7 — Search v2 (post-cutover polish)
+
+**Goal:** autocomplete, recent searches, filters/scoping, typo-recovery fallback (borrowing Emil's scoring algo per §11.1.C).
+
+**Sharp focus:** search power-user features. Already-working users keep working.
+
+**Estimate:** ~3-4 days.
+
+### Phase 8 — Search v3 (blocked on analytics target)
+
+**Goal:** search-result analytics.
+
+**Blocked** on picking an analytics target (Plausible / GoatCounter / Cloudflare Worker / self-hosted endpoint). Separate design decision; park until we know where the data should go.
+
+### Phase 9 — Landing page (codesign)
+
+**Goal:** build the dedicated landing page at `/` (the marketing-style front door) that §11.11 §4.4 reserved a slot for.
+
+**Explicitly framed as a back-and-forth codesign exercise** between Juro and the agent, not a one-shot spec.
+
+Why a separate phase, post-cutover:
+- Juro has a specific vision but it will take iteration to reach (component composition, hero copy, feature framing, code-example choice, visual hierarchy).
+- The landing page sits outside `DocPage` chrome and doesn't gate any other phase.
+- It can ship to production independently — Phase 6 cuts over with `/` either redirecting to `/docs/` or serving a thin scaffold; Phase 9 replaces that with the real landing.
+- Doing it last means the rest of the design system (tokens, typography, `CodeTabs`, `ExampleCard`) is already locked in. The landing page reuses those primitives rather than inventing them.
+
+**Estimate:** hard to predict. Budget ~1-2 weeks of calendar time across multiple short codesign sessions, not dedicated focus blocks.
+
+### Phase 10+ — Deferred / post-launch maintenance
+
+Tracked separately so it doesn't crowd the migration. Items: selective rebuild of newer historical versions, pre-0.124 URL redirect map (driven by analytics), version-pruning policy, CVE audit on frozen Material bundles, per-version freeze flag, sitemap-index, `dev/` deploy flow decision.
+
+See [features file → Phase 7+](DESIGN_djc_docs_site_features.md#phase-7--deferred--post-launch) for the inventory.
+
+### Note on the Phase-1 thin scaffold
+
+Phase 1 ships a *thin* placeholder at `/` so the new top-nav `Docs / Examples / Plugins` structure works end-to-end from day one. The placeholder is ~50 LOC — hero text, three nav links, footer — using the design tokens but no original layout work. Phase 9 replaces this placeholder with the real landing page.
+
+### Total estimate
+
+Phases 0-6 (the actual migration): ~10-12 weeks of focused effort. Search v2/v3 and the landing page (Phases 7-9) add to that whenever we choose to do them. All can be split across many PRs and many calendar weeks.
+
+### Invariant across all phases
+
+**At every phase, the old mkdocs site is still the canonical published site.** We do not break docs while we're rebuilding them. We only switch the deploy in Phase 6.
 
 ---
 
 ## 9. Open questions to resolve before starting
 
-1. **URL stability.** Material generates anchors as `#some-heading`; we need to match its slug algorithm exactly to avoid breaking inbound links from third-party blog posts. Audit the slug function and replicate it.
+1. **URL stability.** Two intersecting concerns:
+    - **(a) Heading anchors.** Material generates anchors as `#some-heading`; we need to match its slug algorithm exactly to avoid breaking inbound links from third-party blog posts. Audit the slug function and replicate it.
+    - **(b) `/docs/` path move (decided by §11.11).** Docs content (`/concepts/`, `/reference/`, `/guides/`, `/getting_started/`, `/overview/`, `/upgrading/`, `/community/`, `/releases/`) moves under `/docs/`. `/examples/` and `/plugins/` stay at root. A new landing page lives at `/`. Inbound links handled via the existing redirect machinery (§11.9.2.5) — every old URL gets a `<meta http-equiv="refresh">` redirect file at its old path, auto-generated from the move map in [spike §4.2](DESIGN_djc_docs_site_spike_11_11.md). Internal cross-refs are rewritten by the same codemod pass that handles the §11.5/§11.6.F anchor scheme change.
 2. **Anchor changes from mkdocstrings — we want to DEVIATE.** Today every API symbol is anchored as `reference/api/#django_components.Component`. The dotted import path in the hash is ugly and verbose, and Juro has wanted to drop it for a long time. New scheme: `reference/api/#Component`. Trade-off: this breaks inbound links from blog posts and prior docs versions. Mitigation: in the rendered HTML, emit **both** the new canonical anchor (`<h2 id="Component">`) and a legacy alias for back-compat (`<a name="django_components.Component"></a>`) so old URLs still work. Confirm via spike (§11) whether the alias actually resolves in modern browsers (`<a name>` is deprecated but still honored).
 3. **Edit-on-GitHub button URLs.** Each generated page maps back to a source. We control this; needs to be wired into our `doc_page` component.
 4. **Themability / dark mode toggle.** Material gives us palette-switching out of the box. We can recreate with one CSS file and a small JS toggle.
@@ -1107,92 +1267,829 @@ Feeds into: §4.1 (build kernel), §4.7 (pipeline). No further coltrane follow-u
 
 ### 11.4 Markdown + Django templates pipeline
 
-- **Question.** Can pages remain markdown but with Django template tags embedded? What's the cleanest way to make `{% example %}` and friends work inside markdown without the markdown parser fighting them?
-- **Why.** Already partially answered in §4.7 (Hugo-style: shortcodes → markdown → layout). The spike validates the answer end-to-end.
-- **Method.**
-    1. Pick one real page from `docs/getting_started/` and convert it to the new pipeline.
-    2. Verify: heading anchors, code-block highlighting, inline `{% example %}` directives, and a custom `{% docstring %}` directive all render correctly.
-    3. Time the per-page render; extrapolate to full-site time.
-    4. Validate that `markdown-it-py` (or `python-markdown`) passes through block-level HTML emitted by Django without mangling it.
-- **Feeds into.** §4.7, and confirms the order of passes is the one we want.
+**Status:** spike completed 2026-05-31. Recommendation: **fence-protection pre-pass + full Django template engine + python-markdown + DocPage layout**. Details below.
+
+- **Question.** Can pages remain markdown but with Django template tags embedded? What's the cleanest way to make `{% example %}` and friends — *and arbitrary `{% component %}` calls* — work inside markdown without the markdown parser fighting them?
+- **Why.** Already partially answered in §4.7. The spike validates the answer end-to-end and corrects the §4.7 sketch.
+
+#### 11.4.A Findings — what's in the docs today
+
+Sampled three real pages plus the mkdocs config:
+
+- [docs/getting_started/your_first_component.md](docs/getting_started/your_first_component.md) — your-first-component tutorial
+- [docs/getting_started/adding_js_and_css.md](docs/getting_started/adding_js_and_css.md) — JS/CSS chapter (admonitions with titles, nested lists with code, multi-language fences)
+- [docs/examples/fragments/README.md](docs/examples/fragments/README.md) — example doc that uses `--8<--` snippets
+
+What we found, mapped to the markdown extensions configured in [mkdocs.yml](mkdocs.yml):
+
+| Feature | Syntax in docs today | python-markdown extension |
+|---|---|---|
+| Code fences with language | ` ```python `, ` ```htmldjango `, ` ```djc_py `, ` ```css `, ` ```js `, ` ```html ` | `pymdownx.highlight` + `pymdownx.superfences` + Pygments (via `pygments_djc` for djc) |
+| Code fences with title | ` ```python title="components/calendar/calendar.py" ` | `pymdownx.highlight` |
+| Inline code | `` `Component.render()` `` | core |
+| File snippets | `--8<-- "docs/examples/fragments/component.py"` (inside a fenced block) | `pymdownx.snippets` |
+| Admonitions (typed, optional title) | `!!! note` / `!!! info "Special role of css and js"` | `markdown.extensions.admonition` |
+| Cross-page links | `[Component](../reference/api.md#django_components.Component)` | core + `toc` for `#anchor` resolution |
+| Nested lists with code blocks | indented 4 spaces inside `1.` | core, but indentation is fragile |
+| Images | `![Fragments example](./images/fragments.gif)` | core |
+| Auto-link GitHub refs | `#1593`, `@oliverhaas` | `pymdownx.magiclink` (configured for `django-components/django-components`) |
+| HTML in markdown | rare in our docs but supported | `md_in_html` |
+| Tables, definition lists, footnotes, task lists | configured but rarely used | `tables`, `def_list`, `pymdownx.tasklist` |
+| Emoji | configured but rarely used | `pymdownx.emoji` |
+| TOC with `¤` permalinks | every page heading | `toc` with `permalink: "¤"` |
+
+The body content is plain CommonMark plus a few well-defined extensions. The extensions are localized: a few admonitions per page, occasional snippets, magic links.
+
+#### 11.4.B Library choice — keep `python-markdown` + `pymdownx.*`
+
+| | `python-markdown` (today) | `markdown-it-py` |
+|---|---|---|
+| Spec | "loose," historically extended via plugins | CommonMark (strict) |
+| Speed | OK | Faster |
+| Existing docs compatibility | **Native** — every page is written for `pymdownx.*` syntax | Would require rewriting every admonition, snippet, magic-link, fence-with-title |
+| Ecosystem | `pymdownx.*` is the de-facto extension pack; mature, widely used | `mdit-py-plugins` is smaller; admonition has a different syntax (Pandoc `::: note` vs `!!! note`) |
+| mkdocs coupling | None at the python-markdown layer | n/a |
+
+**Decision: keep `python-markdown` with the existing `pymdownx.*` extension set.** The speed gain from `markdown-it-py` does not justify rewriting ~100 admonitions, every `--8<--` snippet, and every `title="..."` code fence. None of the `pymdownx.*` extensions depend on mkdocs — they plug into the `markdown` library directly. They keep working unchanged. This reverses the "or markdown-it-py" hedge in §4.7's earlier draft.
+
+#### 11.4.C The pipeline (revision of §4.7)
+
+§4.7's first draft said: "render markdown source as a Django template" (Pass 1), then "markdown to HTML" (Pass 2), then "wrap in layout" (Pass 3). Juro raised a real concern in feedback: **what about arbitrary `{% component "table" rows=... %}` calls in markdown?**
+
+A narrow regex-based whitelist (the previous spike answer) would leave `{% component %}` untouched, so it would survive Pass 1, get carried through python-markdown as text, and end up as literal `{% component %}` in the final HTML — broken.
+
+The fix is conceptually simpler: **wrap every code region in `{% verbatim %}...{% endverbatim %}` in a pre-pass, then run Django's full template engine on the result.** Every Django tag — `{% component %}`, `{% example %}`, `{% docstring %}`, `{% if %}`, `{% for %}` — works uniformly. Code fences are protected because their content is wrapped in `{% verbatim %}`, which is Django's official escape mechanism for "treat what's inside as literal."
+
+Revised four-pass pipeline:
+
+```
+content/foo.md
+    [Pre-pass] Fence-protection scanner (~50 LOC, Python)
+        - Walk the source line-by-line, tracking fence state for:
+            - ``` fenced blocks
+            - ~~~ fenced blocks
+            - 4-space indented code blocks
+            - `inline code` spans
+        - Wrap each contiguous code region in {% verbatim %}...{% endverbatim %}
+        - Output: markdown source where every code region is verbatim-escaped
+
+    [Pass 1] Django template engine renders the body
+        - {% load docs_extras component_tags %} is auto-injected
+        - Any Django tag works:
+            {% component "table" rows=... %}     -> runs the djc renderer
+            {% example "fragments" %}            -> custom simple_tag, runs ExampleCard.render(...)
+            {% docstring "django_components.Component" %} -> custom simple_tag, runs ApiReference.render(...)
+            {% include_file "path" %}            -> custom simple_tag, emits a fenced code block
+            {% version %}                 -> custom simple_tag, returns "0.150.0"
+            {% if %}, {% for %}, {% with %}      -> just work
+        - Output: markdown body with all template tags expanded to either
+          markdown text or block-level HTML (separated by blank lines)
+        - Inside the {% verbatim %} blocks, every {% %} pattern is emitted literally
+          (so doc examples that *show* template tags survive)
+
+    [Pass 2] python-markdown -> HTML
+        - Extensions match today's mkdocs config: pymdownx.highlight, pymdownx.superfences,
+          pymdownx.snippets, pymdownx.magiclink, pymdownx.details, pymdownx.tabbed,
+          pymdownx.tasklist, pymdownx.emoji, pymdownx.inlinehilite, admonition, attr_list,
+          codehilite, def_list, tables, md_in_html, toc, abbr
+        - md_in_html lets block-level HTML emitted by Pass 1 pass through
+        - toc.permalink="¤" preserves today's heading-anchor permalinks
+        - Slugify with pymdownx.slugs.slugify(case="lower") to match Material's anchors exactly
+        - Output: HTML page body + TOC tree
+
+    [Pass 3] DocPage layout wrap
+        - Render DocPage Django component:
+            DocPage(content_html, title, toc, breadcrumbs, edit_url, version, version_picker, ...)
+        - ONLY place page chrome (nav, sidebar, footer, dark mode, search bar) is added
+        - Output: complete HTML page
+
+    [Pass 4] Minify + sanitize + write
+        - htmlmin or equivalent
+        - write to docs/v/<version>/<path>.html
+```
+
+The key shape: **pre-pass protects code, then Django, then markdown, then layout.** There is no "narrow whitelist directive expander" and no special handling for `{% component %}` — Django's template engine handles every tag uniformly.
+
+#### 11.4.D Where's the line between directive and Django template tag?
+
+**There is no line.** Every tag in markdown is just a Django template tag. This was the user's question and is the central insight of the revised design.
+
+- "Docs tags" like `{% example %}`, `{% docstring %}`, `{% include_file %}`, `{% version %}`, `{% image %}` are convenience `simple_tag` definitions registered in `docs_extras.py`. They're sugar for common docs operations.
+- djc tags like `{% component "table" %}` are the same tags users use in their own templates. They work in docs unchanged because Django loads the `django_components` template library like any other Django app.
+- Core Django tags (`{% if %}`, `{% for %}`, `{% url %}`, `{% with %}`) work too. Useful for cases like "show one section only in the latest version" or looping over a metadata structure.
+
+Authors don't have to memorize a separate "directive" syntax. They write Django template tags in markdown the same way they write them in templates.
+
+#### 11.4.E How a docs tag wires up to a Django component (the `<ApiReference>` clarification)
+
+Juro flagged a confusion in the earlier draft: I described `{% docstring %}` as emitting "an `<ApiReference>` HTML block," which read like JSX-style invocation. **That's not how djc v1/v2 works.** Components are invoked via `{% component "name" %}` in templates, or `.render()` in Python — never as bare HTML tags like `<ApiReference>`.
+
+The correct mechanism for `{% docstring "django_components.Component" %}`:
+
+```python
+# docs_site/apps/docs/templatetags/docs_extras.py
+from django import template
+from docs_site.apps.docs.components.api_reference import ApiReference
+from docs_site.apps.docs.griffe_adapter import lookup_symbol  # uses our griffe extensions
+
+register = template.Library()
+
+@register.simple_tag(takes_context=True)
+def docstring(context, dotted_path):
+    symbol_data = lookup_symbol(dotted_path)  # returns the portable dict from §2.2
+    return ApiReference.render(kwargs={"symbol": symbol_data}, context=context.flatten())
+```
+
+The `simple_tag` is registered with Django. When the template engine sees `{% docstring "x.Y" %}`, it calls the Python function, which calls `ApiReference.render(...)` (a regular djc Component class), and returns the resulting HTML string. The HTML is substituted into the page where `{% docstring %}` was. No JSX-style tag is ever emitted.
+
+`{% example "fragments" %}` works the same way — a `simple_tag` that calls `ExampleCard.render(name="fragments")` and returns HTML.
+
+This pattern is the bridge from "Django template tag syntax in markdown" to "djc component rendering." It uses entirely existing v1/v2 mechanisms.
+
+#### 11.4.F `--8<--` audit — keep, with two raw-inject pages handled
+
+Juro asked us to audit `--8<--` usage and find any non-fenced cases (raw text injection). Results:
+
+| Use | Where | Inside fenced block? | What to do |
+|---|---|---|---|
+| `--8<-- "docs/examples/<name>/component.py"` | All `docs/examples/*/README.md` (18 instances) | **Yes** — inside ` ```djc_py ` fences | Keep `pymdownx.snippets` |
+| `--8<-- "CODE_OF_CONDUCT.md"` | [docs/community/code_of_conduct.md](docs/community/code_of_conduct.md) | **No** — raw markdown injection | Keep `pymdownx.snippets` (handles both cases) |
+| `--8<-- "LICENSE"` | [docs/overview/license.md](docs/overview/license.md) | **No** — raw text injection | Keep `pymdownx.snippets` |
+
+`pymdownx.snippets` handles both fenced and raw injection out of the box — fenced-vs-raw is determined by context (what surrounds the `--8<--` line), not by configuration. We don't need a separate directive for the raw case. The two raw-inject pages keep working as-is.
+
+**Design note on injection-protection:** Juro is right that fenced-injection is safer (the injected content can't be parsed as markdown/template syntax). We can adopt a project convention: "prefer to inject inside a fenced block; document raw injection as the rare exception." `code_of_conduct.md` and `license.md` are the rare exceptions — both inject stable, well-behaved markdown / plain text. No new mechanism needed.
+
+**Decision on `--8<--` vs `{% example %}`** (open question §4 in the earlier spike): **option (1)** — keep `--8<--` for explicit "here is one specific file" inclusions; add `{% example %}` for the high-level "show component + page + live demo tabs" case. They serve different purposes.
+
+#### 11.4.G Per-page validation
+
+I mentally walked each real page through the revised pipeline:
+
+**`your_first_component.md`**: ~15 code fences (each gets verbatim-wrapped by the pre-pass, then highlighted by Pygments in Pass 2), 3 admonitions (handled by `markdown.extensions.admonition` in Pass 2), ~12 cross-page links to `../reference/api.md#django_components.Component`. The `#django_components.Component` anchor becomes `#Component` after the anchor-scheme deviation (§7.2); a post-Pass-2 link-rewriter handles internal links, the legacy alias (§7.2) handles external. Verdict: **zero source changes**.
+
+**`adding_js_and_css.md`**: admonitions with titles, nested ordered lists with indented code, nested admonitions inside list items. All handled by `markdown.extensions.admonition` in Pass 2. Verdict: **zero source changes**.
+
+**`examples/fragments/README.md`**: `--8<-- "docs/examples/fragments/component.py"` inside a `djc_py` fence — handled by `pymdownx.snippets` in Pass 2. Image with relative path — markdown-native. Verdict: **zero source changes**. We can later add `{% example "fragments" %}` to embed the live demo, but the existing content already renders correctly.
+
+#### 11.4.H Concrete prototype
+
+The cheapest follow-up is a ~200-line proof of concept:
+
+```python
+# docs_site/apps/docs/management/commands/build_one.py
+
+import re
+from pathlib import Path
+
+import markdown
+from django.template import Engine, Context
+from django.core.management.base import BaseCommand
+from pymdownx.slugs import slugify
+
+MD_EXTENSIONS = [
+    "abbr", "admonition", "attr_list", "codehilite", "def_list", "tables",
+    "md_in_html", "toc",
+    "pymdownx.magiclink", "pymdownx.details", "pymdownx.highlight",
+    "pymdownx.inlinehilite", "pymdownx.snippets", "pymdownx.tabbed",
+    "pymdownx.superfences", "pymdownx.tasklist", "pymdownx.emoji",
+]
+MD_EXTENSION_CONFIGS = {
+    "pymdownx.highlight": {"anchor_linenums": True},
+    "pymdownx.snippets": {"check_paths": True, "base_path": "."},
+    "pymdownx.tabbed": {"alternate_style": True},
+    "pymdownx.tasklist": {"custom_checkbox": True},
+    "pymdownx.magiclink": {
+        "repo_url_shorthand": True,
+        "user": "django-components",
+        "repo": "django-components",
+    },
+    "toc": {"permalink": "¤", "slugify": slugify(case="lower")},
+}
+
+FENCE_OPEN_TICK = re.compile(r'^(\s*)```')
+FENCE_OPEN_TILDE = re.compile(r'^(\s*)~~~')
+
+def protect_code_fences(md_source: str) -> str:
+    """Pre-pass. Wrap every ``` and ~~~ fence in {% verbatim %}...{% endverbatim %}.
+    Production version also handles indented code and inline code spans."""
+    out = []
+    in_fence = False
+    fence_char = None
+    for line in md_source.splitlines(keepends=True):
+        if not in_fence:
+            m = FENCE_OPEN_TICK.match(line) or FENCE_OPEN_TILDE.match(line)
+            if m:
+                fence_char = "```" if "`" in line else "~~~"
+                out.append("{% verbatim %}\n")
+                out.append(line)
+                in_fence = True
+                continue
+            out.append(line)
+        else:
+            out.append(line)
+            if line.lstrip().startswith(fence_char):
+                out.append("{% endverbatim %}\n")
+                in_fence = False
+    return "".join(out)
+
+def render_django(md_source: str, engine: Engine, ctx: dict) -> str:
+    """Pass 1. Run the verbatim-protected source through Django's template engine."""
+    template_src = "{% load docs_extras component_tags %}\n" + md_source
+    return engine.from_string(template_src).render(Context(ctx))
+
+def md_to_html(md_source: str) -> tuple[str, list]:
+    """Pass 2. python-markdown -> HTML + TOC."""
+    md = markdown.Markdown(extensions=MD_EXTENSIONS, extension_configs=MD_EXTENSION_CONFIGS)
+    html = md.convert(md_source)
+    return html, md.toc_tokens
+
+class Command(BaseCommand):
+    def handle(self, *args, **opts):
+        src = Path("docs/getting_started/your_first_component.md").read_text()
+        protected = protect_code_fences(src)
+        expanded = render_django(protected, Engine.get_default(),
+                                 ctx={"version": "0.150.0"})
+        html, toc = md_to_html(expanded)
+        # Pass 3: DocPage.render(content_html=html, toc=toc, ...)
+        Path("site/test.html").write_text(html)
+```
+
+This skeleton is enough to:
+1. Prove the fence-protection pre-pass works.
+2. Prove arbitrary Django tags in markdown work (including `{% component %}`).
+3. Prove `pymdownx.*` extensions render existing pages correctly.
+4. Prove `md_in_html` correctly passes through block-level HTML emitted by Pass 1.
+5. Time the per-page render (likely <100ms for `your_first_component.md`).
+
+#### 11.4.I Gotchas
+
+1. **Inline code and indented blocks — what the scanner has to handle.** The prototype above only handles ` ``` ` fences. Production pre-pass needs to also escape:
+    - **`~~~`-fenced blocks** (also valid in `pymdownx.superfences`) — trivial extension of the fence regex.
+    - **Inline code spans** (`` `...` ``) — within a single line, find each backtick-delimited span. The cleanest way to protect a `{% ... %}` pattern inside backticks is to rewrite it to `{% templatetag openblock %}... {% templatetag closeblock %}` only when inside backticks. ~20 LOC.
+    - **4-space indented code blocks** — **Juro asked how we'd detect these. Short answer: we essentially don't have to.** A scan of every `.md` file in `docs/` for true standalone 4-space indented code (preceded by a blank line, not inside a list item or admonition) found two non-trivial sources:
+        - [docs/community/people.md](docs/community/people.md) — Jinja-template HTML inside `mkdocs-macros` loops. This page becomes a native Django-template page in the new pipeline (see §2.3) and stops being markdown.
+        - [docs/reference/*.md](docs/reference/) — mkdocstrings `:::` directives with their `options:` blocks. These are replaced entirely by our `{% docstring %}` mechanism.
+        Both cases evaporate during the migration. No other true 4-space indented code blocks exist in our docs today.
+
+    **Decision:** the scanner handles `` ` ``-style fences, `~~~`-style fences, and `` ` `` inline spans. We adopt a **project convention: use fenced blocks for code; raw 4-space indented code is not supported.** A CI guardrail (one regex, run on changed `.md` files) flags any incoming PR that introduces indented code. **If** we ever need to support it, the scanner gains a ~30-line post-process: walk the source, find each contiguous run of `>=4-space-indented` lines preceded by a blank line and NOT preceded (within ~50 lines back) by a list-item or admonition opener, and wrap that run in `{% verbatim %}`. Cheap, but not worth pre-emptively building.
+
+    Total scanner with the cases we DO need: ~80 LOC, well-bounded.
+
+2. **`{% verbatim %}` nesting.** Django supports `{% verbatim somename %}...{% endverbatim somename %}` for nesting. We use a unique name per fence so nested cases (a fence whose content shows the verbatim tag) still work. Edge case but worth supporting.
+
+3. **`--8<--` snippet expansion timing.** `pymdownx.snippets` runs in Pass 2 (after Django). A Pass-1 directive (e.g. `{% include_file %}`) that emits a fenced block with `--8<--` inside it will get further-expanded in Pass 2 — usually desired, occasionally a surprise. Mitigate by documenting the order.
+
+4. **Magic-link expansion.** `pymdownx.magiclink` runs in Pass 2 and rewrites `#1593` → GitHub issue link. If a directive emits text containing `#1593` (or anything resembling a GitHub ref), it will be auto-linked. Mostly desired. Edge case: a directive that emits Python attribute access that happens to look like a ref. None of the planned tags emit such content.
+
+5. **TOC inclusion of directive-emitted headings.** If `{% docstring %}` emits markdown headings (`## Component`), the `toc` extension picks them up. If it emits raw HTML headings, `toc` may or may not, depending on `md_in_html` config. **Recommendation:** have `{% docstring %}` emit markdown headings, not HTML. Simpler, TOC-friendly, slug-controllable.
+
+6. **Slug parity.** Material configures `pymdownx.slugs.slugify(case="lower")`. We use the same in `MD_EXTENSION_CONFIGS["toc"]["slugify"]` so heading anchors match today's exactly. A/B test on one page to confirm before committing to the migration.
+
+7. **Dev-mode reload.** In `runserver` mode, every request to a `.md` URL re-runs the whole pipeline. Fine for dev (~100ms latency). For build mode, cache the markdown→HTML output per content file, keyed on `(source_hash, directive_outputs_hash)`. Directives can change without source changing (e.g. `{% version %}`), so both need to be in the cache key.
+
+8. **Build-time context.** Directives like `{% version %}` depend on the build-time version. The Django render gets a small build context dict at expansion time (version, site_url, edit_base_url). Pure function of (directive args, build context). No HTTP request needed.
+
+#### 11.4.J Conclusions
+
+1. **Architecture works** with one shape correction: the pipeline is **pre-pass + Django template engine + python-markdown + DocPage layout**, not "regex directive expander + ...". The shift was driven by Juro's question about `{% component %}` in markdown.
+2. **`python-markdown` stays.** Switching to `markdown-it-py` would force rewriting ~100 admonitions and every snippet; the speed gain doesn't pay back.
+3. **Every Django tag works in markdown** — there's no distinction between "directives" and "Django tags." Docs tags (`{% example %}`, `{% docstring %}`, `{% include_file %}`, `{% version %}`, `{% image %}`) are convenience `simple_tag` definitions; djc tags work because Django loads its template library.
+4. **`<ApiReference>`-style tags are NOT used.** Components are invoked via `simple_tag` implementations that call `Component.render(...)` in Python. Bridges Django template tag syntax to djc rendering using only v1/v2 mechanisms.
+5. **`--8<--` stays for code-block injection.** Two existing raw-inject pages (`code_of_conduct.md`, `license.md`) are handled by the same `pymdownx.snippets` extension. No new directive needed.
+6. **Zero source changes** required to existing markdown for it to render under the new pipeline. New tags are additive.
+7. **Gotchas are tractable.** The biggest is the fence-protection scanner (~80 LOC, well-bounded).
+
+#### 11.4.K When to build the prototype — Phase 0, before Phase 1
+
+**Juro asked when this gets built.** The prototype is its own micro-phase before Phase 1 of the migration plan (§5):
+
+```
+Phase 0 — Pipeline proof of concept  (~2-3 days)   <-- the prototype
+Phase 1 — Scaffold + one section     (~1-2 weeks)
+Phase 2 — {% example %} tag          (~1 week)
+Phase 3 — Rest of markdown pages     (~1-2 weeks)
+Phase 4 — API reference              (~1 week)
+Phase 5 — Search, versioning, social (~1 week)
+Phase 6 — Cutover                    (~2 days)
+```
+
+It's not a real "phase" in the project-management sense — it's the executable deliverable that closes the §11.4 spike. The point is to validate the pipeline shape with the cheapest possible code before sinking 1-2 weeks of effort into Phase 1's scaffolding (Django app structure, management command, multi-page build, etc.).
+
+**Phase 0 build:** the ~200-LOC skeleton from §11.4.H. Single management command, one file, throws everything else away. Run against:
+- [docs/getting_started/your_first_component.md](docs/getting_started/your_first_component.md) — covers admonitions, multi-language fences, cross-page links, code-fence titles
+- [docs/examples/fragments/README.md](docs/examples/fragments/README.md) — covers `--8<--` snippets, images
+
+**Phase 0 success criteria:**
+- Output HTML matches the current mkdocs build for `your_first_component.md` modulo class names. Heading anchors are identical (slug-parity A/B test, §11.4.I gotcha 6).
+- A small synthetic `{% component %}` call placed inside a test markdown page actually renders to HTML — confirms the "every Django tag works in markdown" claim from §11.4.D.
+- Per-page render time recorded, extrapolated to ~200 pages.
+- Confirm `md_in_html` passes the Pass-1 block-level HTML through Pass 2 untouched.
+
+**If Phase 0 passes**, §4.7 is locked, the prototype becomes the seed of Phase 1's `docs_site/apps/docs/management/commands/build_docs.py`, and Phase 1 starts.
+
+**If Phase 0 fails** (most likely cause: a markdown extension we configured doesn't compose with `md_in_html` the way we expect, or slug-parity breaks for non-trivial headings), we revise §4.7 before committing engineering effort to Phase 1. The whole prototype is ~200 LOC, so a complete rewrite costs days, not weeks.
+
+The point of Phase 0 is the same as any spike: **shift the riskiest unknown to the cheapest moment.**
 
 ### 11.5 Griffe reuse + per-API-kind renderers
 
-- **Question.** Validate the assumption that griffe gives us everything we need *minus mkdocstrings*. Then enumerate every API "kind" we currently render and design the component-per-kind set.
-- **Why.** This is the biggest piece of new work after the markdown pipeline. If griffe falls short somewhere we expect mkdocstrings to fill in (e.g. cross-references, ambiguity resolution), we need to know.
-- **Method.**
-    1. List every distinct API kind currently rendered: `class`, `function`, `method`, `property`, `setting`, `cli_command`, `management_command`, `template_tag`, `exception`, `extension_hook`, `dataclass_field`, etc. (audit `docs/scripts/reference.py` and `docs/reference/*.md`).
-    2. For each kind, sketch the Django template that renders it. Note shared sub-components (e.g. "signature line", "parameters table", "examples block").
-    3. Walk a real griffe `Object` tree for `django_components.Component` and confirm every field we need is reachable.
-    4. Identify gaps where mkdocstrings does post-processing we'd need to replicate (cross-reference resolution is the obvious one).
-- **Feeds into.** §4.3, §2.2 (the data → renderer split).
+- **Status:** **complete** (2026-05-31). Full write-up in [DESIGN_djc_docs_site_spike_11_5.md](DESIGN_djc_docs_site_spike_11_5.md).
+- **Verdict:** GO. Griffe gives us every machine-readable fact we need across all 21 distinct API renderings. Five real gaps (cross-refs, runtime-set class attributes, argparse metadata, NamedTuple `_fields`, raw HTML in docstrings) all have known mitigations totalling ~50-200 LOC. Our two existing griffe extensions port verbatim.
+- **Key findings:**
+    - 21 distinct rendered kinds fold into **12 distinct Django templates** plus a small set of shared sub-components (`SignatureBlock`, `SourceCodeLink`, `ParametersTable`, `DocstringBody`, `CrossRef`, `SymbolTypeBadge`).
+    - The Discovery → Rendering contract is a portable `ReferencePage` Python dict (JSON-serializable), validating the §2.2 split.
+    - Concrete file layout proposed: per-kind components live under `apps/docs/components/reference/entries/`; the discovery layer is a sibling `apps/docs/discovery/` (not under `components/`), enforcing the §2.2 split by directory placement.
+    - **Anchor scheme is leaf-name-only.** `#django_components.component.Component` → `#Component` (the entire dotted path drops, not just the root). Within a single reference page, leaf names are already unique, and the intermediate path is internal detail anyway. The hand-typed `[X](api.md#dotted.path)` form in 397 docstring links gets swept in the same codemod into a resolver-friendly form.
+    - **`signature_crossrefs` is load-bearing** (712 auto-linked types on one page). Reimplementing it requires parsing griffe's `Expr` tree per parameter and looking each `ExprName` up against a merged inventory (project symbols + `objects.inv` from Python stdlib and Django).
+    - **Docstring format that works in both IDEs and docs builds:** Google-style sections + a **two-syntax model** — single backticks for code/literals/mentions (monospace in both worlds, never linkified, no ambiguity), bracket cross-refs `[X][]` (autorefs-style) when a link is the point. Backticks carry the daily authoring load; cross-refs degrade to plain text in IDE hover (accepted tradeoff for keeping backticks unambiguous). Matches mkdocstrings+autorefs ecosystem syntax, so our `objects.inv` round-trips.
+    - **Codemod scope (structural blockers only, per Juro):** ~975 hand-typed `[X](api.md#django_components.Y)` links across `src/` (397) + `docs/` (578) → bracket cross-refs `[X][LeafName]`, no per-link judgment, no downgrades to backticks. Plus ~129 markdown-style `**Args:**` → true Google `Args:`. **Advanced syntaxes in existing docstrings (31 Material admonitions, 1 raw HTML) are NOT swept** — that's a separate later judgment call. The §11.2 convention is the target for new docstrings going forward. Roughly a one-day precursor PR.
+    - Thematic grouping for `api.md` is a worthwhile migration opportunity — `ReferencePage` already supports arbitrary entry ordering, so grouping classes by theme (Core / Slots / Registration / Media / Errors) is ~60 min of curation.
+    - **`reference.py` (1160 lines)** is rewritten, not refactored — one PR per generator (12 of them).
+    - Three mkdocstrings options are dead weight today and can be dropped: `preload_modules`, `summary`, `show_submodules`.
+- **First concrete step:** build the Layer 1 + Layer 2 prototype against `exceptions.md` (smallest distinct page, 3 entries, all kind `class`). ~1 day. Validates contract before scaling to 11 more kinds.
+- **Feeds into.** §4.3, §2.2 (the data → renderer split), §7.2 (anchor scheme codemod).
 
 ### 11.6 Replicating "simple/clean way to define content"
 
-- **Question.** What's the inventory of authoring affordances Material/mkdocs gives us today, and what's the minimum we need to keep contributors happy?
-- **Why.** `pymdownx.tabbed`, `admonition`, `details`, `tasklist`, `--8<--` includes, `mkdocs-macros`, code annotations, footnotes — every one of these is a contributor convenience. If the new system feels like a downgrade to authors, we'll regret it.
-- **Method.**
-    1. Inventory: grep `docs/` for every pymdown / Material directive in use.
-    2. For each, decide: (a) supported natively by `markdown-it-py` (or `python-markdown`), (b) trivial Django template tag, (c) drop, (d) reimplement.
-    3. Write the shortest possible spec for each — one sentence per directive.
-- **Feeds into.** §4.7.
+**Status:** spike complete 2026-05-31. Recommendation: **the markdown side is mostly free** because `python-markdown` + `pymdownx.*` (locked in by §11.4.B) covers every directive actually used in `docs/`. The real §11.6 work isn't markdown extensions — it's the **Material theme affordances** (copy button, edit-on-GitHub, page metadata, section-index pages) that authors don't write directives for but that *contributors and readers feel*. Plus formalizing the **new docs-only Django template tags** the migration introduces.
+
+- **Original question.** What's the inventory of authoring affordances Material/mkdocs gives us today, and what's the minimum we need to keep contributors happy?
+- **Why.** Every directive and every theme feature is a contributor convenience. If the new system feels like a downgrade to authors, we'll regret it.
+
+#### 11.6.A Reframing — "directives" is the wrong frame
+
+The original spike statement implied the answer is a list of markdown directives. The inventory below shows that's not quite right:
+
+1. Almost everything we use is already free from `python-markdown` + `pymdownx.*` (§11.4.B). The migration doesn't lose those.
+2. The features authors *don't* see but contributors and readers *feel* — copy button, edit-on-GitHub, breadcrumbs, dark/light toggle, page metadata — are not markdown directives. They're theme behavior. Material gives them away for free; our renderer must deliberately rebuild each.
+3. The migration **introduces new authoring idioms** (`{% example %}`, `{% docstring %}`, `{% include_file %}`, `{% version %}`, `{% component %}`). These count as part of the "simple/clean way to define content" story and need a spec.
+
+So the spike covers three categories: **(B)** markdown directives, **(C)** theme/UX affordances, **(D)** new Django template tags.
+
+#### 11.6.B Markdown-directive inventory (verified counts, 2026-05-31)
+
+Scope: human-authored markdown under `docs/getting_started/`, `docs/concepts/`, `docs/guides/`, `docs/community/`, `docs/overview/`, `docs/upgrading/`, `docs/releases/`, `docs/plugins/`, `docs/examples/*/README.md`, `docs/migrating_from_safer_staticfiles.md`. Auto-generated `docs/reference/` excluded (covered by §11.5).
+
+##### Heavy use — keep
+
+| Directive | Use count | Where | Provides | Verdict |
+|---|---|---|---|---|
+| Fenced code blocks (info-string includes language) | 633 fences across ~11 languages (most-used: `python` 174, `django` 145, `py` 130, `djc_py` 53, `sh` 33, `html` 26, `bash` 26, `htmldjango` 24, `txt` 17) | All over | `pymdownx.highlight` + `pymdownx.superfences` + Pygments | **Keep** — free from extensions |
+| Fenced-block `title="..."` | 39 occurrences | `concepts/`, `examples/`, `guides/` | `pymdownx.highlight` | **Keep** — free |
+| Admonitions (`!!! note`, `!!! info`, `!!! warning`) | 80 total: `warning` 32, `info` 28, `note` 18. 7 titled (e.g. `!!! info "Title"`) | All over | `markdown.extensions.admonition` | **Keep** — free |
+| Tasklists `- [ ]` / `- [x]` | 59 | `community/`, `concepts/`, `getting_started/` | `pymdownx.tasklist` (config `custom_checkbox: true`) | **Keep** — free |
+| `pymdownx.snippets` (`--8<-- "..."`) | 20 (all inside `djc_py` fences in `docs/examples/*/README.md`) | `examples/` | `pymdownx.snippets` | **Keep** — free. Already audited in §11.4.F. Convention: prefer fenced inclusion; raw inclusion documented as the exception (the two raw cases live in `code_of_conduct.md` and `license.md`) |
+| Pipe tables | ~36 table rows, 6-8 tables | Scattered | `markdown.extensions.tables` | **Keep** — free |
+| Same-page anchor links `[X](#anchor)` | 35 | `concepts/advanced/` mostly | core markdown | **Keep** — free |
+| Same-section cross-page links `[X](other.md)` | 59 | `guides/`, `examples/` | core markdown | **Keep** — free |
+| Cross-page anchor links `[X](path.md#django_components.Y)` | **773 total in `docs/`, of which 578 target the `#django_components.*` API anchor scheme** | `concepts/` 26 files, `getting_started/` 8, `examples/` 4, `guides/` 3, `overview/` 2, `community/` 2 | core markdown | **Keep — but codemod required.** Same anchor-scheme change as §11.5's 397 in `src/`. See §11.6.F |
+
+##### Configured today but unused — keep enabled, document them
+
+These are currently enabled in `mkdocs.yml` but never used in source. **Decision (per Juro): keep them enabled.** The reason they're unused isn't that we don't need them — it's that contributors (Juro included) didn't know they existed and chronically reached for the affordance they did know about (admonitions). Dropping them codifies the discoverability gap. Keeping them, plus building a "Markdown syntax reference" docs page (§11.6.B.2), surfaces the options.
+
+| Directive | Count | Decision |
+|---|---|---|
+| `pymdownx.tabbed` (`=== "Tab"`) | 0 today | **Keep** — Juro will want tabs for multi-tool install instructions (pip / uv / poetry), API code examples by language, etc. |
+| `pymdownx.details` (`??? note` / `???+ note`) | 0 today | **Keep** — collapsible asides. Juro: "I chronically used notes (admonitions), because I didn't know that expandable details sections were a thing." |
+| `pymdownx.inlinehilite` (`` `:python: code` ``) | 0 today | **Keep** — inline syntax highlighting for short snippets where a full fence is overkill |
+
+##### Verified droppable
+
+Only one item really drops:
+
+| Directive | Count | Decision |
+|---|---|---|
+| `pymdownx.magiclink` (`#1234`, `@user` auto-link) | 0 | **Drop**. Verified: changelog and release-notes pages use *full* GitHub URLs generated by `gen_release_notes.py`, not the magic-link short form. Explicit full URLs are more grep-friendly anyway |
+
+##### Configured but unused — keep (low cost, small surface)
+
+These add nothing if unused but cost nothing to keep enabled. Contributors who reach for them get what they expect:
+
+| Directive | Count | Decision |
+|---|---|---|
+| `pymdownx.emoji` (`:warning:`) | 0 in scope | **Keep** — costs nothing |
+| `attr_list` (`{ #id .class }`) | 0 real (38 false positives are Django template comments `{# ... #}`) | **Keep** — see §11.6.B.3 for what it does |
+| `def_list` (term/definition) | 0 | **Keep** — see §11.6.B.3 |
+| `abbr` (`*[HTML]: HyperText Markup Language`) | 0 | **Keep** |
+| `md_in_html` (`<div markdown=1>...</div>`) explicit | 0 explicit uses | **Keep** — load-bearing for the Pass-1 → Pass-2 handover in §4.7 even though authors don't write it directly |
+| `[TOC]` marker | 0 | **Keep** the `toc` extension (heading slugification + anchor generation); the explicit `[TOC]` marker is rarely used but free |
+| Frontmatter | 1 file (`docs/README.md`, out of scope) | **Build into the pipeline** — see §11.6.I item 2 for the schema and library choice |
+
+##### Available pymdownx capabilities we haven't enabled yet (catalog)
+
+Juro asked for an enumeration so we know what's reachable when we want a new affordance. The full pymdownx-extensions list is at <https://facelessuser.github.io/pymdown-extensions/>; below is the subset that's plausible for our use case. None are enabled today; all are opt-in.
+
+| Extension | What it does | When we might want it |
+|---|---|---|
+| `pymdownx.superfences` custom fences | Custom fence languages routed to validators / renderers (e.g. `mermaid`, `vegalite`, custom) | Enable when we add Mermaid (see below) |
+| `pymdownx.arithmatex` | LaTeX math via `$inline$` and `$$display$$`, rendered client-side by KaTeX/MathJax | When a real equation appears in docs |
+| `pymdownx.tilde` | Strikethrough `~~text~~` (CommonMark/GFM-compatible) and subscript `~sub~` | Cheap to enable; useful for "deprecated" markers |
+| `pymdownx.caret` | Superscript `^sup^` and `^^insert^^` | Rarely needed; opt-in |
+| `pymdownx.mark` | Highlight `==text==` | "Pay attention to this" emphasis |
+| `pymdownx.smartsymbols` | Auto-replace `-->` `<--` `(c)` `(tm)` `1/2` with proper Unicode | Light cosmetic improvement |
+| `pymdownx.keys` | Keyboard chords `++ctrl+a++` → styled `<kbd>` | Useful for IDE shortcut tables |
+| `pymdownx.critic` | Track-changes-style markup `{++added++}` `{--removed--}` `{~~old~>new~~}` `{>>comment<<}` `{==highlight==}{>>note<<}` | **Promising for "what changed in v0.150"** style release notes; inline diff explanation |
+| `pymdownx.blocks.admonition` | Newer block-style admonitions (`/// note`) replacing `!!! note` syntax | Consistency with the `pymdownx.blocks.*` family; transitional |
+| `pymdownx.blocks.definition` | Definition lists via `/// define` syntax | Alternative to `def_list` — Juro encountered this form in pymdown docs |
+| `pymdownx.blocks.details` | Collapsible blocks via `/// details` | Newer form of `pymdownx.details`; same idea, different syntax |
+| `pymdownx.blocks.html` | Block-level HTML wrapper `/// html | div ...` | Cleaner than raw `<div markdown=1>` |
+| `pymdownx.blocks.tab` | New block-style tabs `/// tab | Tab Title` | Alternative to `pymdownx.tabbed` |
+| `pymdownx.blocks.caption` | Figure captions `/// caption` | Cleaner than raw HTML `<figcaption>` |
+| `pymdownx.pathconverter` | Rewrites relative paths in HTML output (absolute ↔ relative) based on a base path | When emitting markdown that references assets from another path context — relevant for `{% include_file %}` |
+| `pymdownx.progressbar` | `[=75% "label"]` styled progress bars | Niche; rarely useful for docs |
+| `pymdownx.snippets` (already enabled) | `--8<-- "path"` inclusions | Already used in 20 places |
+
+**Mermaid is a separate setup** — it's NOT a pymdownx extension itself. The pattern is: enable `pymdownx.superfences` with a custom fence definition that routes ` ```mermaid ` blocks to a `<pre class="mermaid">` wrapper, then load `mermaid.min.js` on the page. Standard recipe in mkdocs-material docs.
+
+**No CI guardrail.** Earlier draft proposed flagging "dropped" directives in CI; that proposal is rejected because almost nothing actually drops. The healthy invariant is now "all the standard pymdownx affordances work; the Markdown syntax reference page tells you what's available."
+
+#### 11.6.B.2 The "Markdown syntax reference" docs page
+
+A new page in `docs/community/` (or `docs/contributing/`) that lists every authoring syntax available, with a one-line example. Solves the discoverability problem that produced the "I didn't know that was possible" reactions during this spike.
+
+Sections, roughly:
+
+1. **Standard markdown** — bold, italic, lists, blockquote, headings, links, images, fenced code, tables.
+2. **Admonitions** — `!!! note` / `!!! info` / `!!! warning` with optional `"Title"`.
+3. **Collapsible sections** — `??? note` (closed) / `???+ note` (open).
+4. **Tabs** — `=== "Tab Title"` blocks.
+5. **Code blocks** — language, `title="..."`, line numbers, line highlighting.
+6. **File includes** — `--8<-- "path"` inside a fence (default) or naked (rare exception).
+7. **Cross-page links** — `[text](path.md#anchor)` for ordinary links; `[X][]` bracket cross-refs for API symbols.
+8. **Docs sugar tags** — `{% example %}`, `{% docstring %}`, `{% include_file %}`, `{% version %}`, `{% image %}`.
+9. **Embedded components** — `{% component "name" args... %}` for ad-hoc demos.
+10. **Tasklists** — `- [x]` / `- [ ]`.
+11. **Available-but-not-enabled** — short note pointing at `mkdocs.yml` for which other pymdownx extensions are reachable (mermaid, math, strikethrough, critic, etc.) and how to enable them in a PR if a real need arises.
+
+This page is also the source of truth for the conventions enforced by §11.10's guardrails (e.g. "raw 4-space indented code is not supported; use fenced blocks").
+
+#### 11.6.B.3 attr_list, def_list, PathConverter — what they do
+
+Brief explanations Juro asked for:
+
+**`attr_list`** (built into python-markdown). Adds HTML attributes to markdown elements via `{ key=value }` syntax. Examples:
+
+```markdown
+# My heading { #custom-id .my-class }
+[click me](https://example.com){ target=_blank rel=noopener }
+![chart](chart.png){ width=400 .figure-tight }
+A paragraph with custom CSS class.
+{ .callout-warning }
+```
+
+Useful when you need a specific anchor ID, want a link to open in a new tab, or want to tag an element with a CSS class for styling. Not currently used in our docs (the 38 grep hits were all Django template comments `{# ... #}`), but small and free.
+
+**`def_list`** (built into python-markdown). Renders definition lists. Two equivalent syntaxes depending on which extension is loaded:
+
+- **`markdown.extensions.def_list`** (the classic):
+    ```markdown
+    Term
+    :   Definition body, indented four spaces.
+    ```
+- **`pymdownx.blocks.definition`** (newer, block-style):
+    ```markdown
+    /// define
+    Term
+    : Definition body.
+    ///
+    ```
+
+Both produce `<dl><dt>Term</dt><dd>Definition</dd></dl>`. The `/// define` form Juro encountered in pymdownx docs is the second variant. For our purposes either works; pick one when we add the syntax reference page.
+
+**`pymdownx.pathconverter`**. Rewrites relative paths inside the rendered HTML so they resolve correctly from a different base path. Example: a markdown file at `examples/fragments/README.md` references `./images/foo.png`. If we render it into a page served from `/concepts/fragments/`, the path is broken. `pathconverter` rewrites `./images/foo.png` to `../../examples/fragments/images/foo.png` (or to an absolute URL) so links survive the relocation. Most useful when one file is included into another via `--8<--` or `{% include_file %}` and the inclusion crosses directory boundaries. Worth enabling once we hit a real path-rewriting case; pre-emptive enabling is fine since it's a no-op when paths don't move.
+
+#### 11.6.C Material theme affordances — not markdown, but contributor/reader UX
+
+These are what Material gives us by default and what our `DocPage` component (§4.1) has to deliberately rebuild. None of them are markdown directives — they're CSS + JS the theme ships.
+
+| Affordance | Today via Material | What we need to ship | Effort |
+|---|---|---|---|
+| **Code copy button** | `content.code.copy` Material feature | `~50 LOC JS`: click handler on code blocks, `navigator.clipboard.writeText`, transient "Copied" tooltip | S — half a day |
+| **Edit-on-GitHub button** | `content.action.edit` Material feature + `edit_uri` in mkdocs.yml | One slot in `DocPage` component; URL is `f"{REPO_EDIT_URL}/{content_relpath}"`; the `version` context already has the branch | S — trivial |
+| **View-source button** | `content.action.view` Material feature | Same shape as edit button; targets `/blob/` instead of `/edit/` | S — trivial |
+| **Heading anchor link on hover** | `toc.permalink: "¤"` (configured) | Already handled by `python-markdown` `toc` extension with the same config | Zero |
+| **Page metadata: "Last updated" + authors** | `git-revision-date-localized` + `git-authors` (excluded from `reference/*`, `changelog.md`, `code_of_conduct.md`, `license.md`) | `subprocess.run(["git", "log", "-1", "--format=%cs|%an", path])` at build time; cache per content file | S |
+| **Section-index pages** (clicking a section in the sidebar opens its index page) | `navigation.indexes` Material feature; used by `docs/plugins/index.md` and `docs/examples/index.md` | The sidebar nav component routes `Section/` to `Section/index.md` if it exists | S — sidebar logic |
+| **Breadcrumbs** | Material default | `DocPage` slot rendered from the nav YAML | S |
+| **Sticky TOC sidebar** | Material default | CSS `position: sticky` on the right-rail TOC; scroll-spy JS to highlight current heading | S — well-trodden |
+| **"Back to top" button** | `navigation.top` Material feature | One JS scroll listener + a button that fades in past a threshold | S |
+| **Dark/light theme toggle** | Material palette config (3 modes: auto / light / dark) | CSS variables + JS toggle. **This is the theming prerequisite already called out in §11.1.G.1** | M (lives in its own phase) |
+| **Instant page loads / prefetching** | `navigation.instant` + `navigation.instant.progress` Material features | SPA-style routing is non-trivial; **defer** to post-cutover or skip entirely | (deferred) |
+| **Heading TOC follow (auto-scroll TOC)** | `toc.follow` Material feature | Scroll-spy JS, same as sticky TOC | S — folds into TOC component |
+| **Navigation expand / sections / tabs / tracking** | `navigation.expand`, `navigation.sections`, `navigation.tabs`, `navigation.tracking` Material features | Sidebar component design choices; covered by §11.11 UI spike | M (in §11.11 scope) |
+| **Search modal + suggestions + highlighting + share URL** | `search.suggest`, `search.highlight`, `search.share` Material features | Covered by §11.1.G search v1 work | (already scoped) |
+
+**Net.** Everything in this table except dark/light toggle and search is a small, well-bounded JS/CSS task. Total effort across the row: ~3-5 days of focused frontend work. None individually scary; the cost is breadth, not depth.
+
+#### 11.6.D New Django template tags the migration introduces
+
+These are the *new* "simple/clean way to define content" the migration adds on top of markdown. They're not replacing anything in today's docs — they're how authors will compose content in the new world.
+
+Per §11.4.D, every tag in markdown is just a Django template tag. The five canonical "docs sugar" tags:
+
+| Tag | Purpose | Implementation | Spec |
+|---|---|---|---|
+| `{% example "name" %}` | Embed a code+rendered-output tabbed widget for an `examples/<name>/` directory. Replaces today's static GIFs | `simple_tag` calls `ExampleCard.render(name=...)` returning HTML. See §4.2 | `{% example "fragments" %}` |
+| `{% docstring "django_components.Component" %}` | Embed the rendered API reference for a symbol. Replaces today's `::: dotted.path` for one-off mentions outside `reference/*` pages | `simple_tag` calls `lookup_symbol(...)` then `ApiReference.render(...)`. See §11.4.E | `{% docstring "django_components.Component" %}` |
+| `{% include_file "path" %}` | Inject a file's contents as a fenced code block (the *safe* form). The unsafe raw form remains as `pymdownx.snippets`' `--8<--` for the two existing exceptions | `simple_tag` reads the file, emits a fenced code block with a language inferred from extension | `{% include_file "docs/examples/fragments/component.py" %}` |
+| `{% version %}` | Insert the current package version at build time | `simple_tag` returns the version string from `pyproject.toml` | `{% version %}` |
+| `{% component "name" args... %}` | The general djc component invocation — works in markdown because Django loads the `django_components` template library | (Already exists in djc; nothing new to build) | `{% component "table" rows=... %}` |
+
+These five plus arbitrary Django core tags (`{% if %}`, `{% for %}`, `{% with %}`, `{% url %}`) are the full authoring surface. No "directives" — just Django tags.
+
+**One additional tag worth scoping:** `{% image %}` — a thin wrapper around `<img>` that handles responsive variants, alt-text checks, and version-relative paths. Reduces author boilerplate for the 30-ish images we have. Optional for v1.
+
+#### 11.6.E mkdocs plugins audit (the §11.6 piece of §11.9's broader plugin work)
+
+Plugins that affect *authoring* (vs deploy/CI):
+
+| Plugin | Used today | Replacement |
+|---|---|---|
+| `mkdocs-macros` | 1 page (`docs/community/people.md`) renders Jinja2 with `force_render_paths` opt-in | This page becomes a **native Django template page** — bypasses the markdown pipeline entirely, renders `people.yml` through a Django template. Covered by §11.4 and §2.3 (this is one of the two cases §11.4.I gotcha 1 calls out where 4-space indented code disappears) |
+| `mkdocs-include-markdown` | 1 use in `docs/README.md` (out of scope; root README isn't part of the built site) | Drop. If we ever need it, `{% include %}` works |
+| `awesome-nav` | Nav YAML — no `.pages` files actually found in `docs/` | Replace with our own nav YAML schema consumed by the sidebar component |
+| `autorefs` | Only used by `reference/*` pages (mkdocstrings). 0 hits in human-authored docs | Replaced by §11.5's cross-ref resolver (which fires only on `[X][]` bracket form) |
+| `gen-files` | Calls `docs/scripts/{setup,reference,gen_release_notes}.py` | Replaced by Django management commands during `docs-build` |
+| `markdown-exec` | Configured but 0 `exec="true"` usage found in scope | Drop |
+| `git-revision-date-localized` / `git-authors` | Adds "Last updated"/authors footer per page | Reimplement as build-time subprocess + cache. See §11.6.C |
+
+`mkdocstrings`, `mike`, `redirects`, `minify`, `social`, `search` are tracked by §11.5, §11.7/§4.6, §7.5, §11.10, §11.1, §11.1 respectively. Plugin audit for non-authoring plugins continues in §11.9.
+
+#### 11.6.F Cross-page link codemod scope (extends §11.5)
+
+§11.5 found **397 hand-typed `[X](api.md#django_components.Y)` cross-refs** in `src/` docstrings. This inventory found **578 more** in human-authored `docs/` markdown targeting the same `#django_components.*` anchor scheme:
+
+- 26 files in `docs/concepts/`
+- 8 files in `docs/getting_started/`
+- 4 files in `docs/examples/`
+- 3 files in `docs/guides/`
+- 3 files in `docs/templates/`
+- 2 files in `docs/overview/`
+- 2 files in `docs/community/`
+
+**Total: ~975 cross-refs across `src/` + `docs/`** that the anchor codemod must sweep. The pattern, regex, and sweep logic are the same; the §11.5 spike's plan extends naturally — same codemod, two source roots.
+
+The remaining 195 cross-refs (773 - 578) target non-`django_components.*` anchors (template tag names like `#fill`, settings like `#dirs`, CLI commands). These don't carry the dotted prefix today, so the anchor-scheme change is a no-op for them. **No sweep needed for these 195.**
+
+**Sweep policy** (revised per Juro's clarification, supersedes the earlier "per-link judgment" framing in [§11.4 of the §11.5 spike file](DESIGN_djc_docs_site_spike_11_5.md)): **every hand-typed link converts to bracket cross-ref form `[X][]`, full stop.** Authors wrote them as links because they meant them as links — densely cross-linking every mention of a public API symbol is a deliberate authoring style, not noise to be undone. The codemod is mechanical: extract link text + leaf name, produce `[text][LeafName]` (or `[X][]` when text == leaf name). No per-link interpretation.
+
+The earlier proposal (downgrade some links to backticks based on "is this navigational?") is **rejected**. Backticks remain reserved for cases where the author explicitly chose *not* to link in the first place — the sweep doesn't introduce them.
+
+**Decision:** treat the 578 docs-side links as part of the same precursor PR as §11.5's 397. Both run before the docs-site migration starts so the migration itself stays purely additive.
+
+#### 11.6.G Per-item specs (the kept set)
+
+Shortest possible spec per surviving directive, in case anyone needs to recall syntax later.
+
+- **Code fence:** ` ```<language> [title="..."] ` opens, ` ``` ` closes. Supported languages cover what Pygments knows; we own `djc_py` via `pygments_djc`.
+- **Admonition:** `!!! <type>` at column 0, followed by indented body (4 spaces). Optional title: `!!! info "Title"`. Types in use: `note`, `info`, `warning`. Other types render with sensible defaults.
+- **Tasklist:** `- [ ]` (unchecked) or `- [x]` (checked) inside a list. Renders with `custom_checkbox: true`.
+- **Snippet:** `--8<-- "path/from/repo/root"` inside a fenced code block (default form) or naked (raw injection — used in two pages, document as the exception).
+- **Same-page anchor link:** `[text](#anchor)`. Anchor is the auto-slugged heading.
+- **Cross-page link:** `[text](relative/path.md)` or `[text](relative/path.md#anchor)`. After the §11.6.F codemod, API anchors use the leaf-name-only scheme.
+- **Pipe table:** standard CommonMark/GFM.
+- **Image:** `![alt](relative/path.png)`. We may layer `{% image %}` on top for the common `<img>` wrapper.
+- **Bold / italic / code / lists / blockquote:** standard markdown.
+
+That's the entire authoring surface for human-written docs. ~10 directives, all standard.
+
+#### 11.6.H Decision matrix (summary)
+
+| What | Decision | Cost |
+|---|---|---|
+| `pymdownx.snippets`, `pymdownx.highlight`, `pymdownx.superfences`, `pymdownx.tasklist` | **Keep** — load-bearing, all in active use | Zero (already free via §11.4.B) |
+| `admonition`, `tables`, `md_in_html`, `toc`, `codehilite` | **Keep** | Zero |
+| `pymdownx.tabbed`, `pymdownx.details`, `pymdownx.inlinehilite` | **Keep + document** — Juro wants these available (e.g. tabbed for "pip / uv / poetry" install variants, details for collapsible asides). The reason they're unused today is discoverability, not lack of need. Build a "Markdown syntax reference" docs page (§11.6.B.2) | Zero |
+| `pymdownx.magiclink` | **Drop** — verified replaceable with full URLs (no source uses `#1234` shorthand) | Negative — remove from extension list |
+| `pymdownx.emoji`, `attr_list`, `def_list`, `abbr` | **Keep** — small, harmless, and individually useful when a contributor reaches for them | Zero |
+| Material directive features (buttons, annotations, mermaid, math, keys, critic, mark, smartsymbols, tooltips) | **Available, opt-in** — not enabled today but pymdownx ships them. See the "Available pymdownx capabilities" catalog in §11.6.B so we know what's reachable when we want a new affordance | Zero (until we enable) |
+| Code copy button | **DIY rebuild** — high-impact reader UX | S |
+| Edit-on-GitHub + view-source buttons | **DIY rebuild** — trivial | S |
+| Page metadata (last-updated, authors) | **DIY rebuild** | S |
+| Section-index pages | **DIY rebuild** | S |
+| Breadcrumbs, sticky TOC, back-to-top, scroll-spy | **DIY rebuild** | S each |
+| Dark/light toggle | **DIY rebuild — in its own phase** (§11.1.G.1) | M |
+| Instant page loads (SPA routing) | **Defer or skip** — non-trivial, low impact | n/a |
+| `mkdocs-macros` (1 page) | **Rewrite as native Django template** | S |
+| `mkdocs-include-markdown` (root README only) | **Drop** | Zero |
+| `markdown-exec`, `awesome-nav`, `mkdocs-include-markdown` plugin configs | **Drop** from new pipeline | Zero |
+| `git-revision-date-localized` / `git-authors` | **Reimplement** as subprocess + cache | S |
+| New tags: `{% example %}`, `{% docstring %}`, `{% include_file %}`, `{% version %}`, `{% image %}` | **Build** — additive | M (each is a `simple_tag` calling a Component) |
+| Anchor-scheme codemod | **Run as precursor PR before migration** | M (extends §11.5's 397 to ~975 total) |
+
+#### 11.6.I Risks and open items
+
+1. **Discoverability over guardrails.** The earlier draft proposed a CI guardrail flagging "dropped" directives. That guardrail is **dropped** because the §11.6.B revision keeps almost everything enabled. The healthy invariant is now positive: the "Markdown syntax reference" docs page (§11.6.B.2) lists what's available, so contributors find affordances by reading the page rather than learning them by hitting a lint warning. The smaller residual concern — that someone introduces a feature we deliberately decided against (e.g. embedded JS scripts in markdown) — is handled by the link / anchor / schema guardrails in §11.10, not by a markdown-syntax linter.
+2. **Frontmatter — we control the schema.** Juro asked who defines the fields. Answer: **we do**. There's no preset schema baked into python-markdown or pymdownx; both leave frontmatter to a separate library. The two relevant libraries:
+    - **`python-frontmatter`** — standalone library. Parses YAML / TOML / JSON frontmatter delimited by `---` (or `+++` for TOML). Returns `(metadata: dict, body: str)`. Schema is whatever we define.
+    - **`markdown.extensions.meta`** — python-markdown's built-in. Parses simpler `Key: Value` header lines (not YAML). More limited but zero new dependency.
+    Recommendation: use `python-frontmatter` (YAML, standard format). Define a small fixed schema in Phase 1: `title` (override H1), `description` (meta description), `hide_toc` (hide right-rail TOC), `redirect_from` (list of old paths), `layout` (override the DocPage layout for the rare custom page), `tags` (reserved for future tag pages). Strict mode: unknown fields fail the build. Today only 1 file uses frontmatter (`docs/README.md`, out of scope), but **scoping frontmatter parsing into Phase 1** is cheap (~50 LOC) and forward-compatible.
+3. **Section-index pages.** Two `index.md` files use Material's `navigation.indexes` feature. Make sure the new sidebar component supports the "clickable section header that opens its index page" pattern from day one; it's a small but easy-to-miss UX detail.
+4. **Pre-existing inconsistencies.** The 578 cross-refs in `docs/` weren't audited for consistency before. Some may target anchors that don't exist (silent broken links in mkdocs strict mode if `unrecognized_links: warn`). The codemod is a good moment to run the link checker (§11.10) and fix orphans in the same PR.
+5. **Advanced syntaxes in `src/` docstrings stay untouched during this migration.** Earlier drafts proposed sweeping Material admonitions (31 in `src/`) into blockquotes and raw HTML into markdown italics for IDE-friendliness. **Rejected per Juro:** that's a judgment call for later, not for the migration codemod. The precursor PR fixes only **structural blockers**: anchor scheme (§11.6.F), the 129 `**Args:**` → true Google `Args:` pseudo-section alignment (§11.5), and any docstring patterns the discovery layer can't parse. Material admonitions, raw HTML, and other docs-build-only constructs in docstrings remain as written until a later, separate decision. The convention recommendation in [§11.2 of the §11.5 spike file](DESIGN_djc_docs_site_spike_11_5.md) (single backticks, bracket cross-refs, prefer-markdown defaults) is the **target state for new docstrings going forward**, not a sweep target for existing ones.
+
+#### 11.6.J Feeds into
+
+- **§4.7** (markdown pipeline) — confirms the locked-in extension set; no changes needed to §4.7 itself.
+- **§11.5** (anchor codemod) — scope widens from 397 src/ links to ~975 total (src/ + docs/). Same codemod, two source roots.
+- **§11.1.G.1** (theme as a prerequisite for search) — confirmed by the §11.6.C theme-affordance ledger; dark/light toggle lands first, search later.
+- **§11.9** (mkdocs plugin audit) — this spike covered the *authoring-facing* plugins; the remaining infrastructure plugins (`gen-files`, `git-*`, `social`, `minify`, `redirects`, `awesome-nav`) are still §11.9's scope.
+- **§11.10** (guardrails) — link / anchor / API-symbol / example-page / cross-version / snapshot guards live there. No markdown-syntax linter (§11.6 revision dropped that proposal in favor of the discoverability page §11.6.B.2).
+- **§11.11** (UI inspiration) — the sidebar / breadcrumbs / dark-mode design is §11.11's domain; §11.6 only confirms scope.
 
 ### 11.7 mike internals + bootstrap-from-tags script
 
-- **Question.** Two parts:
-    (a) Can we reuse any of `mike`'s internals (manifest schema, version-picker JS, alias resolution) even though we're persisting versions to `master` rather than `gh-pages`? Did Juro's earlier outreach to the `mike` author get a response?
-    (b) Implementing the `docs-build-all` bootstrap command (§4.6): walk `git tag`, check each out in a worktree, run `docs-build` per tag.
-- **Why.** `docs-build-all` only runs at bootstrap / disaster recovery, but it has to work reliably the few times we do run it. And there's no point reinventing pieces of `mike` that we can lift as small focused modules.
-- **Method.**
-    1. Read `mike`'s source. Identify modules that could be invoked without the `mkdocs` adapter — manifest writer, version-picker JS, alias resolver.
-    2. Check Juro's earlier issue/PR/email thread for any reply from the `mike` author.
-    3. Design the `docs-build-all` worktree-walker (the `docs_versions.toml` schema, include/exclude/bounds, idempotency on existing `docs/v/<version>/` dirs).
-    4. Verify on a 3-version smoke test (e.g. v0.148, v0.149, v0.150) producing `docs/v/0.148/`, `docs/v/0.149/`, `docs/v/0.150/` on a scratch branch.
-- **Feeds into.** §4.6.
+- **Status:** **complete** (2026-05-31). Full write-up in [DESIGN_djc_docs_site_spike_11_7.md](DESIGN_djc_docs_site_spike_11_7.md).
+- **Verdict:** GO. Vendor ~270 LOC from `mike` (almost entirely `versions.py`), skip the rest. Two-command shape from §4.6 holds; concretized with idempotency stamps, redirect-mode aliases, and `docs_versions.toml` schema. No upstream standalone `mike` is coming.
+- **Key findings:**
+    - **Juro's outreach got a reply.** [`jimporter/mike#255`](https://github.com/jimporter/mike/discussions/255), 2026-01-25 → reply 2026-01-26. jimporter is "thinking about" a standalone mike but "nothing definite." He independently agrees the `gh-pages`-branch design is "a hack" from a 2016 GitHub Pages constraint. Bottom line: we vendor, we don't wait.
+    - **What we vendor (~270 LOC, dep-free except `verspec`):** `mike/versions.py` (209 LOC — `Versions` + `VersionInfo` classes, JSON round-trip, `LooseVersion`-based sort, alias coalescing — verified against our 127 tags), `mike/templates/redirect.html` (15 LOC, alias redirects), and the *algorithm* (~50 LOC) of `mike/themes/*/js/version-select.js`, rewritten as a Django `version_picker` component.
+    - **What we skip:** `git_utils.py` (431 LOC, gh-pages branch plumbing — irrelevant when committing to `master`), `mkdocs_plugin.py`, `mkdocs_utils.py`, `driver.py`, `arguments.py`, `server.py` (mkdocs/CLI adapters), `jsonpath.py` (only used by `mike props`, niche feature we don't need). `commands.py` is reference-only — useful for understanding mike's deploy contract (read manifest → mutate → write files + manifest → commit), but not portable because of gh-pages coupling.
+    - **Aliases: switch from `symlink` to `redirect` mode.** mike supports three modes (symlink / copy / redirect). We use `symlink` today on `gh-pages` (verified: `latest/` is a mode-`120000` git symlink blob). With `master` as the deploy source, symlinks become a Windows-clone footgun and a `git status` annoyance. Redirect mode uses mike's 15-line `redirect.html` per page; tiny disk cost, universal compatibility.
+    - **`docs-build-all` is a thin orchestrator.** `for tag in matched_tags: git worktree add ... && uv run docs-build --version=<tag> ... && git worktree remove ...` + single manifest-merge at end. Idempotency via a per-version `_build_info.json` stamp that records `{tag, source_sha, built_at, builder_version}` — `docs-build-all` skips dirs whose stamp matches the tag's commit SHA.
+    - **`docs_versions.toml` schema:** `pattern` regex, `include`/`exclude` lists, `oldest`/`newest` bounds, optional `aliases` overrides. Default pattern handles both 2-part (`0.124`) and 3-part (`0.139.1`, `0.140.0`) tags — verified.
+    - **`docs/v/versions.json` is byte-identical to mike's output.** That means the Material `provider: mike` selector can read our manifest during the transition window, and any third-party tooling that consumes versions.json keeps working.
+    - **Cost estimate:** `docs-build` per release is ~90s (one version). `docs-build-all` over the existing 40+ historical versions is a one-time ~1-hour run.
+    - **`docs-build-check` confirmed as a CI gate** (per Juro). Validates `docs/v/` ↔ manifest consistency, alias resolution, `_build_info.json` sanity, and intra-version internal links. Runs in PR CI on `docs/v/` touches and on release-deploy as a post-commit guard. ~150-200 LOC; lands with `docs-build-all`.
+    - **No pre-commit hook** (per Juro). Docs builds are a CI concern; local devs use `uv run docs-serve` for live preview.
+    - **License audit complete** (spike §12). Entire stack is permissive: MIT / BSD-2/3 / ISC / Apache-2.0 / HPND. No copyleft anywhere. Non-MIT deps we pick up: `mike` (BSD-3), `griffe` (ISC), `verspec` (BSD-2 OR Apache-2.0), `python-markdown` (BSD-3), `pygments` (BSD-2), `jinja2` (BSD-3), `pillow` (MIT-CMU). All compatible with our own MIT license. Vendored `mike/versions.py` keeps top-of-file attribution + a `_vendor/LICENSE-mike.txt`. CI license check recommended on dep updates (tracks with §11.10).
+- **Risks called out for execution:**
+    - Pre-release tags (`0.150.0rc1`) untested; verify before introducing the convention.
+    - Worktree cleanup-on-failure must use `try/finally` + a defensive `git worktree prune` at the start of each run.
+    - **Older versions migration is explicitly deferred to after Phase 7** (per Juro). We don't pick rebuild / freeze / hybrid until the new builder has gone through end-to-end (scaffold → cutover → search v2). The walker supports all three options without code change; the choice lands as TOML config when we have the data to decide.
+- **Recommended first step:** ~1 day. Vendor `versions.py`, write a stub `docs-build` that writes `docs/v/<version>/index.html` + manifest, prove the 3-tag round-trip (`0.148.0`, `0.149.0`, `0.150.0 --alias=latest`) on a scratch branch, open in a browser, confirm the version picker switches versions. If that works the rest is execution.
+- **Feeds into.** §4.6 (chosen approach codified), §11.8 (deferred to after Phase 7; the walker is option-agnostic so deferral is safe), §11.10 (`docs-build-check` is one guardrail among many).
 
 ### 11.8 Migrating older docs versions
 
-- **Question.** What do we do with `v0.135` through `v0.150` once the new builder is canonical?
-- **Why.** Inbound links from blog posts, Stack Overflow, and search engines point to specific historical URLs. We can't break them.
-- **Method.** Choose between three options and decide on cost/benefit:
-    1. **Rebuild all historical versions with the new builder.** Requires that old markdown content remains compatible with the new directive set (mostly likely, but not guaranteed). Cleanest URL story.
-    2. **Freeze old versions; new builder only from v0.151+.** Old versions are served from a frozen mkdocs-built directory committed once. URL prefixes diverge.
-    3. **Hybrid:** rebuild only versions of interest (e.g. last 3 stable), freeze older.
-- **Feeds into.** §9.9, §4.6.
+- **Status:** **complete** (2026-05-31). Full write-up in [DESIGN_djc_docs_site_spike_11_8.md](DESIGN_djc_docs_site_spike_11_8.md). Final policy decision is **deferred to after Phase 7** per [§11.7 spike §7](DESIGN_djc_docs_site_spike_11_7.md); this spike's contribution is the data that pre-loads the decision.
+- **Recommended default plan:** **freeze + import all** at Phase 6 cutover. One PR copies `origin/gh-pages` → `master/docs/v/`, materializes `latest/` as redirects (not symlinks), and switches GitHub Pages source. After cutover, only new versions land via the new builder. Post-Phase-7, selectively rebuild recent versions if data argues for it.
+- **Key findings (data behind the recommendation):**
+    - **57 entries** on `gh-pages` today (56 release versions `0.92`-`0.150.0` + `dev`). Manifest skips `0.140.0` and `0.147.0` (releases that were never deployed) — nothing to migrate for those.
+    - **The bloat fear was a working-tree artifact.** `gh-pages` working tree is 1.0 GB *expanded*, but the **bare git repo is only 114 MB**. Material's CSS/JS bundle (~5 MB) is byte-identical across versions and deltifies to effectively a single copy. Master `.git` goes from 108 MB → ~220 MB after import. Acceptable.
+    - **URL structure has changed twice**, and these are the lines that determine where freeze-vs-rebuild can land:
+        - **0.110 → 0.111:** flat (`latest/CHANGELOG/`, `latest/slot_rendering/`) → nested (`latest/concepts/`, `latest/guides/`). Pre-0.111 must be frozen — rebuilding produces different URLs.
+        - **0.123 → 0.124:** reference page structure changes from mkdocstrings deep tree (`reference/django_components/Component/`) to per-topic-page model. Modern URL skeleton starts here.
+    - **From 0.124 onward URL drift is additive**, not renaming. But within "stable era," each tag's `reference.py` differs from current — rebuilding 0.124 with current `reference.py` produces different pages. To rebuild any historical version, the walker must use that *era's* `reference.py`, which is engineering risk.
+    - **If hybrid were chosen**, the realistic cutoff is **0.148.0** (3 versions). Below: freeze. At/above: rebuild possible. Not worth the orchestration for 3 versions — **freeze-all is cheaper**.
+    - **Anchor scheme change** (`#django_components.X` → `#X`, per [§11.5 spike §7](DESIGN_djc_docs_site_spike_11_5.md)) is irrelevant for frozen versions (their HTML doesn't change). For any rebuild, the legacy-alias mechanism we'd build for current docs applies uniformly.
+    - **`latest/` symlink → redirect-file replacement** at import is a ~50-LOC Python script that lifts mike's [`templates/redirect.html`](https://github.com/jimporter/mike/blob/master/mike/templates/redirect.html) per page.
+    - **Org-rename in old sitemaps** (`emilstenstrom.github.io` → `django-components.github.io`, pre-0.139) is not a real problem — GitHub's username-rename redirect keeps inbound URLs alive, and `robots.txt` only advertises `latest/sitemap.xml` anyway.
+- **Risks called out for execution:**
+    - Master clone size jumps from ~108 MB to ~220 MB `.git`. Document in CONTRIBUTING; `--depth 1` and `--filter=tree:0` work for contributors.
+    - **The `dev/` deploy on the new system needs a decision.** Today it's rewritten on every master push — that's a lot of churn if it commits to `master/docs/v/dev/`. Likely answer: build `dev/` without committing to git, or commit as separate orphan. Defer to CI-workflow wiring.
+    - Old Material JS bundles ship with whatever CVEs the era had. Mitigation: optional Phase 7+ sweep to identify and selectively rebuild only versions with critical bundled-JS vulns.
+- **Recommended next move:** **none yet.** Execute the import at Phase 6 cutover. Until then, this spike is documentation.
+- **Feeds into.** §4.6 (default Phase 6 cutover plan), §11.7 (the walker is option-agnostic; this spike picks the cheap default).
 
 ### 11.9 mkdocs plugin replacement audit
 
-- **Question.** Go plugin-by-plugin through [mkdocs.yml](mkdocs.yml) and confirm a replacement for each.
-- **Why.** §2.1 has a high-level table; the spike turns each row into a concrete decision (library / DIY / drop).
-- **Method.**
-    1. For each plugin: read its current config, list the features we actually use (most plugins have a feature surface bigger than what we exercise).
-    2. Pick a replacement library or DIY snippet for each used feature.
-    3. Build the proof-of-concept page (§11.4) using the replacements end-to-end.
-- **Feeds into.** §2.1, Phase 1 scope.
+- **Status:** **complete** (2026-06-01). Full write-up in [DESIGN_djc_docs_site_spike_11_9.md](DESIGN_djc_docs_site_spike_11_9.md).
+- **Verdict:** GO. Every plugin in [mkdocs.yml](mkdocs.yml) maps to a concrete replacement. **Total new LOC across the infrastructure plugins exclusively owned by §11.9** (`social`, `minify`, `redirects`, `gen-files`, `awesome-nav`, `markdown-exec`, `include-markdown`, `mkdocs-macros`, `git-revision-date-localized`, `git-authors`) is **~500–700 LOC**, dominated by social-card generation.
+- **Key findings:**
+    - **Plugin inventory is exhaustive.** [§11.9 spike §1](DESIGN_djc_docs_site_spike_11_9.md) lists every plugin from [mkdocs.yml](mkdocs.yml) with its owner spike (§11.1, §11.5, §11.6, §11.7, §11.10, or §11.9 itself) and final disposition. No plugin is unaccounted for.
+    - **Social cards: replace Material's 1800-LOC plugin with Playwright + a Django `OgCard` component (~230 LOC total).** Playwright is already a dev dep (E2E tests); marginal cost is near zero. CSS-driven card template beats Material's `Pillow + cairosvg + Jinja sandbox + thread-pool composition` stack on both LOC and contributor DX. **Side benefit: drops the only LGPL-3.0 dep in our docs stack (`cairosvg`, pulled transitively by the Material social plugin).**
+    - **`redirects`: static `<meta http-equiv="refresh">` HTML stubs at the moved URL paths.** GitHub Pages serves them correctly. Belt-and-braces design (meta refresh + JS replace + canonical link + robots noindex). ~30 LOC.
+    - **`minify`: switch from `htmlmin2` (the lib `mkdocs-minify-plugin` uses; community fork of abandoned `htmlmin`) to `minify-html` (Rust-backed, MIT, 10–100× faster, well-maintained).** ~20 LOC.
+    - **`gen-files`: replaced by Django management commands chained into `docs-build`.** Three scripts collapse: `setup.py` becomes one import, `reference.py` is subsumed by §11.5's Discovery layer, `gen_release_notes.py` keeps ~80% of its parser but swaps the mkdocs-virtual-fs API for `pathlib.write_text`.
+    - **`awesome-nav`: drop the plugin (0 `.pages` files exist), ship a ~50 LOC YAML loader.**
+    - **`git-revision-date-localized` + `git-authors`: subprocess `git log` + `lru_cache` per file (~100 LOC combined).** CI workflows need `fetch-depth: 0` instead of the default shallow clone.
+    - **`mkdocs-macros` (1 page): rewrite the page as a native Django template** that bypasses the markdown pipeline. ~40 LOC view + template.
+    - **`include-markdown`, `markdown-exec`: drop entirely** (verified 0 in-scope usages in §11.6.E).
+- **License audit across the full docs stack (per Juro's §11.7 feedback):** with the social-card change, **all docs deps become permissively-licensed.** MIT/BSD-2/BSD-3/ISC/Apache-2.0/MIT-CMU only. The only non-permissive license today (`cairosvg`, LGPL-3.0) is removed transitively by replacing Material's `social` plugin. `mike` (BSD-3) remains vendored per §11.7 with attribution. See [§11.9 spike §3](DESIGN_djc_docs_site_spike_11_9.md).
+- **`docs-build-check` CLI gate (per Juro's §11.7 feedback):** third entrypoint alongside `docs-build` and `docs-build-all`. Runs the full build to a temp dir + every §11.10 guardrail, writes nothing to disk, exits non-zero on any failure. Wired into GitHub Actions as a PR check. Skips slow steps (social cards, minify) by default; `--full` flag enables them. ~80 LOC + reuses every existing piece. See [§11.9 spike §4](DESIGN_djc_docs_site_spike_11_9.md).
+- **Implementation order is staged by migration phase:** Phase 1 lands `gen-files` / `awesome-nav` / `redirects` / `mkdocs-macros` rewrite (the plugins needed before any page can render). Phase 3 lands `git-*` and drops `markdown-exec` / `include-markdown`. Phase 5 lands `social` + `minify`. Phase 6 deletes `mkdocs.yml`.
+- **Recommended first concrete step:** during Phase 1, wire `emit_redirects()` and `run_minifier()` as post-build passes. Both are ~50 LOC combined, zero dependency on the rest of the pipeline, prove the post-build pass shape social cards will reuse. Fail-cheap validation of the build dir layout.
+- **Feeds into.** §2.1, §4.1, §4.6, §4.8, §5 / Phase plan, §7 (license), §11.10.
 
 ### 11.10 Guardrails (dead-link detection, broken anchors, schema drift)
 
-- **Question.** What guards does the new build need so CI fails loudly when something breaks?
-- **Why.** mkdocs `--strict` mode catches many problems for us. The new build needs equal-or-better guards or we'll regress quality.
-- **Method.** Each guardrail is a separate small piece:
-    1. **Internal link check.** Walk all generated HTML, parse `<a href>`, assert every internal target resolves.
-    2. **Anchor check.** Every `#anchor` in href maps to an `id=` in the destination page.
-    3. **API symbol check.** Every `{% docstring "x.y.z" %}` references a symbol that exists in griffe.
-    4. **Example-page contract check.** Every `{% example %}` references a directory under `examples/` with a valid `page.py`.
-    5. **Cross-version link check.** A link from `/v0.150/foo` should not silently target `/v0.149/foo`.
-    6. **Snapshot test.** Snapshot a small set of rendered pages (syrupy) so accidental regressions in the renderer surface in PR review.
-- **Feeds into.** §4.8 (build), §9.8.
+- **Status:** **complete** (2026-06-01). Full write-up in [DESIGN_djc_docs_site_spike_11_10.md](DESIGN_djc_docs_site_spike_11_10.md).
+- **Verdict:** GO. Every check `mkdocs --strict` performs today has a concrete replacement; we gain seven additional guards (API symbol coverage, example-page contracts, anchor alias coverage, cross-version drift, snapshot regression, pygments lexer alias validation, HTML well-formedness) that mkdocs can't run. **Total ~840 LOC** across the harness, `SiteIndex`, and 17 in-build guards. The 18th guard (external links) is deliberately offloaded to a weekly out-of-band workflow to avoid blocking PRs on third-party uptime.
+- **Key findings:**
+    - **Severity model: two levels (error / warning).** `docs-build` emits both to stderr and proceeds (Phase-1 reality). `docs-build-check --strict` (the CI default) upgrades warnings to errors and exits non-zero. Matches today's `mkdocs --strict` semantics.
+    - **A shared `SiteIndex` (~120 LOC) walks every built HTML file once** and exposes links, anchors, images, scripts, redirect stubs, and headings to every post-build guard. Replaces the 5× repeated HTML parsing a naive implementation would do; centralizes the parser dependency on `lxml.html` (already permissively licensed).
+    - **The pre-pass code-fence scanner from §11.4.C gets a validator twin (§3.2)** that catches unclosed fences and malformed `--8<--` blocks *before* Django sees the page. Saves a whole class of confusing downstream errors.
+    - **Cross-version link checking is a flat file-exists check.** Because the §4.6 strategy persists `docs/v/<version>/` to `master`, a link from `/v0.151/foo` to `/v0.150/bar` is validated by `Path.exists()` on the on-disk version dir. No server lookup, no manifest cross-reference.
+    - **API symbol coverage runs both directions** (§3.4 forward = `{% docstring %}` → griffe; §3.5 reverse = public API → `{% docstring %}` coverage). The reverse direction catches new exports added without docs.
+    - **Snapshot test starts small (3 pages) and grows to 8.** Reduces churn during Phases 1–3. Re-snapshot via `pytest --snapshot-update`. Lives in `tests/test_docs_snapshots.py`, runs alongside `docs-build-check` not inside it.
+    - **External links → lychee in a weekly workflow.** A flaky Discord invite or PyPI 503 should not block PRs. Separate `docs-external-links.yml` workflow on a cron.
+- **Implementation order is staged by migration phase:** Phase 1 lands the three minimum-viable guards (template_render, fence_validator, internal_link + anchor sharing one SiteIndex). Phase 2 adds example_contract + anchor_alias. Phase 3 adds the rest of the pre-build/build-time guards. Phase 5 adds cross_version_link, asset, redirect_target, versions_manifest, snapshot. Phase 6 deletes `mkdocs build --strict` from `release-docs.yml`.
+- **Recommended first concrete step:** during Phase 1, build the `SiteIndex` + template_render + internal_link + anchor as a single PR. These three guards (with the shared index) are the bare minimum to ship a single-section preview safely.
+- **Feeds into.** §4.7 (markdown pipeline pre-pass + Pass 1), §4.8 (build CLI flags), §9.8 (mkdocs strict equivalence), §11.4 (pre-pass), §11.5 (Discovery public-api set), §11.7 (versions.json schema), §11.9 §4 (CI gate host).
 
 ### 11.11 UI / layout inspiration
 
-- **Question.** What does the actual layout/visual design look like? Reference: `~/repos/agents/safe-ai-factory/web` (flat sidebar, simple and elegant); [Vuese](https://vuese.org/) (nested sidebar variant); [Pagefind docs](https://pagefind.app/).
-- **Why.** Material's polish is a real loss in §5. We need a deliberate visual direction before Phase 5 so we're not bikeshedding under time pressure.
-- **Method.**
-    1. Screenshot the three references' main views (home, content page with sidebar, search overlay, code block, dark mode).
-    2. Pull out 5-8 design tokens we want to honor (sidebar width, font stack, code-block padding, link color treatment, table style, etc.).
-    3. Decide flat-vs-nested sidebar — likely nested, since our docs have real depth.
-    4. Sketch a static HTML mock of a single page before building it as a component.
-- **Feeds into.** Phase 5 component design.
+**Status:** spike complete (2026-06-01, revised). See [DESIGN_djc_docs_site_spike_11_11.md](DESIGN_djc_docs_site_spike_11_11.md) for the full deep dive. Headline decisions:
+
+- **Nested sidebar, two levels deep.** Top sections (`Concepts`, `Reference`, etc.) hold either flat items or sub-groups (`fundamentals/`, `advanced/`); never both. Sidebar nav YAML schema in spike §3.2.
+- **Top nav names kinds of pages, not docs sections** (revised per Juro). Slots: `logo (→ landing) · Docs · Examples · Plugins · Blog (future) · ⌘K · version · theme · GitHub`. Sidebar handles within-kind nav; top nav handles between-kind.
+- **URL move under `/docs/` (NEW).** Content currently at root (`/concepts/`, `/reference/`, `/guides/`, `/getting_started/`, `/overview/`, `/upgrading/`, `/community/`, `/releases/`) moves under `/docs/`. `/examples/` and `/plugins/` stay at root. Inbound links handled via the existing redirect machinery (§11.9.2.5). Full move map in spike §4.2.
+- **Landing page at `/` is NEW, deferred to Phase 9 (codesign).** A thin ~50 LOC placeholder ships in Phase 1 so the top-nav taxonomy works end-to-end; the real landing page is its own phase at the end of the migration plan, framed as iterative back-and-forth between Juro and the agent. Lives outside `DocPage` chrome. See spike §4.4 + main doc §8 (Phase 9).
+- **Release Notes folds into Docs**, not a top-nav slot.
+- **Three-column layout at 1280px outer max.** Sidebar 280px, content max 720px, right TOC 240px. Breakpoint behaviour in spike §2.
+- **Light theme is the default; dark theme is a peer.** `auto` mode follows `prefers-color-scheme`. Two complete OKLCH token sets (light + dark), neither derived from the other. Toggle wiring deferred to §11.1.G.1.
+- **Code blocks: minimal.** Language label top-right, copy button on hover. No terminal-chrome decoration. 3px left accent border for hierarchy.
+- **One unified `CodeTabs` component** serves three authoring affordances: `{% example %}` widget, `pymdownx.tabbed` multi-variant blocks (install variants etc.), and code-fence `title="..."` single-label tabs. One CSS rule, one component, three entry points. Spec in spike §6.4.
+- **Eight design tokens** (surfaces, foreground, accent, link, semantic admonitions, typography, spacing, shadows), all OKLCH-defined. Full table in spike §10.
+- **Accent colour decision deferred to Juro:** muted teal (continuity with current Material teal) or Django bottle-green (dogfoods the Django brand). Either works; one token swap.
+- **Two static HTML mocks** in spike §11: concept page + API reference page. Both render via a single `DocPage` Django chrome component.
+- **First concrete step:** Phase 1 ships `DocPage` chrome + a thin ~50 LOC landing placeholder (1-2 days), then content rendering builds on top. The real landing page is Phase 9.
+
+References surveyed: `~/repos/agents/safe-ai-factory/web` (read in full), [VitePress](https://vitepress.dev) (substituting for Vuese, whose domain expired), [Pagefind](https://pagefind.app), and Pydantic's docs (in-repo nav-inspo reference).
+
+**Feeds into.** §4.1 (DocPage + LandingPage chrome), §4.2 (URL stability — the `/docs/` move records here), §5 (sized Material-polish loss), §11.1.G.1 (theme prereq), §11.5 (per-kind component styling envelope), §11.6 (CodeTabs serves pymdownx.tabbed too), §11.6.C (theme-affordance styling), §11.9 (Material palette + redirect machinery handles `/docs/` move), §11.10 (guardrail: every old URL must have a redirect file), Phase 1, Phase 5.
+
+### 11.12 SEO and AIO audit — what features to implement
+
+**Status:** spike complete (2026-06-01). See [DESIGN_djc_docs_site_spike_11_12.md](DESIGN_djc_docs_site_spike_11_12.md) for the full deep dive. Headline decisions:
+
+- **SHIP across the board.** Current site is weaker than people think: prod emits only viewport, site-level description, canonical. No OG, no JSON-LD, no per-page description, no `llms.txt`, no `.md` companion URLs.
+- **Three load-bearing additions:** `llms.txt` + `llms-full.txt` (~120 LOC), `.md` companion URLs at every `<path>.md` (~50 LOC, highest-leverage AIO win), per-page description + OG + JSON-LD (`BreadcrumbList` + `TechArticle`) (~80 LOC).
+- **Three near-free wins:** per-version `noindex` for `/v0.x/` where `x < latest`, Lighthouse CI on a 5-page sample, custom 404 with embedded Pagefind search.
+- **Three deferrals:** `tags.json` template-DSL manifest (post-cutover, coordinated with §11.5), full a11y audit (§11.11 follow-up), real-time SEO monitoring (operational).
+- **AI-bot policy: default-allow** (Juro confirmed 2026-06-01). `robots.txt` explicitly allows GPTBot, ClaudeBot, anthropic-ai, Google-Extended, PerplexityBot, CCBot. Codified in `community/ai_bot_policy.md`.
+- **Three migration-time gotchas captured:** anchor-migration deprecation timer (12 months) interacts with §7.2; canonical-URL strategy changes (versioned pages canonical to `/latest/`, not self); single-`<h1>` invariant guarded by §11.10.
+- **Total surface:** ~880 LOC, of which ~330 must land in Phase 1 (head block, canonical, description, JSON-LD, front-matter, `.md` companion).
+- **First concrete step:** Phase 1 unified `DocPage` `<head>` block (~150 LOC) sets the SEO floor; everything else builds on top.
+
+**Feeds into.** §4.1 (DocPage `<head>` block), §4.6 (per-version `noindex`), §7.2 (anchor deprecation timer), §11.9 (sitemap + robots.txt + social cards behaviour scoped), §11.10 (single-h1 + alt-text + JSON-LD + anchor-deprecation + example-rename guardrails), §11.11 (chrome metadata threading), Phase 1, Phase 3 (alt-text + ai_bot_policy.md content), Phase 5.
+
+---
+
+**Original spike framing (preserved for reference):**
+
+- **Question.** What is the full set of SEO (search-engine optimisation) and AIO (AI / LLM optimisation — making content well-formed for retrieval-augmented agents and AI search engines) features the new docs site should ship with? §11.10 §10.2 explicitly deferred this from the guardrails spike; we need to close it before Phase 5 (or before cutover, whichever comes first) so we don't ship the new site weaker than the current Material build.
+
+- **Why.** Three pressures converge here:
+    1. **Inbound discovery is how new users find us.** Material's defaults (sitemap, canonical, OG, robots, basic JSON-LD) work well today; if the new site drops any of those silently, we regress organic traffic.
+    2. **The migration is the moment to fix the long-standing UX gap with AI search.** Tools like ChatGPT search, Perplexity, Claude, Phind, and Kagi Assistant retrieve docs pages directly. Pages that surface a clean canonical URL, structured headings, machine-readable code-block language tags, and llms.txt land well; pages that don't, don't. We have a one-shot opportunity to design for this rather than retrofit.
+    3. **URL stability and the anchor-scheme change (§7.2) interact with search-engine memory.** Old anchors will linger in the index for months; we need a deliberate plan, not just hope.
+
+- **Method.** Inventory + decision per item. Group A is SEO ("classic" search engines); Group B is AIO (LLM consumers); Group C is shared infrastructure that benefits both.
+
+    **Group A — SEO**
+    1. **Canonical URLs.** Confirm every page emits `<link rel="canonical">` pointing to `/latest/<path>` for the current version (so old versions don't compete with current). Decide what `/v0.149/` etc. canonicalise to — themselves, or `/latest/`? Material defaults to "self"; reconsider.
+    2. **Sitemap.** `sitemap.xml` at site root, `<lastmod>` from git, only `/latest/` entries listed (avoid sitemap-bloat from versioned pages). Materially affects crawl budget.
+    3. **`robots.txt`.** Allow `/`, disallow `/v0.x/` for `x < latest` to keep historical versions out of fresh index (but still reachable). Validate against Google's robots tester.
+    4. **OG / Twitter cards.** Auto-generated per page (title, description, OG image). Description comes from the page's first paragraph or front-matter `description:`. OG image: per-page social card (continue Material's social plugin behaviour, but using Playwright at build time — see §11.9 §2.4).
+    5. **Page titles.** `<title>` is `Page · Section · django-components` (current pattern). Confirm this in the new layout's `<head>` block.
+    6. **Meta description.** Same source as OG description. 155 char cap.
+    7. **Structured data (JSON-LD).**
+        - `SoftwareSourceCode` schema for the project on `/latest/` home, `getting_started/`, and API reference pages.
+        - `BreadcrumbList` on all content pages.
+        - `Article` / `TechArticle` on concept and guide pages.
+        - `HowTo` on the `examples/` pages where it fits.
+        - **Question:** does Google still surface JSON-LD on developer docs, or only e-commerce / recipe / event? Verify before investing.
+    8. **Heading hierarchy.** Exactly one `<h1>` per page, sequential `<h2>`/`<h3>`. The migration breaks this if `DocPage` chrome inserts an outer `<h1>` while content also opens with `# Heading` → two h1s. Lint this in §11.10 guardrails (file a follow-up to that spike).
+    9. **Image alt text.** Every `![](img)` has alt. Currently inconsistent. Guardrail it.
+    10. **Internal link density.** Cross-links between concept / reference / examples improve crawl coverage and dwell time. Audit current density; set a soft floor (e.g. each concept page links to ≥1 reference and ≥1 example, where applicable). Manual audit, not automated.
+    11. **HTTPS + redirects from www → apex.** GitHub Pages handles HTTPS. Confirm the apex/www redirect chain on the published domain.
+    12. **404 page.** Custom 404.html with search box and "did you mean X?" common-typo redirects.
+    13. **Anchor migration (§7.2 interaction).** When we drop the `django_components.` prefix from anchors, the old anchors should remain as fallbacks for at least 6-12 months. Decision: emit `<a name="django_components.Component"></a>` aliases (already in §7.2), confirm Google honours both, set a deprecation timer.
+    14. **Page speed / Core Web Vitals.** Static HTML with our own minimal CSS / JS should crush this. Confirm via Lighthouse in CI on a sampled set of pages. Budget: LCP < 1.5s on 4G, CLS = 0, INP < 100ms.
+
+    **Group B — AIO (AI / LLM consumers)**
+    1. **`llms.txt` at site root.** [Proposed spec by jeremyhoward](https://llmstxt.org/). A markdown index of the docs aimed at LLMs ingesting the site. We auto-generate from the nav YAML. Two variants:
+        - `/llms.txt` — short index (titles + URLs + 1-line descriptions).
+        - `/llms-full.txt` — concatenation of all content pages as markdown (so a model can ingest the whole site in one fetch). Mistakes here are cheap; the file is a hint, not authoritative.
+    2. **`.md` companion URLs.** Every `/path/page/` also serves at `/path/page.md` returning the raw markdown source (with front-matter stripped, includes expanded, but no rendering). Pattern adopted by Stripe docs, Vercel docs, others. Cost is ~one extra file per page in the build; benefit is enormous for LLM ingestion. **Decide whether to ship.**
+    3. **Structured headings in markdown source.** The `.md` companion URLs in (2) only pay off if our markdown is well-structured. Audit current `docs/` content for: missing top-level h1, h-tag jumps, code blocks without language tags, unlabelled lists. Tie into §11.10 guardrails.
+    4. **Code-block language tags.** Every fence ` ``` ` declares a language. Critical for LLMs interpreting code samples. Already partially enforced via Pygments lexer guard (§11.10 §3.2.3). Extend the check to flag any unlabelled fences as errors.
+    5. **Stable code-example IDs.** When an example is referenced (`See the form_submission example`), the URL anchor stays stable across versions. Otherwise LLMs cite anchors that 404 in newer versions. Audit naming.
+    6. **Semantic HTML.** `<article>`, `<aside>`, `<nav>` used in `DocPage` chrome (§11.11 §3 already does this). Confirm during Phase 1.
+    7. **`<meta name="description">` quality.** LLMs read this when summarising URLs. Auto-generated descriptions from the first paragraph are usually fine; flag pages where the first paragraph is a navigational paragraph or admonition.
+    8. **No JS-required content.** Static HTML rendered server-side is already ✓ by the Option-B architecture. Just confirm: nothing critical loads via JS-only `fetch()` (the fragment examples in §4.4 use pre-rendered static files, so they're OK).
+    9. **OpenAPI / schema export.** Not applicable (we're a library, not an API surface) — but for the django-components **template-tag DSL**, we could publish a JSON / TOML manifest of every tag's signature, args, kwargs, and slot-fill expectations. AI agents authoring templates would consume this. **Decide whether to ship a `tags.json` at site root.**
+    10. **`robots.txt` for AI bots.** Decide: do we allow GPTBot, ClaudeBot, Google-Extended, PerplexityBot? Default-allow is the right call for a docs site that benefits from being well-known; document the policy in `community/`.
+    11. **Markdown front-matter consistency.** If a model is fed `/page.md` (per item 2), front-matter (title, description, lastmod) helps it index correctly. Define a small schema and lint it.
+    12. **AI-friendly URL conventions.** Lowercase, hyphen-separated, no extensions in URLs. Already mostly true; confirm during the §7.1 slug-algo audit.
+
+    **Group C — Shared infrastructure**
+    1. **Build-time fixed `<head>` block.** Single shared block (canonical, OG, JSON-LD, title, description, theme color, favicon, viewport) emitted per page from a centralised template; no per-page handcrafting. Define this in `DocPage` chrome (§4.1).
+    2. **Per-page front-matter override.** When a page wants to deviate (custom OG image, custom description, `noindex`), front-matter wins. Define schema.
+    3. **Per-version `<head>` differences.** Old versions get `<meta name="robots" content="noindex,follow">` so they don't compete with `/latest/` in search but are still followable. Wire into the versioned build (§4.6).
+    4. **Lighthouse CI.** Run on every PR against a sampled set of pages. Block PRs that regress Performance / Accessibility / SEO / Best Practices below thresholds (Performance 95, others 100).
+    5. **Search-engine indexing manifest.** A small `meta/indexing.json` enumerating intended-indexable URLs. Used by §11.10 guardrails to confirm we didn't accidentally make a major page `noindex`.
+
+- **Deliverable.** A markdown sub-doc (`DESIGN_djc_docs_site_spike_11_12.md`) listing each item above with a verdict: **Ship / Skip / Defer / Spike further**. For each "Ship", a one-line implementation note pointing at the responsible component or build step.
+
+- **Decisions this spike forces.**
+    - Whether to ship `.md` companion URLs (Group B §2). Yes/no with cost estimate.
+    - Whether to ship `llms.txt` and `llms-full.txt` (Group B §1). Yes/no.
+    - Whether to ship `tags.json` (Group B §9). Yes/no.
+    - Whether the AI-bot allow/disallow policy is documented (Group B §10).
+    - Canonical-URL strategy for versioned pages (Group A §1).
+    - Anchor-migration timeline (Group A §13).
+
+- **Feeds into.** §4.1 (DocPage `<head>` block), §4.6 (per-version `noindex`), §7.2 (anchor migration), §11.9 (which plugins handle social cards / sitemap / robots), §11.10 (additional guardrails — single-h1, alt-text, language-tag).
+
+- **Out of scope.**
+    - Comprehensive accessibility audit (deferred to §11.11 follow-up).
+    - Multi-language SEO (`hreflang`) — we don't have translated docs.
+    - Real-time SEO monitoring (e.g. weekly Search Console audits). Operational concern, not part of this build.
 
 ---
 
@@ -1301,3 +2198,112 @@ Pull from these in the §11.11 spike; don't try to clone Material's exact aesthe
 ### Spike 11.4
 
 > ok, let's now do a deep dive spike on 11.4
+
+> please fold the standalone DESIGN_djc_docs_site_spike_11_4.md into the main design doc, the same way as we did with the spikes 11.1-11.3, it was a unapproved deviation that you created this standalone file.
+>
+> Next, in "3.2 Solution: a directive expander, not a Django template render" - you suggested to convert `{% docstring "<dotted.path>" %}` to `<ApiReference>`. But what does `<ApiReference>` actually mean? is it a web component? or in second pass we replace <ApiReference> again to Djnago syntax so that Django template parser understands it? Or how do we plan to expand/render `<ApiReference>` to final HTML? Something like `<ApiReference>` would work with React, Vue, or DJC v3 (in v3 we switch to HTML-like syntax), but in v1 and v2, DJC components require the Django syntax `{% ... %}`. So how do you plan to wire up the `ExampleCard` *component* to be rendered in the place of a `<ExampleCard>` tag in the HTML?
+>
+> Next, re "{% include_file '<path>' %}" - I beleive there are use cases where we rely on inserting the text from injected file (`--8<--`) even without the encapsulating fenced code blocks. Or at least in the past we did that with I think overview/welcome page importing README, or sth like that. in such case we'd need `{% include_file "<path>" %}` NOT to wrap the imported string in fenced code block. HOWEVER, I think fenced code block is the BETTER design - it like an injection protection - ensuring that what gets injected is NOT evaluated as markdown/django template. But so in that case we should look for all uses of `--8<--`, and search for those that are NOT injected as literal code, and reassess whether we really need to inject the "raw" string.
+>
+> ANother thing re 3.2 - So I can imagine that as the entire site will be built on top of Django, we might use otehr custom Django components . AKA we might have things like `{% component "table" %}` in the markdowns. SO how would we handle that? would this survive to pass 3? Or? In such case, where do we draw the line between what is a directive expander and what is django template tag?
+>
+> re open question in sectino 4. - yes to `Keep --8<-- for explicit "here is one specific file" inclusions. Use {% example %} only for the high-level "show component + page + live demo tabs" case.`
+
+> Nice, the revised design for 11.4 is much better!
+>
+> re 11.4.C - how are we planning to detect `4-space indented code block`?
+>
+> And re 11.4.K and 11.4.H - at what stage / phase shoudl we build the prototype?
+
+### Spike 11.5
+
+> ok, let's now do a deep dive spike on 11.5
+
+> One correct re "plan to drop the django_components. prefix" - I don;t want to drop jusrt the root `django_components.` from the anchors, I want to drop the entire path, so only the last part of the path remains as the anchor (usually this corresponds to symbol name) - eg anchor `#django_components.component.Component` would become just `#Component`, because, 1) let's be honest, on respective ref pages (API, commands, django tags, etc), those symbols should be unique, so scoping under the path is not needed, and 2) the path is sometimes internal detail since we have dedicated paths for the public API (eg the general public API is all exported from root `django_component`, etc), so I'd prefer if we can hide the internal path from the docs / users.
+> 
+> Also, you wrote that "Anchor scheme change breaks 397 handwritten links in src/" - what do you mean by "handwritten links"? Or rather, how would these "handwritten" differ from non-handwritten?
+> 
+> re "Module-level instances (e.g. django_components.registry)" - where exactly does this happen?
+> 
+> re "Anchor scheme breaks 397 handwritten links in src/" and the "[X](api.md#django_components.Y)" vs cross-ref -> I suppose we can update them all to use the cross refs instead of md links.
+> 
+> re "api.md is alphabetically ordered with no thematic grouping." - I like that suggestion of adding thematic grouping!
+> 
+> re "Both griffe extensions inject raw HTML into docstring values. Our markdown renderer must permit raw HTML (markdown-it-py with html=true does)" - this assessment is outdated, see the latest design docs, we decided to go with python-markdown (or whatever is its name). Check your spike for other such outdated assumptions. (eg for the static site gen item in "Open items deferred to other spikes", we chose django-distill).
+> 
+> re "Layer 2 prototype: a ReferenceClass Django component that takes one ReferenceEntry, resolves the griffe object, and renders HTML. Wire it into a minimal page layout." and similar - let's also talk amore concretely where the API-kind-specifc templates should / would live.
+> 
+> Moreover on the topic of links vs cross refs - today, the docstrings are made so the result looks good in the built docs, not necessarily in VSCode or other IDEs. Is there some docstring format that looks well (autoformatted correctly on hints on hover, for example) in all major IDEs? And if so, could we achieve some docstring format that achieves both corect IDE hints rendering, as well as playing nice with the docs building?
+
+> In "11.1 What each IDE renders today" - what is the 3rd entry? because I see 'Inline code \Component``'. Or is it supposed to be a symbol wrapped in double backticks?
+>
+> Anyway, so my takeaway from 11.1 is:
+> - Migrate to Google-style (`Args:`, etc) across the codebase.
+> - Migrate to double backticks(?) for inlined code
+> 
+> re "Backticks around symbol names" and "Write `Component`. IDEs render it as monospace; the docs build runs an implicit-cross-ref resolver pass that turns backticked text into a link when it matches a known project symbol" - not sure I like that - how would we distinguish between `Component` as link vs `Component` as inlined code? Or is teh idea that with single backtick we wrap in links, while in double backticks we don't?
+> 
+> Also, do python docstirngs support linking to other symbols similarly to I think `@link` in JSDocs?
+> 
+> re "No Material admonitions. " and "No raw HTML." in 11.2 - I agree with the *idea*, but we'll see in practice whether it makes sense. Right now the nice thing is that we can have rich docs even in reference docs. I'm willing to not adhere to these conventions 100% of the time if the options are a) bland docstrings with only vanilla markdown vs b) rich docstrings with examples vs c) needless duplication just to keep docstrings vanilla and rich examples in separate page.
+> 
+> Also note that all these conventions that we eventually agree on should be documented (eg in development section of the docs) (and also added to our local claude.md)
+
+> re 11.3 - since backticks would be doing double duty, I think I prefer that we leave backticks are monospace (inline code) and non-linked, and instead leave the cross reffing feature eg `[text][django_components.Component]` for linking.. SO this also changes the item 2. in 11.2.
+
+### Spike 11.6
+
+> ok, let's now do a deep dive spike on 11.6. Note that a lot has changed since last message, so be sure to read up on latest state of the design doc, as well as the surroundnig spike files
+
+> looking through 11.6.B:
+> - heavy use items look good
+> - re zer- or near zero use, I have some comments:
+>   - pymdownx.tabbed -> didn't know that was possible! I did want tabs in the past and WILL want them (eg for multiple package managers). le'ts keep them.
+>   - pymdownx.details -> same thing. I chronically used notes (admonitions), because I didn't know that expandable details sections were a thing.
+>   - pymdownx.magiclink -> this one I agree can be removed - it's trivial and better to be explicit with the full links.
+>   - pymdownx.inlinehilite -> same as the first two, keep and document insrtead of removing.
+> 
+> So overall I think we should have a reference page to show all the syntaxes that we can use in the markdowns so that those unused features get better visibility, instead of dropping them.
+> 
+> Ideally we'd also enumarate all available pymdownx plugins, so we'd know when to add them. eg I just saw that the superfence allows for creating mermaid diagrams, or that there's "Arithmatex", or strikethrough, or captions, or keyboard keys, or the "critic" highlight (https://facelessuser.github.io/pymdown-extensions/extensions/critic/) that could be used for inline git-like diffing, etc.
+> 
+> Some that I genuinely don't know what they do (or couldn't find in the docs) are :
+> - attr_list
+> - def_list (in docs there's `/// define`)
+> - PathConverter
+> 
+> So with that I'd also drop the CI guardrail that you're proposing. in 11.6.B
+> 
+> re 11.6.D - I'm thinking changing `{% version %}` to just `{% version %}`, the rest looks good.
+> 
+> just a note in 11.6.F re "Per-link authoring choice during the sweep" - For a lot of the docs I wrote I included A LOT of manual links eg '[`Component`](../api.md#django_components.component.Component)'. These are meant to be genuine links, NOT just "a backticked mention dressed as a link". My aim indeed is that when we mention specific public API interfaces, to link to them often (as opposed to eg linking only the first instance of the symbol). I'm just mentioning this so that you don't go on a spree undoing all my linking work just because.
+> 
+> re frontmatter support - how would that look like - would WE control what goes into the frontmatter, or does pymdownx already defines specific fields it recognizes?
+> 
+> also, re "Default behavior on Material admonitions in docstrings vs in markdown pages." - I said this in another chat but looks like it didn't survive to be noted down in 11.5 / 11.6 - DO NOT sweep-convert existing admonitions to blockquotes for "IDE friendliness". that's something for me to decide later on, but during this work, we should keep the advanced syntaxes in docstrings as they are, and only fix the structural blockers - align on google syntax, fix the links, etc. Please update the other spikes and the main design doc accordingly too.
+
+### Spike 11.7
+
+> ok, let's now do a deep dive spike on 11.7. Note that a lot has changed since last message, so be sure to read up on latest state of the design doc, as well as the surroundnig spike files
+
+> re "Older mkdocs-built versions on gh-pages" - I belive the practical approach is to revisit this once we've built the versioning logic and completed the main build end to end, so we know waht the contract is, eg after phase 7 "search v2"?
+> 
+> do NOT add precommit hook.
+> 
+> re 8.3 - I wasn't aware that mike was on BSD 3 - any other deps across all the spikes/upstream deps that have non MIT licenses?
+> 
+> and re 11 - we can implement also the docs-build-check comand - I suppose tha could then live in CI as a gate?
+
+### Spike 11.9
+
+> ok, let's now do a deep dive spike on 11.9. Note that a lot has changed since last message, so be sure to read up on latest state of the design doc, as well as the surroundnig spike files
+
+### Spike 11.11
+
+> ok, let's now do a deep dive spike on 11.11. Note that a lot has changed since last message, so be sure to read up on latest state of the design doc, as well as the surroundnig spike files
+
+> re "Code blocks" you mentioned "Skip the file-name tab for v1 (we don't author with file-named code blocks today)" - but isn't that what we'd use the pymdownx tabs for?
+>
+> Q on "4. Top header" - if we move the Overview, Concenpts, etc in the sidebar, then frankly I don't see why it should be duplicated in the top nav? I'd lean that top-level nav would point to genuinely different kinds of pages. Eg like logo would take user to landing page (NEW; differnet from current), Documentation (or just "Docs") would take to section that houses the "Concepts, Reference, Examples, ...", something like Plugins should live in the top too, bc it's different KIND of page, Examples is a mixed case (but could be at top nav), Release notes can be folded inside Docs(?). Thoughts? Also in the future I'd like to have a Blog link there.
+
+> re landing page, let's add that add a separate phase at the end. I have an idea in mind, but it will involve a lot of active back and forth and codesign with the agent
