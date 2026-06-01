@@ -27,7 +27,7 @@ Goal: clean source-of-truth before the migration starts. These are codemods in t
 |---|---|---|---|---|---|---|---|
 | 0.1 | `codemod-links` | Hand-typed link sweep (`[X](api.md#...)` → `[X][Key]`) | M | ✓ | 11.5 §7.1, §11.4 | **done** (3cb4c531) | 1086 transformations across 72 files. Always-explicit `[X][Key]` form, short keys (no `django_components.` prefix, no module prefix) |
 | 0.2 | `codemod-google-sections` | Google-style section alignment (`**Args:**` → `Args:`) | M | ✓ | 11.5 §11.4 | **done** (28cea92d) | 128 mechanical free-form renames + 14 manual structured (Args/Arguments/Raises) bullet → bare-indent restructures |
-| 0.3 | `docs-convention-community` | Document docstring convention in `docs/community/development.md` | M | | 11.5 §11.6 | **done** (this commit) | "Writing docstrings" subsection under "Documentation website" |
+| 0.3 | `docs-convention-community` | Document docstring convention in `docs/community/development.md` | M | | 11.5 §11.6 | **done** (14554db7) | "Writing docstrings" subsection under "Documentation website" |
 | 0.4 | `docs-convention-claude` | Add docstring rule to `CLAUDE.md` | S | | 11.5 §11.6 | skipped | `CLAUDE.md` is intentionally local/untracked; spike §11.6 step skipped |
 
 **Out of scope here:** any code under `docs_site/`.
@@ -420,23 +420,36 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 
 ## Roll-up
 
-| Phase | Goal | Count | Critical |
-|---|---|---|---|
-| 0 | Pre-work in `src/` | 4 | 2 |
-| 1 | Foundation: 1 page end-to-end | 30 | 21 |
-| 2 | `{% example %}` end-to-end | 7 | 4 |
-| 3a | Theme + core chrome | 23 | 17 |
-| 3b | Mass content port + responsive + content guardrails | 25 | 12 |
-| 4 | API reference (mkdocstrings replacement) | 66 | 30 |
-| 5a | Search v1 | 6 | 4 |
-| 5b | Versioning | 17 | 12 |
-| 5c | SEO + AIO + chrome polish | 19 | 0 |
-| 5d | Feature-parity audit (process) | 0 | 0 |
-| 6 | Cutover | 5 | 4 |
-| 7 | Search v2 (post-cutover polish) | 4 | 0 |
-| 8 | Search v3 (blocked on analytics target) | 1 | 0 |
-| 9 | Landing page (codesign) | 1 | 0 |
-| 10+ | Deferred / post-launch maintenance | 7 | 0 |
-| **Total** | | **215** | **106** |
+| Phase | Goal | Count | Critical | Status |
+|---|---|---|---|---|
+| 0 | Pre-work in `src/` | 4 | 2 | 3/4 done, 1 skipped (CLAUDE.md untracked) |
+| 1 | Foundation: 1 page end-to-end | 30 | 21 | pending |
+| 2 | `{% example %}` end-to-end | 7 | 4 | pending |
+| 3a | Theme + core chrome | 23 | 17 | pending |
+| 3b | Mass content port + responsive + content guardrails | 25 | 12 | pending |
+| 4 | API reference (mkdocstrings replacement) | 66 | 30 | pending |
+| 5a | Search v1 | 6 | 4 | pending |
+| 5b | Versioning | 17 | 12 | pending |
+| 5c | SEO + AIO + chrome polish | 19 | 0 | pending |
+| 5d | Feature-parity audit (process) | 0 | 0 | pending |
+| 6 | Cutover | 5 | 4 | pending |
+| 7 | Search v2 (post-cutover polish) | 4 | 0 | pending |
+| 8 | Search v3 (blocked on analytics target) | 1 | 0 | pending |
+| 9 | Landing page (codesign) | 1 | 0 | pending |
+| 10+ | Deferred / post-launch maintenance | 7 | 0 | pending |
+| **Total** | | **215** | **106** | **3/215 done** |
+
+### Phase 0 closed
+
+Phase 0 landed across three commits on `jo-docs-mkdocs-migrate`:
+
+- [`3cb4c531`](https://github.com/django-components/django-components/commit/3cb4c531) — link codemod
+- [`28cea92d`](https://github.com/django-components/django-components/commit/28cea92d) — Google-section sweep
+- [`14554db7`](https://github.com/django-components/django-components/commit/14554db7) — "Writing docstrings" convention
+
+Outstanding (not phase-0 blockers, tracked for follow-up):
+
+- **0.4** `CLAUDE.md` rule — skipped because the file is intentionally untracked.
+- **Examples indent** — the 128 mechanical `**Example:**` → `Example:` renames in commit 0.2 left the bodies at the same indent as the heading. Griffe still treats those as free-form text, not as structured `DocstringSectionKind.examples` sections. Verified by running `griffe.GriffeLoader().load(...).docstring.parse('google')` on `provide.ProvideNode`: only the `Args:` block parses as `parameters`, the `Example:` block parses as plain `text`. To get a structured section, body needs to be indented +4 spaces. Captured as a follow-up sweep (one-shot, mechanical) before the new docs builder lands in Phase 4.
 
 If something is missing here, **add it**. This file is the canonical inventory.
