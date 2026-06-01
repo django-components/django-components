@@ -230,22 +230,25 @@ Fragment examples need a server endpoint that returns HTML when clicked. In prod
 
 #### 4.4a Pre-render every fragment response to a static file
 
-For each example's `View.get()`, enumerate the inputs that the example actually uses (e.g. `?type=alpine`, `?type=htmx`, `?type=js`), call it at build time, and write the result to `static/fragments/<example>/<key>.html`. Rewrite `hx-get="/examples/fragments?type=alpine"` to `hx-get="/static/fragments/fragments/alpine.html"` at build time.
+For each example's `View.get()`, enumerate the inputs that the example actually uses (e.g. alpine / htmx / js variants), call it at build time, and write the result to a static path. Rewrite the in-page `hx-get="..."` URL to point at the static file at build time.
+
+**URL convention: path-keyed, not query-string-keyed.** The fragment variants live at `/examples/fragments/alpine/`, `/examples/fragments/htmx/`, `/examples/fragments/js/` — **not** `/examples/fragments?type=alpine`. Rationale:
+
+- Clean static URLs (a directory per variant, with `index.html` inside).
+- Compatible with `django-distill` out of the box, which explicitly rejects query strings (see §11.3 spike findings).
+- Cacheable as plain static files without server-side normalization.
 
 This works because **the example author already knows the finite set of inputs** — that's what makes it a doc-able example. We add a tiny convention:
 
 ```python
 class FragmentsPage(Component):
     class DocsExample:
-        # The set of (path, query) pairs to pre-render and emit as static files.
-        fragments = [
-            ("", {"type": "alpine"}),
-            ("", {"type": "htmx"}),
-            ("", {"type": "js"}),
-        ]
+        # Each entry becomes a sub-URL of the example's page.
+        # The view receives the variant as a path parameter.
+        fragments = ["alpine", "htmx", "js"]
 ```
 
-The `build_docs` command walks every example's `DocsExample.fragments`, calls the view with a synthetic request, and writes the body to `static/fragments/...html`. A URL rewriter replaces `get_component_url(...)` calls at build time.
+The `build_docs` command walks every example's `DocsExample.fragments`, materializes each variant as a sub-URL of the example's page (`/examples/<name>/<variant>/`), calls the view via Django's test client, and writes the body to `static/fragments/<example>/<variant>/index.html`. A URL rewriter substitutes `get_component_url(...)` calls in the rendered page with the static path at build time.
 
 This covers every fragment example currently in [docs/examples/](docs/examples/) (fragments, form_submission, tabs).
 
@@ -384,37 +387,7 @@ Open to discussion. A thin `Makefile`/`justfile` wrapper that just calls the `uv
 
 ---
 
-## 5. Migration plan (incremental, not big-bang)
-
-We don't replace mkdocs in one PR. We run both side-by-side until the new site reaches parity, then cut over.
-
-**Phase 1 — scaffold + one section.** Build `docs_site/` with one section (e.g. `getting_started/`) ported. Markdown → HTML → static output works end-to-end. No interactive examples yet. *Output:* a directory we can `python -m http.server`. *Time estimate:* ~1-2 weeks of focused work.
-
-**Phase 2 — the `{% example %}` tag.** Port [docs/examples/](docs/examples/) and the fragment pre-rendering. Pick fragments as the first real example. Prove that a doc page can embed a real interactive component. *Output:* a live fragments example in the new site. *Time estimate:* ~1 week.
-
-**Phase 3 — the rest of the markdown pages.** Mechanical port of `concepts/`, `guides/`, `community/`, etc. Mostly markdown copy-paste; the tricky bits are the cross-page links and the `mkdocs-macros` people.md page. *Output:* feature-equivalent docs minus API reference. *Time estimate:* ~1-2 weeks.
-
-**Phase 4 — API reference.** Build the griffe → component adapter. Reuse [docs/scripts/extensions.py](docs/scripts/extensions.py) verbatim. *Output:* `reference/*` parity. *Time estimate:* ~1 week.
-
-**Phase 5a — theming.** Light / dark CSS tokens, palette, dark-mode toggle component. Needs to land before search because the search modal is theme-sensitive (input, results, hover, focus rings) — see §11.1.G.1. *Output:* theme tokens consumed by all components built so far. *Time estimate:* ~3-4 days.
-
-**Phase 5b — versioning + social cards.** `docs/v/<version>/` layout per §4.6, `version_picker` component, OG-image generation. Open question (§11.1.G.1): is versioning a hard prerequisite for search v1? Almost certainly no — per-version search is just one Pagefind bundle per version dir — but confirm during implementation. *Output:* multi-version-ready site + social cards. *Time estimate:* ~1 week.
-
-**Phase 5c — search v1.** Pagefind integration, `SearchInput` / `SearchModal` / `SearchResultList` components per §11.1.G.5, plus `?h=` on-page highlight. Includes the delayed-spinner fallback. *Output:* parity with Material's day-to-day search UX. *Time estimate:* ~5-7 days.
-
-**Phase 6 — cutover.** Switch the GitHub Pages deploy from mkdocs to the new build. Delete mkdocs config and dependencies. Leave a redirect for any moved URLs. *Time estimate:* ~2 days.
-
-**Phase 7 — search v2 (post-cutover).** Autocomplete, recent searches, filters/scoping, typo-recovery fallback (borrowing Emil's scoring algo per §11.1.C). *Output:* power-user polish. *Time estimate:* ~3-4 days.
-
-**Phase 8 — search v3 (deferred).** Search-result analytics. **Blocked** on picking an analytics target (Plausible / GoatCounter / Cloudflare Worker / self-hosted endpoint). Separate design decision; park until we know where the data should go.
-
-**Total estimate (Phases 1-6, the actual migration):** ~7-9 weeks of effort. Search v2/v3 add to that whenever we choose to do them. Can all be split across many PRs and many calendar weeks.
-
-A key property of this plan: **at every phase, the old mkdocs site is still the canonical published site.** We do not break docs while we're rebuilding them. We only switch the deploy in Phase 6.
-
----
-
-## 6. What we lose, what we gain
+## 5. What we lose, what we gain
 
 | What we gain | What we lose |
 |---|---|
@@ -433,21 +406,7 @@ The biggest single risk is **search quality**. Material's search is genuinely we
 
 ---
 
-## 7. Open questions to resolve before starting
-
-1. **URL stability.** Material generates anchors as `#some-heading`; we need to match its slug algorithm exactly to avoid breaking inbound links from third-party blog posts. Audit the slug function and replicate it.
-2. **Anchor changes from mkdocstrings — we want to DEVIATE.** Today every API symbol is anchored as `reference/api/#django_components.Component`. The dotted import path in the hash is ugly and verbose, and Juro has wanted to drop it for a long time. New scheme: `reference/api/#Component`. Trade-off: this breaks inbound links from blog posts and prior docs versions. Mitigation: in the rendered HTML, emit **both** the new canonical anchor (`<h2 id="Component">`) and a legacy alias for back-compat (`<a name="django_components.Component"></a>`) so old URLs still work. Confirm via spike (§11) whether the alias actually resolves in modern browsers (`<a name>` is deprecated but still honored).
-3. **Edit-on-GitHub button URLs.** Each generated page maps back to a source. We control this; needs to be wired into our `doc_page` component.
-4. **Themability / dark mode toggle.** Material gives us palette-switching out of the box. We can recreate with one CSS file and a small JS toggle.
-5. **Versioned redirects.** When pages move (like [#1355](https://github.com/django-components/django-components/issues/1355)), our redirect map is HTML `<meta http-equiv=refresh>` files. Confirm GitHub Pages serves them with the right Cache-Control.
-6. **Build time.** mkdocs build is ~30s today. Django startup + crawl + Pygments will likely be slower; budget ~1-2 minutes. Acceptable for CI.
-7. **`pygments_djc` ownership.** Confirmed by Juro — we own it. It stays as a normal dep; no migration concerns here.
-8. **mkdocs strict-mode link checking.** We currently run `mkdocs build --strict` in CI to fail on broken links. The new build needs an equivalent step that walks all generated HTML, parses `<a href>`, and asserts every internal link resolves. See "Guardrails" spike in §11.10.
-9. **Migrating old docs versions.** Unresolved. Two sub-questions: (a) do we rebuild every historical version from its git tag with the *new* builder (which means historical content has to remain compatible with the new directives), or (b) do we keep the existing mkdocs-built HTML for older versions and only switch the builder for new releases going forward? See spike in §11.8.
-
----
-
-## 8. First concrete step
+## 6. First concrete step
 
 If we want to test the riskiest assumption before committing to the plan, the cheapest experiment is:
 
@@ -464,12 +423,68 @@ Recommended next move: **spike the proof of concept**, then come back to this do
 
 ---
 
-## 9. Out of scope for this doc
+## 7. Out of scope for this doc
 
 - Internationalization. mkdocs doesn't support it cleanly today either; defer.
 - Comments / discussion threads embedded in docs.
 - Auto-generated tutorials. We'd rather hand-author and keep them honest.
 - The v2/v3 "drop Django dependency" refactor — orthogonal, and the docs site doesn't need it.
+
+---
+
+## 8. Migration plan (incremental, not big-bang)
+
+We don't replace mkdocs in one PR. We run both side-by-side until the new site reaches parity, then cut over.
+
+**Phase 1 — scaffold + one section.** Build `docs_site/` with one section (e.g. `getting_started/`) ported. Markdown → HTML → static output works end-to-end. No interactive examples yet. *Output:* a directory we can `python -m http.server`. *Time estimate:* ~1-2 weeks of focused work.
+
+**Phase 2 — the `{% example %}` tag.** Port [docs/examples/](docs/examples/) and the fragment pre-rendering. Pick fragments as the first real example. Prove that a doc page can embed a real interactive component. *Output:* a live fragments example in the new site. *Time estimate:* ~1 week.
+
+**Phase 3 — the rest of the markdown pages.** Mechanical port of `concepts/`, `guides/`, `community/`, etc. Mostly markdown copy-paste; the tricky bits are the cross-page links and the `mkdocs-macros` people.md page. *Output:* feature-equivalent docs minus API reference. *Time estimate:* ~1-2 weeks.
+
+**Phase 4 — API reference.** Build the griffe → component adapter. Reuse [docs/scripts/extensions.py](docs/scripts/extensions.py) verbatim. *Output:* `reference/*` parity. *Time estimate:* ~1 week.
+
+**Phase 5a — theming.** Light / dark CSS tokens, palette, dark-mode toggle component. Needs to land before search because the search modal is theme-sensitive (input, results, hover, focus rings) — see §11.1.G.1. *Output:* theme tokens consumed by all components built so far. *Time estimate:* ~3-4 days.
+
+**Phase 5b — versioning + social cards.** `docs/v/<version>/` layout per §4.6, `version_picker` component, OG-image generation. Open question (§11.1.G.1): is versioning a hard prerequisite for search v1? Almost certainly no — per-version search is just one Pagefind bundle per version dir — but confirm during implementation. *Output:* multi-version-ready site + social cards. *Time estimate:* ~1 week.
+
+**Phase 5c — search v1.** Pagefind integration, `SearchInput` / `SearchModal` / `SearchResultList` components per §11.1.G.5, plus `?h=` on-page highlight. Includes the delayed-spinner fallback. *Output:* parity with Material's day-to-day search UX. *Time estimate:* ~5-7 days.
+
+**Phase 5d — feature-parity audit + selective port.** Before cutover, hold a deliberate gate: sit with three columns side by side — (1) our current Material/mkdocs docs site, (2) Zensical's current feature list (see §11.2 "What we'd give up"), (3) what our new Django docs site actually does today. For each row, decide one of: **port**, **skip** (we don't want it), **defer** (post-cutover follow-up). The reason this is a separate phase: it's the only realistic moment to catch silent regressions before users see them. Each prior phase optimizes for getting the next thing working, not for completeness.
+
+Concrete steps:
+
+1. **Build the matrix.** Walk the [Zensical feature inventory](https://zensical.org/compatibility/features/) row by row. For each, fill in "today (Material)", "today (new site)", and "user-visible? load-bearing?". Drop trivial rows; keep anything a docs reader could notice.
+2. **Decide per row.** Three buckets: port now (cutover blocker), defer (post-cutover follow-up, file an issue), skip (we don't want it). Default to *skip* when in doubt — Phase 5a-c already covered the load-bearing polish.
+3. **Implement the "port now" set.** Each item should be small (none should exceed half a day; if one does, it probably belongs in "defer" and should be re-scoped).
+4. **Walk the live site cold.** Pretend to be a first-time reader. Compare the same tasks side by side on Material vs the new site (home → search a term → land on an API page → navigate to a related concept → toggle dark mode → switch versions). Note anything that feels worse. Fix or file.
+5. **File deferred items as a tracked backlog** so they don't get lost after cutover.
+
+What this phase explicitly is NOT: a chance to rethink the design. We do not redesign anything in Phase 5d. We only port and polish. *Output:* a documented decision per Material/Zensical feature + a small batch of cutover-blocking polish landed. *Time estimate:* ~4-6 days (depends entirely on how much "port now" comes out of step 2; the audit itself is 1-2 days).
+
+**Phase 6 — cutover.** Switch the GitHub Pages deploy from mkdocs to the new build. Delete mkdocs config and dependencies. Leave a redirect for any moved URLs. *Time estimate:* ~2 days.
+
+**Phase 7 — search v2 (post-cutover).** Autocomplete, recent searches, filters/scoping, typo-recovery fallback (borrowing Emil's scoring algo per §11.1.C). *Output:* power-user polish. *Time estimate:* ~3-4 days.
+
+**Phase 8 — search v3 (deferred).** Search-result analytics. **Blocked** on picking an analytics target (Plausible / GoatCounter / Cloudflare Worker / self-hosted endpoint). Separate design decision; park until we know where the data should go.
+
+**Total estimate (Phases 1-6, the actual migration):** ~8-10 weeks of effort (Phase 5d adds ~1 week). Search v2/v3 add to that whenever we choose to do them. Can all be split across many PRs and many calendar weeks.
+
+A key property of this plan: **at every phase, the old mkdocs site is still the canonical published site.** We do not break docs while we're rebuilding them. We only switch the deploy in Phase 6.
+
+---
+
+## 9. Open questions to resolve before starting
+
+1. **URL stability.** Material generates anchors as `#some-heading`; we need to match its slug algorithm exactly to avoid breaking inbound links from third-party blog posts. Audit the slug function and replicate it.
+2. **Anchor changes from mkdocstrings — we want to DEVIATE.** Today every API symbol is anchored as `reference/api/#django_components.Component`. The dotted import path in the hash is ugly and verbose, and Juro has wanted to drop it for a long time. New scheme: `reference/api/#Component`. Trade-off: this breaks inbound links from blog posts and prior docs versions. Mitigation: in the rendered HTML, emit **both** the new canonical anchor (`<h2 id="Component">`) and a legacy alias for back-compat (`<a name="django_components.Component"></a>`) so old URLs still work. Confirm via spike (§11) whether the alias actually resolves in modern browsers (`<a name>` is deprecated but still honored).
+3. **Edit-on-GitHub button URLs.** Each generated page maps back to a source. We control this; needs to be wired into our `doc_page` component.
+4. **Themability / dark mode toggle.** Material gives us palette-switching out of the box. We can recreate with one CSS file and a small JS toggle.
+5. **Versioned redirects.** When pages move (like [#1355](https://github.com/django-components/django-components/issues/1355)), our redirect map is HTML `<meta http-equiv=refresh>` files. Confirm GitHub Pages serves them with the right Cache-Control.
+6. **Build time.** mkdocs build is ~30s today. Django startup + crawl + Pygments will likely be slower; budget ~1-2 minutes. Acceptable for CI.
+7. **`pygments_djc` ownership.** Confirmed by Juro — we own it. It stays as a normal dep; no migration concerns here.
+8. **mkdocs strict-mode link checking.** We currently run `mkdocs build --strict` in CI to fail on broken links. The new build needs an equivalent step that walks all generated HTML, parses `<a href>`, and asserts every internal link resolves. See "Guardrails" spike in §11.10.
+9. **Migrating old docs versions.** Unresolved. Two sub-questions: (a) do we rebuild every historical version from its git tag with the *new* builder (which means historical content has to remain compatible with the new directives), or (b) do we keep the existing mkdocs-built HTML for older versions and only switch the builder for new releases going forward? See spike in §11.8.
 
 ---
 
@@ -494,7 +509,7 @@ Captured here so we don't lose them. Each spike has a question, why it matters, 
 **Status:** spike completed 2026-05-31. Recommendation: **Pagefind**. Details below.
 
 - **Question.** How does Material's search actually work end-to-end? Where does it score, what does it index, what makes it feel "snappy"? And what is the search Emil implemented (in a separate branch or repo) — is it usable for us?
-- **Why.** Search is the most-used feature on docs sites per the [#1515 thread](https://github.com/django-components/django-components/issues/1515). The biggest risk in §6's gains/losses table is "search quality." We need to compare three candidates concretely: Material's Lunr setup, Emil's implementation, and Pagefind.
+- **Why.** Search is the most-used feature on docs sites per the [#1515 thread](https://github.com/django-components/django-components/issues/1515). The biggest risk in §5's gains/losses table is "search quality." We need to compare three candidates concretely: Material's Lunr setup, Emil's implementation, and Pagefind.
 
 #### 11.1.A Findings — Material's search
 
@@ -702,11 +717,11 @@ The engine choice gives us *retrieval* — the result list for a query. Everythi
 
 Search isn't a standalone phase. It has hard dependencies that have to land first:
 
-1. **E2E single page working** — at minimum a real markdown page rendering through our `doc_page` component pipeline (the §8 proof of concept). Until the page chrome exists, there's nowhere to put a search bar.
+1. **E2E single page working** — at minimum a real markdown page rendering through our `doc_page` component pipeline (the §6 proof of concept). Until the page chrome exists, there's nowhere to put a search bar.
 2. **Light / dark theming** — the `SearchModal` is a theme-sensitive surface (input, results, hover states, focus rings). Building it before the theme tokens exist means redoing the CSS once theming lands. Theming first; search after.
 3. **Versioning — open question.** Do we need versioning in place before the first search iteration? Per-version search is just "one Pagefind bundle per version directory" (§11.1.G item #19), so probably **no — search v1 can ship pre-versioning**, with the assumption it'll naturally extend to per-version once §4.6's `docs/v/<version>/` layout is live. Confirm during the implementation spike.
 
-**Reorder for the migration plan (§5):** today Phase 5 is "search, versioning, social cards" lumped together. Split it: theming first (in Phase 1 or a dedicated mini-phase), versioning in its own phase, then search v1 as the next phase. Search v2 and v3 come after the initial cutover.
+**Reorder for the migration plan (§8):** today Phase 5 is "search, versioning, social cards" lumped together. Split it: theming first (in Phase 1 or a dedicated mini-phase), versioning in its own phase, then search v1 as the next phase. Search v2 and v3 come after the initial cutover.
 
 #### 11.1.G.2 What gets built when: three iterations
 
@@ -835,6 +850,75 @@ The "easy migrations" reported in the wild are projects with vanilla setups. We 
 - **§3 Option C (live Django server) → replaced by an implicit Option D (wait for Zensical) — reject.** The risks are: alpha software with no 1.0 ETA, plugin system not yet third-party-friendly, our second-largest override needs a Python-free rewrite, mkdocstrings is "preliminary" and headed for a from-scratch rebuild, mike is a bridge fork.
 - **Decision:** continue with Option B (Pre-render with Django at build time). Revisit Zensical only if (a) it ships 1.0, (b) its module system opens to third parties, and (c) mkdocstrings cross-references/backlinks land. Until all three are true, the customization gap is bigger than the build-our-own-docs gap.
 
+##### What we'd give up by building our own instead of going Zensical
+
+The honest opportunity-cost ledger. Three categories, ordered by how much pain each one moves to our column:
+
+**A. Material-class polish we'd have to rebuild ourselves**
+
+These are real features Material/Zensical give us for free that our own renderer has to recreate. This is the bulk of the migration cost.
+
+| Feature | Today via Material | Cost to rebuild |
+|---|---|---|
+| Palette toggle + auto light/dark mode | Free | One CSS file with `[data-theme]` variants + 20-line JS toggle |
+| Custom palettes / colors | Free | CSS variables (we'd own the design tokens) |
+| Font + icon + emoji + favicon plumbing | Free | Standard `<link>` + Material-icons / iconify imports |
+| Social cards (OG-image generation) | Free | Playwright or Pillow at build time, ~200 lines |
+| 30+ markdown extensions (admonitions, tabs, snippets, mermaid, math, footnotes, tasklist, tooltips, grids, annotations, ...) | Free via pymdown | Each extension supported in `markdown-it-py` natively; the few that aren't (e.g. annotations, grids) need custom plugins or a small DIY pass |
+| Instant loading / prefetching / instant previews | Free | Each one is a small JS feature (~50-200 lines); we'd cherry-pick which ones matter |
+| Sticky tabs / sections / expansion / pruning / breadcrumbs / section-index pages | Free | Navigation rendering is one of our components; logic is ~300 lines |
+| Anchor tracking + TOC anchor following + back-to-top | Free | Standard scroll-spy JS, ~100 lines |
+| Hide-sidebars + keyboard shortcuts + content-width controls | Free | Mostly CSS + a small JS layer |
+| Code-block copy button + line highlight + line numbers | Free | Pygments output + a small JS wrapper |
+| Search (Lunr-class) | Free | Pagefind handles this; better-than-Material out of the box |
+| Strict mode + link validation | Free | We own this (§11.10 guardrails); strict-than-mkdocs feasible |
+| Site-wide 404 page | Free | Static `404.html` |
+| Cookie consent / data privacy | Free | One JS modal; rarely needed for a docs site like ours |
+
+**Rough order of magnitude:** category A is *most* of the work in Phases 1-5 of §5. None of these are individually hard; the cost is breadth, not depth. Spread across the 6-8 week estimate.
+
+**B. Zensical roadmap items we'd never get**
+
+These are the genuinely new things Zensical is building that we'd permanently miss out on:
+
+- **Disco search engine** — Rust-based, *"blazing fast"*, with ranking + filtering + aggregation. Likely better than Pagefind once shipped. But: not released yet, no ETA.
+- **Module system** — composable, extensible pipeline replacing plugins. Coming first to paid Spark members, eventually opening. Would let us write our docs-site-specific behaviors as Zensical modules instead of as Django code.
+- **Component system** — reusable components in templates. Ironically, this is what we're going to build *ourselves* with django-components. We'd be making our own version of what Zensical is building for everyone.
+- **Modular navigation** — flexible nav beyond mkdocs' monolithic structure.
+- **Native API documentation** — cross-language, replacing mkdocstrings. We'd skip this entirely and keep griffe + our own renderer.
+- **Modern theme** — new visual aesthetic alongside classic Material. Same fix-it-ourselves story as polish above.
+- **CommonMark via Rust parser** (replacing Python Markdown). We use `markdown-it-py` which is already a CommonMark parser, so we don't really miss this.
+
+**What we actually lose here:** Disco (if it lives up to the hype) and the module ecosystem. Component system is moot (we're building our own). The rest are either fixed-by-our-own-work or things we don't use.
+
+**C. Stuff we don't use today that Zensical ships**
+
+Features we'd theoretically miss but never used in the first place:
+
+| Feature | Used today? | If we wanted later |
+|---|---|---|
+| Comment system | No | Plug in a third-party widget |
+| Blog | No | Same |
+| Tags + tag listings + tags in search | No | Could DIY in a small build pass |
+| 60+ language i18n | No | We're English-only; out of scope anyway |
+| Revisioning (document dates, authors, contributors) | Sort of, via `git-revision-date-localized` + `git-authors` | DIY via `git log`, ~50 lines |
+| Site analytics + feedback widget | No | Plug in Plausible/GA + a JS widget |
+| Announcement bar | No | One component |
+
+This category is essentially **free** — we don't lose anything we currently use, and if we ever want one of these, each is a small, well-scoped addition.
+
+##### Net assessment
+
+The realistic loss is **category A** (Material-class polish) and **Disco + module system** from category B. We're not losing anything load-bearing for our use case (live component examples — Zensical can't do that anyway without our docs being Django-rendered first). And we're gaining things Zensical can't give us:
+
+- **Live django-components examples** embedded in docs (the killer feature of §4.2).
+- **Pygments security upgrade unblocked** (§1).
+- **Anchor scheme we control** — `#Component` instead of `#django_components.Component` (§6).
+- **Versioning we control** — committed to `master` instead of a `gh-pages` fork (§4.6).
+- **No "wait until v1" exposure** — we're not betting our docs on someone else's pre-1.0 alpha.
+
+The opportunity cost is real, but it's the same opportunity cost any custom site has against a turn-key theme. The difference here is that the turn-key theme can't host our killer feature.
+
 ##### Sources
 
 - [Zensical homepage](https://zensical.org/)
@@ -863,6 +947,163 @@ The "easy migrations" reported in the wild are projects with vanilla setups. We 
     3. Search PyPI for "django static site" packages updated within the last 12 months.
     4. For each candidate: does it support our URL patterns (paginated nav, versioned routes, fragments)? Does it fight Django's `Media` / staticfiles?
 - **Feeds into.** §4.1 (the build pipeline) and the Phase 1 scope.
+
+#### Spike results (2026-05-31)
+
+**Inventory of what's actually shipping in 2026.**
+
+| Library | Latest | Last release | Approach | Maintained? |
+|---|---|---|---|---|
+| [django-distill](https://github.com/meeb/django-distill) | 3.2.7 | Aug 2024 | Registration: `distill_path()` replaces `path()`; spoofs requests via test client | Slow but alive |
+| [django-bakery](https://github.com/palewire/django-bakery) | 0.13.5 | Mar 2025 | Mixin: subclass `BuildableTemplateView` / `BuildableDetailView` per page; framework walks querysets | Yes — LA Times Data Desk |
+| [coltrane](https://github.com/adamghill/coltrane) | 0.40.0 | May 2026 | Filesystem-routed markdown content site, works standalone OR as a third-party Django app | Yes — recent activity |
+| [django-render-static](https://pypi.org/project/django-render-static/) | 3.5.2 | Mar 2026 | **Out of scope** — transpiles Python → JS for client side, not URL crawling | n/a |
+| [django-static-sites](https://pypi.org/project/django-static-sites/) | low | — | Decorator on existing views | Marginal |
+| [django-staticsite](https://pypi.org/project/django-staticsite/) | low | — | Generator for DEBUG and production builds | Marginal |
+| [django-jackfrost](https://pypi.org/project/django-jackfrost/) | 0.4.0 | Jul 2015 | Renderer-classes config | **Abandoned** |
+| [django-medusa](https://github.com/mtigas/django-medusa) | — | 2014 | TestClient → disk/S3/GAE | **Abandoned** (README points to django-bakery) |
+
+**Deep-dive findings on the three live candidates:**
+
+**django-distill** ([source](https://github.com/meeb/django-distill))
+- *URL discovery:* registration-only. You replace `path(...)` with `distill_path(...)` and pass a `distill_func` that yields the parameter dicts to materialize. Under the hood, it uses Django's test client to spoof requests for each URL.
+- *Dynamic URLs:* path parameters only. **Query strings are explicitly rejected** ("Querystring parameters do not make sense for static page generation"). This is the most consequential limitation for our §4.4a fragments use case, since today we use `?type=alpine`.
+- *Static assets:* requires `collectstatic` first, then copies from `STATIC_ROOT`. Supports `DISTILL_SKIP_STATICFILES_DIRS` and `DISTILL_SKIP_ADMIN_DIRS`.
+- *Fragment / partial responses:* not supported. Only GET responses with HTTP 200.
+- *Maintenance:* last release Aug 2024, no 2025/2026 releases visible. Mature but slow-moving.
+- *Verdict:* the no-query-string limitation is a real obstacle but is fixable by **changing our fragment URL convention from `?type=alpine` to `/alpine/`**, which we'd want for clean static URLs anyway. So the limitation is a forcing function in the right direction.
+
+**django-bakery** ([source](https://github.com/palewire/django-bakery))
+- *URL discovery:* mixin opt-in. You subclass `BuildableTemplateView`, `BuildableListView`, `BuildableDetailView`, `BuildableArchiveIndexView`, `Buildable404View`, `BuildableRedirectView`, etc. Each subclass defines a `build_path` attribute and (for Detail views) a queryset that the framework walks, calling `get_absolute_url()` on each object.
+- *Heritage:* built and maintained by LA Times Data Desk for newsroom workflows. Heavy on the "build one HTML page per Postgres row" pattern + S3 sync via Celery.
+- *Static assets / fragments:* documentation lacks specifics for either; clearly not a focus.
+- *Verdict:* overkill for our shape. The mixin layering pays off when your site is model-driven (thousands of detail pages from a DB). Our content is flat markdown files; we don't need the queryset machinery.
+
+**coltrane** ([source](https://github.com/adamghill/coltrane))
+- *Shape:* both a standalone framework (`coltrane create` / `coltrane play` / `coltrane record`) **and** a third-party Django app you can integrate into an existing project.
+- *Content model:* markdown files with **Django template tags inside the markdown**. Auto-routes URLs from the filesystem (`content/foo/bar.md` → `/foo/bar/`).
+- *Pipeline ordering:* docs don't make the markdown↔template ordering explicit. **Spike sub-task** (§11.4): read the source to confirm — this is the same question we already need to answer for our own pipeline (§4.7).
+- *What it doesn't have natively:* versioning (mike-style), search, model-driven URLs (it's flat-files focused), fragment pre-rendering, griffe-based API reference.
+- *Recent activity:* v0.40.0 May 2026 — most active of the three.
+- *Verdict:* **closest fit in spirit**, and ideologically the same shape as our design. But layered on top of an opinionated routing/layout model that may not stretch to our requirements (versioning, custom navigation, API ref pages, fragment pre-rendering). Worth a focused second spike before committing — see "Coltrane follow-up spike" below.
+
+#### Verdict / recommendation
+
+**No existing library cleanly solves the whole problem.** Specifically, none of them handle our fragments use case (query-string-keyed responses) and none have versioning or griffe-based API reference. But two of them give us a meaningful starting point we shouldn't reimplement:
+
+**Primary recommendation: build on django-distill.**
+- It's the cheapest, most boring kernel for "crawl Django URLs, write to disk."
+- The no-query-string limitation is a forcing function in the right direction — we rewrite our fragment URL convention from `/examples/fragments?type=alpine` to `/examples/fragments/alpine/`, and now we have clean static URLs *and* django-distill works out of the box.
+- Layer our own code on top for: markdown processing pipeline (§4.7), API reference (§4.3), versioning (§4.6), search (§4.5).
+- Estimated effort saved vs DIY: ~200-300 lines (the URL-iteration + test-client spoofing + asset copying loop).
+
+**Worth a follow-up evaluation before locking in: coltrane.**
+- If coltrane's filesystem-routing convention fits our `content/` layout and its markdown+templates pipeline matches §4.7's design, it could replace *both* the django-distill kernel and parts of our markdown pipeline.
+- Risk: opinionated about layout. We may end up fighting it for the API-reference, versioning, and fragment-pre-rendering pieces.
+- **Coltrane follow-up spike (§11.3a):** read its source for the markdown rendering order; check if its routing accepts external URL patterns (for our `reference/*` and `v/<version>/...` paths); evaluate whether we can swap our own markdown converter into its pipeline.
+
+**Rejected:**
+- django-bakery — overkill (mixin layering for model-driven sites we don't have).
+- django-medusa, django-jackfrost — abandoned.
+- django-render-static — solves a different problem (Python→JS transpilation).
+- django-static-sites, django-staticsite — too small / unproven.
+
+**Implication for §4.4 (fragments).** Change the URL scheme from query-string-keyed (`?type=alpine`) to path-keyed (`/alpine/`). This works with django-distill out of the box and gives us cleaner static URLs. Update §4.4a's example to reflect this.
+
+#### §11.3a — coltrane evaluation (results, 2026-05-31)
+
+Source-read spike on coltrane: [`renderer.py`](https://github.com/adamghill/coltrane/blob/main/src/coltrane/renderer.py), [`urls.py`](https://github.com/adamghill/coltrane/blob/main/src/coltrane/urls.py), [`management/commands/build.py`](https://github.com/adamghill/coltrane/blob/main/src/coltrane/management/commands/build.py), and the [`example_integrated/`](https://github.com/adamghill/coltrane/tree/main/example_integrated) project layout. (No `pip install`; pure source reading.)
+
+**Q1: Markdown ↔ Django template ordering.**
+
+Coltrane's order is **markdown → HTML → Django templates on the HTML output**. From `MistuneMarkdownRenderer.render_markdown_text`:
+
+```python
+content = self.pre_process_markdown(frontmatter_post.content)
+content = self.mistune_markdown(content)         # markdown → HTML
+content = unescape(content)
+content = self.post_process_html(content)
+# ... later, in the parent render_markdown():
+content = self.render_html_with_django(html, context, request)  # HTML → Django templates
+```
+
+This is **the opposite of the Hugo-style order proposed in §4.7** (shortcodes → markdown → layout).
+
+Coltrane keeps this order working by escaping Django template syntax with placeholder markers before markdown runs and restoring them after. Concretely:
+- `{{ var }}` → `DJANGO-TEMPLATE-VARIABLE-BEGIN-var-DJANGO-TEMPLATE-VARIABLE-END` → back to `{{ var }}`
+- `{% tag arg %}` → same scheme, plus a `SPACE_REPLACEMENT` sentinel for whitespace inside args.
+- Code fences wrapped in `{% verbatim %}` to keep their contents from being templated.
+- `replace('"', "'")` on template-tag args — **so you can't use double-quoted args** like our `{% example "fragments" %}`.
+
+That's debt we'd inherit. We'd either fight the escape layer or work around it for every directive we add.
+
+**Q2: Does `coltrane record` walk Django URLs?**
+
+No. The build command (called from `coltrane record`) iterates **content markdown files**, not URL patterns:
+
+```python
+for path in get_content_paths(request=self.request):
+    future = executor.submit(self._output_markdown_file, path)
+```
+
+`sitemap.xml`, `rss.xml`, `collectstatic`, `compress`, and a list of "extra files" (robots.txt, etc.) are handled separately as one-shot writes. Everything else has to be a markdown file under `content/`.
+
+**This is the dealbreaker.** Our docs site has three categories of pages that aren't markdown files:
+1. **API reference** — driven by griffe, one component-rendered page per Python symbol (§4.3).
+2. **Pre-rendered fragments** — synthesized URLs like `/examples/fragments/alpine/` (§4.4a).
+3. **Versioned routes** — `/v/<version>/...` paths whose content comes from other versions' content trees (§4.6).
+
+Coltrane's `record` command would silently skip all of these. We could synthesize pseudo-markdown files for every API symbol and route them through its pipeline, but that's an awkward inversion of control.
+
+**Q3: External URL patterns alongside coltrane.**
+
+Routing-wise, **yes** — coltrane's `urls.py` ends in a catch-all `re_path`, so you wire it in last and your own patterns take precedence:
+
+```python
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("", include("coltrane.urls")),   # catch-all goes last
+]
+```
+
+So at runtime (`coltrane play`), our own views work fine. But that doesn't help us at build time, where `coltrane record` only iterates markdown files. The routing freedom is theoretical for the static-export use case.
+
+**Q4: Other observations worth borrowing (not adopting).**
+
+- **Manifest-based incremental builds** in `build.py`: it tracks `(path, mtime, md5)` per content file in `output.json` and skips unchanged files. Genuinely good idea — worth replicating in our own builder.
+- **Multi-threaded build** using `ThreadPoolExecutor` with `cpu_count() // 2 - 1` workers by default.
+- **`StaticRequest`** pattern: a fake `HttpRequest` subclass used to fool views into rendering at build time. Same trick we'd use ourselves.
+- **`{% verbatim %}` wrapping for code fences**: useful defensive idea even if our pipeline order is different.
+
+**Q5: Markdown engine.**
+
+Coltrane uses **mistune**, not markdown-it-py. Mistune is fine but the extension ecosystem is smaller. Not a dealbreaker either way.
+
+#### Verdict on coltrane
+
+**Reject coltrane as the kernel. Stick with django-distill + our own markdown pipeline.**
+
+Two showstoppers:
+1. **Pipeline order is markdown-first, not template-first** (§4.7). The escape-and-restore hack to make this work has real constraints (no double-quoted template-tag args, code-fence semantics may not roundtrip cleanly with `djc_py`).
+2. **`coltrane record` builds from markdown files, not Django URLs.** Our API reference, fragments, and versioned routes are not markdown files.
+
+What we'd gain by adopting it:
+- A filesystem-routed catch-all view (~50 lines of our own code anyway).
+- Manifest incremental builds (worth copying as a pattern, not as a dependency).
+- Sitemap.xml, rss.xml, collectstatic, compress, django-browser-reload pre-wired (incidental conveniences, low cost to do ourselves).
+
+What we'd lose:
+- Control over markdown↔template ordering.
+- Ability to render non-markdown URLs without inverting our control flow.
+- Choice of markdown library.
+- A clean docstring on our own pipeline.
+
+**Borrow, don't adopt.** Take three ideas from coltrane into our own builder:
+1. **Manifest-based incremental build** — track per-file mtime/md5 in an `output.json`, skip unchanged content. Big win for dev-mode iteration.
+2. **`StaticRequest` fake-HttpRequest** — the same trick django-distill uses; coltrane's version is slightly cleaner to copy.
+3. **`{% verbatim %}` wrapping of code fences** — even with our template-first order, we want code blocks not to be templated.
+
+Feeds into: §4.1 (build kernel), §4.7 (pipeline). No further coltrane follow-ups needed.
 
 ### 11.4 Markdown + Django templates pipeline
 
@@ -917,7 +1158,7 @@ The "easy migrations" reported in the wild are projects with vanilla setups. We 
     1. **Rebuild all historical versions with the new builder.** Requires that old markdown content remains compatible with the new directive set (mostly likely, but not guaranteed). Cleanest URL story.
     2. **Freeze old versions; new builder only from v0.151+.** Old versions are served from a frozen mkdocs-built directory committed once. URL prefixes diverge.
     3. **Hybrid:** rebuild only versions of interest (e.g. last 3 stable), freeze older.
-- **Feeds into.** §7.9, §4.6.
+- **Feeds into.** §9.9, §4.6.
 
 ### 11.9 mkdocs plugin replacement audit
 
@@ -940,12 +1181,12 @@ The "easy migrations" reported in the wild are projects with vanilla setups. We 
     4. **Example-page contract check.** Every `{% example %}` references a directory under `examples/` with a valid `page.py`.
     5. **Cross-version link check.** A link from `/v0.150/foo` should not silently target `/v0.149/foo`.
     6. **Snapshot test.** Snapshot a small set of rendered pages (syrupy) so accidental regressions in the renderer surface in PR review.
-- **Feeds into.** §4.8 (build), §7.8.
+- **Feeds into.** §4.8 (build), §9.8.
 
 ### 11.11 UI / layout inspiration
 
 - **Question.** What does the actual layout/visual design look like? Reference: `~/repos/agents/safe-ai-factory/web` (flat sidebar, simple and elegant); [Vuese](https://vuese.org/) (nested sidebar variant); [Pagefind docs](https://pagefind.app/).
-- **Why.** Material's polish is a real loss in §6. We need a deliberate visual direction before Phase 5 so we're not bikeshedding under time pressure.
+- **Why.** Material's polish is a real loss in §5. We need a deliberate visual direction before Phase 5 so we're not bikeshedding under time pressure.
 - **Method.**
     1. Screenshot the three references' main views (home, content page with sidebar, search overlay, code block, dark mode).
     2. Pull out 5-8 design tokens we want to honor (sidebar width, font stack, code-block padding, link color treatment, table style, etc.).
@@ -982,8 +1223,7 @@ Pull from these in the §11.11 spike; don't try to clone Material's exact aesthe
 >
 > To assess this, you'll need to explore the code examples in our docs. because while most of the docs examples could be made into static code, things might get trickier around the code examples around HTML fragment support. But I suppose even there the to-be-fetched-later fragments could be pre-rendered too. Check both code examples in docs, as well as the examples pages in the docs, and the live examlples when you run sampleproject.
 
-### 1st iter
-
+### 1st feedback
 
 > Agree to go with b) Pre-render with Django at build time. And I like the "Recommended first move" that you proposed. I believe we can do it after we do the additional spikes I ask for below, but the "render one page" as the north star is a good practical framing.
 >
@@ -1028,28 +1268,36 @@ Pull from these in the §11.11 spike; don't try to clone Material's exact aesthe
 
 ### Spike 11.1
 
-```
-ok, let's now do a deep dive spite on 11.1
-```
+> ok, let's now do a deep dive spike on 11.1
 
-```
-re emil's search - it's not part of this repo. in the mkdocs migration issue, he included link to the website. iirc it was github pages website. so from that you can infer the github URL and source code location
-```
+> re emil's search - it's not part of this repo. in the mkdocs migration issue, he included link to the website. iirc it was github pages website. so from that you can infer the github URL and source code location
 
-```
-and how does pagefind compares against lunr feature-wise?
-```
+> and how does pagefind compares against lunr feature-wise?
 
-```
-ok, and for both lunr and pagefind - what features would we need to rebuild ourselves to match (some of) the material search bar UX/features? WHich ones would make sense to reimplement?
-```
+> ok, and for both lunr and pagefind - what features would we need to rebuild ourselves to match (some of) the material search bar UX/features? WHich ones would make sense to reimplement?
 
-```
-ok, looks good. my conclusion is that:
-- let's primarily go with pagefind
-- the search bar impl phase should be done after we have the e2e single page working (versioned?), AND after the dark/light themeing is implemented
-- during actual implementation, only at that time we should do actual explorations of trying to get pagefind / lunr implemented.
-- add another search bar impl phase for the v2 features for the more advanced features.
-- one thing I'm just not sure about is the seach-result analytics - we'd need to discuss where to send the data to. So this could be deferred to "v3" (iteration 3) of the search bar feature. (So similar to what you concluded in 11.1.G.1 :) ).
-- Tho I think we can still add the `"Searching…" spinner` - just as a fallback.
-```
+> ok, looks good. my conclusion is that:
+> - let's primarily go with pagefind
+> - the search bar impl phase should be done after we have the e2e single page working (versioned?), AND after the dark/light themeing is implemented
+> - during actual implementation, only at that time we should do actual explorations of trying to get pagefind / lunr implemented.
+> - add another search bar impl phase for the v2 features for the more advanced features.
+> - one thing I'm just not sure about is the seach-result analytics - we'd need to discuss where to send the data to. So this could be deferred to "v3" (iteration 3) of the search bar feature. (So similar to what you concluded in 11.1.G.1 :) ).
+> - Tho I think we can still add the `"Searching…" spinner` - just as a fallback.
+
+### Spike 11.2
+
+> ok, let's now do a deep dive spike on 11.2
+
+> ok, please also provide an overview of the features that zensical now ships - what would we lose out on if we decide to roll our own solution?
+
+> loooks good. One more thing on this - after phase 5 (or as 5d?), we should revisit the features and behavior of 1) our old material documentation, 2) the list of zensical features, 3) our new django-based documentaiton, and assess and implement which features we want to port from the old docs / zensical into our new docs.
+
+### Spike 11.3
+
+> ok, let's now do a deep dive spike on 11.3
+
+> ok, go ahead and do the "11.3a — coltrane evaluation"
+
+### Spike 11.4
+
+> ok, let's now do a deep dive spike on 11.4
