@@ -2,6 +2,8 @@
 
 ## v0.150.1
 
+_2026-06-01_
+
 #### Fix
 
 - **Template expression errors now point at the correct source line in debug mode**
