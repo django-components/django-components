@@ -60,7 +60,7 @@ def get_component_url(
     - `False` and `None` values are omitted from the URL
     - Other values are rendered normally (e.g., `?foo=bar`)
 
-    **Example:**
+    Example:
 
     ```py
     from django_components import Component, get_component_url
@@ -105,6 +105,7 @@ def get_component_url(
     )
     # /components/ext/view/components/c1ab2c3/john/42/?tab=settings
     ```
+
     """
     view_cls: type[ComponentView] | None = getattr(component, "View", None)
     if not _is_view_public(view_cls):
@@ -131,7 +132,7 @@ class ComponentView(ExtensionComponentConfig, View):
     The [`Component`][Component] class is available
     via `self.component_cls`.
 
-    **Example:**
+    Example:
 
     Define a handler that runs for GET HTTP requests:
 
@@ -167,6 +168,7 @@ class ComponentView(ExtensionComponentConfig, View):
 
     The component URL route can be customized by overriding
     [`get_route_path()`][ComponentView.get_route_path].
+
     """
 
     # NOTE: The `component` / `component_cls` attributes are NOT user input, but still must be declared
@@ -192,7 +194,7 @@ class ComponentView(ExtensionComponentConfig, View):
     """
     The parent component class.
 
-    **Example:**
+    Example:
 
     ```py
     class MyComponent(Component):
@@ -218,7 +220,7 @@ class ComponentView(ExtensionComponentConfig, View):
 
         You can override this method to customize the route path.
 
-        **Example:**
+        Example:
         ```py
         from django_components import Component, get_component_url
 
@@ -232,6 +234,7 @@ class ComponentView(ExtensionComponentConfig, View):
         url = get_component_url(MyComponent, kwargs={"pk": 123})
         # /components/ext/view/my/custom/path/c1ab2c3/123/
         ```
+
         """
         return f"components/{cls.component_cls.class_id}/"
 
@@ -269,7 +272,7 @@ class ComponentView(ExtensionComponentConfig, View):
 
     You can explicitly set `public` to `True` or `False` to override this behaviour.
 
-    **Example:**
+    Example:
 
     Define the component HTTP handlers and get its URL using
     [`get_component_url()`][get_component_url]:

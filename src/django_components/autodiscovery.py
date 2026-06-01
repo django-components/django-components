@@ -64,7 +64,7 @@ def import_libraries(
     Returns:
         list[str]: A list of module paths of imported files.
 
-    **Examples:**
+    Examples:
 
     Normal usage - load libraries after Django has loaded
     ```python

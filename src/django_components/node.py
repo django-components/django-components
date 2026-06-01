@@ -784,7 +784,7 @@ def _format_error_with_template_position(
     - Up to 2 following lines
     - Underlined code with ^^^ characters
 
-    **Example:**
+    Example:
 
     ```
     TypeError: Error in mytag3: missing 1 required keyword-only argument: 'msg' and 'mode'
@@ -792,6 +792,7 @@ def _format_error_with_template_position(
         1 | {% mytag3 'John' %}
             ^^^^^^^^^^^^^^^^^^^
     ```
+
     """
     # Convert source to lines with line numbers
     lines = source.split("\n")

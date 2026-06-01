@@ -25,7 +25,7 @@ class ErrorFallback(Component):
     you can access the `error` object through slot data (`{% fill "fallback" data="data" %}`).
     Cannot be used together with the `fallback` kwarg.
 
-    **Example:**
+    Example:
 
     Given this template:
 
@@ -113,6 +113,7 @@ class ErrorFallback(Component):
     !!! info
 
         Remember to define the `content` slot as function, so it's evaluated from inside of `ErrorFallback`.
+
     """
 
     class Kwargs:

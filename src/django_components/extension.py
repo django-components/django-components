@@ -328,7 +328,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
     Read more on [Extensions](../concepts/advanced/extensions.md).
 
-    **Example:**
+    Example:
 
     ```python
     class ExampleExtension(ComponentExtension):
@@ -372,6 +372,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
             def baz(self):
                 return "overridden baz"
     ```
+
     """
 
     ###########################
@@ -433,7 +434,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
     The class name must be a valid Python identifier.
 
-    **Example:**
+    Example:
 
     ```python
     class MyExt(ComponentExtension):
@@ -497,7 +498,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     Commands are defined as subclasses of
     [`ComponentCommand`][ComponentCommand].
 
-    **Example:**
+    Example:
 
     This example defines an extension with a command that prints "Hello world". To run the command,
     the user would run `components ext run hello_world hello`.
@@ -573,7 +574,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         Use this hook to perform any initialization or validation of the extension instance.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnExtensionCreatedContext
@@ -583,6 +584,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 # Add a new attribute to the extension instance
                 ctx.extension.my_attr = "my_value"
         ```
+
         """
 
     ###########################
@@ -599,7 +601,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         Use this hook to perform any initialization or validation of the
         [`Component`][Component] class.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnComponentClassCreatedContext
@@ -609,6 +611,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 # Add a new attribute to the Component class
                 ctx.component_cls.my_attr = "my_value"
         ```
+
         """
 
     def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
@@ -620,7 +623,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         Use this hook to perform any cleanup related to the [`Component`][Component] class.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnComponentClassDeletedContext
@@ -630,6 +633,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 # Remove Component class from the extension's cache on deletion
                 self.cache.pop(ctx.component_cls, None)
         ```
+
         """
 
     def on_registry_created(self, ctx: OnRegistryCreatedContext) -> None:
@@ -641,7 +645,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         Use this hook to perform any initialization needed for the registry.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnRegistryCreatedContext
@@ -651,6 +655,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 # Add a new attribute to the registry
                 ctx.registry.my_attr = "my_value"
         ```
+
         """
 
     def on_registry_deleted(self, ctx: OnRegistryDeletedContext) -> None:
@@ -662,7 +667,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         Use this hook to perform any cleanup related to the registry.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnRegistryDeletedContext
@@ -672,6 +677,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 # Remove registry from the extension's cache on deletion
                 self.cache.pop(ctx.registry, None)
         ```
+
         """
 
     def on_component_registered(self, ctx: OnComponentRegisteredContext) -> None:
@@ -682,7 +688,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         This hook is called after a [`Component`][Component] class
         is successfully registered.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnComponentRegisteredContext
@@ -691,6 +697,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
             def on_component_registered(self, ctx: OnComponentRegisteredContext) -> None:
                 print(f"Component {ctx.component_cls} registered to {ctx.registry} as '{ctx.name}'")
         ```
+
         """
 
     def on_component_unregistered(self, ctx: OnComponentUnregisteredContext) -> None:
@@ -701,7 +708,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         This hook is called after a [`Component`][Component] class
         is removed from the registry.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnComponentUnregisteredContext
@@ -710,6 +717,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
             def on_component_unregistered(self, ctx: OnComponentUnregisteredContext) -> None:
                 print(f"Component {ctx.component_cls} unregistered from {ctx.registry} as '{ctx.name}'")
         ```
+
         """
 
     ###########################
@@ -760,7 +768,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
             for your extension, or `Slot.extra`). It is then discarded automatically once the
             component is done, whether or not `on_component_rendered` runs.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnComponentInputContext
@@ -783,6 +791,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
             [`Component.kwargs`][Component.kwargs],
             [`Component.slots`][Component.slots]
             are plain `list` / `dict` objects.
+
         """
 
     def on_component_data(self, ctx: OnComponentDataContext) -> None:
@@ -799,7 +808,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         Use this hook to modify or validate the component's data before rendering.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnComponentDataContext
@@ -809,6 +818,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 # Add extra template variable to all components when they are rendered
                 ctx.template_data["my_template_var"] = "my_value"
         ```
+
         """
 
     def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
@@ -828,7 +838,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         3. If you neither raise nor return string, the original output or error will be used.
 
-        **Examples:**
+        Examples:
 
         Change the final output of a component:
 
@@ -866,6 +876,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                     # The component rendered successfully
                     print(f"Result: {ctx.result}")
         ```
+
         """
 
     ##########################
@@ -884,7 +895,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         To modify the template, return a new string from this hook.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnTemplateLoadedContext
@@ -894,6 +905,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 # Modify the template
                 return ctx.content.replace("Hello", "Hi")
         ```
+
         """
 
     def on_template_compiled(self, ctx: OnTemplateCompiledContext) -> None:
@@ -907,7 +919,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         Use this hook to read or modify the template (in-place) after it's compiled.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnTemplateCompiledContext
@@ -916,6 +928,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
             def on_template_compiled(self, ctx: OnTemplateCompiledContext) -> None:
                 print(f"Template origin: {ctx.template.origin.name}")
         ```
+
         """
 
     def on_css_loaded(self, ctx: OnCssLoadedContext) -> str | None:
@@ -930,7 +943,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         To modify the CSS, return a new string from this hook.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnCssLoadedContext
@@ -940,6 +953,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 # Modify the CSS
                 return ctx.content.replace("Hello", "Hi")
         ```
+
         """
 
     def on_js_loaded(self, ctx: OnJsLoadedContext) -> str | None:
@@ -954,7 +968,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         To modify the JS, return a new string from this hook.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnCssLoadedContext
@@ -964,6 +978,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 # Modify the JS
                 return ctx.content.replace("Hello", "Hi")
         ```
+
         """
 
     ##########################
@@ -978,7 +993,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         To modify the output, return a new string from this hook.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import ComponentExtension, OnSlotRenderedContext
@@ -1008,6 +1023,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 slot_owner = slot_node.template_component
                 print(f"Slot owner: {slot_owner}")
         ```
+
         """
 
     ###########################
@@ -1032,7 +1048,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
         - `scripts` is a list of [`Script`][Script] objects.
         - `styles` is a list of [`Style`][Style] objects.
 
-        **Example:**
+        Example:
 
         ```python
         from django_components import (
@@ -1083,6 +1099,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 )
                 return (scripts, styles)
         ```
+
         """
 
 

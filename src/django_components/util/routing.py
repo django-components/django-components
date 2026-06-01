@@ -31,7 +31,7 @@ class URLRoute:
     The `URLRoute` must either define a `handler` function or have a list of child routes `children`.
     If both are defined, an error will be raised.
 
-    **Example:**
+    Example:
 
     ```python
     URLRoute("/my/path", handler=my_handler, name="my_name", extra={"kwargs": {"my_extra": "my_value"}})
@@ -61,6 +61,7 @@ class URLRoute:
         ],
     )
     ```
+
     """
 
     path: str

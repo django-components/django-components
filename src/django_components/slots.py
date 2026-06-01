@@ -52,7 +52,7 @@ SlotResult: TypeAlias = str | SafeString
 """
 Type representing the result of a slot render function.
 
-**Example:**
+Example:
 
 ```python
 from django_components import SlotContext, SlotResult
@@ -75,7 +75,7 @@ class SlotContext(Generic[TSlotData]):
 
     Read more about [Slot functions](../concepts/fundamentals/slots.md#slot-class).
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import SlotContext, SlotResult
@@ -93,6 +93,7 @@ class SlotContext(Generic[TSlotData]):
     def my_slot(ctx: SlotContext[MySlotData]):
         return f"Hello, {ctx.data['name']}!"
     ```
+
     """
 
     data: TSlotData
@@ -101,7 +102,7 @@ class SlotContext(Generic[TSlotData]):
 
     Read more about [Slot data](../concepts/fundamentals/slots.md#slot-data).
 
-    **Example:**
+    Example:
 
     ```python
     def my_slot(ctx: SlotContext):
@@ -114,7 +115,7 @@ class SlotContext(Generic[TSlotData]):
 
     Read more about [Slot fallback](../concepts/fundamentals/slots.md#slot-fallback).
 
-    **Example:**
+    Example:
 
     ```python
     def my_slot(ctx: SlotContext):
@@ -145,14 +146,13 @@ class SlotFunc(Protocol, Generic[TSlotData]):
 
     Read more about [Slot functions](../concepts/fundamentals/slots.md#slot-functions).
 
-    **Arguments:**
-
-    * `ctx` (`SlotContext`): Single named tuple that holds the slot data and metadata.
+    Args:
+        ctx (SlotContext): Single named tuple that holds the slot data and metadata.
 
     Returns:
         (str | SafeString): The rendered slot content.
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import SlotContext, SlotResult
@@ -184,7 +184,7 @@ class Slot(Generic[TSlotData]):
 
     Read more about [Slot class](../concepts/fundamentals/slots.md#slot-class).
 
-    **Example:**
+    Example:
 
     Passing slots to components:
 
@@ -221,6 +221,7 @@ class Slot(Generic[TSlotData]):
     slot = Slot(lambda ctx: f"Hello, {ctx.data['name']}!")
     html = slot({"name": "John"})  # Output: Hello, John!
     ```
+
     """
 
     contents: Any
@@ -277,7 +278,7 @@ class Slot(Generic[TSlotData]):
 
     See [Slot metadata](../concepts/fundamentals/slots.md#slot-metadata).
 
-    **Example:**
+    Example:
 
     You can use this to find the [`Component`][Component] in whose
     template the [`{% fill %}`](template_tags.md#fill) tag was defined:
@@ -300,7 +301,7 @@ class Slot(Generic[TSlotData]):
     See [Pass slot metadata](../concepts/advanced/extensions.md#pass-slot-metadata)
     for usage for extensions.
 
-    **Example:**
+    Example:
 
     ```python
     # Either at slot creation
@@ -386,7 +387,7 @@ Use this type when typing the slots in your component.
 `SlotInput` accepts an optional type parameter to specify the data dictionary that will be passed to the
 slot content function.
 
-**Example:**
+Example:
 
 ```python
 from typing import TypedDict
@@ -452,12 +453,13 @@ class SlotFallback:
 
     To force the fallback to render, coerce it to string to trigger the `__str__()` method.
 
-    **Example:**
+    Example:
 
     ```py
     def slot_function(self, ctx: SlotContext):
         return f"Hello, {ctx.fallback}!"
     ```
+
     """
 
     def __init__(self, slot: "SlotNode", context: Context) -> None:
@@ -518,16 +520,15 @@ class SlotNode(BaseNode):
     [Vue](https://vuejs.org/guide/components/slots.html)
     or [React's `children`](https://react.dev/learn/passing-props-to-a-component#passing-jsx-as-children).
 
-    **Args:**
+    Args:
+        name (str, required): Registered name of the component to render
+        default: Optional flag. If there is a default slot, you can pass the component slot content
+            without using the [`{% fill %}`](#fill) tag. See
+            [Default slot](../concepts/fundamentals/slots.md#default-slot)
+        required: Optional flag. Will raise an error if a slot is required but not given.
+        **kwargs: Any extra kwargs will be passed as the slot data.
 
-    - `name` (str, required): Registered name of the component to render
-    - `default`: Optional flag. If there is a default slot, you can pass the component slot content
-        without using the [`{% fill %}`](#fill) tag. See
-        [Default slot](../concepts/fundamentals/slots.md#default-slot)
-    - `required`: Optional flag. Will raise an error if a slot is required but not given.
-    - `**kwargs`: Any extra kwargs will be passed as the slot data.
-
-    **Example:**
+    Example:
 
     ```djc_py
     @register("child")
@@ -630,6 +631,7 @@ class SlotNode(BaseNode):
           {% endcomponent %}
         \"\"\"
     ```
+
     """
 
     tag = "slot"
@@ -1002,16 +1004,15 @@ class FillNode(BaseNode):
     [`{% fill %}`](#fill) tag may be used only within a `{% component %}..{% endcomponent %}` block,
     and raises a `TemplateSyntaxError` if used outside of a component.
 
-    **Args:**
+    Args:
+        name (str, required): Name of the slot to insert this content into. Use `"default"` for
+            the [default slot](../concepts/fundamentals/slots.md#default-slot).
+        data (str, optional): This argument allows you to access the data passed to the slot
+            under the specified variable name. See [Slot data](../concepts/fundamentals/slots.md#slot-data).
+        fallback (str, optional): This argument allows you to access the original content of the slot
+            under the specified variable name. See [Slot fallback](../concepts/fundamentals/slots.md#slot-fallback).
 
-    - `name` (str, required): Name of the slot to insert this content into. Use `"default"` for
-        the [default slot](../concepts/fundamentals/slots.md#default-slot).
-    - `data` (str, optional): This argument allows you to access the data passed to the slot
-        under the specified variable name. See [Slot data](../concepts/fundamentals/slots.md#slot-data).
-    - `fallback` (str, optional): This argument allows you to access the original content of the slot
-        under the specified variable name. See [Slot fallback](../concepts/fundamentals/slots.md#slot-fallback).
-
-    **Example:**
+    Example:
 
     ```django
     {% component "my_table" %}
@@ -1140,6 +1141,7 @@ class FillNode(BaseNode):
           {% endfill %}
         {% endcomponent %}
         ```
+
     """
 
     tag = "fill"

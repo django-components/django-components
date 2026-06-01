@@ -204,7 +204,7 @@ class Script(Dependency):
 
     If `Script.url` is set, renders as `<script src="...">`, otherwise renders as `<script>...</script>`.
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import Script
@@ -223,6 +223,7 @@ class Script(Dependency):
         console.log('Hello, world!');
     </script>
     ```
+
     """
 
     wrap: bool = True
@@ -317,7 +318,7 @@ class Style(Dependency):
     If `Style.url` is set, renders as `<link rel="stylesheet" href="...">`,
     otherwise renders as `<style>...</style>`.
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import Style
@@ -333,6 +334,7 @@ class Style(Dependency):
     ```html
     <link rel="stylesheet" href="/static/style.css" media="print">
     ```
+
     """
 
     def to_json(self) -> dict:
@@ -794,37 +796,35 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
 
     See [Rendering JS / CSS](../concepts/advanced/rendering_js_css.md).
 
-    **Args:**
+    Args:
+        content (str | bytes): The rendered HTML string that is searched for components, and
+            into which we insert the JS and CSS tags. Required.
+        strategy: Optional. Configure how to handle JS and CSS dependencies. Default is
+            `"document"`. Read more about
+            [Rendering strategies](../concepts/advanced/rendering_js_css.md#dependencies-strategies).
 
-    - `content` (str | bytes): The rendered HTML string that is searched for components, and
-        into which we insert the JS and CSS tags. Required.
+            There are six strategies:
 
-    - `strategy` - Optional. Configure how to handle JS and CSS dependencies. Default is
-        ``"document"``. Read more about
-        [Rendering strategies](../concepts/advanced/rendering_js_css.md#dependencies-strategies).
+            - [`"document"`](../concepts/advanced/rendering_js_css.md#document) (default for top-level)
+                - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
+                - Inserts extra script to allow `fragment` types to work.
+                - Assumes the HTML will be rendered in a JS-enabled browser.
+            - [`"fragment"`](../concepts/advanced/rendering_js_css.md#fragment)
+                - A lightweight HTML fragment to be inserted into a document.
+                - No JS / CSS included.
+            - [`"simple"`](../concepts/advanced/rendering_js_css.md#simple)
+                - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
+                - No extra script loaded.
+            - [`"prepend"`](../concepts/advanced/rendering_js_css.md#prepend)
+                - Insert JS / CSS before the rendered HTML.
+                - No extra script loaded.
+            - [`"append"`](../concepts/advanced/rendering_js_css.md#append)
+                - Insert JS / CSS after the rendered HTML.
+                - No extra script loaded.
+            - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore) (default when nested)
+                - Returns the content unchanged (no JS / CSS inserted).
 
-        There are six strategies:
-
-        - [`"document"`](../concepts/advanced/rendering_js_css.md#document) (default for top-level)
-            - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
-            - Inserts extra script to allow `fragment` types to work.
-            - Assumes the HTML will be rendered in a JS-enabled browser.
-        - [`"fragment"`](../concepts/advanced/rendering_js_css.md#fragment)
-            - A lightweight HTML fragment to be inserted into a document.
-            - No JS / CSS included.
-        - [`"simple"`](../concepts/advanced/rendering_js_css.md#simple)
-            - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
-            - No extra script loaded.
-        - [`"prepend"`](../concepts/advanced/rendering_js_css.md#prepend)
-            - Insert JS / CSS before the rendered HTML.
-            - No extra script loaded.
-        - [`"append"`](../concepts/advanced/rendering_js_css.md#append)
-            - Insert JS / CSS after the rendered HTML.
-            - No extra script loaded.
-        - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore) (default when nested)
-            - Returns the content unchanged (no JS / CSS inserted).
-
-    **Example:**
+    Example:
 
     ```python
     def my_view(request):

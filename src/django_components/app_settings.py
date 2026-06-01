@@ -53,7 +53,7 @@ class ContextBehavior(str, Enum):
     2. Variables from [`Component.get_template_data()`][Component.get_template_data]
     are available to the component fill.
 
-    **Example:**
+    Example:
 
     Given this template
     ```django
@@ -94,7 +94,7 @@ class ContextBehavior(str, Enum):
     the fills use EXCLUSIVELY the context variables defined in
     [`Component.get_template_data()`][Component.get_template_data].
 
-    **Example:**
+    Example:
 
     Given this template
     ```django
@@ -133,7 +133,7 @@ class ComponentsSettings(NamedTuple):
     """
     Settings available for django_components.
 
-    **Example:**
+    Example:
 
     ```python
     COMPONENTS = ComponentsSettings(
@@ -141,6 +141,7 @@ class ComponentsSettings(NamedTuple):
         dirs = [BASE_DIR / "components"],
     )
     ```
+
     """
 
     extensions: Sequence[type["ComponentExtension"] | str] | None = None
@@ -154,7 +155,7 @@ class ComponentsSettings(NamedTuple):
 
     Read more about [extensions](../concepts/advanced/extensions.md).
 
-    **Example:**
+    Example:
 
     ```python
     COMPONENTS = ComponentsSettings(
@@ -172,7 +173,7 @@ class ComponentsSettings(NamedTuple):
 
     Read more about [Extension defaults](../concepts/advanced/extensions.md#extension-defaults).
 
-    **Example:**
+    Example:
 
     ```python
     COMPONENTS = ComponentsSettings(
@@ -377,7 +378,7 @@ class ComponentsSettings(NamedTuple):
 
     Expects a list of python module paths. Defaults to empty list.
 
-    **Example:**
+    Example:
 
     ```python
     COMPONENTS = ComponentsSettings(
@@ -575,7 +576,7 @@ class ComponentsSettings(NamedTuple):
     )
     ```
 
-    **Examples:**
+    Examples:
 
     - `"django_components.component_formatter"`
 

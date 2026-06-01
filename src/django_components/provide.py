@@ -22,13 +22,12 @@ class ProvideNode(BaseNode):
     This is similar to React's [`ContextProvider`](https://react.dev/learn/passing-data-deeply-with-context),
     or Vue's [`provide()`](https://vuejs.org/guide/components/provide-inject).
 
-    **Args:**
+    Args:
+        name (str, required): Provider name. This is the name you will then use in
+            [`Component.inject()`][Component.inject].
+        **kwargs: Any extra kwargs will be passed as the provided data.
 
-    - `name` (str, required): Provider name. This is the name you will then use in
-        [`Component.inject()`][Component.inject].
-    - `**kwargs`: Any extra kwargs will be passed as the provided data.
-
-    **Example:**
+    Example:
 
     Provide the "user_data" in parent component:
 
@@ -80,6 +79,7 @@ class ProvideNode(BaseNode):
     ```python
     user = self.inject("user_data")["user"]
     ```
+
     """
 
     tag = "provide"

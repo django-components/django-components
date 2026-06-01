@@ -32,7 +32,7 @@ def get_component_dirs(include_apps: bool = True) -> list[Path]:
     [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
     (e.g. `[app]/components`).
 
-    **Notes:**
+    Notes:
 
     - Paths that do not point to directories are ignored.
 
@@ -133,7 +133,7 @@ def get_component_files(suffix: str | None = None) -> list[ComponentFileEntry]:
         list[ComponentFileEntry] A list of entries that contain both the filesystem path and \
             the python import path (dot path).
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import get_component_files

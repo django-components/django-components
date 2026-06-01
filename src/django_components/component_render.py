@@ -77,7 +77,7 @@ When `on_render()` is a generator then it:
 
 - At the end it may return a new string to override the final rendered output.
 
-**Example:**
+Example:
 
 ```py
 from django_components import Component, OnRenderGenerator

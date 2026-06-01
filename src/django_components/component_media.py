@@ -80,7 +80,7 @@ a [Style][Style],
 or any object with `__html__` method, it is treated as
 a pre-rendered tag and output as-is. Otherwise, it's assumed to be a path to a file.
 
-**Example:**
+Example:
 
 ```py
 from django_components import Script, Style
@@ -227,7 +227,7 @@ class ComponentMediaInput(Protocol):
 
     Read more in [Media inheritance](../concepts/fundamentals/secondary_js_css_files.md#media-inheritance) section.
 
-    **Example:**
+    Example:
 
     Disable media inheritance:
 

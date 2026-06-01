@@ -71,7 +71,7 @@ class ComponentDebugHighlight(ExtensionComponentConfig):
 
     Read more about [Component debug highlighting](../guides/other/troubleshooting.md#component-and-slot-highlighting).
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import Component
@@ -98,6 +98,7 @@ class ComponentDebugHighlight(ExtensionComponentConfig):
         },
     )
     ```
+
     """
 
     # TODO_v1 - Remove `DEBUG_HIGHLIGHT_COMPONENTS` and `DEBUG_HIGHLIGHT_SLOTS`

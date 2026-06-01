@@ -28,7 +28,7 @@ class Default:
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    **Example:**
+    Example:
 
     ```py
     from django_components import Default
@@ -41,6 +41,7 @@ class Default:
             # Otherwise all instances will share the same value
             selected_items = Default(lambda: [1, 2, 3])
     ```
+
     """
 
     value: Callable[[], Any]
@@ -64,7 +65,7 @@ def get_component_defaults(component: "type[Component] | Component") -> dict[str
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    **Example:**
+    Example:
 
     ```py
     from django_components import Component, Default, get_component_defaults
@@ -88,6 +89,7 @@ def get_component_defaults(component: "type[Component] | Component") -> dict[str
     #     "variable": "from_kwargs",
     # }
     ```
+
     """
     component_cls = component if isclass(component) else component.__class__
     defaults_fields = defaults_by_component[component_cls]  # type: ignore[index]
@@ -215,7 +217,7 @@ class ComponentDefaults(ExtensionComponentConfig):
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import Component, Default
@@ -225,6 +227,7 @@ class ComponentDefaults(ExtensionComponentConfig):
             position = "left"
             selected_items = Default(lambda: [1, 2, 3])
     ```
+
     """
 
 
@@ -234,7 +237,7 @@ class DefaultsExtension(ComponentExtension):
 
     This nested `Defaults` class is used to set default values for the component's kwargs.
 
-    **Example:**
+    Example:
 
     ```py
     from django_components import Component, Default
@@ -247,6 +250,7 @@ class DefaultsExtension(ComponentExtension):
     ```
 
     This extension is automatically added to all components.
+
     """
 
     name = "defaults"

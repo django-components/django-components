@@ -24,13 +24,12 @@ class HtmlAttrsNode(BaseNode):
 
     It is designed to easily merge HTML attributes passed from outside as well as inside the component.
 
-    **Args:**
-
-    - `attrs` (dict, optional): Optional dictionary that holds HTML attributes. On conflict, overrides
-        values in the `default` dictionary.
-    - `default` (str, optional): Optional dictionary that holds HTML attributes. On conflict, is overriden
-        with values in the `attrs` dictionary.
-    - Any extra kwargs will be appended to the corresponding keys
+    Args:
+        attrs (dict, optional): Optional dictionary that holds HTML attributes. On conflict, overrides
+            values in the `default` dictionary.
+        default (str, optional): Optional dictionary that holds HTML attributes. On conflict, is overriden
+            with values in the `attrs` dictionary.
+        **kwargs: Any extra kwargs will be appended to the corresponding keys.
 
     The attributes in `attrs` and `defaults` are merged and resulting dict is rendered as HTML attributes
     (`key="value"`).
@@ -49,7 +48,7 @@ class HtmlAttrsNode(BaseNode):
 
     will result in `class="my-class extra-class"`.
 
-    **Example:**
+    Example:
     ```django
     <div {% html_attrs
         attrs
@@ -67,6 +66,7 @@ class HtmlAttrsNode(BaseNode):
 
     See more usage examples in
     [HTML attributes](../concepts/fundamentals/html_attributes.md).
+
     """
 
     tag = "html_attrs"
@@ -96,7 +96,7 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
 
     Read more about [HTML attributes](../concepts/fundamentals/html_attributes.md).
 
-    **Example:**
+    Example:
 
     ```python
     format_attributes({"class": "my-class", "data-id": "123"})
@@ -107,6 +107,7 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
     ```py
     'class="my-class" data-id="123"'
     ```
+
     """
     attr_list = []
 
@@ -141,7 +142,7 @@ def merge_attributes(*attrs: dict) -> dict:
 
     Read more about [HTML attributes](../concepts/fundamentals/html_attributes.md).
 
-    **Example:**
+    Example:
 
     ```python
     merge_attributes(
@@ -167,7 +168,7 @@ def merge_attributes(*attrs: dict) -> dict:
     - If given as a string, it is used as is.
     - If given as a dictionary, only the keys with a truthy value are used.
 
-    **Example:**
+    Example:
 
     ```python
     merge_attributes(
@@ -191,7 +192,7 @@ def merge_attributes(*attrs: dict) -> dict:
     - If given as a string, it is used as is.
     - If given as a dictionary, it is converted to a style attribute string.
 
-    **Example:**
+    Example:
 
     ```python
     merge_attributes(
@@ -207,6 +208,7 @@ def merge_attributes(*attrs: dict) -> dict:
         "style": "color: red; background-color: blue; background-color: green;",
     }
     ```
+
     """
     result: dict = {}
 
@@ -248,7 +250,7 @@ def normalize_class(value: ClassValue) -> str:
 
     This is based on Vue's [`mergeProps` function](https://vuejs.org/api/render-function#mergeprops).
 
-    **Example:**
+    Example:
 
     ```python
     normalize_class([
@@ -266,6 +268,7 @@ def normalize_class(value: ClassValue) -> str:
     - `my-class` is used as is
     - `extra-class` is used because it has a truthy value
     - `other-class` is ignored because it's last value is falsy
+
     """
     res: dict[str, bool] = {}
     if isinstance(value, str):
@@ -339,7 +342,7 @@ def normalize_style(value: StyleValue) -> str:
 
     This is based on Vue's [`mergeProps` function](https://vuejs.org/api/render-function#mergeprops).
 
-    **Example:**
+    Example:
 
     ```python
     normalize_style([
@@ -357,6 +360,7 @@ def normalize_style(value: StyleValue) -> str:
     - `color: green` overwrites `color: red`
     - `background-color": None` is ignored, so `background-color: blue` is used
     - `width` is omitted because it is given with a `False` value
+
     """
     res: StyleDict = {}
     if isinstance(value, str):
@@ -415,7 +419,7 @@ def parse_string_style(css_text: str) -> StyleDict:
     """
     Parse a string of CSS style properties into a dictionary.
 
-    **Example:**
+    Example:
 
     ```python
     parse_string_style("color: red; background-color: blue; /* comment */")
@@ -426,6 +430,7 @@ def parse_string_style(css_text: str) -> StyleDict:
     ```python
     {"color": "red", "background-color": "blue"}
     ```
+
     """
     # Remove comments
     css_text = style_comment_re.sub("", css_text)

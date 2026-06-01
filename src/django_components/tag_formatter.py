@@ -75,7 +75,7 @@ class TagFormatterABC(abc.ABC):
     {% endcomp_name %}
     ```
 
-    **Example:**
+    Example:
 
     Implementation for `ShorthandComponentFormatter`:
 
@@ -94,6 +94,7 @@ class TagFormatterABC(abc.ABC):
             name = tokens.pop(0)
             return TagResult(name, tokens)
     ```
+
     """
 
     @abc.abstractmethod
@@ -138,7 +139,7 @@ class TagFormatterABC(abc.ABC):
         Returns:
             TagResult: Parsed component name and remaining tokens.
 
-        **Example:**
+        Example:
 
         Assuming we used a component in a template like this:
 

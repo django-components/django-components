@@ -14,20 +14,19 @@ class DynamicComponent(Component):
 
     The args, kwargs, and slot fills are all passed down to the underlying component.
 
-    **Arguments:**
-
-    * `is` (`str | type[Component]`): Component that should be rendered. Either a registered name of a component,
-      or a [Component][Component] class directly. Required.
-    * `registry` (`ComponentRegistry`, optional): Specify the [registry][ComponentRegistry]
-      to search for the registered name. If omitted, all registries are searched until the first match.
-    * `*args`: Additional data passed to the component.
-    * `**kwargs`: Additional data passed to the component.
+    Args:
+        is (str | type[Component]): Component that should be rendered. Either a registered name of a component,
+            or a [Component][Component] class directly. Required.
+        registry (ComponentRegistry, optional): Specify the [registry][ComponentRegistry]
+            to search for the registered name. If omitted, all registries are searched until the first match.
+        *args: Additional data passed to the component.
+        **kwargs: Additional data passed to the component.
 
     **Slots:**
 
     * Any slots, depending on the actual component.
 
-    **Examples:**
+    Examples:
 
     Django
     ```django

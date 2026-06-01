@@ -192,7 +192,7 @@ class ComponentVars(NamedTuple):
 
     Otherwise, `args` will be a plain list.
 
-    **Example:**
+    Example:
 
     With `Args` class:
 
@@ -244,7 +244,7 @@ class ComponentVars(NamedTuple):
 
     Otherwise, `kwargs` will be a plain dict.
 
-    **Example:**
+    Example:
 
     With `Kwargs` class:
 
@@ -296,7 +296,7 @@ class ComponentVars(NamedTuple):
 
     Otherwise, `slots` will be a plain dict.
 
-    **Example:**
+    Example:
 
     With `Slots` class:
 
@@ -695,7 +695,7 @@ class Component(metaclass=ComponentMeta):
         [`template`][Component.template]
         or [`get_template`][Component.get_template] must be defined.
 
-    **Example:**
+    Example:
 
     Assuming this project layout:
 
@@ -800,7 +800,7 @@ class Component(metaclass=ComponentMeta):
         [`get_template()`][Component.get_template]
         must be defined.
 
-    **Example:**
+    Example:
 
     ```python
     class Table(Component):
@@ -890,7 +890,7 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [Template variables](../concepts/fundamentals/html_js_css_variables.md).
 
-        **Example:**
+        Example:
 
         ```py
         class MyComponent(Component):
@@ -911,6 +911,7 @@ class Component(metaclass=ComponentMeta):
             are mutually exclusive.
 
             If both methods return non-empty dictionaries, an error will be raised.
+
         """
         return None
 
@@ -922,7 +923,7 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [Template variables](../concepts/fundamentals/html_js_css_variables.md).
 
-        **Example:**
+        Example:
 
         ```py
         class MyComponent(Component):
@@ -937,13 +938,12 @@ class Component(metaclass=ComponentMeta):
         MyComponent.render(name="World")
         ```
 
-        **Args:**
-
-        - `args`: Positional arguments passed to the component.
-        - `kwargs`: Keyword arguments passed to the component.
-        - `slots`: Slots passed to the component.
-        - `context`: [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
-           used for rendering the component template.
+        Args:
+            args: Positional arguments passed to the component.
+            kwargs: Keyword arguments passed to the component.
+            slots: Slots passed to the component.
+            context ([Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)):
+                Used for rendering the component template.
 
         **Pass-through kwargs:**
 
@@ -977,7 +977,7 @@ class Component(metaclass=ComponentMeta):
 
         Read more on [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
-        **Example:**
+        Example:
 
         ```py
         from django.template import Context
@@ -1017,7 +1017,7 @@ class Component(metaclass=ComponentMeta):
         [`TemplateData`][Component.TemplateData] class
         by instantiating it with the dictionary.
 
-        **Example:**
+        Example:
 
         ```py
         class MyComponent(Component):
@@ -1043,6 +1043,7 @@ class Component(metaclass=ComponentMeta):
             are mutually exclusive.
 
             If both methods return non-empty dictionaries, an error will be raised.
+
         """
         return None
 
@@ -1133,7 +1134,7 @@ class Component(metaclass=ComponentMeta):
         Only one of [`js`][Component.js] or
         [`js_file`][Component.js_file] must be defined.
 
-    **Example:**
+    Example:
 
     ```py
     class MyComponent(Component):
@@ -1182,7 +1183,7 @@ class Component(metaclass=ComponentMeta):
         Only one of [`js`][Component.js] or
         [`js_file`][Component.js_file] must be defined.
 
-    **Example:**
+    Example:
 
     ```js title="path/to/script.js"
     console.log('Hello, World!');
@@ -1207,7 +1208,7 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [JavaScript variables](../concepts/fundamentals/html_js_css_variables.md).
 
-        **Example:**
+        Example:
 
         ```py
         class MyComponent(Component):
@@ -1226,13 +1227,12 @@ class Component(metaclass=ComponentMeta):
         MyComponent.render(name="World")
         ```
 
-        **Args:**
-
-        - `args`: Positional arguments passed to the component.
-        - `kwargs`: Keyword arguments passed to the component.
-        - `slots`: Slots passed to the component.
-        - `context`: [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
-           used for rendering the component template.
+        Args:
+            args: Positional arguments passed to the component.
+            kwargs: Keyword arguments passed to the component.
+            slots: Slots passed to the component.
+            context ([Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)):
+                Used for rendering the component template.
 
         **Pass-through kwargs:**
 
@@ -1265,7 +1265,7 @@ class Component(metaclass=ComponentMeta):
 
         Read more on [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
-        **Example:**
+        Example:
 
         ```py
         from typing import NamedTuple
@@ -1306,7 +1306,7 @@ class Component(metaclass=ComponentMeta):
         [`JsData`][Component.JsData] class
         by instantiating it with the dictionary.
 
-        **Example:**
+        Example:
 
         ```py
         class MyComponent(Component):
@@ -1325,6 +1325,7 @@ class Component(metaclass=ComponentMeta):
                     size=kwargs["size"],
                 )
         ```
+
         """
         return None
 
@@ -1415,7 +1416,7 @@ class Component(metaclass=ComponentMeta):
         Only one of [`css`][Component.css] or
         [`css_file`][Component.css_file] must be defined.
 
-    **Example:**
+    Example:
 
     ```py
     class MyComponent(Component):
@@ -1470,7 +1471,7 @@ class Component(metaclass=ComponentMeta):
         Only one of [`css`][Component.css] or
         [`css_file`][Component.css_file] must be defined.
 
-    **Example:**
+    Example:
 
     ```css title="path/to/style.css"
     .my-class {
@@ -1500,7 +1501,7 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [CSS variables](../concepts/fundamentals/html_js_css_variables.md).
 
-        **Example:**
+        Example:
 
         ```py
         class MyComponent(Component):
@@ -1518,13 +1519,12 @@ class Component(metaclass=ComponentMeta):
         MyComponent.render(color="red")
         ```
 
-        **Args:**
-
-        - `args`: Positional arguments passed to the component.
-        - `kwargs`: Keyword arguments passed to the component.
-        - `slots`: Slots passed to the component.
-        - `context`: [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
-           used for rendering the component template.
+        Args:
+            args: Positional arguments passed to the component.
+            kwargs: Keyword arguments passed to the component.
+            slots: Slots passed to the component.
+            context ([Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)):
+                Used for rendering the component template.
 
         **Pass-through kwargs:**
 
@@ -1557,7 +1557,7 @@ class Component(metaclass=ComponentMeta):
 
         Read more on [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
-        **Example:**
+        Example:
 
         ```py
         from django.template import Context
@@ -1596,7 +1596,7 @@ class Component(metaclass=ComponentMeta):
         [`CssData`][Component.CssData] class
         by instantiating it with the dictionary.
 
-        **Example:**
+        Example:
 
         ```py
         class MyComponent(Component):
@@ -1615,6 +1615,7 @@ class Component(metaclass=ComponentMeta):
                     size=kwargs["size"],
                 )
         ```
+
         """
         return None
 
@@ -1705,7 +1706,7 @@ class Component(metaclass=ComponentMeta):
 
     Read more on [Accessing component's Media JS / CSS](../concepts/fundamentals/secondary_js_css_files.md#accessing-media-files).
 
-    **Example:**
+    Example:
 
     ```py
     class MyComponent(Component):
@@ -1731,7 +1732,7 @@ class Component(metaclass=ComponentMeta):
 
     Read more in [Media class](../concepts/fundamentals/secondary_js_css_files.md#media-class).
 
-    **Example:**
+    Example:
 
     ```py
     class MyTable(Component):
@@ -1768,7 +1769,7 @@ class Component(metaclass=ComponentMeta):
        [`SafeString`](https://dev.to/doridoro/django-safestring-afj), or a function
        (See [`ComponentMediaInputPath`][ComponentMediaInputPath]).
 
-    **Example:**
+    Example:
 
     ```py
     class MyTable(Component):
@@ -1797,7 +1798,7 @@ class Component(metaclass=ComponentMeta):
     Defaults to
     [`django.http.HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#httpresponse-objects).
 
-    **Example:**
+    Example:
 
     ```py
     from django.http import HttpResponse
@@ -1836,7 +1837,7 @@ class Component(metaclass=ComponentMeta):
         Returns:
             None. This hook is for side effects only.
 
-        **Example:**
+        Example:
 
         You can use this hook to access the context or the template:
 
@@ -2101,7 +2102,7 @@ class Component(metaclass=ComponentMeta):
         Return `(new_scripts, new_styles)` to replace the list for this instance;
         return `None` (default) to keep the original list.
 
-        **Example:**
+        Example:
 
         ```py
         class MyButton(Component):
@@ -2113,6 +2114,7 @@ class Component(metaclass=ComponentMeta):
                         style.attrs["nonce"] = get_current_nonce()
                 return (scripts, styles)
         ```
+
         """  # noqa: E501
         return None
 
@@ -2128,7 +2130,7 @@ class Component(metaclass=ComponentMeta):
 
     Read more about [Component caching](../concepts/advanced/component_caching.md).
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import Component
@@ -2152,7 +2154,7 @@ class Component(metaclass=ComponentMeta):
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import Component, Default
@@ -2180,7 +2182,7 @@ class Component(metaclass=ComponentMeta):
 
     Read more about [Component views and URLs](../concepts/fundamentals/component_views_urls.md).
 
-    **Example:**
+    Example:
 
     ```python
     class MyComponent(Component):
@@ -2214,7 +2216,7 @@ class Component(metaclass=ComponentMeta):
 
     Otherwise, this will be the name of the class.
 
-    **Example:**
+    Example:
 
     ```py
     @register("my_component")
@@ -2240,7 +2242,7 @@ class Component(metaclass=ComponentMeta):
 
     Otherwise, this will be `None`.
 
-    **Example:**
+    Example:
 
     ```py
     @register("my_component")
@@ -2286,7 +2288,7 @@ class Component(metaclass=ComponentMeta):
 
     If you need to expand this limit, please open an issue on GitHub.
 
-    **Example:**
+    Example:
 
     ```py
     class MyComponent(Component):
@@ -2317,7 +2319,7 @@ class Component(metaclass=ComponentMeta):
     - And other kwargs passed to [`Component.render()`][Component.render]
         like `deps_strategy`
 
-    **Example:**
+    Example:
 
     ```python
     class Table(Component):
@@ -2349,7 +2351,7 @@ class Component(metaclass=ComponentMeta):
         then the `args` property will return an instance of that `Args` class.
     - Otherwise, `args` will be a plain list.
 
-    **Example:**
+    Example:
 
     With `Args` class:
 
@@ -2392,7 +2394,7 @@ class Component(metaclass=ComponentMeta):
     is not typed and will remain as plain list even if you define the
     [`Component.Args`][Component.Args] class.
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import Component
@@ -2420,7 +2422,7 @@ class Component(metaclass=ComponentMeta):
     Kwargs have the defaults applied to them.
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    **Example:**
+    Example:
 
     With `Kwargs` class:
 
@@ -2469,7 +2471,7 @@ class Component(metaclass=ComponentMeta):
     `raw_kwargs` have the defaults applied to them.
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import Component
@@ -2494,7 +2496,7 @@ class Component(metaclass=ComponentMeta):
         then the `slots` property will return an instance of that class.
     - Otherwise, `slots` will be a plain dict.
 
-    **Example:**
+    Example:
 
     With `Slots` class:
 
@@ -2540,7 +2542,7 @@ class Component(metaclass=ComponentMeta):
     is not typed and will remain as plain dict even if you define the
     [`Component.Slots`][Component.Slots] class.
 
-    **Example:**
+    Example:
 
     ```python
     from django_components import Component
@@ -2700,7 +2702,7 @@ class Component(metaclass=ComponentMeta):
     [HTTPRequest](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest)
     object passed to this component.
 
-    **Example:**
+    Example:
 
     ```py
     class MyComponent(Component):
@@ -2756,7 +2758,7 @@ class Component(metaclass=ComponentMeta):
 
         NOTE: This dictionary is generated dynamically, so any changes to it will not be persisted.
 
-        **Example:**
+        Example:
 
         ```py
         class MyComponent(Component):
@@ -2766,6 +2768,7 @@ class Component(metaclass=ComponentMeta):
                     'is_logged_in': user.is_authenticated,
                 }
         ```
+
         """
         request = self.request
 
@@ -2782,7 +2785,7 @@ class Component(metaclass=ComponentMeta):
     Returns the parent [`Component`][Component] instance if this component
     is nested within another component, or `None` if this is the root component.
 
-    **Example:**
+    Example:
 
     ```py
     class Theme(Component):
@@ -2806,7 +2809,7 @@ class Component(metaclass=ComponentMeta):
     Returns the root [`Component`][Component] instance in the component tree.
     If this component is the root component, returns `self`.
 
-    **Example:**
+    Example:
 
     ```py
     class Theme(Component):
@@ -2830,7 +2833,7 @@ class Component(metaclass=ComponentMeta):
         Yields [`Component`][Component] instances starting from the parent component,
         then the parent's parent, and so on, up to (but not including) the root component.
 
-        **Example:**
+        Example:
 
         ```py
         class Theme(Component):
@@ -2882,7 +2885,7 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [Provide / Inject](../concepts/advanced/provide_inject.md).
 
-        **Example:**
+        Example:
 
         Given this template:
         ```django
@@ -2911,6 +2914,7 @@ class Component(metaclass=ComponentMeta):
         ```
 
         As the `{{ message }}` is taken from the "my_provide" provider.
+
         """
         return get_injected_context_var(self.id, self.name, key, default)
 
@@ -2966,7 +2970,7 @@ class Component(metaclass=ComponentMeta):
 
         Any additional kwargs are passed to the response class.
 
-        **Example:**
+        Example:
 
         ```python
         Button.render_to_response(
@@ -3005,6 +3009,7 @@ class Component(metaclass=ComponentMeta):
         response = MyComponent.render_to_response()
         assert isinstance(response, MyHttpResponse)
         ```
+
         """
         content = cls.render(
             args=args,

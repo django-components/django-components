@@ -185,13 +185,13 @@ class ComponentRegistry:
             a static value or a callable that returns the settings. If omitted, the settings from\
             [`COMPONENTS`][ComponentsSettings] are used.
 
-    **Notes:**
+    Notes:
 
     - The default registry is available as [`django_components.registry`][registry].
     - The default registry is used when registering components with [`@register`][register]
     decorator.
 
-    **Example:**
+    Example:
 
     ```python
     # Use with default Library
@@ -352,12 +352,10 @@ class ComponentRegistry:
             name (str): The name under which the component will be registered. Required.
             component (type[Component]): The component class to register. Required.
 
-        **Raises:**
+        Raises:
+            AlreadyRegistered: if `name` is already registered with any class other than `component` itself.
 
-        - [`AlreadyRegistered`][AlreadyRegistered]
-        if `name` is already registered with any class other than `component` itself.
-
-        **Example:**
+        Example:
 
         ```python
         registry.register("button", ButtonComponent)
@@ -419,12 +417,10 @@ class ComponentRegistry:
         Args:
             name (str): The name under which the component is registered. Required.
 
-        **Raises:**
+        Raises:
+            NotRegistered: if the given name is not registered.
 
-        - [`NotRegistered`][NotRegistered]
-        if the given name is not registered.
-
-        **Example:**
+        Example:
 
         ```python
         # First register component
@@ -487,12 +483,10 @@ class ComponentRegistry:
         Returns:
             type[Component]: The component class registered under the given name.
 
-        **Raises:**
+        Raises:
+            NotRegistered: if the given name is not registered.
 
-        - [`NotRegistered`][NotRegistered]
-          if the given name is not registered.
-
-        **Example:**
+        Example:
 
         ```python
         # First register component
@@ -519,7 +513,7 @@ class ComponentRegistry:
         Returns:
             bool: `True` if the component is registered, `False` otherwise.
 
-        **Example:**
+        Example:
 
         ```python
         # First register component
@@ -539,7 +533,7 @@ class ComponentRegistry:
         Returns:
             dict[str, type[Component]]: A dictionary of component names to component classes
 
-        **Example:**
+        Example:
 
         ```python
         # First register components

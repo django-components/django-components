@@ -137,7 +137,7 @@ def routes_to_django(routes: Iterable[URLRoute]) -> list[URLPattern | URLResolve
 
     Nested routes are recursively converted to Django with `django.urls.include()`.
 
-    **Example:**
+    Example:
 
     ```python
     urls_to_django([
@@ -149,6 +149,7 @@ def routes_to_django(routes: Iterable[URLRoute]) -> list[URLPattern | URLResolve
         ),
     ])
     ```
+
     """
     django_routes: list[URLPattern | URLResolver] = []
     for route in routes:

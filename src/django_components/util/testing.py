@@ -173,30 +173,32 @@ def djc_test(
         ...
     ```
 
-    **Arguments:**
+    Args:
+        django_settings: Django settings, a dictionary passed to Django's
+            [`@override_settings`](https://docs.djangoproject.com/en/5.2/topics/testing/tools/#django.test.override_settings).
+            The test runs within the context of these overridden settings.
 
-    - `django_settings`: Django settings, a dictionary passed to Django's
-      [`@override_settings`](https://docs.djangoproject.com/en/5.2/topics/testing/tools/#django.test.override_settings).
-      The test runs within the context of these overridden settings.
+            If `django_settings` contains django-components settings (`COMPONENTS` field), these are merged.
+            Other Django settings are simply overridden.
 
-        If `django_settings` contains django-components settings (`COMPONENTS` field), these are merged.
-        Other Django settings are simply overridden.
+        components_settings: Instead of defining django-components settings under `django_settings["COMPONENTS"]`,
+            you can simply set the Components settings here.
 
-    - `components_settings`: Instead of defining django-components settings under `django_settings["COMPONENTS"]`,
-        you can simply set the Components settings here.
+            These settings are merged with the django-components settings from `django_settings["COMPONENTS"]`.
 
-        These settings are merged with the django-components settings from `django_settings["COMPONENTS"]`.
+            Fields in `components_settings` override fields in `django_settings["COMPONENTS"]`.
 
-        Fields in `components_settings` override fields in `django_settings["COMPONENTS"]`.
+        parametrize: Parametrize the test function with
+            [`pytest.mark.parametrize`](https://docs.pytest.org/en/stable/how-to/parametrize.html#pytest-mark-parametrize).
+            This requires [pytest](https://docs.pytest.org/) to be installed.
 
-    - `parametrize`: Parametrize the test function with
-        [`pytest.mark.parametrize`](https://docs.pytest.org/en/stable/how-to/parametrize.html#pytest-mark-parametrize).
-        This requires [pytest](https://docs.pytest.org/) to be installed.
+            The input is a tuple of:
 
-        The input is a tuple of:
+            - `(param_names, param_values)` or
+            - `(param_names, param_values, ids)`
 
-        - `(param_names, param_values)` or
-        - `(param_names, param_values, ids)`
+        gc_collect: By default `djc_test` runs garbage collection after each test to force the
+            state cleanup. Set this to `False` to skip this.
 
     Example:
         ```py
@@ -241,9 +243,6 @@ def djc_test(
             rendered = MyComponent.render()
             ...
         ```
-
-    - `gc_collect`: By default `djc_test` runs garbage collection after each test to force the state cleanup.
-      Set this to `False` to skip this.
 
     **Settings resolution:**
 
