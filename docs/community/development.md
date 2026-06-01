@@ -469,6 +469,107 @@ The CI workflow runs when:
 - A new commit is pushed to the `master` branch - This updates the `dev` version
 - A new tag is pushed - This updates the `latest` version and the version specified in the tag name
 
+### Writing docstrings
+
+Public-API docstrings ship in two places at once: a contributor's IDE-hover
+popup (VSCode/Pylance, PyCharm) and the rendered docs site (via
+[griffe](https://mkdocstrings.github.io/griffe/) + mkdocstrings). The
+following convention is what works in both, with the smallest set of rules
+worth memorizing.
+
+**The 4 rules:**
+
+1. **Use Google-style sections.** `Args:`, `Returns:`, `Raises:`,
+   `Yields:`, `Examples:`, `Note:`, `Warning:`, `Attributes:`. Indent the
+   body four spaces. Both IDEs and griffe parse these into structured
+   display.
+
+    Do **not** write `**Args:**` (markdown-bold pseudo-section): griffe's
+    Google parser ignores that form, so the parameters end up unparsed in
+    the docs build.
+
+2. **Single backticks for code, literals, and symbol mentions where a link
+   isn't needed.** Single backticks NEVER produce a link in the docs
+   build, only monospace, the same as IDEs. This keeps backticks
+   unambiguous: no surprise linkification, no "literal or reference?"
+   confusion.
+
+3. **Bracket cross-refs `[X][]` (or `[link text][Symbol]`) when a link IS
+   the goal.** Don't write `[Component](api.md#Component)` by hand:
+   that couples the docstring to the docs URL layout, which has bitten us
+   before. Bracket cross-refs let the docs builder resolve the link.
+
+    The lookup key is the short form. So
+    `[Component][Component]`, `[Component.inject()][Component.inject]`,
+    `[ComponentsSettings.dirs][ComponentsSettings.dirs]`: never
+    `[X][django_components.X]` or
+    `[X][app_settings.ComponentsSettings.dirs]`. Strip the package and
+    module prefixes; keep `Class.attr` form for attributes.
+
+    The IDE shows `[Component][]` as plain text (no link). That's the
+    tradeoff we accept for keeping backticks unambiguous.
+
+4. **Prefer markdown alternatives to raw HTML and Material admonitions,
+   most of the time.** Replace `<i>New in version X</i>` with
+   `*New in version X.*`. Replace `!!! warning` with `> **Warning:** ...`
+   when a regular blockquote conveys the same weight. These render in
+   both IDE hover and the docs build.
+
+    **Escape hatch:** when a docstring genuinely benefits from the
+    Material admonition treatment (a long worked example, a load-bearing
+    "this will silently corrupt your data" callout), keep the
+    `!!! warning` form. The IDE shows plain text but the build renders
+    the styled callout. Don't dilute the load-bearing callouts by using
+    them for everything.
+
+**External links:** use full URLs. `[Django Context](https://docs.djangoproject.com/...)`.
+IDEs make them clickable. The build passes them through.
+
+#### Worked example: bad vs good
+
+❌ Bad: bold pseudo-section, hand-typed URL link, raw HTML for emphasis.
+
+```python
+def render(self, *args, **kwargs):
+    """
+    Render the component.
+
+    <i>Available since v0.50.</i>
+
+    **Args:**
+
+    - `args`: Positional args passed to the [`Component`](api.md#django_components.Component).
+    - `kwargs`: Keyword args.
+    """
+```
+
+✅ Good: Google `Args:` section, bracket cross-ref, italic markdown.
+
+```python
+def render(self, *args, **kwargs):
+    """
+    Render the component.
+
+    *Available since v0.50.*
+
+    Args:
+        args: Positional args passed to the [`Component`][Component].
+        kwargs: Keyword args.
+    """
+```
+
+The IDE renders both reasonably; only the second produces a clickable
+cross-ref AND a structured `Args:` block in the docs build.
+
+#### Scope
+
+The convention is forward-looking: it's how new docstrings should be
+written. Existing docstrings were swept once for the structural blockers
+(the hand-typed `[X](api.md#...)` form and the `**Args:**` pseudo-section
+form) when the docs migration started; advanced syntaxes that already
+exist in docstrings (Material admonitions, raw HTML) are kept until a
+load-bearing reason argues to change them.
+
 ### Examples
 
 The [examples page](../examples/index.md) is populated from entries in `docs/examples/`.

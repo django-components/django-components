@@ -25,10 +25,10 @@ Goal: clean source-of-truth before the migration starts. These are codemods in t
 
 | # | ID | Name | Effort | Critical | Source | Status | Notes |
 |---|---|---|---|---|---|---|---|
-| 0.1 | `codemod-links` | Hand-typed link sweep (`[X](api.md#...)` → `[X][]`) | M | ✓ | 11.5 §7.1, §11.4 | pending | ~975 hits across `src/` + `docs/`; mechanical Python sweep |
-| 0.2 | `codemod-google-sections` | Google-style section alignment (`**Args:**` → `Args:`) | M | ✓ | 11.5 §11.4 | pending | ~129 hits in `src/`; structural blocker for griffe parser |
-| 0.3 | `docs-convention-community` | Document docstring convention in `docs/community/development.md` | M | | 11.5 §11.6 | pending | Public contribution guide |
-| 0.4 | `docs-convention-claude` | Add docstring rule to `CLAUDE.md` | S | | 11.5 §11.6 | pending | One paragraph + pointer to development.md |
+| 0.1 | `codemod-links` | Hand-typed link sweep (`[X](api.md#...)` → `[X][Key]`) | M | ✓ | 11.5 §7.1, §11.4 | **done** (3cb4c531) | 1086 transformations across 72 files. Always-explicit `[X][Key]` form, short keys (no `django_components.` prefix, no module prefix) |
+| 0.2 | `codemod-google-sections` | Google-style section alignment (`**Args:**` → `Args:`) | M | ✓ | 11.5 §11.4 | **done** (28cea92d) | 128 mechanical free-form renames + 14 manual structured (Args/Arguments/Raises) bullet → bare-indent restructures |
+| 0.3 | `docs-convention-community` | Document docstring convention in `docs/community/development.md` | M | | 11.5 §11.6 | **done** (this commit) | "Writing docstrings" subsection under "Documentation website" |
+| 0.4 | `docs-convention-claude` | Add docstring rule to `CLAUDE.md` | S | | 11.5 §11.6 | skipped | `CLAUDE.md` is intentionally local/untracked; spike §11.6 step skipped |
 
 **Out of scope here:** any code under `docs_site/`.
 
