@@ -808,9 +808,9 @@ def _format_hook_type(type_str: str) -> str:
 
     # Add links to non-builtin types
     if "ComponentRegistry" in type_str:
-        type_str = f"[{type_str}](api.md#django_components.ComponentRegistry)"
+        type_str = f"[{type_str}][ComponentRegistry]"
     elif "Component" in type_str:
-        type_str = f"[{type_str}](api.md#django_components.Component)"
+        type_str = f"[{type_str}][Component]"
     elif "Context" in type_str:
         type_str = f"[{type_str}](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)"
 

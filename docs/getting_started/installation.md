@@ -112,7 +112,7 @@ If you want to use JS or CSS with components, you will need to:
 
 3. _Optional._ By default, components' JS and CSS files are cached in memory.
    
-    If you want to change the cache backend, set the [`COMPONENTS.cache`](../reference/settings.md#django_components.app_settings.ComponentsSettings.cache) setting.
+    If you want to change the cache backend, set the [`COMPONENTS.cache`][ComponentsSettings.cache] setting.
 
     Read more in [Caching](../guides/setup/caching.md).
 
@@ -142,8 +142,8 @@ django-components needs to know where to search for component HTML, JS and CSS f
 
 There are two ways to configure the component directories:
 
-- [`COMPONENTS.dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs) sets global component directories.
-- [`COMPONENTS.app_dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.app_dirs) sets app-level component directories.
+- [`COMPONENTS.dirs`][ComponentsSettings.dirs] sets global component directories.
+- [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs] sets app-level component directories.
 
 By default, django-components will look for a top-level `/components` directory,
 `{BASE_DIR}/components`, equivalent to:
@@ -174,7 +174,7 @@ COMPONENTS = ComponentsSettings(
 
 !!! note
 
-    The input to [`COMPONENTS.dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
+    The input to [`COMPONENTS.dirs`][ComponentsSettings.dirs]
     is the same as for `STATICFILES_DIRS`, and the paths must be full paths.
     [See Django docs](https://docs.djangoproject.com/en/5.2/ref/settings/#staticfiles-dirs).
 

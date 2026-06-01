@@ -43,8 +43,8 @@ of the initial page load. This means that:
 A component is rendered as a "document" when:
 
 - It is embedded inside a template as [`{% component %}`](../../reference/template_tags.md#component)
-- It is rendered with [`Component.render()`](../../reference/api.md#django_components.Component.render)
-  or [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
+- It is rendered with [`Component.render()`][Component.render]
+  or [`Component.render_to_response()`][Component.render_to_response]
   with the `deps_strategy` kwarg set to `"document"` (default for top-level renders)
 
 Example:
@@ -76,8 +76,8 @@ The component renders HTML that will be inserted into the page as a fragment, at
 
 A component is rendered as "fragment" when:
 
-- It is rendered with [`Component.render()`](../../reference/api.md#django_components.Component.render)
-  or [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
+- It is rendered with [`Component.render()`][Component.render]
+  or [`Component.render_to_response()`][Component.render_to_response]
   with the `deps_strategy` kwarg set to `"fragment"`
 
 Example:

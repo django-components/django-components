@@ -232,8 +232,8 @@ It extends Django's template tags syntax with:
 ```
 
 You too can define template tags with these features by using
-[`@template_tag()`](../reference/api.md#django_components.template_tag)
-or [`BaseNode`](../reference/api.md#django_components.BaseNode).
+[`@template_tag()`][template_tag]
+or [`BaseNode`][BaseNode].
 
 Read more on [Custom template tags](../concepts/advanced/template_tags.md).
 
@@ -424,7 +424,7 @@ path("calendar/", Calendar.as_view())
 `django-components` supports the provide / inject pattern, similarly to React's [Context Providers](https://react.dev/learn/passing-data-deeply-with-context) or Vue's [provide / inject](https://vuejs.org/guide/components/provide-inject):
 
 - Use the [`{% provide %}`](../reference/template_tags.md#provide) tag to provide data to the component tree
-- Use the [`Component.inject()`](../reference/api.md#django_components.Component.inject) method to inject data into the component
+- Use the [`Component.inject()`][Component.inject] method to inject data into the component
 
 Read more about [Provide / Inject](../concepts/advanced/provide_inject.md).
 
@@ -479,8 +479,8 @@ class Button(Component):
 ```
 
 To have type hints when calling
-[`Button.render()`](../reference/api.md#django_components.Component.render) or
-[`Button.render_to_response()`](../reference/api.md#django_components.Component.render_to_response),
+[`Button.render()`][Component.render] or
+[`Button.render_to_response()`][Component.render_to_response],
 wrap the inputs in their respective `Args`, `Kwargs`, and `Slots` classes:
 
 ```py

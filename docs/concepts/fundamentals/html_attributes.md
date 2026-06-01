@@ -151,7 +151,7 @@ In HTML, boolean attributes are usually rendered with no value. Consider the exa
 <button>Click me!</button>
 ```
 
-HTML rendering with [`html_attrs`](../../reference/template_tags.md#html_attrs) tag or [`format_attributes`](../../reference/api.md#django_components.format_attributes) works the same way - an attribute set to `True` is rendered without the value, and an attribute set to `False` is not rendered at all.
+HTML rendering with [`html_attrs`](../../reference/template_tags.md#html_attrs) tag or [`format_attributes`][format_attributes] works the same way - an attribute set to `True` is rendered without the value, and an attribute set to `False` is not rendered at all.
 
 So given this input:
 
@@ -392,11 +392,11 @@ Renders:
 
 In some cases, you want to prepare HTML attributes outside of templates.
 
-To achieve the same behavior as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag, you can use the [`merge_attributes()`](../../reference/api.md#django_components.merge_attributes) and [`format_attributes()`](../../reference/api.md#django_components.format_attributes) helper functions.
+To achieve the same behavior as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag, you can use the [`merge_attributes()`][merge_attributes] and [`format_attributes()`][format_attributes] helper functions.
 
 ### Merging attributes
 
-[`merge_attributes()`](../../reference/api.md#django_components.merge_attributes) accepts any number of dictionaries and merges them together, using the same merge strategy as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs).
+[`merge_attributes()`][merge_attributes] accepts any number of dictionaries and merges them together, using the same merge strategy as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs).
 
 ```python
 from django_components import merge_attributes
@@ -419,11 +419,11 @@ Which will output:
 
 !!! warning
 
-    Unlike [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs), where you can pass extra kwargs, [`merge_attributes()`](../../reference/api.md#django_components.merge_attributes) requires each argument to be a dictionary.
+    Unlike [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs), where you can pass extra kwargs, [`merge_attributes()`][merge_attributes] requires each argument to be a dictionary.
 
 ### Formatting attributes
 
-[`format_attributes()`](../../reference/api.md#django_components.format_attributes) serializes attributes the same way as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag does.
+[`format_attributes()`][format_attributes] serializes attributes the same way as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag does.
 
 ```py
 from django_components import format_attributes

@@ -58,7 +58,7 @@ OnRenderGenerator: TypeAlias = Generator[
     "SlotResult | None",
 ]
 """
-This is the signature of the [`Component.on_render()`](api.md#django_components.Component.on_render)
+This is the signature of the [`Component.on_render()`][Component.on_render]
 method if it yields (and thus returns a generator).
 
 When `on_render()` is a generator then it:

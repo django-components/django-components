@@ -5,7 +5,7 @@ class Empty(NamedTuple):
     """
     Type for an object with no members.
 
-    You can use this to define [Component](api.md#django_components.Component)
+    You can use this to define [Component][Component]
     types that accept NO args, kwargs, slots, etc:
 
     ```python

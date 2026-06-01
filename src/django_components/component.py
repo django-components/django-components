@@ -82,7 +82,7 @@ ALL_COMPONENTS: AllComponents = []
 
 
 def all_components() -> list[type["Component"]]:
-    """Get a list of all created [`Component`](api.md#django_components.Component) classes."""
+    """Get a list of all created [`Component`][Component] classes."""
     components: list[type[Component]] = []
     for comp_ref in ALL_COMPONENTS:
         comp = comp_ref()
@@ -122,7 +122,7 @@ def get_component_by_class_id(comp_cls_id: str) -> type["Component"]:
 
     E.g. `path.to.my.secret.MyComponent` -> `MyComponent_ab01f32`
 
-    This hash is available under [`class_id`](api.md#django_components.Component.class_id)
+    This hash is available under [`class_id`][Component.class_id]
     on the component class.
 
     Raises `KeyError` if the component class is not found.
@@ -138,10 +138,10 @@ class ComponentInput:
     """
     Deprecated. Will be removed in v1.
 
-    Object holding the inputs that were passed to [`Component.render()`](api.md#django_components.Component.render)
+    Object holding the inputs that were passed to [`Component.render()`][Component.render]
     or the [`{% component %}`](template_tags.md#component) template tag.
 
-    This object is available only during render under [`Component.input`](api.md#django_components.Component.input).
+    This object is available only during render under [`Component.input`][Component.input].
 
     Read more about the [Render API](../concepts/fundamentals/render_api.md).
     """
@@ -182,12 +182,12 @@ class ComponentVars(NamedTuple):
     args: Any
     """
     The `args` argument as passed to
-    [`Component.get_template_data()`](api.md#django_components.Component.get_template_data).
+    [`Component.get_template_data()`][Component.get_template_data].
 
-    This is the same [`Component.args`](api.md#django_components.Component.args)
+    This is the same [`Component.args`][Component.args]
     that's available on the component instance.
 
-    If you defined the [`Component.Args`](api.md#django_components.Component.Args) class,
+    If you defined the [`Component.Args`][Component.Args] class,
     then the `args` property will return an instance of that class.
 
     Otherwise, `args` will be a plain list.
@@ -234,12 +234,12 @@ class ComponentVars(NamedTuple):
     kwargs: Any
     """
     The `kwargs` argument as passed to
-    [`Component.get_template_data()`](api.md#django_components.Component.get_template_data).
+    [`Component.get_template_data()`][Component.get_template_data].
 
-    This is the same [`Component.kwargs`](api.md#django_components.Component.kwargs)
+    This is the same [`Component.kwargs`][Component.kwargs]
     that's available on the component instance.
 
-    If you defined the [`Component.Kwargs`](api.md#django_components.Component.Kwargs) class,
+    If you defined the [`Component.Kwargs`][Component.Kwargs] class,
     then the `kwargs` property will return an instance of that class.
 
     Otherwise, `kwargs` will be a plain dict.
@@ -286,12 +286,12 @@ class ComponentVars(NamedTuple):
     slots: Any
     """
     The `slots` argument as passed to
-    [`Component.get_template_data()`](api.md#django_components.Component.get_template_data).
+    [`Component.get_template_data()`][Component.get_template_data].
 
-    This is the same [`Component.slots`](api.md#django_components.Component.slots)
+    This is the same [`Component.slots`][Component.slots]
     that's available on the component instance.
 
-    If you defined the [`Component.Slots`](api.md#django_components.Component.Slots) class,
+    If you defined the [`Component.Slots`][Component.Slots] class,
     then the `slots` property will return an instance of that class.
 
     Otherwise, `slots` will be a plain dict.
@@ -337,7 +337,7 @@ class ComponentVars(NamedTuple):
     # TODO_v1 - Remove, superseded by `component_vars.slots`
     is_filled: dict[str, bool]
     """
-    Deprecated. Will be removed in v1. Use [`component_vars.slots`](template_variables.md#django_components.component.ComponentVars.slots) instead.
+    Deprecated. Will be removed in v1. Use [`component_vars.slots`][ComponentVars.slots] instead.
     Note that `component_vars.slots` no longer escapes the slot names.
 
     Dictonary describing which component slots are filled (`True`) or are not (`False`).
@@ -366,7 +366,7 @@ class ComponentVars(NamedTuple):
                 "my_slot_filled": "my_slot" in slots
             }
     ```
-    """  # noqa: E501
+    """
 
 
 # Descriptor to pass getting/setting of `template_name` onto `template_file`
@@ -474,9 +474,9 @@ class Component(metaclass=ComponentMeta):
     Optional typing for positional arguments passed to the component.
 
     If set and not `None`, then the `args` parameter of the data methods
-    ([`get_template_data()`](api.md#django_components.Component.get_template_data),
-    [`get_js_data()`](api.md#django_components.Component.get_js_data),
-    [`get_css_data()`](api.md#django_components.Component.get_css_data))
+    ([`get_template_data()`][Component.get_template_data],
+    [`get_js_data()`][Component.get_js_data],
+    [`get_css_data()`][Component.get_css_data])
     will be the instance of this class:
 
     ```py
@@ -500,11 +500,11 @@ class Component(metaclass=ComponentMeta):
 
     - Validate the input at runtime.
     - Set type hints for the positional arguments for data methods like
-      [`get_template_data()`](api.md#django_components.Component.get_template_data).
+      [`get_template_data()`][Component.get_template_data].
     - Document the component inputs.
 
     You can also use `Args` to validate the positional arguments for
-    [`Component.render()`](api.md#django_components.Component.render):
+    [`Component.render()`][Component.render]:
 
     ```py
     Table.render(
@@ -534,9 +534,9 @@ class Component(metaclass=ComponentMeta):
     Optional typing for keyword arguments passed to the component.
 
     If set and not `None`, then the `kwargs` parameter of the data methods
-    ([`get_template_data()`](api.md#django_components.Component.get_template_data),
-    [`get_js_data()`](api.md#django_components.Component.get_js_data),
-    [`get_css_data()`](api.md#django_components.Component.get_css_data))
+    ([`get_template_data()`][Component.get_template_data],
+    [`get_js_data()`][Component.get_js_data],
+    [`get_css_data()`][Component.get_css_data])
     will be the instance of this class:
 
     ```py
@@ -560,12 +560,12 @@ class Component(metaclass=ComponentMeta):
 
     - Validate the input at runtime.
     - Set type hints for the keyword arguments for data methods like
-      [`get_template_data()`](api.md#django_components.Component.get_template_data).
+      [`get_template_data()`][Component.get_template_data].
     - Set defaults for individual fields
     - Document the component inputs.
 
     You can also use `Kwargs` to validate the keyword arguments for
-    [`Component.render()`](api.md#django_components.Component.render):
+    [`Component.render()`][Component.render]:
 
     ```py
     Table.render(
@@ -574,7 +574,7 @@ class Component(metaclass=ComponentMeta):
     ```
 
     The defaults set on `Kwargs` will be merged with defaults from
-    [`Component.Defaults`](api.md#django_components.Component.Defaults) class.
+    [`Component.Defaults`][Component.Defaults] class.
     `Kwargs` takes precendence. Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
     If you do not specify any bases, the `Kwargs` class will be automatically
@@ -600,9 +600,9 @@ class Component(metaclass=ComponentMeta):
     Optional typing for slots passed to the component.
 
     If set and not `None`, then the `slots` parameter of the data methods
-    ([`get_template_data()`](api.md#django_components.Component.get_template_data),
-    [`get_js_data()`](api.md#django_components.Component.get_js_data),
-    [`get_css_data()`](api.md#django_components.Component.get_css_data))
+    ([`get_template_data()`][Component.get_template_data],
+    [`get_js_data()`][Component.get_js_data],
+    [`get_css_data()`][Component.get_css_data])
     will be the instance of this class:
 
     ```py
@@ -626,11 +626,11 @@ class Component(metaclass=ComponentMeta):
 
     - Validate the input at runtime.
     - Set type hints for the slots for data methods like
-      [`get_template_data()`](api.md#django_components.Component.get_template_data).
+      [`get_template_data()`][Component.get_template_data].
     - Document the component inputs.
 
     You can also use `Slots` to validate the slots for
-    [`Component.render()`](api.md#django_components.Component.render):
+    [`Component.render()`][Component.render]:
 
     ```py
     Table.render(
@@ -660,18 +660,18 @@ class Component(metaclass=ComponentMeta):
 
     !!! info
 
-        Components can receive slots as strings, functions, or instances of [`Slot`](api.md#django_components.Slot).
+        Components can receive slots as strings, functions, or instances of [`Slot`][Slot].
 
-        Internally these are all normalized to instances of [`Slot`](api.md#django_components.Slot).
+        Internally these are all normalized to instances of [`Slot`][Slot].
 
         Therefore, the `slots` dictionary available in data methods (like
-        [`get_template_data()`](api.md#django_components.Component.get_template_data))
-        will always be a dictionary of [`Slot`](api.md#django_components.Slot) instances.
+        [`get_template_data()`][Component.get_template_data])
+        will always be a dictionary of [`Slot`][Slot] instances.
 
         To correctly type this dictionary, you should set the fields of `Slots` to
-        [`Slot`](api.md#django_components.Slot) or [`SlotInput`](api.md#django_components.SlotInput):
+        [`Slot`][Slot] or [`SlotInput`][SlotInput]:
 
-        [`SlotInput`](api.md#django_components.SlotInput) is a union of `Slot`, string, and function types.
+        [`SlotInput`][SlotInput] is a union of `Slot`, string, and function types.
     """
 
     template_file: ClassVar[str | None] = None
@@ -682,18 +682,18 @@ class Component(metaclass=ComponentMeta):
 
     - Relative to the directory where the Component's Python file is defined.
     - Relative to one of the component directories, as set by
-      [`COMPONENTS.dirs`](settings.md#django_components.app_settings.ComponentsSettings.dirs)
+      [`COMPONENTS.dirs`][ComponentsSettings.dirs]
       or
-      [`COMPONENTS.app_dirs`](settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+      [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
       (e.g. `<root>/components/`).
     - Relative to the template directories, as set by Django's `TEMPLATES` setting (e.g. `<root>/templates/`).
 
     !!! warning
 
-        Only one of [`template_file`](api.md#django_components.Component.template_file),
-        [`get_template_name`](api.md#django_components.Component.get_template_name),
-        [`template`](api.md#django_components.Component.template)
-        or [`get_template`](api.md#django_components.Component.get_template) must be defined.
+        Only one of [`template_file`][Component.template_file],
+        [`get_template_name`][Component.get_template_name],
+        [`template`][Component.template]
+        or [`get_template`][Component.get_template] must be defined.
 
     **Example:**
 
@@ -715,9 +715,9 @@ class Component(metaclass=ComponentMeta):
     ```
 
     Or relative to one of the directories in
-    [`COMPONENTS.dirs`](settings.md#django_components.app_settings.ComponentsSettings.dirs)
+    [`COMPONENTS.dirs`][ComponentsSettings.dirs]
     or
-    [`COMPONENTS.app_dirs`](settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
     (`components/`):
 
     ```python
@@ -730,31 +730,31 @@ class Component(metaclass=ComponentMeta):
     #       But we still define it here for documenting and type hinting.
     template_name: ClassVar[str | None] = None
     """
-    Alias for [`template_file`](api.md#django_components.Component.template_file).
+    Alias for [`template_file`][Component.template_file].
 
     For historical reasons, django-components used `template_name` to align with Django's
     [TemplateView](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#django.views.generic.base.TemplateView).
 
     `template_file` was introduced to align with
-    [`js`](api.md#django_components.Component.js)/[`js_file`](api.md#django_components.Component.js_file)
-    and [`css`](api.md#django_components.Component.css)/[`css_file`](api.md#django_components.Component.css_file).
+    [`js`][Component.js]/[`js_file`][Component.js_file]
+    and [`css`][Component.css]/[`css_file`][Component.css_file].
 
     Setting and accessing this attribute is proxied to
-    [`template_file`](api.md#django_components.Component.template_file).
+    [`template_file`][Component.template_file].
     """
 
     # TODO_v1 - Remove
     def get_template_name(self, context: Context) -> str | None:
         """
-        DEPRECATED: Use instead [`Component.template_file`](api.md#django_components.Component.template_file),
-        [`Component.template`](api.md#django_components.Component.template) or
-        [`Component.on_render()`](api.md#django_components.Component.on_render).
+        DEPRECATED: Use instead [`Component.template_file`][Component.template_file],
+        [`Component.template`][Component.template] or
+        [`Component.on_render()`][Component.on_render].
         Will be removed in v1.
 
-        Same as [`Component.template_file`](api.md#django_components.Component.template_file),
+        Same as [`Component.template_file`][Component.template_file],
         but allows to dynamically resolve the template name at render time.
 
-        See [`Component.template_file`](api.md#django_components.Component.template_file)
+        See [`Component.template_file`][Component.template_file]
         for more info and examples.
 
         !!! warning
@@ -762,17 +762,17 @@ class Component(metaclass=ComponentMeta):
             The context is not fully populated at the point when this method is called.
 
             If you need to access the context, either use
-            [`Component.on_render_before()`](api.md#django_components.Component.on_render_before) or
-            [`Component.on_render()`](api.md#django_components.Component.on_render).
+            [`Component.on_render_before()`][Component.on_render_before] or
+            [`Component.on_render()`][Component.on_render].
 
         !!! warning
 
             Only one of
-            [`template_file`](api.md#django_components.Component.template_file),
-            [`get_template_name()`](api.md#django_components.Component.get_template_name),
-            [`template`](api.md#django_components.Component.template)
+            [`template_file`][Component.template_file],
+            [`get_template_name()`][Component.get_template_name],
+            [`template`][Component.template]
             or
-            [`get_template()`](api.md#django_components.Component.get_template)
+            [`get_template()`][Component.get_template]
             must be defined.
 
         Args:
@@ -793,11 +793,11 @@ class Component(metaclass=ComponentMeta):
     !!! warning
 
         Only one of
-        [`template_file`](api.md#django_components.Component.template_file),
-        [`template`](api.md#django_components.Component.template),
-        [`get_template_name()`](api.md#django_components.Component.get_template_name),
+        [`template_file`][Component.template_file],
+        [`template`][Component.template],
+        [`get_template_name()`][Component.get_template_name],
         or
-        [`get_template()`](api.md#django_components.Component.get_template)
+        [`get_template()`][Component.get_template]
         must be defined.
 
     **Example:**
@@ -833,27 +833,27 @@ class Component(metaclass=ComponentMeta):
     # TODO_v1 - Remove
     def get_template(self, context: Context) -> str | Template | None:
         """
-        DEPRECATED: Use instead [`Component.template_file`](api.md#django_components.Component.template_file),
-        [`Component.template`](api.md#django_components.Component.template) or
-        [`Component.on_render()`](api.md#django_components.Component.on_render).
+        DEPRECATED: Use instead [`Component.template_file`][Component.template_file],
+        [`Component.template`][Component.template] or
+        [`Component.on_render()`][Component.on_render].
         Will be removed in v1.
 
-        Same as [`Component.template`](api.md#django_components.Component.template),
+        Same as [`Component.template`][Component.template],
         but allows to dynamically resolve the template at render time.
 
         The template can be either plain string or
         a [`Template`](https://docs.djangoproject.com/en/5.2/topics/templates/#template) instance.
 
-        See [`Component.template`](api.md#django_components.Component.template) for more info and examples.
+        See [`Component.template`][Component.template] for more info and examples.
 
         !!! warning
 
             Only one of
-            [`template`](api.md#django_components.Component.template)
-            [`template_file`](api.md#django_components.Component.template_file),
-            [`get_template_name()`](api.md#django_components.Component.get_template_name),
+            [`template`][Component.template]
+            [`template_file`][Component.template_file],
+            [`get_template_name()`][Component.get_template_name],
             or
-            [`get_template()`](api.md#django_components.Component.get_template)
+            [`get_template()`][Component.get_template]
             must be defined.
 
         !!! warning
@@ -861,8 +861,8 @@ class Component(metaclass=ComponentMeta):
             The context is not fully populated at the point when this method is called.
 
             If you need to access the context, either use
-            [`Component.on_render_before()`](api.md#django_components.Component.on_render_before) or
-            [`Component.on_render()`](api.md#django_components.Component.on_render).
+            [`Component.on_render_before()`][Component.on_render_before] or
+            [`Component.on_render()`][Component.on_render].
 
         Args:
             context (Context): The Django template\
@@ -879,7 +879,7 @@ class Component(metaclass=ComponentMeta):
     # TODO_V2 - Remove this in v2
     def get_context_data(self, *_args: Any, **_kwargs: Any) -> Mapping | None:
         """
-        DEPRECATED: Use [`get_template_data()`](api.md#django_components.Component.get_template_data) instead.
+        DEPRECATED: Use [`get_template_data()`][Component.get_template_data] instead.
         Will be removed in v2.
 
         Use this method to define variables that will be available in the template.
@@ -907,7 +907,7 @@ class Component(metaclass=ComponentMeta):
 
         !!! warning
 
-            `get_context_data()` and [`get_template_data()`](api.md#django_components.Component.get_template_data)
+            `get_context_data()` and [`get_template_data()`][Component.get_template_data]
             are mutually exclusive.
 
             If both methods return non-empty dictionaries, an error will be raised.
@@ -964,9 +964,9 @@ class Component(metaclass=ComponentMeta):
         **Type hints:**
 
         To get type hints for the `args`, `kwargs`, and `slots` parameters,
-        you can define the [`Args`](api.md#django_components.Component.Args),
-        [`Kwargs`](api.md#django_components.Component.Kwargs), and
-        [`Slots`](api.md#django_components.Component.Slots) classes on the component class,
+        you can define the [`Args`][Component.Args],
+        [`Kwargs`][Component.Kwargs], and
+        [`Slots`][Component.Slots] classes on the component class,
         and then directly reference them in the function signature of `get_template_data()`.
 
         When you set these classes, the `args`, `kwargs`, and `slots` parameters will be
@@ -1006,15 +1006,15 @@ class Component(metaclass=ComponentMeta):
         ```
 
         You can also add typing to the data returned from
-        [`get_template_data()`](api.md#django_components.Component.get_template_data)
-        by defining the [`TemplateData`](api.md#django_components.Component.TemplateData)
+        [`get_template_data()`][Component.get_template_data]
+        by defining the [`TemplateData`][Component.TemplateData]
         class on the component class.
 
         When you set this class, you can return either the data as a plain dictionary,
-        or an instance of [`TemplateData`](api.md#django_components.Component.TemplateData).
+        or an instance of [`TemplateData`][Component.TemplateData].
 
         If you return plain dictionary, the data will be validated against the
-        [`TemplateData`](api.md#django_components.Component.TemplateData) class
+        [`TemplateData`][Component.TemplateData] class
         by instantiating it with the dictionary.
 
         **Example:**
@@ -1039,7 +1039,7 @@ class Component(metaclass=ComponentMeta):
 
         !!! warning
 
-            `get_template_data()` and [`get_context_data()`](api.md#django_components.Component.get_context_data)
+            `get_template_data()` and [`get_context_data()`][Component.get_context_data]
             are mutually exclusive.
 
             If both methods return non-empty dictionaries, an error will be raised.
@@ -1049,20 +1049,20 @@ class Component(metaclass=ComponentMeta):
     TemplateData: ClassVar[type | None] = None
     """
     Optional typing for the data to be returned from
-    [`get_template_data()`](api.md#django_components.Component.get_template_data).
+    [`get_template_data()`][Component.get_template_data].
 
     If set and not `None`, then this class will be instantiated with the dictionary returned from
-    [`get_template_data()`](api.md#django_components.Component.get_template_data) to validate the data.
+    [`get_template_data()`][Component.get_template_data] to validate the data.
 
     Use `TemplateData` to:
 
     - Validate the data returned from
-      [`get_template_data()`](api.md#django_components.Component.get_template_data) at runtime.
+      [`get_template_data()`][Component.get_template_data] at runtime.
     - Set type hints for this data.
     - Document the component data.
 
     You can also return an instance of `TemplateData` directly from
-    [`get_template_data()`](api.md#django_components.Component.get_template_data)
+    [`get_template_data()`][Component.get_template_data]
     to get type hints:
 
     ```py
@@ -1130,8 +1130,8 @@ class Component(metaclass=ComponentMeta):
 
     !!! warning
 
-        Only one of [`js`](api.md#django_components.Component.js) or
-        [`js_file`](api.md#django_components.Component.js_file) must be defined.
+        Only one of [`js`][Component.js] or
+        [`js_file`][Component.js_file] must be defined.
 
     **Example:**
 
@@ -1165,9 +1165,9 @@ class Component(metaclass=ComponentMeta):
 
     - Relative to the directory where the Component's Python file is defined.
     - Relative to one of the component directories, as set by
-      [`COMPONENTS.dirs`](settings.md#django_components.app_settings.ComponentsSettings.dirs)
+      [`COMPONENTS.dirs`][ComponentsSettings.dirs]
       or
-      [`COMPONENTS.app_dirs`](settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+      [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
       (e.g. `<root>/components/`).
     - Relative to the staticfiles directories, as set by Django's `STATICFILES_DIRS` setting (e.g. `<root>/static/`).
 
@@ -1175,12 +1175,12 @@ class Component(metaclass=ComponentMeta):
 
     1. If the file path is relative to the directory where the component's Python file is,
        the path is resolved.
-    2. The file is read and its contents is set to [`Component.js`](api.md#django_components.Component.js).
+    2. The file is read and its contents is set to [`Component.js`][Component.js].
 
     !!! warning
 
-        Only one of [`js`](api.md#django_components.Component.js) or
-        [`js_file`](api.md#django_components.Component.js_file) must be defined.
+        Only one of [`js`][Component.js] or
+        [`js_file`][Component.js_file] must be defined.
 
     **Example:**
 
@@ -1252,9 +1252,9 @@ class Component(metaclass=ComponentMeta):
         **Type hints:**
 
         To get type hints for the `args`, `kwargs`, and `slots` parameters,
-        you can define the [`Args`](api.md#django_components.Component.Args),
-        [`Kwargs`](api.md#django_components.Component.Kwargs), and
-        [`Slots`](api.md#django_components.Component.Slots) classes on the component class,
+        you can define the [`Args`][Component.Args],
+        [`Kwargs`][Component.Kwargs], and
+        [`Slots`][Component.Slots] classes on the component class,
         and then directly reference them in the function signature of `get_js_data()`.
 
         When you set these classes, the `args`, `kwargs`, and `slots` parameters will be
@@ -1295,15 +1295,15 @@ class Component(metaclass=ComponentMeta):
         ```
 
         You can also add typing to the data returned from
-        [`get_js_data()`](api.md#django_components.Component.get_js_data)
-        by defining the [`JsData`](api.md#django_components.Component.JsData)
+        [`get_js_data()`][Component.get_js_data]
+        by defining the [`JsData`][Component.JsData]
         class on the component class.
 
         When you set this class, you can return either the data as a plain dictionary,
-        or an instance of [`JsData`](api.md#django_components.Component.JsData).
+        or an instance of [`JsData`][Component.JsData].
 
         If you return plain dictionary, the data will be validated against the
-        [`JsData`](api.md#django_components.Component.JsData) class
+        [`JsData`][Component.JsData] class
         by instantiating it with the dictionary.
 
         **Example:**
@@ -1331,20 +1331,20 @@ class Component(metaclass=ComponentMeta):
     JsData: ClassVar[type | None] = None
     """
     Optional typing for the data to be returned from
-    [`get_js_data()`](api.md#django_components.Component.get_js_data).
+    [`get_js_data()`][Component.get_js_data].
 
     If set and not `None`, then this class will be instantiated with the dictionary returned from
-    [`get_js_data()`](api.md#django_components.Component.get_js_data) to validate the data.
+    [`get_js_data()`][Component.get_js_data] to validate the data.
 
     Use `JsData` to:
 
     - Validate the data returned from
-      [`get_js_data()`](api.md#django_components.Component.get_js_data) at runtime.
+      [`get_js_data()`][Component.get_js_data] at runtime.
     - Set type hints for this data.
     - Document the component data.
 
     You can also return an instance of `JsData` directly from
-    [`get_js_data()`](api.md#django_components.Component.get_js_data)
+    [`get_js_data()`][Component.get_js_data]
     to get type hints:
 
     ```py
@@ -1412,8 +1412,8 @@ class Component(metaclass=ComponentMeta):
 
     !!! warning
 
-        Only one of [`css`](api.md#django_components.Component.css) or
-        [`css_file`](api.md#django_components.Component.css_file) must be defined.
+        Only one of [`css`][Component.css] or
+        [`css_file`][Component.css_file] must be defined.
 
     **Example:**
 
@@ -1453,9 +1453,9 @@ class Component(metaclass=ComponentMeta):
 
     - Relative to the directory where the Component's Python file is defined.
     - Relative to one of the component directories, as set by
-      [`COMPONENTS.dirs`](settings.md#django_components.app_settings.ComponentsSettings.dirs)
+      [`COMPONENTS.dirs`][ComponentsSettings.dirs]
       or
-      [`COMPONENTS.app_dirs`](settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+      [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
       (e.g. `<root>/components/`).
     - Relative to the staticfiles directories, as set by Django's `STATICFILES_DIRS` setting (e.g. `<root>/static/`).
 
@@ -1463,12 +1463,12 @@ class Component(metaclass=ComponentMeta):
 
     1. If the file path is relative to the directory where the component's Python file is,
        the path is resolved.
-    2. The file is read and its contents is set to [`Component.css`](api.md#django_components.Component.css).
+    2. The file is read and its contents is set to [`Component.css`][Component.css].
 
     !!! warning
 
-        Only one of [`css`](api.md#django_components.Component.css) or
-        [`css_file`](api.md#django_components.Component.css_file) must be defined.
+        Only one of [`css`][Component.css] or
+        [`css_file`][Component.css_file] must be defined.
 
     **Example:**
 
@@ -1544,9 +1544,9 @@ class Component(metaclass=ComponentMeta):
         **Type hints:**
 
         To get type hints for the `args`, `kwargs`, and `slots` parameters,
-        you can define the [`Args`](api.md#django_components.Component.Args),
-        [`Kwargs`](api.md#django_components.Component.Kwargs), and
-        [`Slots`](api.md#django_components.Component.Slots) classes on the component class,
+        you can define the [`Args`][Component.Args],
+        [`Kwargs`][Component.Kwargs], and
+        [`Slots`][Component.Slots] classes on the component class,
         and then directly reference them in the function signature of `get_css_data()`.
 
         When you set these classes, the `args`, `kwargs`, and `slots` parameters will be
@@ -1585,15 +1585,15 @@ class Component(metaclass=ComponentMeta):
         ```
 
         You can also add typing to the data returned from
-        [`get_css_data()`](api.md#django_components.Component.get_css_data)
-        by defining the [`CssData`](api.md#django_components.Component.CssData)
+        [`get_css_data()`][Component.get_css_data]
+        by defining the [`CssData`][Component.CssData]
         class on the component class.
 
         When you set this class, you can return either the data as a plain dictionary,
-        or an instance of [`CssData`](api.md#django_components.Component.CssData).
+        or an instance of [`CssData`][Component.CssData].
 
         If you return plain dictionary, the data will be validated against the
-        [`CssData`](api.md#django_components.Component.CssData) class
+        [`CssData`][Component.CssData] class
         by instantiating it with the dictionary.
 
         **Example:**
@@ -1621,20 +1621,20 @@ class Component(metaclass=ComponentMeta):
     CssData: ClassVar[type | None] = None
     """
     Optional typing for the data to be returned from
-    [`get_css_data()`](api.md#django_components.Component.get_css_data).
+    [`get_css_data()`][Component.get_css_data].
 
     If set and not `None`, then this class will be instantiated with the dictionary returned from
-    [`get_css_data()`](api.md#django_components.Component.get_css_data) to validate the data.
+    [`get_css_data()`][Component.get_css_data] to validate the data.
 
     Use `CssData` to:
 
     - Validate the data returned from
-      [`get_css_data()`](api.md#django_components.Component.get_css_data) at runtime.
+      [`get_css_data()`][Component.get_css_data] at runtime.
     - Set type hints for this data.
     - Document the component data.
 
     You can also return an instance of `CssData` directly from
-    [`get_css_data()`](api.md#django_components.Component.get_css_data)
+    [`get_css_data()`][Component.get_css_data]
     to get type hints:
 
     ```py
@@ -1699,9 +1699,9 @@ class Component(metaclass=ComponentMeta):
     media: MediaCls | None = None
     """
     Normalized definition of JS and CSS media files associated with this component.
-    `None` if [`Component.Media`](api.md#django_components.Component.Media) is not defined.
+    `None` if [`Component.Media`][Component.Media] is not defined.
 
-    This field is generated from [`Component.media_class`](api.md#django_components.Component.media_class).
+    This field is generated from [`Component.media_class`][Component.media_class].
 
     Read more on [Accessing component's Media JS / CSS](../concepts/fundamentals/secondary_js_css_files.md#accessing-media-files).
 
@@ -1724,7 +1724,7 @@ class Component(metaclass=ComponentMeta):
     """
     Set the [Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#assets-as-a-static-definition)
     that will be instantiated with the JS and CSS media files from
-    [`Component.Media`](api.md#django_components.Component.Media).
+    [`Component.Media`][Component.Media].
 
     This is useful when you want to customize the behavior of the media files, like
     customizing how the JS or CSS files are rendered into `<script>` or `<link>` HTML tags.
@@ -1756,17 +1756,17 @@ class Component(metaclass=ComponentMeta):
       This path is still rendered to HTML with `media_class.render_js()` or `media_class.render_css()`.
     - A `SafeString` (with `__html__` method) is considered an already-formatted HTML tag, skipping both static file
         resolution and rendering with `media_class.render_js()` or `media_class.render_css()`.
-    - You can set [`extend`](api.md#django_components.ComponentMediaInput.extend) to configure
+    - You can set [`extend`][ComponentMediaInput.extend] to configure
       whether to inherit JS / CSS from parent components. See
       [Media inheritance](../concepts/fundamentals/secondary_js_css_files.md#media-inheritance).
 
     However, there's a few differences from Django's Media class:
 
     1. Our Media class accepts various formats for the JS and CSS files: either a single file, a list,
-       or (CSS-only) a dictionary (See [`ComponentMediaInput`](api.md#django_components.ComponentMediaInput)).
+       or (CSS-only) a dictionary (See [`ComponentMediaInput`][ComponentMediaInput]).
     2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`,
        [`SafeString`](https://dev.to/doridoro/django-safestring-afj), or a function
-       (See [`ComponentMediaInputPath`](api.md#django_components.ComponentMediaInputPath)).
+       (See [`ComponentMediaInputPath`][ComponentMediaInputPath]).
 
     **Example:**
 
@@ -1790,7 +1790,7 @@ class Component(metaclass=ComponentMeta):
     response_class: ClassVar[type[HttpResponse]] = HttpResponse
     """
     This attribute configures what class is used to generate response from
-    [`Component.render_to_response()`](api.md#django_components.Component.render_to_response).
+    [`Component.render_to_response()`][Component.render_to_response].
 
     The response class should accept a string as the first argument.
 
@@ -1855,7 +1855,7 @@ class Component(metaclass=ComponentMeta):
         !!! warning
 
             If you want to pass data to the template, prefer using
-            [`get_template_data()`](api.md#django_components.Component.get_template_data)
+            [`get_template_data()`][Component.get_template_data]
             instead of this hook.
 
         !!! warning
@@ -2021,14 +2021,14 @@ class Component(metaclass=ComponentMeta):
         Hook that runs when the component was fully rendered,
         including all its children.
 
-        It receives the same arguments as [`on_render_before()`](api.md#django_components.Component.on_render_before),
+        It receives the same arguments as [`on_render_before()`][Component.on_render_before],
         plus the outcome of the rendering:
 
         - `result`: The rendered output of the component. `None` if the rendering failed.
         - `error`: The error that occurred during the rendering, or `None` if the rendering succeeded.
 
-        [`on_render_after()`](api.md#django_components.Component.on_render_after) behaves the same way
-        as the second part of [`on_render()`](api.md#django_components.Component.on_render) (after the `yield`).
+        [`on_render_after()`][Component.on_render_after] behaves the same way
+        as the second part of [`on_render()`][Component.on_render] (after the `yield`).
 
         ```py
         class MyTable(Component):
@@ -2041,7 +2041,7 @@ class Component(metaclass=ComponentMeta):
                     print(f"Error: {error}")
         ```
 
-        Same as [`on_render()`](api.md#django_components.Component.on_render),
+        Same as [`on_render()`][Component.on_render],
         you can return a new HTML, raise a new exception, or return nothing:
 
         1. Return a new HTML
@@ -2093,10 +2093,10 @@ class Component(metaclass=ComponentMeta):
     ) -> tuple[list[Script], list[Style]] | None:
         """
         Hook called once per rendered component instance with that component's
-        [`Script`](api.md#django_components.Script)/[`Style`](api.md#django_components.Style) list.
+        [`Script`][Script]/[`Style`][Style] list.
 
-        The list includes [`Component.js`](api.md#django_components.Component.js)/[`Component.css`](api.md#django_components.Component.css)
-        CSS/JS variables, and [`Component.Media.js`](api.md#django_components.ComponentMediaInput.js)/[`Component.Media.css`](api.md#django_components.ComponentMediaInput.css).
+        The list includes [`Component.js`][Component.js]/[`Component.css`][Component.css]
+        CSS/JS variables, and [`Component.Media.js`][ComponentMediaInput.js]/[`Component.Media.css`][ComponentMediaInput.css].
 
         Return `(new_scripts, new_styles)` to replace the list for this instance;
         return `None` (default) to keep the original list.
@@ -2142,13 +2142,13 @@ class Component(metaclass=ComponentMeta):
     """
     cache: ComponentCache
     """
-    Instance of [`ComponentCache`](api.md#django_components.ComponentCache) available at component render time.
+    Instance of [`ComponentCache`][ComponentCache] available at component render time.
     """
     Defaults: ClassVar[type[ComponentDefaults]]
     """
     The fields of this class are used to set default values for the component's kwargs.
 
-    These defaults will be merged with defaults on [`Component.Kwargs`](api.md#django_components.Component.Kwargs).
+    These defaults will be merged with defaults on [`Component.Kwargs`][Component.Kwargs].
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
@@ -2165,7 +2165,7 @@ class Component(metaclass=ComponentMeta):
     """
     defaults: ComponentDefaults
     """
-    Instance of [`ComponentDefaults`](api.md#django_components.ComponentDefaults) available at component render time.
+    Instance of [`ComponentDefaults`][ComponentDefaults] available at component render time.
     """
     View: ClassVar[type[ComponentView]]
     """
@@ -2173,7 +2173,7 @@ class Component(metaclass=ComponentMeta):
 
     This class is a subclass of
     [`django.views.View`](https://docs.djangoproject.com/en/5.2/ref/class-based-views/base/#view).
-    The [`Component`](api.md#django_components.Component) instance is available
+    The [`Component`][Component] instance is available
     via `self.component`.
 
     Override the methods of this class to define the behavior of the component.
@@ -2191,7 +2191,7 @@ class Component(metaclass=ComponentMeta):
     """
     view: ComponentView
     """
-    Instance of [`ComponentView`](api.md#django_components.ComponentView) available at component render time.
+    Instance of [`ComponentView`][ComponentView] available at component render time.
     """
     DebugHighlight: ClassVar[type[ComponentDebugHighlight]]
     """
@@ -2210,7 +2210,7 @@ class Component(metaclass=ComponentMeta):
     The name of the component.
 
     If the component was registered, this will be the name under which the component was registered in
-    the [`ComponentRegistry`](api.md#django_components.ComponentRegistry).
+    the [`ComponentRegistry`][ComponentRegistry].
 
     Otherwise, this will be the name of the class.
 
@@ -2236,7 +2236,7 @@ class Component(metaclass=ComponentMeta):
     """
     If the component was rendered with the [`{% component %}`](template_tags.md#component) template tag,
     this will be the name under which the component was registered in
-    the [`ComponentRegistry`](api.md#django_components.ComponentRegistry).
+    the [`ComponentRegistry`][ComponentRegistry].
 
     Otherwise, this will be `None`.
 
@@ -2269,7 +2269,7 @@ class Component(metaclass=ComponentMeta):
 
     id: str
     """
-    This ID is unique for every time a [`Component.render()`](api.md#django_components.Component.render)
+    This ID is unique for every time a [`Component.render()`][Component.render]
     (or equivalent) is called (AKA "render ID").
 
     This is useful for logging or debugging.
@@ -2307,14 +2307,14 @@ class Component(metaclass=ComponentMeta):
 
     This includes:
 
-    - [`args`](api.md#django_components.ComponentInput.args) - List of positional arguments
-    - [`kwargs`](api.md#django_components.ComponentInput.kwargs) - Dictionary of keyword arguments
-    - [`slots`](api.md#django_components.ComponentInput.slots) - Dictionary of slots. Values are normalized to
-        [`Slot`](api.md#django_components.Slot) instances
-    - [`context`](api.md#django_components.ComponentInput.context) -
+    - [`args`][ComponentInput.args] - List of positional arguments
+    - [`kwargs`][ComponentInput.kwargs] - Dictionary of keyword arguments
+    - [`slots`][ComponentInput.slots] - Dictionary of slots. Values are normalized to
+        [`Slot`][Slot] instances
+    - [`context`][ComponentInput.context] -
         [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
         object that should be used to render the component
-    - And other kwargs passed to [`Component.render()`](api.md#django_components.Component.render)
+    - And other kwargs passed to [`Component.render()`][Component.render]
         like `deps_strategy`
 
     **Example:**
@@ -2343,9 +2343,9 @@ class Component(metaclass=ComponentMeta):
     This is part of the [Render API](../concepts/fundamentals/render_api.md).
 
     `args` has the same behavior as the `args` argument of
-    [`Component.get_template_data()`](api.md#django_components.Component.get_template_data):
+    [`Component.get_template_data()`][Component.get_template_data]:
 
-    - If you defined the [`Component.Args`](api.md#django_components.Component.Args) class,
+    - If you defined the [`Component.Args`][Component.Args] class,
         then the `args` property will return an instance of that `Args` class.
     - Otherwise, `args` will be a plain list.
 
@@ -2388,9 +2388,9 @@ class Component(metaclass=ComponentMeta):
 
     This is part of the [Render API](../concepts/fundamentals/render_api.md).
 
-    Unlike [`Component.args`](api.md#django_components.Component.args), this attribute
+    Unlike [`Component.args`][Component.args], this attribute
     is not typed and will remain as plain list even if you define the
-    [`Component.Args`](api.md#django_components.Component.Args) class.
+    [`Component.Args`][Component.Args] class.
 
     **Example:**
 
@@ -2411,9 +2411,9 @@ class Component(metaclass=ComponentMeta):
     This is part of the [Render API](../concepts/fundamentals/render_api.md).
 
     `kwargs` has the same behavior as the `kwargs` argument of
-    [`Component.get_template_data()`](api.md#django_components.Component.get_template_data):
+    [`Component.get_template_data()`][Component.get_template_data]:
 
-    - If you defined the [`Component.Kwargs`](api.md#django_components.Component.Kwargs) class,
+    - If you defined the [`Component.Kwargs`][Component.Kwargs] class,
         then the `kwargs` property will return an instance of that `Kwargs` class.
     - Otherwise, `kwargs` will be a plain dict.
 
@@ -2462,9 +2462,9 @@ class Component(metaclass=ComponentMeta):
 
     This is part of the [Render API](../concepts/fundamentals/render_api.md).
 
-    Unlike [`Component.kwargs`](api.md#django_components.Component.kwargs), this attribute
+    Unlike [`Component.kwargs`][Component.kwargs], this attribute
     is not typed and will remain as plain dict even if you define the
-    [`Component.Kwargs`](api.md#django_components.Component.Kwargs) class.
+    [`Component.Kwargs`][Component.Kwargs] class.
 
     `raw_kwargs` have the defaults applied to them.
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
@@ -2488,9 +2488,9 @@ class Component(metaclass=ComponentMeta):
     This is part of the [Render API](../concepts/fundamentals/render_api.md).
 
     `slots` has the same behavior as the `slots` argument of
-    [`Component.get_template_data()`](api.md#django_components.Component.get_template_data):
+    [`Component.get_template_data()`][Component.get_template_data]:
 
-    - If you defined the [`Component.Slots`](api.md#django_components.Component.Slots) class,
+    - If you defined the [`Component.Slots`][Component.Slots] class,
         then the `slots` property will return an instance of that class.
     - Otherwise, `slots` will be a plain dict.
 
@@ -2536,9 +2536,9 @@ class Component(metaclass=ComponentMeta):
 
     This is part of the [Render API](../concepts/fundamentals/render_api.md).
 
-    Unlike [`Component.slots`](api.md#django_components.Component.slots), this attribute
+    Unlike [`Component.slots`][Component.slots], this attribute
     is not typed and will remain as plain dict even if you define the
-    [`Component.Slots`](api.md#django_components.Component.Slots) class.
+    [`Component.Slots`][Component.Slots] class.
 
     **Example:**
 
@@ -2555,7 +2555,7 @@ class Component(metaclass=ComponentMeta):
     context: Context
     """
     The `context` argument as passed to
-    [`Component.get_template_data()`](api.md#django_components.Component.get_template_data).
+    [`Component.get_template_data()`][Component.get_template_data].
 
     This is Django's [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
     with which the component template is rendered.
@@ -2565,7 +2565,7 @@ class Component(metaclass=ComponentMeta):
     then this will be an instance of `RequestContext`.
 
     Whether the context variables defined in `context` are available to the template depends on the
-    [context behavior mode](settings.md#django_components.app_settings.ComponentsSettings.context_behavior):
+    [context behavior mode][ComponentsSettings.context_behavior]:
 
     - In `"django"` context behavior mode, the template will have access to the keys of this context.
 
@@ -2603,7 +2603,7 @@ class Component(metaclass=ComponentMeta):
         - No extra script loaded.
     - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore)
         - HTML is left as-is. You can still process it with a different strategy later with
-            [`render_dependencies()`](api.md#django_components.render_dependencies).
+            [`render_dependencies()`][render_dependencies].
         - Used for inserting rendered HTML into other components.
     """
 
@@ -2621,7 +2621,7 @@ class Component(metaclass=ComponentMeta):
     ```
 
     This is relevant when your components are isolated, for example when using
-    the ["isolated"](settings.md#django_components.app_settings.ComponentsSettings.context_behavior)
+    the ["isolated"][ComponentsSettings.context_behavior]
     context behavior mode or when using the `only` flag.
 
     When components are isolated, each component has its own instance of Context,
@@ -2630,19 +2630,19 @@ class Component(metaclass=ComponentMeta):
 
     registry: ComponentRegistry
     """
-    The [`ComponentRegistry`](api.md#django_components.ComponentRegistry) instance
+    The [`ComponentRegistry`][ComponentRegistry] instance
     that was used to render the component.
     """
 
     node: "ComponentNode | None"
     """
-    The [`ComponentNode`](api.md#django_components.ComponentNode) instance
+    The [`ComponentNode`][ComponentNode] instance
     that was used to render the component.
 
     This will be set only if the component was rendered with the
     [`{% component %}`](template_tags.md#component) tag.
 
-    Accessing the [`ComponentNode`](api.md#django_components.ComponentNode) is mostly useful for extensions,
+    Accessing the [`ComponentNode`][ComponentNode] is mostly useful for extensions,
     which can modify their behaviour based on the source of the Component.
 
     ```py
@@ -2655,8 +2655,8 @@ class Component(metaclass=ComponentMeta):
     For example, if `MyComponent` was used in another component - that is,
     with a `{% component "my_component" %}` tag
     in a template that belongs to another component - then you can use
-    [`self.node.template_component`](api.md#django_components.ComponentNode.template_component)
-    to access the owner [`Component`](api.md#django_components.Component) class.
+    [`self.node.template_component`][ComponentNode.template_component]
+    to access the owner [`Component`][Component] class.
 
     ```djc_py
     class Parent(Component):
@@ -2676,13 +2676,13 @@ class Component(metaclass=ComponentMeta):
     !!! info
 
         `Component.node` is `None` if the component is created by
-        [`Component.render()`](api.md#django_components.Component.render)
+        [`Component.render()`][Component.render]
         (but you can pass in the `node` kwarg yourself).
     """
     # TODO_v1 - Remove, superseded by `Component.slots`
     is_filled: SlotIsFilled
     """
-    Deprecated. Will be removed in v1. Use [`Component.slots`](api.md#django_components.Component.slots) instead.
+    Deprecated. Will be removed in v1. Use [`Component.slots`][Component.slots] instead.
     Note that `Component.slots` no longer escapes the slot names.
 
     Dictionary describing which slots have or have not been filled.
@@ -2691,9 +2691,9 @@ class Component(metaclass=ComponentMeta):
 
     You can also access this variable from within the template as
 
-    [`{{ component_vars.is_filled.slot_name }}`](template_variables.md#django_components.component.ComponentVars.is_filled)
+    [`{{ component_vars.is_filled.slot_name }}`][ComponentVars.is_filled]
 
-    """  # noqa: E501
+    """
 
     request: HttpRequest | None
     """
@@ -2718,8 +2718,8 @@ class Component(metaclass=ComponentMeta):
     to pass the `HttpRequest` object to the template.
 
     With Components, you can either use `RequestContext`, or pass the `request` object
-    explicitly via [`Component.render()`](api.md#django_components.Component.render) and
-    [`Component.render_to_response()`](api.md#django_components.Component.render_to_response).
+    explicitly via [`Component.render()`][Component.render] and
+    [`Component.render_to_response()`][Component.render_to_response].
 
     When a component is nested in another, the child component uses parent's `request` object.
     """
@@ -2732,7 +2732,7 @@ class Component(metaclass=ComponentMeta):
 
         This data is also available from within the component's template, without having to
         return this data from
-        [`get_template_data()`](api.md#django_components.Component.get_template_data).
+        [`get_template_data()`][Component.get_template_data].
 
         In regular Django templates, you need to use
         [`RequestContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
@@ -2745,11 +2745,11 @@ class Component(metaclass=ComponentMeta):
             (Regular Django behavior)
         - The component is rendered with a regular
             [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) (or none),
-            but the `request` kwarg of [`Component.render()`](api.md#django_components.Component.render) is set.
+            but the `request` kwarg of [`Component.render()`][Component.render] is set.
         - The component is nested in another component that matches any of these conditions.
 
         See
-        [`Component.request`](api.md#django_components.Component.request)
+        [`Component.request`][Component.request]
         on how the `request`
         ([HTTPRequest](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest))
         object is passed to and within the components.
@@ -2779,7 +2779,7 @@ class Component(metaclass=ComponentMeta):
 
     This is part of the [Render API](../concepts/fundamentals/render_api.md).
 
-    Returns the parent [`Component`](api.md#django_components.Component) instance if this component
+    Returns the parent [`Component`][Component] instance if this component
     is nested within another component, or `None` if this is the root component.
 
     **Example:**
@@ -2803,7 +2803,7 @@ class Component(metaclass=ComponentMeta):
 
     This is part of the [Render API](../concepts/fundamentals/render_api.md).
 
-    Returns the root [`Component`](api.md#django_components.Component) instance in the component tree.
+    Returns the root [`Component`][Component] instance in the component tree.
     If this component is the root component, returns `self`.
 
     **Example:**
@@ -2827,7 +2827,7 @@ class Component(metaclass=ComponentMeta):
 
         This is part of the [Render API](../concepts/fundamentals/render_api.md).
 
-        Yields [`Component`](api.md#django_components.Component) instances starting from the parent component,
+        Yields [`Component`][Component] instances starting from the parent component,
         then the parent's parent, and so on, up to (but not including) the root component.
 
         **Example:**
@@ -2959,7 +2959,7 @@ class Component(metaclass=ComponentMeta):
         Render the component and wrap the content in an HTTP response class.
 
         `render_to_response()` takes the same inputs as
-        [`Component.render()`](api.md#django_components.Component.render).
+        [`Component.render()`][Component.render].
         See that method for more information.
 
         After the component is rendered, the HTTP response class is instantiated with the rendered content.
@@ -2988,7 +2988,7 @@ class Component(metaclass=ComponentMeta):
         **Custom response class:**
 
         You can set a custom response class on the component via
-        [`Component.response_class`](api.md#django_components.Component.response_class).
+        [`Component.response_class`][Component.response_class].
         Defaults to
         [`django.http.HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#httpresponse-objects).
 
@@ -3090,7 +3090,7 @@ class Component(metaclass=ComponentMeta):
 
             Dictionary keys are the slot names. Dictionary values are the slot fills.
 
-            Slot fills can be strings, render functions, or [`Slot`](api.md#django_components.Slot) instances:
+            Slot fills can be strings, render functions, or [`Slot`][Slot] instances:
 
             ```python
             Button.render(
@@ -3146,7 +3146,7 @@ class Component(metaclass=ComponentMeta):
             ```
 
             Whether the variables defined in `context` are available to the template depends on the
-            [context behavior mode](settings.md#django_components.app_settings.ComponentsSettings.context_behavior):
+            [context behavior mode][ComponentsSettings.context_behavior]:
 
             - In `"django"` context behavior mode, the template will have access to the keys of this context.
 
@@ -3177,7 +3177,7 @@ class Component(metaclass=ComponentMeta):
                 - No extra script loaded.
             - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore) (default when nested)
                 - HTML is left as-is. You can still process it with a different strategy later with
-                  [`render_dependencies()`](api.md#django_components.render_dependencies).
+                  [`render_dependencies()`][render_dependencies].
                 - Used for inserting rendered HTML into other components.
 
         - `request` - Optional. HTTPRequest object. Pass a request object directly to the component to apply
@@ -3208,9 +3208,9 @@ class Component(metaclass=ComponentMeta):
         **Type hints:**
 
         `Component.render()` is NOT typed. To add type hints, you can wrap the inputs
-        in component's [`Args`](api.md#django_components.Component.Args),
-        [`Kwargs`](api.md#django_components.Component.Kwargs),
-        and [`Slots`](api.md#django_components.Component.Slots) classes.
+        in component's [`Args`][Component.Args],
+        [`Kwargs`][Component.Kwargs],
+        and [`Slots`][Component.Slots] classes.
 
         Read more on [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
@@ -3293,10 +3293,10 @@ class Component(metaclass=ComponentMeta):
     _template: Template | None = None
     """
     Cached [`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template)
-    instance for the [`Component`](api.md#django_components.Component),
+    instance for the [`Component`][Component],
     created from
-    [`Component.template`](#django_components.Component.template) or
-    [`Component.template_file`](#django_components.Component.template_file).
+    [`Component.template`][Component.template] or
+    [`Component.template_file`][Component.template_file].
     """
 
     # TODO_v3 - Django-specific property to prevent calling the instance as a function.
@@ -3460,7 +3460,7 @@ class Component(metaclass=ComponentMeta):
 class ComponentNode(BaseNode):
     """
     Renders one of the components that was previously registered with
-    [`@register()`](api.md#django_components.register)
+    [`@register()`][register]
     decorator.
 
     The [`{% component %}`](#component) tag takes:
@@ -3520,7 +3520,7 @@ class ComponentNode(BaseNode):
     ```
 
     Alternatively, you can set all components to be isolated by default, by setting
-    [`context_behavior`](settings.md#django_components.app_settings.ComponentsSettings.context_behavior)
+    [`context_behavior`][ComponentsSettings.context_behavior]
     to `"isolated"` in your settings:
 
     ```python

@@ -174,8 +174,8 @@ So in your HTML, you may see something like this:
 
 Finally, we return to our Python component in `calendar.py` to tie this together.
 
-To link JS and CSS defined in other files, use [`js_file`](../reference/api.md#django_components.Component.js_file)
-and [`css_file`](../reference/api.md#django_components.Component.css_file) attributes:
+To link JS and CSS defined in other files, use [`js_file`][Component.js_file]
+and [`css_file`][Component.css_file] attributes:
 
 ```python title="[project root]/components/calendar/calendar.py"
 from django_components import Component
@@ -200,8 +200,8 @@ automatically embed the associated JS and CSS.
 
     1. Relative to the Python component file (as seen above),
     2. Relative to any of the component directories as defined by
-    [`COMPONENTS.dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
-    and/or [`COMPONENTS.app_dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.dirs`][ComponentsSettings.dirs]
+    and/or [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
     (e.g. `[your apps]/components` dir and `[project root]/components`)
     3. Relative to any of the directories defined by `STATICFILES_DIRS`.
 
@@ -218,13 +218,13 @@ automatically embed the associated JS and CSS.
 ### 5. JS variables
 
 You can pass dynamic data from your Python component to your JavaScript using JS variables.
-This is done using the [`get_js_data()`](../reference/api.md#django_components.Component.get_js_data) method.
+This is done using the [`get_js_data()`][Component.get_js_data] method.
 
 The dictionary returned from `get_js_data()` will be serialized to JSON and made available to your component's JavaScript code.
 
 To access these variables in your JavaScript, use the special `$onComponent()` callback function. `$onComponent()` is called when the component's JavaScript is loaded.
 
-`$onComponent()` is a special function that is only available within the component's JavaScript code ([`Component.js`](../reference/api.md#django_components.Component.js) or [`Component.js_file`](../reference/api.md#django_components.Component.js_file)).
+`$onComponent()` is a special function that is only available within the component's JavaScript code ([`Component.js`][Component.js] or [`Component.js_file`][Component.js_file]).
 
 Let's update our calendar component to pass data to JavaScript:
 
@@ -288,7 +288,7 @@ Each component instance will receive its own JS variables based on the data retu
 ### 6. CSS variables
 
 You can pass dynamic data from your Python component to your CSS using CSS variables.
-This is done using the [`get_css_data()`](../reference/api.md#django_components.Component.get_css_data) method.
+This is done using the [`get_css_data()`][Component.get_css_data] method.
 
 The dictionary returned from `get_css_data()` will be converted to CSS variables where:
 

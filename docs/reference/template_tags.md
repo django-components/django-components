@@ -72,7 +72,7 @@ If you insert this tag multiple times, ALL JS scripts will be duplicately insert
 
 
 Renders one of the components that was previously registered with
-[`@register()`](api.md#django_components.register)
+[`@register()`][register]
 decorator.
 
 The [`{% component %}`](#component) tag takes:
@@ -132,7 +132,7 @@ can access only the data that was explicitly passed to it:
 ```
 
 Alternatively, you can set all components to be isolated by default, by setting
-[`context_behavior`](settings.md#django_components.app_settings.ComponentsSettings.context_behavior)
+[`context_behavior`][ComponentsSettings.context_behavior]
 to `"isolated"` in your settings:
 
 ```python
@@ -284,8 +284,8 @@ use [`{% fill %}`](#fill) with `name` set to `"default"`:
 You can pass a slot fill from Python to a component by setting the `body` kwarg
 on the [`{% fill %}`](#fill) tag.
 
-First pass a [`Slot`](api.md#django_components.Slot) instance to the template
-with the [`get_template_data()`](api.md#django_components.Component.get_template_data)
+First pass a [`Slot`][Slot] instance to the template
+with the [`get_template_data()`][Component.get_template_data]
 method:
 
 ```python
@@ -399,7 +399,7 @@ the [provide / inject feature](../concepts/advanced/provide_inject.md).
 Pass kwargs to this tag to define the provider's data.
 
 Any components defined within the `{% provide %}..{% endprovide %}` tags will be able to access this data
-with [`Component.inject()`](api.md#django_components.Component.inject).
+with [`Component.inject()`][Component.inject].
 
 This is similar to React's [`ContextProvider`](https://react.dev/learn/passing-data-deeply-with-context),
 or Vue's [`provide()`](https://vuejs.org/guide/components/provide-inject).
@@ -407,7 +407,7 @@ or Vue's [`provide()`](https://vuejs.org/guide/components/provide-inject).
 **Args:**
 
 - `name` (str, required): Provider name. This is the name you will then use in
-    [`Component.inject()`](api.md#django_components.Component.inject).
+    [`Component.inject()`][Component.inject].
 - `**kwargs`: Any extra kwargs will be passed as the provided data.
 
 **Example:**
@@ -451,7 +451,7 @@ class Child(Component):
 ```
 
 Notice that the keys defined on the [`{% provide %}`](#provide) tag are then accessed as attributes
-when accessing them with [`Component.inject()`](api.md#django_components.Component.inject).
+when accessing them with [`Component.inject()`][Component.inject].
 
 ✅ Do this
 ```python

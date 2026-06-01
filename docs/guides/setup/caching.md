@@ -2,7 +2,7 @@ This page describes the kinds of assets that django-components caches and how to
 
 ## Component caching
 
-You can cache the output of your components by setting the [`Component.Cache`](../../reference/api.md#django_components.Component.Cache) options.
+You can cache the output of your components by setting the [`Component.Cache`][Component.Cache] options.
 
 Read more about [Component caching](../../concepts/advanced/component_caching.md).
 
@@ -18,10 +18,10 @@ To achieve all this, django-components defines additional temporary JS and CSS f
 
 This includes:
 
-- Inlined JS/CSS defined via [`Component.js`](../../reference/api.md#django_components.Component.js) and [`Component.css`](../../reference/api.md#django_components.Component.css)
-- JS/CSS variables generated from [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data) and [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data)
+- Inlined JS/CSS defined via [`Component.js`][Component.js] and [`Component.css`][Component.css]
+- JS/CSS variables generated from [`get_js_data()`][Component.get_js_data] and [`get_css_data()`][Component.get_css_data]
 
-By default, django-components uses Django's local memory cache backend to store these assets. You can configure it to use any of your Django cache backends by setting the [`COMPONENTS.cache`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.cache) option in your settings:
+By default, django-components uses Django's local memory cache backend to store these assets. You can configure it to use any of your Django cache backends by setting the [`COMPONENTS.cache`][ComponentsSettings.cache] option in your settings:
 
 ```python
 COMPONENTS = {
@@ -51,4 +51,4 @@ COMPONENTS = {
 }
 ```
 
-See [`COMPONENTS.cache`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.cache) for more details about this setting.
+See [`COMPONENTS.cache`][ComponentsSettings.cache] for more details about this setting.

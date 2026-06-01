@@ -4,9 +4,9 @@ Each component can have single "primary" HTML, CSS and JS file associated with t
 
 Each of these can be either defined inline, or in a separate file:
 
-- HTML files are defined using [`Component.template`](../../reference/api.md#django_components.Component.template) or [`Component.template_file`](../../reference/api.md#django_components.Component.template_file)
-- CSS files are defined using [`Component.css`](../../reference/api.md#django_components.Component.css) or [`Component.css_file`](../../reference/api.md#django_components.Component.css_file)
-- JS files are defined using [`Component.js`](../../reference/api.md#django_components.Component.js) or [`Component.js_file`](../../reference/api.md#django_components.Component.js_file)
+- HTML files are defined using [`Component.template`][Component.template] or [`Component.template_file`][Component.template_file]
+- CSS files are defined using [`Component.css`][Component.css] or [`Component.css_file`][Component.css_file]
+- JS files are defined using [`Component.js`][Component.js] or [`Component.js_file`][Component.js_file]
 
 ```py
 @register("calendar")
@@ -43,8 +43,8 @@ Read more about each file type below:
 - [CSS](#css)
 - [JS](#js)
 
-In addition, you can define extra "secondary" CSS / JS files using the nested [`Component.Media`](../../reference/api.md#django_components.Component.Media) class,
-by setting [`Component.Media.js`](../../reference/api.md#django_components.ComponentMediaInput.js) and [`Component.Media.css`](../../reference/api.md#django_components.ComponentMediaInput.css).
+In addition, you can define extra "secondary" CSS / JS files using the nested [`Component.Media`][Component.Media] class,
+by setting [`Component.Media.js`][ComponentMediaInput.js] and [`Component.Media.css`][ComponentMediaInput.css].
 
 Single component can have many secondary files. There is no special behavior for them.
 
@@ -77,9 +77,9 @@ reorder, or inject scripts), see [Modifying JS / CSS scripts](../advanced/render
 Components use Django's template system to define their HTML.
 This means that you can use [Django's template syntax](https://docs.djangoproject.com/en/5.2/ref/templates/language/) to define your HTML.
 
-Inside the template, you can access the data returned from the [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data) method.
+Inside the template, you can access the data returned from the [`get_template_data()`][Component.get_template_data] method.
 
-You can define the HTML directly in your Python code using the [`template`](../../reference/api.md#django_components.Component.template) attribute:
+You can define the HTML directly in your Python code using the [`template`][Component.template] attribute:
 
 ```djc_py
 class Button(Component):
@@ -99,7 +99,7 @@ class Button(Component):
         }
 ```
 
-Or you can define the HTML in a separate file and reference it using [`template_file`](../../reference/api.md#django_components.Component.template_file):
+Or you can define the HTML in a separate file and reference it using [`template_file`][Component.template_file]:
 
 ```python
 class Button(Component):
@@ -129,7 +129,7 @@ However, whether it's for A/B testing or for preserving public API
 when sharing your components, sometimes you may need to render different templates
 based on the input to your component.
 
-You can use [`Component.on_render()`](../../reference/api.md#django_components.Component.on_render)
+You can use [`Component.on_render()`][Component.on_render]
 to dynamically override what template gets rendered.
 
 By default, the component's template is rendered as-is.
@@ -145,7 +145,7 @@ If you want to render a different template in its place,
 we recommended you to:
 
 1. Wrap the substitute templates as new Components
-2. Then render those Components inside [`Component.on_render()`](../../reference/api.md#django_components.Component.on_render):
+2. Then render those Components inside [`Component.on_render()`][Component.on_render]:
 
 ```py
 class TableNew(Component):
@@ -195,7 +195,7 @@ class Table(Component):
 
 ### Template-less components
 
-Since you can use [`Component.on_render()`](../../reference/api.md#django_components.Component.on_render)
+Since you can use [`Component.on_render()`][Component.on_render]
 to render _other_ components, there is no need to define a template for the component.
 
 So even an empty component like this is valid:
@@ -225,7 +225,7 @@ Here is how the HTML is post-processed:
     </div>
     ```
 
-2. **Insert CSS ID**: If the component defines CSS variables through [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data), the root elements also receive a `data-djc-css-xxxxxx` attribute. This attribute links the element to its specific CSS variables.
+2. **Insert CSS ID**: If the component defines CSS variables through [`get_css_data()`][Component.get_css_data], the root elements also receive a `data-djc-css-xxxxxx` attribute. This attribute links the element to its specific CSS variables.
 
     ```html
     <!-- Output HTML -->
@@ -248,11 +248,11 @@ Here is how the HTML is post-processed:
 
 The component's JS script is executed in the browser:
 
-- It is executed AFTER the "secondary" JS files from [`Component.Media.js`](../../reference/api.md#django_components.ComponentMediaInput.js) are loaded.
+- It is executed AFTER the "secondary" JS files from [`Component.Media.js`][ComponentMediaInput.js] are loaded.
 - The script is only executed once, even if there are multiple instances of the component on the page.
 - Component JS scripts are executed in the order how they appeared in the template / HTML (top to bottom).
 
-You can define the JS directly in your Python code using the [`js`](../../reference/api.md#django_components.Component.js) attribute:
+You can define the JS directly in your Python code using the [`js`][Component.js] attribute:
 
 ```djc_py
 class Button(Component):
@@ -268,7 +268,7 @@ class Button(Component):
         }
 ```
 
-Or you can define the JS in a separate file and reference it using [`js_file`](../../reference/api.md#django_components.Component.js_file):
+Or you can define the JS in a separate file and reference it using [`js_file`][Component.js_file]:
 
 ```python
 class Button(Component):
@@ -286,12 +286,12 @@ $onComponent(({ text }) => {
 });
 ```
 
-The data returned from [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data)
+The data returned from [`get_js_data()`][Component.get_js_data]
 is available inside the component's JS through [`$onComponent()`](html_js_css_variables.md#oncomponent-callback-function).
 
 ## CSS
 
-You can define the CSS directly in your Python code using the [`css`](../../reference/api.md#django_components.Component.css) attribute:
+You can define the CSS directly in your Python code using the [`css`][Component.css] attribute:
 
 ```djc_py
 class Button(Component):
@@ -308,7 +308,7 @@ class Button(Component):
         }
 ```
 
-Or you can define the CSS in a separate file and reference it using [`css_file`](../../reference/api.md#django_components.Component.css_file):
+Or you can define the CSS in a separate file and reference it using [`css_file`][Component.css_file]:
 
 ```python
 class Button(Component):
@@ -326,7 +326,7 @@ class Button(Component):
 }
 ```
 
-The data returned from [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data)
+The data returned from [`get_css_data()`][Component.get_css_data]
 is exposed to the component's CSS as custom properties, so the `color` key is read with `var(--color)`.
 
 ## File paths
@@ -358,7 +358,7 @@ class Calendar(Component):
 ```
 
 Assuming that
-[`COMPONENTS.dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
+[`COMPONENTS.dirs`][ComponentsSettings.dirs]
 contains path `[project root]/components`, the example above is the same as writing out:
 
 ```py title="[project root]/components/calendar/calendar.py"
@@ -373,9 +373,9 @@ class Calendar(Component):
 
 If the path cannot be resolved relative to the component, django-components will attempt
 to resolve the path relative to the component directories, as set in
-[`COMPONENTS.dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
+[`COMPONENTS.dirs`][ComponentsSettings.dirs]
 or
-[`COMPONENTS.app_dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.app_dirs).
+[`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs].
 
 Read more about [file path resolution](secondary_js_css_files.md/#relative-to-component).
 
@@ -384,38 +384,38 @@ Read more about [file path resolution](secondary_js_css_files.md/#relative-to-co
 Component's HTML / CSS / JS is resolved and loaded lazily.
 
 This means that, when you specify any of
-[`template_file`](../../reference/api.md#django_components.Component.template_file),
-[`js_file`](../../reference/api.md#django_components.Component.js_file),
-[`css_file`](../../reference/api.md#django_components.Component.css_file),
-or [`Media.js/css`](../../reference/api.md#django_components.Component.Media),
+[`template_file`][Component.template_file],
+[`js_file`][Component.js_file],
+[`css_file`][Component.css_file],
+or [`Media.js/css`][Component.Media],
 these file paths will be resolved only once you either:
 
 1. Access any of the following attributes on the component:
 
-    - [`media`](../../reference/api.md#django_components.Component.media),
-     [`template`](../../reference/api.md#django_components.Component.template),
-     [`template_file`](../../reference/api.md#django_components.Component.template_file),
-     [`js`](../../reference/api.md#django_components.Component.js),
-     [`js_file`](../../reference/api.md#django_components.Component.js_file),
-     [`css`](../../reference/api.md#django_components.Component.css),
-     [`css_file`](../../reference/api.md#django_components.Component.css_file)
+    - [`media`][Component.media],
+     [`template`][Component.template],
+     [`template_file`][Component.template_file],
+     [`js`][Component.js],
+     [`js_file`][Component.js_file],
+     [`css`][Component.css],
+     [`css_file`][Component.css_file]
 
 2. Render the component.
 
 Once the component's media files have been loaded once, they will remain in-memory
 on the Component class:
 
-- HTML from [`Component.template_file`](../../reference/api.md#django_components.Component.template_file)
-  will be available under [`Component.template`](../../reference/api.md#django_components.Component.template)
-- CSS from [`Component.css_file`](../../reference/api.md#django_components.Component.css_file)
-  will be available under [`Component.css`](../../reference/api.md#django_components.Component.css)
-- JS from [`Component.js_file`](../../reference/api.md#django_components.Component.js_file)
-  will be available under [`Component.js`](../../reference/api.md#django_components.Component.js)
+- HTML from [`Component.template_file`][Component.template_file]
+  will be available under [`Component.template`][Component.template]
+- CSS from [`Component.css_file`][Component.css_file]
+  will be available under [`Component.css`][Component.css]
+- JS from [`Component.js_file`][Component.js_file]
+  will be available under [`Component.js`][Component.js]
 
 Thus, whether you define HTML via
-[`Component.template_file`](../../reference/api.md#django_components.Component.template_file)
-or [`Component.template`](../../reference/api.md#django_components.Component.template),
-you can always access the HTML content under [`Component.template`](../../reference/api.md#django_components.Component.template).
+[`Component.template_file`][Component.template_file]
+or [`Component.template`][Component.template],
+you can always access the HTML content under [`Component.template`][Component.template].
 And the same applies for JS and CSS.
 
 **Example:**

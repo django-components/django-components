@@ -10,17 +10,17 @@ That said, our prefered way is to keep the files of a component close together b
 This means that files containing backend logic, such as Python modules and HTML templates, live in the same directory as static files, e.g. JS and CSS.
 
 From v0.100 onwards, we keep component files (as defined by
-[`COMPONENTS.dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
-and [`COMPONENTS.app_dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.app_dirs))
+[`COMPONENTS.dirs`][ComponentsSettings.dirs]
+and [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs])
 separate from the rest of the static
 files (defined by `STATICFILES_DIRS`). That way, the Python and HTML files are NOT exposed by the server. Only the static JS, CSS, and
-[other common formats](../reference/settings.md#django_components.app_settings.ComponentsSettings.static_files_allowed).
+[other common formats][ComponentsSettings.static_files_allowed].
 
 !!! note
 
     If you need to expose different file formats, you can configure these with
-    [`COMPONENTS.static_files_allowed`](../reference/settings.md#django_components.app_settings.ComponentsSettings.static_files_allowed)
-    and [`COMPONENTS.static_files_forbidden`](../reference/settings.md#django_components.app_settings.ComponentsSettings.static_files_forbidden).
+    [`COMPONENTS.static_files_allowed`][ComponentsSettings.static_files_allowed]
+    and [`COMPONENTS.static_files_forbidden`][ComponentsSettings.static_files_forbidden].
 
 <!-- # TODO_REMOVE_IN_V1 - Remove mentions of safer_staticfiles in V1 -->
 

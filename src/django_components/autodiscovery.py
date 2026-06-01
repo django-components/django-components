@@ -16,9 +16,9 @@ def autodiscover(
 ) -> list[str]:
     """
     Search for all python files in
-    [`COMPONENTS.dirs`](settings.md#django_components.app_settings.ComponentsSettings.dirs)
+    [`COMPONENTS.dirs`][ComponentsSettings.dirs]
     and
-    [`COMPONENTS.app_dirs`](settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
     and import them.
 
     See [Autodiscovery](../concepts/fundamentals/autodiscovery.md).
@@ -33,7 +33,7 @@ def autodiscover(
         list[str]: A list of module paths of imported files.
 
     To get the same list of modules that `autodiscover()` would return, but without importing them, use
-    [`get_component_files()`](api.md#django_components.get_component_files):
+    [`get_component_files()`][get_component_files]:
 
     ```python
     from django_components import get_component_files
@@ -52,7 +52,7 @@ def import_libraries(
 ) -> list[str]:
     """
     Import modules set in
-    [`COMPONENTS.libraries`](settings.md#django_components.app_settings.ComponentsSettings.libraries)
+    [`COMPONENTS.libraries`][ComponentsSettings.libraries]
     setting.
 
     See [Autodiscovery](../concepts/fundamentals/autodiscovery.md).

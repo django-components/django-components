@@ -1,7 +1,7 @@
 ## Overview
 
-Each component can define extra or "secondary" CSS / JS files using the nested [`Component.Media`](../../reference/api.md#django_components.Component.Media) class,
-by setting [`Component.Media.js`](../../reference/api.md#django_components.ComponentMediaInput.js) and [`Component.Media.css`](../../reference/api.md#django_components.ComponentMediaInput.css).
+Each component can define extra or "secondary" CSS / JS files using the nested [`Component.Media`][Component.Media] class,
+by setting [`Component.Media.js`][ComponentMediaInput.js] and [`Component.Media.css`][ComponentMediaInput.css].
 
 The [main HTML / JS / CSS files](html_js_css_files.md) are limited to 1 per component. This is not the case for the secondary files,
 where components can have many of them.
@@ -63,19 +63,19 @@ This `Media` class behaves similarly to
 - **Bypass formatting** - A [`SafeString`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.SafeString),
   or a function (with `__html__` method) is considered an already-formatted HTML tag, skipping both static file
   resolution and rendering with `media_class.render_js()` or `media_class.render_css()`.
-- **Inheritance** - You can set [`extend`](../../reference/api.md#django_components.ComponentMediaInput.extend) to configure
+- **Inheritance** - You can set [`extend`][ComponentMediaInput.extend] to configure
   whether to inherit JS / CSS from parent components. See [Media inheritance](#media-inheritance).
 
 However, there's a few differences from Django's Media class:
 
 1. Our Media class accepts various formats for the JS and CSS files: either a single file, a list,
-   or (CSS-only) a dictonary (See [`ComponentMediaInput`](../../reference/api.md#django_components.ComponentMediaInput)).
+   or (CSS-only) a dictonary (See [`ComponentMediaInput`][ComponentMediaInput]).
 2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`,
    [`SafeString`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.SafeString), or a function
-   (See [`ComponentMediaInputPath`](../../reference/api.md#django_components.ComponentMediaInputPath)).
+   (See [`ComponentMediaInputPath`][ComponentMediaInputPath]).
 3. Individual JS / CSS files can be glob patterns, e.g. `*.js` or `styles/**/*.css`.
-4. If you set [`Media.extend`](../../reference/api.md#django_components.ComponentMediaInput.extend) to a list,
-   it should be a list of [`Component`](../../reference/api.md#django_components.Component) classes.
+4. If you set [`Media.extend`][ComponentMediaInput.extend] to a list,
+   it should be a list of [`Component`][Component] classes.
 
 ```py
 from components.layout import LayoutComp
@@ -164,7 +164,7 @@ class MyComponent(ParentComponent):
 print(MyComponent.media._js)  # ["parent.js", "script.js"]
 ```
 
-You can set the component NOT to inherit from the parent component by setting the [`extend`](../../reference/api.md#django_components.ComponentMediaInput.extend) attribute to `False`:
+You can set the component NOT to inherit from the parent component by setting the [`extend`][ComponentMediaInput.extend] attribute to `False`:
 
 ```python
 class ParentComponent(Component):
@@ -206,8 +206,8 @@ print(MyComponent.media._js)  # ["script.js", "other1.js", "other2.js"]
 
 ### Accessing Media files
 
-To access the files that you defined under [`Component.Media`](../../reference/api.md#django_components.Component.Media),
-use [`Component.media`](../../reference/api.md#django_components.Component.media) (lowercase).
+To access the files that you defined under [`Component.Media`][Component.Media],
+use [`Component.media`][Component.media] (lowercase).
 
 This is consistent behavior with
 [Django's Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#assets-as-a-static-definition).
@@ -233,7 +233,7 @@ When working with component media files, it is important to understand the diffe
 
 - `Component.media`
     - Returns all resolved media files, **including** those inherited from parent components
-    - Is an instance of [`Component.media_class`](../../reference/api.md#django_components.Component.media_class)
+    - Is an instance of [`Component.media_class`][Component.media_class]
 
 ```python
 class ParentComponent(Component):
@@ -255,8 +255,8 @@ print(ChildComponent.media._js)  # ["parent.js", "child.js"]
 
     You should **not** manually modify `Component.media` or `Component.Media` after the component has been resolved, as this may lead to unexpected behavior.
 
-If you want to modify the class that is instantiated for [`Component.media`](../../reference/api.md#django_components.Component.media),
-you can configure [`Component.media_class`](../../reference/api.md#django_components.Component.media_class)
+If you want to modify the class that is instantiated for [`Component.media`][Component.media],
+you can configure [`Component.media_class`][Component.media_class]
 ([See example](#rendering-paths)).
 
 ## File paths
@@ -267,10 +267,10 @@ Unlike the [main HTML / JS / CSS files](html_js_css_files.md), the path definiti
 
 As seen in the [getting started example](../../getting_started/your_first_component.md), to associate HTML / JS / CSS
 files with a component, you can set them as
-[`Component.template_file`](../../reference/api.md#django_components.Component.template_file),
-[`Component.js_file`](../../reference/api.md#django_components.Component.js_file)
+[`Component.template_file`][Component.template_file],
+[`Component.js_file`][Component.js_file]
 and
-[`Component.css_file`](../../reference/api.md#django_components.Component.css_file) respectively:
+[`Component.css_file`][Component.css_file] respectively:
 
 ```py title="[project root]/components/calendar/calendar.py"
 from django_components import Component, register
@@ -285,15 +285,15 @@ class Calendar(Component):
 In the example above, we defined the files relative to the directory where the component file is defined.
 
 Alternatively, you can specify the file paths relative to the directories set in
-[`COMPONENTS.dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
+[`COMPONENTS.dirs`][ComponentsSettings.dirs]
 or
-[`COMPONENTS.app_dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.app_dirs).
+[`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs].
 
 If you specify the paths relative to component's directory, django-componenents does the conversion automatically
 for you.
 
 Thus, assuming that
-[`COMPONENTS.dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
+[`COMPONENTS.dirs`][ComponentsSettings.dirs]
 contains path `[project root]/components`, the example above is the same as writing:
 
 ```py title="[project root]/components/calendar/calendar.py"
@@ -314,9 +314,9 @@ class Calendar(Component):
 
     For each file path, it checks if the file path is relative to the component's directory.
     And such file exists, the component's file path is re-written to be defined relative to a first matching directory
-    in [`COMPONENTS.dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
+    in [`COMPONENTS.dirs`][ComponentsSettings.dirs]
     or
-    [`COMPONENTS.app_dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.app_dirs).
+    [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs].
 
     **Example:**
 
@@ -373,7 +373,7 @@ File paths can be any of:
 - `Style`
 - `Callable` that returns any of the above, evaluated at class creation (`__new__`)
 
-To help with typing the union, use [`ComponentMediaInputPath`](../../reference/api.md#django_components.ComponentMediaInputPath).
+To help with typing the union, use [`ComponentMediaInputPath`][ComponentMediaInputPath].
 
 ```py
 from pathlib import Path
@@ -411,7 +411,7 @@ This is an extension of Django's [Paths as objects](https://docs.djangoproject.c
 feature, where "safe" strings are taken as is, and are accessed only at render time.
 
 Because of that, the paths defined as "safe" strings are NEVER resolved, neither relative to component's directory,
-nor relative to [`COMPONENTS.dirs`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs). It is assumed that you will define the full `<script>`/`<link>` tag with the correct URL / path.
+nor relative to [`COMPONENTS.dirs`][ComponentsSettings.dirs]. It is assumed that you will define the full `<script>`/`<link>` tag with the correct URL / path.
 
 "Safe" strings can be used to lazily resolve a path, or to customize the `<script>` or `<link>` tag for individual paths:
 
@@ -447,7 +447,7 @@ class Calendar(Component):
 
 ### `Script` and `Style` in Media
 
-You can use [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects from `django_components` directly in [`Component.Media.js`](../../reference/api.md#django_components.ComponentMediaInput.js) and [`Component.Media.css`](../../reference/api.md#django_components.ComponentMediaInput.css). This lets you add inline JS/CSS or external URLs with custom attributes (e.g. `type="module"`, `nonce`) without building HTML strings.
+You can use [`Script`][Script] and [`Style`][Style] objects from `django_components` directly in [`Component.Media.js`][ComponentMediaInput.js] and [`Component.Media.css`][ComponentMediaInput.css]. This lets you add inline JS/CSS or external URLs with custom attributes (e.g. `type="module"`, `nonce`) without building HTML strings.
 
 ```py
 from django_components import Component, Script, Style
@@ -481,7 +481,7 @@ In the [Paths as objects](#paths-as-objects) section, we saw that we can use tha
 how the HTML tags are constructed.
 
 However, if you need to change how ALL CSS and JS files are rendered for a given component,
-you can provide your own subclass of [Django's `Media` class](https://docs.djangoproject.com/en/5.2/topics/forms/media) to the [`Component.media_class`](../../reference/api.md#django_components.Component.media_class) attribute.
+you can provide your own subclass of [Django's `Media` class](https://docs.djangoproject.com/en/5.2/topics/forms/media) to the [`Component.media_class`][Component.media_class] attribute.
 
 To change how the tags are constructed, you can override the [`Media.render_js()` and `Media.render_css()` methods](https://github.com/django/django/blob/fa7848146738a9fe1d415ee4808664e54739eeb7/django/forms/widgets.py#L102):
 

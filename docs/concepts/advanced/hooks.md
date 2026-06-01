@@ -3,7 +3,7 @@ _New in version 0.96_
 Intercept the rendering lifecycle with Component hooks.
 
 Unlike the [extension hooks](../../reference/extension_hooks.md), these are defined directly
-on the [`Component`](../../reference/api.md#django_components.Component) class.
+on the [`Component`][Component] class.
 
 ## Available hooks
 
@@ -17,7 +17,7 @@ def on_render_before(
 ) -> None:
 ```
 
-[`Component.on_render_before`](../../reference/api.md#django_components.Component.on_render_before) runs just before the component's template is rendered.
+[`Component.on_render_before`][Component.on_render_before] runs just before the component's template is rendered.
 
 It is called for every component, including nested ones, as part of
 the component render lifecycle.
@@ -47,7 +47,7 @@ class MyTable(Component):
 !!! warning
 
     If you want to pass data to the template, prefer using
-    [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
+    [`get_template_data()`][Component.get_template_data]
     instead of this hook.
 
 !!! warning
@@ -66,7 +66,7 @@ def on_render(
 ) -> str | SafeString | OnRenderGenerator | None:
 ```
 
-[`Component.on_render`](../../reference/api.md#django_components.Component.on_render) does the actual rendering.
+[`Component.on_render`][Component.on_render] does the actual rendering.
 
 You can override this method to:
 
@@ -123,7 +123,7 @@ receives the same
 [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
 that was passed to `on_render()`.
 
-You can also use [`on_render()`](../../reference/api.md#django_components.Component.on_render) as a router,
+You can also use [`on_render()`][Component.on_render] as a router,
 rendering other components based on the parent component's arguments:
 
 ```py
@@ -146,7 +146,7 @@ class MyTable(Component):
 
 #### Post-processing rendered template
 
-When you render the original template in [`on_render()`](../../reference/api.md#django_components.Component.on_render) as:
+When you render the original template in [`on_render()`][Component.on_render] as:
 
 ```py
 class MyTable(Component):
@@ -250,7 +250,7 @@ At this point you can do 3 things:
 
 #### Multiple yields
 
-You can yield multiple times within the same [`on_render()`](../../reference/api.md#django_components.Component.on_render) method. This is useful for complex rendering scenarios:
+You can yield multiple times within the same [`on_render()`][Component.on_render] method. This is useful for complex rendering scenarios:
 
 ```py
 class MyTable(Component):
@@ -277,7 +277,7 @@ Each yield operation is independent and returns its own `(html, error)` tuple, a
 
 #### Example: ErrorBoundary
 
-[`on_render()`](../../reference/api.md#django_components.Component.on_render) can be used to
+[`on_render()`][Component.on_render] can be used to
 implement React's [ErrorBoundary](https://react.dev/reference/react/Component#catching-rendering-errors-with-an-error-boundary).
 
 That is, a component that catches errors in nested components and displays a fallback UI instead:
@@ -293,7 +293,7 @@ That is, a component that catches errors in nested components and displays a fal
 {% endcomponent %}
 ```
 
-To implement this, we render the fallback slot in [`on_render()`](../../reference/api.md#django_components.Component.on_render)
+To implement this, we render the fallback slot in [`on_render()`][Component.on_render]
 and return it if an error occurred:
 
 ```djc_py
@@ -349,7 +349,7 @@ def on_render_after(
 ) -> str | SafeString | None:
 ```
 
-[`on_render_after()`](../../reference/api.md#django_components.Component.on_render_after) runs when the component was fully rendered,
+[`on_render_after()`][Component.on_render_after] runs when the component was fully rendered,
 including all its children.
 
 It receives the same arguments as [`on_render_before()`](#on_render_before),
@@ -358,7 +358,7 @@ plus the outcome of the rendering:
 - `result`: The rendered output of the component. `None` if the rendering failed.
 - `error`: The error that occurred during the rendering, or `None` if the rendering succeeded.
 
-[`on_render_after()`](../../reference/api.md#django_components.Component.on_render_after) behaves the same way
+[`on_render_after()`][Component.on_render_after] behaves the same way
 as the second part of [`on_render()`](#on_render) (after the `yield`).
 
 ```py
@@ -434,17 +434,17 @@ def on_dependencies(
 ) -> tuple[list[Script], list[Style]] | None:
 ```
 
-[`Component.on_dependencies`](../../reference/api.md#django_components.Component.on_dependencies) is a **classmethod** hook that allows you to modify the JS / CSS dependencies emitted by this component only.
+[`Component.on_dependencies`][Component.on_dependencies] is a **classmethod** hook that allows you to modify the JS / CSS dependencies emitted by this component only.
 
 These are the `<script>` and `<style>` tags that will be rendered for this component.
 
-The JS / CSS are available as lists of [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects.
+The JS / CSS are available as lists of [`Script`][Script] and [`Style`][Style] objects.
 
 The JS / CSS dependencies include:
 
-- The component's [`Component.js`](../../reference/api.md#django_components.Component.js) / [`Component.css`](../../reference/api.md#django_components.Component.css)
+- The component's [`Component.js`][Component.js] / [`Component.css`][Component.css]
 - The component's [JS/CSS variables](../fundamentals/html_js_css_variables.md)
-- Media dependencies ([`Component.Media.js`](../../reference/api.md#django_components.ComponentMediaInput.js) / [`Component.Media.css`](../../reference/api.md#django_components.ComponentMediaInput.css))
+- Media dependencies ([`Component.Media.js`][ComponentMediaInput.js] / [`Component.Media.css`][ComponentMediaInput.css])
 
 To override the dependencies, return a tuple of `(new_scripts, new_styles)`.
 
@@ -454,7 +454,7 @@ Use this hook to add, remove, or reorder scripts and styles for this component o
 
 !!! note
 
-    To modify **all** dependencies (including Media) for the whole page, use the [extension hook](../../reference/extension_hooks.md#django_components.extension.ComponentExtension.on_dependencies) instead.
+    To modify **all** dependencies (including Media) for the whole page, use the [extension hook][ComponentExtension.on_dependencies] instead.
 
 **Example:**
 

@@ -31,23 +31,23 @@ TComponent = TypeVar("TComponent", bound="Component")
 
 class AlreadyRegistered(Exception):
     """
-    Raised when you try to register a [Component](./api.md#django_components.Component)
+    Raised when you try to register a [Component][Component]
     under a name that is already registered with the given
-    [ComponentRegistry](./api.md#django_components.ComponentRegistry).
+    [ComponentRegistry][ComponentRegistry].
 
     Re-registering the exact same class object under the same name is a no-op
     and does NOT raise - so calling `autodiscover()` or `import_libraries()`
     more than once is safe. Any *other* class under that name raises and you
-    must call [`unregister()`](./api.md#django_components.ComponentRegistry.unregister)
+    must call [`unregister()`][ComponentRegistry.unregister]
     first to replace the existing registration.
     """
 
 
 class NotRegistered(Exception):
     """
-    Raised when you try to access a [Component](./api.md#django_components.Component),
+    Raised when you try to access a [Component][Component],
     but it's NOT registered with given
-    [ComponentRegistry](./api.md#django_components.ComponentRegistry).
+    [ComponentRegistry][ComponentRegistry].
     """
 
 
@@ -67,7 +67,7 @@ class ComponentRegistryEntry(NamedTuple):
 
 class RegistrySettings(NamedTuple):
     """
-    Configuration for a [`ComponentRegistry`](./api.md#django_components.ComponentRegistry).
+    Configuration for a [`ComponentRegistry`][ComponentRegistry].
 
     These settings define how the components registered with this registry will behave when rendered.
 
@@ -86,11 +86,11 @@ class RegistrySettings(NamedTuple):
     context_behavior: ContextBehaviorType | None = None
     """
     Same as the global
-    [`COMPONENTS.context_behavior`](./settings.md#django_components.app_settings.ComponentsSettings.context_behavior)
+    [`COMPONENTS.context_behavior`][ComponentsSettings.context_behavior]
     setting, but for this registry.
 
     If omitted, defaults to the global
-    [`COMPONENTS.context_behavior`](./settings.md#django_components.app_settings.ComponentsSettings.context_behavior)
+    [`COMPONENTS.context_behavior`][ComponentsSettings.context_behavior]
     setting.
     """
 
@@ -100,22 +100,22 @@ class RegistrySettings(NamedTuple):
     _Deprecated. Use `context_behavior` instead. Will be removed in v1._
 
     Same as the global
-    [`COMPONENTS.context_behavior`](./settings.md#django_components.app_settings.ComponentsSettings.context_behavior)
+    [`COMPONENTS.context_behavior`][ComponentsSettings.context_behavior]
     setting, but for this registry.
 
     If omitted, defaults to the global
-    [`COMPONENTS.context_behavior`](./settings.md#django_components.app_settings.ComponentsSettings.context_behavior)
+    [`COMPONENTS.context_behavior`][ComponentsSettings.context_behavior]
     setting.
     """
 
     tag_formatter: "TagFormatterABC | str | None" = None
     """
     Same as the global
-    [`COMPONENTS.tag_formatter`](./settings.md#django_components.app_settings.ComponentsSettings.tag_formatter)
+    [`COMPONENTS.tag_formatter`][ComponentsSettings.tag_formatter]
     setting, but for this registry.
 
     If omitted, defaults to the global
-    [`COMPONENTS.tag_formatter`](./settings.md#django_components.app_settings.ComponentsSettings.tag_formatter)
+    [`COMPONENTS.tag_formatter`][ComponentsSettings.tag_formatter]
     setting.
     """
 
@@ -125,11 +125,11 @@ class RegistrySettings(NamedTuple):
     _Deprecated. Use `tag_formatter` instead. Will be removed in v1._
 
     Same as the global
-    [`COMPONENTS.tag_formatter`](./settings.md#django_components.app_settings.ComponentsSettings.tag_formatter)
+    [`COMPONENTS.tag_formatter`][ComponentsSettings.tag_formatter]
     setting, but for this registry.
 
     If omitted, defaults to the global
-    [`COMPONENTS.tag_formatter`](./settings.md#django_components.app_settings.ComponentsSettings.tag_formatter)
+    [`COMPONENTS.tag_formatter`][ComponentsSettings.tag_formatter]
     setting.
     """
 
@@ -146,7 +146,7 @@ ALL_REGISTRIES: AllRegistries = []
 
 
 def all_registries() -> list["ComponentRegistry"]:
-    """Get a list of all created [`ComponentRegistry`](./api.md#django_components.ComponentRegistry) instances."""
+    """Get a list of all created [`ComponentRegistry`][ComponentRegistry] instances."""
     registries: list[ComponentRegistry] = []
     for reg_ref in ALL_REGISTRIES:
         reg = reg_ref()
@@ -157,7 +157,7 @@ def all_registries() -> list["ComponentRegistry"]:
 
 class ComponentRegistry:
     """
-    Manages [components](./api.md#django_components.Component) and makes them available
+    Manages [components][Component] and makes them available
     in the template, by default as [`{% component %}`](./template_tags.md#component)
     tags.
 
@@ -181,14 +181,14 @@ class ComponentRegistry:
             associated with this registry. If omitted, the default Library instance from django_components is used.
         settings (RegistrySettings | Callable[[ComponentRegistry], RegistrySettings], optional): Configure\
             how the components registered with this registry will behave when rendered.\
-            See [`RegistrySettings`](./api.md#django_components.RegistrySettings). Can be either\
+            See [`RegistrySettings`][RegistrySettings]. Can be either\
             a static value or a callable that returns the settings. If omitted, the settings from\
-            [`COMPONENTS`](./settings.md#django_components.app_settings.ComponentsSettings) are used.
+            [`COMPONENTS`][ComponentsSettings] are used.
 
     **Notes:**
 
-    - The default registry is available as [`django_components.registry`](./api.md#django_components.registry).
-    - The default registry is used when registering components with [`@register`](./api.md#django_components.register)
+    - The default registry is available as [`django_components.registry`][registry].
+    - The default registry is used when registering components with [`@register`][register]
     decorator.
 
     **Example:**
@@ -309,7 +309,7 @@ class ComponentRegistry:
 
     @property
     def settings(self) -> InternalRegistrySettings:
-        """[Registry settings](./api.md#django_components.RegistrySettings) configured for this registry."""
+        """[Registry settings][RegistrySettings] configured for this registry."""
         # NOTE: We allow the settings to be given as a getter function
         # so the settings can respond to changes.
         if callable(self._settings):
@@ -331,7 +331,7 @@ class ComponentRegistry:
 
     def register(self, name: str, component: type["Component"]) -> None:
         """
-        Register a [`Component`](./api.md#django_components.Component) class
+        Register a [`Component`][Component] class
         with this registry under the given name.
 
         A component MUST be registered before it can be used in a template such as:
@@ -342,10 +342,10 @@ class ComponentRegistry:
 
         `register()` is additive. Calling it again with the exact same class object
         is a no-op. Calling it with any other class - even one whose
-        [`class_id`](./api.md#django_components.Component.class_id) collides with the
+        [`class_id`][Component.class_id] collides with the
         existing one - raises
-        [`AlreadyRegistered`](./exceptions.md#django_components.AlreadyRegistered).
-        Call [`unregister()`](#django_components.ComponentRegistry.unregister) first
+        [`AlreadyRegistered`][AlreadyRegistered].
+        Call [`unregister()`][ComponentRegistry.unregister] first
         if you intend to replace the registered class.
 
         Args:
@@ -354,7 +354,7 @@ class ComponentRegistry:
 
         **Raises:**
 
-        - [`AlreadyRegistered`](./exceptions.md#django_components.AlreadyRegistered)
+        - [`AlreadyRegistered`][AlreadyRegistered]
         if `name` is already registered with any class other than `component` itself.
 
         **Example:**
@@ -411,7 +411,7 @@ class ComponentRegistry:
 
     def unregister(self, name: str) -> None:
         """
-        Unregister the [`Component`](./api.md#django_components.Component) class
+        Unregister the [`Component`][Component] class
         that was registered under the given name.
 
         Once a component is unregistered, it is no longer available in the templates.
@@ -421,7 +421,7 @@ class ComponentRegistry:
 
         **Raises:**
 
-        - [`NotRegistered`](./exceptions.md#django_components.NotRegistered)
+        - [`NotRegistered`][NotRegistered]
         if the given name is not registered.
 
         **Example:**
@@ -478,7 +478,7 @@ class ComponentRegistry:
 
     def get(self, name: str) -> type["Component"]:
         """
-        Retrieve a [`Component`](./api.md#django_components.Component)
+        Retrieve a [`Component`][Component]
         class registered under the given name.
 
         Args:
@@ -489,7 +489,7 @@ class ComponentRegistry:
 
         **Raises:**
 
-        - [`NotRegistered`](./exceptions.md#django_components.NotRegistered)
+        - [`NotRegistered`][NotRegistered]
           if the given name is not registered.
 
         **Example:**
@@ -510,7 +510,7 @@ class ComponentRegistry:
 
     def has(self, name: str) -> bool:
         """
-        Check if a [`Component`](./api.md#django_components.Component)
+        Check if a [`Component`][Component]
         class is registered under the given name.
 
         Args:
@@ -534,7 +534,7 @@ class ComponentRegistry:
 
     def all(self) -> dict[str, type["Component"]]:
         """
-        Retrieve all registered [`Component`](./api.md#django_components.Component) classes.
+        Retrieve all registered [`Component`][Component] classes.
 
         Returns:
             dict[str, type[Component]]: A dictionary of component names to component classes
@@ -629,7 +629,7 @@ class ComponentRegistry:
 # This variable represents the global component registry
 registry: ComponentRegistry = ComponentRegistry()
 """
-The default and global [component registry](./api.md#django_components.ComponentRegistry).
+The default and global [component registry][ComponentRegistry].
 Use this instance to directly register or remove components:
 
 See [Registering components](../concepts/advanced/component_registry.md).
@@ -668,15 +668,15 @@ def register(
     type[TComponent],
 ]:
     """
-    Class decorator for registering a [component](api.md#django_components.Component)
-    to a [component registry](api.md#django_components.ComponentRegistry).
+    Class decorator for registering a [component][Component]
+    to a [component registry][ComponentRegistry].
 
     See [Registering components](../concepts/advanced/component_registry.md).
 
     Args:
         name (str): Registered name. This is the name by which the component will be accessed\
             from within a template when using the [`{% component %}`](template_tags.md#component) tag. Required.
-        registry (ComponentRegistry, optional): Specify the [registry](api.md#django_components.ComponentRegistry)\
+        registry (ComponentRegistry, optional): Specify the [registry][ComponentRegistry]\
             to which to register this component. If omitted, component is registered to the default registry.
 
     Raises:
@@ -692,7 +692,7 @@ def register(
         ...
     ```
 
-    Specifing [`ComponentRegistry`](api.md#django_components.ComponentRegistry) the component
+    Specifing [`ComponentRegistry`][ComponentRegistry] the component
     should be registered to by setting the `registry` kwarg:
 
     ```python

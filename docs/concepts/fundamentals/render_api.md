@@ -1,17 +1,17 @@
-When a component is being rendered, whether with [`Component.render()`](../../reference/api.md#django_components.Component.render)
+When a component is being rendered, whether with [`Component.render()`][Component.render]
 or [`{% component %}`](../../reference/template_tags.md#component), a component instance is populated with the current inputs and context. This allows you to access things like component inputs.
 
 We refer to these render-time-only methods and attributes as the "Render API".
 
-Render API is available inside these [`Component`](../../reference/api.md#django_components.Component) methods:
+Render API is available inside these [`Component`][Component] methods:
 
-- [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
-- [`get_js_data()`](../../reference/api.md#django_components.Component.get_js_data)
-- [`get_css_data()`](../../reference/api.md#django_components.Component.get_css_data)
-- [`get_context_data()`](../../reference/api.md#django_components.Component.get_context_data)
-- [`on_render_before()`](../../reference/api.md#django_components.Component.on_render_before)
-- [`on_render()`](../../reference/api.md#django_components.Component.on_render)
-- [`on_render_after()`](../../reference/api.md#django_components.Component.on_render_after)
+- [`get_template_data()`][Component.get_template_data]
+- [`get_js_data()`][Component.get_js_data]
+- [`get_css_data()`][Component.get_css_data]
+- [`get_context_data()`][Component.get_context_data]
+- [`on_render_before()`][Component.on_render_before]
+- [`on_render()`][Component.on_render]
+- [`on_render_after()`][Component.on_render_after]
 
 Example:
 
@@ -66,8 +66,8 @@ The Render API includes:
     - [`self.inject()`](#provide-inject) - Inject data into the component
 
 - Template tag metadata:
-    - [`self.node`](#template-tag-metadata) - The [`ComponentNode`](../../reference/api.md#django_components.ComponentNode) instance
-    - [`self.registry`](#template-tag-metadata) - The [`ComponentRegistry`](../../reference/api.md#django_components.ComponentRegistry) instance
+    - [`self.node`](#template-tag-metadata) - The [`ComponentNode`][ComponentNode] instance
+    - [`self.registry`](#template-tag-metadata) - The [`ComponentRegistry`][ComponentRegistry] instance
     - [`self.registered_name`](#template-tag-metadata) - The name under which the component was registered
     - [`self.outer_context`](#template-tag-metadata) - The context outside of the [`{% component %}`](../../reference/template_tags.md#component) tag
 
@@ -79,15 +79,15 @@ The Render API includes:
 ### Args
 
 The `args` argument as passed to
-[`Component.get_template_data()`](../../reference/api.md#django_components.Component.get_template_data).
+[`Component.get_template_data()`][Component.get_template_data].
 
-If you defined the [`Component.Args`](../../reference/api.md#django_components.Component.Args) class,
-then the [`Component.args`](../../reference/api.md#django_components.Component.args) property will return an instance of that class.
+If you defined the [`Component.Args`][Component.Args] class,
+then the [`Component.args`][Component.args] property will return an instance of that class.
 
 Otherwise, `args` will be a plain list.
 
-Use [`self.raw_args`](../../reference/api.md#django_components.Component.raw_args)
-to access the positional arguments as a plain list irrespective of [`Component.Args`](../../reference/api.md#django_components.Component.Args).
+Use [`self.raw_args`][Component.raw_args]
+to access the positional arguments as a plain list irrespective of [`Component.Args`][Component.Args].
 
 **Example:**
 
@@ -124,15 +124,15 @@ class Table(Component):
 ### Kwargs
 
 The `kwargs` argument as passed to
-[`Component.get_template_data()`](../../reference/api.md#django_components.Component.get_template_data).
+[`Component.get_template_data()`][Component.get_template_data].
 
-If you defined the [`Component.Kwargs`](../../reference/api.md#django_components.Component.Kwargs) class,
-then the [`Component.kwargs`](../../reference/api.md#django_components.Component.kwargs) property will return an instance of that class.
+If you defined the [`Component.Kwargs`][Component.Kwargs] class,
+then the [`Component.kwargs`][Component.kwargs] property will return an instance of that class.
 
 Otherwise, `kwargs` will be a plain dictionary.
 
-Use [`self.raw_kwargs`](../../reference/api.md#django_components.Component.raw_kwargs)
-to access the keyword arguments as a plain dictionary irrespective of [`Component.Kwargs`](../../reference/api.md#django_components.Component.Kwargs).
+Use [`self.raw_kwargs`][Component.raw_kwargs]
+to access the keyword arguments as a plain dictionary irrespective of [`Component.Kwargs`][Component.Kwargs].
 
 **Example:**
 
@@ -169,15 +169,15 @@ class Table(Component):
 ### Slots
 
 The `slots` argument as passed to
-[`Component.get_template_data()`](../../reference/api.md#django_components.Component.get_template_data).
+[`Component.get_template_data()`][Component.get_template_data].
 
-If you defined the [`Component.Slots`](../../reference/api.md#django_components.Component.Slots) class,
-then the [`Component.slots`](../../reference/api.md#django_components.Component.slots) property will return an instance of that class.
+If you defined the [`Component.Slots`][Component.Slots] class,
+then the [`Component.slots`][Component.slots] property will return an instance of that class.
 
 Otherwise, `slots` will be a plain dictionary.
 
-Use [`self.raw_slots`](../../reference/api.md#django_components.Component.raw_slots)
-to access the slots as a plain dictionary irrespective of [`Component.Slots`](../../reference/api.md#django_components.Component.Slots).
+Use [`self.raw_slots`][Component.raw_slots]
+to access the slots as a plain dictionary irrespective of [`Component.Slots`][Component.Slots].
 
 **Example:**
 
@@ -217,7 +217,7 @@ class Table(Component):
 ### Context
 
 The `context` argument as passed to
-[`Component.get_template_data()`](../../reference/api.md#django_components.Component.get_template_data).
+[`Component.get_template_data()`][Component.get_template_data].
 
 This is Django's [Context](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
 with which the component template is rendered.
@@ -227,7 +227,7 @@ If the root component or template was rendered with
 then this will be an instance of `RequestContext`.
 
 Whether the context variables defined in `context` are available to the template depends on the
-[context behavior mode](../../reference/settings.md#django_components.app_settings.ComponentsSettings.context_behavior):
+[context behavior mode][ComponentsSettings.context_behavior]:
 
 - In `"django"` context behavior mode, the template will have access to the keys of this context.
 
@@ -240,7 +240,7 @@ When components are nested, you can navigate the component tree using `parent`, 
 
 ### Parent
 
-The [`self.parent`](../../reference/api.md#django_components.Component.parent) property returns the parent component instance if this component is nested within another component, or `None` if this is the root component.
+The [`self.parent`][Component.parent] property returns the parent component instance if this component is nested within another component, or `None` if this is the root component.
 
 **Example:**
 
@@ -258,7 +258,7 @@ class Table(Component):
 
 ### Root
 
-The [`self.root`](../../reference/api.md#django_components.Component.root) property returns the root component instance (top-most ancestor) in the component tree. If this component is the root component, it returns `self`.
+The [`self.root`][Component.root] property returns the root component instance (top-most ancestor) in the component tree. If this component is the root component, it returns `self`.
 
 **Example:**
 
@@ -275,7 +275,7 @@ class Table(Component):
 
 ### Ancestors
 
-The [`self.ancestors`](../../reference/api.md#django_components.Component.ancestors) property returns an iterator that yields all ancestor component instances, walking up the tree. It starts from the parent component, then the parent's parent, and so on, up to the root component.
+The [`self.ancestors`][Component.ancestors] property returns an iterator that yields all ancestor component instances, walking up the tree. It starts from the parent component, then the parent's parent, and so on, up to the root component.
 
 The `ancestors` list does not contain the current component itself.
 
@@ -305,10 +305,10 @@ class MarkdownEditor(Component):
 
 Component ID (or render ID) is a unique identifier for the current render call.
 
-That means that if you call [`Component.render()`](../../reference/api.md#django_components.Component.render)
+That means that if you call [`Component.render()`][Component.render]
 multiple times, the ID will be different for each call.
 
-It is available as [`self.id`](../../reference/api.md#django_components.Component.id).
+It is available as [`self.id`][Component.id].
 
 The ID is a 7-letter alphanumeric string in the format `cXXXXXX`,
 where `XXXXXX` is a random string of 6 alphanumeric characters (case-sensitive).
@@ -332,17 +332,17 @@ class Table(Component):
 
 Components have access to the request object and context processors data if the component was:
 
-- Given a [`request`](../../reference/api.md#django_components.Component.render) kwarg directly
+- Given a [`request`][Component.render] kwarg directly
 - Rendered with [`RenderContext`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.RequestContext)
 - Nested in another component for which any of these conditions is true
 
-Then the request object will be available in [`self.request`](../../reference/api.md#django_components.Component.request).
+Then the request object will be available in [`self.request`][Component.request].
 
-If the request object is available, you will also be able to access the [`context processors`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#configuring-an-engine) data in [`self.context_processors_data`](../../reference/api.md#django_components.Component.context_processors_data).
+If the request object is available, you will also be able to access the [`context processors`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#configuring-an-engine) data in [`self.context_processors_data`][Component.context_processors_data].
 
 This is a dictionary with the context processors data.
 
-If the request object is not available, then [`self.context_processors_data`](../../reference/api.md#django_components.Component.context_processors_data) will be an empty dictionary.
+If the request object is not available, then [`self.context_processors_data`][Component.context_processors_data] will be an empty dictionary.
 
 Read more about the request object and context processors in the [HTTP Request](./http_request.md) section.
 
@@ -364,9 +364,9 @@ rendered = Table.render(
 
 Components support a provide / inject system as known from Vue or React.
 
-When rendering the component, you can call [`self.inject()`](../../reference/api.md#django_components.Component.inject) with the key of the data you want to inject.
+When rendering the component, you can call [`self.inject()`][Component.inject] with the key of the data you want to inject.
 
-The object returned by [`self.inject()`](../../reference/api.md#django_components.Component.inject)
+The object returned by [`self.inject()`][Component.inject]
 
 To provide data to components, use the [`{% provide %}`](../../reference/template_tags.md#provide) template tag.
 
@@ -385,11 +385,11 @@ class Table(Component):
 If the component is rendered with [`{% component %}`](../../reference/template_tags.md#component) template tag,
 the following metadata is available:
 
-- [`self.node`](../../reference/api.md#django_components.Component.node) - The [`ComponentNode`](../../reference/api.md#django_components.ComponentNode) instance
-- [`self.registry`](../../reference/api.md#django_components.Component.registry) - The [`ComponentRegistry`](../../reference/api.md#django_components.ComponentRegistry) instance
+- [`self.node`][Component.node] - The [`ComponentNode`][ComponentNode] instance
+- [`self.registry`][Component.registry] - The [`ComponentRegistry`][ComponentRegistry] instance
   that was used to render the component
-- [`self.registered_name`](../../reference/api.md#django_components.Component.registered_name) - The name under which the component was registered
-- [`self.outer_context`](../../reference/api.md#django_components.Component.outer_context) - The context outside of the [`{% component %}`](../../reference/template_tags.md#component) tag
+- [`self.registered_name`][Component.registered_name] - The name under which the component was registered
+- [`self.outer_context`][Component.outer_context] - The context outside of the [`{% component %}`](../../reference/template_tags.md#component) tag
 
     ```django
     {% with abc=123 %}
@@ -399,7 +399,7 @@ the following metadata is available:
     ```
 
 You can use these to check whether the component was rendered inside a template with [`{% component %}`](../../reference/template_tags.md#component) tag
-or in Python with [`Component.render()`](../../reference/api.md#django_components.Component.render).
+or in Python with [`Component.render()`][Component.render].
 
 ```python
 class MyComponent(Component):
@@ -410,7 +410,7 @@ class MyComponent(Component):
             # Do something for the {% component %} template tag
 ```
 
-You can access the [`ComponentNode`](../../reference/api.md#django_components.ComponentNode) under [`Component.node`](../../reference/api.md#django_components.Component.node):
+You can access the [`ComponentNode`][ComponentNode] under [`Component.node`][Component.node]:
 
 ```py
 class MyComponent(Component):
@@ -419,13 +419,13 @@ class MyComponent(Component):
             assert self.node.name == "my_component"
 ```
 
-Accessing the [`ComponentNode`](../../reference/api.md#django_components.ComponentNode) is mostly useful for extensions, which can modify their behaviour based on the source of the Component.
+Accessing the [`ComponentNode`][ComponentNode] is mostly useful for extensions, which can modify their behaviour based on the source of the Component.
 
 For example, if `MyComponent` was used in another component - that is,
 with a `{% component "my_component" %}` tag
 in a template that belongs to another component - then you can use
-[`self.node.template_component`](../../reference/api.md#django_components.ComponentNode.template_component)
-to access the owner [`Component`](../../reference/api.md#django_components.Component) class.
+[`self.node.template_component`][ComponentNode.template_component]
+to access the owner [`Component`][Component] class.
 
 ```djc_py
 class Parent(Component):
@@ -444,5 +444,5 @@ class MyComponent(Component):
 
 !!! info
 
-    `Component.node` is `None` if the component is created by [`Component.render()`](../../reference/api.md#django_components.Component.render)
+    `Component.node` is `None` if the component is created by [`Component.render()`][Component.render]
     (but you can pass in the `node` kwarg yourself).

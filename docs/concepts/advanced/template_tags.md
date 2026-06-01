@@ -14,7 +14,7 @@ You too can easily create custom template tags that use the above features.
 ## Defining template tags with `@template_tag`
 
 The simplest way to create a custom template tag is using
-the [`@template_tag`](../../reference/api.md#django_components.template_tag) decorator.
+the [`@template_tag`][template_tag] decorator.
 This decorator allows you to define a template tag by just writing a function that returns the rendered content.
 
 ```python
@@ -49,7 +49,7 @@ This will allow you to use the tag in your templates like this:
 
 ### Parameters
 
-The [`@template_tag`](../../reference/api.md#django_components.template_tag) decorator accepts the following parameters:
+The [`@template_tag`][template_tag] decorator accepts the following parameters:
 
 - `library`: The Django template library to register the tag with
 - `tag`: The name of the template tag (e.g. `"mytag"` for `{% mytag %}`)
@@ -58,7 +58,7 @@ The [`@template_tag`](../../reference/api.md#django_components.template_tag) dec
 
 ### Function signature
 
-The function decorated with [`@template_tag`](../../reference/api.md#django_components.template_tag)
+The function decorated with [`@template_tag`][template_tag]
 must accept at least two arguments:
 
 1. `node`: The node instance (we'll explain this in detail in the next section)
@@ -126,7 +126,7 @@ This allows you to use the tag like this:
 
 ## Defining template tags with `BaseNode`
 
-For more control over your template tag, you can subclass [`BaseNode`](../../reference/api.md#django_components.BaseNode) directly instead of using the decorator. This gives you access to additional features like the node's internal state and parsing details.
+For more control over your template tag, you can subclass [`BaseNode`][BaseNode] directly instead of using the decorator. This gives you access to additional features like the node's internal state and parsing details.
 
 ```python
 from django_components import BaseNode
@@ -148,18 +148,18 @@ GreetNode.register(library)
 
 ### Node properties
 
-When using [`BaseNode`](../../reference/api.md#django_components.BaseNode), you have access to several useful properties:
+When using [`BaseNode`][BaseNode], you have access to several useful properties:
 
-- [`node_id`](../../reference/api.md#django_components.BaseNode.node_id): A unique identifier for this node instance
-- [`flags`](../../reference/api.md#django_components.BaseNode.flags): Dictionary of flag values (e.g. `{"required": True}`)
-- [`params`](../../reference/api.md#django_components.BaseNode.params): List of raw parameters passed to the tag
-- [`nodelist`](../../reference/api.md#django_components.BaseNode.nodelist): The template nodes between the start and end tags
-- [`contents`](../../reference/api.md#django_components.BaseNode.contents): The raw contents between the start and end tags
-- [`active_flags`](../../reference/api.md#django_components.BaseNode.active_flags): List of flags that are currently set to True
-- [`template_name`](../../reference/api.md#django_components.BaseNode.template_name): The name of the `Template` instance inside which the node was defined
-- [`template_component`](../../reference/api.md#django_components.BaseNode.template_component): The component class that the `Template` belongs to
+- [`node_id`][BaseNode.node_id]: A unique identifier for this node instance
+- [`flags`][BaseNode.flags]: Dictionary of flag values (e.g. `{"required": True}`)
+- [`params`][BaseNode.params]: List of raw parameters passed to the tag
+- [`nodelist`][BaseNode.nodelist]: The template nodes between the start and end tags
+- [`contents`][BaseNode.contents]: The raw contents between the start and end tags
+- [`active_flags`][BaseNode.active_flags]: List of flags that are currently set to True
+- [`template_name`][BaseNode.template_name]: The name of the `Template` instance inside which the node was defined
+- [`template_component`][BaseNode.template_component]: The component class that the `Template` belongs to
 
-This is what the `node` parameter in the [`@template_tag`](../../reference/api.md#django_components.template_tag) decorator gives you access to - it's the instance of the node class that was automatically created for your template tag.
+This is what the `node` parameter in the [`@template_tag`][template_tag] decorator gives you access to - it's the instance of the node class that was automatically created for your template tag.
 
 ### Rendering content between tags
 

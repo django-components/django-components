@@ -124,7 +124,7 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
 # TODO_V1 - Remove in v1, keep only `format_attributes` going forward
 attributes_to_string = format_attributes
 """
-Deprecated. Use [`format_attributes`](api.md#django_components.format_attributes) instead.
+Deprecated. Use [`format_attributes`][format_attributes] instead.
 """
 
 

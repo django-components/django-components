@@ -12,7 +12,7 @@ This is particularly useful for components that are expensive to render or do no
 
 Caching is disabled by default.
 
-To enable caching for a component, set [`Component.Cache.enabled`](../../reference/api.md#django_components.ComponentCache.enabled) to `True`:
+To enable caching for a component, set [`Component.Cache.enabled`][ComponentCache.enabled] to `True`:
 
 ```python
 from django_components import Component
@@ -24,7 +24,7 @@ class MyComponent(Component):
 
 ### Time-to-live (TTL)
 
-You can specify a time-to-live (TTL) for the cache entry with [`Component.Cache.ttl`](../../reference/api.md#django_components.ComponentCache.ttl), which determines how long the entry remains valid. The TTL is specified in seconds.
+You can specify a time-to-live (TTL) for the cache entry with [`Component.Cache.ttl`][ComponentCache.ttl], which determines how long the entry remains valid. The TTL is specified in seconds.
 
 ```python
 class MyComponent(Component):
@@ -40,7 +40,7 @@ class MyComponent(Component):
 
 ### Custom cache name
 
-Since component caching uses Django's cache framework, you can specify a custom cache name with [`Component.Cache.cache_name`](../../reference/api.md#django_components.ComponentCache.cache_name) to use a different cache backend:
+Since component caching uses Django's cache framework, you can specify a custom cache name with [`Component.Cache.cache_name`][ComponentCache.cache_name] to use a different cache backend:
 
 ```python
 class MyComponent(Component):
@@ -65,7 +65,7 @@ However, you have full control over the cache key generation. As such, you can:
 - Cache the component irrespective of the inputs
 
 To achieve that, you can override
-the [`Component.Cache.hash()`](../../reference/api.md#django_components.ComponentCache.hash)
+the [`Component.Cache.hash()`][ComponentCache.hash]
 method to customize how arguments are hashed into the cache key.
 
 ```python
@@ -77,7 +77,7 @@ class MyComponent(Component):
             return f"{json.dumps(args)}:{json.dumps(kwargs)}"
 ```
 
-For even more control, you can override other methods available on the [`ComponentCache`](../../reference/api.md#django_components.ComponentCache) class.
+For even more control, you can override other methods available on the [`ComponentCache`][ComponentCache] class.
 
 !!! warning
 
@@ -88,7 +88,7 @@ For even more control, you can override other methods available on the [`Compone
 
 By default, the cache key is generated based ONLY on the args and kwargs.
 
-To cache the component based on the slots, set [`Component.Cache.include_slots`](../../reference/api.md#django_components.ComponentCache.include_slots) to `True`:
+To cache the component based on the slots, set [`Component.Cache.include_slots`][ComponentCache.include_slots] to `True`:
 
 ```python
 class MyComponent(Component):
@@ -111,7 +111,7 @@ As such, the following two calls would generate separate entries in the cache:
 {% endcomponent %}
 ```
 
-Same when using [`Component.render()`](../../reference/api.md#django_components.Component.render) with string slots:
+Same when using [`Component.render()`][Component.render] with string slots:
 
 ```py
 MyComponent.render(
@@ -239,7 +239,7 @@ cache that is **per-process and in-memory by default**. After a restart,
 the cached fragment refers to variable data the new process no longer has.
 
 ✅ Do: set the
-[`cache` setting](../../reference/settings.md#django_components.app_settings.ComponentsSettings.cache)
+[`cache` setting][ComponentsSettings.cache]
 to the same persistent backend you use for the fragment cache, so the
 variables survive restarts.
 

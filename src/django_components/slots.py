@@ -136,9 +136,9 @@ class SlotContext(Generic[TSlotData]):
 class SlotFunc(Protocol, Generic[TSlotData]):
     """
     When rendering components with
-    [`Component.render()`](api.md#django_components.Component.render)
+    [`Component.render()`][Component.render]
     or
-    [`Component.render_to_response()`](api.md#django_components.Component.render_to_response),
+    [`Component.render_to_response()`][Component.render_to_response],
     the slots can be given either as strings or as functions.
 
     If a slot is given as a function, it will have the signature of `SlotFunc`.
@@ -266,10 +266,10 @@ class Slot(Generic[TSlotData]):
     fill_node: "FillNode | ComponentNode | None" = None
     """
     If the slot was created from a [`{% fill %}`](template_tags.md#fill) tag,
-    this will be the [`FillNode`](api.md#django_components.FillNode) instance.
+    this will be the [`FillNode`][FillNode] instance.
 
     If the slot was a default slot created from a [`{% component %}`](template_tags.md#component) tag,
-    this will be the [`ComponentNode`](api.md#django_components.ComponentNode) instance.
+    this will be the [`ComponentNode`][ComponentNode] instance.
 
     Otherwise, this will be `None`.
 
@@ -279,7 +279,7 @@ class Slot(Generic[TSlotData]):
 
     **Example:**
 
-    You can use this to find the [`Component`](api.md#django_components.Component) in whose
+    You can use this to find the [`Component`][Component] in whose
     template the [`{% fill %}`](template_tags.md#fill) tag was defined:
 
     ```python
@@ -376,9 +376,9 @@ SlotInput: TypeAlias = SlotResult | SlotFunc[TSlotData] | Slot[TSlotData]
 """
 Type representing all forms in which slot content can be passed to a component.
 
-When rendering a component with [`Component.render()`](api.md#django_components.Component.render)
-or [`Component.render_to_response()`](api.md#django_components.Component.render_to_response),
-the slots may be given a strings, functions, or [`Slot`](api.md#django_components.Slot) instances.
+When rendering a component with [`Component.render()`][Component.render]
+or [`Component.render_to_response()`][Component.render_to_response],
+the slots may be given a strings, functions, or [`Slot`][Slot] instances.
 This type describes that union.
 
 Use this type when typing the slots in your component.
@@ -425,7 +425,7 @@ html = Table.render(
 # TODO_V1 - REMOVE, superseded by SlotInput
 SlotContent: TypeAlias = SlotInput[TSlotData]
 """
-DEPRECATED: Use [`SlotInput`](api.md#django_components.SlotInput) instead. Will be removed in v1.
+DEPRECATED: Use [`SlotInput`][SlotInput] instead. Will be removed in v1.
 """
 
 
@@ -472,7 +472,7 @@ class SlotFallback:
 # TODO_v1 - REMOVE - superseded by SlotFallback
 SlotRef: TypeAlias = SlotFallback
 """
-DEPRECATED: Use [`SlotFallback`](api.md#django_components.SlotFallback) instead. Will be removed in v1.
+DEPRECATED: Use [`SlotFallback`][SlotFallback] instead. Will be removed in v1.
 """
 
 
@@ -1106,8 +1106,8 @@ class FillNode(BaseNode):
     You can pass a slot fill from Python to a component by setting the `body` kwarg
     on the [`{% fill %}`](#fill) tag.
 
-    First pass a [`Slot`](api.md#django_components.Slot) instance to the template
-    with the [`get_template_data()`](api.md#django_components.Component.get_template_data)
+    First pass a [`Slot`][Slot] instance to the template
+    with the [`get_template_data()`][Component.get_template_data]
     method:
 
     ```python

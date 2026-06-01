@@ -5,7 +5,7 @@ _New in version 0.80_:
 This is achieved with the combination of:
 
 - [`{% provide %}`](../../reference/template_tags.md#provide) tag
-- [`Component.inject()`](../../reference/api.md#django_components.Component.inject) method
+- [`Component.inject()`][Component.inject] method
 
 ## What is "prop drilling"
 
@@ -70,7 +70,7 @@ Similarly to [slots and fills](../fundamentals/slots.md#dynamic-fills), also pro
 ## Injecting data
 
 To "inject" (access) the data defined on the [`{% provide %}`](../../reference/template_tags.md#provide) tag,
-you can use the [`Component.inject()`](../../reference/api.md#django_components.Component.inject) method from within any other component methods.
+you can use the [`Component.inject()`][Component.inject] method from within any other component methods.
 
 For a component to be able to "inject" some data, the component ([`{% component %}`](../../reference/template_tags.md#component) tag) must be nested inside the [`{% provide %}`](../../reference/template_tags.md#provide) tag.
 
@@ -84,12 +84,12 @@ class ChildComponent(Component):
         print(my_data.another)  # 123
 ```
 
-First argument to [`Component.inject()`](../../reference/api.md#django_components.Component.inject) is the _key_ (or _name_) of the provided data. This
+First argument to [`Component.inject()`][Component.inject] is the _key_ (or _name_) of the provided data. This
 must match the string that you used in the [`{% provide %}`](../../reference/template_tags.md#provide) tag.
 
-If no provider with given key is found, [`inject()`](../../reference/api.md#django_components.Component.inject) raises a `KeyError`.
+If no provider with given key is found, [`inject()`][Component.inject] raises a `KeyError`.
 
-To avoid the error, you can pass a second argument to [`inject()`](../../reference/api.md#django_components.Component.inject). This will act as a default value similar to `dict.get(key, default)`:
+To avoid the error, you can pass a second argument to [`inject()`][Component.inject]. This will act as a default value similar to `dict.get(key, default)`:
 
 ```py
 class ChildComponent(Component):
@@ -100,12 +100,12 @@ class ChildComponent(Component):
 
 !!! note
 
-    The instance returned from [`inject()`](../../reference/api.md#django_components.Component.inject) is immutable (subclass of [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)). This ensures that the data returned from [`inject()`](../../reference/api.md#django_components.Component.inject) will always
+    The instance returned from [`inject()`][Component.inject] is immutable (subclass of [`NamedTuple`](https://docs.python.org/3/library/typing.html#typing.NamedTuple)). This ensures that the data returned from [`inject()`][Component.inject] will always
     have all the keys that were passed to the [`{% provide %}`](../../reference/template_tags.md#provide) tag.
 
 !!! warning
 
-    [`inject()`](../../reference/api.md#django_components.Component.inject) works strictly only during render execution. If you try to call `inject()` from outside, it will raise an error.
+    [`inject()`][Component.inject] works strictly only during render execution. If you try to call `inject()` from outside, it will raise an error.
 
 ## Full example
 

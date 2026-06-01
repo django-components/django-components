@@ -56,10 +56,10 @@ class ComponentDefaultField(NamedTuple):
 
 def get_component_defaults(component: "type[Component] | Component") -> dict[str, Any]:
     """
-    Generate a defaults dictionary for a [`Component`](api.md#django_components.Component).
+    Generate a defaults dictionary for a [`Component`][Component].
 
-    The defaults dictionary is generated from the [`Component.Defaults`](api.md#django_components.Component.Defaults)
-    and [`Component.Kwargs`](api.md#django_components.Component.Kwargs) classes.
+    The defaults dictionary is generated from the [`Component.Defaults`][Component.Defaults]
+    and [`Component.Kwargs`][Component.Kwargs] classes.
     `Kwargs` take precedence over `Defaults`.
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).

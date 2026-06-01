@@ -18,7 +18,7 @@ TAG_RE = re.compile(rf"^[{TAG_CHARS}]+$")
 
 class TagResult(NamedTuple):
     """
-    The return value from [`TagFormatter.parse()`](api.md#django_components.TagFormatterABC.parse).
+    The return value from [`TagFormatter.parse()`][TagFormatterABC.parse].
 
     Read more about [Tag formatters](../concepts/advanced/tag_formatters.md).
     """
@@ -59,7 +59,7 @@ class TagFormatterABC(abc.ABC):
     Read more about [Tag formatter](../concepts/advanced/tag_formatters.md).
 
     For example, with the default tag formatter
-    ([`ComponentFormatter`](tag_formatters.md#django_components.tag_formatter.ComponentFormatter)),
+    ([`ComponentFormatter`][ComponentFormatter]),
     components are written as:
 
     ```django
@@ -68,7 +68,7 @@ class TagFormatterABC(abc.ABC):
     ```
 
     While with the shorthand tag formatter
-    ([`ShorthandComponentFormatter`](tag_formatters.md#django_components.tag_formatter.ShorthandComponentFormatter)),
+    ([`ShorthandComponentFormatter`][ShorthandComponentFormatter]),
     components are written as:
     ```django
     {% comp_name %}
@@ -129,7 +129,7 @@ class TagFormatterABC(abc.ABC):
         """
         Given the tokens (words) passed to a component start tag, this function extracts
         the component name from the tokens list, and returns
-        [`TagResult`](api.md#django_components.TagResult),
+        [`TagResult`][TagResult],
         which is a tuple of `(component_name, remaining_tokens)`.
 
         Args:

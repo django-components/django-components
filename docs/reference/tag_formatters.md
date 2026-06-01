@@ -5,15 +5,15 @@
 [Tag formatters](../concepts/advanced/tag_formatters.md) allow you to change the syntax for calling components from within
 the Django templates.
 
-Tag formatter are set via the [tag_formatter](settings.md#django_components.app_settings.ComponentsSettings.tag_formatter)
+Tag formatter are set via the [tag_formatter][ComponentsSettings.tag_formatter]
 setting.
 
 
 ### Available tag formatters
 
-- `django_components.component_formatter` for [ComponentFormatter](#django_components.tag_formatter.ComponentFormatter)
+- `django_components.component_formatter` for [ComponentFormatter][ComponentFormatter]
 
-- `django_components.component_shorthand_formatter` for [ShorthandComponentFormatter](#django_components.tag_formatter.ShorthandComponentFormatter)
+- `django_components.component_shorthand_formatter` for [ShorthandComponentFormatter][ShorthandComponentFormatter]
 ::: django_components.tag_formatter.ComponentFormatter
     options:
       inherited_members: false

@@ -8,14 +8,14 @@ When subclassing a component, there's a couple of things to keep in mind:
 
 When it comes to the pairs:
 
-- [`Component.template`](../../reference/api.md#django_components.Component.template)/[`Component.template_file`](../../reference/api.md#django_components.Component.template_file)
-- [`Component.js`](../../reference/api.md#django_components.Component.js)/[`Component.js_file`](../../reference/api.md#django_components.Component.js_file)
-- [`Component.css`](../../reference/api.md#django_components.Component.css)/[`Component.css_file`](../../reference/api.md#django_components.Component.css_file)
+- [`Component.template`][Component.template]/[`Component.template_file`][Component.template_file]
+- [`Component.js`][Component.js]/[`Component.js_file`][Component.js_file]
+- [`Component.css`][Component.css]/[`Component.css_file`][Component.css_file]
 
 inheritance follows these rules:
 
-- If a child component class defines either member of a pair (e.g., either [`template`](../../reference/api.md#django_components.Component.template) or [`template_file`](../../reference/api.md#django_components.Component.template_file)), it takes precedence and the parent's definition is ignored completely.
-- For example, if a child component defines [`template_file`](../../reference/api.md#django_components.Component.template_file), the parent's [`template`](../../reference/api.md#django_components.Component.template) or [`template_file`](../../reference/api.md#django_components.Component.template_file) will be ignored.
+- If a child component class defines either member of a pair (e.g., either [`template`][Component.template] or [`template_file`][Component.template_file]), it takes precedence and the parent's definition is ignored completely.
+- For example, if a child component defines [`template_file`][Component.template_file], the parent's [`template`][Component.template] or [`template_file`][Component.template_file] will be ignored.
 - This applies independently to each pair - you can inherit the JS while overriding the template, for instance.
 
 For example:
@@ -54,10 +54,10 @@ class CustomCard(BaseCard):
 
 ## Media inheritance
 
-The [`Component.Media`](../../reference/api.md#django_components.Component.Media) nested class follows Django's media inheritance rules:
+The [`Component.Media`][Component.Media] nested class follows Django's media inheritance rules:
 
 - If both parent and child define a `Media` class, the child's media will automatically include both its own and the parent's JS and CSS files.
-- This behavior can be configured using the [`extend`](../../reference/api.md#django_components.ComponentMediaInput.extend) attribute in the Media class, similar to Django's forms.
+- This behavior can be configured using the [`extend`][ComponentMediaInput.extend] attribute in the Media class, similar to Django's forms.
   Read more on this in [Media inheritance](secondary_js_css_files.md#media-inheritance).
 
 For example:
@@ -89,10 +89,10 @@ For the following media attributes, when you don't want to inherit from the pare
 but you also don't need to set the template / JS / CSS to any specific value,
 you can set these attributes to `None`.
 
-- [`template`](../../reference/api.md#django_components.Component.template) / [`template_file`](../../reference/api.md#django_components.Component.template_file)
-- [`js`](../../reference/api.md#django_components.Component.js) / [`js_file`](../../reference/api.md#django_components.Component.js_file)
-- [`css`](../../reference/api.md#django_components.Component.css) / [`css_file`](../../reference/api.md#django_components.Component.css_file)
-- [`Media`](../../reference/api.md#django_components.Component.Media) class
+- [`template`][Component.template] / [`template_file`][Component.template_file]
+- [`js`][Component.js] / [`js_file`][Component.js_file]
+- [`css`][Component.css] / [`css_file`][Component.css_file]
+- [`Media`][Component.Media] class
 
 For example:
 
@@ -113,7 +113,7 @@ class ContactForm(BaseForm):
 
 ## Regular Python inheritance
 
-All other attributes and methods (including the [`Component.View`](../../reference/api.md#django_components.ComponentView) class and its methods) follow standard Python inheritance rules.
+All other attributes and methods (including the [`Component.View`][ComponentView] class and its methods) follow standard Python inheritance rules.
 
 For example:
 

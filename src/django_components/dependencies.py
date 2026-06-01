@@ -51,7 +51,7 @@ DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append", "ignor
 
 DependencyKind: TypeAlias = Literal["component", "variables", "core", "extra"]
 """
-Type for the kind of [`Dependency`](api.md#django_components.Dependency) objects.
+Type for the kind of [`Dependency`][Dependency] objects.
 
 - `"core"`: Required for Django Components library to work.
 - `"component"`: Dependency from a component's `Component.js` or `Component.css`.

@@ -1,16 +1,16 @@
 Next we will add third-party JavaScript and CSS dependencies to our component.
 
 Your components may depend on third-party packages or styling, or other shared logic.
-To load these additional dependencies, you can use a nested [`Media` class](../reference/api.md#django_components.Component.Media).
+To load these additional dependencies, you can use a nested [`Media` class][Component.Media].
 
 This `Media` class behaves similarly to [Django's Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#assets-as-a-static-definition),
 with a few differences:
 
 1. Our Media class accepts various formats for the JS and CSS files: either a single file, a list, or (CSS-only) a dictonary (see below).
-2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`, [`SafeString`](https://dev.to/doridoro/django-safestring-afj), [`Script`](../reference/api.md#django_components.Script), [`Style`](../reference/api.md#django_components.Style), or a function.
+2. Individual JS / CSS files can be any of `str`, `bytes`, `Path`, [`SafeString`](https://dev.to/doridoro/django-safestring-afj), [`Script`][Script], [`Style`][Style], or a function.
 3. Individual JS / CSS files can be glob patterns, e.g. `*.js` or `styles/**/*.css`.
-4. If you set [`Media.extend`](../reference/api.md#django_components.ComponentMediaInput.extend) to a list,
-   it should be a list of [`Component`](../reference/api.md#django_components.Component) classes.
+4. If you set [`Media.extend`][ComponentMediaInput.extend] to a list,
+   it should be a list of [`Component`][Component] classes.
 
 [Learn more](../concepts/fundamentals/secondary_js_css_files.md) about using Media.
 
@@ -46,8 +46,8 @@ class Calendar(Component):
 
     1. Relative to the Python component file (as seen above),
     2. Relative to any of the component directories as defined by
-    [`COMPONENTS.dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.dirs)
-    and/or [`COMPONENTS.app_dirs`](../reference/settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.dirs`][ComponentsSettings.dirs]
+    and/or [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
     (e.g. `[your apps]/components` dir and `[project root]/components`)
 
 !!! info

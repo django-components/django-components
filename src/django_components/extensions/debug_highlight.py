@@ -83,7 +83,7 @@ class ComponentDebugHighlight(ExtensionComponentConfig):
     ```
 
     To highlight ALL components and slots, set
-    [extension defaults](settings.md#django_components.app_settings.ComponentsSettings.extensions_defaults)
+    [extension defaults][ComponentsSettings.extensions_defaults]
     in your settings:
 
     ```python

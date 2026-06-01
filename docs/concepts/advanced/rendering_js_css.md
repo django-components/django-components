@@ -98,7 +98,7 @@ If your components use JS and CSS scripts, you may need to handle them different
 
 The different ways for handling JS / CSS are called **"dependencies strategies"**.
 
-[`render()`](../../reference/api.md#django_components.Component.render) and [`render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
+[`render()`][Component.render] and [`render_to_response()`][Component.render_to_response]
 accept a `deps_strategy` parameter, which controls where and how the JS / CSS are inserted into the HTML.
 
 ```python
@@ -125,7 +125,7 @@ fragment = render(request, "my_component.html", ctx=ctx)
 
 !!! info
 
-    The `deps_strategy` parameter is ultimately passed to [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies).
+    The `deps_strategy` parameter is ultimately passed to [`render_dependencies()`][render_dependencies].
 
 !!! note "Why is `deps_strategy` required?"
 
@@ -159,7 +159,7 @@ There are six dependencies strategies:
     - No extra script loaded.
 - [`ignore`](#ignore) (default when nested)
     - HTML is left as-is. You can still process it with a different strategy later with
-      [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies).
+      [`render_dependencies()`][render_dependencies].
     - Used for inserting rendered HTML into other components.
 
 ### `document`
@@ -188,8 +188,8 @@ JS and CSS is inserted:
 For the `"document"` strategy, the JS and CSS is set up to avoid any delays when the end user loads
 the page in the browser:
 
-- Components' primary JS and CSS scripts ([`Component.js`](../../reference/api.md#django_components.Component.js)
-  and [`Component.css`](../../reference/api.md#django_components.Component.css)) - fully inlined:
+- Components' primary JS and CSS scripts ([`Component.js`][Component.js]
+  and [`Component.css`][Component.css]) - fully inlined:
 
     ```html
     <script>
@@ -203,7 +203,7 @@ the page in the browser:
     ```
 
 - Components' secondary JS and CSS scripts
-  ([`Component.Media`](../../reference/api.md#django_components.Component.Media)) - inserted as links:
+  ([`Component.Media`][Component.Media]) - inserted as links:
 
     ```html
     <link rel="stylesheet" href="https://example.com/styles.css" />
@@ -267,8 +267,8 @@ JS and CSS is inserted:
 
 **Included scripts:**
 
-- Components' primary JS and CSS scripts ([`Component.js`](../../reference/api.md#django_components.Component.js)
-  and [`Component.css`](../../reference/api.md#django_components.Component.css)) - fully inlined:
+- Components' primary JS and CSS scripts ([`Component.js`][Component.js]
+  and [`Component.css`][Component.css]) - fully inlined:
 
     ```html
     <script>
@@ -282,7 +282,7 @@ JS and CSS is inserted:
     ```
 
 - Components' secondary JS and CSS scripts
-  ([`Component.Media`](../../reference/api.md#django_components.Component.Media)) - inserted as links:
+  ([`Component.Media`][Component.Media]) - inserted as links:
 
     ```html
     <link rel="stylesheet" href="https://example.com/styles.css" />
@@ -331,7 +331,7 @@ Same as for the [`"simple"`](#simple) strategy.
 html = MyComponent.render(deps_strategy="ignore")
 ```
 
-The rendered HTML is left as-is. You can still process it with a different strategy later with [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies).
+The rendered HTML is left as-is. You can still process it with a different strategy later with [`render_dependencies()`][render_dependencies].
 
 This is useful when you want to insert rendered HTML into another component.
 
@@ -373,10 +373,10 @@ rendered = Outer.render()
 Before JS and CSS dependencies are rendered into `<script>`, `<style>`, and `<link>` tags,
 they can be modified in two places:
 
-1. **Per component:** Each component's dependencies are passed through that component's [`Component.on_dependencies()`](../../reference/api.md#django_components.Component.on_dependencies) hook. This includes the component's [`Component.js`](../../reference/api.md#django_components.Component.js) / [`Component.css`](../../reference/api.md#django_components.Component.css) and [JS/CSS variables](../fundamentals/html_js_css_variables.md). See [Component hooks: on_dependencies](hooks.md#on_dependencies).
-2. **Globally:** The combined list of all dependencies is then passed through the [`ComponentExtension.on_dependencies`](../../reference/api.md#django_components.ComponentExtension.on_dependencies) extension hook.
+1. **Per component:** Each component's dependencies are passed through that component's [`Component.on_dependencies()`][Component.on_dependencies] hook. This includes the component's [`Component.js`][Component.js] / [`Component.css`][Component.css] and [JS/CSS variables](../fundamentals/html_js_css_variables.md). See [Component hooks: on_dependencies](hooks.md#on_dependencies).
+2. **Globally:** The combined list of all dependencies is then passed through the [`ComponentExtension.on_dependencies`][ComponentExtension.on_dependencies] extension hook.
 
-You can use these hooks to add, remove, or modify [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects,
+You can use these hooks to add, remove, or modify [`Script`][Script] and [`Style`][Style] objects,
 so that the final HTML reflects your changes.
 
 Use cases include:
@@ -387,11 +387,11 @@ Use cases include:
 
 ### Component hook: `on_dependencies`
 
-[`Component.on_dependencies`](../../reference/api.md#django_components.Component.on_dependencies) is a **classmethod** hook that allows you to modify the JS / CSS dependencies emitted by this component only.
+[`Component.on_dependencies`][Component.on_dependencies] is a **classmethod** hook that allows you to modify the JS / CSS dependencies emitted by this component only.
 
 These are the `<script>` and `<style>` tags that will be rendered for this component.
 
-The JS / CSS are available as lists of [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects.
+The JS / CSS are available as lists of [`Script`][Script] and [`Style`][Style] objects.
 
 **Example:**
 
@@ -414,7 +414,7 @@ Full details and more examples are in [Component hooks](hooks.md#on_dependencies
 
 ### Extension hook: `on_dependencies`
 
-In the [`ComponentExtension.on_dependencies`](../../reference/extension_hooks.md#django_components.extension.ComponentExtension.on_dependencies) hook, you can modify the **entire** list of [`Script`](../../reference/api.md#django_components.Script) and [`Style`](../../reference/api.md#django_components.Style) objects that will be rendered (all components and Media).
+In the [`ComponentExtension.on_dependencies`][ComponentExtension.on_dependencies] hook, you can modify the **entire** list of [`Script`][Script] and [`Style`][Style] objects that will be rendered (all components and Media).
 
 Return a tuple `(scripts, styles)` to replace the lists that will be rendered, or `None` to leave dependencies unchanged.
 
@@ -443,10 +443,10 @@ See [Extensions](extensions.md) for how to register and configure extensions.
 By default, inline JavaScript in component scripts is wrapped in a [**self-executing (IIFE)**](https://developer.mozilla.org/en-US/docs/Glossary/IIFE) function
 so that variables do not leak into the global scope.
 
-Whether a given `<script>` is wrapped depends on [`Script.wrap`](../../reference/api.md#django_components.Script) (default `True`) and the script's `type` attribute.
+Whether a given `<script>` is wrapped depends on [`Script.wrap`][Script] (default `True`) and the script's `type` attribute.
 
 To disable wrapping for a specific script, set
-[`Script.wrap`](../../reference/api.md#django_components.Script) to `False`.
+[`Script.wrap`][Script] to `False`.
 
 ```python
 script = Script(
@@ -475,8 +475,8 @@ Anything else is not wrapped. This includes:
 When rendering templates or components, django-components covers all the traditional ways how components
 or templates can be rendered:
 
-- [`Component.render()`](../../reference/api.md#django_components.Component.render)
-- [`Component.render_to_response()`](../../reference/api.md#django_components.Component.render_to_response)
+- [`Component.render()`][Component.render]
+- [`Component.render_to_response()`][Component.render_to_response]
 - [`Template.render()`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template.render)
 - [`django.shortcuts.render()`](https://docs.djangoproject.com/en/5.2/topics/http/shortcuts/#render)
 
@@ -484,19 +484,19 @@ This way you don't need to manually handle rendering of JS / CSS.
 
 However, for advanced or low-level use cases, you may need to control when to render JS / CSS.
 
-In such case you can directly pass rendered HTML to [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies).
+In such case you can directly pass rendered HTML to [`render_dependencies()`][render_dependencies].
 
 This function will extract all used components in the HTML string, and insert the components' JS and CSS
 based on given strategy.
 
 !!! info
 
-    The truth is that all the methods listed above call [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies)
+    The truth is that all the methods listed above call [`render_dependencies()`][render_dependencies]
     internally.
 
 **Example:**
 
-To see how [`render_dependencies()`](../../reference/api.md#django_components.render_dependencies) works,
+To see how [`render_dependencies()`][render_dependencies] works,
 let's render a template with a component.
 
 We will render it twice:

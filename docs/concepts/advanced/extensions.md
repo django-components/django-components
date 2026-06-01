@@ -12,7 +12,7 @@ Django-components functionality can be extended with "extensions". Extensions al
 
 ## Install extensions
 
-Extensions are configured in the Django settings under [`COMPONENTS.extensions`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.extensions).
+Extensions are configured in the Django settings under [`COMPONENTS.extensions`][ComponentsSettings.extensions].
 
 Extensions can be set by either as an import string or by passing in a class:
 
@@ -43,7 +43,7 @@ Extensions can define methods to hook into lifecycle events, such as:
 - Creating or deleting a registry
 - Extension instantiation
 - Pre-processing data passed to a component on render
-- Post-processing data returned from [`get_template_data()`](../../reference/api.md#django_components.Component.get_template_data)
+- Post-processing data returned from [`get_template_data()`][Component.get_template_data]
 - JS/CSS dependencies (e.g. add nonce, reorder scripts)
 - and others.
 
@@ -51,14 +51,14 @@ See the full list in [Extension Hooks Reference](../../reference/extension_hooks
 
 ## Per-component configuration
 
-Each extension has a corresponding nested class within the [`Component`](../../reference/api.md#django_components.Component) class. These allow
+Each extension has a corresponding nested class within the [`Component`][Component] class. These allow
 to configure the extensions on a per-component basis.
 
 E.g.:
 
-- `"view"` extension -> [`Component.View`](../../reference/api.md#django_components.Component.View)
-- `"cache"` extension -> [`Component.Cache`](../../reference/api.md#django_components.Component.Cache)
-- `"defaults"` extension -> [`Component.Defaults`](../../reference/api.md#django_components.Component.Defaults)
+- `"view"` extension -> [`Component.View`][Component.View]
+- `"cache"` extension -> [`Component.Cache`][Component.Cache]
+- `"defaults"` extension -> [`Component.Defaults`][Component.Defaults]
 
 !!! note
 
@@ -130,7 +130,7 @@ Extensions are incredibly flexible, but configuring the same extension for every
 
 For this reason, django-components allows for extension defaults. This is like setting the extension config for every component.
 
-To set extension defaults, use the [`COMPONENTS.extensions_defaults`](../../reference/settings.md#django_components.app_settings.ComponentsSettings.extensions_defaults) setting.
+To set extension defaults, use the [`COMPONENTS.extensions_defaults`][ComponentsSettings.extensions_defaults] setting.
 
 The `extensions_defaults` setting is a dictionary where the key is the extension name and the value is a dictionary of config attributes:
 
@@ -222,12 +222,12 @@ class MyTable(Component):
 ## Writing extensions
 
 Creating extensions in django-components involves defining a class that inherits from
-[`ComponentExtension`](../../reference/api.md#django_components.ComponentExtension).
+[`ComponentExtension`][ComponentExtension].
 This class can implement various lifecycle hooks and define new attributes or methods to be added to components.
 
 ### Extension class
 
-To create an extension, define a class that inherits from [`ComponentExtension`](../../reference/api.md#django_components.ComponentExtension)
+To create an extension, define a class that inherits from [`ComponentExtension`][ComponentExtension]
 and implement the desired hooks.
 
 - Each extension MUST have a `name` attribute. The name MUST be a valid Python identifier.
@@ -254,12 +254,12 @@ class MyExtension(ComponentExtension):
 
     Moreover, the `name` attribute MUST NOT conflict with existing Component class API.
 
-    So if you name an extension `render`, it will conflict with the [`render()`](../../reference/api.md#django_components.Component.render) method of the `Component` class.
+    So if you name an extension `render`, it will conflict with the [`render()`][Component.render] method of the `Component` class.
 
 ### Component config
 
 In previous sections we've seen the `View` and `Storybook` extensions classes that were nested
-within the [`Component`](../../reference/api.md#django_components.Component) class:
+within the [`Component`][Component] class:
 
 ```python
 class MyComponent(Component):
@@ -319,7 +319,7 @@ class MyTable(Component):
 
 !!! warning
 
-    When writing an extension, the `ComponentConfig` MUST subclass the base class [`ExtensionComponentConfig`](../../reference/api.md#django_components.ExtensionComponentConfig).
+    When writing an extension, the `ComponentConfig` MUST subclass the base class [`ExtensionComponentConfig`][ExtensionComponentConfig].
 
     This base class ensures that the extension class will have access to the component instance.
 
@@ -424,14 +424,14 @@ This will log the component name and color when the component is created, delete
 
 django-components provides a few utility functions to help with writing extensions:
 
-- [`all_components()`](../../reference/api.md#django_components.all_components) - returns a list of all created component classes.
-- [`all_registries()`](../../reference/api.md#django_components.all_registries) - returns a list of all created registry instances.
+- [`all_components()`][all_components] - returns a list of all created component classes.
+- [`all_registries()`][all_registries] - returns a list of all created registry instances.
 
 ### Access component class
 
-You can access the owner [`Component`](../../reference/api.md#django_components.Component) class (`MyTable`) from within methods
+You can access the owner [`Component`][Component] class (`MyTable`) from within methods
 of the extension class (`MyExtension`) by using
-the [`component_cls`](../../reference/api.md#django_components.ExtensionComponentConfig.component_cls) attribute:
+the [`component_cls`][ExtensionComponentConfig.component_cls] attribute:
 
 ```py
 class MyTable(Component):
@@ -477,7 +477,7 @@ class LoggerExtension(ComponentExtension):
             slots_cache[id(slot)] = {"some": "metadata"}
 ```
 
-Instead, use the [`Slot.extra`](../../reference/api.md#django_components.Slot.extra) attribute,
+Instead, use the [`Slot.extra`][Slot.extra] attribute,
 which is copied from the original slot:
 
 ```python
@@ -571,7 +571,7 @@ Where:
 
 ### Define commands
 
-To define a command, subclass from [`ComponentCommand`](../../reference/extension_commands.md#django_components.ComponentCommand).
+To define a command, subclass from [`ComponentCommand`][ComponentCommand].
 This subclass should define:
 
 - `name` - the command's name
@@ -596,12 +596,12 @@ class MyExt(ComponentExtension):
 ### Define arguments and options
 
 Commands can accept positional arguments and options (e.g. `--foo`), which are defined using the
-[`arguments`](../../reference/extension_commands.md#django_components.ComponentCommand.arguments)
-attribute of the [`ComponentCommand`](../../reference/extension_commands.md#django_components.ComponentCommand) class.
+[`arguments`][ComponentCommand.arguments]
+attribute of the [`ComponentCommand`][ComponentCommand] class.
 
 The arguments are parsed with [`argparse`](https://docs.python.org/3/library/argparse.html)
 into a dictionary of arguments and options. These are then available
-as keyword arguments to the [`handle`](../../reference/extension_commands.md#django_components.ComponentCommand.handle)
+as keyword arguments to the [`handle`][ComponentCommand.handle]
 method of the command.
 
 ```python
@@ -647,20 +647,20 @@ python manage.py components ext run my_ext hello John --shout
     See the [argparse documentation](https://docs.python.org/3/library/argparse.html) for more information.
 
     django-components defines types as
-    [`CommandArg`](../../reference/extension_commands.md#django_components.CommandArg),
-    [`CommandArgGroup`](../../reference/extension_commands.md#django_components.CommandArgGroup),
-    [`CommandSubcommand`](../../reference/extension_commands.md#django_components.CommandSubcommand),
-    and [`CommandParserInput`](../../reference/extension_commands.md#django_components.CommandParserInput)
+    [`CommandArg`][CommandArg],
+    [`CommandArgGroup`][CommandArgGroup],
+    [`CommandSubcommand`][CommandSubcommand],
+    and [`CommandParserInput`][CommandParserInput]
     to help with type checking.
 
 !!! note
 
-    If a command doesn't have the [`handle`](../../reference/extension_commands.md#django_components.ComponentCommand.handle)
+    If a command doesn't have the [`handle`][ComponentCommand.handle]
     method defined, the command will print a help message and exit.
 
 ### Argument groups
 
-Arguments can be grouped using [`CommandArgGroup`](../../reference/extension_commands.md#django_components.CommandArgGroup)
+Arguments can be grouped using [`CommandArgGroup`][CommandArgGroup]
 to provide better organization and help messages.
 
 Read more on [argparse argument groups](https://docs.python.org/3/library/argparse.html#argument-groups).
@@ -716,12 +716,12 @@ class HelloCommand(ComponentCommand):
 Extensions can define subcommands, allowing for more complex command structures.
 
 Subcommands are defined similarly to root commands, as subclasses of
-[`ComponentCommand`](../../reference/extension_commands.md#django_components.ComponentCommand) class.
+[`ComponentCommand`][ComponentCommand] class.
 
 However, instead of defining the subcommands in the
-[`commands`](../../reference/api.md#django_components.ComponentExtension.commands)
+[`commands`][ComponentExtension.commands]
 attribute of the extension, you define them in the
-[`subcommands`](../../reference/extension_commands.md#django_components.ComponentCommand.subcommands)
+[`subcommands`][ComponentCommand.subcommands]
 attribute of the parent command:
 
 ```python
@@ -810,7 +810,7 @@ with patch("sys.stdout", new=out):
 output = out.getvalue()
 ```
 
-And to temporarily set the extensions, you can use the [`@djc_test`](../../reference/testing_api.md#django_components.testing.djc_test) decorator.
+And to temporarily set the extensions, you can use the [`@djc_test`][djc_test] decorator.
 
 Thus, a full test example can then look like this:
 
@@ -840,7 +840,7 @@ def test_hello_command(self):
 
 Extensions can define custom views and endpoints that can be accessed through the Django application.
 
-To define URLs for an extension, set them in the [`urls`](../../reference/api.md#django_components.ComponentExtension.urls) attribute of your [`ComponentExtension`](../../reference/api.md#django_components.ComponentExtension) class. Each URL is defined using the [`URLRoute`](../../reference/extension_urls.md#django_components.URLRoute) class, which specifies the path, handler, and optional name for the route.
+To define URLs for an extension, set them in the [`urls`][ComponentExtension.urls] attribute of your [`ComponentExtension`][ComponentExtension] class. Each URL is defined using the [`URLRoute`][URLRoute] class, which specifies the path, handler, and optional name for the route.
 
 Here's an example of how to define URLs within an extension:
 
@@ -862,13 +862,13 @@ class MyExtension(ComponentExtension):
 
 !!! warning
 
-    The [`URLRoute`](../../reference/extension_urls.md#django_components.URLRoute) objects
+    The [`URLRoute`][URLRoute] objects
     are different from objects created with Django's
     [`django.urls.path()`](https://docs.djangoproject.com/en/5.2/ref/urls/#path).
     Do NOT use `URLRoute` objects in Django's [`urlpatterns`](https://docs.djangoproject.com/en/5.2/topics/http/urls/#example)
     and vice versa!
 
-    django-components uses a custom [`URLRoute`](../../reference/extension_urls.md#django_components.URLRoute) class to define framework-agnostic routing rules.
+    django-components uses a custom [`URLRoute`][URLRoute] class to define framework-agnostic routing rules.
 
     As of v0.131, `URLRoute` objects are directly converted to Django's `URLPattern` and `URLResolver` objects.
 
@@ -890,9 +890,9 @@ For example, if you have defined a URL with the path `my-view/<str:name>/` in an
 
 Extensions can also define nested URLs to allow for more complex routing structures.
 
-To define nested URLs, set the [`children`](../../reference/extension_urls.md#django_components.URLRoute.children)
-attribute of the [`URLRoute`](../../reference/extension_urls.md#django_components.URLRoute) object to
-a list of child [`URLRoute`](../../reference/extension_urls.md#django_components.URLRoute) objects:
+To define nested URLs, set the [`children`][URLRoute.children]
+attribute of the [`URLRoute`][URLRoute] object to
+a list of child [`URLRoute`][URLRoute] objects:
 
 ```python
 class MyExtension(ComponentExtension):
@@ -919,15 +919,15 @@ would call the `my_view` handler with the parameter `name` set to `"John"`.
 
 ### Extra URL data
 
-The [`URLRoute`](../../reference/extension_urls.md#django_components.URLRoute) class is framework-agnostic,
+The [`URLRoute`][URLRoute] class is framework-agnostic,
 so that extensions could be used with non-Django frameworks in the future.
 
 However, that means that there may be some extra fields that Django's
 [`django.urls.path()`](https://docs.djangoproject.com/en/5.2/ref/urls/#path)
 accepts, but which are not defined on the `URLRoute` object.
 
-To address this, the [`URLRoute`](../../reference/extension_urls.md#django_components.URLRoute) object has
-an [`extra`](../../reference/extension_urls.md#django_components.URLRoute.extra) attribute,
+To address this, the [`URLRoute`][URLRoute] object has
+an [`extra`][URLRoute.extra] attribute,
 which is a dictionary that can be used to pass any extra kwargs to `django.urls.path()`:
 
 ```python
