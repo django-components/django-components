@@ -27,58 +27,57 @@ class ProvideNode(BaseNode):
             [`Component.inject()`][Component.inject].
         **kwargs: Any extra kwargs will be passed as the provided data.
 
-    Example:
+    Examples:
+        Provide the "user_data" in parent component:
 
-    Provide the "user_data" in parent component:
+        ```djc_py
+        @register("parent")
+        class Parent(Component):
+            template = \"\"\"
+              <div>
+                {% provide "user_data" user=user %}
+                  {% component "child" / %}
+                {% endprovide %}
+              </div>
+            \"\"\"
 
-    ```djc_py
-    @register("parent")
-    class Parent(Component):
-        template = \"\"\"
-          <div>
-            {% provide "user_data" user=user %}
-              {% component "child" / %}
-            {% endprovide %}
-          </div>
-        \"\"\"
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "user": kwargs["user"],
+                }
+        ```
 
-        def get_template_data(self, args, kwargs, slots, context):
-            return {
-                "user": kwargs["user"],
-            }
-    ```
+        Since the "child" component is used within the `{% provide %} / {% endprovide %}` tags,
+        we can request the "user_data" using `Component.inject("user_data")`:
 
-    Since the "child" component is used within the `{% provide %} / {% endprovide %}` tags,
-    we can request the "user_data" using `Component.inject("user_data")`:
+        ```djc_py
+        @register("child")
+        class Child(Component):
+            template = \"\"\"
+              <div>
+                User is: {{ user }}
+              </div>
+            \"\"\"
 
-    ```djc_py
-    @register("child")
-    class Child(Component):
-        template = \"\"\"
-          <div>
-            User is: {{ user }}
-          </div>
-        \"\"\"
+            def get_template_data(self, args, kwargs, slots, context):
+                user = self.inject("user_data").user
+                return {
+                    "user": user,
+                }
+        ```
 
-        def get_template_data(self, args, kwargs, slots, context):
-            user = self.inject("user_data").user
-            return {
-                "user": user,
-            }
-    ```
+        Notice that the keys defined on the [`{% provide %}`](#provide) tag are then accessed as attributes
+        when accessing them with [`Component.inject()`][Component.inject].
 
-    Notice that the keys defined on the [`{% provide %}`](#provide) tag are then accessed as attributes
-    when accessing them with [`Component.inject()`][Component.inject].
+        ✅ Do this
+        ```python
+        user = self.inject("user_data").user
+        ```
 
-    ✅ Do this
-    ```python
-    user = self.inject("user_data").user
-    ```
-
-    ❌ Don't do this
-    ```python
-    user = self.inject("user_data")["user"]
-    ```
+        ❌ Don't do this
+        ```python
+        user = self.inject("user_data")["user"]
+        ```
 
     """
 

@@ -118,60 +118,59 @@ def djc_test(
     This is applied recursively to nested classes as well.
 
     Examples:
+        Applying to a function:
+        ```python
+        from django_components.testing import djc_test
 
-    Applying to a function:
-    ```python
-    from django_components.testing import djc_test
-
-    @djc_test
-    def test_my_component():
-        @register("my_component")
-        class MyComponent(Component):
-            template = "..."
-        ...
-    ```
-
-    Applying to a class:
-    ```python
-    from django_components.testing import djc_test
-
-    @djc_test
-    class TestMyComponent:
-        def test_something(self):
-            ...
-
-        class Nested:
-            def test_something_else(self):
-                ...
-    ```
-
-    Applying to a class is the same as applying the decorator to each `test_` method individually:
-    ```python
-    from django_components.testing import djc_test
-
-    class TestMyComponent:
         @djc_test
-        def test_something(self):
+        def test_my_component():
+            @register("my_component")
+            class MyComponent(Component):
+                template = "..."
             ...
+        ```
 
-        class Nested:
-            @djc_test
-            def test_something_else(self):
+        Applying to a class:
+        ```python
+        from django_components.testing import djc_test
+
+        @djc_test
+        class TestMyComponent:
+            def test_something(self):
                 ...
-    ```
 
-    To use `@djc_test`, Django must be set up first:
+            class Nested:
+                def test_something_else(self):
+                    ...
+        ```
 
-    ```python
-    import django
-    from django_components.testing import djc_test
+        Applying to a class is the same as applying the decorator to each `test_` method individually:
+        ```python
+        from django_components.testing import djc_test
 
-    django.setup()
+        class TestMyComponent:
+            @djc_test
+            def test_something(self):
+                ...
 
-    @djc_test
-    def test_my_component():
-        ...
-    ```
+            class Nested:
+                @djc_test
+                def test_something_else(self):
+                    ...
+        ```
+
+        To use `@djc_test`, Django must be set up first:
+
+        ```python
+        import django
+        from django_components.testing import djc_test
+
+        django.setup()
+
+        @djc_test
+        def test_my_component():
+            ...
+        ```
 
     Args:
         django_settings: Django settings, a dictionary passed to Django's
@@ -200,7 +199,7 @@ def djc_test(
         gc_collect: By default `djc_test` runs garbage collection after each test to force the
             state cleanup. Set this to `False` to skip this.
 
-    Example:
+    Examples:
         ```py
         from django_components.testing import djc_test
 

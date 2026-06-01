@@ -71,33 +71,32 @@ class ComponentDebugHighlight(ExtensionComponentConfig):
 
     Read more about [Component debug highlighting](../guides/other/troubleshooting.md#component-and-slot-highlighting).
 
-    Example:
+    Examples:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
+        class MyComponent(Component):
+            class DebugHighlight:
+                highlight_components = True
+                highlight_slots = True
+        ```
 
-    class MyComponent(Component):
-        class DebugHighlight:
-            highlight_components = True
-            highlight_slots = True
-    ```
+        To highlight ALL components and slots, set
+        [extension defaults][ComponentsSettings.extensions_defaults]
+        in your settings:
 
-    To highlight ALL components and slots, set
-    [extension defaults][ComponentsSettings.extensions_defaults]
-    in your settings:
+        ```python
+        from django_components import ComponentsSettings
 
-    ```python
-    from django_components import ComponentsSettings
-
-    COMPONENTS = ComponentsSettings(
-        extensions_defaults={
-            "debug_highlight": {
-                "highlight_components": True,
-                "highlight_slots": True,
+        COMPONENTS = ComponentsSettings(
+            extensions_defaults={
+                "debug_highlight": {
+                    "highlight_components": True,
+                    "highlight_slots": True,
+                },
             },
-        },
-    )
-    ```
+        )
+        ```
 
     """
 

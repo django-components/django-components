@@ -65,22 +65,21 @@ def import_libraries(
         list[str]: A list of module paths of imported files.
 
     Examples:
+        Normal usage - load libraries after Django has loaded
+        ```python
+        from django_components import import_libraries
 
-    Normal usage - load libraries after Django has loaded
-    ```python
-    from django_components import import_libraries
+        class MyAppConfig(AppConfig):
+            def ready(self):
+                import_libraries()
+        ```
 
-    class MyAppConfig(AppConfig):
-        def ready(self):
-            import_libraries()
-    ```
+        Potential usage in tests
+        ```python
+        from django_components import import_libraries
 
-    Potential usage in tests
-    ```python
-    from django_components import import_libraries
-
-    import_libraries(lambda path: path.replace("tests.", "myapp."))
-    ```
+        import_libraries(lambda path: path.replace("tests.", "myapp."))
+        ```
 
     """
     from django_components.app_settings import app_settings  # noqa: PLC0415

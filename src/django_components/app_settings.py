@@ -53,39 +53,38 @@ class ContextBehavior(str, Enum):
     2. Variables from [`Component.get_template_data()`][Component.get_template_data]
     are available to the component fill.
 
-    Example:
+    Examples:
+        Given this template
+        ```django
+        {% with cheese="feta" %}
+          {% component 'my_comp' %}
+            {{ my_var }}  # my_var
+            {{ cheese }}  # cheese
+          {% endcomponent %}
+        {% endwith %}
+        ```
 
-    Given this template
-    ```django
-    {% with cheese="feta" %}
-      {% component 'my_comp' %}
-        {{ my_var }}  # my_var
-        {{ cheese }}  # cheese
-      {% endcomponent %}
-    {% endwith %}
-    ```
+        and this context returned from the `Component.get_template_data()` method
+        ```python
+        { "my_var": 123 }
+        ```
 
-    and this context returned from the `Component.get_template_data()` method
-    ```python
-    { "my_var": 123 }
-    ```
+        Then if component "my_comp" defines context
+        ```python
+        { "my_var": 456 }
+        ```
 
-    Then if component "my_comp" defines context
-    ```python
-    { "my_var": 456 }
-    ```
+        Then this will render:
+        ```django
+        456   # my_var
+        feta  # cheese
+        ```
 
-    Then this will render:
-    ```django
-    456   # my_var
-    feta  # cheese
-    ```
+        Because "my_comp" overrides the variable "my_var",
+        so `{{ my_var }}` equals `456`.
 
-    Because "my_comp" overrides the variable "my_var",
-    so `{{ my_var }}` equals `456`.
-
-    And variable "cheese" will equal `feta`, because the fill CAN access
-    the current context.
+        And variable "cheese" will equal `feta`, because the fill CAN access
+        the current context.
     """
 
     ISOLATED = "isolated"
@@ -94,36 +93,35 @@ class ContextBehavior(str, Enum):
     the fills use EXCLUSIVELY the context variables defined in
     [`Component.get_template_data()`][Component.get_template_data].
 
-    Example:
+    Examples:
+        Given this template
+        ```django
+        {% with cheese="feta" %}
+          {% component 'my_comp' %}
+            {{ my_var }}  # my_var
+            {{ cheese }}  # cheese
+          {% endcomponent %}
+        {% endwith %}
+        ```
 
-    Given this template
-    ```django
-    {% with cheese="feta" %}
-      {% component 'my_comp' %}
-        {{ my_var }}  # my_var
-        {{ cheese }}  # cheese
-      {% endcomponent %}
-    {% endwith %}
-    ```
+        and this context returned from the `get_template_data()` method
+        ```python
+        { "my_var": 123 }
+        ```
 
-    and this context returned from the `get_template_data()` method
-    ```python
-    { "my_var": 123 }
-    ```
+        Then if component "my_comp" defines context
+        ```python
+        { "my_var": 456 }
+        ```
 
-    Then if component "my_comp" defines context
-    ```python
-    { "my_var": 456 }
-    ```
+        Then this will render:
+        ```django
+        123   # my_var
+              # cheese
+        ```
 
-    Then this will render:
-    ```django
-    123   # my_var
-          # cheese
-    ```
-
-    Because both variables "my_var" and "cheese" are taken from the root context.
-    Since "cheese" is not defined in root context, it's empty.
+        Because both variables "my_var" and "cheese" are taken from the root context.
+        Since "cheese" is not defined in root context, it's empty.
     """
 
 
@@ -133,14 +131,13 @@ class ComponentsSettings(NamedTuple):
     """
     Settings available for django_components.
 
-    Example:
-
-    ```python
-    COMPONENTS = ComponentsSettings(
-        autodiscover=False,
-        dirs = [BASE_DIR / "components"],
-    )
-    ```
+    Examples:
+        ```python
+        COMPONENTS = ComponentsSettings(
+            autodiscover=False,
+            dirs = [BASE_DIR / "components"],
+        )
+        ```
 
     """
 
@@ -155,16 +152,15 @@ class ComponentsSettings(NamedTuple):
 
     Read more about [extensions](../concepts/advanced/extensions.md).
 
-    Example:
-
-    ```python
-    COMPONENTS = ComponentsSettings(
-        extensions=[
-            "path.to.my_extension.MyExtension",
-            StorybookExtension,
-        ],
-    )
-    ```
+    Examples:
+        ```python
+        COMPONENTS = ComponentsSettings(
+            extensions=[
+                "path.to.my_extension.MyExtension",
+                StorybookExtension,
+            ],
+        )
+        ```
     """
 
     extensions_defaults: dict[str, Any] | None = None
@@ -173,21 +169,20 @@ class ComponentsSettings(NamedTuple):
 
     Read more about [Extension defaults](../concepts/advanced/extensions.md#extension-defaults).
 
-    Example:
-
-    ```python
-    COMPONENTS = ComponentsSettings(
-        extensions_defaults={
-            "my_extension": {
-                "my_setting": "my_value",
+    Examples:
+        ```python
+        COMPONENTS = ComponentsSettings(
+            extensions_defaults={
+                "my_extension": {
+                    "my_setting": "my_value",
+                },
+                "cache": {
+                    "enabled": True,
+                    "ttl": 60,
+                },
             },
-            "cache": {
-                "enabled": True,
-                "ttl": 60,
-            },
-        },
-    )
-    ```
+        )
+        ```
     """
 
     autodiscover: bool | None = None
@@ -378,28 +373,27 @@ class ComponentsSettings(NamedTuple):
 
     Expects a list of python module paths. Defaults to empty list.
 
-    Example:
+    Examples:
+        ```python
+        COMPONENTS = ComponentsSettings(
+            libraries=[
+                "mysite.components.forms",
+                "mysite.components.buttons",
+                "mysite.components.cards",
+            ],
+        )
+        ```
 
-    ```python
-    COMPONENTS = ComponentsSettings(
-        libraries=[
-            "mysite.components.forms",
-            "mysite.components.buttons",
-            "mysite.components.cards",
-        ],
-    )
-    ```
+        This would be the equivalent of importing these modules from within Django's
+        [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.2/ref/applications/#django.apps.AppConfig.ready):
 
-    This would be the equivalent of importing these modules from within Django's
-    [`AppConfig.ready()`](https://docs.djangoproject.com/en/5.2/ref/applications/#django.apps.AppConfig.ready):
-
-    ```python
-    class MyAppConfig(AppConfig):
-        def ready(self):
-            import "mysite.components.forms"
-            import "mysite.components.buttons"
-            import "mysite.components.cards"
-    ```
+        ```python
+        class MyAppConfig(AppConfig):
+            def ready(self):
+                import "mysite.components.forms"
+                import "mysite.components.buttons"
+                import "mysite.components.cards"
+        ```
 
     # Manually loading libraries
 
@@ -577,42 +571,41 @@ class ComponentsSettings(NamedTuple):
     ```
 
     Examples:
+        - `"django_components.component_formatter"`
 
-    - `"django_components.component_formatter"`
+            Set
 
-        Set
+            ```python
+            COMPONENTS = ComponentsSettings(
+                "tag_formatter": "django_components.component_formatter"
+            )
+            ```
 
-        ```python
-        COMPONENTS = ComponentsSettings(
-            "tag_formatter": "django_components.component_formatter"
-        )
-        ```
+            To write components like this:
 
-        To write components like this:
+            ```django
+            {% component "button" href="..." %}
+                Click me!
+            {% endcomponent %}
+            ```
 
-        ```django
-        {% component "button" href="..." %}
-            Click me!
-        {% endcomponent %}
-        ```
+        - `django_components.component_shorthand_formatter`
 
-    - `django_components.component_shorthand_formatter`
+            Set
 
-        Set
+            ```python
+            COMPONENTS = ComponentsSettings(
+                "tag_formatter": "django_components.component_shorthand_formatter"
+            )
+            ```
 
-        ```python
-        COMPONENTS = ComponentsSettings(
-            "tag_formatter": "django_components.component_shorthand_formatter"
-        )
-        ```
+            To write components like this:
 
-        To write components like this:
-
-        ```django
-        {% button href="..." %}
-            Click me!
-        {% endbutton %}
-        ```
+            ```django
+            {% button href="..." %}
+                Click me!
+            {% endbutton %}
+            ```
     """
 
     # TODO_V1 - remove

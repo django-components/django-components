@@ -60,24 +60,23 @@ def get_component_url(
     - `False` and `None` values are omitted from the URL
     - Other values are rendered normally (e.g., `?foo=bar`)
 
-    Example:
+    Examples:
+        ```py
+        from django_components import Component, get_component_url
 
-    ```py
-    from django_components import Component, get_component_url
+        class MyTable(Component):
+            class View:
+                def get(self, request: HttpRequest, **kwargs: Any):
+                    return MyTable.render_to_response()
 
-    class MyTable(Component):
-        class View:
-            def get(self, request: HttpRequest, **kwargs: Any):
-                return MyTable.render_to_response()
-
-    # Get the URL for the component
-    url = get_component_url(
-        MyComponent,
-        query={"foo": "bar", "enabled": True, "debug": False, "unused": None},
-        fragment="baz",
-    )
-    # /components/ext/view/components/c1ab2c3/?foo=bar&enabled#baz
-    ```
+        # Get the URL for the component
+        url = get_component_url(
+            MyComponent,
+            query={"foo": "bar", "enabled": True, "debug": False, "unused": None},
+            fragment="baz",
+        )
+        # /components/ext/view/components/c1ab2c3/?foo=bar&enabled#baz
+        ```
 
     **Example with route parameters:**
 
@@ -132,16 +131,15 @@ class ComponentView(ExtensionComponentConfig, View):
     The [`Component`][Component] class is available
     via `self.component_cls`.
 
-    Example:
+    Examples:
+        Define a handler that runs for GET HTTP requests:
 
-    Define a handler that runs for GET HTTP requests:
-
-    ```python
-    class MyComponent(Component):
-        class View:
-            def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-                return HttpResponse("Hello, world!")
-    ```
+        ```python
+        class MyComponent(Component):
+            class View:
+                def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+                    return HttpResponse("Hello, world!")
+        ```
 
     **Component URL:**
 
@@ -194,14 +192,13 @@ class ComponentView(ExtensionComponentConfig, View):
     """
     The parent component class.
 
-    Example:
-
-    ```py
-    class MyComponent(Component):
-        class View:
-            def get(self, request):
-                return self.component_cls.render_to_response(request=request)
-    ```
+    Examples:
+        ```py
+        class MyComponent(Component):
+            class View:
+                def get(self, request):
+                    return self.component_cls.render_to_response(request=request)
+        ```
     """
 
     def __init__(self, component: "Component", **kwargs: Any) -> None:
@@ -220,20 +217,20 @@ class ComponentView(ExtensionComponentConfig, View):
 
         You can override this method to customize the route path.
 
-        Example:
-        ```py
-        from django_components import Component, get_component_url
+        Examples:
+            ```py
+            from django_components import Component, get_component_url
 
-        class MyComponent(Component):
-            class View:
-                @classmethod
-                def get_route_path(cls):
-                    return f"my/custom/path/{cls.component_cls.class_id}/<int:pk>/"
+            class MyComponent(Component):
+                class View:
+                    @classmethod
+                    def get_route_path(cls):
+                        return f"my/custom/path/{cls.component_cls.class_id}/<int:pk>/"
 
-        # Get the URL with route parameters filled
-        url = get_component_url(MyComponent, kwargs={"pk": 123})
-        # /components/ext/view/my/custom/path/c1ab2c3/123/
-        ```
+            # Get the URL with route parameters filled
+            url = get_component_url(MyComponent, kwargs={"pk": 123})
+            # /components/ext/view/my/custom/path/c1ab2c3/123/
+            ```
 
         """
         return f"components/{cls.component_cls.class_id}/"
@@ -272,34 +269,33 @@ class ComponentView(ExtensionComponentConfig, View):
 
     You can explicitly set `public` to `True` or `False` to override this behaviour.
 
-    Example:
+    Examples:
+        Define the component HTTP handlers and get its URL using
+        [`get_component_url()`][get_component_url]:
 
-    Define the component HTTP handlers and get its URL using
-    [`get_component_url()`][get_component_url]:
+        ```py
+        from django_components import Component, get_component_url
 
-    ```py
-    from django_components import Component, get_component_url
+        class MyComponent(Component):
+            class View:
+                def get(self, request):
+                    return self.component_cls.render_to_response(request=request)
 
-    class MyComponent(Component):
-        class View:
-            def get(self, request):
-                return self.component_cls.render_to_response(request=request)
+        url = get_component_url(MyComponent)
+        ```
 
-    url = get_component_url(MyComponent)
-    ```
+        This will create a URL route like `/components/ext/view/components/a1b2c3/`.
 
-    This will create a URL route like `/components/ext/view/components/a1b2c3/`.
+        To explicitly hide the component, set `public = False`:
 
-    To explicitly hide the component, set `public = False`:
+        ```py
+        class MyComponent(Component):
+            class View:
+                public = False
 
-    ```py
-    class MyComponent(Component):
-        class View:
-            public = False
-
-            def get(self, request):
-                return self.component_cls.render_to_response(request=request)
-    ```
+                def get(self, request):
+                    return self.component_cls.render_to_response(request=request)
+        ```
     """
 
     # NOTE: The methods below are defined to satisfy the `View` class. All supported methods

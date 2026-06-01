@@ -784,14 +784,13 @@ def _format_error_with_template_position(
     - Up to 2 following lines
     - Underlined code with ^^^ characters
 
-    Example:
+    Examples:
+        ```
+        TypeError: Error in mytag3: missing 1 required keyword-only argument: 'msg' and 'mode'
 
-    ```
-    TypeError: Error in mytag3: missing 1 required keyword-only argument: 'msg' and 'mode'
-
-        1 | {% mytag3 'John' %}
-            ^^^^^^^^^^^^^^^^^^^
-    ```
+            1 | {% mytag3 'John' %}
+                ^^^^^^^^^^^^^^^^^^^
+        ```
 
     """
     # Convert source to lines with line numbers

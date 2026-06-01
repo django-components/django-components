@@ -191,24 +191,23 @@ class ComponentRegistry:
     - The default registry is used when registering components with [`@register`][register]
     decorator.
 
-    Example:
+    Examples:
+        ```python
+        # Use with default Library
+        registry = ComponentRegistry()
 
-    ```python
-    # Use with default Library
-    registry = ComponentRegistry()
+        # Or a custom one
+        my_lib = Library()
+        registry = ComponentRegistry(library=my_lib)
 
-    # Or a custom one
-    my_lib = Library()
-    registry = ComponentRegistry(library=my_lib)
-
-    # Usage
-    registry.register("button", ButtonComponent)
-    registry.register("card", CardComponent)
-    registry.all()
-    registry.clear()
-    registry.get("button")
-    registry.has("button")
-    ```
+        # Usage
+        registry.register("button", ButtonComponent)
+        registry.register("card", CardComponent)
+        registry.all()
+        registry.clear()
+        registry.get("button")
+        registry.has("button")
+        ```
 
     # Using registry to share components
 
@@ -355,11 +354,10 @@ class ComponentRegistry:
         Raises:
             AlreadyRegistered: if `name` is already registered with any class other than `component` itself.
 
-        Example:
-
-        ```python
-        registry.register("button", ButtonComponent)
-        ```
+        Examples:
+            ```python
+            registry.register("button", ButtonComponent)
+            ```
 
         """
         existing_entry = self._registry.get(name)
@@ -420,14 +418,13 @@ class ComponentRegistry:
         Raises:
             NotRegistered: if the given name is not registered.
 
-        Example:
-
-        ```python
-        # First register component
-        registry.register("button", ButtonComponent)
-        # Then unregister
-        registry.unregister("button")
-        ```
+        Examples:
+            ```python
+            # First register component
+            registry.register("button", ButtonComponent)
+            # Then unregister
+            registry.unregister("button")
+            ```
 
         """
         # Validate
@@ -486,15 +483,14 @@ class ComponentRegistry:
         Raises:
             NotRegistered: if the given name is not registered.
 
-        Example:
-
-        ```python
-        # First register component
-        registry.register("button", ButtonComponent)
-        # Then get
-        registry.get("button")
-        # > ButtonComponent
-        ```
+        Examples:
+            ```python
+            # First register component
+            registry.register("button", ButtonComponent)
+            # Then get
+            registry.get("button")
+            # > ButtonComponent
+            ```
 
         """
         if name not in self._registry:
@@ -513,15 +509,14 @@ class ComponentRegistry:
         Returns:
             bool: `True` if the component is registered, `False` otherwise.
 
-        Example:
-
-        ```python
-        # First register component
-        registry.register("button", ButtonComponent)
-        # Then check
-        registry.has("button")
-        # > True
-        ```
+        Examples:
+            ```python
+            # First register component
+            registry.register("button", ButtonComponent)
+            # Then check
+            registry.has("button")
+            # > True
+            ```
 
         """
         return name in self._registry
@@ -533,19 +528,18 @@ class ComponentRegistry:
         Returns:
             dict[str, type[Component]]: A dictionary of component names to component classes
 
-        Example:
-
-        ```python
-        # First register components
-        registry.register("button", ButtonComponent)
-        registry.register("card", CardComponent)
-        # Then get all
-        registry.all()
-        # > {
-        # >   "button": ButtonComponent,
-        # >   "card": CardComponent,
-        # > }
-        ```
+        Examples:
+            ```python
+            # First register components
+            registry.register("button", ButtonComponent)
+            registry.register("card", CardComponent)
+            # Then get all
+            registry.all()
+            # > {
+            # >   "button": ButtonComponent,
+            # >   "card": CardComponent,
+            # > }
+            ```
 
         """
         comps = {key: entry.cls for key, entry in self._registry.items()}
@@ -555,18 +549,17 @@ class ComponentRegistry:
         """
         Clears the registry, unregistering all components.
 
-        Example:
-
-        ```python
-        # First register components
-        registry.register("button", ButtonComponent)
-        registry.register("card", CardComponent)
-        # Then clear
-        registry.clear()
-        # Then get all
-        registry.all()
-        # > {}
-        ```
+        Examples:
+            ```python
+            # First register components
+            registry.register("button", ButtonComponent)
+            registry.register("card", CardComponent)
+            # Then clear
+            registry.clear()
+            # Then get all
+            registry.all()
+            # > {}
+            ```
 
         """
         all_comp_names = list(self._registry.keys())

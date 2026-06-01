@@ -28,19 +28,18 @@ class Default:
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    Example:
+    Examples:
+        ```py
+        from django_components import Default
 
-    ```py
-    from django_components import Default
-
-    class MyComponent(Component):
-        class Defaults:
-            # Plain value doesn't need a factory
-            position = "left"
-            # Lists and dicts need to be wrapped in `Default`
-            # Otherwise all instances will share the same value
-            selected_items = Default(lambda: [1, 2, 3])
-    ```
+        class MyComponent(Component):
+            class Defaults:
+                # Plain value doesn't need a factory
+                position = "left"
+                # Lists and dicts need to be wrapped in `Default`
+                # Otherwise all instances will share the same value
+                selected_items = Default(lambda: [1, 2, 3])
+        ```
 
     """
 
@@ -65,30 +64,29 @@ def get_component_defaults(component: "type[Component] | Component") -> dict[str
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    Example:
+    Examples:
+        ```py
+        from django_components import Component, Default, get_component_defaults
 
-    ```py
-    from django_components import Component, Default, get_component_defaults
+        class MyTable(Component):
+            class Kwargs:
+                position: str
+                order: int
+                items: list[int]
+                variable: str = "from_kwargs"
 
-    class MyTable(Component):
-        class Kwargs:
-            position: str
-            order: int
-            items: list[int]
-            variable: str = "from_kwargs"
+            class Defaults:
+                position: str = "left"
+                items = Default(lambda: [1, 2, 3])
 
-        class Defaults:
-            position: str = "left"
-            items = Default(lambda: [1, 2, 3])
-
-    # Get the defaults dictionary
-    defaults = get_component_defaults(MyTable)
-    # {
-    #     "position": "left",
-    #     "items": [1, 2, 3],
-    #     "variable": "from_kwargs",
-    # }
-    ```
+        # Get the defaults dictionary
+        defaults = get_component_defaults(MyTable)
+        # {
+        #     "position": "left",
+        #     "items": [1, 2, 3],
+        #     "variable": "from_kwargs",
+        # }
+        ```
 
     """
     component_cls = component if isclass(component) else component.__class__
@@ -217,16 +215,15 @@ class ComponentDefaults(ExtensionComponentConfig):
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    Example:
+    Examples:
+        ```python
+        from django_components import Component, Default
 
-    ```python
-    from django_components import Component, Default
-
-    class MyComponent(Component):
-        class Defaults:
-            position = "left"
-            selected_items = Default(lambda: [1, 2, 3])
-    ```
+        class MyComponent(Component):
+            class Defaults:
+                position = "left"
+                selected_items = Default(lambda: [1, 2, 3])
+        ```
 
     """
 
@@ -237,17 +234,16 @@ class DefaultsExtension(ComponentExtension):
 
     This nested `Defaults` class is used to set default values for the component's kwargs.
 
-    Example:
+    Examples:
+        ```py
+        from django_components import Component, Default
 
-    ```py
-    from django_components import Component, Default
-
-    class MyComponent(Component):
-        class Defaults:
-            position = "left"
-            # Factory values need to be wrapped in `Default`
-            selected_items = Default(lambda: [1, 2, 3])
-    ```
+        class MyComponent(Component):
+            class Defaults:
+                position = "left"
+                # Factory values need to be wrapped in `Default`
+                selected_items = Default(lambda: [1, 2, 3])
+        ```
 
     This extension is automatically added to all components.
 

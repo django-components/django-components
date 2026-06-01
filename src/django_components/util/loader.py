@@ -133,13 +133,12 @@ def get_component_files(suffix: str | None = None) -> list[ComponentFileEntry]:
         list[ComponentFileEntry] A list of entries that contain both the filesystem path and \
             the python import path (dot path).
 
-    Example:
+    Examples:
+        ```python
+        from django_components import get_component_files
 
-    ```python
-    from django_components import get_component_files
-
-    modules = get_component_files(".py")
-    ```
+        modules = get_component_files(".py")
+        ```
 
     """
     search_glob = f"**/*{suffix}" if suffix else "**/*"
@@ -205,11 +204,11 @@ def _filepath_to_python_module(
     """
     Derive python import path from the filesystem path.
 
-    Example:
-    - If project root is `/path/to/project`
-    - And file_path is `/path/to/project/app/components/mycomp.py`
-    - Then the path relative to project root is `app/components/mycomp.py`
-    - Which we then turn into python import path `app.components.mycomp`
+    Examples:
+        - If project root is `/path/to/project`
+        - And file_path is `/path/to/project/app/components/mycomp.py`
+        - Then the path relative to project root is `app/components/mycomp.py`
+        - Which we then turn into python import path `app.components.mycomp`
 
     """
     path_cls = PureWindowsPath if os.name == "nt" else PurePosixPath

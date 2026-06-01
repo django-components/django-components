@@ -204,25 +204,24 @@ class Script(Dependency):
 
     If `Script.url` is set, renders as `<script src="...">`, otherwise renders as `<script>...</script>`.
 
-    Example:
+    Examples:
+        ```python
+        from django_components import Script
 
-    ```python
-    from django_components import Script
+        script = Script(
+            content="console.log('Hello, world!');",
+            attrs={"type": "module"},
+            wrap=False,
+        )
+        ```
 
-    script = Script(
-        content="console.log('Hello, world!');",
-        attrs={"type": "module"},
-        wrap=False,
-    )
-    ```
+        becomes
 
-    becomes
-
-    ```html
-    <script type="module">
-        console.log('Hello, world!');
-    </script>
-    ```
+        ```html
+        <script type="module">
+            console.log('Hello, world!');
+        </script>
+        ```
 
     """
 
@@ -318,22 +317,21 @@ class Style(Dependency):
     If `Style.url` is set, renders as `<link rel="stylesheet" href="...">`,
     otherwise renders as `<style>...</style>`.
 
-    Example:
+    Examples:
+        ```python
+        from django_components import Style
 
-    ```python
-    from django_components import Style
+        style = Style(
+            url="/static/style.css",
+            attrs={"media": "print"},
+        )
+        ```
 
-    style = Style(
-        url="/static/style.css",
-        attrs={"media": "print"},
-    )
-    ```
+        becomes
 
-    becomes
-
-    ```html
-    <link rel="stylesheet" href="/static/style.css" media="print">
-    ```
+        ```html
+        <link rel="stylesheet" href="/static/style.css" media="print">
+        ```
 
     """
 
@@ -824,33 +822,32 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
             - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore) (default when nested)
                 - Returns the content unchanged (no JS / CSS inserted).
 
-    Example:
+    Examples:
+        ```python
+        def my_view(request):
+            template = Template('''
+                {% load component_tags %}
+                <!doctype html>
+                <html>
+                    <head></head>
+                    <body>
+                        <h1>{{ table_name }}</h1>
+                        {% component "table" name=table_name / %}
+                    </body>
+                </html>
+            ''')
 
-    ```python
-    def my_view(request):
-        template = Template('''
-            {% load component_tags %}
-            <!doctype html>
-            <html>
-                <head></head>
-                <body>
-                    <h1>{{ table_name }}</h1>
-                    {% component "table" name=table_name / %}
-                </body>
-            </html>
-        ''')
+            html = template.render(
+                Context({
+                    "table_name": request.GET["name"],
+                })
+            )
 
-        html = template.render(
-            Context({
-                "table_name": request.GET["name"],
-            })
-        )
+            # This inserts components' JS and CSS
+            processed_html = render_dependencies(html)
 
-        # This inserts components' JS and CSS
-        processed_html = render_dependencies(html)
-
-        return HttpResponse(processed_html)
-    ```
+            return HttpResponse(processed_html)
+        ```
 
     """
     if strategy not in DEPS_STRATEGIES:

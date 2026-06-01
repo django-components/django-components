@@ -77,31 +77,30 @@ When `on_render()` is a generator then it:
 
 - At the end it may return a new string to override the final rendered output.
 
-Example:
+Examples:
+    ```py
+    from django_components import Component, OnRenderGenerator
 
-```py
-from django_components import Component, OnRenderGenerator
+    class MyTable(Component):
+        def on_render(
+            self,
+            context: Context,
+            template: Template | None,
+        ) -> OnRenderGenerator:
+            # Do something BEFORE rendering template
+            # Same as `Component.on_render_before()`
+            context["hello"] = "world"
 
-class MyTable(Component):
-    def on_render(
-        self,
-        context: Context,
-        template: Template | None,
-    ) -> OnRenderGenerator:
-        # Do something BEFORE rendering template
-        # Same as `Component.on_render_before()`
-        context["hello"] = "world"
+            # Yield a function that renders the template
+            # to receive fully-rendered template or error.
+            html, error = yield lambda: template.render(context)
 
-        # Yield a function that renders the template
-        # to receive fully-rendered template or error.
-        html, error = yield lambda: template.render(context)
-
-        # Do something AFTER rendering template, or post-process
-        # the rendered template.
-        # Same as `Component.on_render_after()`
-        if html is not None:
-            return html + "<p>Hello</p>"
-```
+            # Do something AFTER rendering template, or post-process
+            # the rendered template.
+            # Same as `Component.on_render_after()`
+            if html is not None:
+                return html + "<p>Hello</p>"
+    ```
 
 **Multiple yields example:**
 

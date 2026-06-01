@@ -25,90 +25,89 @@ class ErrorFallback(Component):
     you can access the `error` object through slot data (`{% fill "fallback" data="data" %}`).
     Cannot be used together with the `fallback` kwarg.
 
-    Example:
+    Examples:
+        Given this template:
 
-    Given this template:
-
-    ```django
-    {% component "error_fallback" fallback="Oops, something went wrong" %}
-        {% component "table" / %}
-    {% endcomponent %}
-    ```
-
-    Then:
-
-    - If the `table` component does NOT raise an error, then the table is rendered as normal.
-    - If the `table` component DOES raise an error, then `error_fallback` renders `Oops, something went wrong`.
-
-    To have more control over the fallback content, you can use the `fallback` slot
-    instead of the `fallback` kwarg.
-
-    ```django
-    {% component "error_fallback" %}
-        {% fill "content" %}
+        ```django
+        {% component "error_fallback" fallback="Oops, something went wrong" %}
             {% component "table" / %}
-        {% endfill %}
-        {% fill "fallback" %}
-            <p>Oops, something went wrong</p>
-            {% button href="/report-error" %}
-                Report error
-            {% endbutton %}
-        {% endfill %}
-    {% endcomponent %}
-    ```
+        {% endcomponent %}
+        ```
 
-    If you want to print the error, you can access the `error` variable
-    as [slot data](../concepts/fundamentals/slots.md#slot-data).
+        Then:
 
-    ```django
-    {% component "error_fallback" %}
-        {% fill "content" %}
-            {% component "table" / %}
-        {% endfill %}
-        {% fill "fallback" data="data" %}
-            Oops, something went wrong:
-            <pre>{{ data.error }}</pre>
-        {% endfill %}
-    {% endcomponent %}
-    ```
+        - If the `table` component does NOT raise an error, then the table is rendered as normal.
+        - If the `table` component DOES raise an error, then `error_fallback` renders `Oops, something went wrong`.
 
-    **Python:**
+        To have more control over the fallback content, you can use the `fallback` slot
+        instead of the `fallback` kwarg.
 
-    With fallback kwarg:
+        ```django
+        {% component "error_fallback" %}
+            {% fill "content" %}
+                {% component "table" / %}
+            {% endfill %}
+            {% fill "fallback" %}
+                <p>Oops, something went wrong</p>
+                {% button href="/report-error" %}
+                    Report error
+                {% endbutton %}
+            {% endfill %}
+        {% endcomponent %}
+        ```
 
-    ```py
-    from django_components import ErrorFallback
+        If you want to print the error, you can access the `error` variable
+        as [slot data](../concepts/fundamentals/slots.md#slot-data).
 
-    ErrorFallback.render(
-        slots={
-            # Main content
-            "content": lambda ctx: TableComponent.render(
-                deps_strategy="ignore",
-            ),
-        },
-        kwargs={
-            # Fallback content
-            "fallback": "Oops, something went wrong",
-        },
-    )
-    ```
+        ```django
+        {% component "error_fallback" %}
+            {% fill "content" %}
+                {% component "table" / %}
+            {% endfill %}
+            {% fill "fallback" data="data" %}
+                Oops, something went wrong:
+                <pre>{{ data.error }}</pre>
+            {% endfill %}
+        {% endcomponent %}
+        ```
 
-    With fallback slot:
+        **Python:**
 
-    ```py
-    from django_components import ErrorFallback
+        With fallback kwarg:
 
-    ErrorFallback.render(
-        slots={
-            # Main content
-            "content": lambda ctx: TableComponent.render(
-                deps_strategy="ignore",
-            ),
-            # Fallback content
-            "fallback": lambda ctx: mark_safe("Oops, something went wrong: " + ctx.error),
-        },
-    )
-    ```
+        ```py
+        from django_components import ErrorFallback
+
+        ErrorFallback.render(
+            slots={
+                # Main content
+                "content": lambda ctx: TableComponent.render(
+                    deps_strategy="ignore",
+                ),
+            },
+            kwargs={
+                # Fallback content
+                "fallback": "Oops, something went wrong",
+            },
+        )
+        ```
+
+        With fallback slot:
+
+        ```py
+        from django_components import ErrorFallback
+
+        ErrorFallback.render(
+            slots={
+                # Main content
+                "content": lambda ctx: TableComponent.render(
+                    deps_strategy="ignore",
+                ),
+                # Fallback content
+                "fallback": lambda ctx: mark_safe("Oops, something went wrong: " + ctx.error),
+            },
+        )
+        ```
 
     !!! info
 

@@ -324,54 +324,54 @@ def process_aggregate_kwargs(
     This function aggregates "prefixed" kwargs into dicts. "Prefixed" kwargs
     start with some prefix delimited with `:` (e.g. `attrs:`).
 
-    Example:
-    ```py
-    process_aggregate_kwargs([], [("abc:one", 1), ("abc:two", 2), ("def:three", 3), ("four", 4)])
-    # ([], [("abc", {"one": 1, "two": 2}), ("def", {"three": 3}), ("four", 4)])
-    ```
+    Examples:
+        ```py
+        process_aggregate_kwargs([], [("abc:one", 1), ("abc:two", 2), ("def:three", 3), ("four", 4)])
+        # ([], [("abc", {"one": 1, "two": 2}), ("def", {"three": 3}), ("four", 4)])
+        ```
 
-    ---
+        ---
 
-    We want to support a use case similar to Vue's fallthrough attributes.
-    In other words, where a component author can designate a prop (input)
-    which is a dict and which will be rendered as HTML attributes.
+        We want to support a use case similar to Vue's fallthrough attributes.
+        In other words, where a component author can designate a prop (input)
+        which is a dict and which will be rendered as HTML attributes.
 
-    This is useful for allowing component users to tweak styling or add
-    event handling to the underlying HTML. E.g.:
+        This is useful for allowing component users to tweak styling or add
+        event handling to the underlying HTML. E.g.:
 
-    `class="pa-4 d-flex text-black"` or `@click.stop="alert('clicked!')"`
+        `class="pa-4 d-flex text-black"` or `@click.stop="alert('clicked!')"`
 
-    So if the prop is `attrs`, and the component is called like so:
-    ```django
-    {% component "my_comp" attrs=attrs %}
-    ```
+        So if the prop is `attrs`, and the component is called like so:
+        ```django
+        {% component "my_comp" attrs=attrs %}
+        ```
 
-    then, if `attrs` is:
-    ```py
-    {"class": "text-red pa-4", "@click": "dispatch('my_event', 123)"}
-    ```
+        then, if `attrs` is:
+        ```py
+        {"class": "text-red pa-4", "@click": "dispatch('my_event', 123)"}
+        ```
 
-    and the component template is:
-    ```django
-    <div {% html_attrs attrs add:class="extra-class" %}></div>
-    ```
+        and the component template is:
+        ```django
+        <div {% html_attrs attrs add:class="extra-class" %}></div>
+        ```
 
-    Then this renders:
-    ```html
-    <div class="text-red pa-4 extra-class" @click="dispatch('my_event', 123)" ></div>
-    ```
+        Then this renders:
+        ```html
+        <div class="text-red pa-4 extra-class" @click="dispatch('my_event', 123)" ></div>
+        ```
 
-    However, this way it is difficult for the component user to define the `attrs`
-    variable, especially if they want to combine static and dynamic values. Because
-    they will need to pre-process the `attrs` dict.
+        However, this way it is difficult for the component user to define the `attrs`
+        variable, especially if they want to combine static and dynamic values. Because
+        they will need to pre-process the `attrs` dict.
 
-    So, instead, we allow to "aggregate" props into a dict. So all props that start
-    with `attrs:`, like `attrs:class="text-red"`, will be collected into a dict
-    at key `attrs`.
+        So, instead, we allow to "aggregate" props into a dict. So all props that start
+        with `attrs:`, like `attrs:class="text-red"`, will be collected into a dict
+        at key `attrs`.
 
-    This provides sufficient flexiblity to make it easy for component users to provide
-    "fallthrough attributes", and sufficiently easy for component authors to process
-    that input while still being able to provide their own keys.
+        This provides sufficient flexiblity to make it easy for component users to provide
+        "fallthrough attributes", and sufficiently easy for component authors to process
+        that input while still being able to provide their own keys.
 
     """
     _check_kwargs_for_agg_conflict(kwargs)

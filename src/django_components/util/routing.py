@@ -31,36 +31,35 @@ class URLRoute:
     The `URLRoute` must either define a `handler` function or have a list of child routes `children`.
     If both are defined, an error will be raised.
 
-    Example:
+    Examples:
+        ```python
+        URLRoute("/my/path", handler=my_handler, name="my_name", extra={"kwargs": {"my_extra": "my_value"}})
+        ```
 
-    ```python
-    URLRoute("/my/path", handler=my_handler, name="my_name", extra={"kwargs": {"my_extra": "my_value"}})
-    ```
+        Is equivalent to:
 
-    Is equivalent to:
+        ```python
+        django.urls.path("/my/path", my_handler, name="my_name", kwargs={"my_extra": "my_value"})
+        ```
 
-    ```python
-    django.urls.path("/my/path", my_handler, name="my_name", kwargs={"my_extra": "my_value"})
-    ```
+        With children:
 
-    With children:
-
-    ```python
-    URLRoute(
-        "/my/path",
-        name="my_name",
-        extra={"kwargs": {"my_extra": "my_value"}},
-        children=[
-            URLRoute(
-                "/child/<str:name>/",
-                handler=my_handler,
-                name="my_name",
-                extra={"kwargs": {"my_extra": "my_value"}},
-            ),
-            URLRoute("/other/<int:id>/", handler=other_handler),
-        ],
-    )
-    ```
+        ```python
+        URLRoute(
+            "/my/path",
+            name="my_name",
+            extra={"kwargs": {"my_extra": "my_value"}},
+            children=[
+                URLRoute(
+                    "/child/<str:name>/",
+                    handler=my_handler,
+                    name="my_name",
+                    extra={"kwargs": {"my_extra": "my_value"}},
+                ),
+                URLRoute("/other/<int:id>/", handler=other_handler),
+            ],
+        )
+        ```
 
     """
 

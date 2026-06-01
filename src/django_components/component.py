@@ -192,43 +192,42 @@ class ComponentVars(NamedTuple):
 
     Otherwise, `args` will be a plain list.
 
-    Example:
+    Examples:
+        With `Args` class:
 
-    With `Args` class:
+        ```djc_py
+        from django_components import Component, register
 
-    ```djc_py
-    from django_components import Component, register
+        @register("table")
+        class Table(Component):
+            class Args:
+                page: int
+                per_page: int
 
-    @register("table")
-    class Table(Component):
-        class Args:
-            page: int
-            per_page: int
+            template = '''
+                <div>
+                    <h1>Table</h1>
+                    <p>Page: {{ component_vars.args.page }}</p>
+                    <p>Per page: {{ component_vars.args.per_page }}</p>
+                </div>
+            '''
+        ```
 
-        template = '''
-            <div>
-                <h1>Table</h1>
-                <p>Page: {{ component_vars.args.page }}</p>
-                <p>Per page: {{ component_vars.args.per_page }}</p>
-            </div>
-        '''
-    ```
+        Without `Args` class:
 
-    Without `Args` class:
+        ```djc_py
+        from django_components import Component, register
 
-    ```djc_py
-    from django_components import Component, register
-
-    @register("table")
-    class Table(Component):
-        template = '''
-            <div>
-                <h1>Table</h1>
-                <p>Page: {{ component_vars.args.0 }}</p>
-                <p>Per page: {{ component_vars.args.1 }}</p>
-            </div>
-        '''
-    ```
+        @register("table")
+        class Table(Component):
+            template = '''
+                <div>
+                    <h1>Table</h1>
+                    <p>Page: {{ component_vars.args.0 }}</p>
+                    <p>Per page: {{ component_vars.args.1 }}</p>
+                </div>
+            '''
+        ```
     """
 
     kwargs: Any
@@ -244,43 +243,42 @@ class ComponentVars(NamedTuple):
 
     Otherwise, `kwargs` will be a plain dict.
 
-    Example:
+    Examples:
+        With `Kwargs` class:
 
-    With `Kwargs` class:
+        ```djc_py
+        from django_components import Component, register
 
-    ```djc_py
-    from django_components import Component, register
+        @register("table")
+        class Table(Component):
+            class Kwargs:
+                page: int
+                per_page: int
 
-    @register("table")
-    class Table(Component):
-        class Kwargs:
-            page: int
-            per_page: int
+            template = '''
+                <div>
+                    <h1>Table</h1>
+                    <p>Page: {{ component_vars.kwargs.page }}</p>
+                    <p>Per page: {{ component_vars.kwargs.per_page }}</p>
+                </div>
+            '''
+        ```
 
-        template = '''
-            <div>
-                <h1>Table</h1>
-                <p>Page: {{ component_vars.kwargs.page }}</p>
-                <p>Per page: {{ component_vars.kwargs.per_page }}</p>
-            </div>
-        '''
-    ```
+        Without `Kwargs` class:
 
-    Without `Kwargs` class:
+        ```djc_py
+        from django_components import Component, register
 
-    ```djc_py
-    from django_components import Component, register
-
-    @register("table")
-    class Table(Component):
-        template = '''
-            <div>
-                <h1>Table</h1>
-                <p>Page: {{ component_vars.kwargs.page }}</p>
-                <p>Per page: {{ component_vars.kwargs.per_page }}</p>
-            </div>
-        '''
-    ```
+        @register("table")
+        class Table(Component):
+            template = '''
+                <div>
+                    <h1>Table</h1>
+                    <p>Page: {{ component_vars.kwargs.page }}</p>
+                    <p>Per page: {{ component_vars.kwargs.per_page }}</p>
+                </div>
+            '''
+        ```
     """
 
     slots: Any
@@ -296,42 +294,41 @@ class ComponentVars(NamedTuple):
 
     Otherwise, `slots` will be a plain dict.
 
-    Example:
+    Examples:
+        With `Slots` class:
 
-    With `Slots` class:
+        ```djc_py
+        from django_components import Component, SlotInput, register
 
-    ```djc_py
-    from django_components import Component, SlotInput, register
+        @register("table")
+        class Table(Component):
+            class Slots:
+                footer: SlotInput
 
-    @register("table")
-    class Table(Component):
-        class Slots:
-            footer: SlotInput
+            template = '''
+                <div>
+                    {% component "pagination" %}
+                        {% fill "footer" body=component_vars.slots.footer / %}
+                    {% endcomponent %}
+                </div>
+            '''
+        ```
 
-        template = '''
-            <div>
-                {% component "pagination" %}
-                    {% fill "footer" body=component_vars.slots.footer / %}
-                {% endcomponent %}
-            </div>
-        '''
-    ```
+        Without `Slots` class:
 
-    Without `Slots` class:
+        ```djc_py
+        from django_components import Component, SlotInput, register
 
-    ```djc_py
-    from django_components import Component, SlotInput, register
-
-    @register("table")
-    class Table(Component):
-        template = '''
-            <div>
-                {% component "pagination" %}
-                    {% fill "footer" body=component_vars.slots.footer / %}
-                {% endcomponent %}
-            </div>
-        '''
-    ```
+        @register("table")
+        class Table(Component):
+            template = '''
+                <div>
+                    {% component "pagination" %}
+                        {% fill "footer" body=component_vars.slots.footer / %}
+                    {% endcomponent %}
+                </div>
+            '''
+        ```
     """
 
     # TODO_v1 - Remove, superseded by `component_vars.slots`
@@ -346,26 +343,25 @@ class ComponentVars(NamedTuple):
 
     Use as `{{ component_vars.is_filled }}`
 
-    Example:
+    Examples:
+        ```django
+        {# Render wrapping HTML only if the slot is defined #}
+        {% if component_vars.is_filled.my_slot %}
+            <div class="slot-wrapper">
+                {% slot "my_slot" / %}
+            </div>
+        {% endif %}
+        ```
 
-    ```django
-    {# Render wrapping HTML only if the slot is defined #}
-    {% if component_vars.is_filled.my_slot %}
-        <div class="slot-wrapper">
-            {% slot "my_slot" / %}
-        </div>
-    {% endif %}
-    ```
+        This is equivalent to checking if a given key is among the slot fills:
 
-    This is equivalent to checking if a given key is among the slot fills:
-
-    ```py
-    class MyTable(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            return {
-                "my_slot_filled": "my_slot" in slots
-            }
-    ```
+        ```py
+        class MyTable(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "my_slot_filled": "my_slot" in slots
+                }
+        ```
     """
 
 
@@ -695,35 +691,34 @@ class Component(metaclass=ComponentMeta):
         [`template`][Component.template]
         or [`get_template`][Component.get_template] must be defined.
 
-    Example:
+    Examples:
+        Assuming this project layout:
 
-    Assuming this project layout:
+        ```txt
+        |- components/
+          |- table/
+            |- table.html
+            |- table.css
+            |- table.js
+        ```
 
-    ```txt
-    |- components/
-      |- table/
-        |- table.html
-        |- table.css
-        |- table.js
-    ```
+        Template name can be either relative to the python file (`components/table/table.py`):
 
-    Template name can be either relative to the python file (`components/table/table.py`):
+        ```python
+        class Table(Component):
+            template_file = "table.html"
+        ```
 
-    ```python
-    class Table(Component):
-        template_file = "table.html"
-    ```
+        Or relative to one of the directories in
+        [`COMPONENTS.dirs`][ComponentsSettings.dirs]
+        or
+        [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
+        (`components/`):
 
-    Or relative to one of the directories in
-    [`COMPONENTS.dirs`][ComponentsSettings.dirs]
-    or
-    [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
-    (`components/`):
-
-    ```python
-    class Table(Component):
-        template_file = "table/table.html"
-    ```
+        ```python
+        class Table(Component):
+            template_file = "table/table.html"
+        ```
     """
 
     # NOTE: This attribute is managed by `ComponentTemplateNameDescriptor` that's set in the metaclass.
@@ -800,34 +795,33 @@ class Component(metaclass=ComponentMeta):
         [`get_template()`][Component.get_template]
         must be defined.
 
-    Example:
+    Examples:
+        ```python
+        class Table(Component):
+            template = '''
+              <div>
+                {{ my_var }}
+              </div>
+            '''
+        ```
 
-    ```python
-    class Table(Component):
-        template = '''
-          <div>
-            {{ my_var }}
-          </div>
-        '''
-    ```
+        **Syntax highlighting**
 
-    **Syntax highlighting**
+        When using the inlined template, you can enable syntax highlighting
+        with `django_components.types.django_html`.
 
-    When using the inlined template, you can enable syntax highlighting
-    with `django_components.types.django_html`.
+        Learn more about [syntax highlighting](../concepts/fundamentals/single_file_components.md#syntax-highlighting).
 
-    Learn more about [syntax highlighting](../concepts/fundamentals/single_file_components.md#syntax-highlighting).
+        ```djc_py
+        from django_components import Component, types
 
-    ```djc_py
-    from django_components import Component, types
-
-    class MyComponent(Component):
-        template: types.django_html = '''
-          <div>
-            {{ my_var }}
-          </div>
-        '''
-    ```
+        class MyComponent(Component):
+            template: types.django_html = '''
+              <div>
+                {{ my_var }}
+              </div>
+            '''
+        ```
     """
 
     # TODO_v1 - Remove
@@ -890,20 +884,19 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [Template variables](../concepts/fundamentals/html_js_css_variables.md).
 
-        Example:
+        Examples:
+            ```py
+            class MyComponent(Component):
+                def get_context_data(self, name, *args, **kwargs):
+                    return {
+                        "name": name,
+                        "id": self.id,
+                    }
 
-        ```py
-        class MyComponent(Component):
-            def get_context_data(self, name, *args, **kwargs):
-                return {
-                    "name": name,
-                    "id": self.id,
-                }
+                template = "Hello, {{ name }}!"
 
-            template = "Hello, {{ name }}!"
-
-        MyComponent.render(name="World")
-        ```
+            MyComponent.render(name="World")
+            ```
 
         !!! warning
 
@@ -923,20 +916,19 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [Template variables](../concepts/fundamentals/html_js_css_variables.md).
 
-        Example:
+        Examples:
+            ```py
+            class MyComponent(Component):
+                def get_template_data(self, args, kwargs, slots, context):
+                    return {
+                        "name": kwargs["name"],
+                        "id": self.id,
+                    }
 
-        ```py
-        class MyComponent(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "name": kwargs["name"],
-                    "id": self.id,
-                }
+                template = "Hello, {{ name }}!"
 
-            template = "Hello, {{ name }}!"
-
-        MyComponent.render(name="World")
-        ```
+            MyComponent.render(name="World")
+            ```
 
         Args:
             args: Positional arguments passed to the component.
@@ -977,33 +969,32 @@ class Component(metaclass=ComponentMeta):
 
         Read more on [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
-        Example:
+        Examples:
+            ```py
+            from django.template import Context
+            from django_components import Component, SlotInput
 
-        ```py
-        from django.template import Context
-        from django_components import Component, SlotInput
+            class MyComponent(Component):
+                class Args:
+                    color: str
 
-        class MyComponent(Component):
-            class Args:
-                color: str
+                class Kwargs:
+                    size: int
 
-            class Kwargs:
-                size: int
+                class Slots:
+                    footer: SlotInput
 
-            class Slots:
-                footer: SlotInput
+                def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+                    assert isinstance(args, MyComponent.Args)
+                    assert isinstance(kwargs, MyComponent.Kwargs)
+                    assert isinstance(slots, MyComponent.Slots)
 
-            def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
-                assert isinstance(args, MyComponent.Args)
-                assert isinstance(kwargs, MyComponent.Kwargs)
-                assert isinstance(slots, MyComponent.Slots)
-
-                return {
-                    "color": args.color,
-                    "size": kwargs.size,
-                    "id": self.id,
-                }
-        ```
+                    return {
+                        "color": args.color,
+                        "size": kwargs.size,
+                        "id": self.id,
+                    }
+            ```
 
         You can also add typing to the data returned from
         [`get_template_data()`][Component.get_template_data]
@@ -1017,25 +1008,24 @@ class Component(metaclass=ComponentMeta):
         [`TemplateData`][Component.TemplateData] class
         by instantiating it with the dictionary.
 
-        Example:
+        Examples:
+            ```py
+            class MyComponent(Component):
+                class TemplateData:
+                    color: str
+                    size: int
 
-        ```py
-        class MyComponent(Component):
-            class TemplateData:
-                color: str
-                size: int
-
-            def get_template_data(self, args, kwargs, slots, context):
-                return {
-                    "color": kwargs["color"],
-                    "size": kwargs["size"],
-                }
-                # or
-                return MyComponent.TemplateData(
-                    color=kwargs["color"],
-                    size=kwargs["size"],
-                )
-        ```
+                def get_template_data(self, args, kwargs, slots, context):
+                    return {
+                        "color": kwargs["color"],
+                        "size": kwargs["size"],
+                    }
+                    # or
+                    return MyComponent.TemplateData(
+                        color=kwargs["color"],
+                        size=kwargs["size"],
+                    )
+            ```
 
         !!! warning
 
@@ -1134,12 +1124,11 @@ class Component(metaclass=ComponentMeta):
         Only one of [`js`][Component.js] or
         [`js_file`][Component.js_file] must be defined.
 
-    Example:
-
-    ```py
-    class MyComponent(Component):
-        js = "console.log('Hello, World!');"
-    ```
+    Examples:
+        ```py
+        class MyComponent(Component):
+            js = "console.log('Hello, World!');"
+        ```
 
     **Syntax highlighting**
 
@@ -1148,14 +1137,16 @@ class Component(metaclass=ComponentMeta):
 
     Learn more about [syntax highlighting](../concepts/fundamentals/single_file_components.md#syntax-highlighting).
 
-    ```djc_py
-    from django_components import Component, types
+    Examples:
+        ```djc_py
+        from django_components import Component, types
 
-    class MyComponent(Component):
-        js: types.js = '''
-          console.log('Hello, World!');
-        '''
-    ```
+        class MyComponent(Component):
+            js: types.js = '''
+                console.log('Hello, World!');
+            '''
+        ```
+
     """
 
     js_file: ClassVar[str | None] = None
@@ -1183,19 +1174,18 @@ class Component(metaclass=ComponentMeta):
         Only one of [`js`][Component.js] or
         [`js_file`][Component.js_file] must be defined.
 
-    Example:
+    Examples:
+        ```js title="path/to/script.js"
+        console.log('Hello, World!');
+        ```
 
-    ```js title="path/to/script.js"
-    console.log('Hello, World!');
-    ```
+        ```py title="path/to/component.py"
+        class MyComponent(Component):
+            js_file = "path/to/script.js"
 
-    ```py title="path/to/component.py"
-    class MyComponent(Component):
-        js_file = "path/to/script.js"
-
-    print(MyComponent.js)
-    # Output: console.log('Hello, World!');
-    ```
+        print(MyComponent.js)
+        # Output: console.log('Hello, World!');
+        ```
     """
 
     def get_js_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Mapping | None:
@@ -1208,24 +1198,23 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [JavaScript variables](../concepts/fundamentals/html_js_css_variables.md).
 
-        Example:
+        Examples:
+            ```py
+            class MyComponent(Component):
+                def get_js_data(self, args, kwargs, slots, context):
+                    return {
+                        "name": kwargs["name"],
+                        "id": self.id,
+                    }
 
-        ```py
-        class MyComponent(Component):
-            def get_js_data(self, args, kwargs, slots, context):
-                return {
-                    "name": kwargs["name"],
-                    "id": self.id,
-                }
+                js = '''
+                    $onComponent(({ name, id }, ctx) => {
+                        console.log(name, id);
+                    });
+                '''
 
-            js = '''
-                $onComponent(({ name, id }, ctx) => {
-                    console.log(name, id);
-                });
-            '''
-
-        MyComponent.render(name="World")
-        ```
+            MyComponent.render(name="World")
+            ```
 
         Args:
             args: Positional arguments passed to the component.
@@ -1265,34 +1254,33 @@ class Component(metaclass=ComponentMeta):
 
         Read more on [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
-        Example:
+        Examples:
+            ```py
+            from typing import NamedTuple
+            from django.template import Context
+            from django_components import Component, SlotInput
 
-        ```py
-        from typing import NamedTuple
-        from django.template import Context
-        from django_components import Component, SlotInput
+            class MyComponent(Component):
+                class Args:
+                    color: str
 
-        class MyComponent(Component):
-            class Args:
-                color: str
+                class Kwargs:
+                    size: int
 
-            class Kwargs:
-                size: int
+                class Slots:
+                    footer: SlotInput
 
-            class Slots:
-                footer: SlotInput
+                def get_js_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+                    assert isinstance(args, MyComponent.Args)
+                    assert isinstance(kwargs, MyComponent.Kwargs)
+                    assert isinstance(slots, MyComponent.Slots)
 
-            def get_js_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
-                assert isinstance(args, MyComponent.Args)
-                assert isinstance(kwargs, MyComponent.Kwargs)
-                assert isinstance(slots, MyComponent.Slots)
-
-                return {
-                    "color": args.color,
-                    "size": kwargs.size,
-                    "id": self.id,
-                }
-        ```
+                    return {
+                        "color": args.color,
+                        "size": kwargs.size,
+                        "id": self.id,
+                    }
+            ```
 
         You can also add typing to the data returned from
         [`get_js_data()`][Component.get_js_data]
@@ -1306,25 +1294,24 @@ class Component(metaclass=ComponentMeta):
         [`JsData`][Component.JsData] class
         by instantiating it with the dictionary.
 
-        Example:
+        Examples:
+            ```py
+            class MyComponent(Component):
+                class JsData:
+                    color: str
+                    size: int
 
-        ```py
-        class MyComponent(Component):
-            class JsData:
-                color: str
-                size: int
-
-            def get_js_data(self, args, kwargs, slots, context):
-                return {
-                    "color": kwargs["color"],
-                    "size": kwargs["size"],
-                }
-                # or
-                return MyComponent.JsData(
-                    color=kwargs["color"],
-                    size=kwargs["size"],
-                )
-        ```
+                def get_js_data(self, args, kwargs, slots, context):
+                    return {
+                        "color": kwargs["color"],
+                        "size": kwargs["size"],
+                    }
+                    # or
+                    return MyComponent.JsData(
+                        color=kwargs["color"],
+                        size=kwargs["size"],
+                    )
+            ```
 
         """
         return None
@@ -1416,16 +1403,15 @@ class Component(metaclass=ComponentMeta):
         Only one of [`css`][Component.css] or
         [`css_file`][Component.css_file] must be defined.
 
-    Example:
-
-    ```py
-    class MyComponent(Component):
-        css = \"\"\"
-            .my-class {
-                color: red;
-            }
-        \"\"\"
-    ```
+    Examples:
+        ```py
+        class MyComponent(Component):
+            css = \"\"\"
+                .my-class {
+                    color: red;
+                }
+            \"\"\"
+        ```
 
     **Syntax highlighting**
 
@@ -1434,16 +1420,18 @@ class Component(metaclass=ComponentMeta):
 
     Learn more about [syntax highlighting](../concepts/fundamentals/single_file_components.md#syntax-highlighting).
 
-    ```djc_py
-    from django_components import Component, types
+    Examples:
+        ```djc_py
+        from django_components import Component, types
 
-    class MyComponent(Component):
-        css: types.css = '''
-          .my-class {
-            color: red;
-          }
-        '''
-    ```
+        class MyComponent(Component):
+            css: types.css = '''
+              .my-class {
+                color: red;
+              }
+            '''
+        ```
+
     """
 
     css_file: ClassVar[str | None] = None
@@ -1471,24 +1459,23 @@ class Component(metaclass=ComponentMeta):
         Only one of [`css`][Component.css] or
         [`css_file`][Component.css_file] must be defined.
 
-    Example:
+    Examples:
+        ```css title="path/to/style.css"
+        .my-class {
+            color: red;
+        }
+        ```
 
-    ```css title="path/to/style.css"
-    .my-class {
-        color: red;
-    }
-    ```
+        ```py title="path/to/component.py"
+        class MyComponent(Component):
+            css_file = "path/to/style.css"
 
-    ```py title="path/to/component.py"
-    class MyComponent(Component):
-        css_file = "path/to/style.css"
-
-    print(MyComponent.css)
-    # Output:
-    # .my-class {
-    #     color: red;
-    # };
-    ```
+        print(MyComponent.css)
+        # Output:
+        # .my-class {
+        #     color: red;
+        # };
+        ```
     """
 
     def get_css_data(self, args: Any, kwargs: Any, slots: Any, context: Context) -> Mapping | None:
@@ -1501,23 +1488,22 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [CSS variables](../concepts/fundamentals/html_js_css_variables.md).
 
-        Example:
+        Examples:
+            ```py
+            class MyComponent(Component):
+                def get_css_data(self, args, kwargs, slots, context):
+                    return {
+                        "color": kwargs["color"],
+                    }
 
-        ```py
-        class MyComponent(Component):
-            def get_css_data(self, args, kwargs, slots, context):
-                return {
-                    "color": kwargs["color"],
-                }
+                css = '''
+                    .my-class {
+                        color: var(--color);
+                    }
+                '''
 
-            css = '''
-                .my-class {
-                    color: var(--color);
-                }
-            '''
-
-        MyComponent.render(color="red")
-        ```
+            MyComponent.render(color="red")
+            ```
 
         Args:
             args: Positional arguments passed to the component.
@@ -1557,32 +1543,31 @@ class Component(metaclass=ComponentMeta):
 
         Read more on [Typing and validation](../concepts/fundamentals/typing_and_validation.md).
 
-        Example:
+        Examples:
+            ```py
+            from django.template import Context
+            from django_components import Component, SlotInput
 
-        ```py
-        from django.template import Context
-        from django_components import Component, SlotInput
+            class MyComponent(Component):
+                class Args:
+                    color: str
 
-        class MyComponent(Component):
-            class Args:
-                color: str
+                class Kwargs:
+                    size: int
 
-            class Kwargs:
-                size: int
+                class Slots:
+                    footer: SlotInput
 
-            class Slots:
-                footer: SlotInput
+                def get_css_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+                    assert isinstance(args, MyComponent.Args)
+                    assert isinstance(kwargs, MyComponent.Kwargs)
+                    assert isinstance(slots, MyComponent.Slots)
 
-            def get_css_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
-                assert isinstance(args, MyComponent.Args)
-                assert isinstance(kwargs, MyComponent.Kwargs)
-                assert isinstance(slots, MyComponent.Slots)
-
-                return {
-                    "color": args.color,
-                    "size": kwargs.size,
-                }
-        ```
+                    return {
+                        "color": args.color,
+                        "size": kwargs.size,
+                    }
+            ```
 
         You can also add typing to the data returned from
         [`get_css_data()`][Component.get_css_data]
@@ -1596,25 +1581,24 @@ class Component(metaclass=ComponentMeta):
         [`CssData`][Component.CssData] class
         by instantiating it with the dictionary.
 
-        Example:
+        Examples:
+            ```py
+            class MyComponent(Component):
+                class CssData:
+                    color: str
+                    size: int
 
-        ```py
-        class MyComponent(Component):
-            class CssData:
-                color: str
-                size: int
-
-            def get_css_data(self, args, kwargs, slots, context):
-                return {
-                    "color": kwargs["color"],
-                    "size": kwargs["size"],
-                }
-                # or
-                return MyComponent.CssData(
-                    color=kwargs["color"],
-                    size=kwargs["size"],
-                )
-        ```
+                def get_css_data(self, args, kwargs, slots, context):
+                    return {
+                        "color": kwargs["color"],
+                        "size": kwargs["size"],
+                    }
+                    # or
+                    return MyComponent.CssData(
+                        color=kwargs["color"],
+                        size=kwargs["size"],
+                    )
+            ```
 
         """
         return None
@@ -1706,19 +1690,18 @@ class Component(metaclass=ComponentMeta):
 
     Read more on [Accessing component's Media JS / CSS](../concepts/fundamentals/secondary_js_css_files.md#accessing-media-files).
 
-    Example:
+    Examples:
+        ```py
+        class MyComponent(Component):
+            class Media:
+                js = "path/to/script.js"
+                css = "path/to/style.css"
 
-    ```py
-    class MyComponent(Component):
-        class Media:
-            js = "path/to/script.js"
-            css = "path/to/style.css"
-
-    print(MyComponent.media)
-    # Output:
-    # <script src="/static/path/to/script.js"></script>
-    # <link href="/static/path/to/style.css" media="all" rel="stylesheet">
-    ```
+        print(MyComponent.media)
+        # Output:
+        # <script src="/static/path/to/script.js"></script>
+        # <link href="/static/path/to/style.css" media="all" rel="stylesheet">
+        ```
     """  # noqa: E501
 
     media_class: ClassVar[type[MediaCls]] = MediaCls
@@ -1732,16 +1715,15 @@ class Component(metaclass=ComponentMeta):
 
     Read more in [Media class](../concepts/fundamentals/secondary_js_css_files.md#media-class).
 
-    Example:
+    Examples:
+        ```py
+        class MyTable(Component):
+            class Media:
+                js = "path/to/script.js"
+                css = "path/to/style.css"
 
-    ```py
-    class MyTable(Component):
-        class Media:
-            js = "path/to/script.js"
-            css = "path/to/style.css"
-
-        media_class = MyMediaClass
-    ```
+            media_class = MyMediaClass
+        ```
     """
 
     Media: ClassVar[type[ComponentMediaInput] | None] = None
@@ -1769,23 +1751,22 @@ class Component(metaclass=ComponentMeta):
        [`SafeString`](https://dev.to/doridoro/django-safestring-afj), or a function
        (See [`ComponentMediaInputPath`][ComponentMediaInputPath]).
 
-    Example:
-
-    ```py
-    class MyTable(Component):
-        class Media:
-            js = [
-                "path/to/script.js",
-                "https://unpkg.com/alpinejs@3.14.7/dist/cdn.min.js",  # AlpineJS
-            ]
-            css = {
-                "all": [
-                    "path/to/style.css",
-                    "https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css",  # TailwindCSS
-                ],
-                "print": ["path/to/style2.css"],
-            }
-    ```
+    Examples:
+        ```py
+        class MyTable(Component):
+            class Media:
+                js = [
+                    "path/to/script.js",
+                    "https://unpkg.com/alpinejs@3.14.7/dist/cdn.min.js",  # AlpineJS
+                ]
+                css = {
+                    "all": [
+                        "path/to/style.css",
+                        "https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css",  # TailwindCSS
+                    ],
+                    "print": ["path/to/style2.css"],
+                }
+        ```
     """
 
     response_class: ClassVar[type[HttpResponse]] = HttpResponse
@@ -1798,21 +1779,20 @@ class Component(metaclass=ComponentMeta):
     Defaults to
     [`django.http.HttpResponse`](https://docs.djangoproject.com/en/5.2/ref/request-response/#httpresponse-objects).
 
-    Example:
+    Examples:
+        ```py
+        from django.http import HttpResponse
+        from django_components import Component
 
-    ```py
-    from django.http import HttpResponse
-    from django_components import Component
+        class MyHttpResponse(HttpResponse):
+            ...
 
-    class MyHttpResponse(HttpResponse):
-        ...
+        class MyComponent(Component):
+            response_class = MyHttpResponse
 
-    class MyComponent(Component):
-        response_class = MyHttpResponse
-
-    response = MyComponent.render_to_response()
-    assert isinstance(response, MyHttpResponse)
-    ```
+        response = MyComponent.render_to_response()
+        assert isinstance(response, MyHttpResponse)
+        ```
     """
 
     # #####################################
@@ -1837,21 +1817,20 @@ class Component(metaclass=ComponentMeta):
         Returns:
             None. This hook is for side effects only.
 
-        Example:
+        Examples:
+            You can use this hook to access the context or the template:
 
-        You can use this hook to access the context or the template:
+            ```py
+            from django.template import Context, Template
+            from django_components import Component
 
-        ```py
-        from django.template import Context, Template
-        from django_components import Component
+            class MyTable(Component):
+                def on_render_before(self, context: Context, template: Template | None) -> None:
+                    # Insert value into the Context
+                    context["from_on_before"] = ":)"
 
-        class MyTable(Component):
-            def on_render_before(self, context: Context, template: Template | None) -> None:
-                # Insert value into the Context
-                context["from_on_before"] = ":)"
-
-                assert isinstance(template, Template)
-        ```
+                    assert isinstance(template, Template)
+            ```
 
         !!! warning
 
@@ -2102,18 +2081,17 @@ class Component(metaclass=ComponentMeta):
         Return `(new_scripts, new_styles)` to replace the list for this instance;
         return `None` (default) to keep the original list.
 
-        Example:
-
-        ```py
-        class MyButton(Component):
-            @classmethod
-            def on_dependencies(cls, scripts, styles):
-                # Add a nonce to every inline style for this component
-                for style in styles:
-                    if style.content and "nonce" not in style.attrs:
-                        style.attrs["nonce"] = get_current_nonce()
-                return (scripts, styles)
-        ```
+        Examples:
+            ```py
+            class MyButton(Component):
+                @classmethod
+                def on_dependencies(cls, scripts, styles):
+                    # Add a nonce to every inline style for this component
+                    for style in styles:
+                        if style.content and "nonce" not in style.attrs:
+                            style.attrs["nonce"] = get_current_nonce()
+                    return (scripts, styles)
+            ```
 
         """  # noqa: E501
         return None
@@ -2130,17 +2108,16 @@ class Component(metaclass=ComponentMeta):
 
     Read more about [Component caching](../concepts/advanced/component_caching.md).
 
-    Example:
+    Examples:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
-
-    class MyComponent(Component):
-        class Cache:
-            enabled = True
-            ttl = 60 * 60 * 24  # 1 day
-            cache_name = "my_cache"
-    ```
+        class MyComponent(Component):
+            class Cache:
+                enabled = True
+                ttl = 60 * 60 * 24  # 1 day
+                cache_name = "my_cache"
+        ```
     """
     cache: ComponentCache
     """
@@ -2154,16 +2131,15 @@ class Component(metaclass=ComponentMeta):
 
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    Example:
+    Examples:
+        ```python
+        from django_components import Component, Default
 
-    ```python
-    from django_components import Component, Default
-
-    class MyComponent(Component):
-        class Defaults:
-            position = "left"
-            selected_items = Default(lambda: [1, 2, 3])
-    ```
+        class MyComponent(Component):
+            class Defaults:
+                position = "left"
+                selected_items = Default(lambda: [1, 2, 3])
+        ```
     """
     defaults: ComponentDefaults
     """
@@ -2182,14 +2158,13 @@ class Component(metaclass=ComponentMeta):
 
     Read more about [Component views and URLs](../concepts/fundamentals/component_views_urls.md).
 
-    Example:
-
-    ```python
-    class MyComponent(Component):
-        class View:
-            def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-                return HttpResponse("Hello, world!")
-    ```
+    Examples:
+        ```python
+        class MyComponent(Component):
+            class View:
+                def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+                    return HttpResponse("Hello, world!")
+        ```
     """
     view: ComponentView
     """
@@ -2216,22 +2191,21 @@ class Component(metaclass=ComponentMeta):
 
     Otherwise, this will be the name of the class.
 
-    Example:
+    Examples:
+        ```py
+        @register("my_component")
+        class RegisteredComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "name": self.name,  # "my_component"
+                }
 
-    ```py
-    @register("my_component")
-    class RegisteredComponent(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            return {
-                "name": self.name,  # "my_component"
-            }
-
-    class UnregisteredComponent(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            return {
-                "name": self.name,  # "UnregisteredComponent"
-            }
-    ```
+        class UnregisteredComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "name": self.name,  # "UnregisteredComponent"
+                }
+        ```
     """
 
     registered_name: str | None
@@ -2242,31 +2216,30 @@ class Component(metaclass=ComponentMeta):
 
     Otherwise, this will be `None`.
 
-    Example:
+    Examples:
+        ```py
+        @register("my_component")
+        class MyComponent(Component):
+            template = "{{ name }}"
 
-    ```py
-    @register("my_component")
-    class MyComponent(Component):
-        template = "{{ name }}"
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "name": self.registered_name,
+                }
+        ```
 
-        def get_template_data(self, args, kwargs, slots, context):
-            return {
-                "name": self.registered_name,
-            }
-    ```
+        Will print `my_component` in the template:
 
-    Will print `my_component` in the template:
+        ```django
+        {% component "my_component" / %}
+        ```
 
-    ```django
-    {% component "my_component" / %}
-    ```
+        And `None` when rendered in Python:
 
-    And `None` when rendered in Python:
-
-    ```python
-    MyComponent.render()
-    # None
-    ```
+        ```python
+        MyComponent.render()
+        # None
+        ```
     """
 
     id: str
@@ -2288,16 +2261,15 @@ class Component(metaclass=ComponentMeta):
 
     If you need to expand this limit, please open an issue on GitHub.
 
-    Example:
+    Examples:
+        ```py
+        class MyComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                print(f"Rendering '{self.id}'")
 
-    ```py
-    class MyComponent(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            print(f"Rendering '{self.id}'")
-
-    MyComponent.render()
-    # Rendering 'ab3c4d'
-    ```
+        MyComponent.render()
+        # Rendering 'ab3c4d'
+        ```
     """
 
     # TODO_v1 - Remove `Component.input`
@@ -2319,23 +2291,22 @@ class Component(metaclass=ComponentMeta):
     - And other kwargs passed to [`Component.render()`][Component.render]
         like `deps_strategy`
 
-    Example:
+    Examples:
+        ```python
+        class Table(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                # Access component's inputs, slots and context
+                assert self.args == [123, "str"]
+                assert self.kwargs == {"variable": "test", "another": 1}
+                footer_slot = self.slots["footer"]
+                some_var = self.input.context["some_var"]
 
-    ```python
-    class Table(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            # Access component's inputs, slots and context
-            assert self.args == [123, "str"]
-            assert self.kwargs == {"variable": "test", "another": 1}
-            footer_slot = self.slots["footer"]
-            some_var = self.input.context["some_var"]
-
-    rendered = TestComponent.render(
-        kwargs={"variable": "test", "another": 1},
-        args=[123, "str"],
-        slots={"footer": "MY_SLOT"},
-    )
-    ```
+        rendered = TestComponent.render(
+            kwargs={"variable": "test", "another": 1},
+            args=[123, "str"],
+            slots={"footer": "MY_SLOT"},
+        )
+        ```
     """
 
     args: Any
@@ -2351,37 +2322,36 @@ class Component(metaclass=ComponentMeta):
         then the `args` property will return an instance of that `Args` class.
     - Otherwise, `args` will be a plain list.
 
-    Example:
+    Examples:
+        With `Args` class:
 
-    With `Args` class:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
+        class Table(Component):
+            class Args:
+                page: int
+                per_page: int
 
-    class Table(Component):
-        class Args:
-            page: int
-            per_page: int
+            def on_render_before(self, context: Context, template: Template | None) -> None:
+                assert self.args.page == 123
+                assert self.args.per_page == 10
 
-        def on_render_before(self, context: Context, template: Template | None) -> None:
-            assert self.args.page == 123
-            assert self.args.per_page == 10
+        rendered = Table.render(
+            args=[123, 10],
+        )
+        ```
 
-    rendered = Table.render(
-        args=[123, 10],
-    )
-    ```
+        Without `Args` class:
 
-    Without `Args` class:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
-
-    class Table(Component):
-        def on_render_before(self, context: Context, template: Template | None) -> None:
-            assert self.args[0] == 123
-            assert self.args[1] == 10
-    ```
+        class Table(Component):
+            def on_render_before(self, context: Context, template: Template | None) -> None:
+                assert self.args[0] == 123
+                assert self.args[1] == 10
+        ```
     """
 
     raw_args: list[Any]
@@ -2394,16 +2364,15 @@ class Component(metaclass=ComponentMeta):
     is not typed and will remain as plain list even if you define the
     [`Component.Args`][Component.Args] class.
 
-    Example:
+    Examples:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
-
-    class Table(Component):
-        def on_render_before(self, context: Context, template: Template | None) -> None:
-            assert self.raw_args[0] == 123
-            assert self.raw_args[1] == 10
-    ```
+        class Table(Component):
+            def on_render_before(self, context: Context, template: Template | None) -> None:
+                assert self.raw_args[0] == 123
+                assert self.raw_args[1] == 10
+        ```
     """
 
     kwargs: Any
@@ -2422,40 +2391,39 @@ class Component(metaclass=ComponentMeta):
     Kwargs have the defaults applied to them.
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    Example:
+    Examples:
+        With `Kwargs` class:
 
-    With `Kwargs` class:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
+        class Table(Component):
+            class Kwargs:
+                page: int
+                per_page: int
 
-    class Table(Component):
-        class Kwargs:
-            page: int
-            per_page: int
+            def on_render_before(self, context: Context, template: Template | None) -> None:
+                assert self.kwargs.page == 123
+                assert self.kwargs.per_page == 10
 
-        def on_render_before(self, context: Context, template: Template | None) -> None:
-            assert self.kwargs.page == 123
-            assert self.kwargs.per_page == 10
+        rendered = Table.render(
+            kwargs={
+                "page": 123,
+                "per_page": 10,
+            },
+        )
+        ```
 
-    rendered = Table.render(
-        kwargs={
-            "page": 123,
-            "per_page": 10,
-        },
-    )
-    ```
+        Without `Kwargs` class:
 
-    Without `Kwargs` class:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
-
-    class Table(Component):
-        def on_render_before(self, context: Context, template: Template | None) -> None:
-            assert self.kwargs["page"] == 123
-            assert self.kwargs["per_page"] == 10
-    ```
+        class Table(Component):
+            def on_render_before(self, context: Context, template: Template | None) -> None:
+                assert self.kwargs["page"] == 123
+                assert self.kwargs["per_page"] == 10
+        ```
     """
 
     raw_kwargs: dict[str, Any]
@@ -2471,16 +2439,15 @@ class Component(metaclass=ComponentMeta):
     `raw_kwargs` have the defaults applied to them.
     Read more about [Component defaults](../concepts/fundamentals/component_defaults.md).
 
-    Example:
+    Examples:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
-
-    class Table(Component):
-        def on_render_before(self, context: Context, template: Template | None) -> None:
-            assert self.raw_kwargs["page"] == 123
-            assert self.raw_kwargs["per_page"] == 10
-    ```
+        class Table(Component):
+            def on_render_before(self, context: Context, template: Template | None) -> None:
+                assert self.raw_kwargs["page"] == 123
+                assert self.raw_kwargs["per_page"] == 10
+        ```
     """
 
     slots: Any
@@ -2496,40 +2463,39 @@ class Component(metaclass=ComponentMeta):
         then the `slots` property will return an instance of that class.
     - Otherwise, `slots` will be a plain dict.
 
-    Example:
+    Examples:
+        With `Slots` class:
 
-    With `Slots` class:
+        ```python
+        from django_components import Component, Slot, SlotInput
 
-    ```python
-    from django_components import Component, Slot, SlotInput
+        class Table(Component):
+            class Slots:
+                header: SlotInput
+                footer: SlotInput
 
-    class Table(Component):
-        class Slots:
-            header: SlotInput
-            footer: SlotInput
+            def on_render_before(self, context: Context, template: Template | None) -> None:
+                assert isinstance(self.slots.header, Slot)
+                assert isinstance(self.slots.footer, Slot)
 
-        def on_render_before(self, context: Context, template: Template | None) -> None:
-            assert isinstance(self.slots.header, Slot)
-            assert isinstance(self.slots.footer, Slot)
+        rendered = Table.render(
+            slots={
+                "header": "MY_HEADER",
+                "footer": lambda ctx: "FOOTER: " + ctx.data["user_id"],
+            },
+        )
+        ```
 
-    rendered = Table.render(
-        slots={
-            "header": "MY_HEADER",
-            "footer": lambda ctx: "FOOTER: " + ctx.data["user_id"],
-        },
-    )
-    ```
+        Without `Slots` class:
 
-    Without `Slots` class:
+        ```python
+        from django_components import Component, Slot, SlotInput
 
-    ```python
-    from django_components import Component, Slot, SlotInput
-
-    class Table(Component):
-        def on_render_before(self, context: Context, template: Template | None) -> None:
-            assert isinstance(self.slots["header"], Slot)
-            assert isinstance(self.slots["footer"], Slot)
-    ```
+        class Table(Component):
+            def on_render_before(self, context: Context, template: Template | None) -> None:
+                assert isinstance(self.slots["header"], Slot)
+                assert isinstance(self.slots["footer"], Slot)
+        ```
     """
 
     raw_slots: dict[str, Slot]
@@ -2542,16 +2508,15 @@ class Component(metaclass=ComponentMeta):
     is not typed and will remain as plain dict even if you define the
     [`Component.Slots`][Component.Slots] class.
 
-    Example:
+    Examples:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
-
-    class Table(Component):
-        def on_render_before(self, context: Context, template: Template | None) -> None:
-            assert self.raw_slots["header"] == "MY_HEADER"
-            assert self.raw_slots["footer"] == "FOOTER: " + ctx.data["user_id"]
-    ```
+        class Table(Component):
+            def on_render_before(self, context: Context, template: Template | None) -> None:
+                assert self.raw_slots["header"] == "MY_HEADER"
+                assert self.raw_slots["footer"] == "FOOTER: " + ctx.data["user_id"]
+        ```
     """
 
     context: Context
@@ -2702,16 +2667,15 @@ class Component(metaclass=ComponentMeta):
     [HTTPRequest](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest)
     object passed to this component.
 
-    Example:
-
-    ```py
-    class MyComponent(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            user_id = self.request.GET['user_id']
-            return {
-                'user_id': user_id,
-            }
-    ```
+    Examples:
+        ```py
+        class MyComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                user_id = self.request.GET['user_id']
+                return {
+                    'user_id': user_id,
+                }
+        ```
 
     **Passing `request` to a component:**
 
@@ -2758,16 +2722,15 @@ class Component(metaclass=ComponentMeta):
 
         NOTE: This dictionary is generated dynamically, so any changes to it will not be persisted.
 
-        Example:
-
-        ```py
-        class MyComponent(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                user = self.context_processors_data['user']
-                return {
-                    'is_logged_in': user.is_authenticated,
-                }
-        ```
+        Examples:
+            ```py
+            class MyComponent(Component):
+                def get_template_data(self, args, kwargs, slots, context):
+                    user = self.context_processors_data['user']
+                    return {
+                        'is_logged_in': user.is_authenticated,
+                    }
+            ```
 
         """
         request = self.request
@@ -2785,19 +2748,18 @@ class Component(metaclass=ComponentMeta):
     Returns the parent [`Component`][Component] instance if this component
     is nested within another component, or `None` if this is the root component.
 
-    Example:
+    Examples:
+        ```py
+        class Theme(Component):
+            ...
 
-    ```py
-    class Theme(Component):
-        ...
-
-    class Table(Component):
-        def on_render_before(self, context, template):
-            if self.parent is not None:
-                # This component is nested in another component
-                parent_type = type(self.parent).__name__
-                ...
-    ```
+        class Table(Component):
+            def on_render_before(self, context, template):
+                if self.parent is not None:
+                    # This component is nested in another component
+                    parent_type = type(self.parent).__name__
+                    ...
+        ```
     """
 
     root: "Component"
@@ -2809,18 +2771,17 @@ class Component(metaclass=ComponentMeta):
     Returns the root [`Component`][Component] instance in the component tree.
     If this component is the root component, returns `self`.
 
-    Example:
-
-    ```py
-    class Theme(Component):
-        ...
-
-    class Table(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            # Access root component's data
-            root_kwargs = self.root.kwargs
+    Examples:
+        ```py
+        class Theme(Component):
             ...
-    ```
+
+        class Table(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                # Access root component's data
+                root_kwargs = self.root.kwargs
+                ...
+        ```
     """
 
     @property
@@ -2833,27 +2794,26 @@ class Component(metaclass=ComponentMeta):
         Yields [`Component`][Component] instances starting from the parent component,
         then the parent's parent, and so on, up to (but not including) the root component.
 
-        Example:
+        Examples:
+            ```py
+            class Theme(Component):
+                ...
 
-        ```py
-        class Theme(Component):
-            ...
+            class MarkdownEditor(Component):
+                def get_template_data(self, args, kwargs, slots, context):
+                    # Check if this component is nested in a Theme component
+                    is_nested_in_theme = any(
+                        isinstance(comp, Theme) for comp in self.ancestors
+                    )
+                    if is_nested_in_theme:
+                        css_fix = "width: 200px; display: flex"
+                    else:
+                        css_fix = ""
 
-        class MarkdownEditor(Component):
-            def get_template_data(self, args, kwargs, slots, context):
-                # Check if this component is nested in a Theme component
-                is_nested_in_theme = any(
-                    isinstance(comp, Theme) for comp in self.ancestors
-                )
-                if is_nested_in_theme:
-                    css_fix = "width: 200px; display: flex"
-                else:
-                    css_fix = ""
-
-                return {
-                    "css_fix": css_fix,
-                }
-        ```
+                    return {
+                        "css_fix": css_fix,
+                    }
+            ```
 
         Raises:
             RuntimeError: If accessed outside of component rendering context.
@@ -2885,35 +2845,34 @@ class Component(metaclass=ComponentMeta):
 
         Read more about [Provide / Inject](../concepts/advanced/provide_inject.md).
 
-        Example:
+        Examples:
+            Given this template:
+            ```django
+            {% provide "my_provide" message="hello" %}
+                {% component "my_comp" / %}
+            {% endprovide %}
+            ```
 
-        Given this template:
-        ```django
-        {% provide "my_provide" message="hello" %}
-            {% component "my_comp" / %}
-        {% endprovide %}
-        ```
+            And given this definition of "my_comp" component:
+            ```py
+            from django_components import Component, register
 
-        And given this definition of "my_comp" component:
-        ```py
-        from django_components import Component, register
+            @register("my_comp")
+            class MyComp(Component):
+                template = "hi {{ message }}!"
 
-        @register("my_comp")
-        class MyComp(Component):
-            template = "hi {{ message }}!"
+                def get_template_data(self, args, kwargs, slots, context):
+                    data = self.inject("my_provide")
+                    message = data.message
+                    return {"message": message}
+            ```
 
-            def get_template_data(self, args, kwargs, slots, context):
-                data = self.inject("my_provide")
-                message = data.message
-                return {"message": message}
-        ```
+            This renders into:
+            ```
+            hi hello!
+            ```
 
-        This renders into:
-        ```
-        hi hello!
-        ```
-
-        As the `{{ message }}` is taken from the "my_provide" provider.
+            As the `{{ message }}` is taken from the "my_provide" provider.
 
         """
         return get_injected_context_var(self.id, self.name, key, default)
@@ -2970,24 +2929,23 @@ class Component(metaclass=ComponentMeta):
 
         Any additional kwargs are passed to the response class.
 
-        Example:
-
-        ```python
-        Button.render_to_response(
-            args=["John"],
-            kwargs={
-                "surname": "Doe",
-                "age": 30,
-            },
-            slots={
-                "footer": "i AM A SLOT",
-            },
-            # HttpResponse kwargs
-            status=201,
-            headers={...},
-        )
-        # HttpResponse(content=..., status=201, headers=...)
-        ```
+        Examples:
+            ```python
+            Button.render_to_response(
+                args=["John"],
+                kwargs={
+                    "surname": "Doe",
+                    "age": 30,
+                },
+                slots={
+                    "footer": "i AM A SLOT",
+                },
+                # HttpResponse kwargs
+                status=201,
+                headers={...},
+            )
+            # HttpResponse(content=..., status=201, headers=...)
+            ```
 
         **Custom response class:**
 
