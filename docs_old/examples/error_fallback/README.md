@@ -29,7 +29,7 @@ We have two cases:
 ## Definition
 
 ```djc_py
---8<-- "docs/examples/error_fallback/component.py"
+--8<-- "docs_old/examples/error_fallback/component.py"
 ```
 
 ## Example
@@ -39,7 +39,7 @@ To see the component in action, you can set up a view and URL pattern as shown b
 ### `views.py`
 
 ```djc_py
---8<-- "docs/examples/error_fallback/page.py"
+--8<-- "docs_old/examples/error_fallback/page.py"
 ```
 
 ### `urls.py`

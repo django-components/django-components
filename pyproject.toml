@@ -139,7 +139,7 @@ namespaces = false
 ###########################################
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "docs/examples"]
+testpaths = ["tests", "docs_old/examples"]
 asyncio_mode = "auto"
 markers = [
     "e2e: browser-based end-to-end tests that need the Django test server",
@@ -268,7 +268,7 @@ ignore = [
     "T201",   # `print` found
     "DTZ",    # `datetime` found
 ]
-"docs/examples/*" = [
+"docs_old/examples/*" = [
     "ARG002", # Unused method argument
     "ANN",    # Annotations are not needed for tests
     "S101",   # Use of `assert` detected

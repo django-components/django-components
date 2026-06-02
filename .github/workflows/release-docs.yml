@@ -128,7 +128,7 @@ jobs:
           echo "Benchmarks for tag ${TAG} DONE."
 
           # Generate benchmarks site
-          # This should save it in `docs/benchmarks/`, so we can then use it when
+          # This should save it in `docs_old/benchmarks/`, so we can then use it when
           # building docs site with `mkdocs`.
           echo "Generating benchmarks site..."
           uv run asv publish
@@ -137,7 +137,7 @@ jobs:
           # Commit benchmark results
           echo "Staging and committing benchmark results..."
           git add .asv/results/
-          git add docs/benchmarks/
+          git add docs_old/benchmarks/
           git commit -m "Add benchmark results for ${TAG}"
           echo "Benchmark results committed."
 

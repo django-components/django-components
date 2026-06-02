@@ -58,7 +58,7 @@ After the rendering of `Tablist`'s body is done, we end up with list of rendered
 ## Definition
 
 ```djc_py
---8<-- "docs/examples/tabs/component.py"
+--8<-- "docs_old/examples/tabs/component.py"
 ```
 
 ## Example
@@ -70,7 +70,7 @@ To see the component in action, you can set up a view and a URL pattern as shown
 This example shows how to render a full page with the tab component.
 
 ```djc_py
---8<-- "docs/examples/tabs/page.py"
+--8<-- "docs_old/examples/tabs/page.py"
 ```
 
 ### `urls.py`

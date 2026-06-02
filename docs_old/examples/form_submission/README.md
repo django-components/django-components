@@ -15,7 +15,7 @@ The `ContactFormComponent` renders a simple form. After submission, it receives 
 ## Definition
 
 ```djc_py
---8<-- "docs/examples/form_submission/component.py"
+--8<-- "docs_old/examples/form_submission/component.py"
 ```
 
 ## Example
@@ -25,7 +25,7 @@ To see the component in action, you can set up a view and a URL pattern as shown
 ### `views.py`
 
 ```djc_py
---8<-- "docs/examples/form_submission/page.py"
+--8<-- "docs_old/examples/form_submission/page.py"
 ```
 
 ### `urls.py`

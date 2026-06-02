@@ -11,7 +11,7 @@ _discovered_examples: set[str] = set()
 def discover_example_modules() -> list[str]:
     """
     Find and import `component.py` and `page.py` files from example directories
-    `docs/examples/*/` (e.g. `docs/examples/form/component.py`).
+    `docs_old/examples/*/` (e.g. `docs_old/examples/form/component.py`).
 
     These files will be importable from other modules like:
 

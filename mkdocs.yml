@@ -10,7 +10,7 @@ edit_uri: https://github.com/django-components/django-components/edit/master/doc
 
 dev_addr: "127.0.0.1:9000"
 site_dir: site
-docs_dir: docs
+docs_dir: docs_old
 
 strict: true
 
@@ -31,7 +31,7 @@ validation:
 
 theme:
   name: "material"
-  custom_dir: docs/overrides
+  custom_dir: docs_old/overrides
   features:
     - content.action.edit
     - content.action.view
@@ -130,9 +130,9 @@ plugins:
       rewrite_relative_urls: true
   - gen-files:
       scripts:
-        - docs/scripts/setup.py
-        - docs/scripts/reference.py
-        - docs/scripts/gen_release_notes.py
+        - docs_old/scripts/setup.py
+        - docs_old/scripts/reference.py
+        - docs_old/scripts/gen_release_notes.py
   - awesome-nav
   - git-revision-date-localized:
       enabled: !ENV [CI, false]
@@ -203,9 +203,9 @@ plugins:
             show_source: false # NOTE: Instead we use SourceCodeExtension
             # NOTE: Order matters!
             extensions:
-            - docs/scripts/extensions.py:RuntimeBasesExtension
-            - docs/scripts/extensions.py:SourceCodeExtension
-            # - docs/scripts/extensions.py:ComponentSyntaxesExtension
+            - docs_old/scripts/extensions.py:RuntimeBasesExtension
+            - docs_old/scripts/extensions.py:SourceCodeExtension
+            # - docs_old/scripts/extensions.py:ComponentSyntaxesExtension
   - macros:
       # Macros plugin automatically transforms markdown pages into Jinja2 templates.
       # The combination of `render_by_default: false` and `force_render_paths` makes
@@ -217,4 +217,4 @@ plugins:
       # e.g. `{{ people.maintainers }}`
       # See https://mkdocs-macros-plugin.readthedocs.io/en/latest/#configuration-of-the-plugin
       include_yaml:
-        - people: docs/community/people.yml
+        - people: docs_old/community/people.yml

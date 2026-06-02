@@ -58,7 +58,7 @@ COMPONENTS = {
 ## Definition
 
 ```djc_py
---8<-- "docs/examples/analytics/component.py"
+--8<-- "docs_old/examples/analytics/component.py"
 ```
 
 ## Example
@@ -68,7 +68,7 @@ To see the component in action, you can set up a view and a URL pattern as shown
 ### `views.py`
 
 ```djc_py
---8<-- "docs/examples/analytics/page.py"
+--8<-- "docs_old/examples/analytics/page.py"
 ```
 
 ### `urls.py`

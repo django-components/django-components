@@ -99,7 +99,7 @@ This keeps the logic closer to where it's used and reduces boilerplate in `get_t
 ## Definition
 
 ```djc_py
---8<-- "docs/examples/python_expressions/component.py"
+--8<-- "docs_old/examples/python_expressions/component.py"
 ```
 
 ## Example
@@ -109,7 +109,7 @@ To see the component in action, you can set up a view and a URL pattern as shown
 ### `views.py`
 
 ```djc_py
---8<-- "docs/examples/python_expressions/page.py"
+--8<-- "docs_old/examples/python_expressions/page.py"
 ```
 
 ### `urls.py`

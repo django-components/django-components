@@ -98,7 +98,7 @@ class ExamplesIndexPage(Component):
                             </div>
                             <h3 class="text-lg font-medium text-gray-900 mb-2">No examples found</h3>
                             <p class="text-gray-600">
-                                No example components were discovered in the docs/examples/ directory.
+                                No example components were discovered in the docs_old/examples/ directory.
                             </p>
                         </div>
                     {% endif %}
@@ -109,7 +109,7 @@ class ExamplesIndexPage(Component):
                                 About these examples
                             </h3>
                             <p class="text-gray-600 mb-4">
-                                These examples are dynamically discovered from the <code class="bg-gray-100 px-2 py-1 rounded text-sm">docs/examples/</code> directory.
+                                These examples are dynamically discovered from the <code class="bg-gray-100 px-2 py-1 rounded text-sm">docs_old/examples/</code> directory.
                                 Each example includes a component definition, live demo page, and tests.
                             </p>
                             <a

@@ -1,10 +1,10 @@
 # Examples
 
-This Django app dynamically discovers and registers example components from the documentation (`docs/examples/`).
+This Django app dynamically discovers and registers example components from the documentation (`docs_old/examples/`).
 
 ## How it works
 
-1. **Discovery**: At startup, the app scans `docs/examples/*/` directories for:
+1. **Discovery**: At startup, the app scans `docs_old/examples/*/` directories for:
 
    - `component.py` - Component definitions with inline templates
    - `page.py` - Page views for live demos
@@ -20,10 +20,10 @@ This Django app dynamically discovers and registers example components from the 
 
 ## Structure
 
-Each example in `docs/examples/` follows this structure:
+Each example in `docs_old/examples/` follows this structure:
 
 ```
-docs/examples/form/
+docs_old/examples/form/
 ├── README.md           # Documentation
 ├── component.py        # Component with inline templates
 ├── page.py            # Page view for live demo
@@ -42,6 +42,6 @@ All examples are available as live demos:
 
 ## Adding new examples
 
-1. Create a new directory in `docs/examples/<example_name>/`
+1. Create a new directory in `docs_old/examples/<example_name>/`
 2. Add `component.py`, `page.py`, and other files as seen above.
 3. Start the server and open `http://localhost:8000/examples/<example_name>` to see the example.

@@ -25,7 +25,7 @@ django-components uses `asv` for these use cases:
 
   1.  When a git tag is created and pushed, we also update the documentation website (see `docs.yml`).
   2.  Before we publish the docs website, we generate the HTML report for the benchmark results.
-  3.  The generated report is placed in the `docs/benchmarks/` directory, and is thus
+  3.  The generated report is placed in the `docs_old/benchmarks/` directory, and is thus
       published with the rest of the docs website and available under [`/benchmarks/`](https://django-components.github.io/django-components/latest/benchmarks).
       - NOTE: The location where the report is placed is defined in `asv.conf.json`.
 
@@ -77,13 +77,13 @@ Let's say we want to generate results for the last 5 commits.
    asv preview
    ```
 
-   - `publish` generates the HTML report and stores it in `docs/benchmarks/`, as configured in `asv.conf.json`.
+   - `publish` generates the HTML report and stores it in `docs_old/benchmarks/`, as configured in `asv.conf.json`.
    - `preview` starts a local server and opens the report in the browser.
 
-   NOTE: Since the results are stored in `docs/benchmarks/`, you can also view the results
+   NOTE: Since the results are stored in `docs_old/benchmarks/`, you can also view the results
    with `mkdocs serve` and navigating to `http://localhost:9000/django-components/benchmarks/`.
 
-   NOTE 2: Running `publish` will overwrite the existing contents of `docs/benchmarks/`.
+   NOTE 2: Running `publish` will overwrite the existing contents of `docs_old/benchmarks/`.
 
 ## Writing benchmarks
 

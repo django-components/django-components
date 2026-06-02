@@ -18,7 +18,7 @@ In each of the 3 cases, when the fragment is loaded, this also runs the fragment
 ## Definition
 
 ```djc_py
---8<-- "docs/examples/fragments/component.py"
+--8<-- "docs_old/examples/fragments/component.py"
 ```
 
 ## Example
@@ -28,7 +28,7 @@ To see the component in action, you can set up a view and a URL pattern as shown
 ### `views.py`
 
 ```djc_py
---8<-- "docs/examples/fragments/page.py"
+--8<-- "docs_old/examples/fragments/page.py"
 ```
 
 ### `urls.py`
