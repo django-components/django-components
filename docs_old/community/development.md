@@ -438,36 +438,53 @@ When you make changes to this JS code, you also need to compile it:
 
 ## Documentation website
 
-The documentation website is built using [MkDocs](https://www.mkdocs.org/) and [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/).
+The documentation site is a Django project under `docs_site/` that uses
+django-components to render markdown pages into static HTML. The site is
+pre-rendered at build time and deployed to GitHub Pages.
 
-Install dependencies needed for the documentation:
-
-```sh
-uv sync --group docs
-```
-
-This will install all documentation dependencies and the package itself in editable mode.
-
-To run the documentation server locally, run:
+All commands run from inside `docs_site/`:
 
 ```sh
-mkdocs serve
+cd docs_site
 ```
 
-Then open <http://127.0.0.1:9000/django-components/> in your browser.
-
-To just build the documentation, run:
+While editing, run the dev server for live preview. It renders each page on
+the fly through the same pipeline as the build, so you just edit a markdown
+file and reload:
 
 ```sh
-mkdocs build
+uv run python manage.py docs_serve   # open http://127.0.0.1:8000/
 ```
 
-The documentation site is deployed automatically with Github actions (see [`.github/workflows/docs.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/docs.yml)).
+Build the whole site to `./site/` (gitignored):
 
-The CI workflow runs when:
+```sh
+uv run python manage.py build_docs
+```
 
-- A new commit is pushed to the `master` branch - This updates the `dev` version
-- A new tag is pushed - This updates the `latest` version and the version specified in the tag name
+Then validate links and anchors in the built site (defaults to `./site/`):
+
+```sh
+uv run python manage.py docs_test          # add --strict to fail on warnings
+```
+
+To debug the pipeline on one page, render it to a standalone file:
+
+```sh
+uv run python manage.py build_one content/test/pipeline_test.md -o /tmp/page.html
+```
+
+The build pipeline renders each markdown file through four passes:
+
+1. Fence protection wraps code blocks in `{% verbatim %}` so Django doesn't execute template tags inside code examples
+2. Django template engine expands `{% version %}`, `{% component %}`, and other tags
+3. python-markdown + pymdownx converts the expanded markdown to HTML with syntax highlighting, admonitions, TOC, etc.
+4. DocPage component wraps the content in a full HTML page with `<head>` metadata
+
+The site is deployed automatically via GitHub Actions. The CI workflow runs when:
+
+- A new tag is pushed - builds and commits the versioned docs to `docs/v/<version>/`
+- A new commit is pushed to `master` - rebuilds the `dev` version
 
 ### Writing docstrings
 

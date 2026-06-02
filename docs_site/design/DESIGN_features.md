@@ -42,36 +42,38 @@ Goal: a single page (e.g. `getting_started/index.md`) renders through the 3-pass
 
 | # | ID | Name | Effort | Critical | Source | Status | Notes |
 |---|---|---|---|---|---|---|---|
-| 1.1 | `docs-site-django-project` | `docs_site/` Django project scaffold | S | ✓ | main §4.1 | pending | Replaces `sampleproject/` |
-| 1.2 | `docs-app-scaffold` | `apps/docs/` with components/, templatetags/, management/commands/ | S | ✓ | main §4.1 | pending | |
-| 1.3 | `content-dir-structure` | Move `docs/` → `docs_site/content/` (markdown source) | S | | main §4.1, 11.4.G | pending | `mv` + `rm` of build cruft |
-| 1.4 | `examples-dir-moved` | Move `docs/examples/` → `docs_site/examples/` | S | | main §4.1 | pending | First-class location |
-| 1.5 | `pygments-djc-loader` | Load `pygments_djc` lexer at command startup | S | ✓ | main §2.1, 11.9 §2.1 | pending | 1 LOC; we own this lib |
-| 1.6 | `fence-protection-scanner` | Wrap code regions in `{% verbatim %}` before Django pass | S | ✓ | main §4.7, §11.4.C | pending | ~80 LOC |
-| 1.7 | `markdown-pipeline-pass1` | Pass 1: Django template engine on markdown source | S | ✓ | main §4.7, §11.4.C | pending | Auto-loads `docs_extras`, `component_tags` |
-| 1.8 | `markdown-pipeline-pass2` | Pass 2: python-markdown + pymdownx → HTML | M | ✓ | main §4.7, §11.4.B | pending | Keep python-markdown, not markdown-it-py |
-| 1.9 | `markdown-pipeline-pass3` | Pass 3: wrap in DocPage layout | M | ✓ | main §4.7 | pending | |
-| 1.10 | `doc-page-component-mvp` | Minimal `DocPage` component (no nav/sidebar yet) | M | ✓ | main §4.1, 11.11 §2 | pending | Phase 1 = chrome stub; full chrome in Phase 3a |
-| 1.11 | `slug-algorithm` | Material-compatible heading slug | S | ✓ | main §4.7, §9.1 | pending | `pymdownx.slugs.slugify(case="lower")` |
-| 1.12 | `code-fence-info-string-parser` | Parse fence headers (`djc_py title="…" hl_lines="…"`) | S | | main §4.7 | pending | |
-| 1.13 | `include-file-tag` | `{% include_file "path" %}` template tag | S | | main §4.7, §11.4.F | pending | Sugar over snippets |
-| 1.14 | `version-tag` | `{% version %}` template tag | S | | main §4.7 | pending | Returns current docs version |
-| 1.15 | `image-tag` | `{% image %}` template tag (optional sugar) | S | | main §4.7 | pending | Markdown img also works |
-| 1.16 | `pygments-light-stylesheet` | Light-mode Pygments theme CSS | S | | 11.11 §6.3 | pending | Picked during Phase 1 sample |
-| 1.17 | `pygments-dark-stylesheet` | Dark-mode Pygments theme CSS | S | | 11.11 §6.3 | pending | |
-| 1.18 | `uv-scripts-entrypoints` | Wire `docs-serve` / `docs-build` / `docs-test` in pyproject.toml | S | ✓ | main §4.8 | pending | Source of truth for CLIs |
-| 1.19 | `docs-serve-command` | Dev-loop runserver wrapper | S | | main §4.8 | pending | |
-| 1.20 | `docs-build-command-mvp` | Build current version to `docs/v/<version>/` (no manifest yet) | M | ✓ | main §4.6, §4.8, 11.7 §3.1, §6 | pending | Versioning manifest in Phase 5b |
-| 1.21 | `docs-test-command-mvp` | Post-build link validator (broken anchors fail) | M | ✓ | main §4.8, §9.8 | pending | Hardened in Phase 3b + 5 |
-| 1.22 | `front-matter-schema` | Codified front-matter spec (title, description, og_image, …) + validator | S | ✓ | 11.12 §3.B.11 | pending | Foundational for metadata |
-| 1.23 | `docpage-head-block` | Unified `<head>` block (title, description, canonical, lang, viewport, favicon, theme-color, robots, alternate) | M | ✓ | 11.12 §4.C.1 | pending | ~100 LOC; central |
-| 1.24 | `page-titles` | `<title>` formatting: `<Page Title> - Django-Components` | S | ✓ | 11.12 §2.A.5 | pending | |
-| 1.25 | `per-page-descriptions` | Front-matter > first-paragraph > site-level fallback | M | ✓ | 11.12 §2.A.6 | pending | Three-source priority |
-| 1.26 | `canonical-urls` | Versioned pages canonical to `/latest/` counterpart | S | ✓ | 11.12 §2.A.1 | pending | Decision: latest is canonical |
-| 1.27 | `per-version-noindex` | `noindex,follow` on pages under non-current/non-previous `/v<x>/` | S | | 11.12 §4.C.3 | pending | ~10 LOC in head builder |
-| 1.28 | `markdown-companion-urls` | Serve every page also at `…/page.md` (raw markdown) | S | ✓ | 11.12 §3.B.2 | pending | Highest-leverage AI-discovery feature |
-| 1.29 | `json-ld-breadcrumbs` | BreadcrumbList JSON-LD on every page | S | | 11.12 §2.A.7 | pending | TechArticle deferred to Phase 5c |
-| 1.30 | `placeholder-home-page` | Thin `/` placeholder (replaced in Phase 9) | S | | main §8 | pending | Nav works end-to-end |
+| 1.0a | `docs-old-rename` | Rename `docs/` → `docs_old/`; repoint every config/script/workflow so old mkdocs still builds locally; free `docs/` for internal docs (agent-knowledge + README pointer) | M | ✓ | main §4.0a | **done** | `git mv`; updated mkdocs.yml, pyproject (testpaths/ruff), asv.conf.json, sampleproject `EXAMPLES_DIR`, scripts, workflows, example snippet paths. Verified: mkdocs builds (only the known Phase-0 autorefs warnings), pytest collects examples. Internal `docs/` now holds `agent-knowledge/` (local) + `README.md` |
+| 1.1 | `docs-site-django-project` | `docs_site/` Django project scaffold | S | ✓ | main §4.1 | **done** | settings, urls, wsgi, manage.py |
+| 1.2 | `docs-app-scaffold` | `apps/docs/` with components/, templatetags/, management/commands/ | S | ✓ | main §4.1 | **done** | Includes `docs_extras.py` with `{% version %}` tag |
+| 1.3 | `content-dir-structure` | Move user-facing pages → `docs_site/content/` (markdown source) | S | | main §4.0a, §4.1, 11.4.G | **moved to Phase 6** (6.7) | Deferred to cutover so mkdocs keeps building on the branch. Source was renamed `docs/` → `docs_old/` first (see 1.0a) |
+| 1.4 | `examples-dir-moved` | Move examples → `docs_site/examples/` | S | | main §4.1 | **moved to Phase 6** (6.8) | Deferred to cutover; examples stay at `docs_old/examples/` until then |
+| 1.5 | `pygments-djc-loader` | Load `pygments_djc` lexer at command startup | S | ✓ | main §2.1, 11.9 §2.1 | **done** | `import pygments_djc` in `build_one` command |
+| 1.6 | `fence-protection-scanner` | Wrap code regions in `{% verbatim %}` before Django pass | S | ✓ | main §4.7, §11.4.C | **done** | `fence_protection.py` ~100 LOC; handles fenced blocks + inline code spans |
+| 1.7 | `markdown-pipeline-pass1` | Pass 1: Django template engine on markdown source | S | ✓ | main §4.7, §11.4.C | **done** | Auto-loads `docs_extras`, `component_tags` |
+| 1.8 | `markdown-pipeline-pass2` | Pass 2: python-markdown + pymdownx → HTML | M | ✓ | main §4.7, §11.4.B | **done** | All pymdownx extensions configured; snippet base_path includes repo root |
+| 1.9 | `markdown-pipeline-pass3` | Pass 3: wrap in DocPage layout | M | ✓ | main §4.7 | **done** | `_pass3_layout` calls `DocPage.render()` |
+| 1.10 | `doc-page-component-mvp` | Minimal `DocPage` component (no nav/sidebar yet) | M | ✓ | main §4.1, 11.11 §2 | **done** | `doc_page.py` with full `<head>` block, design tokens, prose CSS; full chrome in Phase 3a |
+| 1.11 | `slug-algorithm` | Material-compatible heading slug | S | ✓ | main §4.7, §9.1 | **done** | `pymdownx.slugs.slugify(case="lower")` configured in pipeline.py |
+| 1.12 | `code-fence-info-string-parser` | Parse fence headers (`djc_py title="…" hl_lines="…"`) | S | | main §4.7 | **done** | Handled natively by `pymdownx.highlight`; verified `title=` renders as `<span class="filename">` |
+| 1.13 | `include-file-tag` | `{% include_file "path" %}` template tag | S | | main §4.7, §11.4.F | **done** | In `docs_extras.py`; infers language from extension |
+| 1.14 | `version-tag` | `{% version %}` template tag | S | | main §4.7 | **done** | `docs_extras.py`; verified expanding to `0.150.1` |
+| 1.15 | `image-tag` | `{% image %}` template tag (optional sugar) | S | | main §4.7 | **done** | In `docs_extras.py`; supports `alt`, `width`, `css_class` attrs |
+| 1.16 | `pygments-light-stylesheet` | Light-mode Pygments theme CSS | S | | 11.11 §6.3 | **done** | `static/css/pygments-light.css` (default theme, ~5KB) |
+| 1.17 | `pygments-dark-stylesheet` | Dark-mode Pygments theme CSS | S | | 11.11 §6.3 | **done** | `static/css/pygments-dark.css` (monokai theme, ~5KB) |
+| 1.18 | `uv-scripts-entrypoints` | Wire `docs-serve` / `docs-build` / `docs-test` | S | ✓ | main §4.8 | **done** | Django management commands; documented in `docs/community/development.md`; run from `docs_site/` |
+| 1.19 | `docs-serve-command` | Dev-loop runserver wrapper | S | | main §4.8 | **done** | `docs_serve` wraps `runserver`; live `serve_page` view renders `content/*.md` on the fly via the same pipeline; URL<->path mapping shared with build in `build/paths.py` |
+| 1.20 | `docs-build-command-mvp` | Build current version to `docs/v/<version>/` (no manifest yet) | M | ✓ | main §4.6, §4.8, 11.7 §3.1, §6 | **done** | `build_docs` command; renders all .md in a content dir to `output/`; versioning manifest in Phase 5b |
+| 1.21 | `docs-test-command-mvp` | Post-build link validator (broken anchors fail) | M | ✓ | main §4.8, §9.8 | **done** | `docs_test` command; walks HTML, checks internal links + anchors; `--strict` mode |
+| 1.22 | `front-matter-schema` | Codified front-matter spec (title, description, og_image, …) + validator | S | ✓ | 11.12 §3.B.11 | **done** | `frontmatter.py`; YAML front-matter with 6 known fields; strict mode rejects unknowns |
+| 1.23 | `docpage-head-block` | Unified `<head>` block (title, description, canonical, lang, viewport, favicon, theme-color, robots, alternate) | M | ✓ | 11.12 §4.C.1 | **done** | In DocPage component template; emits title, description, canonical, robots, generator |
+| 1.24 | `page-titles` | `<title>` formatting: `<Page Title> - Django-Components` | S | ✓ | 11.12 §2.A.5 | **done** | Front-matter > H1 > site name fallback |
+| 1.25 | `per-page-descriptions` | Front-matter > first-paragraph > site-level fallback | M | ✓ | 11.12 §2.A.6 | **done** | Fence-aware H1 extraction; paragraph extractor strips markdown formatting, caps at 155 chars |
+| 1.26 | `canonical-urls` | Versioned pages canonical to `/latest/` counterpart | S | ✓ | 11.12 §2.A.1 | **done** | `build_docs` computes canonical from site_url + page path; threaded through to DocPage `<head>` |
+| 1.27 | `per-version-noindex` | `noindex,follow` on pages under non-current/non-previous `/v<x>/` | S | | 11.12 §4.C.3 | **done** | DocPage emits `noindex,follow` when front-matter `noindex: true`; version-based logic deferred to Phase 5b |
+| 1.28 | `markdown-companion-urls` | Serve every page also at `…/page.md` (raw markdown) | S | ✓ | 11.12 §3.B.2 | **done** | `build_docs` emits `index.md` companion with title/url/description front-matter + expanded markdown |
+| 1.29 | `json-ld-breadcrumbs` | BreadcrumbList JSON-LD on every page | S | | 11.12 §2.A.7 | **done** | Generated from canonical URL path in DocPage; TechArticle deferred to Phase 5c |
+| 1.30 | `placeholder-home-page` | Thin `/` placeholder (replaced in Phase 9) | S | | main §8 | **done** | `content/index.md` with title, description, GitHub link |
+| 1.31 | `internal-md-link-rewriting` | Rewrite internal `[X](foo/bar.md)` links to clean URLs (`use_directory_urls`-style) so they resolve under the `page.md` -> `/page/` scheme | M | ✓ | main §4.7, §9.1a, 3b.25 | **done** | `build/links.py`; post-Pass-2 HTML rewrite. Resolves `.md` relative to source, maps to clean URL, computes relative href with `../` nesting; preserves anchors; leaves clean URLs + external links untouched. `.md` companion link rewriting (spike 11.12) deferred |
 
 **Out of scope here:** API reference (Phase 4), examples (Phase 2), sidebar/header chrome (Phase 3a), search (Phase 5a), versioning manifest (Phase 5b), SEO/AIO polish (Phase 5c).
 
@@ -341,17 +343,23 @@ Goal: every SEO/AIO feature wired. Site is Lighthouse-clean and AI-bot-friendly.
 
 ## Phase 6 — Cutover
 
-Goal: GitHub Pages serves from `master/docs/v/`. Old `gh-pages` retained for rollback. Inbound URLs preserved.
+Goal: merge the migration branch so the new `docs_site` build replaces the old mkdocs site. One atomic commit; never two sites deployed at once (see main §8 branch-model invariant). Inbound URLs preserved.
 
-**Sharp focus:** cutover and only cutover.
+**Sharp focus:** cutover and only cutover. This is a comparison + a single merge commit, not a live deploy switch.
 
 | # | ID | Name | Effort | Critical | Source | Status | Notes |
 |---|---|---|---|---|---|---|---|
 | 6.1 | `materialize-redirects-script` | Convert `latest/` symlink → redirect HTML files | S | ✓ | 11.8 §6, §7 | pending | ~50 LOC; Windows-compat |
-| 6.2 | `import-gh-pages-tree` | One-time mirror of `origin/gh-pages` into `master/docs/v/` (57 versions + dev) | M | ✓ | 11.8 §5.1, §7 | pending | ~30 min execution |
+| 6.2 | `import-gh-pages-tree` | One-time mirror of `origin/gh-pages` into `docs_site/versions/` (57 versions + dev) | M | ✓ | 11.8 §5.1, §7 | pending | ~30 min execution. Target changed from `docs/v/` to `docs_site/versions/` per main §4.0a |
 | 6.3 | `docs-build-check-validation` | Validate imported tree before commit | S | ✓ | 11.8 §5.1, §7 | pending | Cutover gate |
-| 6.4 | `github-pages-source-switch` | Repo setting: `gh-pages` branch → `master/docs/v/` | S | ✓ | 11.8 §5.1 | pending | Final activation step |
+| 6.4 | `ci-deploy-site-via-actions` | Rewrite docs CI: build `docs_site` → `site/` (current + `docs_site/versions/*`), deploy `site/` via GitHub Actions | M | ✓ | main §4.0a, §4.6 | pending | Supersedes "switch Pages source to master/docs/v/" |
 | 6.5 | `gh-pages-branch-deletion` | Delete `gh-pages` branch (deferred 3-6 months) | S | | 11.8 §5.1, §8.2 | pending | Cleanup, not blocker |
+| 6.6 | `cutover-docs-cleanup` | Delete `docs_old/` + `mkdocs.yml`; remove mkdocs/material/mike deps from pyproject.toml; `grep -rn docs_old .` and update every straggler | M | ✓ | main §4.0a, §6 | pending | The `docs_old` rename makes this a search. **Also grep `master/docs/`**: absolute GitHub URLs (README image, CHANGELOG link, mkdocs `edit_uri`) still say `docs/` and won't be caught by the `docs_old` grep |
+| 6.7 | `content-move-to-content-dir` | Move user-facing pages `docs_old/` → `docs_site/content/` (preserve subtree structure so URLs are stable) + remaining assets (css, images) into `docs_site/static/` | L | ✓ | main §4.0a, §4.1, 11.11 §4.2 | pending | Was Phase-1 feature 1.3; deferred to cutover so mkdocs keeps building on the branch |
+| 6.8 | `examples-move` | Move `docs_old/examples/` → `docs_site/examples/`; update pytest `testpaths`, ruff override, sampleproject `EXAMPLES_DIR` | M | ✓ | main §4.0a, §4.1 | pending | Was Phase-1 feature 1.4 |
+| 6.9 | `devguides-move` | Move `docs_old/community/devguides/` → internal `docs/devguides/` (was never meant to be user-facing) | S | | main §4.0a | pending | Pair with 6.10 review |
+| 6.10 | `devguides-relevance-review` | Review each devguide article for whether it's still relevant/accurate before keeping it as internal docs | S | | main §4.0a | pending | Content audit |
+| 6.11 | `benchmark-report-relocation` | Relocate asv report `docs_old/benchmarks/` → `benchmarks/report/`; add static-passthrough copy into the build; update `asv.conf.json` `html_dir`, `release-docs.yml`, `benchmarks/README.md` | M | | main §4.0a | pending | Static passthrough, not "serve index.html if present" |
 
 ---
 
@@ -423,7 +431,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | Phase | Goal | Count | Critical | Status |
 |---|---|---|---|---|
 | 0 | Pre-work in `src/` | 4 | 2 | **4/4 done** (0.4 is local-only edit to untracked CLAUDE.md) |
-| 1 | Foundation: 1 page end-to-end | 30 | 21 | pending |
+| 1 | Foundation: 1 page end-to-end | 30 | 23 | **30/30 done** (1.3/1.4 dir-moves reclassified to Phase 6 cutover) |
 | 2 | `{% example %}` end-to-end | 7 | 4 | pending |
 | 3a | Theme + core chrome | 23 | 17 | pending |
 | 3b | Mass content port + responsive + content guardrails | 25 | 12 | pending |
@@ -432,12 +440,12 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 5b | Versioning | 17 | 12 | pending |
 | 5c | SEO + AIO + chrome polish | 19 | 0 | pending |
 | 5d | Feature-parity audit (process) | 0 | 0 | pending |
-| 6 | Cutover | 5 | 4 | pending |
+| 6 | Cutover | 11 | 7 | pending |
 | 7 | Search v2 (post-cutover polish) | 4 | 0 | pending |
 | 8 | Search v3 (blocked on analytics target) | 1 | 0 | pending |
 | 9 | Landing page (codesign) | 1 | 0 | pending |
 | 10+ | Deferred / post-launch maintenance | 7 | 0 | pending |
-| **Total** | | **215** | **106** | **4/215 done** |
+| **Total** | | **221** | **111** | **34/221 done** |
 
 ### Phase 0 closed
 

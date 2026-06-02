@@ -150,6 +150,33 @@ The only real questions are:
 
 ## 4. Proposed architecture
 
+### 4.0a Repository layout during the migration
+
+Before any new content was written, the existing `docs/` directory was **renamed to `docs_old/`** (one commit, with every config/script/workflow reference repointed so the old mkdocs site still builds locally). This does two things:
+
+1. **Frees up `docs/` for internal docs.** `docs/` now holds **contributor-facing / internal** documentation that is *never* published: `docs/agent-knowledge/` (local, uncommitted) and — at cutover — `docs/devguides/` (implementation deep-dives that were only ever published as a side effect of having nowhere else to put them). A `docs/README.md` points readers to the user docs (at the published URL and in `docs_site/content/`), because a visitor clicking `docs/` reasonably expects user documentation.
+2. **Makes the cutover a search.** Every place still wired to the old layout is found with `grep -rn docs_old .`. The big content move and config rewrite happen as one atomic Phase-6 commit, not piecemeal.
+
+Target end-state layout (reached at cutover):
+
+```
+docs/                            <-- INTERNAL docs only (agent-knowledge, devguides, README pointer)
+docs_old/                        <-- the old mkdocs source; DELETED at cutover
+docs_site/                       <-- the new docs builder (Django project)
+    content/                     <-- user-facing markdown (moved from docs_old/ at cutover)
+    examples/                    <-- runnable examples (moved from docs_old/examples/ at cutover)
+    versions/<version>/          <-- committed built version snapshots -> mounted at /v/<version>/
+    static/                      <-- css, images, and other static assets
+benchmarks/                      <-- benchmark CODE (already here)
+    report/                      <-- asv HTML output (relocated from docs_old/benchmarks/); copied
+                                     into the build as a static passthrough
+site/                            <-- build output (gitignored); the deploy artifact, contains /v/<version>/
+```
+
+**Build output and deploy.** The everyday `docs-build` writes to `site/` (gitignored, mirrors mkdocs' `site_dir`). At deploy, CI builds `docs_site` → `site/` (assembling the current version plus the committed `docs_site/versions/*` snapshots into `site/v/*`) and deploys `site/` via GitHub Actions. This supersedes the earlier "commit built HTML to `master/docs/v/` and serve from `/docs`" sketch in §4.6 — versions stay committed (under `docs_site/versions/`, preserving reproducibility/rollback), but the deploy artifact is `site/`, assembled at build time.
+
+**Benchmarks** are a static passthrough: the asv report (currently committed under `docs_old/benchmarks/`) relocates to `benchmarks/report/`, and the builder copies it verbatim into the built site under its mount path (skipping the markdown pipeline — it's already HTML). The builder gains an explicit list of `(source_dir -> mount_path)` passthroughs rather than a magic "serve index.html if present" rule.
+
 ### 4.1 Top-level shape
 
 ```
@@ -578,11 +605,21 @@ What this phase is NOT: a chance to rethink the design. We do not redesign in Ph
 
 ### Phase 6 — Cutover
 
-**Goal:** GitHub Pages serves from `master/docs/v/`. Old `gh-pages` retained for rollback. Inbound URLs preserved.
+**Goal:** merge the migration branch so the new `docs_site` build replaces the old mkdocs site. Inbound URLs preserved.
 
-**Sharp focus:** cutover and only cutover.
+**Sharp focus:** cutover and only cutover. This is a *comparison + a single merge commit*, not a live deploy switch (see the branch-model invariant above).
 
-**Estimate:** ~2 days.
+**Mechanics:**
+
+1. **Move the remaining content.** Move the user-facing pages still in `docs_old/` into `docs_site/content/` (preserving subtree structure so published URLs don't change), and move any remaining non-content assets (CSS, images, etc.) into their `docs_site/` homes. Move `docs_old/community/devguides/` into the internal `docs/devguides/` (these were never meant to be user-facing). Relocate the benchmark report out of `docs_old/benchmarks/` (see §4.0a).
+2. **Find every straggler with one search.** Because the current source was renamed to `docs_old/` up front, `grep -rn docs_old .` lists every place still wired to the old layout — configs, workflows, scripts, docstring links, design docs. Update them all.
+3. **Compare locally.** Build the new site and review it page-for-page against the deployed old mkdocs site (visual review + the §11.10 guardrails + link checks).
+4. **Delete the old stack.** Remove `docs_old/`, `mkdocs.yml`, and the mkdocs/material/mike dependencies from `pyproject.toml`. Rewrite the docs CI workflow to build `docs_site` → `site/` and deploy `site/`.
+5. **One commit, then merge.** Land all of the above as a single cutover commit and merge the branch. The next deploy serves the new site.
+
+Old `gh-pages` is retained for rollback; historical versions are imported per §11.8.
+
+**Estimate:** ~2-3 days.
 
 ### Phase 7 — Search v2 (post-cutover polish)
 
@@ -626,9 +663,15 @@ Phase 1 ships a *thin* placeholder at `/` so the new top-nav `Docs / Examples / 
 
 Phases 0-6 (the actual migration): ~10-12 weeks of focused effort. Search v2/v3 and the landing page (Phases 7-9) add to that whenever we choose to do them. All can be split across many PRs and many calendar weeks.
 
-### Invariant across all phases
+### Invariant across all phases — the branch model
 
-**At every phase, the old mkdocs site is still the canonical published site.** We do not break docs while we're rebuilding them. We only switch the deploy in Phase 6.
+**The entire migration lives on a single feature branch (`jo-docs-mkdocs-migrate`) and is NOT merged to `master` until it is fully done.** This is the key to a low-drama cutover:
+
+- **`master` keeps serving the old mkdocs site the whole time.** Because the migration branch is never deployed, **there are never two doc sites online at once.** The deployed site is always whatever `master` says — i.e. the old mkdocs site — until the single cutover merge.
+- **Both builders run side-by-side _locally_ on the branch.** The current docs source was renamed `docs/` → `docs_old/` (see §4.0a), and mkdocs was repointed at `docs_old/`, so a contributor can run the old mkdocs site AND the new `docs_site` builder locally and compare them page-for-page. mkdocs `--strict` is *allowed to fail* on the branch (the Phase-0 short-form anchor refs break old autorefs); that does not block local comparison.
+- **Cutover is a comparison + a single commit, not a deploy switch.** When the new site reaches parity (Phase 6), we review it locally against the deployed old site (visual + guardrails), then in one commit: delete `docs_old/` and the mkdocs config, wire the new builder into CI, and merge the branch. The next deploy serves the new site.
+
+We do not break the published docs at any point because we never publish the half-built site.
 
 ---
 
