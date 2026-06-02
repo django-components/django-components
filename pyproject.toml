@@ -276,6 +276,14 @@ ignore = [
     "T201",   # `print` found
     "DTZ",    # `datetime` found
 ]
+# The docs site builder is internal tooling (a Django project), not the shipped
+# library, so it isn't held to the package's full annotation strictness.
+"docs_site/*" = [
+    "ARG001", # Unused function argument (e.g. a Django view's `request`)
+    "ARG002", # Unused method argument (Django / djc framework signatures)
+    "ANN",    # Full type annotations not required for internal build tooling
+    "BLE001", # Intentional broad `except` in the per-page build loop
+]
 
 [tool.ruff.lint.isort]
 known-first-party = ["django_components"]

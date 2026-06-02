@@ -53,5 +53,7 @@ class Command(BaseCommand):
             self.stdout.write(result.html)
 
         self.stdout.write(f"Title: {result.meta.title}")
-        self.stdout.write(f"Description: {result.meta.description[:80]}{'...' if len(result.meta.description) > 80 else ''}")
+        self.stdout.write(
+            f"Description: {result.meta.description[:80]}{'...' if len(result.meta.description) > 80 else ''}"
+        )
         self.stdout.write(f"TOC entries: {len(result.toc_tokens)}")

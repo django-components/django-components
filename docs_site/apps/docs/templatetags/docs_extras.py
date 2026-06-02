@@ -73,7 +73,7 @@ def image(src: str, alt: str = "", width: str = "", css_class: str = "") -> str:
         attrs.append(f'width="{escape(width)}"')
     if css_class:
         attrs.append(f'class="{escape(css_class)}"')
-    return f'<img {" ".join(attrs)}>'
+    return f"<img {' '.join(attrs)}>"
 
 
 _EXT_MAP = {

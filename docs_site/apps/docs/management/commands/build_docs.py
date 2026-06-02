@@ -32,8 +32,12 @@ class Command(BaseCommand):
     help = "Build all docs pages through the pipeline."
 
     def add_arguments(self, parser):  # type: ignore[no-untyped-def]
-        parser.add_argument("--content", type=str, default=None, help="Content directory (default: settings.CONTENT_DIR)")
-        parser.add_argument("--docs-version", type=str, default=None, help="Version string (default: from pyproject.toml)")
+        parser.add_argument(
+            "--content", type=str, default=None, help="Content directory (default: settings.CONTENT_DIR)"
+        )
+        parser.add_argument(
+            "--docs-version", type=str, default=None, help="Version string (default: from pyproject.toml)"
+        )
         parser.add_argument("-o", "--output", type=str, default=None, help="Output directory (default: ./site/)")
         parser.add_argument("--no-companions", action="store_true", help="Skip .md companion file generation")
 
@@ -118,9 +122,7 @@ class Command(BaseCommand):
 
         elapsed = time.monotonic() - t0
         suffix = " (with .md companions)" if emit_companions else ""
-        self.stdout.write(
-            self.style.SUCCESS(f"Built {built} pages{suffix} in {elapsed:.1f}s ({errors} errors)")
-        )
+        self.stdout.write(self.style.SUCCESS(f"Built {built} pages{suffix} in {elapsed:.1f}s ({errors} errors)"))
 
 
 def _write_companion(path: Path, meta, expanded_markdown: str, canonical: str) -> None:

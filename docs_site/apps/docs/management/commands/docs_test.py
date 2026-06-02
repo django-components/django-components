@@ -35,7 +35,9 @@ class Command(BaseCommand):
     help = "Validate internal links and anchors in built docs."
 
     def add_arguments(self, parser):  # type: ignore[no-untyped-def]
-        parser.add_argument("build_dir", type=str, nargs="?", default=None, help="Built docs directory (default: ./site/)")
+        parser.add_argument(
+            "build_dir", type=str, nargs="?", default=None, help="Built docs directory (default: ./site/)"
+        )
         parser.add_argument("--strict", action="store_true", help="Exit non-zero on warnings too")
 
     def handle(self, *args: object, **options: object) -> None:
@@ -60,13 +62,6 @@ class Command(BaseCommand):
 
         existing_pages = set(page_index.keys())
 
-        # Build a set of known directory paths for resolving directory-style URLs
-        existing_dirs = set()
-        for p in existing_pages:
-            parts = Path(p).parts
-            for i in range(len(parts)):
-                existing_dirs.add(str(Path(*parts[: i + 1])))
-
         errors = 0
         warnings = 0
 
@@ -76,8 +71,8 @@ class Command(BaseCommand):
             content = html_path.read_text(encoding="utf-8")
             hrefs = HREF_RE.findall(content)
 
-            for href in hrefs:
-                href = unquote(href)
+            for raw_href in hrefs:
+                href = unquote(raw_href)
 
                 # Skip external links, mailto, javascript, and empty hrefs
                 if not href or href.startswith(("http://", "https://", "mailto:", "javascript:", "#")):
@@ -109,7 +104,7 @@ class Command(BaseCommand):
                         continue
 
                 # Try to find the target page (handles clean URLs like /foo/ -> foo/index.html)
-                resolved = _resolve_target(target_rel, existing_pages, existing_dirs)
+                resolved = _resolve_target(target_rel, existing_pages)
                 if resolved is None:
                     self.stderr.write(self.style.ERROR(f"  {rel}: broken link -> {href}"))
                     errors += 1
@@ -117,7 +112,9 @@ class Command(BaseCommand):
 
                 # If the link has an anchor fragment, check it exists on the target page
                 if anchor and anchor not in page_index.get(resolved, set()):
-                    self.stderr.write(self.style.WARNING(f"  {rel}: broken anchor {href} (page exists, anchor missing)"))
+                    self.stderr.write(
+                        self.style.WARNING(f"  {rel}: broken anchor {href} (page exists, anchor missing)")
+                    )
                     warnings += 1
 
         total = len(html_files)
@@ -129,7 +126,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("OK"))
 
 
-def _resolve_target(target_rel: str, existing_pages: set[str], existing_dirs: set[str]) -> str | None:
+def _resolve_target(target_rel: str, existing_pages: set[str]) -> str | None:
     """
     Try to resolve a relative link target to an existing built page.
 

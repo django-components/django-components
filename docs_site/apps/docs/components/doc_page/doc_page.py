@@ -11,6 +11,7 @@ Phase 3a replaces this stub with the full chrome: header, sidebar, right-rail TO
 breadcrumbs, dark mode toggle, search trigger. The template structure will change
 significantly at that point - this version is intentionally minimal.
 """
+
 import json
 from urllib.parse import urlparse
 
@@ -19,7 +20,6 @@ from django_components import Component, register, types
 
 @register("doc_page")
 class DocPage(Component):
-
     class Kwargs:
         content_html: str
         title: str = ""
@@ -37,8 +37,8 @@ class DocPage(Component):
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
 
-            {# Title: "Page Title - Site Name", or just the site name for the home page #}
-            <title>{% if title and title != site_name %}{{ title }} - {{ site_name }}{% else %}{{ site_name }}{% endif %}</title>
+            {# Title and robots directive are composed in get_template_data #}
+            <title>{{ page_title }}</title>
 
             {# Per-page meta description for search engine snippets #}
             {% if description %}<meta name="description" content="{{ description }}">{% endif %}
@@ -47,7 +47,7 @@ class DocPage(Component):
             {% if canonical %}<link rel="canonical" href="{{ canonical }}">{% endif %}
 
             {# noindex for old versions so they don't compete with /latest/ in search #}
-            {% if noindex %}<meta name="robots" content="noindex,follow">{% else %}<meta name="robots" content="index,follow">{% endif %}
+            <meta name="robots" content="{{ robots }}">
 
             <meta name="generator" content="django-components docs builder">
 
@@ -147,15 +147,22 @@ class DocPage(Component):
         if kwargs.canonical and kwargs.title:
             breadcrumb_jsonld = _build_breadcrumb_jsonld(kwargs.canonical, kwargs.title)
 
+        # Compose the <title> ("Page - Site", or just "Site" on the home page) and the
+        # robots directive here so the template stays declarative.
+        if kwargs.title and kwargs.title != kwargs.site_name:
+            page_title = f"{kwargs.title} - {kwargs.site_name}"
+        else:
+            page_title = kwargs.site_name
+        robots = "noindex,follow" if kwargs.noindex else "index,follow"
+
         return {
             "content_html": kwargs.content_html,
-            "title": kwargs.title,
+            "page_title": page_title,
             "description": kwargs.description,
             "canonical": kwargs.canonical,
-            "noindex": kwargs.noindex,
+            "robots": robots,
             "version": kwargs.version,
             "lang": kwargs.lang,
-            "site_name": kwargs.site_name,
             "breadcrumb_jsonld": breadcrumb_jsonld,
         }
 
@@ -186,18 +193,23 @@ def _build_breadcrumb_jsonld(canonical: str, title: str) -> str:
     base_url = f"{parsed.scheme}://{parsed.netloc}/{'/'.join(segments[:content_start])}"
     items = []
     for i, seg in enumerate(content_segments):
-        item_url = f"{base_url}/{'/'.join(content_segments[:i + 1])}/"
+        item_url = f"{base_url}/{'/'.join(content_segments[: i + 1])}/"
         # Last segment uses the page title; earlier ones use the slug as-is
         name = title if i == len(content_segments) - 1 else seg.replace("_", " ").title()
-        items.append({
-            "@type": "ListItem",
-            "position": i + 1,
-            "name": name,
-            "item": item_url,
-        })
+        items.append(
+            {
+                "@type": "ListItem",
+                "position": i + 1,
+                "name": name,
+                "item": item_url,
+            }
+        )
 
-    return json.dumps({
-        "@context": "https://schema.org",
-        "@type": "BreadcrumbList",
-        "itemListElement": items,
-    }, ensure_ascii=False)
+    return json.dumps(
+        {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": items,
+        },
+        ensure_ascii=False,
+    )
