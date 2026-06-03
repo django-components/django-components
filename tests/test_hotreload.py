@@ -352,11 +352,13 @@ class TestHotReloadEndToEnd:
                         template = "hello"
                         js_file = "test.js"
 
+                    assert JsComp.js is not None
                     assert "original" in JsComp.js
 
                     js_path.write_text("console.log('updated');")
                     file_changed.send(sender=None, file_path=js_path)
 
+                    assert JsComp.js is not None
                     assert "updated" in JsComp.js
 
                 inner()
@@ -377,11 +379,13 @@ class TestHotReloadEndToEnd:
                         template = "hello"
                         css_file = "test.css"
 
+                    assert CssComp.css is not None
                     assert "original" in CssComp.css
 
                     css_path.write_text(".updated { color: blue; }")
                     file_changed.send(sender=None, file_path=css_path)
 
+                    assert CssComp.css is not None
                     assert "updated" in CssComp.css
 
                 inner()
