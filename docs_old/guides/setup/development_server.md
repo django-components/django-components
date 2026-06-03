@@ -1,34 +1,51 @@
-## Reload dev server on component file changes
+## Hot-reloading component files during development
 
-This is relevant if you are using the project structure as shown in our examples, where
-HTML, JS, CSS and Python are in separate files and nested in a directory.
+When you edit a component's HTML template, JS, or CSS file while the dev server
+is running, django_components automatically picks up the change on the next
+request - no server restart needed.
 
-```
-sampleproject/
-├── components/
-│   └── calendar/
-│       ├── calendar.py
-│       └── calendar.html
-│       └── calendar.css
-│       └── calendar.js
-├── sampleproject/
-├── manage.py
-└── requirements.txt
-```
+This works out of the box with the default setting
+[`reload_on_file_change`][ComponentsSettings.reload_on_file_change] `= "hot"`.
 
-In this case you may notice that when you are running a development server,
-the server sometimes does not reload when you change component files.
+### How it works
 
-From relevant [StackOverflow thread](https://stackoverflow.com/a/76722393/9788634):
+When a file changes inside one of the
+[`COMPONENTS.dirs`][ComponentsSettings.dirs]
+or
+[`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
+directories, django_components clears its internal template/JS/CSS cache for
+the affected components. The next render re-reads the file from disk.
 
-> TL;DR is that the server won't reload if it thinks the changed file is in a templates directory,
-> or in a nested sub directory of a templates directory. This is by design.
+The dev server itself keeps running - there is no restart, so the reload is
+fast.
 
-To make the dev server reload on all component files, set
-[`reload_on_file_change`][ComponentsSettings.reload_on_file_change]
-to `True`.
-This configures Django to watch for component files too.
+### Reload modes
+
+The [`reload_on_file_change`][ComponentsSettings.reload_on_file_change]
+setting accepts the following values:
+
+| Value | Behavior |
+|-------|----------|
+| `True` or `"hot"` (default) | Clear the component cache on file change. No server restart. |
+| `False` or `"off"` | No file watching. Changes require a manual server restart. |
+| `"restart"` | Clear the cache **and** restart the dev server. Deprecated - use `"hot"` instead. |
 
 !!! warning
 
-    This setting should be enabled only for the dev environment!
+    This setting should be used only in the dev environment!
+
+### Example
+
+```python
+COMPONENTS = ComponentsSettings(
+    reload_on_file_change="hot",  # This is the default
+)
+```
+
+To disable file watching entirely:
+
+```python
+COMPONENTS = ComponentsSettings(
+    reload_on_file_change="off",
+)
+```

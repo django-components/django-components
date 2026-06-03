@@ -476,6 +476,17 @@ def _cache_script(
     cache.set(cache_key, serialized_script)
 
 
+def evict_component_scripts(comp_cls: type["Component"]) -> None:
+    """
+    Remove a component's JS and CSS from the dependency rendering cache,
+    so the next render re-caches from fresh file content.
+    """
+    cache = get_component_media_cache()
+    for script_type in ("js", "css"):
+        cache_key = _gen_cache_key(comp_cls.class_id, script_type, None)
+        cache.delete(cache_key)
+
+
 # Regex pattern to match $onComponent( calls in component JS
 # Matches: $onComponent( with optional whitespace before the opening parenthesis
 _ONCOMPONENT_PATTERN = re.compile(r"\$onComponent\s*\(")
