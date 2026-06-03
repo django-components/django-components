@@ -7,7 +7,9 @@ from django.apps import AppConfig
 from django.template import Template
 from django.template.library import InclusionNode
 from django.template.loader_tags import IncludeNode
-from django.utils.autoreload import file_changed, trigger_reload
+from django.utils.autoreload import file_changed
+
+from django_components.app_settings import ReloadModeType
 
 
 class ComponentsConfig(AppConfig):
@@ -42,10 +44,11 @@ class ComponentsConfig(AppConfig):
         # NOTE: Delete when Django 5.2 reaches end of life
         monkeypatch_template_proxy_cls()
 
-        # Auto-reload Django dev server when any component files changes
+        # Set up file-change handling for component files (templates, JS, CSS).
         # See https://github.com/django-components/django-components/discussions/567#discussioncomment-10273632
-        if app_settings.RELOAD_ON_FILE_CHANGE:
-            _watch_component_files_for_autoreload()
+        reload_mode = app_settings.RELOAD_ON_FILE_CHANGE
+        if reload_mode != "off":
+            _setup_component_file_reload(reload_mode=reload_mode)
 
         # Allow tags to span multiple lines. This makes it easier to work with
         # components inside Django templates, allowing us syntax like:
@@ -72,17 +75,47 @@ class ComponentsConfig(AppConfig):
         extensions._init_app(app_settings.EXTENSIONS)
 
 
-# See https://github.com/django-components/django-components/issues/586#issue-2472678136
-def _watch_component_files_for_autoreload() -> None:
-    from django_components.util.loader import get_component_dirs
+def _setup_component_file_reload(*, reload_mode: ReloadModeType) -> None:
+    """
+    Listen for file changes in component directories and clear the cached
+    component media (template, JS, CSS) so the next render reads fresh content
+    from disk.
 
-    component_dirs = set(get_component_dirs())
+    When `reload_mode` is "hot", the handler returns True to
+    tell Django's autoreloader that the change was handled, suppressing a full
+    server restart.
 
-    def template_changed(sender: Any, file_path: Path, **kwargs: Any) -> None:  # noqa: ARG001
-        # Reload dev server if any of the files within `COMPONENTS.dirs` or `COMPONENTS.app_dirs` changed
-        for dir_path in file_path.parents:
-            if dir_path in component_dirs:
-                trigger_reload(file_path)
-                return
+    When `reload_mode` is "restart", the handler returns None.
+    Django's `notify_file_changed()` treats that as "no handler claimed it" and
+    calls `trigger_reload()` itself. See `django/utils/autoreload.py`.
+    """
+    from django_components.component_media import _get_components_for_file
 
-    file_changed.connect(template_changed)
+    def on_component_file_changed(
+        sender: Any,  # noqa: ARG001
+        file_path: Path,
+        **kwargs: Any,  # noqa: ARG001
+    ) -> bool | None:
+        abs_path = str(Path(file_path).resolve())
+        components = _get_components_for_file(abs_path)
+        if not components:
+            return None
+
+        for comp_cls in components:
+            comp_media = comp_cls._component_media  # type: ignore[attr-defined]
+            # Reset both template and non-template caches. A given file can only
+            # be one type, but reset_template/reset_files are cheap no-ops when
+            # the corresponding attribute isn't set, so we just clear both.
+            comp_media.reset_template()
+            comp_media.reset_files()
+
+        if reload_mode == "hot":
+            return True
+
+        # Return None so Django's notify_file_changed() calls trigger_reload()
+        # for us. See django/utils/autoreload.py:371.
+        return None
+
+    # weak=False because the handler is a closure local to this function.
+    # Django's default weak=True would let it get garbage-collected immediately.
+    file_changed.connect(on_component_file_changed, weak=False)

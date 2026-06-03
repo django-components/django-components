@@ -46,7 +46,7 @@ defaults = ComponentsSettings(
     extensions_defaults={},
     libraries=[],  # E.g. ["mysite.components.forms", ...]
     multiline_tags=True,
-    reload_on_file_change=False,
+    reload_on_file_change="hot",
     static_files_allowed=[
         ".css",
         ".js", ".jsx", ".ts", ".tsx",

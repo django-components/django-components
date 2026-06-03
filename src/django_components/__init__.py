@@ -3,7 +3,7 @@
 # Public API
 # NOTE: Some of the documentation is generated based on these exports
 # isort: off
-from django_components.app_settings import ContextBehavior, ComponentsSettings
+from django_components.app_settings import ContextBehavior, ComponentsSettings, ReloadMode, ReloadModeType
 from django_components.attributes import format_attributes, merge_attributes
 from django_components.autodiscovery import autodiscover, import_libraries
 from django_components.dependencies import Dependency, DependencyKind, Script, Style
@@ -150,6 +150,8 @@ __all__ = [
     "OnTemplateLoadedContext",
     "ProvideNode",
     "RegistrySettings",
+    "ReloadMode",
+    "ReloadModeType",
     "Script",
     "ShorthandComponentFormatter",
     "Slot",

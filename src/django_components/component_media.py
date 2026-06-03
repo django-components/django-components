@@ -16,7 +16,7 @@ from typing import (
     TypeVar,
     cast,
 )
-from weakref import WeakKeyDictionary
+from weakref import ReferenceType, WeakKeyDictionary, ref
 
 from django.contrib.staticfiles import finders
 from django.core.exceptions import ImproperlyConfigured
@@ -25,6 +25,7 @@ from django.template import Template
 from django.utils.safestring import SafeData
 
 from django_components.dependencies import Script, Style
+from django_components.dependencies import evict_component_scripts as _evict_component_scripts
 from django_components.extension import OnCssLoadedContext, OnJsLoadedContext, extensions
 from django_components.template import ensure_unique_template, load_component_template
 from django_components.util.loader import get_component_dirs, resolve_file
@@ -313,6 +314,23 @@ class ComponentMedia:
         self.resolved_template = False
         self.resolved_files = False
         self.resolved_relative_paths = False
+
+    def reset_template(self) -> None:
+        """Clear cached template so next access re-reads from disk."""
+        self.resolved_template = False
+        self._template = UNSET
+        self.template = UNSET
+
+    def reset_files(self) -> None:
+        """
+        Clear cached JS/CSS so next access re-reads from disk.
+        Also evicts stale entries from the dependency rendering cache,
+        so the next render re-caches from the fresh file content.
+        """
+        self.resolved_files = False
+        self.js = UNSET
+        self.css = UNSET
+        _evict_component_scripts(self.comp_cls)
 
 
 # This metaclass is all about one thing - lazily resolving the media files.
@@ -689,6 +707,10 @@ def _load_media(
 
         css_str, _ = _get_asset(comp_cls, comp_media, inlined_attr="css", file_attr="css_file", comp_dirs=comp_dirs)
         comp_media.css = css_str
+
+    # Map resolved file paths back to this component class, so the hot-reload
+    # handler can look up which components to invalidate when a file changes.
+    _register_component_files(comp_cls, comp_media, asset_type=asset_type, comp_dirs=comp_dirs)
 
 
 def _normalize_media(media: type[ComponentMediaInput]) -> None:
@@ -1193,3 +1215,76 @@ def _get_asset(
 
 def is_set(value: T | Unset | None) -> TypeGuard[T]:
     return value is not None and value is not UNSET
+
+
+########################################################
+# File-to-component reverse index for hot-reload
+########################################################
+
+_ComponentRef: TypeAlias = "ReferenceType[type[Component]]"
+
+# Absolute file path -> list of weakrefs to Component classes that use that file.
+# Used by the hot-reload handler to know which components to reset when a file changes.
+_component_file_cache: dict[str, list[_ComponentRef]] = {}
+
+
+def _register_component_file(abs_path: str, comp_cls: type["Component"]) -> None:
+    """Register that a component class uses the given file (by absolute path)."""
+    if abs_path not in _component_file_cache:
+        _component_file_cache[abs_path] = []
+    _component_file_cache[abs_path].append(ref(comp_cls))
+
+
+def _get_components_for_file(abs_path: str) -> list[type["Component"]]:
+    """Look up component classes that use the given file. Prunes dead weakrefs."""
+    refs = _component_file_cache.get(abs_path)
+    if refs is None:
+        return []
+
+    # Prune dead weakrefs while we're at it.
+    alive: list[type[Component]] = []
+    pruned: list[_ComponentRef] = []
+    for r in refs:
+        comp_cls = r()
+        if comp_cls is not None:
+            alive.append(comp_cls)
+            pruned.append(r)
+
+    _component_file_cache[abs_path] = pruned
+    return alive
+
+
+def _reset_component_file_cache() -> None:
+    """Clear the file-to-component cache. Used in test cleanup."""
+    _component_file_cache.clear()
+
+
+def _register_component_files(
+    comp_cls: type["Component"],
+    comp_media: ComponentMedia,
+    asset_type: Literal["template", "non-template"] | None,
+    comp_dirs: list[Path],
+) -> None:
+    """Populate the file-to-component reverse index for hot-reload."""
+    if asset_type == "template":
+        # Inlined templates (Component.template = "...") have no file to watch.
+        # They still get a Template object with an origin, but the origin name
+        # is a class identifier, not a file path.
+        if is_set(comp_media.template_file):
+            tmpl = comp_media._template
+            # Django's get_template() stores the absolute path in origin.name
+            if isinstance(tmpl, Template) and tmpl.origin is not None:
+                _register_component_file(os.path.abspath(tmpl.origin.name), comp_cls)
+
+    elif asset_type == "non-template":
+        # JS/CSS are loaded via resolve_file() + finders.find(), same lookup
+        # chain as _get_asset(). We repeat it here to get the absolute path.
+        for file_attr in ("js_file", "css_file"):
+            file_val = getattr(comp_media, file_attr, UNSET)
+            if not is_set(file_val):
+                continue
+            full_path = resolve_file(file_val, comp_dirs)
+            if full_path is None:
+                full_path = finders.find(file_val)
+            if full_path is not None:
+                _register_component_file(os.path.abspath(full_path), comp_cls)
