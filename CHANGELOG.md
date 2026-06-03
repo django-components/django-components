@@ -2,6 +2,8 @@
 
 ## v0.151.0
 
+_2026-06-03_
+
 #### Feature
 
 - **Hot reload - Component files (templates, JS, CSS) are now updated without a server restart**
