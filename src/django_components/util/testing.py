@@ -21,6 +21,7 @@ from django.test import override_settings
 
 from django_components import ComponentsSettings
 from django_components.component import ALL_COMPONENTS, Component
+from django_components.component_media import _reset_component_file_cache
 from django_components.component_registry import ALL_REGISTRIES, ComponentRegistry
 from django_components.extension import extensions
 from django_components.perfutil.provide import provide_cache
@@ -576,6 +577,7 @@ def _clear_djc_global_state(
 
     # Clear other djc state
     _reset_component_template_file_cache()
+    _reset_component_file_cache()
     loading_components.clear()
 
     # Clear Django caches

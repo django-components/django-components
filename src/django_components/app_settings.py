@@ -127,6 +127,43 @@ class ContextBehavior(str, Enum):
     """
 
 
+ReloadModeType: TypeAlias = Literal["off", "hot", "restart"]
+
+
+class ReloadMode(str, Enum):
+    """
+    Configure how django_components reacts when component files
+    (HTML templates, JS, CSS) change on disk while the dev server is running.
+
+    Also see [Reload dev server on component file changes](
+    ../guides/setup/development_server.md#reload-dev-server-on-component-file-changes).
+
+    **Options:**
+
+    - `off`: No file watching. Changes are not picked up until the server is manually restarted.
+    - `hot`: Clear the in-memory component cache so the next render reads fresh content from disk.
+      The dev server keeps running - no restart.
+    - `restart`: Same as `hot`, but also restarts the dev server. Deprecated, will be removed in v1.
+    """
+
+    OFF = "off"
+    """No file watching. Component file changes are not picked up until the server is manually restarted."""
+
+    HOT = "hot"
+    """
+    Clear the in-memory component cache when a component file changes, so the next
+    render reads fresh content from disk. The dev server keeps running without a restart.
+    """
+
+    # TODO_REMOVE_IN_V1
+    RESTART = "restart"
+    """
+    Same cache-clearing behavior as `hot`, but also triggers a full dev server restart.
+
+    Deprecated. Use `hot` instead. Will be removed in v1.
+    """
+
+
 # This is the source of truth for the settings that are available. If the documentation
 # or the defaults do NOT match this, they should be updated.
 class ComponentsSettings(NamedTuple):
@@ -436,35 +473,29 @@ class ComponentsSettings(NamedTuple):
     [`COMPONENTS.reload_on_file_change`](./settings.md#django_components.app_settings.ComponentsSettings.reload_on_file_change)
     instead."""
 
-    reload_on_file_change: bool | None = None
+    reload_on_file_change: bool | ReloadModeType | None = None
     """
-    This is relevant if you are using the project structure where
-    HTML, JS, CSS and Python are in separate files and nested in a directory.
+    Configure how django_components reacts when component files
+    (HTML templates, JS, CSS) change on disk while the dev server is running.
 
-    In this case you may notice that when you are running a development server,
-    the server sometimes does not reload when you change component files.
+    See [Reload dev server on component file changes](
+    ../guides/setup/development_server.md#reload-dev-server-on-component-file-changes).
 
-    Django's native [live reload](https://stackoverflow.com/a/66023029/9788634) logic
-    handles only Python files and HTML template files. It does NOT reload when other
-    file types change or when template files are nested more than one level deep.
+    **Options:**
 
-    The setting `reload_on_file_change` fixes this, reloading the dev server even when your component's
-    HTML, JS, or CSS changes.
+    - `False` or `"off"` - No file watching. Changes are not picked up until the server
+      is manually restarted.
+    - `True` or `"hot"` - Clear the in-memory component cache so the next render reads fresh
+      content from disk. The dev server keeps running without a restart.
+    - `"restart"` - Same as `"hot"`, but also triggers a full dev server restart.
+      Deprecated, will be removed in v1.
 
-    If `True`, django_components configures Django to reload when files inside
-    [`COMPONENTS.dirs`](./settings.md#django_components.app_settings.ComponentsSettings.dirs)
-    or
-    [`COMPONENTS.app_dirs`](./settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
-    change.
-
-    See [Reload dev server on component file changes](../guides/setup/development_server.md#reload-dev-server-on-component-file-changes).
-
-    Defaults to `False`.
+    Defaults to `"hot"`.
 
     !!! warning
 
-        This setting should be enabled only for the dev environment!
-    """  # noqa: E501
+        This setting should be used only in the dev environment!
+    """
 
     static_files_allowed: list[str | re.Pattern] | None = None
     """
@@ -707,7 +738,7 @@ defaults = ComponentsSettings(
     extensions_defaults={},
     libraries=[],  # E.g. ["mysite.components.forms", ...]
     multiline_tags=True,
-    reload_on_file_change=False,
+    reload_on_file_change="hot",
     static_files_allowed=[
         ".css",
         ".js", ".jsx", ".ts", ".tsx",
@@ -813,13 +844,27 @@ class InternalSettings:
         all_extensions = [*built_in_extensions, *extensions]
         return all_extensions  # type: ignore[return-value]
 
-    def _prepare_reload_on_file_change(self, new_settings: ComponentsSettings) -> bool:
+    def _prepare_reload_on_file_change(self, new_settings: ComponentsSettings) -> ReloadModeType:
         val = new_settings.reload_on_file_change
         # TODO_REMOVE_IN_V1
         if val is None:
             val = new_settings.reload_on_template_change
 
-        return default(val, cast("bool", defaults.reload_on_file_change))
+        resolved = default(val, defaults.reload_on_file_change)
+
+        # TODO_REMOVE_IN_V1 - Normalize bool to ReloadMode string
+        if resolved is True:
+            return "hot"
+        if resolved is False:
+            return "off"
+
+        if resolved not in ("off", "hot", "restart"):
+            raise ValueError(
+                f"Invalid value for 'reload_on_file_change': {resolved!r}."
+                " Must be one of: False, True, 'off', 'hot', 'restart'."
+            )
+
+        return cast("ReloadModeType", resolved)
 
     def _prepare_static_files_forbidden(self, new_settings: ComponentsSettings) -> list[str | re.Pattern]:
         val = new_settings.static_files_forbidden
@@ -887,7 +932,7 @@ class InternalSettings:
         return self._get_settings().multiline_tags  # type: ignore[return-value]
 
     @property
-    def RELOAD_ON_FILE_CHANGE(self) -> bool:
+    def RELOAD_ON_FILE_CHANGE(self) -> ReloadModeType:
         return self._get_settings().reload_on_file_change  # type: ignore[return-value]
 
     @property
