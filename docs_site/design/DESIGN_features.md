@@ -107,19 +107,19 @@ Goal: a markdown page renders with header + sidebar + right-rail TOC + code bloc
 
 | # | ID | Name | Effort | Critical | Source | Status | Notes |
 |---|---|---|---|---|---|---|---|
-| 3a.1 | `design-tokens-css` | OKLCH design-tokens CSS file | S | ✓ | 11.11 §10, §11.1 | pending | Foundation |
-| 3a.2 | `light-theme-tokens` | Light-mode token values | S | ✓ | 11.11 §10 | pending | Accent decision deferred to Juro |
-| 3a.3 | `dark-theme-tokens` | Dark-mode token values | S | ✓ | 11.11 §10 | pending | |
-| 3a.4 | `theme-fouc-prevention` | Inline `<script>` in head reads localStorage before paint | S | ✓ | 11.11 §9.1 | pending | |
-| 3a.5 | `inter-font-link` | Inter font (CDN or self-hosted) | S | | 11.11 §10.6 | pending | Self-host if zero-off-origin required |
-| 3a.6 | `prose-typography` | Body, headings, links, anchored-heading hover | S | ✓ | 11.11 §5.1-5.3 | pending | CSS-only |
-| 3a.7 | `inline-code-styling` | Inline `<code>` styled as accent pills | S | | 11.11 §5.4 | pending | One CSS rule |
+| 3a.1 | `design-tokens-css` | OKLCH design-tokens CSS file | S | ✓ | 11.11 §10, §11.1 | **done** | `static/css/tokens.css`; OKLCH values with @font-face for self-hosted Inter |
+| 3a.2 | `light-theme-tokens` | Light-mode token values | S | ✓ | 11.11 §10 | **done** | Teal accent (Option A per Juro) |
+| 3a.3 | `dark-theme-tokens` | Dark-mode token values | S | ✓ | 11.11 §10 | **done** | `[data-theme="dark"]` + `@media (prefers-color-scheme: dark)` auto fallback |
+| 3a.4 | `theme-fouc-prevention` | Inline `<script>` in head reads localStorage before paint | S | ✓ | 11.11 §9.1 | **done** | Reads `djc-theme` from localStorage, sets `data-theme` attr |
+| 3a.5 | `inter-font-link` | Inter font (CDN or self-hosted) | S | | 11.11 §10.6 | **done** | Self-hosted: `static/fonts/InterVariable.woff2` (variable font, 344KB, all weights) |
+| 3a.6 | `prose-typography` | Body, headings, links, anchored-heading hover | S | ✓ | 11.11 §5.1-5.3 | **done** | `static/css/site.css`; `.prose` class with heading borders, anchor hover |
+| 3a.7 | `inline-code-styling` | Inline `<code>` styled as accent pills | S | | 11.11 §5.4 | **done** | Accent-colored pill via `var(--c-accent)` + `var(--c-accent-dim)` |
 | 3a.8 | `code-block-component` | `<pre><code>` with language label + copy button | M | ✓ | 11.11 §6.2-6.3 | pending | Minimal chrome |
 | 3a.9 | `tabbed-code-component` | `CodeTabs` (multi-tab fences + example widget tabs + filename) | M | | 11.11 §6.4 | pending | Reusable |
-| 3a.10 | `blockquote-styling` | Left-border, muted fg | S | | 11.11 §5.5 | pending | |
-| 3a.11 | `table-styling` | Cell borders, header bg, mono first-col auto-detect | S | | 11.11 §5.6 | pending | |
-| 3a.12 | `admonition-component` | Note/info/warning with accent border + tinted bg | S | ✓ | 11.11 §5.7 | pending | Get free from pymdownx or wrap |
-| 3a.13 | `list-styling` | Standard CommonMark lists | S | | 11.11 §5.8 | pending | |
+| 3a.10 | `blockquote-styling` | Left-border, muted fg | S | | 11.11 §5.5 | **done** | CSS-only in `site.css` |
+| 3a.11 | `table-styling` | Cell borders, header bg, mono first-col auto-detect | S | | 11.11 §5.6 | **done** | CSS-only in `site.css`; overflow-x wrapper |
+| 3a.12 | `admonition-component` | Note/info/warning with accent border + tinted bg | S | ✓ | 11.11 §5.7 | **done** | CSS-only in `site.css`; note/info/warning/danger variants via pymdownx classes |
+| 3a.13 | `list-styling` | Standard CommonMark lists | S | | 11.11 §5.8 | **done** | CSS-only in `site.css`; includes task-list and definition-list styling |
 | 3a.14 | `header-component` | 64px sticky header (logo, top-nav, search trigger, version, theme, GitHub) | M | ✓ | 11.11 §4 | pending | Drives all nav |
 | 3a.15 | `sidebar-component` | 280px sticky left sidebar (nested 2-level nav, collapsible groups, active highlight, scroll-into-view) | M | ✓ | 11.11 §3 | pending | Requires nav YAML |
 | 3a.16 | `right-toc-component` | 240px sticky right rail (H2/H3 scroll-spy) | M | ✓ | 11.11 §7.1, §2.2 | pending | Hidden < 1024px |
@@ -128,7 +128,7 @@ Goal: a markdown page renders with header + sidebar + right-rail TOC + code bloc
 | 3a.19 | `nav-yaml-loader` | Loads + validates single `_nav.yml` | S | ✓ | 11.9 §2.2 | pending | ~80 LOC; replaces awesome-nav |
 | 3a.20 | `breadcrumbs-component` | Above-H1 breadcrumb trail | S | | 11.11 §7.2 | pending | From nav tree |
 | 3a.21 | `page-nav-component` | Prev/Next cards at bottom | S | | 11.11 §7.3 | pending | From nav order |
-| 3a.22 | `site-css` | Bundled prose + components + utilities stylesheet | M | ✓ | 11.11 §5, §6, §11.1 | pending | Incrementally built |
+| 3a.22 | `site-css` | Bundled prose + components + utilities stylesheet | M | ✓ | 11.11 §5, §6, §11.1 | **in_progress** | Prose + content styles done in `site.css`; layout chrome styles added in Batch 2 |
 | 3a.23 | `site-js` | Bundled interactivity (search trigger, theme, sidebar persistence, scroll-spy, copy, drawer) | M | ✓ | 11.11 §3.3, §4.1, §7.1, §6.2, §8, §9.1 | pending | Mostly vanilla |
 
 **Out of scope here:** mobile breakpoints (Phase 3b), Pagefind UI (Phase 5a), content port (Phase 3b).

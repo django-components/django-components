@@ -1,0 +1,451 @@
+/*
+ * Prose typography and content styling for the django-components docs site.
+ *
+ * Spec: docs_site/design/DESIGN_spike_11.md sections 5-6.
+ * Tokens: tokens.css (loaded before this file).
+ *
+ * Phase 3a Batch 1: typography, headings, links, inline code, code blocks,
+ * blockquotes, tables, admonitions, lists. Layout shell comes in Batch 2.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Base reset & body                                                   */
+/* ------------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 80px; /* clear the sticky header on anchor jumps */
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--c-fg-muted);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ------------------------------------------------------------------ */
+/* Prose: the content article area                                     */
+/* ------------------------------------------------------------------ */
+.prose {
+  max-width: 720px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ------------------------------------------------------------------ */
+/* Headings                                                            */
+/* ------------------------------------------------------------------ */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  color: var(--c-fg);
+  font-weight: bold;
+  line-height: 1.3;
+  margin-bottom: 0.75rem;
+}
+
+.prose h1 {
+  font-size: 2.25rem;
+  margin-top: 0;
+}
+
+.prose h2 {
+  font-size: 1.75rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--c-border-subtle);
+}
+
+.prose h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2rem;
+}
+
+.prose h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+}
+
+.prose h5,
+.prose h6 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+/* Anchored heading: # glyph fades in on hover */
+.prose h2,
+.prose h3,
+.prose h4 {
+  position: relative;
+}
+
+.prose .headerlink {
+  color: var(--c-fg-subtle);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  margin-left: 0.3em;
+  font-weight: normal;
+}
+
+.prose h2:hover .headerlink,
+.prose h3:hover .headerlink,
+.prose h4:hover .headerlink {
+  opacity: 1;
+}
+
+.prose .headerlink:hover {
+  color: var(--c-link);
+}
+
+/* ------------------------------------------------------------------ */
+/* Links                                                               */
+/* ------------------------------------------------------------------ */
+.prose a {
+  color: var(--c-link);
+  text-decoration: none;
+}
+
+.prose a:hover {
+  color: var(--c-link-hover);
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ */
+/* Paragraphs                                                          */
+/* ------------------------------------------------------------------ */
+.prose p {
+  margin: 0 0 1rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Inline code: accent-colored pill (spike 11.11 section 5.4)          */
+/* ------------------------------------------------------------------ */
+.prose :not(pre) > code {
+  color: var(--c-accent);
+  background: var(--c-accent-dim);
+  padding: 0.1em 0.35em;
+  border-radius: 0.2em;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Code blocks                                                         */
+/* ------------------------------------------------------------------ */
+.prose pre {
+  background: var(--c-surface-2);
+  padding: 1rem 1.25rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid var(--c-link-dim);
+  overflow-x: auto;
+  margin: 1rem 0;
+  position: relative;
+}
+
+.prose pre code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  line-height: 1.6;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  white-space: pre;
+  font-weight: normal;
+}
+
+/* Pygments highlight wrapper */
+.prose .highlight {
+  margin: 1rem 0;
+  position: relative;
+}
+
+.prose .highlight pre {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Blockquotes                                                         */
+/* ------------------------------------------------------------------ */
+.prose blockquote {
+  border-left: 3px solid var(--c-link);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--c-fg-muted);
+}
+
+.prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tables                                                              */
+/* ------------------------------------------------------------------ */
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid var(--c-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.prose th {
+  background: var(--c-surface-2);
+  font-weight: 600;
+  color: var(--c-fg);
+}
+
+.prose table code {
+  font-size: 0.85em;
+}
+
+/* Overflow wrapper for wide tables on narrow viewports */
+.prose .table-wrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.prose .table-wrapper table {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Admonitions (pymdownx/markdown admonition extension)                */
+/* ------------------------------------------------------------------ */
+.prose .admonition {
+  border-left: 3px solid var(--c-note);
+  padding: 0.75rem 1rem;
+  margin: 1.25rem 0;
+  background: oklch(from var(--c-note) l c h / 6%);
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.prose .admonition-title {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.3rem;
+  color: var(--c-note);
+}
+
+.prose .admonition p:last-child {
+  margin-bottom: 0;
+}
+
+/* Admonition variants */
+.prose .admonition.warning,
+.prose .admonition.caution {
+  border-left-color: var(--c-warning);
+  background: oklch(from var(--c-warning) l c h / 6%);
+}
+
+.prose .admonition.warning .admonition-title,
+.prose .admonition.caution .admonition-title {
+  color: var(--c-warning);
+}
+
+.prose .admonition.info,
+.prose .admonition.tip {
+  border-left-color: var(--c-info);
+  background: oklch(from var(--c-info) l c h / 6%);
+}
+
+.prose .admonition.info .admonition-title,
+.prose .admonition.tip .admonition-title {
+  color: var(--c-info);
+}
+
+.prose .admonition.danger,
+.prose .admonition.error {
+  border-left-color: var(--c-danger);
+  background: oklch(from var(--c-danger) l c h / 6%);
+}
+
+.prose .admonition.danger .admonition-title,
+.prose .admonition.error .admonition-title {
+  color: var(--c-danger);
+}
+
+/* ------------------------------------------------------------------ */
+/* Lists                                                               */
+/* ------------------------------------------------------------------ */
+.prose ul,
+.prose ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+.prose li {
+  margin-bottom: 0.25rem;
+}
+
+.prose li > p {
+  margin-bottom: 0.5rem;
+}
+
+.prose ul ul,
+.prose ol ol,
+.prose ul ol,
+.prose ol ul {
+  margin: 0.25rem 0;
+}
+
+/* Task lists (pymdownx.tasklist) */
+.prose .task-list-item {
+  list-style: none;
+  margin-left: -1.5rem;
+  padding-left: 1.5rem;
+}
+
+.prose .task-list-item input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Definition lists                                                    */
+/* ------------------------------------------------------------------ */
+.prose dl {
+  margin: 1rem 0;
+}
+
+.prose dt {
+  font-weight: 600;
+  color: var(--c-fg);
+  margin-top: 0.75rem;
+}
+
+.prose dd {
+  margin-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Horizontal rules                                                    */
+/* ------------------------------------------------------------------ */
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--c-border);
+  margin: 2rem 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Images                                                              */
+/* ------------------------------------------------------------------ */
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* pymdownx.tabbed (alternate style)                                   */
+/* ------------------------------------------------------------------ */
+.prose .tabbed-set {
+  margin: 1rem 0;
+}
+
+.prose .tabbed-set > input {
+  display: none;
+}
+
+.prose .tabbed-set > .tabbed-labels {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--c-border);
+  margin-bottom: 0;
+}
+
+.prose .tabbed-set > .tabbed-labels > label {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--c-fg-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.prose .tabbed-set > .tabbed-labels > label:hover {
+  color: var(--c-fg);
+}
+
+.prose .tabbed-set > input:checked + label {
+  color: var(--c-accent);
+  border-bottom-color: var(--c-accent);
+}
+
+.prose .tabbed-set > .tabbed-content {
+  padding: 0;
+}
+
+.prose .tabbed-set > .tabbed-content > .tabbed-block {
+  display: none;
+}
+
+.prose .tabbed-set > .tabbed-content > .tabbed-block:first-child {
+  display: block;
+}
+
+/* ------------------------------------------------------------------ */
+/* pymdownx.details                                                    */
+/* ------------------------------------------------------------------ */
+.prose details {
+  margin: 1rem 0;
+  border: 1px solid var(--c-border);
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+}
+
+.prose details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--c-fg);
+  padding: 0.25rem 0;
+}
+
+.prose details[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Abbreviations                                                       */
+/* ------------------------------------------------------------------ */
+.prose abbr[title] {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+/* ------------------------------------------------------------------ */
+/* Selection highlight                                                 */
+/* ------------------------------------------------------------------ */
+::selection {
+  background: var(--c-accent-dim);
+  color: var(--c-fg);
+}

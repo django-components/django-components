@@ -1,0 +1,129 @@
+/*
+ * Design tokens for the django-components docs site.
+ *
+ * All color values use OKLCH for perceptually uniform light/dark adjustment.
+ * Hex equivalents in comments are approximate (for devtools sanity-checking).
+ *
+ * Spec: docs_site/design/DESIGN_spike_11.md section 10.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Self-hosted Inter variable font                                     */
+/* ------------------------------------------------------------------ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('../fonts/InterVariable.woff2') format('woff2');
+}
+
+/* ------------------------------------------------------------------ */
+/* Typography tokens                                                   */
+/* ------------------------------------------------------------------ */
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Menlo, monospace;
+}
+
+/* ------------------------------------------------------------------ */
+/* Light theme (default)                                               */
+/* ------------------------------------------------------------------ */
+:root {
+  /* Surfaces */
+  --c-bg:        oklch(99% 0.003 250);   /* #fbfcfd */
+  --c-surface:   oklch(97% 0.005 250);   /* #f1f4f7 */
+  --c-surface-2: oklch(95% 0.006 250);   /* #e9edf2 */
+  --c-surface-3: oklch(92% 0.008 250);   /* #dee3eb */
+
+  /* Foreground & borders */
+  --c-fg:            oklch(20% 0.01 250);  /* #1d2030 */
+  --c-fg-muted:      oklch(40% 0.01 250);  /* #525b6e */
+  --c-fg-subtle:     oklch(55% 0.01 250);  /* #797f8c */
+  --c-border:        oklch(88% 0.005 250); /* #d0d5db */
+  --c-border-subtle: oklch(92% 0.005 250); /* #dde2e7 */
+
+  /* Accent: muted teal */
+  --c-accent:       oklch(55% 0.13 195);        /* #0d8a8a */
+  --c-accent-hover: oklch(48% 0.13 195);        /* #0a7474 */
+  --c-accent-dim:   oklch(55% 0.13 195 / 10%);
+
+  /* Links: steel-blue */
+  --c-link:       oklch(55% 0.15 245);        /* #3870c5 */
+  --c-link-hover: oklch(48% 0.15 245);        /* #2a5da8 */
+  --c-link-dim:   oklch(55% 0.15 245 / 10%);
+
+  /* Admonition semantics */
+  --c-note:    oklch(55% 0.15 245);  /* blue, same hue as link */
+  --c-info:    oklch(55% 0.13 175);  /* teal-cyan */
+  --c-warning: oklch(65% 0.16 70);   /* amber */
+  --c-danger:  oklch(55% 0.18 25);   /* red, reserved */
+
+  /* Shadows */
+  --shadow-modal:      0 25px 50px -12px oklch(0% 0 0 / 25%);
+  --shadow-card-hover: 0 4px 12px oklch(0% 0 0 / 8%);
+}
+
+/* ------------------------------------------------------------------ */
+/* Dark theme                                                          */
+/* ------------------------------------------------------------------ */
+[data-theme="dark"] {
+  --c-bg:        oklch(15% 0.008 250);   /* #0f1117 */
+  --c-surface:   oklch(18% 0.01 250);    /* #161924 */
+  --c-surface-2: oklch(21% 0.01 250);    /* #1c1f2b */
+  --c-surface-3: oklch(25% 0.01 250);    /* #23273a */
+
+  --c-fg:            oklch(94% 0.005 80);  /* #f0ecdf */
+  --c-fg-muted:      oklch(70% 0.008 80);  /* #b3aa9a */
+  --c-fg-subtle:     oklch(50% 0.008 80);  /* #7a7264 */
+  --c-border:        oklch(32% 0.01 250);  /* #2d3043 */
+  --c-border-subtle: oklch(28% 0.01 250);  /* #272a3b */
+
+  --c-accent:       oklch(72% 0.13 195);        /* #3eb4b4 */
+  --c-accent-hover: oklch(78% 0.13 195);        /* #5cc8c8 */
+  --c-accent-dim:   oklch(72% 0.13 195 / 12%);
+
+  --c-link:       oklch(72% 0.13 245);        /* #7aaae0 */
+  --c-link-hover: oklch(78% 0.13 245);        /* #94c0eb */
+  --c-link-dim:   oklch(72% 0.13 245 / 12%);
+
+  --c-note:    oklch(72% 0.13 245);
+  --c-info:    oklch(72% 0.13 175);
+  --c-warning: oklch(75% 0.14 70);
+  --c-danger:  oklch(65% 0.16 25);
+
+  --shadow-modal:      0 25px 50px -12px oklch(0% 0 0 / 50%);
+  --shadow-card-hover: 0 4px 12px oklch(0% 0 0 / 20%);
+}
+
+/* Auto dark theme: respects OS preference when no explicit choice is stored */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --c-bg:        oklch(15% 0.008 250);
+    --c-surface:   oklch(18% 0.01 250);
+    --c-surface-2: oklch(21% 0.01 250);
+    --c-surface-3: oklch(25% 0.01 250);
+
+    --c-fg:            oklch(94% 0.005 80);
+    --c-fg-muted:      oklch(70% 0.008 80);
+    --c-fg-subtle:     oklch(50% 0.008 80);
+    --c-border:        oklch(32% 0.01 250);
+    --c-border-subtle: oklch(28% 0.01 250);
+
+    --c-accent:       oklch(72% 0.13 195);
+    --c-accent-hover: oklch(78% 0.13 195);
+    --c-accent-dim:   oklch(72% 0.13 195 / 12%);
+
+    --c-link:       oklch(72% 0.13 245);
+    --c-link-hover: oklch(78% 0.13 245);
+    --c-link-dim:   oklch(72% 0.13 245 / 12%);
+
+    --c-note:    oklch(72% 0.13 245);
+    --c-info:    oklch(72% 0.13 175);
+    --c-warning: oklch(75% 0.14 70);
+    --c-danger:  oklch(65% 0.16 25);
+
+    --shadow-modal:      0 25px 50px -12px oklch(0% 0 0 / 50%);
+    --shadow-card-hover: 0 4px 12px oklch(0% 0 0 / 20%);
+  }
+}

@@ -1,11 +1,7 @@
-/* Pygments light theme (default) - auto-generated, do not edit */
-pre { line-height: 125%; }
-td.linenos .normal { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
-span.linenos { color: inherit; background-color: transparent; padding-left: 5px; padding-right: 5px; }
-td.linenos .special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
-span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 5px; padding-right: 5px; }
+/* Pygments light theme (default) - auto-generated from Pygments, scoped to light mode */
+
+/* Light theme: applies by default */
 .highlight .hll { background-color: #ffffcc }
-.highlight { background: #f8f8f8; }
 .highlight .c { color: #3D7B7B; font-style: italic } /* Comment */
 .highlight .err { border: 1px solid #F00 } /* Error */
 .highlight .k { color: #008000; font-weight: bold } /* Keyword */
@@ -74,3 +70,6 @@ span.linenos.special { color: #000000; background-color: #ffffc0; padding-left: 
 .highlight .vi { color: #19177C } /* Name.Variable.Instance */
 .highlight .vm { color: #19177C } /* Name.Variable.Magic */
 .highlight .il { color: #666 } /* Literal.Number.Integer.Long */
+
+/* Override when user explicitly picks light (suppresses dark @media) */
+[data-theme="light"] .highlight .hll { background-color: #ffffcc }
