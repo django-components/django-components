@@ -24,8 +24,10 @@ import pygments_djc  # noqa: F401 -- register the djc_py Pygments lexer
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+from apps.docs.build.examples import pre_render_examples
 from apps.docs.build.paths import md_companion_path, md_to_html_path, md_to_url
 from apps.docs.build.pipeline import render_page
+from apps.docs.examples import get_example_registry
 
 
 class Command(BaseCommand):
@@ -59,6 +61,9 @@ class Command(BaseCommand):
         # Base URL for canonical links and .md companion headers
         site_url = f"{settings.SITE_URL}/v/{ver}"
         emit_companions = not options["no_companions"]
+
+        example_registry = get_example_registry()
+        self.stdout.write(f"Discovered {len(example_registry)} examples")
 
         md_files = sorted(content_dir.rglob("*.md"))
         if not md_files:
@@ -119,6 +124,18 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stderr.write(self.style.ERROR(f"  FAIL {rel}: {e}"))
                 errors += 1
+
+        # The fragments example normally needs a live Django server
+        # to serve the HTMX fragment variants. But we want to serve
+        # the entire docs site as static files. So we pre-render not just
+        # the page itself, but also each fragment that we know we want to
+        # fetch from within the docs site's code.
+        # These are identified by defining a `Components.DocsExample.fragment` field.
+        # on the Component class. See docs/examples/fragments/page.py for an example.
+        if example_registry:
+            ex_rendered, ex_errors = pre_render_examples(output_dir, example_registry)
+            self.stdout.write(f"Pre-rendered {ex_rendered} example files ({ex_errors} errors)")
+            errors += ex_errors
 
         elapsed = time.monotonic() - t0
         suffix = " (with .md companions)" if emit_companions else ""

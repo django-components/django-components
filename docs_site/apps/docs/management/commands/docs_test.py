@@ -25,6 +25,9 @@ from urllib.parse import unquote, urlparse
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+from apps.docs.build.guards import check_example_contracts
+from apps.docs.examples import get_example_registry
+
 # Regex patterns for extracting links and anchor targets from built HTML
 HREF_RE = re.compile(r'<a\s[^>]*href="([^"]*)"', re.IGNORECASE)
 ID_RE = re.compile(r'\bid="([^"]*)"', re.IGNORECASE)
@@ -116,6 +119,14 @@ class Command(BaseCommand):
                         self.style.WARNING(f"  {rel}: broken anchor {href} (page exists, anchor missing)")
                     )
                     warnings += 1
+
+        # Example guardrails
+        registry = get_example_registry()
+
+        contract_errors = check_example_contracts(settings.CONTENT_DIR, settings.EXAMPLES_DIR, registry)
+        for msg in contract_errors:
+            self.stderr.write(self.style.ERROR(f"  example-contract: {msg}"))
+        errors += len(contract_errors)
 
         total = len(html_files)
         self.stdout.write(f"Checked {total} pages: {errors} errors, {warnings} warnings")

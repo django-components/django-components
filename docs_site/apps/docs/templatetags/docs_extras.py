@@ -16,8 +16,32 @@ from pathlib import Path
 
 from django import template
 from django.utils.html import escape
+from django.utils.safestring import mark_safe
 
 register = template.Library()
+
+
+@register.simple_tag
+def example(name: str) -> str:
+    """
+    Embed a tabbed example widget (Component code / Page code / Live demo).
+
+    Usage in markdown: {% example "fragments" %}
+    """
+    from apps.docs.components.example_card.example_card import ExampleCard  # noqa: PLC0415
+    from apps.docs.examples import get_example_registry  # noqa: PLC0415
+
+    registry = get_example_registry()
+    if name not in registry:
+        return f'<p class="error">Unknown example: {escape(name)}</p>'
+    info = registry[name]
+    result = ExampleCard.render(kwargs={"name": name, "info": info})
+    # Strip leading whitespace from the component output so python-markdown
+    # sees block-level HTML at column 0 (4+ spaces = code block in markdown).
+    # textwrap.dedent doesn't work here because djc's rendered output has
+    # inconsistent indentation from the template string.
+    result = "\n".join(line.lstrip() for line in result.splitlines())
+    return mark_safe(f"\n\n{result}\n\n")
 
 
 @register.simple_tag

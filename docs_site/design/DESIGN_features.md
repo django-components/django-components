@@ -87,13 +87,13 @@ Goal: one example (suggested: `fragments`) renders interactively in a docs page,
 
 | # | ID | Name | Effort | Critical | Source | Status | Notes |
 |---|---|---|---|---|---|---|---|
-| 2.1 | `example-autodiscovery` | Walk `docs_site/examples/` and register Page components | S | ✓ | main §2.4 | pending | Same pattern as sampleproject |
-| 2.2 | `docs-example-convention` | `class DocsExample` metadata on Page components | S | | main §4.4a | pending | `fragments = ["alpine", "htmx", "js"]` |
-| 2.3 | `fragment-pre-render` | Pre-render every fragment variant to `static/fragments/…` | M | ✓ | main §4.4a | pending | Path-keyed URLs |
-| 2.4 | `example-card-component` | `ExampleCard` Django component (tabbed code + render) | M | ✓ | main §4.2 | pending | The centerpiece |
-| 2.5 | `example-tag` | `{% example "name" %}` template tag | S | ✓ | main §4.2, §11.4.E | pending | |
-| 2.6 | `stable-example-ids-guardrail` | Detect renames of `examples/<name>/` in PR | S | | 11.12 §3.B.5 | pending | Prevents breaking LLM-cached URLs |
-| 2.7 | `example-contract-check` | Validate every `{% example %}` has matching dir with `Page` + tests | M | | 11.10 §3.6 | pending | Static + importlib check |
+| 2.1 | `example-autodiscovery` | Walk `docs_old/examples/` and register Page components | S | ✓ | main §2.4 | **done** | `apps/docs/examples.py`; walks EXAMPLES_DIR, imports component.py + page.py, finds *Page class; cached registry |
+| 2.2 | `docs-example-convention` | `class DocsExample` metadata on Page components | S | | main §4.4a | **done** | Added to FragmentsPage: `fragments = {"alpine": {"type": "alpine"}, ...}` (name -> query params dict) |
+| 2.3 | `fragment-pre-render` | Pre-render every fragment variant to `output/examples/…` | M | ✓ | main §4.4a | **done** | `build/examples.py`; uses `Component.as_view()` + RequestFactory; `get_component_url()` outputs rewritten to static paths via string replacement |
+| 2.4 | `example-card-component` | `ExampleCard` Django component (tabbed code + render) | M | ✓ | main §4.2 | **done** | CSS radio-button tabs; Pygments-highlighted code; iframe srcdoc for live demo; `get_component_url()` string replacement for fragments |
+| 2.5 | `example-tag` | `{% example "name" %}` template tag | S | ✓ | main §4.2, §11.4.E | **done** | `simple_tag` in docs_extras.py; calls ExampleCard.render(); lstrips output for markdown block-level parsing |
+| 2.6 | `stable-example-ids-guardrail` | Detect renames of `examples/<name>/` in PR | S | | 11.12 §3.B.5 | **dropped** | Overly prescriptive - freezing example names via a guardrail isn't useful |
+| 2.7 | `example-contract-check` | Validate every `{% example %}` has matching dir with `Page` + tests | M | | 11.10 §3.6 | **done** | `build/guards.py`; scans markdown for `{% example %}` refs, validates component.py, page.py, *Page class, View, test file; wired into `docs_test` |
 
 **Out of scope here:** the other examples (those are content port, Phase 3b); all the chrome.
 
@@ -432,7 +432,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 |---|---|---|---|---|
 | 0 | Pre-work in `src/` | 4 | 2 | **4/4 done** (0.4 is local-only edit to untracked CLAUDE.md) |
 | 1 | Foundation: 1 page end-to-end | 30 | 23 | **30/30 done** (1.3/1.4 dir-moves reclassified to Phase 6 cutover) |
-| 2 | `{% example %}` end-to-end | 7 | 4 | pending |
+| 2 | `{% example %}` end-to-end | 7 | 4 | **6/7 done** (2.6 dropped) |
 | 3a | Theme + core chrome | 23 | 17 | pending |
 | 3b | Mass content port + responsive + content guardrails | 25 | 12 | pending |
 | 4 | API reference (mkdocstrings replacement) | 66 | 30 | pending |
@@ -445,7 +445,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 8 | Search v3 (blocked on analytics target) | 1 | 0 | pending |
 | 9 | Landing page (codesign) | 1 | 0 | pending |
 | 10+ | Deferred / post-launch maintenance | 7 | 0 | pending |
-| **Total** | | **221** | **111** | **34/221 done** |
+| **Total** | | **221** | **111** | **41/221 done** |
 
 ### Phase 0 closed
 

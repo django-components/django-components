@@ -95,6 +95,9 @@ CONTENT_DIR = BASE_DIR / "content"
 # The repo root (one level above docs_site/)
 REPO_ROOT = BASE_DIR.parent
 
+# Where runnable examples live (docs_old/examples/ until Phase 6 cutover)
+EXAMPLES_DIR = REPO_ROOT / "docs_old" / "examples"
+
 # Base URL for the published docs site on GitHub Pages
 SITE_URL = "https://django-components.github.io/django-components"
 

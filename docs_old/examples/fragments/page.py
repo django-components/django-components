@@ -7,6 +7,16 @@ from .component import AlpineFragment, SimpleFragment
 
 
 class FragmentsPage(Component):
+    class DocsExample:
+        # HTMX fragments need to be pre-rendered the same way as full pages,
+        # so we can access them on *some* GET endpoint.
+        # This specifies which query params correspond to which fragments.
+        fragments = {
+            "alpine": {"type": "alpine"},
+            "htmx": {"type": "htmx"},
+            "js": {"type": "js"},
+        }
+
     class Media:
         js = (
             "https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries",
@@ -135,5 +145,4 @@ class FragmentsPage(Component):
             else:
                 return FragmentsPage.render_to_response(
                     request=request,
-                    deps_strategy="fragment",
                 )
