@@ -283,6 +283,7 @@ ignore = [
     "ARG002", # Unused method argument (Django / djc framework signatures)
     "ANN",    # Full type annotations not required for internal build tooling
     "BLE001", # Intentional broad `except` in the per-page build loop
+    "E501",   # Line length: inline SVG path data in templates can't be broken
 ]
 
 [tool.ruff.lint.isort]

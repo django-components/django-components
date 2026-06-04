@@ -15,6 +15,7 @@ from django.conf import settings
 from django.http import Http404, HttpRequest, HttpResponse
 from django.test import RequestFactory
 
+from apps.docs.build.nav import load_nav
 from apps.docs.build.paths import md_to_url, url_to_md
 from apps.docs.build.pipeline import render_page
 from apps.docs.examples import get_example_registry
@@ -49,8 +50,17 @@ def serve_page(request: HttpRequest, url_path: str = "") -> HttpResponse:
         "site_url": f"{settings.SITE_URL}/v/{ver}",
     }
 
+    nav_tree = load_nav(settings.CONTENT_DIR / "_nav.yml")
+
     source = md_path.read_text(encoding="utf-8")
-    result = render_page(source, context=ctx, source_path=md_path, content_dir=settings.CONTENT_DIR)
+    result = render_page(
+        source,
+        context=ctx,
+        source_path=md_path,
+        content_dir=settings.CONTENT_DIR,
+        nav_tree=nav_tree,
+        current_path=page_url,
+    )
     return HttpResponse(result.html)
 
 

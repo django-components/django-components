@@ -19,8 +19,7 @@ The pipeline also captures the post-Pass-1 expanded markdown for use as
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import markdown  # type: ignore[import-untyped]  # python-markdown ships no stubs
 from django.conf import settings
@@ -30,6 +29,11 @@ from pymdownx.slugs import slugify
 from .fence_protection import protect_fences, reset_counter
 from .frontmatter import PageMeta, parse_page
 from .links import rewrite_internal_md_links
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from .nav import NavTree
 
 # Extension set matches the current mkdocs.yml config (minus mkdocs-only plugins).
 # These plug into python-markdown directly and don't depend on mkdocs.
@@ -78,6 +82,8 @@ def render_page(
     source_path: Path | None = None,
     content_dir: Path | None = None,
     wrap_in_layout: bool = True,
+    nav_tree: NavTree | None = None,
+    current_path: str = "",
 ) -> RenderResult:
     """
     Run the full 3-pass pipeline on a markdown source string.
@@ -109,7 +115,14 @@ def render_page(
 
     # Pass 3: wrap in DocPage layout (full HTML page with <head>, CSS, chrome)
     if wrap_in_layout:
-        page_html = _pass3_layout(content_html, meta=meta, context=context or {})
+        page_html = _pass3_layout(
+            content_html,
+            meta=meta,
+            context=context or {},
+            nav_tree=nav_tree,
+            current_path=current_path,
+            toc_tokens=toc_tokens,
+        )
     else:
         page_html = content_html
 
@@ -172,6 +185,9 @@ def _pass3_layout(
     *,
     meta: PageMeta,
     context: dict[str, Any],
+    nav_tree: NavTree | None = None,
+    current_path: str = "",
+    toc_tokens: list | None = None,
 ) -> str:
     # Lazy import to avoid circular imports at module level
     from apps.docs.components.doc_page.doc_page import DocPage  # noqa: PLC0415
@@ -184,5 +200,8 @@ def _pass3_layout(
             "canonical": meta.canonical,
             "noindex": meta.noindex,
             "version": context.get("version", ""),
+            "nav_tree": nav_tree,
+            "current_path": current_path,
+            "toc_items": toc_tokens,
         },
     )

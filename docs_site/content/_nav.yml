@@ -1,0 +1,18 @@
+# Navigation tree for the docs sidebar.
+# Spec: docs_site/design/DESIGN_spike_11.md section 3.2.
+#
+# A section has EITHER items (1-level) OR groups (2-level), never both.
+# Paths are relative to the content directory and map to clean URLs.
+#
+# This is a test nav for Phase 3a development. The real content nav
+# will be built during Phase 3b content port.
+
+sections:
+  - label: Home
+    path: /
+
+  - label: Test Pages
+    items:
+      - { title: Pipeline test, path: /test/pipeline_test/ }
+      - { title: Example test, path: /test/example_test/ }
+      - { title: Other page, path: /test/other/ }

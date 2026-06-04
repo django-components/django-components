@@ -25,6 +25,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from apps.docs.build.examples import pre_render_examples
+from apps.docs.build.nav import load_nav
 from apps.docs.build.paths import md_companion_path, md_to_html_path, md_to_url
 from apps.docs.build.pipeline import render_page
 from apps.docs.examples import get_example_registry
@@ -65,7 +66,9 @@ class Command(BaseCommand):
         example_registry = get_example_registry()
         self.stdout.write(f"Discovered {len(example_registry)} examples")
 
-        md_files = sorted(content_dir.rglob("*.md"))
+        nav_tree = load_nav(content_dir / "_nav.yml")
+
+        md_files = sorted(p for p in content_dir.rglob("*.md") if p.name != "_nav.yml")
         if not md_files:
             self.stderr.write(self.style.WARNING(f"No .md files found in {content_dir}"))
             return
@@ -105,6 +108,8 @@ class Command(BaseCommand):
                     context=ctx,
                     source_path=md_path,
                     content_dir=content_dir,
+                    nav_tree=nav_tree,
+                    current_path=page_url,
                 )
 
                 # Ensure canonical is set even if front-matter didn't provide one

@@ -120,16 +120,16 @@ Goal: a markdown page renders with header + sidebar + right-rail TOC + code bloc
 | 3a.11 | `table-styling` | Cell borders, header bg, mono first-col auto-detect | S | | 11.11 §5.6 | **done** | CSS-only in `site.css`; overflow-x wrapper |
 | 3a.12 | `admonition-component` | Note/info/warning with accent border + tinted bg | S | ✓ | 11.11 §5.7 | **done** | CSS-only in `site.css`; note/info/warning/danger variants via pymdownx classes |
 | 3a.13 | `list-styling` | Standard CommonMark lists | S | | 11.11 §5.8 | **done** | CSS-only in `site.css`; includes task-list and definition-list styling |
-| 3a.14 | `header-component` | 64px sticky header (logo, top-nav, search trigger, version, theme, GitHub) | M | ✓ | 11.11 §4 | pending | Drives all nav |
-| 3a.15 | `sidebar-component` | 280px sticky left sidebar (nested 2-level nav, collapsible groups, active highlight, scroll-into-view) | M | ✓ | 11.11 §3 | pending | Requires nav YAML |
-| 3a.16 | `right-toc-component` | 240px sticky right rail (H2/H3 scroll-spy) | M | ✓ | 11.11 §7.1, §2.2 | pending | Hidden < 1024px |
-| 3a.17 | `doc-page-layout` | 3-column shell (sidebar / content / TOC), 1280px max-width | M | ✓ | 11.11 §2 | pending | Replaces Phase 1 stub |
-| 3a.18 | `theme-toggle-button` | 3-mode cycle (auto / light / dark) wired to localStorage | M | ✓ | 11.11 §4.1, §9 | pending | |
-| 3a.19 | `nav-yaml-loader` | Loads + validates single `_nav.yml` | S | ✓ | 11.9 §2.2 | pending | ~80 LOC; replaces awesome-nav |
-| 3a.20 | `breadcrumbs-component` | Above-H1 breadcrumb trail | S | | 11.11 §7.2 | pending | From nav tree |
-| 3a.21 | `page-nav-component` | Prev/Next cards at bottom | S | | 11.11 §7.3 | pending | From nav order |
-| 3a.22 | `site-css` | Bundled prose + components + utilities stylesheet | M | ✓ | 11.11 §5, §6, §11.1 | **in_progress** | Prose + content styles done in `site.css`; layout chrome styles added in Batch 2 |
-| 3a.23 | `site-js` | Bundled interactivity (search trigger, theme, sidebar persistence, scroll-spy, copy, drawer) | M | ✓ | 11.11 §3.3, §4.1, §7.1, §6.2, §8, §9.1 | pending | Mostly vanilla |
+| 3a.14 | `header-component` | 64px sticky header (logo, top-nav, search trigger, version, theme, GitHub) | M | ✓ | 11.11 §4 | **done** | Sticky header with backdrop-blur; Docs/Examples nav; theme toggle, version badge, GitHub link |
+| 3a.15 | `sidebar-component` | 280px sticky left sidebar (nested 2-level nav, collapsible groups, active highlight, scroll-into-view) | M | ✓ | 11.11 §3 | **done** | 280px sticky sidebar from _nav.yml; collapsible groups with localStorage persistence; active highlight + scroll-into-view |
+| 3a.16 | `right-toc-component` | 240px sticky right rail (H2/H3 scroll-spy) | M | ✓ | 11.11 §7.1, §2.2 | **done** | 240px sticky; H2/H3 from toc_tokens; IntersectionObserver scroll-spy; hidden <1024px |
+| 3a.17 | `doc-page-layout` | 3-column shell (sidebar / content / TOC), 1280px max-width | M | ✓ | 11.11 §2 | **done** | Replaces Phase 1 stub; 3-column flexbox; responsive breakpoints at 768px and 1024px |
+| 3a.18 | `theme-toggle-button` | 3-mode cycle (auto / light / dark) wired to localStorage | M | ✓ | 11.11 §4.1, §9 | **done** | Sun/moon SVG icons; auto->light->dark->auto cycle; wired in site.js |
+| 3a.19 | `nav-yaml-loader` | Loads + validates single `_nav.yml` | S | ✓ | 11.9 §2.2 | **done** | `build/nav.py` ~130 LOC; NavTree/NavSection/NavGroup/NavItem types; flat_pages, breadcrumbs, prev/next, active state |
+| 3a.20 | `breadcrumbs-component` | Above-H1 breadcrumb trail | S | | 11.11 §7.2 | **done** | Generated from nav tree; rendered above H1 in content area |
+| 3a.21 | `page-nav-component` | Prev/Next cards at bottom | S | | 11.11 §7.3 | **done** | Card-style prev/next with hover border glow; derived from nav order |
+| 3a.22 | `site-css` | Bundled prose + components + utilities stylesheet | M | ✓ | 11.11 §5, §6, §11.1 | **done** | `site.css`: prose typography + layout chrome (header, sidebar, TOC, breadcrumbs, page-nav, footer) |
+| 3a.23 | `site-js` | Bundled interactivity (search trigger, theme, sidebar persistence, scroll-spy, copy, drawer) | M | ✓ | 11.11 §3.3, §4.1, §7.1, §6.2, §8, §9.1 | **in_progress** | `site.js`: theme toggle, sidebar collapse, TOC scroll-spy done. Copy button and mobile drawer deferred to Batch 3 / Phase 3b |
 
 **Out of scope here:** mobile breakpoints (Phase 3b), Pagefind UI (Phase 5a), content port (Phase 3b).
 
