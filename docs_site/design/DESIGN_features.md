@@ -114,8 +114,8 @@ Goal: a markdown page renders with header + sidebar + right-rail TOC + code bloc
 | 3a.5 | `inter-font-link` | Inter font (CDN or self-hosted) | S | | 11.11 §10.6 | **done** | Self-hosted: `static/fonts/InterVariable.woff2` (variable font, 344KB, all weights) |
 | 3a.6 | `prose-typography` | Body, headings, links, anchored-heading hover | S | ✓ | 11.11 §5.1-5.3 | **done** | `static/css/site.css`; `.prose` class with heading borders, anchor hover |
 | 3a.7 | `inline-code-styling` | Inline `<code>` styled as accent pills | S | | 11.11 §5.4 | **done** | Accent-colored pill via `var(--c-accent)` + `var(--c-accent-dim)` |
-| 3a.8 | `code-block-component` | `<pre><code>` with language label + copy button | M | ✓ | 11.11 §6.2-6.3 | pending | Minimal chrome |
-| 3a.9 | `tabbed-code-component` | `CodeTabs` (multi-tab fences + example widget tabs + filename) | M | | 11.11 §6.4 | pending | Reusable |
+| 3a.8 | `code-block-component` | `<pre><code>` with language label + copy button | M | ✓ | 11.11 §6.2-6.3 | **done** | JS-driven: detects language from code class, injects label + copy button on hover; checkmark feedback on copy |
+| 3a.9 | `tabbed-code-component` | `CodeTabs` (multi-tab fences + example widget tabs + filename) | M | | 11.11 §6.4 | pending | Deferred: pymdownx.tabbed already provides tab switching; unified CodeTabs component built when needed in Phase 3b/4 |
 | 3a.10 | `blockquote-styling` | Left-border, muted fg | S | | 11.11 §5.5 | **done** | CSS-only in `site.css` |
 | 3a.11 | `table-styling` | Cell borders, header bg, mono first-col auto-detect | S | | 11.11 §5.6 | **done** | CSS-only in `site.css`; overflow-x wrapper |
 | 3a.12 | `admonition-component` | Note/info/warning with accent border + tinted bg | S | ✓ | 11.11 §5.7 | **done** | CSS-only in `site.css`; note/info/warning/danger variants via pymdownx classes |
@@ -129,7 +129,7 @@ Goal: a markdown page renders with header + sidebar + right-rail TOC + code bloc
 | 3a.20 | `breadcrumbs-component` | Above-H1 breadcrumb trail | S | | 11.11 §7.2 | **done** | Generated from nav tree; rendered above H1 in content area |
 | 3a.21 | `page-nav-component` | Prev/Next cards at bottom | S | | 11.11 §7.3 | **done** | Card-style prev/next with hover border glow; derived from nav order |
 | 3a.22 | `site-css` | Bundled prose + components + utilities stylesheet | M | ✓ | 11.11 §5, §6, §11.1 | **done** | `site.css`: prose typography + layout chrome (header, sidebar, TOC, breadcrumbs, page-nav, footer) |
-| 3a.23 | `site-js` | Bundled interactivity (search trigger, theme, sidebar persistence, scroll-spy, copy, drawer) | M | ✓ | 11.11 §3.3, §4.1, §7.1, §6.2, §8, §9.1 | **in_progress** | `site.js`: theme toggle, sidebar collapse, TOC scroll-spy done. Copy button and mobile drawer deferred to Batch 3 / Phase 3b |
+| 3a.23 | `site-js` | Bundled interactivity (search trigger, theme, sidebar persistence, scroll-spy, copy, drawer) | M | ✓ | 11.11 §3.3, §4.1, §7.1, §6.2, §8, §9.1 | **done** | `site.js`: theme toggle, sidebar collapse/persist, TOC scroll-spy, code block lang label + copy button. Search trigger wired in Phase 5a; mobile drawer in Phase 3b |
 
 **Out of scope here:** mobile breakpoints (Phase 3b), Pagefind UI (Phase 5a), content port (Phase 3b).
 

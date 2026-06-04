@@ -183,6 +183,53 @@ body {
   margin: 0;
 }
 
+/* Code block language label (top-right, always visible) */
+.djc-code-lang {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-fg-subtle);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Code block copy button (top-right, visible on hover) */
+.djc-code-copy {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  background: var(--c-surface-3);
+  border: 1px solid var(--c-border);
+  border-radius: 0.25rem;
+  padding: 0.3rem;
+  cursor: pointer;
+  color: var(--c-fg-subtle);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+/* Show copy button on hover; hide language label to avoid overlap */
+.prose pre:hover .djc-code-copy {
+  opacity: 1;
+}
+
+.prose pre:hover .djc-code-lang {
+  opacity: 0;
+}
+
+.djc-code-copy:hover {
+  color: var(--c-fg);
+  background: var(--c-surface-2);
+}
+
 /* ------------------------------------------------------------------ */
 /* Blockquotes                                                         */
 /* ------------------------------------------------------------------ */
