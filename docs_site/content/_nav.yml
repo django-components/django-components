@@ -3,14 +3,32 @@
 #
 # A section has EITHER items (1-level) OR groups (2-level), never both.
 # Paths are relative to the content directory and map to clean URLs.
-#
-# This is a test nav for Phase 3a development. The real content nav
-# will be built during Phase 3b content port.
 
 sections:
+  # Section-level link: the label itself is clickable
   - label: Home
     path: /
 
+  # 2-level section with collapsible sub-groups
+  - label: Guides
+    groups:
+      - label: Setup
+        items:
+          - { title: Installation, path: /guides/setup/installation/ }
+          - { title: Configuration, path: /guides/setup/configuration/ }
+      - label: Recipes
+        items:
+          - { title: Form handling, path: /guides/recipes/forms/ }
+          - { title: HTML Fragments, path: /guides/recipes/fragments/ }
+
+  # 1-level section: flat list of pages (no sub-groups)
+  - label: Reference
+    items:
+      - { title: API, path: /reference/api/ }
+      - { title: Settings, path: /reference/settings/ }
+      - { title: Commands, path: /reference/commands/ }
+
+  # 1-level section with test pages
   - label: Test Pages
     items:
       - { title: Pipeline test, path: /test/pipeline_test/ }

@@ -136,19 +136,17 @@ Embeds a tabbed widget showing an example's source code and live demo.
 {% example "fragments" %}
 ```
 
-Renders three tabs: **Live demo** (iframe), **Component** (highlighted
-source), **Page** (highlighted source). Uses the shared `.tabbed-set` tab
-system from `site.css`/`site.js`.
+Renders three tabs:
+- **Live demo** - the actual rendered component in an `<iframe>`
+- **Component** - syntax-highlighted source from `component.py`
+- **Page** - syntax-highlighted source from `page.py`
 
 **Caveats:**
 - The example name must match a directory under `EXAMPLES_DIR`
   (currently `docs_old/examples/`) with a `component.py` and `page.py`.
-- Tab selection resets on page reload (no localStorage persistence).
 - The tag output goes through `_lstrip_outside_pre()` to strip Django
   template indentation while preserving code indentation inside `<pre>`
-  blocks. If the output appears as a markdown code block instead of
-  rendered HTML, the stripping failed - check that the ExampleCard
-  template doesn't add unexpected indentation.
+  blocks.
 
 ### `{% version %}`
 
@@ -171,9 +169,6 @@ file extension unless explicitly set.
 **Caveats:**
 - The path is relative to the working directory (the repo root when
   running from `docs_site/`), not to the content file.
-- The output is a markdown fenced code block, so it's converted to
-  highlighted HTML in Pass 2. It does NOT go through Pass 1 again
-  (no recursive template tag expansion).
 
 ### `{% image "src" %}`
 
@@ -201,7 +196,6 @@ Tab switching is handled by `site.js`, not CSS-only.
 ```
 
 **Behavior:**
-- Tab selection resets on page reload (no localStorage persistence).
 - Tabs can contain mixed content (text + code blocks), not just code.
 
 **Caveats:**
@@ -244,7 +238,7 @@ Three theme modes via the header picker buttons:
 The active mode is highlighted with accent color. Choice is persisted
 in `localStorage` under the key `djc-theme`.
 
-A FOUC prevention `<script>` in `<head>` reads the stored value and
+A FOUC (Flash of unstyled content) prevention `<script>` in `<head>` reads the stored value and
 sets `data-theme` on `<html>` before the first paint.
 
 ## Resizable sidebars
@@ -253,24 +247,7 @@ The dividers between sidebar/content and content/TOC are draggable.
 A 4x2 dot grid grip is visible at the viewport center. Widths are
 clamped to 160-500px and persisted in `localStorage`.
 
-## Live examples (`{% example %}`)
-
-The `{% example "name" %}` template tag embeds a tabbed widget in a docs
-page showing an example's source code and a live rendered demo (see `DESIGN.md` section 4.2).
-
-Usage in a markdown file:
-
-```markdown
-## Fragments example
-
-{% example "fragments" %}
-```
-
-This renders three tabs:
-
-- **Live demo** - the actual rendered component in an `<iframe>`
-- **Component** - syntax-highlighted source from `component.py`
-- **Page** - syntax-highlighted source from `page.py`
+## Examples
 
 ### How it works
 
