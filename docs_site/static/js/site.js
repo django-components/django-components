@@ -15,10 +15,10 @@
   'use strict';
 
   // ----------------------------------------------------------------
-  // Theme toggle (3-mode: auto -> light -> dark -> auto)
+  // Theme picker (3-button: light / auto / dark)
   // ----------------------------------------------------------------
   var THEME_KEY = 'djc-theme';
-  var themeBtn = document.querySelector('.djc-theme-toggle');
+  var themeBtns = document.querySelectorAll('.djc-theme-picker__btn');
 
   function getStoredTheme() {
     return localStorage.getItem(THEME_KEY) || 'auto';
@@ -30,16 +30,27 @@
     } else {
       document.documentElement.setAttribute('data-theme', theme);
     }
-  }
-
-  if (themeBtn) {
-    themeBtn.addEventListener('click', function () {
-      var current = getStoredTheme();
-      var next = current === 'auto' ? 'light' : current === 'light' ? 'dark' : 'auto';
-      localStorage.setItem(THEME_KEY, next);
-      applyTheme(next);
+    // Highlight the active button
+    themeBtns.forEach(function (btn) {
+      var val = btn.getAttribute('data-theme-value');
+      if (val === theme) {
+        btn.classList.add('is-active');
+      } else {
+        btn.classList.remove('is-active');
+      }
     });
   }
+
+  // Set initial active state
+  applyTheme(getStoredTheme());
+
+  themeBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var theme = btn.getAttribute('data-theme-value');
+      localStorage.setItem(THEME_KEY, theme);
+      applyTheme(theme);
+    });
+  });
 
   // ----------------------------------------------------------------
   // Sidebar group collapse/expand
@@ -97,6 +108,36 @@
   if (activeLink) {
     activeLink.scrollIntoView({ block: 'nearest' });
   }
+
+  // ----------------------------------------------------------------
+  // Tabbed content (pymdownx.tabbed alternate style + ExampleCard)
+  // ----------------------------------------------------------------
+  document.querySelectorAll('.tabbed-set').forEach(function (set) {
+    var inputs = set.querySelectorAll(':scope > input[type="radio"]');
+    var labels = set.querySelectorAll(':scope > .tabbed-labels > label');
+    var blocks = set.querySelectorAll(':scope > .tabbed-content > .tabbed-block');
+
+    function activate(index) {
+      labels.forEach(function (l, i) {
+        l.classList.toggle('is-active', i === index);
+      });
+      blocks.forEach(function (b, i) {
+        b.classList.toggle('is-active', i === index);
+      });
+      inputs.forEach(function (inp, i) {
+        inp.checked = i === index;
+      });
+    }
+
+    activate(0);
+
+    labels.forEach(function (label, index) {
+      label.addEventListener('click', function (e) {
+        e.preventDefault();
+        activate(index);
+      });
+    });
+  });
 
   // ----------------------------------------------------------------
   // Right-rail TOC scroll-spy
@@ -210,5 +251,72 @@
     });
 
     pre.appendChild(btn);
+  });
+
+  // ----------------------------------------------------------------
+  // Resizable sidebar dividers
+  // ----------------------------------------------------------------
+  var RESIZE_KEY = 'djc-panel-widths';
+
+  function getStoredWidths() {
+    try { return JSON.parse(localStorage.getItem(RESIZE_KEY) || '{}'); }
+    catch (e) { return {}; }
+  }
+
+  function saveStoredWidths(widths) {
+    localStorage.setItem(RESIZE_KEY, JSON.stringify(widths));
+  }
+
+  // Restore saved widths on load
+  var storedWidths = getStoredWidths();
+  Object.keys(storedWidths).forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.style.width = storedWidths[id] + 'px';
+  });
+
+  // Wire up each resize handle
+  document.querySelectorAll('.djc-resize-handle').forEach(function (handle) {
+    var targetId = handle.getAttribute('data-target');
+    var direction = handle.getAttribute('data-direction');
+    var target = document.getElementById(targetId);
+    if (!target) return;
+
+    handle.addEventListener('mousedown', function (e) {
+      e.preventDefault();
+      var startX = e.clientX;
+      var startWidth = target.getBoundingClientRect().width;
+
+      handle.classList.add('is-dragging');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+
+      function onMove(ev) {
+        var delta = ev.clientX - startX;
+        // "left" panels grow when you drag right; "right" panels grow when you drag left
+        var newWidth = direction === 'left'
+          ? startWidth + delta
+          : startWidth - delta;
+
+        // Clamp to reasonable bounds
+        newWidth = Math.max(160, Math.min(500, newWidth));
+        target.style.width = newWidth + 'px';
+      }
+
+      function onUp() {
+        handle.classList.remove('is-dragging');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+
+        // Persist the width
+        var widths = getStoredWidths();
+        widths[targetId] = Math.round(target.getBoundingClientRect().width);
+        saveStoredWidths(widths);
+      }
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
   });
 })();

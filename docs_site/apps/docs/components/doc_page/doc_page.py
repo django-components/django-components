@@ -1,8 +1,17 @@
 """
-DocPage - the full document page layout component.
+DocPage - the document page layout component.
 
-Phase 3a Batch 2: 3-column layout with header, sidebar, right-rail TOC,
-breadcrumbs, and prev/next page navigation.
+The outermost wrapper for every rendered docs page. Provides:
+- Full <head> block with SEO metadata (title, description, canonical, robots)
+- FOUC prevention script (reads theme from localStorage before first paint)
+- 3-column layout: left sidebar (nav) / content / right TOC (scroll-spy)
+- Sticky header with logo, nav links, theme picker, version badge, GitHub link
+- Breadcrumbs, prev/next page navigation, version footer
+- Resizable sidebar dividers (widths persisted to localStorage)
+
+The nav tree, breadcrumbs, and prev/next links are computed from _nav.yml
+via NavTree (apps/docs/build/nav.py). The right-rail TOC is built from
+python-markdown's toc_tokens output.
 
 Spec: docs_site/design/DESIGN_spike_11.md sections 2-7.
 """
@@ -41,14 +50,20 @@ class DocPage(Component):
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
 
+            {# Title and robots directive are composed in get_template_data #}
             <title>{{ page_title }}</title>
 
+            {# Per-page meta description for search engine snippets #}
             {% if description %}<meta name="description" content="{{ description }}">{% endif %}
+
+            {# Canonical URL - versioned pages point to /latest/ counterpart #}
             {% if canonical %}<link rel="canonical" href="{{ canonical }}">{% endif %}
 
+            {# noindex for old versions so they don't compete with /latest/ in search #}
             <meta name="robots" content="{{ robots }}">
             <meta name="generator" content="django-components docs builder">
 
+            {# JSON-LD BreadcrumbList for search engine rich results #}
             {% if breadcrumb_jsonld %}
             <script type="application/ld+json">{{ breadcrumb_jsonld }}</script>
             {% endif %}
@@ -83,46 +98,49 @@ class DocPage(Component):
                         <a href="/examples/">Examples</a>
                     </nav>
                     <div class="djc-header__actions">
-                        <button
-                            class="djc-theme-toggle"
-                            aria-label="Toggle theme"
-                            title="Toggle theme"
-                        >
-                            <svg
-                                class="djc-theme-toggle__icon djc-theme-toggle__icon--light"
-                                viewBox="0 0 24 24"
-                                width="20"
-                                height="20"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                        {# Theme picker: 3 buttons (light / auto / dark) #}
+                        <div class="djc-theme-picker" role="radiogroup" aria-label="Color theme">
+                            <button
+                                class="djc-theme-picker__btn"
+                                data-theme-value="light"
+                                aria-label="Light theme"
+                                title="Light"
                             >
-                                <circle cx="12" cy="12" r="5"/>
-                                <line x1="12" y1="1" x2="12" y2="3"/>
-                                <line x1="12" y1="21" x2="12" y2="23"/>
-                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                                <line x1="1" y1="12" x2="3" y2="12"/>
-                                <line x1="21" y1="12" x2="23" y2="12"/>
-                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                            </svg>
-                            <svg
-                                class="djc-theme-toggle__icon djc-theme-toggle__icon--dark"
-                                viewBox="0 0 24 24"
-                                width="20"
-                                height="20"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="5"/>
+                                    <line x1="12" y1="1" x2="12" y2="3"/>
+                                    <line x1="12" y1="21" x2="12" y2="23"/>
+                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                                    <line x1="1" y1="12" x2="3" y2="12"/>
+                                    <line x1="21" y1="12" x2="23" y2="12"/>
+                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                                </svg>
+                            </button>
+                            <button
+                                class="djc-theme-picker__btn"
+                                data-theme-value="auto"
+                                aria-label="System theme"
+                                title="System"
                             >
-                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                            </svg>
-                        </button>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="3" width="20" height="14" rx="2"/>
+                                    <line x1="8" y1="21" x2="16" y2="21"/>
+                                    <line x1="12" y1="17" x2="12" y2="21"/>
+                                </svg>
+                            </button>
+                            <button
+                                class="djc-theme-picker__btn"
+                                data-theme-value="dark"
+                                aria-label="Dark theme"
+                                title="Dark"
+                            >
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                                </svg>
+                            </button>
+                        </div>
                         {% if version %}
                         <span class="djc-version-badge">v{{ version }}</span>
                         {% endif %}
@@ -203,6 +221,9 @@ class DocPage(Component):
                     </nav>
                 </aside>
 
+                {# Resize handle: sidebar | content #}
+                <div class="djc-resize-handle" data-target="djc-sidebar" data-direction="left"></div>
+
                 {# CONTENT #}
                 <main class="djc-content">
                     {% if breadcrumbs %}
@@ -219,6 +240,7 @@ class DocPage(Component):
                     {% endif %}
 
                     <article class="prose">
+                        {# content_html is already-rendered HTML from our pipeline - mark safe #}
                         {{ content_html|safe }}
                     </article>
 
@@ -253,6 +275,9 @@ class DocPage(Component):
 
                 {# RIGHT TOC #}
                 {% if toc_items %}
+                {# Resize handle: content | TOC #}
+                <div class="djc-resize-handle" data-target="djc-toc" data-direction="right"></div>
+
                 <aside class="djc-toc" id="djc-toc">
                     <div class="djc-toc__label">On this page</div>
                     <ul class="djc-toc__list">

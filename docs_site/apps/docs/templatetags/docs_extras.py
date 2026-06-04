@@ -38,9 +38,9 @@ def example(name: str) -> str:
     result = ExampleCard.render(kwargs={"name": name, "info": info})
     # Strip leading whitespace from the component output so python-markdown
     # sees block-level HTML at column 0 (4+ spaces = code block in markdown).
-    # textwrap.dedent doesn't work here because djc's rendered output has
-    # inconsistent indentation from the template string.
-    result = "\n".join(line.lstrip() for line in result.splitlines())
+    # But preserve whitespace inside <pre> blocks where it's significant
+    # (Pygments uses raw leading spaces for code indentation).
+    result = _lstrip_outside_pre(result)
     return mark_safe(f"\n\n{result}\n\n")
 
 
@@ -118,3 +118,27 @@ _EXT_MAP = {
 
 def _ext_to_language(ext: str) -> str:
     return _EXT_MAP.get(ext.lower(), "text")
+
+
+def _lstrip_outside_pre(html: str) -> str:
+    """
+    Strip leading whitespace from HTML lines, but preserve it inside <pre>.
+
+    Django templates add indentation to rendered output. Markdown treats
+    4+ leading spaces as a code block, so outer HTML must be flush-left.
+    But whitespace inside <pre> is significant (Pygments uses raw spaces
+    for code indentation), so those lines must stay untouched.
+    """
+    lines = html.splitlines()
+    result = []
+    in_pre = False
+    for line in lines:
+        if not in_pre and ("<pre>" in line or "<pre " in line):
+            in_pre = True
+        if in_pre:
+            result.append(line)
+        else:
+            result.append(line.lstrip())
+        if in_pre and "</pre>" in line:
+            in_pre = False
+    return "\n".join(result)

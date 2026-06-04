@@ -61,14 +61,26 @@ variable `{{ request.user }}` is also available.
 
 === "uv"
 
+    LOL
+
     ```bash
     uv pip install django-components
     ```
+
+    KEK
 
 === "pip"
 
     ```bash
     pip install django-components
+    ```
+
+=== "third"
+
+    LOL
+
+    ```bash
+    uv pip install django-components
     ```
 
 ## Collapsible details

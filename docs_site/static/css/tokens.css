@@ -30,14 +30,14 @@
 /* Light theme (default)                                               */
 /* ------------------------------------------------------------------ */
 :root {
-  /* Surfaces */
-  --c-bg:        oklch(99% 0.003 250);   /* #fbfcfd */
-  --c-surface:   oklch(97% 0.005 250);   /* #f1f4f7 */
-  --c-surface-2: oklch(95% 0.006 250);   /* #e9edf2 */
-  --c-surface-3: oklch(92% 0.008 250);   /* #dee3eb */
+  /* Surfaces — pulled away from pure white for softer feel */
+  --c-bg:        oklch(96.5% 0.005 250);  /* ~#f2f4f7 warm off-white */
+  --c-surface:   oklch(94.5% 0.006 250);  /* ~#ebeef3 */
+  --c-surface-2: oklch(92% 0.007 250);    /* ~#e2e6ed */
+  --c-surface-3: oklch(89% 0.008 250);    /* ~#d6dbe4 */
 
-  /* Foreground & borders */
-  --c-fg:            oklch(20% 0.01 250);  /* #1d2030 */
+  /* Foreground & borders — pulled away from pure black for softer feel */
+  --c-fg:            oklch(25% 0.01 250);  /* ~#2a2d3d soft black */
   --c-fg-muted:      oklch(40% 0.01 250);  /* #525b6e */
   --c-fg-subtle:     oklch(55% 0.01 250);  /* #797f8c */
   --c-border:        oklch(88% 0.005 250); /* #d0d5db */
@@ -68,12 +68,12 @@
 /* Dark theme                                                          */
 /* ------------------------------------------------------------------ */
 [data-theme="dark"] {
-  --c-bg:        oklch(15% 0.008 250);   /* #0f1117 */
-  --c-surface:   oklch(18% 0.01 250);    /* #161924 */
-  --c-surface-2: oklch(21% 0.01 250);    /* #1c1f2b */
-  --c-surface-3: oklch(25% 0.01 250);    /* #23273a */
+  --c-bg:        oklch(18% 0.008 250);   /* ~#151825 soft dark */
+  --c-surface:   oklch(21% 0.01 250);    /* ~#1c1f2b */
+  --c-surface-2: oklch(24% 0.01 250);    /* ~#222536 */
+  --c-surface-3: oklch(28% 0.01 250);    /* ~#2a2e42 */
 
-  --c-fg:            oklch(94% 0.005 80);  /* #f0ecdf */
+  --c-fg:            oklch(90% 0.006 80);  /* ~#e5e0d4 soft off-white */
   --c-fg-muted:      oklch(70% 0.008 80);  /* #b3aa9a */
   --c-fg-subtle:     oklch(50% 0.008 80);  /* #7a7264 */
   --c-border:        oklch(32% 0.01 250);  /* #2d3043 */
@@ -99,12 +99,12 @@
 /* Auto dark theme: respects OS preference when no explicit choice is stored */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --c-bg:        oklch(15% 0.008 250);
-    --c-surface:   oklch(18% 0.01 250);
-    --c-surface-2: oklch(21% 0.01 250);
-    --c-surface-3: oklch(25% 0.01 250);
+    --c-bg:        oklch(18% 0.008 250);
+    --c-surface:   oklch(21% 0.01 250);
+    --c-surface-2: oklch(24% 0.01 250);
+    --c-surface-3: oklch(28% 0.01 250);
 
-    --c-fg:            oklch(94% 0.005 80);
+    --c-fg:            oklch(90% 0.006 80);
     --c-fg-muted:      oklch(70% 0.008 80);
     --c-fg-subtle:     oklch(50% 0.008 80);
     --c-border:        oklch(32% 0.01 250);

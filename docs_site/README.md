@@ -67,6 +67,192 @@ Their output must start at column 0 (no leading whitespace) so
 python-markdown in step 3 treats it as block-level HTML rather than a
 code block.
 
+## Sidebar navigation (`_nav.yml`)
+
+The left sidebar is driven by [`content/_nav.yml`](content/_nav.yml).
+The loader lives at [`apps/docs/build/nav.py`](apps/docs/build/nav.py).
+
+### Schema
+
+A section has EITHER `items` (1-level flat list) OR `groups` (2-level
+with collapsible sub-groups), never both. Section labels can optionally
+be links via `path`.
+
+```yaml
+sections:
+  - label: Overview
+    path: /overview/   # optional: makes the section label clickable
+
+  # 1-level: flat list of pages
+  - label: Getting Started
+    items:
+      - { title: Installation, path: /getting_started/installation/ }
+      - { title: Quick start,  path: /getting_started/quick_start/ }
+
+  # 2-level: collapsible sub-groups
+  - label: Concepts
+    groups:
+      - label: Fundamentals
+        items:
+          - { title: Render API, path: /concepts/fundamentals/render_api/ }
+          - { title: Component defaults, path: /concepts/fundamentals/component_defaults/ }
+      - label: Advanced
+        items:
+          - { title: Hooks, path: /concepts/advanced/hooks/ }
+```
+
+### Behavior
+
+- **Active highlighting**: the sidebar auto-highlights the current page
+  based on URL matching.
+- **Collapsible groups**: sub-groups start collapsed unless the current
+  page is inside them. Collapse state is saved to `localStorage`.
+- **Breadcrumbs**: generated from the nav tree by walking up from the
+  current page (section > group > page).
+- **Prev/next navigation**: computed from the document order in the nav.
+
+### Caveats
+
+- Paths in `_nav.yml` must match the clean URL slug for the page. For
+  `content/foo/bar.md` the path is `/foo/bar/`. For
+  `content/foo/index.md` the path is `/foo/`.
+- If a path doesn't match any content file, the sidebar link will be a
+  dead link (no build-time validation yet; that's Phase 3b feature
+  `nav-yaml-validity-check`).
+- A section cannot have both `items` and `groups`. The nav loader does
+  not enforce this at build time yet, but the sidebar will render incorrectly.
+
+## Template tags
+
+Custom template tags available in markdown files via the Django template
+engine (Pass 1). Defined in
+[`apps/docs/templatetags/docs_extras.py`](apps/docs/templatetags/docs_extras.py).
+
+### `{% example "name" %}`
+
+Embeds a tabbed widget showing an example's source code and live demo.
+
+```markdown
+{% example "fragments" %}
+```
+
+Renders three tabs: **Live demo** (iframe), **Component** (highlighted
+source), **Page** (highlighted source). Uses the shared `.tabbed-set` tab
+system from `site.css`/`site.js`.
+
+**Caveats:**
+- The example name must match a directory under `EXAMPLES_DIR`
+  (currently `docs_old/examples/`) with a `component.py` and `page.py`.
+- Tab selection resets on page reload (no localStorage persistence).
+- The tag output goes through `_lstrip_outside_pre()` to strip Django
+  template indentation while preserving code indentation inside `<pre>`
+  blocks. If the output appears as a markdown code block instead of
+  rendered HTML, the stripping failed - check that the ExampleCard
+  template doesn't add unexpected indentation.
+
+### `{% version %}`
+
+Outputs the current django-components version string (e.g. `0.151.0`).
+
+```markdown
+Install version {% version %}
+```
+
+### `{% include_file "path" %}`
+
+Includes a file as a fenced code block. Language is inferred from the
+file extension unless explicitly set.
+
+```markdown
+{% include_file "docs_old/examples/fragments/component.py" %}
+{% include_file "some/config" language="toml" %}
+```
+
+**Caveats:**
+- The path is relative to the working directory (the repo root when
+  running from `docs_site/`), not to the content file.
+- The output is a markdown fenced code block, so it's converted to
+  highlighted HTML in Pass 2. It does NOT go through Pass 1 again
+  (no recursive template tag expansion).
+
+### `{% image "src" %}`
+
+Renders an `<img>` tag with optional attributes.
+
+```markdown
+{% image "/static/screenshot.png" alt="Example" width="400" css_class="bordered" %}
+```
+
+## Tabbed content (pymdownx.tabbed)
+
+Multi-tab code blocks work via `pymdownx.tabbed` (alternate style).
+Tab switching is handled by `site.js`, not CSS-only.
+
+```markdown
+=== "uv"
+    ```bash
+    uv pip install django-components
+    ```
+
+=== "pip"
+    ```bash
+    pip install django-components
+    ```
+```
+
+**Behavior:**
+- Tab selection resets on page reload (no localStorage persistence).
+- Tabs can contain mixed content (text + code blocks), not just code.
+
+**Caveats:**
+- The `===` tab syntax must be flush-left in the markdown source (no
+  leading indentation).
+- Each tab's content must be indented 4 spaces under its `===` header.
+
+## Code blocks
+
+Fenced code blocks support language labels and copy buttons
+(injected by `site.js` at page load).
+
+```markdown
+```python
+class MyComponent(Component):
+    pass
+`` `
+
+```python title="components/calendar.py"
+class Calendar(Component):
+    pass
+`` `
+```
+
+**Features:**
+- **Language label**: auto-detected from the fence info string, shown
+  top-right in muted text.
+- **Copy button**: appears on hover (top-right), copies code to
+  clipboard, shows a checkmark for 1.5s.
+- **Filename tab**: `title="filename.py"` renders as a monospace tab
+  header above the code block (via `pymdownx.highlight`).
+
+## Theme (dark / light / auto)
+
+Three theme modes via the header picker buttons:
+- **Light** (sun icon): forces light theme
+- **System** (monitor icon): follows OS `prefers-color-scheme`
+- **Dark** (moon icon): forces dark theme
+
+The active mode is highlighted with accent color. Choice is persisted
+in `localStorage` under the key `djc-theme`.
+
+A FOUC prevention `<script>` in `<head>` reads the stored value and
+sets `data-theme` on `<html>` before the first paint.
+
+## Resizable sidebars
+
+The dividers between sidebar/content and content/TOC are draggable.
+A 4x2 dot grid grip is visible at the viewport center. Widths are
+clamped to 160-500px and persisted in `localStorage`.
+
 ## Live examples (`{% example %}`)
 
 The `{% example "name" %}` template tag embeds a tabbed widget in a docs
@@ -82,9 +268,9 @@ Usage in a markdown file:
 
 This renders three tabs:
 
+- **Live demo** - the actual rendered component in an `<iframe>`
 - **Component** - syntax-highlighted source from `component.py`
 - **Page** - syntax-highlighted source from `page.py`
-- **Live demo** - the actual rendered component in an `<iframe srcdoc>`
 
 ### How it works
 
@@ -174,34 +360,9 @@ no JS interceptor or runtime patching needed.
    that has `class View` with `def get(self, request)`.
 3. Add a test file `test_example_<name>.py`.
 4. If the example uses fragments, add `class DocsExample` with a
-   `fragments` list.
+   `fragments` dict.
 5. Reference it in a markdown page with `{% example "<name>" %}`.
 6. Run `python manage.py build_docs` and verify.
-
-## Where to find things
-
-```
-docs_site/
-    README.md                  <- you are here
-    manage.py                  <- Django entrypoint
-    design/                    <- design docs + feature inventory
-    content/                   <- markdown source pages
-        index.md               <- placeholder home page
-        test/pipeline_test.md  <- fixture exercising every pipeline feature
-        test/example_test.md   <- fixture exercising {% example %} tag
-    static/css/                <- Pygments light/dark theme stylesheets
-    docs_site/                 <- Django project package
-        settings.py            <- settings (REPO_ROOT, SITE_URL, CONTENT_DIR, EXAMPLES_DIR)
-        urls.py
-        wsgi.py
-    apps/docs/                 <- the docs app
-        examples.py            <- example autodiscovery + registry
-        urls.py / views.py     <- live page serving for the dev server
-        build/                 <- pipeline, fence protection, front-matter, links, example pre-rendering
-        components/            <- django-components (DocPage, ExampleCard)
-        management/commands/   <- build_docs, build_one, docs_test, docs_serve
-        templatetags/          <- docs_extras.py ({% example %}, {% version %}, {% include_file %}, {% image %})
-```
 
 ## Front-matter
 
@@ -222,10 +383,45 @@ tags: [example, advanced]
 All fields are optional. With no front-matter, the title comes from the first
 `# H1` and the description from the first paragraph.
 
+## Where to find things
+
+```
+docs_site/
+    README.md                  <- you are here
+    manage.py                  <- Django entrypoint
+    design/                    <- design docs + feature inventory
+    content/                   <- markdown source pages
+        _nav.yml               <- sidebar navigation tree
+        index.md               <- placeholder home page
+        test/pipeline_test.md  <- fixture exercising every pipeline feature
+        test/example_test.md   <- fixture exercising {% example %} tag
+    static/
+        css/tokens.css         <- OKLCH design tokens (light + dark themes)
+        css/site.css           <- prose typography, layout chrome, components
+        css/pygments-light.css <- syntax highlighting (light theme)
+        css/pygments-dark.css  <- syntax highlighting (dark theme)
+        fonts/InterVariable.woff2  <- self-hosted Inter variable font
+        js/site.js             <- theme toggle, sidebar, TOC scroll-spy,
+                                  tab switching, code copy, resize handles
+    docs_site/                 <- Django project package
+        settings.py            <- settings (REPO_ROOT, SITE_URL, CONTENT_DIR, EXAMPLES_DIR)
+        urls.py
+        wsgi.py
+    apps/docs/                 <- the docs app
+        examples.py            <- example autodiscovery + registry
+        urls.py / views.py     <- live page serving for the dev server
+        build/                 <- pipeline, fence protection, front-matter,
+                                  links, nav loader, example pre-rendering
+        components/            <- django-components (DocPage, ExampleCard)
+        management/commands/   <- build_docs, build_one, docs_test, docs_serve
+        templatetags/          <- docs_extras.py ({% example %}, {% version %},
+                                  {% include_file %}, {% image %})
+```
+
 ## Status
 
 This is an in-progress migration. See
 [`design/DESIGN_features.md`](design/DESIGN_features.md) for the full feature
-inventory and current progress. Phases 0-1 (pre-work + foundation) are
-complete; Phase 2 (live examples via `{% example %}`) is done for the core
-features (guardrails deferred).
+inventory and current progress. Phases 0-2 are complete; Phase 3a (theme +
+core chrome) is done. Phase 3b (content port + responsive + guardrails)
+is next.
