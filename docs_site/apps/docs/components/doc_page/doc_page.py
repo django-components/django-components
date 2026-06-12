@@ -356,12 +356,14 @@ def _flatten_toc(toc_tokens: list) -> list[dict]:
         children = []
         for child in token.get("children", []):
             children.append({"id": child["id"], "name": child["name"], "level": child.get("level", 3)})
-        items.append({
-            "id": token["id"],
-            "name": token["name"],
-            "level": token.get("level", 2),
-            "children": children,
-        })
+        items.append(
+            {
+                "id": token["id"],
+                "name": token["name"],
+                "level": token.get("level", 2),
+                "children": children,
+            }
+        )
     return items
 
 

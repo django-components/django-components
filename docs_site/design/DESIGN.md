@@ -152,7 +152,7 @@ The only real questions are:
 
 ### 4.0a Repository layout during the migration
 
-Before any new content was written, the existing `docs/` directory was **renamed to `docs_old/`** (one commit, with every config/script/workflow reference repointed so the old mkdocs site still builds locally). This does two things:
+Before any new content was written, the existing `docs/` directory was **renamed to `docs_old/`** (one commit, with every config/script/workflow reference repointed so the rename didn't break the build at the time). Keeping mkdocs buildable on the branch indefinitely is **not** a goal — the branch is free to cannibalize it as content is ported (see the §8 branch model). The rename does two things:
 
 1. **Frees up `docs/` for internal docs.** `docs/` now holds **contributor-facing / internal** documentation that is *never* published: `docs/agent-knowledge/` (local, uncommitted) and — at cutover — `docs/devguides/` (implementation deep-dives that were only ever published as a side effect of having nowhere else to put them). A `docs/README.md` points readers to the user docs (at the published URL and in `docs_site/content/`), because a visitor clicking `docs/` reasonably expects user documentation.
 2. **Makes the cutover a search.** Every place still wired to the old layout is found with `grep -rn docs_old .`. The big content move and config rewrite happen as one atomic Phase-6 commit, not piecemeal.
@@ -161,10 +161,10 @@ Target end-state layout (reached at cutover):
 
 ```
 docs/                            <-- INTERNAL docs only (agent-knowledge, devguides, README pointer)
-docs_old/                        <-- the old mkdocs source; DELETED at cutover
+docs_old/                        <-- the old mkdocs source; emptied as pages are ported (Phase 3b), fully DELETED by cutover
 docs_site/                       <-- the new docs builder (Django project)
-    content/                     <-- user-facing markdown (moved from docs_old/ at cutover)
-    examples/                    <-- runnable examples (moved from docs_old/examples/ at cutover)
+    content/                     <-- user-facing markdown (moved from docs_old/ during the Phase 3b content port; see §8 branch model)
+    examples/                    <-- runnable examples (moved from docs_old/examples/ during the migration)
     versions/<version>/          <-- committed built version snapshots -> mounted at /v/<version>/
     static/                      <-- css, images, and other static assets
 benchmarks/                      <-- benchmark CODE (already here)
@@ -668,8 +668,9 @@ Phases 0-6 (the actual migration): ~10-12 weeks of focused effort. Search v2/v3 
 **The entire migration lives on a single feature branch (`jo-docs-mkdocs-migrate`) and is NOT merged to `master` until it is fully done.** This is the key to a low-drama cutover:
 
 - **`master` keeps serving the old mkdocs site the whole time.** Because the migration branch is never deployed, **there are never two doc sites online at once.** The deployed site is always whatever `master` says — i.e. the old mkdocs site — until the single cutover merge.
-- **Both builders run side-by-side _locally_ on the branch.** The current docs source was renamed `docs/` → `docs_old/` (see §4.0a), and mkdocs was repointed at `docs_old/`, so a contributor can run the old mkdocs site AND the new `docs_site` builder locally and compare them page-for-page. mkdocs `--strict` is *allowed to fail* on the branch (the Phase-0 short-form anchor refs break old autorefs); that does not block local comparison.
-- **Cutover is a comparison + a single commit, not a deploy switch.** When the new site reaches parity (Phase 6), we review it locally against the deployed old site (visual + guardrails), then in one commit: delete `docs_old/` and the mkdocs config, wire the new builder into CI, and merge the branch. The next deploy serves the new site.
+- **The branch cannibalizes mkdocs; keeping it buildable locally is NOT a requirement.** We are free to *move and then delete* `docs_old/` content into `docs_site/content/` at any point on the branch — the content port happens during the migration (Phase 3b, feature 3b.25), it is **not** deferred to cutover to "keep mkdocs building." The earlier `docs/` → `docs_old/` rename (see §4.0a) exists to make stragglers greppable (`grep -rn docs_old .`), **not** to oblige us to keep the old build green. Once a page is ported, its `docs_old/` source can be deleted; `docs_old/` is fully gone by cutover.
+- **The Phase 6 parity comparison is against the DEPLOYED old site, not a locally-rebuilt mkdocs.** The baseline is the live gh-pages / `master` mkdocs build (it stays online the whole time per the first bullet), so we can dismantle mkdocs on the branch without losing anything to compare against. We do **not** need both builders runnable side-by-side locally.
+- **Cutover is a comparison + a single commit, not a deploy switch.** When the new site reaches parity (Phase 6), we review it against the deployed old site (visual + guardrails), then in one commit: delete whatever remains of `docs_old/` and the mkdocs config, wire the new builder into CI, and merge the branch. The next deploy serves the new site.
 
 We do not break the published docs at any point because we never publish the half-built site.
 

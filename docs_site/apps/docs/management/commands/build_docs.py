@@ -6,6 +6,9 @@ Walks every .md file in the content directory, renders each through the
 Also emits .md companion files (raw expanded markdown for LLM consumption)
 unless --no-companions is passed.
 
+The actual rendering lives in apps/docs/build/builder.py so it can be shared
+with the docs_build_check CI gate.
+
 Usage:
     cd docs_site
     python manage.py build_docs                     # content/ -> ./site/ (gitignored)
@@ -15,20 +18,13 @@ Usage:
 
 from __future__ import annotations
 
-import shutil
-import time
-from importlib.metadata import version as get_version
 from pathlib import Path
 
 import pygments_djc  # noqa: F401 -- register the djc_py Pygments lexer
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from apps.docs.build.examples import pre_render_examples
-from apps.docs.build.nav import load_nav
-from apps.docs.build.paths import md_companion_path, md_to_html_path, md_to_url
-from apps.docs.build.pipeline import render_page
-from apps.docs.examples import get_example_registry
+from apps.docs.build.builder import build_site
 
 
 class Command(BaseCommand):
@@ -50,121 +46,30 @@ class Command(BaseCommand):
             self.stderr.write(self.style.ERROR(f"Content directory not found: {content_dir}"))
             return
 
-        ver = str(options["docs_version"]) if options["docs_version"] else get_version("django_components")
-
-        # Default output is the gitignored ./site/ dir (mirrors mkdocs' site_dir).
-        # The release workflow passes --output ../docs/v/<version>/ for the committed deploy.
-        if options["output"]:
-            output_dir = Path(str(options["output"]))
-        else:
-            output_dir = settings.SITE_DIR
-
-        # Base URL for canonical links and .md companion headers
-        site_url = f"{settings.SITE_URL}/v/{ver}"
+        output_dir = Path(str(options["output"])) if options["output"] else settings.SITE_DIR
+        version = str(options["docs_version"]) if options["docs_version"] else None
         emit_companions = not options["no_companions"]
 
-        example_registry = get_example_registry()
-        self.stdout.write(f"Discovered {len(example_registry)} examples")
-
-        nav_tree = load_nav(content_dir / "_nav.yml")
-
-        md_files = sorted(p for p in content_dir.rglob("*.md") if p.name != "_nav.yml")
-        if not md_files:
-            self.stderr.write(self.style.WARNING(f"No .md files found in {content_dir}"))
+        self.stdout.write(f"Building pages from {content_dir} -> {output_dir}")
+        try:
+            outcome = build_site(
+                content_dir=content_dir,
+                output_dir=output_dir,
+                version=version,
+                emit_companions=emit_companions,
+            )
+        except ValueError as e:
+            self.stderr.write(self.style.ERROR(str(e)))
             return
 
-        # Clear the output dir so stale files don't accumulate (mkdocs does the same).
-        # Guard against clearing something important if a bad --output is passed.
-        resolved_out = output_dir.resolve()
-        unsafe = {settings.REPO_ROOT.resolve(), content_dir.resolve(), Path(resolved_out.anchor)}
-        if resolved_out in unsafe:
-            self.stderr.write(self.style.ERROR(f"Refusing to clear output dir: {resolved_out}"))
-            return
-        if output_dir.exists():
-            shutil.rmtree(output_dir)
+        for result in outcome.render_errors:
+            self.stderr.write(self.style.ERROR(f"  FAIL {result.source}: {result.message}"))
+        if outcome.example_files:
+            self.stdout.write(f"Pre-rendered {outcome.example_files} example files")
 
-        self.stdout.write(f"Building {len(md_files)} pages from {content_dir} -> {output_dir}")
-        t0 = time.monotonic()
-        built = 0
-        errors = 0
-
-        for md_path in md_files:
-            rel = md_path.relative_to(content_dir)
-            out_path = md_to_html_path(output_dir, rel)
-            page_url = md_to_url(rel)
-            canonical = f"{site_url}/{page_url}" if site_url else ""
-
-            # Build context available to Django template tags in Pass 1
-            ctx: dict = {
-                "version": ver,
-                "canonical": canonical,
-                "site_url": site_url,
-            }
-
-            try:
-                source = md_path.read_text(encoding="utf-8")
-                result = render_page(
-                    source,
-                    context=ctx,
-                    source_path=md_path,
-                    content_dir=content_dir,
-                    nav_tree=nav_tree,
-                    current_path=page_url,
-                )
-
-                # Ensure canonical is set even if front-matter didn't provide one
-                if not result.meta.canonical and canonical:
-                    result.meta.canonical = canonical
-
-                out_path.parent.mkdir(parents=True, exist_ok=True)
-                out_path.write_text(result.html, encoding="utf-8")
-
-                # .md companion: raw expanded markdown for LLM/AI agent consumption
-                # (see design doc spike 11.12 section 3.B.2)
-                if emit_companions:
-                    companion_path = md_companion_path(output_dir, rel)
-                    _write_companion(companion_path, result.meta, result.expanded_markdown, canonical)
-
-                built += 1
-            except Exception as e:
-                self.stderr.write(self.style.ERROR(f"  FAIL {rel}: {e}"))
-                errors += 1
-
-        # The fragments example normally needs a live Django server
-        # to serve the HTMX fragment variants. But we want to serve
-        # the entire docs site as static files. So we pre-render not just
-        # the page itself, but also each fragment that we know we want to
-        # fetch from within the docs site's code.
-        # These are identified by defining a `Components.DocsExample.fragment` field.
-        # on the Component class. See docs/examples/fragments/page.py for an example.
-        if example_registry:
-            ex_rendered, ex_errors = pre_render_examples(output_dir, example_registry)
-            self.stdout.write(f"Pre-rendered {ex_rendered} example files ({ex_errors} errors)")
-            errors += ex_errors
-
-        elapsed = time.monotonic() - t0
         suffix = " (with .md companions)" if emit_companions else ""
-        self.stdout.write(self.style.SUCCESS(f"Built {built} pages{suffix} in {elapsed:.1f}s ({errors} errors)"))
-
-
-def _write_companion(path: Path, meta, expanded_markdown: str, canonical: str) -> None:
-    """
-    Write a .md companion file with minimal front-matter + expanded markdown.
-
-    The companion contains the post-Django-expansion markdown (all template tags
-    resolved) but not the HTML conversion. LLMs prefer this over reverse-engineering
-    markdown from rendered HTML.
-    """
-    header_lines = ["---"]
-    if meta.title:
-        header_lines.append(f"title: {meta.title}")
-    if canonical:
-        header_lines.append(f"url: {canonical}")
-    if meta.description:
-        desc = meta.description.replace('"', '\\"')
-        header_lines.append(f'description: "{desc}"')
-    header_lines.append("---")
-    header_lines.append("")
-
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("\n".join(header_lines) + expanded_markdown, encoding="utf-8")
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Built {outcome.built} pages{suffix} in {outcome.elapsed:.1f}s ({outcome.failed} errors)"
+            )
+        )

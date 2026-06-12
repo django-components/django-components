@@ -1,0 +1,65 @@
+"""
+Nav-YAML validity guard.
+
+Catches two-way drift between `content/` and `_nav.yml`:
+
+- A `_nav.yml` entry whose page doesn't exist on disk -> error (dead nav link).
+- A content page that no `_nav.yml` entry points at -> warning (orphan page,
+  matches mkdocs' `validation.omitted_files: warn`).
+
+Spec: docs_site/design/DESIGN_spike_10.md section 3.14 (feature 3b.15).
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterator
+from typing import TYPE_CHECKING
+
+from apps.docs.build.nav import load_nav
+from apps.docs.build.paths import md_to_url, url_to_md
+
+from .base import GuardResult
+
+if TYPE_CHECKING:
+    from .base import GuardContext
+
+# Content files that legitimately live outside the sidebar nav.
+OMIT_FROM_NAV = {
+    "index.md",  # home / landing page
+    "404.md",  # error page
+}
+
+
+def _norm(url: str) -> str:
+    return url.strip("/")
+
+
+def check(ctx: GuardContext) -> Iterator[GuardResult]:
+    nav_path = ctx.nav_path
+    if not nav_path.is_file():
+        return
+
+    tree = load_nav(nav_path)
+    nav_urls: set[str] = {_norm(item.path) for item in tree.flat_pages() if item.path}
+
+    # 1. Every nav entry must resolve to an existing content page.
+    for url in sorted(nav_urls):
+        if url_to_md(ctx.content_dir, url) is None:
+            yield GuardResult.error(
+                guard="nav",
+                message=f"_nav.yml entry points at a missing page: /{url}/",
+                source=str(nav_path.name),
+            )
+
+    # 2. Every content page should appear in the nav (orphans are warnings).
+    for md in sorted(ctx.content_dir.rglob("*.md")):
+        rel = md.relative_to(ctx.content_dir)
+        if rel.as_posix() in OMIT_FROM_NAV:
+            continue
+        url = _norm(md_to_url(rel))
+        if url not in nav_urls:
+            yield GuardResult.warning(
+                guard="nav",
+                message="Page is not referenced in _nav.yml (orphan)",
+                source=str(rel),
+            )

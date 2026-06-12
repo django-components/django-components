@@ -45,8 +45,8 @@ Goal: a single page (e.g. `getting_started/index.md`) renders through the 3-pass
 | 1.0a | `docs-old-rename` | Rename `docs/` → `docs_old/`; repoint every config/script/workflow so old mkdocs still builds locally; free `docs/` for internal docs (agent-knowledge + README pointer) | M | ✓ | main §4.0a | **done** | `git mv`; updated mkdocs.yml, pyproject (testpaths/ruff), asv.conf.json, sampleproject `EXAMPLES_DIR`, scripts, workflows, example snippet paths. Verified: mkdocs builds (only the known Phase-0 autorefs warnings), pytest collects examples. Internal `docs/` now holds `agent-knowledge/` (local) + `README.md` |
 | 1.1 | `docs-site-django-project` | `docs_site/` Django project scaffold | S | ✓ | main §4.1 | **done** | settings, urls, wsgi, manage.py |
 | 1.2 | `docs-app-scaffold` | `apps/docs/` with components/, templatetags/, management/commands/ | S | ✓ | main §4.1 | **done** | Includes `docs_extras.py` with `{% version %}` tag |
-| 1.3 | `content-dir-structure` | Move user-facing pages → `docs_site/content/` (markdown source) | S | | main §4.0a, §4.1, 11.4.G | **moved to Phase 6** (6.7) | Deferred to cutover so mkdocs keeps building on the branch. Source was renamed `docs/` → `docs_old/` first (see 1.0a) |
-| 1.4 | `examples-dir-moved` | Move examples → `docs_site/examples/` | S | | main §4.1 | **moved to Phase 6** (6.8) | Deferred to cutover; examples stay at `docs_old/examples/` until then |
+| 1.3 | `content-dir-structure` | Move user-facing pages → `docs_site/content/` (markdown source) | S | | main §4.0a, §4.1, 11.4.G | **moved to Phase 3b** (3b.25) | The content move IS the Phase 3b content-port sweep. (Originally parked for Phase 6 to "keep mkdocs building on the branch" - but the branch cannibalizes mkdocs and Phase 6 compares against the *deployed* old site, so the move can happen now. See main §8 branch model.) Source was renamed `docs/` → `docs_old/` first (see 1.0a) |
+| 1.4 | `examples-dir-moved` | Move examples → `docs_site/examples/` | S | | main §4.1 | **moved to Phase 6** (6.8) | Examples stay at `docs_old/examples/` until cutover. (Not a "keep mkdocs building" constraint - it's just that nothing forces the examples move earlier; the `{% example %}` tag reads `EXAMPLES_DIR`, which can point at `docs_old/examples/` meanwhile. Can be pulled into the migration if convenient.) |
 | 1.5 | `pygments-djc-loader` | Load `pygments_djc` lexer at command startup | S | ✓ | main §2.1, 11.9 §2.1 | **done** | `import pygments_djc` in `build_one` command |
 | 1.6 | `fence-protection-scanner` | Wrap code regions in `{% verbatim %}` before Django pass | S | ✓ | main §4.7, §11.4.C | **done** | `fence_protection.py` ~100 LOC; handles fenced blocks + inline code spans |
 | 1.7 | `markdown-pipeline-pass1` | Pass 1: Django template engine on markdown source | S | ✓ | main §4.7, §11.4.C | **done** | Auto-loads `docs_extras`, `component_tags` |
@@ -93,7 +93,7 @@ Goal: one example (suggested: `fragments`) renders interactively in a docs page,
 | 2.4 | `example-card-component` | `ExampleCard` Django component (tabbed code + render) | M | ✓ | main §4.2 | **done** | CSS radio-button tabs; Pygments-highlighted code; iframe srcdoc for live demo; `get_component_url()` string replacement for fragments |
 | 2.5 | `example-tag` | `{% example "name" %}` template tag | S | ✓ | main §4.2, §11.4.E | **done** | `simple_tag` in docs_extras.py; calls ExampleCard.render(); lstrips output for markdown block-level parsing |
 | 2.6 | `stable-example-ids-guardrail` | Detect renames of `examples/<name>/` in PR | S | | 11.12 §3.B.5 | **dropped** | Overly prescriptive - freezing example names via a guardrail isn't useful |
-| 2.7 | `example-contract-check` | Validate every `{% example %}` has matching dir with `Page` + tests | M | | 11.10 §3.6 | **done** | `build/guards.py`; scans markdown for `{% example %}` refs, validates component.py, page.py, *Page class, View, test file; wired into `docs_test` |
+| 2.7 | `example-contract-check` | Validate every `{% example %}` has matching dir with `Page` + tests | M | | 11.10 §3.6 | **done** | `build/guards/example_contract.py` (migrated from `build/guards.py` into the unified harness in Phase 3b); validates component.py, page.py, *Page class, View, test file; runs as a harness guard |
 
 **Out of scope here:** the other examples (those are content port, Phase 3b); all the chrome.
 
@@ -150,24 +150,24 @@ Goal: every existing markdown page renders correctly under the new pipeline + ch
 | 3b.5 | `release-notes-parser` | Parse CHANGELOG.md → per-release pages + index | S | | 11.9 §2.1 | pending | ~80 LOC port |
 | 3b.6 | `people-page-template` | Native Django template (replace mkdocs-macros) | S | | 11.9 §2.7 | pending | Single page |
 | 3b.7 | `ai-bot-policy-doc` | New `content/community/ai_bot_policy.md` | S | | 11.12 §3.B.10 | pending | ~30 lines |
-| 3b.8 | `template-render-guard` | Catch Django template errors in Pass 1 | S | ✓ | 11.10 §3.1 | pending | Built into Django |
-| 3b.9 | `fence-validator` | Detect unclosed fences, malformed snippets, unknown languages | M | ✓ | 11.10 §3.2 | pending | Reuses scanner from 1.6 |
-| 3b.10 | `lexer-alias-check` | Validate fence info-strings resolve to Pygments lexer | S | | 11.10 §3.3 | pending | Allowlist for `mermaid` etc. |
-| 3b.11 | `snippet-path-check` | Validate `--8<--` targets exist within `base_path` | S | ✓ | 11.10 §3.7 | pending | Config-driven |
-| 3b.12 | `internal-link-check` | Walk built HTML, assert every internal `<a href>` resolves | M | ✓ | 11.10 §3.9 | pending | Reuses SiteIndex |
-| 3b.13 | `anchor-check` | Every `#anchor` href maps to an `id=` | S | ✓ | 11.10 §3.10 | pending | |
-| 3b.14 | `image-asset-check` | `<img src>`, `<script src>`, `<link href>` to local assets exist | S | | 11.10 §3.12 | pending | |
-| 3b.15 | `nav-yaml-validity-check` | Content ↔ `_nav.yml` 2-way drift | M | | 11.10 §3.14 | pending | |
-| 3b.16 | `html-wellformedness-check` | lxml.html parse with `recover=False` | S | | 11.10 §3.15 | pending | Must run pre-minify |
-| 3b.17 | `snapshot-regression-test` | pytest + syrupy on curated 8-page set | M | | 11.10 §3.17 | pending | Starts at 3, grows |
-| 3b.18 | `site-index` | Shared post-build HTML walker (~120 LOC) | M | ✓ | 11.10 §6 | pending | Powers all post-build guards |
-| 3b.19 | `guardrail-runner-harness` | Orchestrator (~100 LOC) — severity rules, dep order | M | ✓ | 11.10 §6 | pending | Powers docs-build + docs-build-check |
-| 3b.20 | `single-h1-guardrail` | Exactly one `<h1>` per page | S | | 11.12 §2.A.8 | pending | |
-| 3b.21 | `image-alt-text-guardrail` | Every `<img>` has non-empty `alt` | S | | 11.12 §2.A.9 | pending | Content audit also runs here |
-| 3b.22 | `structured-headings-guardrail` | No `##` → `####` jumps | S | | 11.12 §3.B.3 | pending | Supports `.md` companion quality |
-| 3b.23 | `code-block-language-tags-guardrail` | Missing language tag = error (with allowlist) | S | | 11.12 §3.B.4 | pending | Extension of 3b.10 |
+| 3b.8 | `template-render-guard` | Catch Django template errors in Pass 1 | S | ✓ | 11.10 §3.1 | **done** | `builder.build_site` captures per-page render failures as `template_render` ERRORs instead of aborting; folded into the report by `docs_build_check` |
+| 3b.9 | `fence-validator` | Detect unclosed fences, malformed snippets, unknown languages | M | ✓ | 11.10 §3.2 | **done** | `guards/fence_validator.py` - `scan_fences()` is the shared primitive (unclosed=ERROR); unknown langs split into 3b.10, missing snippet paths into 3b.11 |
+| 3b.10 | `lexer-alias-check` | Validate fence info-strings resolve to Pygments lexer | S | | 11.10 §3.3 | **done** | `guards/lexer_alias.py`; `ALLOWED_NON_LEXER_LANGS` allowlist (text/console/mermaid...) |
+| 3b.11 | `snippet-path-check` | Validate `--8<--` targets exist within `base_path` | S | ✓ | 11.10 §3.7 | **done** | `guards/snippet_path.py` - static pre-scan (single + block `--8<--` forms), resolves vs source dir then repo root |
+| 3b.12 | `internal-link-check` | Walk built HTML, assert every internal `<a href>` resolves | M | ✓ | 11.10 §3.9 | **done** | `guards/internal_link.py` via `SiteIndex.resolve_link` (clean-URL aware); skips asset-looking hrefs |
+| 3b.13 | `anchor-check` | Every `#anchor` href maps to an `id=` | S | ✓ | 11.10 §3.10 | **done** | `guards/anchor.py`; WARNING (matches mkdocs `validation.anchors: warn`, fails under `--strict`) |
+| 3b.14 | `image-asset-check` | `<img src>`, `<script src>`, `<link href>` to local assets exist | S | | 11.10 §3.12 | **done** | `guards/asset.py`; `/static/` resolved via Django staticfiles **finders** (sees package static like djc JS); doc-pages only |
+| 3b.15 | `nav-yaml-validity-check` | Content ↔ `_nav.yml` 2-way drift | M | | 11.10 §3.14 | **done** | `guards/nav.py`; missing target=ERROR, orphan page=WARNING; `OMIT_FROM_NAV` for index/404 |
+| 3b.16 | `html-wellformedness-check` | lxml.html parse + duplicate-id detection | S | | 11.10 §3.15 | **done** | `guards/html_wellformed.py`. **Deviation:** dropped `recover=False` - libxml2 strict mode treats `<a id=X name=X>` (pymdownx line anchors) as a duplicate ID, a false positive on nearly every page. Real dup IDs caught precisely by an `id=`-only Counter in `SiteIndex` |
+| 3b.17 | `snapshot-regression-test` | pytest + syrupy on curated set | M | | 11.10 §3.17 | **done (scaffold)** | `tests/test_render_snapshot.py`, 3 fixtures, snapshots **content** HTML (`wrap_in_layout=False`) so chrome/version don't churn. Standalone pytest - NOT wired into `docs_build_check` until renderer settles (Phase 5), per spike |
+| 3b.18 | `site-index` | Shared post-build HTML walker (~120 LOC) | M | ✓ | 11.10 §6 | **done** | `build/site_index.py` - parses each page once; exposes links/anchors/assets/images/headings/redirect/dup-ids |
+| 3b.19 | `guardrail-runner-harness` | Orchestrator (~100 LOC) — severity rules, dep order | M | ✓ | 11.10 §6 | **done** | `build/guards/__init__.py` (`run_guards`, `format_report`); a crashing guard is itself an ERROR. Driven by `docs_build_check` (build-to-temp CI gate) and `docs_test` (over an existing build) |
+| 3b.20 | `single-h1-guardrail` | Exactly one `<h1>` per page | S | | 11.12 §2.A.8 | **done** | `guards/single_h1.py`; WARNING; doc-pages only (skips example demos / redirect stubs) |
+| 3b.21 | `image-alt-text-guardrail` | Every `<img>` has non-empty `alt` | S | | 11.12 §2.A.9 | **done** | `guards/alt_text.py`; WARNING; doc-pages only |
+| 3b.22 | `structured-headings-guardrail` | No `##` → `####` jumps | S | | 11.12 §3.B.3 | **done** | `guards/headings.py`; WARNING; flags level jumps > +1 |
+| 3b.23 | `code-block-language-tags-guardrail` | Missing language tag = warning (with allowlist) | S | | 11.12 §3.B.4 | **done** | `guards/code_lang.py`; source-scan over `scan_fences`; empty info-string=WARNING (suggest ```text) |
 | 3b.24 | `git-metadata-fetcher` | DIY subprocess `git log` for last-updated + authors | S | | 11.9 §2.3 | pending | ~100 LOC; `fetch-depth: 0` in CI |
-| 3b.25 | `content-port-sweep` | Move every existing page; fix `--8<--` paths, links | L | ✓ | main §5 Phase 3 | pending | Mostly mechanical |
+| 3b.25 | `content-port-sweep` | Move every existing page `docs_old/` → `docs_site/content/` (move + delete source); fix `--8<--` paths, links | L | ✓ | main §5 Phase 3 | pending | Mostly mechanical. This is the actual content move (absorbs the old 1.3 / 6.7). Because the branch cannibalizes mkdocs (Phase 6 compares against the *deployed* old site, see main §8), we move pages out of `docs_old/` and delete the source as we go - no need to keep mkdocs buildable on the branch |
 
 **Out of scope here:** API reference (Phase 4), Pagefind (Phase 5a), versioning (Phase 5b), SEO polish (Phase 5c).
 
@@ -355,7 +355,7 @@ Goal: merge the migration branch so the new `docs_site` build replaces the old m
 | 6.4 | `ci-deploy-site-via-actions` | Rewrite docs CI: build `docs_site` → `site/` (current + `docs_site/versions/*`), deploy `site/` via GitHub Actions | M | ✓ | main §4.0a, §4.6 | pending | Supersedes "switch Pages source to master/docs/v/" |
 | 6.5 | `gh-pages-branch-deletion` | Delete `gh-pages` branch (deferred 3-6 months) | S | | 11.8 §5.1, §8.2 | pending | Cleanup, not blocker |
 | 6.6 | `cutover-docs-cleanup` | Delete `docs_old/` + `mkdocs.yml`; remove mkdocs/material/mike deps from pyproject.toml; `grep -rn docs_old .` and update every straggler | M | ✓ | main §4.0a, §6 | pending | The `docs_old` rename makes this a search. **Also grep `master/docs/`**: absolute GitHub URLs (README image, CHANGELOG link, mkdocs `edit_uri`) still say `docs/` and won't be caught by the `docs_old` grep |
-| 6.7 | `content-move-to-content-dir` | Move user-facing pages `docs_old/` → `docs_site/content/` (preserve subtree structure so URLs are stable) + remaining assets (css, images) into `docs_site/static/` | L | ✓ | main §4.0a, §4.1, 11.11 §4.2 | pending | Was Phase-1 feature 1.3; deferred to cutover so mkdocs keeps building on the branch |
+| 6.7 | `content-move-to-content-dir` | Move user-facing pages `docs_old/` → `docs_site/content/` (preserve subtree structure so URLs are stable) + remaining assets (css, images) into `docs_site/static/` | L | ✓ | main §4.0a, §4.1, 11.11 §4.2 | **folded into 3b.25** | The page move now happens during the Phase 3b content port (3b.25), not at cutover - the "keep mkdocs building" rationale no longer applies (branch cannibalizes mkdocs; Phase 6 compares against the *deployed* old site, see main §8). What remains for Phase 6 here: sweep up any *remaining* assets (css, images) and verify nothing user-facing is still left in `docs_old/` before deleting it |
 | 6.8 | `examples-move` | Move `docs_old/examples/` → `docs_site/examples/`; update pytest `testpaths`, ruff override, sampleproject `EXAMPLES_DIR` | M | ✓ | main §4.0a, §4.1 | pending | Was Phase-1 feature 1.4 |
 | 6.9 | `devguides-move` | Move `docs_old/community/devguides/` → internal `docs/devguides/` (was never meant to be user-facing) | S | | main §4.0a | pending | Pair with 6.10 review |
 | 6.10 | `devguides-relevance-review` | Review each devguide article for whether it's still relevant/accurate before keeping it as internal docs | S | | main §4.0a | pending | Content audit |
@@ -431,10 +431,10 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | Phase | Goal | Count | Critical | Status |
 |---|---|---|---|---|
 | 0 | Pre-work in `src/` | 4 | 2 | **4/4 done** (0.4 is local-only edit to untracked CLAUDE.md) |
-| 1 | Foundation: 1 page end-to-end | 30 | 23 | **30/30 done** (1.3/1.4 dir-moves reclassified to Phase 6 cutover) |
+| 1 | Foundation: 1 page end-to-end | 30 | 23 | **30/30 done** (content move 1.3 → Phase 3b/3b.25; examples move 1.4 → Phase 6/6.8) |
 | 2 | `{% example %}` end-to-end | 7 | 4 | **6/7 done** (2.6 dropped) |
 | 3a | Theme + core chrome | 23 | 17 | pending |
-| 3b | Mass content port + responsive + content guardrails | 25 | 12 | pending |
+| 3b | Mass content port + responsive + content guardrails | 25 | 12 | **Cluster B done** (16 guardrail features 3b.8-3b.23 + harness + SiteIndex); Cluster A (responsive) + Cluster C (content infra + port) pending |
 | 4 | API reference (mkdocstrings replacement) | 66 | 30 | pending |
 | 5a | Search v1 | 6 | 4 | pending |
 | 5b | Versioning | 17 | 12 | pending |

@@ -117,6 +117,9 @@ docs = [
     "mkdocstrings",
     "mkdocstrings-python",
     "pymdown-extensions",
+    # lxml powers the docs-site build guardrails: the shared SiteIndex HTML
+    # walker and the HTML well-formedness check (recover=False parsing).
+    "lxml",
     # Pygments 2.20 breaks mkdocstrings signature rendering by rejecting the
     # None filename value passed through pymdownx.highlight.
     "pygments<2.21",
@@ -284,6 +287,17 @@ ignore = [
     "ANN",    # Full type annotations not required for internal build tooling
     "BLE001", # Intentional broad `except` in the per-page build loop
     "E501",   # Line length: inline SVG path data in templates can't be broken
+    "T201",   # `print` is fine for build-command progress output
+    "TC003",  # Don't force stdlib type-only imports into TYPE_CHECKING blocks
+]
+# Build-tool tests assert and touch the filesystem freely; relax test-only rules.
+"docs_site/tests/*" = [
+    "S101",   # `assert` is the whole point of a test
+    "PT",     # Project tests don't follow all pytest-style conventions
+    "PTH",    # Tests build paths directly (Path("."), os.path) for fixtures
+    "INP001", # Test dirs are intentionally not packages
+    "SLF001", # Tests may poke at internals
+    "PLR2004", # Magic values are fine in test assertions
 ]
 
 [tool.ruff.lint.isort]
