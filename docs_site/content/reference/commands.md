@@ -16,7 +16,7 @@ python manage.py startcomponent my_widget
 
 Creates:
 
-```
+```text
 components/my_widget/
     my_widget.py
     my_widget.html

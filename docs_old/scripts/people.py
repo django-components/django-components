@@ -32,7 +32,7 @@ BOT_USERS = {
 }
 
 # NOTE: Relative to project root
-PEOPLE_PAGE_PATH = Path("docs_old/community/people.yml")
+PEOPLE_PAGE_PATH = Path("docs_site/content/community/people.yml")
 
 GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
 

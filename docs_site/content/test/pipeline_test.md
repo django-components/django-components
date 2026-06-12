@@ -138,12 +138,12 @@ Deeply nested content.
 
 Empty code fence:
 
-```
+```text
 ```
 
 Fence with no language:
 
-```
+```text
 plain text content
 ```
 

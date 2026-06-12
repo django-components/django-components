@@ -22,6 +22,23 @@ html {
   scroll-padding-top: 80px; /* clear the sticky header on anchor jumps */
 }
 
+/* Page side gutter: 24px mobile -> 32px tablet -> 48px desktop (spike 11.11 section 2.1) */
+:root {
+  --page-gutter: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --page-gutter: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --page-gutter: 3rem;
+  }
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -546,6 +563,56 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* People page: avatar grid (UserGrid component)                       */
+/* ------------------------------------------------------------------ */
+.user-list {
+  display: flex;
+  justify-content: center;
+  padding-top: 1.5rem;
+  gap: 2.5em;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.user a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 1.05rem;
+  color: var(--c-fg);
+  text-decoration: none;
+}
+
+.user a:hover .title {
+  color: var(--c-link);
+}
+
+.user .avatar-wrapper {
+  width: 6em;
+  height: 6em;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.user .avatar-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.user .title {
+  margin: 0.5rem 0 0.25rem;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.user .info {
+  font-size: 0.85rem;
+  color: var(--c-fg-subtle);
+}
+
+/* ------------------------------------------------------------------ */
 /* pymdownx.details                                                    */
 /* ------------------------------------------------------------------ */
 .prose details {
@@ -609,8 +676,25 @@ body {
   height: 100%;
   display: flex;
   align-items: center;
-  padding: 0 1.5rem;
+  padding: 0 var(--page-gutter);
   gap: 1.5rem;
+}
+
+/* Hamburger: drawer toggle, only rendered useful below 768px */
+.djc-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-fg-muted);
+  padding: 0.4rem;
+  margin-left: -0.4rem;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.djc-hamburger:hover {
+  color: var(--c-fg);
 }
 
 .djc-logo {
@@ -706,12 +790,89 @@ body {
 }
 
 /* ------------------------------------------------------------------ */
+/* Header overflow menu (mobile home for version + theme + GitHub)     */
+/* ------------------------------------------------------------------ */
+.djc-overflow {
+  position: relative;
+  display: none; /* shown below 768px */
+}
+
+.djc-overflow__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-fg-muted);
+  padding: 0.4rem;
+  margin-right: -0.4rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.djc-overflow__btn:hover {
+  color: var(--c-fg);
+}
+
+.djc-overflow__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  display: none;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 200px;
+  padding: 0.75rem 1rem;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-card-hover);
+  z-index: 80;
+}
+
+.djc-overflow.is-open .djc-overflow__menu {
+  display: flex;
+}
+
+.djc-overflow__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.djc-overflow__label {
+  font-size: 0.8rem;
+  color: var(--c-fg-subtle);
+}
+
+.djc-overflow__link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--c-fg-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.djc-overflow__link:hover {
+  color: var(--c-fg);
+}
+
+/* Text variant of the theme-picker buttons (used inside the overflow menu) */
+.djc-theme-picker__btn--text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
 /* 3-column layout                                                     */
 /* ------------------------------------------------------------------ */
 .djc-layout {
   max-width: 1280px;
   margin: 0 auto;
   padding-top: 64px; /* below fixed header */
+  padding-left: var(--page-gutter);
+  padding-right: var(--page-gutter);
   display: flex;
   min-height: calc(100vh - 64px);
 }
@@ -731,6 +892,24 @@ body {
 
 .djc-sidebar__nav {
   padding: 0 1rem;
+}
+
+/* Drawer-only top-nav links (the header nav is hidden below 768px) */
+.djc-sidebar__topnav {
+  display: none;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0 1rem 1rem;
+  padding: 0 0.75rem 1rem;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.djc-sidebar__topnav a {
+  color: var(--c-fg);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.3rem 0;
 }
 
 .djc-sidebar__section {
@@ -812,7 +991,7 @@ a.djc-sidebar__label:hover {
 }
 
 .djc-sidebar__caret {
-  font-size: 0.7rem;
+  font-size: 1rem;
   color: var(--c-fg-subtle);
   transition: transform 0.15s;
 }
@@ -983,6 +1162,9 @@ a.djc-sidebar__label:hover {
   border-top: 1px solid var(--c-border);
   font-size: 0.85rem;
   color: var(--c-fg-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1042,25 +1224,126 @@ a.djc-sidebar__label:hover {
 }
 
 /* ------------------------------------------------------------------ */
-/* Hide TOC below 1024px, hide sidebar below 768px                     */
+/* Mobile TOC: <details> disclosure shown when the right rail is gone  */
+/* ------------------------------------------------------------------ */
+.djc-toc-mobile {
+  display: none;
+  margin: 0 0 1.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--c-border);
+  border-radius: 0.5rem;
+}
+
+.djc-toc-mobile summary {
+  cursor: pointer;
+  padding: 0.25rem 0;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-fg-subtle);
+  font-weight: 600;
+  user-select: none;
+}
+
+.djc-toc-mobile[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Drawer overlay (dimmed backdrop behind the open mobile drawer)      */
+/* ------------------------------------------------------------------ */
+.djc-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: oklch(0% 0 0 / 40%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+body.djc-drawer-open .djc-drawer-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive tiers (spike 11.11 section 2.2)                          */
+/*   >= 1280px       full geometry, 48px gutters                       */
+/*   1024px - 1280px sidebar + TOC visible, content flexes             */
+/*   768px - 1024px  TOC folds into <details>; sidebar stays           */
+/*   < 768px         sidebar becomes drawer; header collapses          */
 /* ------------------------------------------------------------------ */
 @media (max-width: 1024px) {
   .djc-toc {
     display: none;
   }
+
+  .djc-toc-mobile {
+    display: block;
+  }
+}
+
+@media (min-width: 768px) {
+  /* Overlay is a drawer affordance only */
+  .djc-drawer-overlay {
+    display: none;
+  }
 }
 
 @media (max-width: 768px) {
+  /* Sidebar becomes an off-canvas drawer, slid in via body.djc-drawer-open */
   .djc-sidebar {
-    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    width: min(320px, 85vw);
+    padding: 1rem 0;
+    background: var(--c-bg);
+    border-right: 1px solid var(--c-border);
+    z-index: 70;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
   }
 
-  .djc-content {
-    padding: 1.5rem;
+  body.djc-drawer-open .djc-sidebar {
+    transform: translateX(0);
+  }
+
+  /* Lock background scroll while the drawer is open */
+  body.djc-drawer-open {
+    overflow: hidden;
+  }
+
+  .djc-sidebar__topnav {
+    display: flex;
+  }
+
+  .djc-hamburger {
+    display: flex;
   }
 
   .djc-header__nav {
     display: none;
+  }
+
+  /* Header actions collapse into the overflow menu */
+  .djc-header__actions > .djc-theme-picker,
+  .djc-header__actions > .djc-version-badge,
+  .djc-header__actions > .djc-gh-link {
+    display: none;
+  }
+
+  .djc-overflow {
+    display: block;
+  }
+
+  /* The layout gutter provides the side padding on mobile */
+  .djc-content {
+    padding: 1.5rem 0 3rem;
   }
 
   .djc-page-nav {

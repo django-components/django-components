@@ -14,6 +14,7 @@ list every broken page at once.
 from __future__ import annotations
 
 import shutil
+import tempfile
 import time
 from dataclasses import dataclass, field
 from importlib.metadata import version as get_version
@@ -22,11 +23,13 @@ from typing import TYPE_CHECKING
 
 from django.conf import settings
 
-from apps.docs.build.examples import pre_render_examples
+from apps.docs.build.examples import examples_index_markdown, pre_render_examples
+from apps.docs.build.git_metadata import EMPTY_META, get_page_git_meta, is_excluded
 from apps.docs.build.guards import GuardResult
 from apps.docs.build.nav import load_nav
 from apps.docs.build.paths import md_companion_path, md_to_html_path, md_to_url
 from apps.docs.build.pipeline import render_page
+from apps.docs.build.release_notes import generate_release_notes
 from apps.docs.examples import get_example_registry
 
 if TYPE_CHECKING:
@@ -57,9 +60,13 @@ def build_site(
     output_dir: Path,
     version: str | None = None,
     emit_companions: bool = True,
+    changelog: Path | None = None,
 ) -> BuildOutcome:
     """
     Build every page in `content_dir` into `output_dir`.
+
+    When `changelog` is given, per-release pages are generated from it into a
+    throwaway staging dir and built under /releases/ alongside the content.
 
     Raises ValueError if `output_dir` looks unsafe to clear (repo root, the
     content dir itself, or a filesystem root).
@@ -80,43 +87,64 @@ def build_site(
     outcome = BuildOutcome(output_dir=output_dir, example_registry=example_registry)
     t0 = time.monotonic()
 
-    for md_path in md_files:
-        rel = md_path.relative_to(content_dir)
-        out_path = md_to_html_path(output_dir, rel)
-        page_url = md_to_url(rel)
-        canonical = f"{site_url}/{page_url}" if site_url else ""
-        ctx = {"version": ver, "canonical": canonical, "site_url": site_url}
+    # (markdown file, the content root it's relative to). Generated pages
+    # (release notes, examples index) render through the same loop, just
+    # rooted in the staging dir.
+    with tempfile.TemporaryDirectory(prefix="djc-docs-generated-") as staging:
+        staging_dir = Path(staging)
+        sources = [(p, content_dir) for p in md_files]
+        if changelog is not None and changelog.is_file():
+            generated = generate_release_notes(changelog, staging_dir)
+            sources += [(p, staging_dir) for p in generated]
 
-        try:
-            source = md_path.read_text(encoding="utf-8")
-            result = render_page(
-                source,
-                context=ctx,
-                source_path=md_path,
-                content_dir=content_dir,
-                nav_tree=nav_tree,
-                current_path=page_url,
-            )
-            if not result.meta.canonical and canonical:
-                result.meta.canonical = canonical
+        # Examples gallery index so the chrome's /examples/ link resolves;
+        # the per-example pages themselves are written by pre_render_examples
+        if example_registry:
+            examples_index = staging_dir / "examples" / "index.md"
+            examples_index.parent.mkdir(parents=True, exist_ok=True)
+            examples_index.write_text(examples_index_markdown(example_registry), encoding="utf-8")
+            sources.append((examples_index, staging_dir))
 
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(result.html, encoding="utf-8")
+        for md_path, content_root in sources:
+            rel = md_path.relative_to(content_root)
+            out_path = md_to_html_path(output_dir, rel)
+            page_url = md_to_url(rel)
+            canonical = f"{site_url}/{page_url}" if site_url else ""
 
-            if emit_companions:
-                companion = md_companion_path(output_dir, rel)
-                _write_companion(companion, result.meta, result.expanded_markdown, canonical)
+            # Footer metadata from git history; skipped for generated/reference pages
+            git_meta = EMPTY_META if is_excluded(rel) else get_page_git_meta(settings.REPO_ROOT, md_path)
+            ctx = {"version": ver, "canonical": canonical, "site_url": site_url, "git_meta": git_meta}
 
-            outcome.built += 1
-        except Exception as e:
-            outcome.failed += 1
-            outcome.render_errors.append(
-                GuardResult.error(
-                    guard="template_render",
-                    message=f"Page failed to render: {type(e).__name__}: {e}",
-                    source=str(rel),
+            try:
+                source = md_path.read_text(encoding="utf-8")
+                result = render_page(
+                    source,
+                    context=ctx,
+                    source_path=md_path,
+                    content_dir=content_root,
+                    nav_tree=nav_tree,
+                    current_path=page_url,
                 )
-            )
+                if not result.meta.canonical and canonical:
+                    result.meta.canonical = canonical
+
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(result.html, encoding="utf-8")
+
+                if emit_companions:
+                    companion = md_companion_path(output_dir, rel)
+                    _write_companion(companion, result.meta, result.expanded_markdown, canonical)
+
+                outcome.built += 1
+            except Exception as e:
+                outcome.failed += 1
+                outcome.render_errors.append(
+                    GuardResult.error(
+                        guard="template_render",
+                        message=f"Page failed to render: {type(e).__name__}: {e}",
+                        source=str(rel),
+                    )
+                )
 
     if example_registry:
         ex_rendered, ex_errors = pre_render_examples(output_dir, example_registry)

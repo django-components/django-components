@@ -28,6 +28,11 @@ sections:
       - { title: Settings, path: /reference/settings/ }
       - { title: Commands, path: /reference/commands/ }
 
+  - label: Community
+    items:
+      - { title: People, path: /community/people/ }
+      - { title: AI / LLM bot policy, path: /community/ai_bot_policy/ }
+
   # 1-level section with test pages
   - label: Test Pages
     items:

@@ -15,9 +15,12 @@ from django.conf import settings
 from django.http import Http404, HttpRequest, HttpResponse
 from django.test import RequestFactory
 
+from apps.docs.build.examples import examples_index_markdown
+from apps.docs.build.git_metadata import EMPTY_META, get_page_git_meta, is_excluded
 from apps.docs.build.nav import load_nav
 from apps.docs.build.paths import md_to_url, url_to_md
 from apps.docs.build.pipeline import render_page
+from apps.docs.build.release_notes import get_release_staging_dir
 from apps.docs.examples import get_example_registry
 
 
@@ -33,21 +36,44 @@ def serve_page(request: HttpRequest, url_path: str = "") -> HttpResponse:
     using {% example %} can resolve their references.
     """
     # Ensure examples are discovered before any page with {% example %} renders
-    get_example_registry()
+    registry = get_example_registry()
 
-    md_path = url_to_md(settings.CONTENT_DIR, url_path)
+    # /examples/ is a generated index page (like in the static build)
+    if url_path.strip("/") == "examples":
+        ver = get_version("django_components")
+        result = render_page(
+            examples_index_markdown(registry),
+            context={"version": ver, "site_url": f"{settings.SITE_URL}/v/{ver}"},
+            nav_tree=load_nav(settings.CONTENT_DIR / "_nav.yml"),
+            current_path="examples/",
+        )
+        return HttpResponse(result.html)
+
+    content_root = settings.CONTENT_DIR
+    md_path = url_to_md(content_root, url_path)
+
+    # /releases/ pages are generated from CHANGELOG.md, not stored in content/.
+    # Generate them on demand (cached on changelog mtime) so live preview works.
+    if md_path is None and (url_path.strip("/") == "releases" or url_path.startswith("releases/")):
+        content_root = get_release_staging_dir(settings.CHANGELOG_PATH)
+        md_path = url_to_md(content_root, url_path)
+
     if md_path is None:
         raise Http404(f"No docs page for /{url_path}")
 
-    rel = md_path.relative_to(settings.CONTENT_DIR)
+    rel = md_path.relative_to(content_root)
     ver = get_version("django_components")
     page_url = md_to_url(rel)
+
+    # Footer metadata from git history; mirrors the build command
+    git_meta = EMPTY_META if is_excluded(rel) else get_page_git_meta(settings.REPO_ROOT, md_path)
 
     # Mirror the build command's context so the live preview matches the build output
     ctx = {
         "version": ver,
         "canonical": f"{settings.SITE_URL}/v/{ver}/{page_url}",
         "site_url": f"{settings.SITE_URL}/v/{ver}",
+        "git_meta": git_meta,
     }
 
     nav_tree = load_nav(settings.CONTENT_DIR / "_nav.yml")
@@ -57,7 +83,7 @@ def serve_page(request: HttpRequest, url_path: str = "") -> HttpResponse:
         source,
         context=ctx,
         source_path=md_path,
-        content_dir=settings.CONTENT_DIR,
+        content_dir=content_root,
         nav_tree=nav_tree,
         current_path=page_url,
     )

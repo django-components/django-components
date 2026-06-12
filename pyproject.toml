@@ -278,6 +278,7 @@ ignore = [
     "S101",   # Use of `assert` detected
     "T201",   # `print` found
     "DTZ",    # `datetime` found
+    "RUF012", # Class-attr dicts (e.g. DocsExample.fragments) are the documented convention
 ]
 # The docs site builder is internal tooling (a Django project), not the shipped
 # library, so it isn't held to the package's full annotation strictness.

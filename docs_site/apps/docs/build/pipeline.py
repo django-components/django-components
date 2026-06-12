@@ -192,6 +192,10 @@ def _pass3_layout(
     # Lazy import to avoid circular imports at module level
     from apps.docs.components.doc_page.doc_page import DocPage  # noqa: PLC0415
 
+    # Per-page git metadata (last-updated + authors) for the footer, if the
+    # build provided it (see build/git_metadata.py)
+    git_meta = context.get("git_meta")
+
     return DocPage.render(
         kwargs={
             "content_html": content_html,
@@ -203,5 +207,7 @@ def _pass3_layout(
             "nav_tree": nav_tree,
             "current_path": current_path,
             "toc_items": toc_tokens,
+            "last_updated": git_meta.last_updated if git_meta else None,
+            "authors": list(git_meta.authors) if git_meta else [],
         },
     )

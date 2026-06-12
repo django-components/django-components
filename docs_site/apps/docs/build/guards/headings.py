@@ -27,6 +27,11 @@ def check(ctx: GuardContext) -> Iterator[GuardResult]:
     for page in index.pages:
         if not page.is_doc_page or page.is_redirect_stub:
             continue
+        # Release pages are generated verbatim from CHANGELOG.md, whose
+        # historical sections legitimately jump levels (## version -> #### Feat).
+        # That formatting is frozen history, so flagging it is pure noise.
+        if page.label.startswith("releases/"):
+            continue
         prev_level = 0
         for heading in page.headings:
             if prev_level and heading.level > prev_level + 1:

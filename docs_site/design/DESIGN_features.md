@@ -143,13 +143,13 @@ Goal: every existing markdown page renders correctly under the new pipeline + ch
 
 | # | ID | Name | Effort | Critical | Source | Status | Notes |
 |---|---|---|---|---|---|---|---|
-| 3b.1 | `mobile-drawer` | Full-height left drawer; hamburger toggle | M | ✓ | 11.11 §4.1, §2.2 | pending | < 768px |
-| 3b.2 | `mobile-header-actions` | Overflow menu for version + theme + GitHub | S | | 11.11 §4.1 | pending | < 768px |
-| 3b.3 | `mobile-toc-details` | `<details>` "On this page" disclosure under H1 | S | | 11.11 §2.2, §7.1 | pending | < 1024px |
-| 3b.4 | `responsive-breakpoints` | 4 breakpoints wired flexbox-side | M | ✓ | 11.11 §2.2 | pending | |
-| 3b.5 | `release-notes-parser` | Parse CHANGELOG.md → per-release pages + index | S | | 11.9 §2.1 | pending | ~80 LOC port |
-| 3b.6 | `people-page-template` | Native Django template (replace mkdocs-macros) | S | | 11.9 §2.7 | pending | Single page |
-| 3b.7 | `ai-bot-policy-doc` | New `content/community/ai_bot_policy.md` | S | | 11.12 §3.B.10 | pending | ~30 lines |
+| 3b.1 | `mobile-drawer` | Full-height left drawer; hamburger toggle | M | ✓ | 11.11 §4.1, §2.2 | **done** | The sidebar element becomes the off-canvas drawer (<768px); hamburger in header, overlay/Esc close, body scroll-lock, drawer-only top-nav links block |
+| 3b.2 | `mobile-header-actions` | Overflow menu for version + theme + GitHub | S | | 11.11 §4.1 | **done** | `.djc-overflow` kebab menu; theme picker reuses the same `data-theme-value` hooks (text buttons), outside-click + Esc close |
+| 3b.3 | `mobile-toc-details` | `<details>` "On this page" disclosure under H1 | S | | 11.11 §2.2, §7.1 | **done** | `.djc-toc-mobile` above the article, same toc_items as the right rail; shown <1024px |
+| 3b.4 | `responsive-breakpoints` | 4 breakpoints wired flexbox-side | M | ✓ | 11.11 §2.2 | **done** | `--page-gutter` var (24/32/48px) on header + layout; tier rules per spike §2.2 (TOC <1024 -> details, sidebar <768 -> drawer) |
+| 3b.5 | `release-notes-parser` | Parse CHANGELOG.md → per-release pages + index | S | | 11.9 §2.1 | **done** | `build/release_notes.py`; pages generated into a temp staging dir at build time and rendered through the normal loop; dev server serves /releases/ from an mtime-cached staging dir; index uses clean URLs. Also added a generated /examples/ index page so the chrome's Examples link resolves (closed a pre-existing internal_link error class); nav entry for /releases/ comes with the 3b.25 content port |
+| 3b.6 | `people-page-template` | Native Django template (replace mkdocs-macros) | S | | 11.9 §2.7 | **done** | **Deviation from spike:** markdown page + `{% people %}` tag + `UserGrid` component instead of a TemplateView - Pass 1 already runs Django tags in markdown, so a special-cased template page would be more indirection, not less. `people.yml` moved to `content/community/`; updater script repointed |
+| 3b.7 | `ai-bot-policy-doc` | New `content/community/ai_bot_policy.md` | S | | 11.12 §3.B.10 | **done** | Default-allow policy text per spike; in nav under Community |
 | 3b.8 | `template-render-guard` | Catch Django template errors in Pass 1 | S | ✓ | 11.10 §3.1 | **done** | `builder.build_site` captures per-page render failures as `template_render` ERRORs instead of aborting; folded into the report by `docs_build_check` |
 | 3b.9 | `fence-validator` | Detect unclosed fences, malformed snippets, unknown languages | M | ✓ | 11.10 §3.2 | **done** | `guards/fence_validator.py` - `scan_fences()` is the shared primitive (unclosed=ERROR); unknown langs split into 3b.10, missing snippet paths into 3b.11 |
 | 3b.10 | `lexer-alias-check` | Validate fence info-strings resolve to Pygments lexer | S | | 11.10 §3.3 | **done** | `guards/lexer_alias.py`; `ALLOWED_NON_LEXER_LANGS` allowlist (text/console/mermaid...) |
@@ -164,9 +164,9 @@ Goal: every existing markdown page renders correctly under the new pipeline + ch
 | 3b.19 | `guardrail-runner-harness` | Orchestrator (~100 LOC) — severity rules, dep order | M | ✓ | 11.10 §6 | **done** | `build/guards/__init__.py` (`run_guards`, `format_report`); a crashing guard is itself an ERROR. Driven by `docs_build_check` (build-to-temp CI gate) and `docs_test` (over an existing build) |
 | 3b.20 | `single-h1-guardrail` | Exactly one `<h1>` per page | S | | 11.12 §2.A.8 | **done** | `guards/single_h1.py`; WARNING; doc-pages only (skips example demos / redirect stubs) |
 | 3b.21 | `image-alt-text-guardrail` | Every `<img>` has non-empty `alt` | S | | 11.12 §2.A.9 | **done** | `guards/alt_text.py`; WARNING; doc-pages only |
-| 3b.22 | `structured-headings-guardrail` | No `##` → `####` jumps | S | | 11.12 §3.B.3 | **done** | `guards/headings.py`; WARNING; flags level jumps > +1 |
+| 3b.22 | `structured-headings-guardrail` | No `##` → `####` jumps | S | | 11.12 §3.B.3 | **done** | `guards/headings.py`; WARNING; flags level jumps > +1; generated `releases/*` pages exempt (frozen CHANGELOG history) |
 | 3b.23 | `code-block-language-tags-guardrail` | Missing language tag = warning (with allowlist) | S | | 11.12 §3.B.4 | **done** | `guards/code_lang.py`; source-scan over `scan_fences`; empty info-string=WARNING (suggest ```text) |
-| 3b.24 | `git-metadata-fetcher` | DIY subprocess `git log` for last-updated + authors | S | | 11.9 §2.3 | pending | ~100 LOC; `fetch-depth: 0` in CI |
+| 3b.24 | `git-metadata-fetcher` | DIY subprocess `git log` for last-updated + authors | S | | 11.9 §2.3 | **done** | `build/git_metadata.py` - one cached `git log --follow` call per page (date + authors combined); exclusions per old mkdocs config + `releases/*`; rendered in the DocPage footer. CI workflow needs `fetch-depth: 0` (lands with 5b.16) |
 | 3b.25 | `content-port-sweep` | Move every existing page `docs_old/` → `docs_site/content/` (move + delete source); fix `--8<--` paths, links | L | ✓ | main §5 Phase 3 | pending | Mostly mechanical. This is the actual content move (absorbs the old 1.3 / 6.7). Because the branch cannibalizes mkdocs (Phase 6 compares against the *deployed* old site, see main §8), we move pages out of `docs_old/` and delete the source as we go - no need to keep mkdocs buildable on the branch |
 
 **Out of scope here:** API reference (Phase 4), Pagefind (Phase 5a), versioning (Phase 5b), SEO polish (Phase 5c).
@@ -433,8 +433,8 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 0 | Pre-work in `src/` | 4 | 2 | **4/4 done** (0.4 is local-only edit to untracked CLAUDE.md) |
 | 1 | Foundation: 1 page end-to-end | 30 | 23 | **30/30 done** (content move 1.3 → Phase 3b/3b.25; examples move 1.4 → Phase 6/6.8) |
 | 2 | `{% example %}` end-to-end | 7 | 4 | **6/7 done** (2.6 dropped) |
-| 3a | Theme + core chrome | 23 | 17 | pending |
-| 3b | Mass content port + responsive + content guardrails | 25 | 12 | **Cluster B done** (16 guardrail features 3b.8-3b.23 + harness + SiteIndex); Cluster A (responsive) + Cluster C (content infra + port) pending |
+| 3a | Theme + core chrome | 23 | 17 | **22/23 done** (3a.9 CodeTabs deferred to when needed) |
+| 3b | Mass content port + responsive + content guardrails | 25 | 12 | **24/25 done** (guardrails, responsive, release notes, people page, AI-bot policy, git metadata); only 3b.25 content port pending |
 | 4 | API reference (mkdocstrings replacement) | 66 | 30 | pending |
 | 5a | Search v1 | 6 | 4 | pending |
 | 5b | Versioning | 17 | 12 | pending |
@@ -445,7 +445,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 8 | Search v3 (blocked on analytics target) | 1 | 0 | pending |
 | 9 | Landing page (codesign) | 1 | 0 | pending |
 | 10+ | Deferred / post-launch maintenance | 7 | 0 | pending |
-| **Total** | | **221** | **111** | **41/221 done** |
+| **Total** | | **221** | **111** | **86/221 done** |
 
 ### Phase 0 closed
 

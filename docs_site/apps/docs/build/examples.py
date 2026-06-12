@@ -19,7 +19,7 @@ from django.test import RequestFactory
 from django_components import get_component_url
 
 if TYPE_CHECKING:
-    from docs_site.apps.docs.examples import ExampleInfo
+    from apps.docs.examples import ExampleInfo
 
 
 def pre_render_examples(
@@ -84,6 +84,25 @@ def pre_render_examples(
                     errors += 1
 
     return rendered, errors
+
+
+def examples_index_markdown(registry: dict[str, ExampleInfo]) -> str:
+    """
+    Markdown source for the /examples/ index page.
+
+    A plain linked list for now, so the chrome's "Examples" link resolves in
+    the built site; the proper card-gallery page comes with the post-cutover
+    examples work (spike 11.11 section 4.1).
+    """
+    lines = [
+        "# Examples",
+        "",
+        "Runnable demos of django-components features. Each example opens as a",
+        "standalone live page.",
+        "",
+    ]
+    lines.extend(f"* [{name}]({name}/)" for name in sorted(registry))
+    return "\n".join(lines) + "\n"
 
 
 def _render_page(

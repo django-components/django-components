@@ -45,6 +45,37 @@ def example(name: str) -> str:
 
 
 @register.simple_tag
+def people(group: str) -> str:
+    """
+    Render the avatar grid for a group of people from community/people.yml.
+
+    Replaces the old mkdocs-macros Jinja loop in community/people.md. The
+    contributor grid also shows each person's merged-PR count.
+
+    Usage in markdown: {% people "maintainers" %} or {% people "contributors" %}
+    """
+    import yaml  # type: ignore[import-untyped]  # noqa: PLC0415
+    from django.conf import settings  # noqa: PLC0415
+
+    from apps.docs.components.user_grid.user_grid import UserGrid  # noqa: PLC0415
+
+    people_path = settings.CONTENT_DIR / "community" / "people.yml"
+    if not people_path.is_file():
+        return f'<p class="error">People data not found: {escape(str(people_path))}</p>'
+
+    data = yaml.safe_load(people_path.read_text(encoding="utf-8")) or {}
+    users = data.get(group)
+    if users is None:
+        return f'<p class="error">Unknown people group: {escape(group)}</p>'
+
+    result = UserGrid.render(kwargs={"users": users, "show_count": group == "contributors"})
+    # Flush-left + blank-line padding so python-markdown treats the output
+    # as block-level HTML (same treatment as the {% example %} tag).
+    result = _lstrip_outside_pre(result)
+    return mark_safe(f"\n\n{result}\n\n")
+
+
+@register.simple_tag
 def version() -> str:
     """
     Return the current django-components version.

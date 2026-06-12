@@ -57,6 +57,7 @@ class Command(BaseCommand):
                 output_dir=output_dir,
                 version=version,
                 emit_companions=emit_companions,
+                changelog=settings.CHANGELOG_PATH,
             )
         except ValueError as e:
             self.stderr.write(self.style.ERROR(str(e)))

@@ -17,6 +17,7 @@ Spec: docs_site/design/DESIGN_spike_11.md sections 2-7.
 """
 
 import json
+from datetime import datetime
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
@@ -42,6 +43,9 @@ class DocPage(Component):
         nav_tree: NavTree | None = None
         current_path: str = ""
         toc_items: list | None = None
+        # Footer git metadata (see build/git_metadata.py); None/[] hides it
+        last_updated: datetime | None = None
+        authors: list | None = None
 
     template: types.django_html = """
         <!DOCTYPE html>
@@ -90,6 +94,19 @@ class DocPage(Component):
             {# ============================================================ #}
             <header class="djc-header">
                 <div class="djc-header__inner">
+                    {# Hamburger: opens the nav drawer on mobile (<768px) #}
+                    <button
+                        class="djc-hamburger"
+                        aria-label="Open navigation"
+                        aria-controls="djc-sidebar"
+                        aria-expanded="false"
+                    >
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <line x1="3" y1="6" x2="21" y2="6"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                            <line x1="3" y1="18" x2="21" y2="18"/>
+                        </svg>
+                    </button>
                     <a class="djc-logo" href="/">
                         <span class="djc-logo__wordmark">django-components</span>
                     </a>
@@ -160,6 +177,45 @@ class DocPage(Component):
                                 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
                             </svg>
                         </a>
+
+                        {# Overflow menu: collapses version + theme + GitHub on mobile (<768px) #}
+                        <div class="djc-overflow">
+                            <button
+                                class="djc-overflow__btn"
+                                aria-label="More options"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
+                                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                    <circle cx="12" cy="5" r="2"/>
+                                    <circle cx="12" cy="12" r="2"/>
+                                    <circle cx="12" cy="19" r="2"/>
+                                </svg>
+                            </button>
+                            <div class="djc-overflow__menu">
+                                <div class="djc-overflow__row">
+                                    <span class="djc-overflow__label">Theme</span>
+                                    {# Same data-theme-value hooks as the desktop picker; site.js wires both #}
+                                    <div class="djc-theme-picker" role="radiogroup" aria-label="Color theme">
+                                        <button class="djc-theme-picker__btn djc-theme-picker__btn--text" data-theme-value="light">Light</button>
+                                        <button class="djc-theme-picker__btn djc-theme-picker__btn--text" data-theme-value="auto">Auto</button>
+                                        <button class="djc-theme-picker__btn djc-theme-picker__btn--text" data-theme-value="dark">Dark</button>
+                                    </div>
+                                </div>
+                                {% if version %}
+                                <div class="djc-overflow__row">
+                                    <span class="djc-overflow__label">Version</span>
+                                    <span class="djc-version-badge">v{{ version }}</span>
+                                </div>
+                                {% endif %}
+                                <a
+                                    class="djc-overflow__link"
+                                    href="https://github.com/django-components/django-components"
+                                    target="_blank"
+                                    rel="noopener"
+                                >GitHub</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -169,8 +225,13 @@ class DocPage(Component):
             {# ============================================================ #}
             <div class="djc-layout">
 
-                {# LEFT SIDEBAR #}
+                {# LEFT SIDEBAR (off-canvas drawer below 768px) #}
                 <aside class="djc-sidebar" id="djc-sidebar">
+                    {# Drawer-only: top-nav links live in the drawer on mobile (header nav is hidden) #}
+                    <nav class="djc-sidebar__topnav">
+                        <a href="/">Docs</a>
+                        <a href="/examples/">Examples</a>
+                    </nav>
                     <nav class="djc-sidebar__nav">
                         {% for section in nav_sections %}
                         <div class="djc-sidebar__section">
@@ -221,6 +282,9 @@ class DocPage(Component):
                     </nav>
                 </aside>
 
+                {# Dimmed backdrop behind the open drawer; click closes it #}
+                <div class="djc-drawer-overlay"></div>
+
                 {# Resize handle: sidebar | content #}
                 <div class="djc-resize-handle" data-target="djc-sidebar" data-direction="left"></div>
 
@@ -237,6 +301,27 @@ class DocPage(Component):
                         {% endif %}
                         {% endfor %}
                     </nav>
+                    {% endif %}
+
+                    {# Mobile TOC: the right rail is hidden below 1024px, so offer a disclosure instead #}
+                    {% if toc_items %}
+                    <details class="djc-toc-mobile">
+                        <summary>On this page</summary>
+                        <ul class="djc-toc__list">
+                            {% for item in toc_items %}
+                            <li class="djc-toc__item djc-toc__item--{{ item.level }}">
+                                <a class="djc-toc__link" href="#{{ item.id }}">{{ item.name }}</a>
+                            </li>
+                            {% if item.children %}
+                            {% for child in item.children %}
+                            <li class="djc-toc__item djc-toc__item--{{ child.level }}">
+                                <a class="djc-toc__link" href="#{{ child.id }}">{{ child.name }}</a>
+                            </li>
+                            {% endfor %}
+                            {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </details>
                     {% endif %}
 
                     <article class="prose">
@@ -266,9 +351,16 @@ class DocPage(Component):
                     </nav>
                     {% endif %}
 
-                    {% if version %}
+                    {% if version or last_updated %}
                     <footer class="djc-footer">
-                        django-components v{{ version }}
+                        {% if last_updated %}
+                        <div class="djc-footer__meta">
+                            Last updated {{ last_updated|date:"j M Y" }}{% if authors %} by {{ authors|join:", " }}{% endif %}
+                        </div>
+                        {% endif %}
+                        {% if version %}
+                        <div>django-components v{{ version }}</div>
+                        {% endif %}
                     </footer>
                     {% endif %}
                 </main>
@@ -341,6 +433,8 @@ class DocPage(Component):
             "prev_page": prev_page,
             "next_page": next_page,
             "toc_items": toc_items,
+            "last_updated": kwargs.last_updated,
+            "authors": kwargs.authors or [],
         }
 
 

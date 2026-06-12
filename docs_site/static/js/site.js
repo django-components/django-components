@@ -9,6 +9,8 @@
  * - Right-rail TOC scroll-spy
  * - Scroll active sidebar item into view on page load
  * - Code block language label + copy button
+ * - Mobile nav drawer (hamburger toggle, overlay/Esc to close)
+ * - Mobile header overflow menu (version + theme + GitHub)
  */
 
 (function () {
@@ -108,6 +110,66 @@
   if (activeLink) {
     activeLink.scrollIntoView({ block: 'nearest' });
   }
+
+  // ----------------------------------------------------------------
+  // Mobile nav drawer (the sidebar becomes off-canvas below 768px)
+  // ----------------------------------------------------------------
+  var hamburger = document.querySelector('.djc-hamburger');
+  var drawerOverlay = document.querySelector('.djc-drawer-overlay');
+
+  function setDrawer(open) {
+    document.body.classList.toggle('djc-drawer-open', open);
+    if (hamburger) {
+      hamburger.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+  }
+
+  if (hamburger) {
+    hamburger.addEventListener('click', function () {
+      setDrawer(!document.body.classList.contains('djc-drawer-open'));
+    });
+  }
+
+  if (drawerOverlay) {
+    drawerOverlay.addEventListener('click', function () {
+      setDrawer(false);
+    });
+  }
+
+  // ----------------------------------------------------------------
+  // Header overflow menu (mobile home for version + theme + GitHub)
+  // ----------------------------------------------------------------
+  var overflowEl = document.querySelector('.djc-overflow');
+  var overflowBtn = document.querySelector('.djc-overflow__btn');
+
+  function closeOverflow() {
+    if (overflowEl && overflowEl.classList.contains('is-open')) {
+      overflowEl.classList.remove('is-open');
+      overflowBtn.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  if (overflowEl && overflowBtn) {
+    overflowBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var open = overflowEl.classList.toggle('is-open');
+      overflowBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    // Click anywhere outside the menu closes it
+    document.addEventListener('click', function (e) {
+      if (!overflowEl.contains(e.target)) {
+        closeOverflow();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      setDrawer(false);
+      closeOverflow();
+    }
+  });
 
   // ----------------------------------------------------------------
   // Tabbed content (pymdownx.tabbed alternate style + ExampleCard)
