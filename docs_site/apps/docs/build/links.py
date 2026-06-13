@@ -34,6 +34,11 @@ _HREF_RE = re.compile(r'href="([^"]*)"')
 # Matches src attributes (images) in the rendered HTML.
 _SRC_RE = re.compile(r'src="([^"]*)"')
 
+# Opening anchor tag, so we can inspect/extend its attribute list.
+_A_OPEN_RE = re.compile(r"<a\b([^>]*)>", re.IGNORECASE)
+_TARGET_ATTR_RE = re.compile(r"\btarget\s*=", re.IGNORECASE)
+_REL_ATTR_RE = re.compile(r"\brel\s*=", re.IGNORECASE)
+
 
 def rewrite_internal_md_links(html: str, *, source_path: Path, content_dir: Path) -> str:
     """
@@ -63,6 +68,42 @@ def rewrite_internal_md_links(html: str, *, source_path: Path, content_dir: Path
 
     html = _HREF_RE.sub(replace_href, html)
     return _SRC_RE.sub(replace_src, html)
+
+
+def mark_external_links(html: str) -> str:
+    """
+    Make off-site links open in a new tab.
+
+    Adds `target="_blank"` (and `rel="noopener"`) to anchors whose href is an
+    absolute web URL - `https://example.com/...` or protocol-relative
+    `//example.com/...`. Internal docs links are always relative clean URLs
+    (`../foo/`, `#anchor`), so they're never matched; neither are `mailto:` /
+    `tel:` links. Anchors that already declare a `target` are left untouched,
+    and `rel` is only added when absent so existing values aren't duplicated.
+    """
+
+    def replace(match: re.Match) -> str:
+        attrs = match.group(1)
+        href_match = re.search(r'href="([^"]*)"', attrs)
+        if not href_match or not _is_external_url(href_match.group(1)):
+            return match.group(0)
+        if _TARGET_ATTR_RE.search(attrs):
+            return match.group(0)  # respect an explicit target
+        extra = ' target="_blank"'
+        if not _REL_ATTR_RE.search(attrs):
+            extra += ' rel="noopener"'
+        return f"<a{attrs}{extra}>"
+
+    return _A_OPEN_RE.sub(replace, html)
+
+
+def _is_external_url(href: str) -> bool:
+    """True if href is an absolute web URL (has a host) - i.e. points off-site."""
+    parsed = urlparse(href)
+    # Relative links, bare anchors, and mailto:/tel: have no netloc.
+    if not parsed.netloc:
+        return False
+    return parsed.scheme in ("", "http", "https")
 
 
 def _rewrite_one(href: str, *, page_url: str, source_dir: Path, content_root: Path) -> str:

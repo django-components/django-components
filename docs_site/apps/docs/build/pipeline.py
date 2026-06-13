@@ -27,7 +27,7 @@ from django.template import Context, Engine
 
 from .fence_protection import protect_fences, reset_counter
 from .frontmatter import PageMeta, parse_page
-from .links import rewrite_internal_md_links
+from .links import mark_external_links, rewrite_internal_md_links
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -127,6 +127,10 @@ def render_page(
     # Rewrite internal .md links to clean URLs (e.g. ./other.md -> ../other/)
     if content_dir is not None and source_path is not None:
         content_html = rewrite_internal_md_links(content_html, source_path=source_path, content_dir=content_dir)
+
+    # Off-site links open in a new tab (runs on content only; chrome links in
+    # Pass 3 already set their own target where needed)
+    content_html = mark_external_links(content_html)
 
     # Pass 3: wrap in DocPage layout (full HTML page with <head>, CSS, chrome)
     if wrap_in_layout:

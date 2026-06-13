@@ -33,7 +33,7 @@
     ''',
     'headings_and_prose': '''
       <h1 id="title">Title<a class="headerlink" href="#title" title="Permanent link">¤</a></h1>
-      <p>Intro paragraph with <code>inline code</code> and a <a href="https://example.com">link</a>.</p>
+      <p>Intro paragraph with <code>inline code</code> and a <a href="https://example.com" target="_blank" rel="noopener">link</a>.</p>
       <h2 id="section">Section<a class="headerlink" href="#section" title="Permanent link">¤</a></h2>
       <p>Some <strong>bold</strong> and <em>italic</em> text.</p>
       <h3 id="subsection">Subsection<a class="headerlink" href="#subsection" title="Permanent link">¤</a></h3>
