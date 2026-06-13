@@ -29,6 +29,7 @@ from apps.docs.build.guards import GuardResult
 from apps.docs.build.nav import load_nav
 from apps.docs.build.paths import md_companion_path, md_to_html_path, md_to_url
 from apps.docs.build.pipeline import render_page
+from apps.docs.build.reference import generate_reference_pages
 from apps.docs.build.release_notes import generate_release_notes
 from apps.docs.examples import get_example_registry
 
@@ -96,6 +97,10 @@ def build_site(
         if changelog is not None and changelog.is_file():
             generated = generate_release_notes(changelog, staging_dir)
             sources += [(p, staging_dir) for p in generated]
+
+        # API reference pages, generated from source docstrings via griffe
+        # (Phase 4). Rendered through the same loop, rooted in the staging dir.
+        sources += [(p, staging_dir) for p in generate_reference_pages(staging_dir)]
 
         # Examples gallery index so the chrome's /examples/ link resolves;
         # the per-example pages themselves are written by pre_render_examples

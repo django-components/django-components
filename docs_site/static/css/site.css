@@ -1369,3 +1369,117 @@ body.djc-drawer-open .djc-drawer-overlay {
     flex-direction: column;
   }
 }
+
+/* ------------------------------------------------------------------ */
+/* API reference (griffe-rendered symbols)                            */
+/* ------------------------------------------------------------------ */
+
+/* Per-kind symbol colors, matching the old mkdocstrings/Material palette so
+   the class/func/attr/module color-coding readers know carries over. */
+:root {
+  --doc-symbol-class-fg: #0550ae;
+  --doc-symbol-class-bg: #0550ae1a;
+  --doc-symbol-function-fg: #8250df;
+  --doc-symbol-function-bg: #8250df1a;
+  --doc-symbol-attribute-fg: #953800;
+  --doc-symbol-attribute-bg: #9538001a;
+  --doc-symbol-module-fg: #5cad0f;
+  --doc-symbol-module-bg: #5cad0f1a;
+}
+
+[data-theme="dark"] {
+  --doc-symbol-class-fg: #79c0ff;
+  --doc-symbol-class-bg: #79c0ff1a;
+  --doc-symbol-function-fg: #d2a8ff;
+  --doc-symbol-function-bg: #d2a8ff1a;
+  --doc-symbol-attribute-fg: #ffa657;
+  --doc-symbol-attribute-bg: #ffa6571a;
+  --doc-symbol-module-fg: #baff79;
+  --doc-symbol-module-bg: #baff791a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --doc-symbol-class-fg: #79c0ff;
+    --doc-symbol-class-bg: #79c0ff1a;
+    --doc-symbol-function-fg: #d2a8ff;
+    --doc-symbol-function-bg: #d2a8ff1a;
+    --doc-symbol-attribute-fg: #ffa657;
+    --doc-symbol-attribute-bg: #ffa6571a;
+    --doc-symbol-module-fg: #baff79;
+    --doc-symbol-module-bg: #baff791a;
+  }
+}
+
+/* Symbol-type badge: a small monospace pill whose label comes from ::after,
+   so the empty <span> the renderer emits stays content-free. */
+.prose .doc-symbol {
+  display: inline-block;
+  border-radius: 0.25em;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0 0.4em;
+  vertical-align: middle;
+}
+
+.prose .doc-symbol-heading {
+  margin-right: 0.5em;
+}
+
+.prose .doc-symbol-class {
+  color: var(--doc-symbol-class-fg);
+  background-color: var(--doc-symbol-class-bg);
+}
+.prose .doc-symbol-class::after { content: "class"; }
+
+.prose .doc-symbol-function {
+  color: var(--doc-symbol-function-fg);
+  background-color: var(--doc-symbol-function-bg);
+}
+.prose .doc-symbol-function::after { content: "func"; }
+
+.prose .doc-symbol-method {
+  color: var(--doc-symbol-function-fg);
+  background-color: var(--doc-symbol-function-bg);
+}
+.prose .doc-symbol-method::after { content: "meth"; }
+
+.prose .doc-symbol-attribute {
+  color: var(--doc-symbol-attribute-fg);
+  background-color: var(--doc-symbol-attribute-bg);
+}
+.prose .doc-symbol-attribute::after { content: "attr"; }
+
+.prose .doc-symbol-module {
+  color: var(--doc-symbol-module-fg);
+  background-color: var(--doc-symbol-module-bg);
+}
+.prose .doc-symbol-module::after { content: "module"; }
+
+/* Symbol heading: the name reads as code (it is one). */
+.prose .doc-heading .doc-object-name {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* "Bases: ..." line and source link sit just under the heading, small + muted. */
+.prose .doc-class-bases {
+  font-size: 0.85em;
+  color: var(--c-fg-muted);
+  margin: 0.25rem 0 0;
+}
+
+.prose .doc-source-link {
+  font-size: 0.85em;
+}
+
+/* Space between consecutive symbol entries on a reference page. */
+.prose .doc-object + .doc-object {
+  margin-top: 1rem;
+}
+
+.prose .doc-contents {
+  margin-top: 0.5rem;
+}

@@ -105,6 +105,12 @@ EXAMPLES_DIR = REPO_ROOT / "docs_old" / "examples"
 # Base URL for the published docs site on GitHub Pages
 SITE_URL = "https://django-components.github.io/django-components"
 
+# GitHub repository, used to build "See source code" links in the API reference
+# (the old mkdocs setup read this from mkdocs.yml's `repo_url`). The branch is
+# the ref those links point at.
+REPO_URL = "https://github.com/django-components/django-components"
+SOURCE_CODE_GIT_BRANCH = "master"
+
 # Default output directory for built HTML (gitignored; mirrors mkdocs' site_dir).
 # The versioned deploy target (docs/v/<version>/) is set explicitly via --output
 # by the release workflow; this is just the everyday dev-build default.

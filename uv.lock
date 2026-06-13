@@ -594,6 +594,7 @@ dev = [
 docs = [
     { name = "django" },
     { name = "djc-core" },
+    { name = "griffe" },
     { name = "lxml" },
     { name = "markdown-exec" },
     { name = "mike" },
@@ -672,6 +673,7 @@ dev = [
 docs = [
     { name = "django", specifier = ">=5.2" },
     { name = "djc-core", specifier = ">=1.3.0" },
+    { name = "griffe", specifier = ">=1.15.0" },
     { name = "lxml" },
     { name = "markdown-exec" },
     { name = "mike" },

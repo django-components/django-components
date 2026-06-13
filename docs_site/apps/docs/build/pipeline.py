@@ -28,6 +28,7 @@ from django.template import Context, Engine
 from .fence_protection import protect_fences, reset_counter
 from .frontmatter import PageMeta, parse_page
 from .links import mark_external_links, rewrite_internal_md_links
+from .toc import merge_html_headings_into_toc
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -118,8 +119,11 @@ def render_page(
     # Pre-pass: protect code fences from Django template execution
     protected = _pass0_fence_protect(meta.body)
 
-    # Pass 1: expand Django template tags ({% version %}, {% component %}, etc.)
-    expanded = _pass1_django(protected, engine=engine, context=context or {})
+    # Pass 1: expand Django template tags ({% version %}, {% component %}, etc.).
+    # Expose the page's clean URL so tags like {% docstring %} can build links
+    # relative to the current page.
+    pass1_context = {**(context or {}), "current_path": current_path}
+    expanded = _pass1_django(protected, engine=engine, context=pass1_context)
 
     # Pass 2: convert markdown to HTML (Pygments highlighting, admonitions, TOC, etc.)
     content_html, toc_tokens = _pass2_markdown(expanded, source_path=source_path)
@@ -131,6 +135,10 @@ def render_page(
     # Off-site links open in a new tab (runs on content only; chrome links in
     # Pass 3 already set their own target where needed)
     content_html = mark_external_links(content_html)
+
+    # Fold raw-HTML headings (e.g. API reference symbols, which bypass the
+    # markdown toc extension) into the TOC so they reach the right-rail + scroll-spy.
+    toc_tokens = merge_html_headings_into_toc(content_html, toc_tokens)
 
     # Pass 3: wrap in DocPage layout (full HTML page with <head>, CSS, chrome)
     if wrap_in_layout:

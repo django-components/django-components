@@ -44,6 +44,32 @@ def example(name: str) -> str:
     return mark_safe(f"\n\n{result}\n\n")
 
 
+@register.simple_tag(takes_context=True)
+def docstring(context: template.Context, path: str) -> str:
+    """
+    Render the API reference for one public symbol.
+
+    Resolves `path` (e.g. "django_components.AlreadyRegistered") against the
+    discovered reference entries and renders it with the matching per-kind
+    component. This is the direct analog of the old mkdocstrings `::: path`
+    directive (feature 4.57).
+
+    Usage in markdown: {% docstring "django_components.Component" %}
+    """
+    from apps.docs.components.reference.render import render_entry  # noqa: PLC0415
+    from apps.docs.discovery.registry import entry_index  # noqa: PLC0415
+
+    entry = entry_index().get(path)
+    if entry is None:
+        return mark_safe(f'<p class="error">Unknown reference symbol: {escape(path)}</p>')
+
+    html = render_entry(entry, current_url=context.get("current_path", ""))
+    # Flush-left + blank-line padding so python-markdown treats the output as
+    # block-level HTML (same treatment as {% example %} / {% people %}).
+    html = _lstrip_outside_pre(html)
+    return mark_safe(f"\n\n{html}\n\n")
+
+
 @register.simple_tag
 def people(group: str) -> str:
     """

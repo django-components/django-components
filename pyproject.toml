@@ -117,6 +117,11 @@ docs = [
     "mkdocstrings",
     "mkdocstrings-python",
     "pymdown-extensions",
+    # griffe powers the new docs-site API reference generator (the mkdocstrings
+    # replacement built in the docs-site migration). Promoted from a transitive
+    # dep of mkdocstrings-python to a direct dep so it survives the Phase 6
+    # removal of the old mkdocs/mkdocstrings stack.
+    "griffe>=1.15.0",
     # lxml powers the docs-site build guardrails: the shared SiteIndex HTML
     # walker and the HTML well-formedness check (recover=False parsing).
     "lxml",

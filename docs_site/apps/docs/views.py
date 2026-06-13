@@ -20,6 +20,7 @@ from apps.docs.build.git_metadata import EMPTY_META, get_page_git_meta, is_exclu
 from apps.docs.build.nav import load_nav
 from apps.docs.build.paths import md_to_url, url_to_md
 from apps.docs.build.pipeline import render_page
+from apps.docs.build.reference import get_reference_staging_dir
 from apps.docs.build.release_notes import get_release_staging_dir
 from apps.docs.examples import get_example_registry
 
@@ -56,6 +57,13 @@ def serve_page(request: HttpRequest, url_path: str = "") -> HttpResponse:
     # content/. Generate on demand (cached on changelog mtime) for live preview.
     if md_path is None and (url_path.strip("/") == "docs/releases" or url_path.startswith("docs/releases/")):
         content_root = get_release_staging_dir(settings.CHANGELOG_PATH)
+        md_path = url_to_md(content_root, url_path)
+
+    # /docs/reference/ pages generated from source docstrings (Phase 4) aren't in
+    # content/ either; generate on demand for live preview. Only the migrated
+    # pages fall through here - the others are still content stubs.
+    if md_path is None and url_path.startswith("docs/reference/"):
+        content_root = get_reference_staging_dir()
         md_path = url_to_md(content_root, url_path)
 
     if md_path is None:
