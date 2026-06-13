@@ -52,9 +52,9 @@ def serve_page(request: HttpRequest, url_path: str = "") -> HttpResponse:
     content_root = settings.CONTENT_DIR
     md_path = url_to_md(content_root, url_path)
 
-    # /releases/ pages are generated from CHANGELOG.md, not stored in content/.
-    # Generate them on demand (cached on changelog mtime) so live preview works.
-    if md_path is None and (url_path.strip("/") == "releases" or url_path.startswith("releases/")):
+    # /docs/releases/ pages are generated from CHANGELOG.md, not stored in
+    # content/. Generate on demand (cached on changelog mtime) for live preview.
+    if md_path is None and (url_path.strip("/") == "docs/releases" or url_path.startswith("docs/releases/")):
         content_root = get_release_staging_dir(settings.CHANGELOG_PATH)
         md_path = url_to_md(content_root, url_path)
 

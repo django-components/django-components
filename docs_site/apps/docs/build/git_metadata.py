@@ -25,11 +25,10 @@ from pathlib import Path
 # exclusions in the old mkdocs.yml plugin config, plus the generated
 # release-notes pages. Patterns match the content-relative posix path.
 EXCLUDE_PATTERNS = (
-    "reference/*",
-    "releases/*",
-    "changelog.md",
-    "code_of_conduct.md",
-    "license.md",
+    "docs/reference/*",
+    "docs/releases/*",
+    "docs/community/code_of_conduct.md",
+    "docs/overview/license.md",
 )
 
 # Cap matches the old git-authors behavior; avoids footer clutter on old pages.

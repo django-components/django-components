@@ -217,4 +217,4 @@ plugins:
       # e.g. `{{ people.maintainers }}`
       # See https://mkdocs-macros-plugin.readthedocs.io/en/latest/#configuration-of-the-plugin
       include_yaml:
-        - people: docs_site/content/community/people.yml
+        - people: docs_site/content/docs/community/people.yml

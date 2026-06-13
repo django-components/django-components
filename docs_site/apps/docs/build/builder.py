@@ -146,6 +146,15 @@ def build_site(
                     )
                 )
 
+    # Copy non-markdown content assets (images etc.) verbatim, preserving the
+    # tree, so relative references from pages keep working (mkdocs semantics)
+    for asset in content_dir.rglob("*"):
+        if asset.is_dir() or asset.suffix == ".md" or asset.name == "_nav.yml":
+            continue
+        dest = output_dir / asset.relative_to(content_dir)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(asset, dest)
+
     if example_registry:
         ex_rendered, ex_errors = pre_render_examples(output_dir, example_registry)
         outcome.example_files = ex_rendered

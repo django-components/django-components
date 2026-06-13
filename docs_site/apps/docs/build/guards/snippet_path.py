@@ -6,8 +6,8 @@ Snippet-path guard.
 the same check as a fast pre-build static scan, so a broken include is reported
 up front with its source line instead of as a mid-build markdown error.
 
-Paths resolve against the same base paths as the pipeline: the source file's
-own directory first, then the repo root.
+Paths resolve against the same base path as the pipeline: the repo root only
+(matching the old mkdocs `base_path: .` config).
 
 Spec: docs_site/design/DESIGN_spike_10.md section 3.7 (feature 3b.11).
 """
@@ -23,8 +23,6 @@ from django.conf import settings
 from .base import GuardResult
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from .base import GuardContext
 
 # Single-line form: --8<-- "path"   (optionally followed by :section markers)
@@ -54,18 +52,14 @@ def _iter_snippet_refs(text: str) -> Iterator[tuple[int, str]]:
             in_block = True
 
 
-def _resolve(raw_path: str, source_dir: Path) -> bool:
-    """True if the snippet target exists under any base path."""
+def _resolve(raw_path: str) -> bool:
+    """True if the snippet target exists under the repo root."""
     # Strip a trailing ":section" / ":start:end" selector if the bare path
     # alone doesn't exist (pymdownx allows section/line selectors after the path).
     candidates = [raw_path]
     if ":" in raw_path:
         candidates.append(raw_path.split(":", 1)[0])
-    for base in (source_dir, settings.REPO_ROOT):
-        for cand in candidates:
-            if (base / cand).is_file():
-                return True
-    return False
+    return any((settings.REPO_ROOT / cand).is_file() for cand in candidates)
 
 
 def check(ctx: GuardContext) -> Iterator[GuardResult]:
@@ -73,7 +67,7 @@ def check(ctx: GuardContext) -> Iterator[GuardResult]:
         label = str(md.relative_to(ctx.content_dir))
         text = md.read_text(encoding="utf-8")
         for lineno, raw_path in _iter_snippet_refs(text):
-            if not _resolve(raw_path, md.parent):
+            if not _resolve(raw_path):
                 yield GuardResult.error(
                     guard="snippet_path",
                     message=f"Snippet target not found: {raw_path!r}",

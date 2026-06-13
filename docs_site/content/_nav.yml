@@ -1,41 +1,116 @@
 # Navigation tree for the docs sidebar.
 # Spec: docs_site/design/DESIGN_spike_11.md section 3.2.
 #
+# Mirrors the old mkdocs awesome-nav ordering (the per-dir .nav.yml files),
+# with the "Documentation:" label prefixes dropped per spike 11.11 section 3.
 # A section has EITHER items (1-level) OR groups (2-level), never both.
 # Paths are relative to the content directory and map to clean URLs.
 
 sections:
-  # Section-level link: the label itself is clickable
   - label: Home
     path: /
 
-  # 2-level section with collapsible sub-groups
+  - label: Welcome
+    path: /docs/
+
+  - label: Overview
+    items:
+      - { title: Compatibility, path: /docs/overview/compatibility/ }
+      - { title: "Security notes 🚨", path: /docs/overview/security_notes/ }
+      - { title: Performance, path: /docs/overview/performance/ }
+      - { title: License, path: /docs/overview/license/ }
+
+  - label: Getting Started
+    items:
+      - { title: Installation, path: /docs/getting_started/installation/ }
+      - { title: Create your first component, path: /docs/getting_started/your_first_component/ }
+      - { title: Adding JS and CSS, path: /docs/getting_started/adding_js_and_css/ }
+      - { title: Adding dependencies, path: /docs/getting_started/adding_dependencies/ }
+      - { title: Components in templates, path: /docs/getting_started/components_in_templates/ }
+      - { title: Parametrising components, path: /docs/getting_started/parametrising_components/ }
+      - { title: Adding slots, path: /docs/getting_started/adding_slots/ }
+      - { title: Rendering components, path: /docs/getting_started/rendering_components/ }
+
+  - label: Concepts
+    groups:
+      - label: Fundamentals
+        items:
+          - { title: Single-file components, path: /docs/concepts/fundamentals/single_file_components/ }
+          - { title: HTML / JS / CSS files, path: /docs/concepts/fundamentals/html_js_css_files/ }
+          - { title: HTML / JS / CSS variables, path: /docs/concepts/fundamentals/html_js_css_variables/ }
+          - { title: Secondary JS / CSS files, path: /docs/concepts/fundamentals/secondary_js_css_files/ }
+          - { title: Component defaults, path: /docs/concepts/fundamentals/component_defaults/ }
+          - { title: Render API, path: /docs/concepts/fundamentals/render_api/ }
+          - { title: Rendering components, path: /docs/concepts/fundamentals/rendering_components/ }
+          - { title: Slots, path: /docs/concepts/fundamentals/slots/ }
+          - { title: Template tag syntax, path: /docs/concepts/fundamentals/template_tag_syntax/ }
+          - { title: HTML attributes, path: /docs/concepts/fundamentals/html_attributes/ }
+          - { title: Component views and URLs, path: /docs/concepts/fundamentals/component_views_urls/ }
+          - { title: HTTP Request, path: /docs/concepts/fundamentals/http_request/ }
+          - { title: Typing and validation, path: /docs/concepts/fundamentals/typing_and_validation/ }
+          - { title: Subclassing components, path: /docs/concepts/fundamentals/subclassing_components/ }
+          - { title: Autodiscovery, path: /docs/concepts/fundamentals/autodiscovery/ }
+      - label: Advanced
+        items:
+          - { title: Rendering JS / CSS, path: /docs/concepts/advanced/rendering_js_css/ }
+          - { title: HTML fragments, path: /docs/concepts/advanced/html_fragments/ }
+          - { title: Prop drilling and provide / inject, path: /docs/concepts/advanced/provide_inject/ }
+          - { title: Lifecycle hooks, path: /docs/concepts/advanced/hooks/ }
+          - { title: Registering components, path: /docs/concepts/advanced/component_registry/ }
+          - { title: Component caching, path: /docs/concepts/advanced/component_caching/ }
+          - { title: Component context and scope, path: /docs/concepts/advanced/component_context_scope/ }
+          - { title: Custom template tags, path: /docs/concepts/advanced/template_tags/ }
+          - { title: Tag formatters, path: /docs/concepts/advanced/tag_formatters/ }
+          - { title: Extensions, path: /docs/concepts/advanced/extensions/ }
+          - { title: Testing, path: /docs/concepts/advanced/testing/ }
+          - { title: Component libraries, path: /docs/concepts/advanced/component_libraries/ }
+
+  - label: API Reference
+    path: /docs/reference/
+    items:
+      - { title: API, path: /docs/reference/api/ }
+      - { title: Commands, path: /docs/reference/commands/ }
+      - { title: Components, path: /docs/reference/components/ }
+      - { title: Exceptions, path: /docs/reference/exceptions/ }
+      - { title: Extension commands, path: /docs/reference/extension_commands/ }
+      - { title: Extension hooks, path: /docs/reference/extension_hooks/ }
+      - { title: Extension URLs, path: /docs/reference/extension_urls/ }
+      - { title: Settings, path: /docs/reference/settings/ }
+      - { title: Signals, path: /docs/reference/signals/ }
+      - { title: Tag formatters, path: /docs/reference/tag_formatters/ }
+      - { title: Template tags, path: /docs/reference/template_tags/ }
+      - { title: Template variables, path: /docs/reference/template_variables/ }
+      - { title: Testing API, path: /docs/reference/testing_api/ }
+      - { title: URLs, path: /docs/reference/urls/ }
+
   - label: Guides
     groups:
       - label: Setup
         items:
-          - { title: Installation, path: /guides/setup/installation/ }
-          - { title: Configuration, path: /guides/setup/configuration/ }
-      - label: Recipes
+          - { title: Caching, path: /docs/guides/setup/caching/ }
+          - { title: Development server, path: /docs/guides/setup/development_server/ }
+      - label: Other
         items:
-          - { title: Form handling, path: /guides/recipes/forms/ }
-          - { title: HTML Fragments, path: /guides/recipes/fragments/ }
+          - { title: Troubleshooting, path: /docs/guides/other/troubleshooting/ }
 
-  # 1-level section: flat list of pages (no sub-groups)
-  - label: Reference
+  - label: Upgrading
     items:
-      - { title: API, path: /reference/api/ }
-      - { title: Settings, path: /reference/settings/ }
-      - { title: Commands, path: /reference/commands/ }
+      - { title: Upgrading in pre-v1.0, path: /docs/upgrading/v0/ }
+      - { title: Migrating from safer_staticfiles, path: /docs/migrating_from_safer_staticfiles/ }
+
+  # NOTE: Plugins is intentionally NOT in the sidebar - it's a top-nav page
+  # (a different navigation context, no docs sidebar), same as Examples.
+  # See spike 11.11 section 4.1.
 
   - label: Community
     items:
-      - { title: People, path: /community/people/ }
-      - { title: AI / LLM bot policy, path: /community/ai_bot_policy/ }
+      - { title: Django Components People, path: /docs/community/people/ }
+      - { title: "Questions & Help", path: /docs/community/help/ }
+      - { title: Contributing, path: /docs/community/contributing/ }
+      - { title: Development, path: /docs/community/development/ }
+      - { title: Code of Conduct, path: /docs/community/code_of_conduct/ }
+      - { title: "AI / LLM bot policy", path: /docs/community/ai_bot_policy/ }
 
-  # 1-level section with test pages
-  - label: Test Pages
-    items:
-      - { title: Pipeline test, path: /test/pipeline_test/ }
-      - { title: Example test, path: /test/example_test/ }
-      - { title: Other page, path: /test/other/ }
+  # Generated from CHANGELOG.md at build time (see build/release_notes.py)
+  - label: Release notes
+    path: /docs/releases/

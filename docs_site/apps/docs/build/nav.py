@@ -86,6 +86,26 @@ class NavTree:
                         ]
         return []
 
+    def find_title(self, current_path: str) -> str:
+        """
+        Return the nav title for a path, or "" if the page isn't in the nav.
+
+        Used as the page-title fallback for pages without front-matter or an
+        H1 - the old mkdocs site got those titles from awesome-nav the same way.
+        """
+        normalized = current_path.strip("/")
+        for section in self.sections:
+            if section.path and section.path.strip("/") == normalized:
+                return section.label
+            for item in section.items:
+                if item.path.strip("/") == normalized:
+                    return item.title
+            for group in section.groups:
+                for item in group.items:
+                    if item.path.strip("/") == normalized:
+                        return item.title
+        return ""
+
     def find_prev_next(self, current_path: str) -> tuple[NavItem | None, NavItem | None]:
         """Return (prev, next) NavItems relative to the current path."""
         pages = self.flat_pages()

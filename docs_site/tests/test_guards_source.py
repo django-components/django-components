@@ -102,10 +102,19 @@ def test_snippet_path_missing(tmp_path: Path) -> None:
     assert results[0].guard == "snippet_path"
 
 
-def test_snippet_path_resolves_sibling(tmp_path: Path) -> None:
-    write(tmp_path, "snippets/inc.py", "x = 1\n")
-    write(tmp_path, "a.md", '--8<-- "snippets/inc.py"\n')
+def test_snippet_path_resolves_repo_root_only(tmp_path: Path) -> None:
+    # Repo-root-relative paths resolve (matches the old mkdocs `base_path: .`)
+    write(tmp_path, "a.md", '--8<-- "CHANGELOG.md"\n')
     assert list(snippet_path.check(make_ctx(tmp_path))) == []
+
+    # Source-dir-relative ("sibling") paths deliberately do NOT resolve: on
+    # case-insensitive filesystems a root-relative include can otherwise match
+    # the including page itself and silently render empty (self-inclusion).
+    write(tmp_path, "snippets/inc.py", "x = 1\n")
+    write(tmp_path, "b.md", '--8<-- "snippets/inc.py"\n')
+    results = list(snippet_path.check(make_ctx(tmp_path)))
+    assert len(results) == 1
+    assert results[0].source == "b.md"
 
 
 # --- nav -------------------------------------------------------------------

@@ -27,6 +27,13 @@ if TYPE_CHECKING:
 OMIT_FROM_NAV = {
     "index.md",  # home / landing page
     "404.md",  # error page
+    "plugins/index.md",  # top-nav page (no docs sidebar), like examples - spike 11.11 section 4.1
+}
+
+# Nav entries whose pages are generated at build time (not in content/),
+# so the exists-on-disk check doesn't apply to them.
+GENERATED_NAV_URLS = {
+    "docs/releases",  # from CHANGELOG.md, see build/release_notes.py
 }
 
 
@@ -44,6 +51,8 @@ def check(ctx: GuardContext) -> Iterator[GuardResult]:
 
     # 1. Every nav entry must resolve to an existing content page.
     for url in sorted(nav_urls):
+        if url in GENERATED_NAV_URLS:
+            continue
         if url_to_md(ctx.content_dir, url) is None:
             yield GuardResult.error(
                 guard="nav",

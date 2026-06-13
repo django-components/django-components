@@ -59,7 +59,7 @@ def people(group: str) -> str:
 
     from apps.docs.components.user_grid.user_grid import UserGrid  # noqa: PLC0415
 
-    people_path = settings.CONTENT_DIR / "community" / "people.yml"
+    people_path = settings.CONTENT_DIR / "docs" / "community" / "people.yml"
     if not people_path.is_file():
         return f'<p class="error">People data not found: {escape(str(people_path))}</p>'
 

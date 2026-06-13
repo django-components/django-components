@@ -111,8 +111,9 @@ class DocPage(Component):
                         <span class="djc-logo__wordmark">django-components</span>
                     </a>
                     <nav class="djc-header__nav">
-                        <a href="/">Docs</a>
+                        <a href="/docs/">Docs</a>
                         <a href="/examples/">Examples</a>
+                        <a href="/plugins/">Plugins</a>
                     </nav>
                     <div class="djc-header__actions">
                         {# Theme picker: 3 buttons (light / auto / dark) #}
@@ -229,21 +230,38 @@ class DocPage(Component):
                 <aside class="djc-sidebar" id="djc-sidebar">
                     {# Drawer-only: top-nav links live in the drawer on mobile (header nav is hidden) #}
                     <nav class="djc-sidebar__topnav">
-                        <a href="/">Docs</a>
+                        <a href="/docs/">Docs</a>
                         <a href="/examples/">Examples</a>
+                        <a href="/plugins/">Plugins</a>
                     </nav>
                     <nav class="djc-sidebar__nav">
                         {% for section in nav_sections %}
-                        <div class="djc-sidebar__section">
-                            {% if section.path %}
-                            <a class="djc-sidebar__label" href="{{ section.path }}">{{ section.label }}</a>
+                        <div class="djc-sidebar__section{% if section.is_standalone %} djc-sidebar__section--standalone{% endif %}">
+                            {% if section.is_standalone %}
+                            {# A section that is just a page (no children) renders as a
+                               link, not an uppercase category label, so its appearance
+                               matches its behavior: it's clickable. #}
+                            <a
+                                class="djc-sidebar__link djc-sidebar__link--top{% if section.active %} is-active{% endif %}"
+                                href="{{ section.path }}"
+                            >{{ section.label }}</a>
                             {% else %}
+                            {# Category label: purely organizational, never a link. #}
                             <div class="djc-sidebar__label">{{ section.label }}</div>
-                            {% endif %}
 
-                            {% if section.items %}
+                            {% if section.index_path or section.child_items %}
                             <ul class="djc-sidebar__items">
-                                {% for item in section.items %}
+                                {% if section.index_path %}
+                                {# The section's own landing page, surfaced as a child item
+                                   so the category label itself can stay inert. #}
+                                <li>
+                                    <a
+                                        class="djc-sidebar__link{% if section.index_active %} is-active{% endif %}"
+                                        href="{{ section.index_path }}"
+                                    >Overview</a>
+                                </li>
+                                {% endif %}
+                                {% for item in section.child_items %}
                                 <li>
                                     <a
                                         class="djc-sidebar__link{% if item.active %} is-active{% endif %}"
@@ -254,8 +272,8 @@ class DocPage(Component):
                             </ul>
                             {% endif %}
 
-                            {% if section.groups %}
-                            {% for group in section.groups %}
+                            {% if section.child_groups %}
+                            {% for group in section.child_groups %}
                             <div class="djc-sidebar__group" data-open="{{ group.expanded|yesno:'true,false' }}">
                                 <button
                                     class="djc-sidebar__group-label"
@@ -276,6 +294,7 @@ class DocPage(Component):
                                 </ul>
                             </div>
                             {% endfor %}
+                            {% endif %}
                             {% endif %}
                         </div>
                         {% endfor %}
@@ -325,6 +344,9 @@ class DocPage(Component):
                     {% endif %}
 
                     <article class="prose">
+                        {# Pages without their own H1 get one from the page title,
+                           mirroring how Material injected nav titles on the old site #}
+                        {% if inject_title %}<h1>{{ title }}</h1>{% endif %}
                         {# content_html is already-rendered HTML from our pipeline - mark safe #}
                         {{ content_html|safe }}
                     </article>
@@ -406,20 +428,29 @@ class DocPage(Component):
             page_title = kwargs.site_name
         robots = "noindex,follow" if kwargs.noindex else "index,follow"
 
-        nav_sections: list[NavSection] = []
+        nav_sections_raw: list[NavSection] = []
         breadcrumbs: list[tuple[str, str]] = []
         prev_page: NavItem | None = None
         next_page: NavItem | None = None
 
         if kwargs.nav_tree:
             kwargs.nav_tree.set_active(kwargs.current_path)
-            nav_sections = kwargs.nav_tree.sections
+            nav_sections_raw = kwargs.nav_tree.sections
             breadcrumbs = kwargs.nav_tree.find_breadcrumbs(kwargs.current_path)
             prev_page, next_page = kwargs.nav_tree.find_prev_next(kwargs.current_path)
 
+        nav_sections = _build_nav_view(nav_sections_raw, kwargs.current_path)
+
         toc_items = _flatten_toc(kwargs.toc_items) if kwargs.toc_items else []
 
+        # Inject an <h1> from the page title when the content brings none
+        # (raw toc_tokens still include H1 entries, unlike the flattened list)
+        has_h1 = any(token.get("level") == 1 for token in (kwargs.toc_items or []))
+        inject_title = bool(kwargs.title) and not has_h1
+
         return {
+            "title": kwargs.title,
+            "inject_title": inject_title,
             "content_html": kwargs.content_html,
             "page_title": page_title,
             "description": kwargs.description,
@@ -436,6 +467,42 @@ class DocPage(Component):
             "last_updated": kwargs.last_updated,
             "authors": kwargs.authors or [],
         }
+
+
+def _build_nav_view(sections: "list[NavSection]", current_path: str) -> list[dict]:
+    """
+    Build the sidebar view model from nav sections.
+
+    Splits each section into one of two render shapes so appearance encodes
+    behavior (the rule: uppercase label = inert category, normal text = page):
+
+    - A section that is just a page (a path, no children) -> a standalone link.
+    - A section with children -> an inert category label. If it also has its own
+      landing page (a path *and* children, e.g. the API reference index), that
+      page is surfaced as an "Overview" child item so the label stays inert.
+    """
+    current = current_path.strip("/")
+    view: list[dict] = []
+    for section in sections:
+        has_children = bool(section.items) or bool(section.groups)
+        is_standalone = bool(section.path) and not has_children
+        section_norm = (section.path or "").strip("/")
+        view.append(
+            {
+                "label": section.label,
+                "path": section.path,
+                "is_standalone": is_standalone,
+                "active": is_standalone and section_norm == current,
+                # Landing page of a category section, rendered as its first child
+                "index_path": section.path if (section.path and has_children) else "",
+                "index_active": bool(section.path) and has_children and section_norm == current,
+                # Renamed off "items"/"groups" so Django template var resolution
+                # can't mistake them for dict.items() / dict-method lookups
+                "child_items": section.items,
+                "child_groups": section.groups,
+            }
+        )
+    return view
 
 
 def _flatten_toc(toc_tokens: list) -> list[dict]:

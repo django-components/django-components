@@ -389,7 +389,8 @@ content/foo.md
         - Extensions match today's mkdocs config (pymdownx.highlight, pymdownx.superfences,
           pymdownx.snippets, pymdownx.magiclink, admonition, md_in_html, toc, ...)
         - md_in_html ensures block-level HTML from Pass 1 passes through untouched
-        - toc.permalink="¤" with pymdownx.slugs.slugify(case="lower") preserves today's anchors
+        - toc.permalink="¤" with python-markdown's DEFAULT slugify preserves today's anchors
+          (NOT pymdownx.slugs.slugify - it produces double hyphens for " / " headings; found in 3b.25)
         - Pygments highlights all fences (incl. djc_py via the pygments_djc lexer we own)
     -> [Pass 3] DocPage layout wrap
         - Render DocPage component with (content_html, title, toc, breadcrumbs, edit_url, version)

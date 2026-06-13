@@ -35,7 +35,7 @@ def _static_asset_exists(rel: str, static_dir: Path) -> bool:
     return (static_dir / rel).is_file()
 
 
-def _asset_exists(src: str, build_dir: Path, static_dir: Path) -> bool:
+def _asset_exists(src: str, build_dir: Path, static_dir: Path, page_dir: Path) -> bool:
     path, _, _ = src.partition("#")
     path, _, _ = path.partition("?")
     if not path:
@@ -45,8 +45,9 @@ def _asset_exists(src: str, build_dir: Path, static_dir: Path) -> bool:
     if path.startswith("/"):
         rel = path.lstrip("/")
         return (build_dir / rel).is_file() or (build_dir / rel / "index.html").is_file()
-    # Relative asset path: resolve against build output root (best effort).
-    return (build_dir / path).is_file()
+    # Relative asset path: resolve the way a browser does - against the page's
+    # output directory (pages are directory URLs, so that's the page's own dir)
+    return (page_dir / path).resolve().is_file()
 
 
 def check(ctx: GuardContext) -> Iterator[GuardResult]:
@@ -61,10 +62,11 @@ def check(ctx: GuardContext) -> Iterator[GuardResult]:
         # isn't part of the docs static tree.
         if not page.is_doc_page:
             continue
+        page_dir = (index.build_dir / page.label).parent
         for asset in page.assets:
             if asset.is_external or not asset.src:
                 continue
-            if _asset_exists(asset.src, index.build_dir, ctx.static_dir):
+            if _asset_exists(asset.src, index.build_dir, ctx.static_dir, page_dir):
                 continue
             key = asset.src
             if key in seen:

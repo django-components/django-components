@@ -71,14 +71,15 @@ def parse_changelog(changelog_path: Path) -> list[Release]:
 
 def generate_release_notes(changelog_path: Path, target_dir: Path) -> list[Path]:
     """
-    Write releases/<slug>.md per release + a releases/index.md into target_dir.
+    Write docs/releases/<slug>.md per release + an index.md into target_dir.
 
     Returns the written paths. Pages carry their title as the H1 (the pipeline
     extracts <title> from the H1), and the index links use clean URLs so no
     .md link rewriting is needed.
     """
     releases = parse_changelog(changelog_path)
-    releases_dir = target_dir / "releases"
+    # Release notes live under the /docs/ section (spike 11.11 sections 4.2-4.3)
+    releases_dir = target_dir / "docs" / "releases"
     releases_dir.mkdir(parents=True, exist_ok=True)
 
     written: list[Path] = []

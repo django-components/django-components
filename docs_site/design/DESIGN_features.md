@@ -53,7 +53,7 @@ Goal: a single page (e.g. `getting_started/index.md`) renders through the 3-pass
 | 1.8 | `markdown-pipeline-pass2` | Pass 2: python-markdown + pymdownx → HTML | M | ✓ | main §4.7, §11.4.B | **done** | All pymdownx extensions configured; snippet base_path includes repo root |
 | 1.9 | `markdown-pipeline-pass3` | Pass 3: wrap in DocPage layout | M | ✓ | main §4.7 | **done** | `_pass3_layout` calls `DocPage.render()` |
 | 1.10 | `doc-page-component-mvp` | Minimal `DocPage` component (no nav/sidebar yet) | M | ✓ | main §4.1, 11.11 §2 | **done** | `doc_page.py` with full `<head>` block, design tokens, prose CSS; full chrome in Phase 3a |
-| 1.11 | `slug-algorithm` | Material-compatible heading slug | S | ✓ | main §4.7, §9.1 | **done** | `pymdownx.slugs.slugify(case="lower")` configured in pipeline.py |
+| 1.11 | `slug-algorithm` | Material-compatible heading slug | S | ✓ | main §4.7, §9.1 | **done** | **Corrected during 3b.25:** the old site used python-markdown's DEFAULT toc slugify (mkdocs.yml set only `permalink`), NOT `pymdownx.slugs.slugify` - the latter keeps whitespace runs as double hyphens (`default-js--css-locations`) and broke every inbound anchor. Pipeline now uses the default slugify |
 | 1.12 | `code-fence-info-string-parser` | Parse fence headers (`djc_py title="…" hl_lines="…"`) | S | | main §4.7 | **done** | Handled natively by `pymdownx.highlight`; verified `title=` renders as `<span class="filename">` |
 | 1.13 | `include-file-tag` | `{% include_file "path" %}` template tag | S | | main §4.7, §11.4.F | **done** | In `docs_extras.py`; infers language from extension |
 | 1.14 | `version-tag` | `{% version %}` template tag | S | | main §4.7 | **done** | `docs_extras.py`; verified expanding to `0.150.1` |
@@ -167,7 +167,7 @@ Goal: every existing markdown page renders correctly under the new pipeline + ch
 | 3b.22 | `structured-headings-guardrail` | No `##` → `####` jumps | S | | 11.12 §3.B.3 | **done** | `guards/headings.py`; WARNING; flags level jumps > +1; generated `releases/*` pages exempt (frozen CHANGELOG history) |
 | 3b.23 | `code-block-language-tags-guardrail` | Missing language tag = warning (with allowlist) | S | | 11.12 §3.B.4 | **done** | `guards/code_lang.py`; source-scan over `scan_fences`; empty info-string=WARNING (suggest ```text) |
 | 3b.24 | `git-metadata-fetcher` | DIY subprocess `git log` for last-updated + authors | S | | 11.9 §2.3 | **done** | `build/git_metadata.py` - one cached `git log --follow` call per page (date + authors combined); exclusions per old mkdocs config + `releases/*`; rendered in the DocPage footer. CI workflow needs `fetch-depth: 0` (lands with 5b.16) |
-| 3b.25 | `content-port-sweep` | Move every existing page `docs_old/` → `docs_site/content/` (move + delete source); fix `--8<--` paths, links | L | ✓ | main §5 Phase 3 | pending | Mostly mechanical. This is the actual content move (absorbs the old 1.3 / 6.7). Because the branch cannibalizes mkdocs (Phase 6 compares against the *deployed* old site, see main §8), we move pages out of `docs_old/` and delete the source as we go - no need to keep mkdocs buildable on the branch |
+| 3b.25 | `content-port-sweep` | Move every existing page `docs_old/` → `docs_site/content/` (move + delete source); fix `--8<--` paths, links | L | ✓ | main §5 Phase 3 | **done** | 50 pages + 10 images ported. **Landed the §11.11 §4.2 URL taxonomy directly** (per Juro): content lives at `content/docs/<section>/`, `/plugins/` at root; old `welcome.md` became the `/docs/` hub (README.md include wrapper deleted). The 14 API-reference pages are interim stubs (anchor sections for inbound `#component` etc. links) until Phase 4. Port surfaced + fixed: slug algorithm was wrong (see 1.11), snippet base-path self-inclusion on macOS (now repo-root-only, matching old mkdocs), asset guard resolved relative srcs against build root instead of page dir. Pages without H1 get one injected from the nav title (Material parity); heading-level jumps and untagged fences fixed in content. Known interim gap: ~640 `[X][Key]` autorefs render literally until Phase 4 cross-ref resolution. `docs_old/` now holds only examples/, devguides/, benchmarks/, reference+templates (Phase 4), scripts/css/overrides (Phase 6) |
 
 **Out of scope here:** API reference (Phase 4), Pagefind (Phase 5a), versioning (Phase 5b), SEO polish (Phase 5c).
 
@@ -434,7 +434,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 1 | Foundation: 1 page end-to-end | 30 | 23 | **30/30 done** (content move 1.3 → Phase 3b/3b.25; examples move 1.4 → Phase 6/6.8) |
 | 2 | `{% example %}` end-to-end | 7 | 4 | **6/7 done** (2.6 dropped) |
 | 3a | Theme + core chrome | 23 | 17 | **22/23 done** (3a.9 CodeTabs deferred to when needed) |
-| 3b | Mass content port + responsive + content guardrails | 25 | 12 | **24/25 done** (guardrails, responsive, release notes, people page, AI-bot policy, git metadata); only 3b.25 content port pending |
+| 3b | Mass content port + responsive + content guardrails | 25 | 12 | **25/25 done** (Phase 3b complete) |
 | 4 | API reference (mkdocstrings replacement) | 66 | 30 | pending |
 | 5a | Search v1 | 6 | 4 | pending |
 | 5b | Versioning | 17 | 12 | pending |
@@ -445,7 +445,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 8 | Search v3 (blocked on analytics target) | 1 | 0 | pending |
 | 9 | Landing page (codesign) | 1 | 0 | pending |
 | 10+ | Deferred / post-launch maintenance | 7 | 0 | pending |
-| **Total** | | **221** | **111** | **86/221 done** |
+| **Total** | | **221** | **111** | **87/221 done** |
 
 ### Phase 0 closed
 

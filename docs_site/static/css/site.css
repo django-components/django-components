@@ -964,6 +964,25 @@ a.djc-sidebar__label:hover {
   font-weight: 500;
 }
 
+/* Standalone top-level page link: a section that is just a page (no children).
+   Rendered as a link, never as an uppercase category label, so appearance
+   encodes behavior - UPPERCASE = inert category, normal text = clickable page. */
+.djc-sidebar__link--top {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--c-fg);
+}
+
+/* Consecutive standalone links stack tightly; a single gap separates the
+   standalone block from the first category section that follows it. */
+.djc-sidebar__section--standalone {
+  margin-bottom: 0.1rem;
+}
+
+.djc-sidebar__section--standalone + .djc-sidebar__section:not(.djc-sidebar__section--standalone) {
+  margin-top: 1.5rem;
+}
+
 /* Sub-groups (collapsible) */
 .djc-sidebar__group {
   margin-bottom: 0.25rem;

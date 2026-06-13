@@ -24,7 +24,6 @@ from typing import TYPE_CHECKING, Any
 import markdown  # type: ignore[import-untyped]  # python-markdown ships no stubs
 from django.conf import settings
 from django.template import Context, Engine
-from pymdownx.slugs import slugify
 
 from .fence_protection import protect_fences, reset_counter
 from .frontmatter import PageMeta, parse_page
@@ -48,6 +47,7 @@ MD_EXTENSIONS = [
     "pymdownx.details",
     "pymdownx.highlight",
     "pymdownx.inlinehilite",
+    "pymdownx.magiclink",  # bare-URL autolinking + #123 / user/repo issue shorthand
     "pymdownx.snippets",  # --8<-- "path" file inclusion
     "pymdownx.superfences",
     "pymdownx.tabbed",
@@ -56,11 +56,20 @@ MD_EXTENSIONS = [
 
 MD_EXTENSION_CONFIGS: dict[str, dict[str, Any]] = {
     "pymdownx.highlight": {"anchor_linenums": True},
+    "pymdownx.magiclink": {
+        "repo_url_shorthand": True,
+        "user": "django-components",
+        "repo": "django-components",
+    },
     "pymdownx.snippets": {"check_paths": True, "base_path": ["."]},
     "pymdownx.tabbed": {"alternate_style": True},
     "pymdownx.tasklist": {"custom_checkbox": True},
-    # Match Material's slug algorithm so heading anchors are identical
-    "toc": {"permalink": "¤", "slugify": slugify(case="lower")},
+    # Heading anchors must match the deployed mkdocs site, which used
+    # python-markdown's DEFAULT toc slugify (mkdocs.yml set only the permalink).
+    # pymdownx.slugs.slugify is NOT compatible: it keeps whitespace runs as
+    # double hyphens ("default-js--css-locations") where the default collapses
+    # them ("default-js-css-locations"), breaking every inbound anchor link.
+    "toc": {"permalink": "¤"},
 }
 
 
@@ -99,6 +108,12 @@ def render_page(
     # Allow the build context to provide a canonical URL when front-matter doesn't
     if context and context.get("canonical") and not meta.canonical:
         meta.canonical = context["canonical"]
+
+    # Title fallback chain: front-matter > H1 (both handled by parse_page) >
+    # nav title. Most ported pages have neither front-matter nor an H1; the
+    # old mkdocs site took their titles from awesome-nav the same way.
+    if not meta.title and nav_tree is not None:
+        meta.title = nav_tree.find_title(current_path)
 
     # Pre-pass: protect code fences from Django template execution
     protected = _pass0_fence_protect(meta.body)
@@ -161,11 +176,13 @@ def _pass2_markdown(
 ) -> tuple[str, list]:
     configs = dict(MD_EXTENSION_CONFIGS)
 
-    # Snippet paths (--8<-- "path") resolve relative to both the source file's
-    # directory and the repo root, so includes like "docs/examples/foo/component.py" work
+    # Snippet paths (--8<-- "path") resolve against the repo root ONLY, same
+    # as the old mkdocs config (base_path: .). Do NOT add the source file's
+    # dir: on case-insensitive filesystems (macOS) a root-relative include
+    # like "CODE_OF_CONDUCT.md" then resolves to the including page itself
+    # (community/code_of_conduct.md), and pymdownx's self-inclusion guard
+    # silently produces an empty page.
     base_paths = [str(settings.REPO_ROOT)]
-    if source_path is not None:
-        base_paths.insert(0, str(source_path.parent))
     configs = {
         **configs,
         "pymdownx.snippets": {
