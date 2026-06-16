@@ -35,3 +35,20 @@ def make_context(build_dir: Path, *, content_dir: Path | None = None) -> GuardCo
         site_index=SiteIndex(build_dir),
         example_registry=get_example_registry(),
     )
+
+
+def make_versions_context(versions_root: Path | None = None) -> GuardContext:
+    """
+    Build a GuardContext for the version guards (VERSION_GUARDS).
+
+    Only `versions_root` is meaningful here; the content/static fields are filled
+    from settings to satisfy the dataclass but go unused by the version guards.
+    """
+    content = settings.CONTENT_DIR
+    return GuardContext(
+        content_dir=content,
+        examples_dir=settings.EXAMPLES_DIR,
+        nav_path=content / "_nav.yml",
+        static_dir=_static_dir(),
+        versions_root=versions_root or settings.VERSIONS_DIR,
+    )

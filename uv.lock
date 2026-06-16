@@ -615,6 +615,7 @@ docs = [
     { name = "pygments" },
     { name = "pygments-djc" },
     { name = "pymdown-extensions" },
+    { name = "verspec" },
 ]
 
 [package.metadata]
@@ -696,6 +697,7 @@ docs = [
     { name = "pygments", specifier = "<2.21" },
     { name = "pygments-djc" },
     { name = "pymdown-extensions" },
+    { name = "verspec" },
 ]
 
 [[package]]

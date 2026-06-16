@@ -769,13 +769,45 @@ body {
   box-shadow: 0 1px 2px oklch(0% 0 0 / 8%);
 }
 
-.djc-version-badge {
+/* Version picker: a native <select> styled to match the old version badge.
+   Populated from versions.json by site.js; a bare control until then. */
+.djc-version-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.djc-version-picker__select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
   font-size: 0.75rem;
   font-family: var(--font-mono);
   color: var(--c-fg-subtle);
   background: var(--c-surface-2);
-  padding: 0.2em 0.5em;
+  border: 1px solid transparent;
   border-radius: 0.25rem;
+  padding: 0.2em 2em 0.2em 0.5em;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.djc-version-picker__select:hover {
+  color: var(--c-fg);
+  border-color: var(--c-border);
+}
+
+.djc-version-picker__select:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 1px;
+}
+
+/* Caret sits over the select's right padding; clicks pass through to the select. */
+.djc-version-picker__caret {
+  position: absolute;
+  right: 0.45em;
+  color: var(--c-fg-subtle);
+  pointer-events: none;
 }
 
 .djc-gh-link {
@@ -1482,7 +1514,7 @@ body.djc-drawer-open .djc-drawer-overlay {
 
   /* Header actions collapse into the overflow menu */
   .djc-header__actions > .djc-theme-picker,
-  .djc-header__actions > .djc-version-badge,
+  .djc-header__actions > .djc-version-picker,
   .djc-header__actions > .djc-gh-link {
     display: none;
   }

@@ -63,6 +63,9 @@ class GuardContext:
     site_index: SiteIndex | None = None
     # name -> ExampleInfo, from the example autodiscovery registry.
     example_registry: dict[str, ExampleInfo] | None = None
+    # docs_site/versions/ (the committed version tree). Only set when running the
+    # version guards (docs_versions_check); None for the per-build content suite.
+    versions_root: Path | None = None
 
 
 # A guard is a function that yields zero or more results for a given context.

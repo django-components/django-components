@@ -484,6 +484,14 @@ Then validate links and anchors in the built site (defaults to `./site/`):
 uv run python manage.py docs_test          # add --strict to fail on warnings
 ```
 
+The full gate that CI runs on every pull request (and that you can run locally)
+builds the whole site to a temp dir and runs every guardrail - links, anchors,
+fences, nav drift - in strict mode:
+
+```sh
+uv run python manage.py docs_build_check
+```
+
 To debug the pipeline on one page, render it to a standalone file:
 
 ```sh
@@ -497,10 +505,37 @@ The build pipeline renders each markdown file through four passes:
 3. python-markdown + pymdownx converts the expanded markdown to HTML with syntax highlighting, admonitions, TOC, etc.
 4. DocPage component wraps the content in a full HTML page with `<head>` metadata
 
-The site is deployed automatically via GitHub Actions. The CI workflow runs when:
+### Versioning
 
-- A new tag is pushed - builds and commits the versioned docs to `docs/v/<version>/`
-- A new commit is pushed to `master` - rebuilds the `dev` version
+Each released version is built once and committed under
+`docs_site/versions/<version>/`, with a `versions.json` manifest and `latest/`
+redirect stubs alongside it; the header's version picker reads that manifest.
+CI does this for you, so you rarely run these by hand:
+
+```sh
+# Build one version snapshot (what a release tag runs in CI):
+uv run python manage.py build_docs --docs-version 0.151.0 --alias latest
+
+# Validate the committed version tree (manifest, aliases, cross-version links):
+uv run python manage.py docs_versions_check
+
+# Rebuild many versions from git tags (one-off bootstrap or recovery):
+uv run python manage.py docs_build_all     # --dry-run to preview the selection
+```
+
+`docs_build_all` reads `docs_versions.toml` for which tags to build; tags from
+before the docs builder existed are skipped.
+
+To exercise the version picker locally - switching between `latest`, `dev`, and
+specific versions - fake a few versions from the current content and serve them:
+
+```sh
+uv run python manage.py docs_preview       # builds a demo tree, serves at :8137
+```
+
+The site deploys automatically via GitHub Actions: a new tag builds that version
+(committed under `docs_site/versions/<version>/`), and a push to `master`
+rebuilds the `dev` version.
 
 ### Writing docstrings
 

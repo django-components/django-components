@@ -147,62 +147,44 @@ jobs:
           echo "Benchmark results pushed to master."
 
       ###########################################
-      # BUILD & RELEASE DOCS
+      # BUILD & COMMIT DOCS
       ###########################################
+      # The new docs builder (replacing mkdocs/mike) writes a per-version snapshot
+      # into docs_site/versions/<version>/ and commits it to master - no gh-pages,
+      # no mike. The app-token checkout from the top of the job is reused so we can
+      # push to the protected master branch.
+      #
+      # NOTE: assembling the committed snapshots into the site/ deploy artifact and
+      # publishing it to GitHub Pages is wired in Phase 6 (feature 6.4). Until then
+      # this only builds + commits the version snapshots; the live site is still the
+      # old mkdocs build. Each docs commit carries [skip ci] so committing back to
+      # master does not re-trigger this workflow.
 
-      # Change git authentication to Github Actions, so the rest of the
-      # workflow will have lower privileges.
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Configure git
-        run: |
-          # required for "mike deploy" command below which pushes to gh-pages
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-
-      - name: Install dependencies
-        run: |
-          # Re-install dependencies after second checkout to ensure virtual environment is available.
-          # Use --frozen so uv does not update uv.lock; otherwise `git checkout gh-pages` may fail.
-          uv sync --frozen --group docs
-
-      # Conditions make sure to select the right step, depending on the job trigger.
-      # Only one of the steps below will run at a time. The others will be skipped.
-
-      - name: Check docs in pull requests with strict mode
-        if: github.event_name == 'pull_request'
-        run: |
-          CI=false uv run mkdocs build --strict
-
-      - name: Build & deploy "dev" docs for a new commit to master
+      - name: Build & commit "dev" docs (push to master)
         if: github.event_name == 'push' && github.ref_type != 'tag'
         run: |
-          # Discard any local changes (e.g. to uv.lock) so checkout gh-pages succeeds
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          (cd docs_site && uv run --group docs python manage.py build_docs --docs-version dev --title "dev (${SHORT_SHA})")
+          (cd docs_site && uv run --group docs python manage.py docs_versions_check)
+          # Keep uv.lock pristine so the docs commit carries only version snapshots.
           git restore uv.lock 2>/dev/null || true
-          # Fetch and checkout gh-pages to ensure we have the latest version
-          git fetch origin gh-pages
-          git checkout gh-pages
-          git pull origin gh-pages
-          git checkout master
+          git add docs_site/versions/
+          git diff --cached --quiet || git commit -m "docs: build dev (${SHORT_SHA}) [skip ci]"
+          git push origin HEAD:master
 
-          export SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          CI=false uv run mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
-
-      - name: Build & deploy docs for a new tag
+      - name: Build & commit docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
-          # Discard any local changes (e.g. to uv.lock) so checkout gh-pages succeeds
-          git restore uv.lock 2>/dev/null || true
-          # Fetch and checkout gh-pages to ensure we have the latest version
-          git fetch origin gh-pages
-          git checkout gh-pages
-          git pull origin gh-pages
+          # Releases are tagged on master, so master's tip is the tagged commit.
+          # Build from master and commit the snapshot back to it.
+          git fetch origin master
           git checkout master
-
-          CI=false uv run mike deploy --push --update-aliases $REF_NAME latest
-          uv run mike set-default latest --push
+          git pull --ff-only origin master
+          (cd docs_site && uv run --group docs python manage.py build_docs --docs-version "${REF_NAME}" --alias latest)
+          (cd docs_site && uv run --group docs python manage.py docs_versions_check)
+          git restore uv.lock 2>/dev/null || true
+          git add docs_site/versions/
+          git commit -m "docs: build ${REF_NAME} [skip ci]"
+          git push origin master

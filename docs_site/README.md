@@ -33,19 +33,42 @@ uv run python manage.py docs_test    # validate links/anchors in ./site/
 
 ## Commands
 
+All run from `docs_site/` as `uv run python manage.py <command>`.
+
+**Author & preview:**
+
 | Command | What it does |
 |---|---|
-| `python manage.py docs_serve` | Start the dev server; renders pages live from `content/` |
-| `python manage.py build_docs` | Build every `.md` to `<output>/<slug>/index.html` (+ `.md` companions). Defaults to `./site/` |
-| `python manage.py docs_test` | Validate internal links and anchors in the build (defaults to `./site/`; `--strict` fails on warnings too) |
-| `python manage.py build_one <file> -o <out>` | Render a single page to one HTML file (handy when debugging the pipeline) |
+| `docs_serve` | Dev server; renders pages live from `content/` (no search index) |
+| `docs_serve_built` | Build the full site (incl. Pagefind search + collected `/static/`) and serve it like production; `--no-build` reuses `./site/` |
+| `build_one <file> -o <out>` | Render a single page to one HTML file (handy when debugging the pipeline) |
 
-Common options for `build_docs`:
+**Build & validate:**
+
+| Command | What it does |
+|---|---|
+| `build_docs` | Build every `.md` to `<output>/<slug>/index.html` (+ `.md` companions + Pagefind index). Defaults to `./site/` |
+| `docs_test` | Validate internal links + anchors in a build (`--strict` fails on warnings too) |
+| `docs_build_check` | CI gate: build to a temp dir and run the full guardrail suite (links, anchors, fences, nav drift, ...) in strict mode |
+
+**Versioning** (see [Versioning](#versioning)):
+
+| Command | What it does |
+|---|---|
+| `build_docs --docs-version X --alias latest` | Build a committed version snapshot into `versions/X/` + update the manifest + the `latest` redirect |
+| `docs_build_all` | Bootstrap/rebuild every version selected by `docs_versions.toml` (a git worktree per tag); `--dry-run` to preview |
+| `docs_versions_check` | Validate the committed `versions/` tree (manifest <-> filesystem, aliases, cross-version links) |
+| `docs_preview` | Build a few fake versions locally and serve them, to test the version picker (latest / dev / specific) |
+
+Common `build_docs` options:
 
 - `--content <dir>` - content directory (default: `content/`)
-- `--docs-version <ver>` - version string (default: from `pyproject.toml`)
-- `-o, --output <dir>` - output directory (default: `./site/`)
-- `--no-companions` - skip `.md` companion file generation
+- `--docs-version <ver>` - version label (default: from `pyproject.toml`); switches to "version mode" (writes `versions/<ver>/` + manifest)
+- `--alias <name>` - alias (e.g. `latest`) pointed at this version; materialized as redirect stubs
+- `-o, --output <dir>` - output directory (default: `./site/`, or `versions/<ver>/` in version mode)
+- `--title <text>` - manifest display title (e.g. `dev (a1b2c3d)`)
+- `--no-manifest-update` - don't rewrite `versions.json` (used by `docs_build_all`)
+- `--no-companions` / `--no-search` - skip `.md` companions / the Pagefind index
 
 ## The rendering pipeline
 
@@ -360,45 +383,77 @@ tags: [example, advanced]
 All fields are optional. With no front-matter, the title comes from the first
 `# H1` and the description from the first paragraph.
 
+## Versioning
+
+Built versions live in `docs_site/versions/<version>/` (committed to the repo),
+with a sibling `versions.json` manifest and `latest/` redirect stubs. The header
+version picker reads `versions.json` client-side. There is no `gh-pages` branch
+and no `mike` dependency - only mike's manifest data model is vendored, under
+[`apps/docs/_vendor/`](apps/docs/_vendor/).
+
+- **Build one version** (what CI runs on a release tag):
+  `build_docs --docs-version 0.151.0 --alias latest`. On a push to `master` it
+  builds `dev` instead. The snapshot, manifest, and `latest/` redirects all land
+  under `versions/`.
+- **Bootstrap / rebuild many** (one-off): `docs_build_all` walks the tags
+  selected by [`docs_versions.toml`](docs_versions.toml), checks each out in a
+  worktree, and builds it. Tags that predate the docs builder are skipped -
+  rebuilding historical versions is a deferred decision.
+- **Validate** the committed tree with `docs_versions_check` (manifest <->
+  filesystem parity, alias redirects, cross-version links). It also runs in CI.
+- **Preview locally** with `docs_preview`: it fakes a few versions from the
+  current content and serves them, so you can click through the picker without
+  needing real historical builds.
+
+The deploy artifact is `site/` (gitignored), assembled at build time from the
+current build plus the committed `versions/*` snapshots, mounted at `/v/<version>/`.
+
 ## Where to find things
 
 ```
 docs_site/
     README.md                  <- you are here
     manage.py                  <- Django entrypoint
+    docs_versions.toml         <- which git tags docs_build_all rebuilds
     design/                    <- design docs + feature inventory
     content/                   <- markdown source pages
         _nav.yml               <- sidebar navigation tree
         index.md               <- placeholder home page
-        test/pipeline_test.md  <- fixture exercising every pipeline feature
-        test/example_test.md   <- fixture exercising {% example %} tag
+        docs/                  <- published pages (concepts, reference, community, ...)
+    versions/<version>/        <- committed built version snapshots + versions.json
+                                  (created when bootstrapped; not present yet)
     static/
         css/tokens.css         <- OKLCH design tokens (light + dark themes)
         css/site.css           <- prose typography, layout chrome, components
-        css/pygments-light.css <- syntax highlighting (light theme)
-        css/pygments-dark.css  <- syntax highlighting (dark theme)
+        css/pygments-*.css     <- syntax highlighting (light + dark)
         fonts/InterVariable.woff2  <- self-hosted Inter variable font
-        js/site.js             <- theme toggle, sidebar, TOC scroll-spy,
-                                  tab switching, code copy, resize handles
+        js/site.js             <- theme toggle, sidebar, TOC scroll-spy, version
+                                  picker, tab switching, code copy, resize handles
+        js/search.js           <- Pagefind-backed search modal
     docs_site/                 <- Django project package
-        settings.py            <- settings (REPO_ROOT, SITE_URL, CONTENT_DIR, EXAMPLES_DIR)
-        urls.py
-        wsgi.py
+        settings.py            <- settings (REPO_ROOT, SITE_URL, CONTENT_DIR,
+                                  EXAMPLES_DIR, VERSIONS_DIR, VERSIONS_CONFIG, SITE_DIR)
+        urls.py / wsgi.py
     apps/docs/                 <- the docs app
         examples.py            <- example autodiscovery + registry
+        discovery/             <- API-reference discovery (griffe-driven)
         urls.py / views.py     <- live page serving for the dev server
-        build/                 <- pipeline, fence protection, front-matter,
-                                  links, nav loader, example pre-rendering
-        components/            <- django-components (DocPage, ExampleCard)
-        management/commands/   <- build_docs, build_one, docs_test, docs_serve
+        build/                 <- pipeline, fence protection, front-matter, links,
+                                  nav loader, versioning, bootstrap, guards/
+        components/            <- django-components (DocPage, ExampleCard,
+                                  version_picker, search_modal, reference, ...)
+        management/commands/   <- docs_serve, docs_serve_built, build_docs,
+                                  build_one, docs_test, docs_build_check,
+                                  docs_build_all, docs_versions_check, docs_preview
         templatetags/          <- docs_extras.py ({% example %}, {% version %},
-                                  {% include_file %}, {% image %})
+                                  {% docstring %}, {% include_file %}, {% image %})
+        _vendor/               <- vendored mike Versions model (BSD-3)
 ```
 
 ## Status
 
-This is an in-progress migration. See
-[`design/DESIGN_features.md`](design/DESIGN_features.md) for the full feature
-inventory and current progress. Phases 0-2 are complete; Phase 3a (theme +
-core chrome) is done. Phase 3b (content port + responsive + guardrails)
-is next.
+In-progress migration; see
+[`design/DESIGN_features.md`](design/DESIGN_features.md) for the full inventory.
+Done: Phases 0-2 (foundation, examples), 3a-3b (theme, chrome, content port,
+guardrails), 4 (API reference), 5a (search), 5b (versioning). Next: 5c
+(SEO + social cards), then Phase 6 cutover.

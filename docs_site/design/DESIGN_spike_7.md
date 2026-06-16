@@ -415,7 +415,7 @@ freeze_below_threshold = ??? # true for hybrid/freeze; false for full rebuild
 ### 8.3 Items deferred to implementation
 
 - **Where to put the vendored `Versions` class.** Suggested: `docs_site/apps/docs/_vendor/mike_versions.py` with a NOTICE block citing `jimporter/mike` and the [BSD-3-Clause license](https://github.com/jimporter/mike/blob/master/LICENSE). Same pattern as we use elsewhere.
-- **`docs_versions.toml` location** — top-level repo, sibling of `pyproject.toml`. Read by both commands.
+- **`docs_versions.toml` location** — ~~top-level repo, sibling of `pyproject.toml`~~. **Resolved in implementation:** lives at the **docs-project root, `docs_site/docs_versions.toml`** (sibling of `manage.py`), keeping the docs project self-contained. Read via `settings.VERSIONS_CONFIG`.
 
 ---
 

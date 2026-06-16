@@ -323,31 +323,49 @@ Goal: Pagefind-powered search with custom UI feels at least as good as Material'
 
 ## Phase 5b — Versioning
 
-Goal: `docs-build` + `docs-build-all` + `version_picker` + `versions.json` flow works end-to-end, with `docs/v/<version>/` committed to `master`.
+Goal: `docs-build` + `docs-build-all` + `version_picker` + `versions.json` flow works end-to-end, with `docs_site/versions/<version>/` committed to `master` (the target moved from `docs/v/` to `docs_site/versions/` per main §4.0a; the spike still says `docs/v/`).
 
 **Sharp focus:** versioning only.
 
 | # | ID | Name | Effort | Critical | Source | Status | Notes |
 |---|---|---|---|---|---|---|---|
-| 5b.1 | `verspec-dep` | Add `verspec` dependency | S | ✓ | 11.7 §2.1, §12 | pending | LooseVersion sort |
-| 5b.2 | `mike-versions-vendor` | Vendor mike's `Versions` + `VersionInfo` classes | S | ✓ | 11.7 §2.1, §9 | pending | BSD-3 attribution |
-| 5b.3 | `mike-redirect-vendor` | Vendor mike's `redirect.html` template | S | ✓ | 11.7 §2.3, §4.4 | pending | 15 lines |
-| 5b.4 | `versions-json-schema` | `versions.json` manifest (mike-compatible) | S | ✓ | 11.7 §4 | pending | |
-| 5b.5 | `build-info-stamp` | Per-version `_build_info.json` (version, source_sha, builder_version) | S | ✓ | 11.7 §3.3 | pending | Enables idempotent rebuilds |
-| 5b.6 | `version-sorter` | Use verspec.LooseVersion; sentinel handling | S | | 11.7 §2.1, §8.1 | pending | |
-| 5b.7 | `docs-build-cmd` | Full `docs-build [--version] [--alias]` (replaces MVP from Phase 1) | M | ✓ | 11.7 §3.1, §6 | pending | |
-| 5b.8 | `docs-build-all-cmd` | Bootstrap walker (`docs-build-all`) | M | ✓ | 11.7 §3.2, §3.3, §8.1 | pending | Worktree-based |
-| 5b.9 | `worktree-orchestration` | Worktree add/remove lifecycle in docs-build-all | S | ✓ | 11.7 §3.2, §8.1 | pending | try/finally + prune |
-| 5b.10 | `alias-redirect-materializer` | Materialize `latest/` etc. as redirect HTML | S | ✓ | 11.7 §2.4, §3.1 | pending | |
-| 5b.11 | `version-picker-component` | Header dropdown reads versions.json | M | ✓ | main §4.6, 11.7 §5, 11.11 §4.1 | pending | |
-| 5b.12 | `docs-versions-toml` | Top-level TOML config | S | | 11.7 §3.2 | pending | |
-| 5b.13 | `docs-build-check-cmd` | Inverse CI check: manifest ↔ FS parity | M | | 11.7 §11 | pending | ~150-200 LOC |
-| 5b.14 | `versions-manifest-integrity-check` | Manifest ↔ dir 2-way sync guardrail | S | | 11.10 §3.16 | pending | |
-| 5b.15 | `cross-version-link-check` | Links from `/v0.X/` to `/v0.Y/` resolve | M | | 11.10 §3.8 | pending | Only with ≥2 versions on disk |
-| 5b.16 | `ci-release-docs-workflow` | Rewrite `release-docs.yml` (tag → docs-build → commit → push) | S | ✓ | 11.7 §3.1, §6, §8.2 | pending | |
-| 5b.17 | `docs-build-check-command` | Pre-commit CI gate (full build to temp, all guardrails) | M | ✓ | 11.9 §4 | pending | ~80 LOC |
+| 5b.1 | `verspec-dep` | Add `verspec` dependency | S | ✓ | 11.7 §2.1, §12 | **done** | Direct dep in the `docs` group (was transitive via mike/mkdocs); comment marks it as surviving the Phase-6 mkdocs/mike removal |
+| 5b.2 | `mike-versions-vendor` | Vendor mike's `Versions` + `VersionInfo` classes | S | ✓ | 11.7 §2.1, §9 | **done** | `_vendor/mike_versions.py` + `LICENSE-mike.txt` (BSD-3, © Jim Porter). Dropped the unused jsonpath `props` methods; `_vendor` excluded from ruff/mypy so it stays verbatim |
+| 5b.3 | `mike-redirect-vendor` | Vendor mike's `redirect.html` template | S | ✓ | 11.7 §2.3, §4.4 | **done** | `_vendor/mike_redirect.html`; rendered via `versioning.render_redirect` |
+| 5b.4 | `versions-json-schema` | `versions.json` manifest (mike-compatible) | S | ✓ | 11.7 §4 | **done** | Byte-compatible with mike (list of {version,title,aliases}); read/written by `build/versioning.py` |
+| 5b.5 | `build-info-stamp` | Per-version `_build_info.json` (version, source_sha, builder_version) | S | ✓ | 11.7 §3.3 | **done** | `versioning.write_build_info`; `DOCS_BUILDER_VERSION=1.0.0`; powers the docs-build-all idempotency check |
+| 5b.6 | `version-sorter` | Use verspec.LooseVersion; sentinel handling | S | | 11.7 §2.1, §8.1 | **done** | Via the vendored `Versions.__iter__` (dev/non-digit sentinels sort above releases) + `bootstrap._lv` for tag bounds |
+| 5b.7 | `docs-build-cmd` | Full `docs-build [--version] [--alias]` (replaces MVP from Phase 1) | M | ✓ | 11.7 §3.1, §6 | **done** | Extended `build_docs`: preview mode (→site/) vs version mode (→`docs_site/versions/<v>/` + manifest + stamp + aliases). Added `--alias`, `--no-manifest-update`, `--title` |
+| 5b.8 | `docs-build-all-cmd` | Bootstrap walker (`docs-build-all`) | M | ✓ | 11.7 §3.2, §3.3, §8.1 | **done** | `docs_build_all` command + testable `build/bootstrap.py` core (config, tag select, idempotency, orchestration). `--dry-run`. Skips tags whose checkout predates the builder (historical migration deferred, spike §7) |
+| 5b.9 | `worktree-orchestration` | Worktree add/remove lifecycle in docs-build-all | S | ✓ | 11.7 §3.2, §8.1 | **done** | `git worktree prune` at start; add `--detach`; remove `--force` in a `finally` + rmtree. Verified clean (no dangling) against a real tag |
+| 5b.10 | `alias-redirect-materializer` | Materialize `latest/` etc. as redirect HTML | S | ✓ | 11.7 §2.4, §3.1 | **done** | `versioning.materialize_alias`; per-page redirect stubs, relative href correct at every nesting depth; clears stale stubs when an alias moves |
+| 5b.11 | `version-picker-component` | Header dropdown reads versions.json | M | ✓ | main §4.6, 11.7 §5, 11.11 §4.1 | **done** | `VersionPicker` component (replaces the static badge); behavior in `site.js`, base-path-agnostic `/v/<version>/` derivation. Browser round-trip verified. Switches to version home (preserve-page is a Phase-7 enhancement) |
+| 5b.12 | `docs-versions-toml` | Top-level TOML config | S | | 11.7 §3.2 | **done** | `docs_site/docs_versions.toml` (at the docs-project root, not the repo root as the spike sketched; read via `settings.VERSIONS_CONFIG`). Keys: pattern/include/exclude/oldest/newest/latest; `oldest=0.150.0` as a safe floor while migration is deferred |
+| 5b.13 | `docs-build-check-cmd` | Inverse CI check: manifest ↔ FS parity | M | | 11.7 §11 | **done** | Folded into the guard harness (per Juro): `guards/versions_manifest.py` + `docs_versions_check` command. Resolves the name collision with 5b.17 |
+| 5b.14 | `versions-manifest-integrity-check` | Manifest ↔ dir 2-way sync guardrail | S | | 11.10 §3.16 | **done** | Same `versions_manifest` guard: orphans, half-built dirs, alias resolution, build-info sanity |
+| 5b.15 | `cross-version-link-check` | Links from `/v0.X/` to `/v0.Y/` resolve | M | | 11.10 §3.8 | **done** | `guards/cross_version_link.py`; reuses the SiteIndex parser + clean-URL `resolve_link` (the same machinery as internal_link) over one index of the whole versions tree, so cross-version links resolve like a browser would. Skips absolute + non-page-asset links (explicit suffix allowlist so version dirs like `0.150.0/` aren't mis-skipped) |
+| 5b.16 | `ci-release-docs-workflow` | Rewrite `release-docs.yml` (tag → docs-build → commit → push) | S | ✓ | 11.7 §3.1, §6, §8.2 | **done** | New build→`docs_versions_check`→commit→push flow on master (no gh-pages/mike); `dev` committed on master push, `[skip ci]` breaks the loop. Dormant until cutover; Pages deploy assembly is Phase 6 (6.4) |
+| 5b.17 | `docs-build-check-command` | Pre-commit CI gate (full build to temp, all guardrails) | M | ✓ | 11.9 §4 | **done** | Command already existed (`docs_build_check`, cites 11.9 §4). 5b **wired it into PR CI**: `tests.yml`'s `test_docs` job now runs `docs_build_check` + `docs_versions_check` (replacing the branch's broken `mkdocs build`), with `fetch-depth: 0` for the git-metadata footer |
 
 **Out of scope here:** SEO/AIO polish; cutover (Phase 6).
+
+### Chunk execution
+
+Phase 5b was built in four vertical chunks (mirroring spike §9's "prove the
+manifest+build contract first"), each verified and reviewed before the next:
+
+| Chunk | Scope | Features |
+|---|---|---|
+| **1 — Manifest + single-version build** | vendor mike `Versions`/redirect, `verspec`, `_build_info.json`, `build_docs` version mode + alias materializer | 5b.1-5b.7, 5b.10 |
+| **2 — version_picker** | header dropdown reading `versions.json` (markup + site.js) | 5b.11 |
+| **3 — docs-build-all** | `docs_versions.toml`, bootstrap core, worktree walker | 5b.8, 5b.9, 5b.12 |
+| **4 — Guards + CI** | `versions_manifest` + `cross_version_link` guards via `docs_versions_check`; `release-docs.yml` rewrite | 5b.13-5b.17 |
+
+**Deferred / dormant by design** (not gaps): `docs-build-all` skips every tag
+today because no released tag yet contains the builder (the historical-version
+migration is the spike §7 decision, post-Phase-7); the rewritten
+`release-docs.yml` doesn't run until the branch merges at cutover, and its Pages
+**deploy** (assembling `site/` from the committed `versions/*`) is Phase 6 (6.4).
 
 ---
 
@@ -479,7 +497,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 3b | Mass content port + responsive + content guardrails | 25 | 12 | **25/25 done** (Phase 3b complete) |
 | 4 | API reference (mkdocstrings replacement) | 67 | 30 | **67/67 done** (Chunks 0/A-J complete: all 14 reference pages + the reference guards; plus 4.67, the collapsible per-member TOC) |
 | 5a | Search v1 | 6 | 4 | pending |
-| 5b | Versioning | 17 | 12 | pending |
+| 5b | Versioning | 17 | 12 | **17/17 done** (target moved to `docs_site/versions/` per §4.0a; 5b.13 folded into the guard harness; historical bootstrap + Pages deploy deferred to post-Phase-7 / Phase 6 by design) |
 | 5c | SEO + AIO + chrome polish | 19 | 0 | pending |
 | 5d | Feature-parity audit (process) | 0 | 0 | pending |
 | 6 | Cutover | 11 | 7 | pending |
@@ -487,7 +505,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 8 | Search v3 (blocked on analytics target) | 1 | 0 | pending |
 | 9 | Landing page (codesign) | 1 | 0 | pending |
 | 10+ | Deferred / post-launch maintenance | 7 | 0 | pending |
-| **Total** | | **222** | **111** | **154/222 done** |
+| **Total** | | **222** | **111** | **171/222 done** (phases 0-4 + 5b) |
 
 ### Phase 0 closed
 

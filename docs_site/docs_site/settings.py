@@ -112,6 +112,16 @@ REPO_URL = "https://github.com/django-components/django-components"
 SOURCE_CODE_GIT_BRANCH = "master"
 
 # Default output directory for built HTML (gitignored; mirrors mkdocs' site_dir).
-# The versioned deploy target (docs/v/<version>/) is set explicitly via --output
-# by the release workflow; this is just the everyday dev-build default.
+# This is the everyday dev-build / preview default; at deploy CI assembles the
+# committed version snapshots (VERSIONS_DIR) into site/v/* alongside it.
 SITE_DIR = REPO_ROOT / "site"
+
+# Committed per-version snapshots: docs_site/versions/<version>/, plus a sibling
+# versions.json manifest and redirect stubs for aliases (latest/). `docs-build
+# --docs-version X` writes the snapshot here; the deploy mounts it at /v/X/.
+# (Supersedes the spike's docs/v/ target per DESIGN.md section 4.0a.)
+VERSIONS_DIR = BASE_DIR / "versions"
+
+# Config for `docs-build-all` (which tags to rebuild): pattern, include/exclude,
+# oldest/newest bounds, latest alias. Lives at the docs-project root.
+VERSIONS_CONFIG = BASE_DIR / "docs_versions.toml"

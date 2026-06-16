@@ -25,6 +25,7 @@ from . import (
     api_symbols,
     asset,
     code_lang,
+    cross_version_link,
     example_contract,
     fence_validator,
     headings,
@@ -34,6 +35,7 @@ from . import (
     nav,
     single_h1,
     snippet_path,
+    versions_manifest,
 )
 from .base import GuardContext, GuardResult, Severity
 
@@ -42,6 +44,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "GUARDS",
+    "VERSION_GUARDS",
     "GuardContext",
     "GuardResult",
     "Severity",
@@ -71,17 +74,31 @@ GUARDS: list[Guard] = [
     headings.check,
 ]
 
+# Guards for the committed docs_site/versions/ tree (run by docs_versions_check,
+# not by the per-build content suite). They read ctx.versions_root and no-op when
+# it is unset, so they're harmless if ever added to GUARDS.
+VERSION_GUARDS: list[Guard] = [
+    versions_manifest.check,
+    cross_version_link.check,
+]
 
-def run_guards(ctx: GuardContext, *, strict: bool = False) -> tuple[list[GuardResult], bool]:
+
+def run_guards(
+    ctx: GuardContext,
+    *,
+    strict: bool = False,
+    guards: list[Guard] | None = None,
+) -> tuple[list[GuardResult], bool]:
     """
-    Run every guard and return (results, ok).
+    Run every guard (default: GUARDS; pass `guards` for a different set) and
+    return (results, ok).
 
     `ok` is False if any ERROR was produced, or (under strict) any WARNING.
     A guard that raises is itself reported as an ERROR so one broken guard can't
     silently pass the suite.
     """
     results: list[GuardResult] = []
-    for guard in GUARDS:
+    for guard in guards if guards is not None else GUARDS:
         try:
             results.extend(guard(ctx))
         except Exception as e:

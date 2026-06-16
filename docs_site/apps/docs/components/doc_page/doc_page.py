@@ -199,9 +199,7 @@ class DocPage(Component):
                                 </svg>
                             </button>
                         </div>
-                        {% if version %}
-                        <span class="djc-version-badge">v{{ version }}</span>
-                        {% endif %}
+                        {% component "version_picker" current_version=version / %}
                         <a
                             class="djc-gh-link"
                             href="https://github.com/django-components/django-components"
@@ -246,7 +244,7 @@ class DocPage(Component):
                                 {% if version %}
                                 <div class="djc-overflow__row">
                                     <span class="djc-overflow__label">Version</span>
-                                    <span class="djc-version-badge">v{{ version }}</span>
+                                    {% component "version_picker" current_version=version / %}
                                 </div>
                                 {% endif %}
                                 <a
@@ -436,7 +434,7 @@ class DocPage(Component):
                         </div>
                         {% endif %}
                         {% if version %}
-                        <div>django-components v{{ version }}</div>
+                        <div>django-components version: {{ version }}</div>
                         {% endif %}
                     </footer>
                     {% endif %}

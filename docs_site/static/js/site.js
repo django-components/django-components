@@ -465,4 +465,44 @@
       document.addEventListener('mouseup', onUp);
     });
   });
+
+  // -- Version picker --------------------------------------------------------
+  // Populate the header <select> from versions.json and redirect on change.
+  // The picker (VersionPicker component) is seeded with the current version, so
+  // if the page isn't served under /v/<version>/ (local dev) or the manifest
+  // can't be fetched, it stays a static one-option control.
+  document.querySelectorAll('[data-version-picker]').forEach(function (picker) {
+    var select = picker.querySelector('select');
+    if (!select) return;
+    var current = picker.getAttribute('data-current');
+
+    // The page lives at <base>/v/<version>/<page>. Capture "<base>/v/" so the
+    // picker is agnostic to the site's base path (e.g. /django-components/).
+    var match = window.location.pathname.match(/^(.*\/v\/)[^/]+\//);
+    if (!match) return; // not under /v/<version>/ -> leave the seeded label
+    var versionsRoot = match[1];
+
+    // On change, go to the selected version's home. The same page may not
+    // exist across versions, so we don't try to preserve the sub-path here
+    // (avoids cross-version 404s); that's a later (Phase 7) enhancement.
+    select.addEventListener('change', function () {
+      window.location.href = versionsRoot + select.value + '/';
+    });
+
+    fetch(versionsRoot + 'versions.json')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (manifest) {
+        if (!manifest || !manifest.length) return;
+        select.innerHTML = '';
+        manifest.forEach(function (row) {
+          // Hidden versions (e.g. unreleased previews) stay out of the list
+          // unless they're the page you're currently on.
+          if (row.properties && row.properties.hidden && row.version !== current) return;
+          var isCurrent = row.version === current ||
+            (row.aliases && row.aliases.indexOf(current) !== -1);
+          select.add(new Option(row.title, row.version, isCurrent, isCurrent));
+        });
+      })
+      .catch(function () { /* keep the seeded current-version option */ });
+  });
 })();
