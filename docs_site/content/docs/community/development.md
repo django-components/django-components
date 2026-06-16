@@ -456,11 +456,27 @@ file and reload:
 uv run python manage.py docs_serve   # open http://127.0.0.1:8000/
 ```
 
+> Search does not work under `docs_serve`. Search is powered by a Pagefind
+> index that is generated from the *built* site, which the live preview never
+> produces, so the search box falls back to a "search with Google" link. To
+> try search, serve the built site instead (see below).
+
 Build the whole site to `./site/` (gitignored):
 
 ```sh
 uv run python manage.py build_docs
 ```
+
+To preview the site exactly as it is deployed - with the Pagefind search index
+and the collected `/static/` assets - build it and serve it over plain HTTP:
+
+```sh
+uv run python manage.py docs_serve_built   # builds, then serves http://127.0.0.1:8000/docs/
+```
+
+This is the way to test anything that only works against the built site, above
+all search. Pass `--no-build` to re-serve the existing `./site/` without
+rebuilding, or `--port` to change the port.
 
 Then validate links and anchors in the built site (defaults to `./site/`):
 

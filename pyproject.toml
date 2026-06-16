@@ -125,6 +125,12 @@ docs = [
     # lxml powers the docs-site build guardrails: the shared SiteIndex HTML
     # walker and the HTML well-formedness check (recover=False parsing).
     "lxml",
+    # pagefind builds the static search index over the built site (Phase 5a).
+    # The `[bin]` extra pulls the bundled Rust binary (pagefind-bin), so the
+    # post-build step shells out to `python -m pagefind` with no Node toolchain
+    # required. The `extended` extra (CJK segmentation) is unnecessary for our
+    # English docs and roughly triples the binary size.
+    "pagefind[bin]",
     # Pygments 2.20 breaks mkdocstrings signature rendering by rejecting the
     # None filename value passed through pymdownx.highlight.
     "pygments<2.21",

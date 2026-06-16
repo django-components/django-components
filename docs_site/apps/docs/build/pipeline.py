@@ -241,6 +241,7 @@ def _pass3_layout(
             "description": meta.description,
             "canonical": meta.canonical,
             "noindex": meta.noindex,
+            "boost": meta.boost,
             "version": context.get("version", ""),
             "nav_tree": nav_tree,
             "current_path": current_path,

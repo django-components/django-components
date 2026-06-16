@@ -34,6 +34,7 @@ from apps.docs.build.release_notes import generate_release_notes
 from apps.docs.examples import get_example_registry
 
 if TYPE_CHECKING:
+    from apps.docs.build.nav import NavTree
     from apps.docs.examples import ExampleInfo
 
 
@@ -168,8 +169,40 @@ def build_site(
     # Emit objects.inv so other docs sites can cross-link into our reference.
     write_objects_inv(output_dir, version=ver)
 
+    # Custom 404 page at the site root (GitHub Pages serves it on any 404).
+    generate_not_found(output_dir, nav_tree=nav_tree, version=ver)
+
     outcome.elapsed = time.monotonic() - t0
     return outcome
+
+
+def generate_not_found(output_dir: Path, *, nav_tree: NavTree | None, version: str) -> None:
+    """
+    Render the custom 404 page (NotFoundPage in DocPage chrome) to 404.html.
+
+    Written to the site root as `404.html` (not `404/index.html`) because
+    GitHub Pages serves `/404.html` for any unmatched path. The page is marked
+    noindex and non-searchable so it stays out of search engines and the
+    Pagefind index.
+    """
+    # Lazy import to avoid pulling the component layer at module import time
+    # (mirrors pipeline._pass3_layout).
+    from apps.docs.components.doc_page.doc_page import DocPage  # noqa: PLC0415
+    from apps.docs.components.not_found_page.not_found_page import NotFoundPage  # noqa: PLC0415
+
+    content_html = NotFoundPage.render()
+    page_html = DocPage.render(
+        kwargs={
+            "content_html": content_html,
+            "title": "Page not found",
+            "noindex": True,
+            "searchable": False,
+            "version": version,
+            "nav_tree": nav_tree,
+            "current_path": "404",
+        },
+    )
+    (output_dir / "404.html").write_text(page_html, encoding="utf-8")
 
 
 def _write_companion(path: Path, meta: object, expanded_markdown: str, canonical: str) -> None:

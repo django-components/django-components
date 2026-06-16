@@ -37,6 +37,11 @@ class DocPage(Component):
         description: str = ""
         canonical: str = ""
         noindex: bool = False
+        # Search-ranking multiplier (front-matter `boost:`); 1.0 = no boost
+        boost: float = 1.0
+        # When False, the article omits data-pagefind-body so Pagefind skips the
+        # page entirely (used by the 404 page, which shouldn't appear in search).
+        searchable: bool = True
         version: str = ""
         lang: str = "en"
         site_name: str = "Django Components"
@@ -88,6 +93,7 @@ class DocPage(Component):
 
             <link rel="stylesheet" href="/static/css/tokens.css">
             <link rel="stylesheet" href="/static/css/site.css">
+            <link rel="stylesheet" href="/static/css/search.css">
             <link rel="stylesheet" href="/static/css/pygments-light.css">
             <link rel="stylesheet" href="/static/css/pygments-dark.css">
         </head>
@@ -120,6 +126,36 @@ class DocPage(Component):
                         <a href="/plugins/">Plugins</a>
                     </nav>
                     <div class="djc-header__actions">
+                        {# Search trigger: opens the modal (data-search-open). Shows
+                           a ⌘K hint on desktop, shrinks to icon-only on mobile.
+                           Global / and Ctrl+K shortcuts are wired in Phase 5a Chunk 3. #}
+                        <button
+                            class="djc-search-trigger"
+                            type="button"
+                            data-search-open
+                            aria-label="Search"
+                            aria-haspopup="dialog"
+                            aria-controls="djc-search-dialog"
+                            aria-expanded="false"
+                        >
+                            <svg
+                                class="djc-search-trigger__icon"
+                                viewBox="0 0 24 24"
+                                width="16"
+                                height="16"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <circle cx="11" cy="11" r="8"/>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                            </svg>
+                            <span class="djc-search-trigger__label">Search…</span>
+                            <kbd class="djc-search-trigger__key">⌘K</kbd>
+                        </button>
                         {# Theme picker: 3 buttons (light / auto / dark) #}
                         <div class="djc-theme-picker" role="radiogroup" aria-label="Color theme">
                             <button
@@ -354,7 +390,15 @@ class DocPage(Component):
                     </details>
                     {% endif %}
 
-                    <article class="prose">
+                    {# data-pagefind-body scopes the search index to article content
+                       only, so the header, sidebar, TOC, prev/next, and footer are
+                       never indexed. data-pagefind-weight applies the front-matter
+                       `boost:` as a per-page ranking multiplier (omitted when 1.0). #}
+                    <article
+                        class="prose"
+                        {% if searchable %}data-pagefind-body{% endif %}
+                        {% if pagefind_weight %}data-pagefind-weight="{{ pagefind_weight }}"{% endif %}
+                    >
                         {# Pages without their own H1 get one from the page title,
                            mirroring how Material injected nav titles on the old site #}
                         {% if inject_title %}<h1>{{ title }}</h1>{% endif %}
@@ -430,7 +474,11 @@ class DocPage(Component):
                 {% endif %}
             </div>
 
+            {# Search overlay (hidden until opened by the header trigger) #}
+            {% component "search_modal" / %}
+
             <script src="/static/js/site.js"></script>
+            <script src="/static/js/search.js"></script>
         </body>
         </html>
     """
@@ -466,7 +514,12 @@ class DocPage(Component):
         has_h1 = any(token.get("level") == 1 for token in (kwargs.toc_items or []))
         inject_title = bool(kwargs.title) and not has_h1
 
+        # Per-page search weight: emit data-pagefind-weight only when boosted,
+        # so unboosted pages keep Pagefind's neutral default (1.0).
+        pagefind_weight = str(kwargs.boost) if kwargs.boost != 1.0 else ""
+
         return {
+            "searchable": kwargs.searchable,
             "title": kwargs.title,
             "inject_title": inject_title,
             "content_html": kwargs.content_html,
@@ -484,6 +537,7 @@ class DocPage(Component):
             "toc_items": toc_items,
             "last_updated": kwargs.last_updated,
             "authors": kwargs.authors or [],
+            "pagefind_weight": pagefind_weight,
         }
 
 

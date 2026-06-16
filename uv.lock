@@ -611,6 +611,7 @@ docs = [
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings" },
     { name = "mkdocstrings-python" },
+    { name = "pagefind", extra = ["bin"] },
     { name = "pygments" },
     { name = "pygments-djc" },
     { name = "pymdown-extensions" },
@@ -691,6 +692,7 @@ docs = [
     { name = "mkdocs-redirects" },
     { name = "mkdocstrings" },
     { name = "mkdocstrings-python" },
+    { name = "pagefind", extras = ["bin"] },
     { name = "pygments", specifier = "<2.21" },
     { name = "pygments-djc" },
     { name = "pymdown-extensions" },
@@ -1683,6 +1685,33 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/65/ee/299d360cdc32edc7d2cf530f3accf79c4fca01e96ffc950d8a52213bd8e4/packaging-26.0.tar.gz", hash = "sha256:00243ae351a257117b6a241061796684b084ed1c516a08c48a3f7e147a9d80b4", size = 143416, upload-time = "2026-01-21T20:50:39.064Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/b9/c538f279a4e237a006a2c98387d081e9eb060d203d8ed34467cc0f0b9b53/packaging-26.0-py3-none-any.whl", hash = "sha256:b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529", size = 74366, upload-time = "2026-01-21T20:50:37.788Z" },
+]
+
+[[package]]
+name = "pagefind"
+version = "1.5.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/50/cc/efc080eb3191d1afc75dc58c336676c0847fc4610b1d9e7d58b4083836b6/pagefind-1.5.2.tar.gz", hash = "sha256:fffddd6e2016b06bdca83b83d4ac4bef379cf0559f05ecdb6908a8729a27dbf3", size = 52521, upload-time = "2026-04-12T12:51:59.814Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0a/a7/414e1df2749f647784e32da78ce3081a9fedf1ae8d5b3bb8d4c5643f06cd/pagefind-1.5.2-py3-none-any.whl", hash = "sha256:6c4086ad9eaa7e8f863085652f6b1093549b1737848d946daa0706ee57f778d1", size = 10104, upload-time = "2026-04-12T12:51:27.563Z" },
+]
+
+[package.optional-dependencies]
+bin = [
+    { name = "pagefind-bin" },
+]
+
+[[package]]
+name = "pagefind-bin"
+version = "1.5.2"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8c/0e/8926c87123e6ccf0df0e70e0d8c7c02acdb505df81e63399b87d486a9767/pagefind_bin-1.5.2-py3-none-macosx_12_0_arm64.whl", hash = "sha256:40b39a852fac5dfb565ae288d7c44ac0627dd354f154166675e73257a28f8e3c", size = 4980054, upload-time = "2026-04-12T12:51:28.875Z" },
+    { url = "https://files.pythonhosted.org/packages/66/19/ba248d72322a27738408a9b2f556931dcb3d21772573bb5071873da193a1/pagefind_bin-1.5.2-py3-none-macosx_12_0_x86_64.whl", hash = "sha256:0e83f5823a116166128b35f6c4818f4b5c3c0a9d476c228d137187e772d190cf", size = 5057535, upload-time = "2026-04-12T12:51:30.955Z" },
+    { url = "https://files.pythonhosted.org/packages/40/cf/2a7608bd67242c3b7a2d3fc0ff238d9183287a63b1e6838ff26b351b4d2a/pagefind_bin-1.5.2-py3-none-manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64.whl", hash = "sha256:92eb3f492fc7dbf0fc68c18c78f8de44ecfb266ba64cb982e3ccc1b4bbd7203e", size = 5401199, upload-time = "2026-04-12T12:51:32.664Z" },
+    { url = "https://files.pythonhosted.org/packages/11/23/21bd734280f3c4fa412c881940a343acd6ed685795f9efd10525ef74b2c6/pagefind_bin-1.5.2-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.musllinux_1_1_aarch64.whl", hash = "sha256:c33f8019bb21f8b417b847efe2cb8ffbbf03ba6996a233a9bb5c764c56d76f6a", size = 5139097, upload-time = "2026-04-12T12:51:34.315Z" },
+    { url = "https://files.pythonhosted.org/packages/9e/7d/4dae4033f428bd1533bc46c520ff910d2909b636aed1b0d2f5bf830316af/pagefind_bin-1.5.2-py3-none-win_amd64.whl", hash = "sha256:02512ae24c483487a5d2742ba990a0bb6823c205aa0ce5594f2f641fc0babed3", size = 5193304, upload-time = "2026-04-12T12:51:36.03Z" },
+    { url = "https://files.pythonhosted.org/packages/e1/d2/86737796d057c1abe48797abaa465f75676d4dd76c52a07ffdb79472c74a/pagefind_bin-1.5.2-py3-none-win_arm64.whl", hash = "sha256:ee34dac9f83e6c8a15a516f6fecc26b7f4143a6c763544991e2b996f591e0492", size = 5067764, upload-time = "2026-04-12T12:51:37.817Z" },
 ]
 
 [[package]]

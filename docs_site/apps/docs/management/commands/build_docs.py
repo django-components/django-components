@@ -25,6 +25,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from apps.docs.build.builder import build_site
+from apps.docs.build.pagefind import run_pagefind
 
 
 class Command(BaseCommand):
@@ -39,6 +40,7 @@ class Command(BaseCommand):
         )
         parser.add_argument("-o", "--output", type=str, default=None, help="Output directory (default: ./site/)")
         parser.add_argument("--no-companions", action="store_true", help="Skip .md companion file generation")
+        parser.add_argument("--no-search", action="store_true", help="Skip the Pagefind search-index build")
 
     def handle(self, *args: object, **options: object) -> None:
         content_dir = Path(str(options["content"])) if options["content"] else settings.CONTENT_DIR
@@ -74,3 +76,15 @@ class Command(BaseCommand):
                 f"Built {outcome.built} pages{suffix} in {outcome.elapsed:.1f}s ({outcome.failed} errors)"
             )
         )
+
+        # Build the Pagefind search index over the freshly written HTML. Runs
+        # after the page build because it scans the output HTML in place.
+        if not options["no_search"]:
+            self.stdout.write("Building search index (pagefind)...")
+            pf = run_pagefind(output_dir)
+            if pf.ok:
+                self.stdout.write(self.style.SUCCESS(pf.message))
+            else:
+                self.stderr.write(self.style.ERROR(f"Search index failed: {pf.message}"))
+                if pf.output:
+                    self.stderr.write(pf.output)

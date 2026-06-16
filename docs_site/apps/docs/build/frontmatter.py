@@ -15,6 +15,8 @@ Schema fields (all optional):
     noindex:     If true, emit <meta name="robots" content="noindex,follow">
     canonical:   Override the auto-computed canonical URL
     tags:        List of string tags (reserved for future taxonomy)
+    boost:       Search-ranking multiplier (>1 ranks the page higher, <1 lower);
+                 emitted as data-pagefind-weight. Default 1.0 (no boost).
 """
 
 from __future__ import annotations
@@ -25,7 +27,10 @@ from typing import Any
 
 import frontmatter
 
-KNOWN_FIELDS = frozenset({"title", "description", "og_image", "noindex", "canonical", "tags"})
+KNOWN_FIELDS = frozenset({"title", "description", "og_image", "noindex", "canonical", "tags", "boost"})
+
+# Pagefind's neutral page weight; pages with this value emit no weight attribute.
+DEFAULT_BOOST = 1.0
 
 # Matches the opening of a fenced code block (used to skip H1s inside fences)
 _FENCE_OPEN = re.compile(r"^(\s*)(```+|~~~+)")
@@ -47,6 +52,7 @@ class PageMeta:
     noindex: bool = False
     canonical: str = ""
     tags: list[str] = field(default_factory=list)
+    boost: float = DEFAULT_BOOST
     # The markdown body with front-matter stripped
     body: str = ""
 
@@ -83,6 +89,7 @@ def parse_page(source: str, *, strict: bool = False) -> PageMeta:
         noindex=bool(meta.get("noindex", False)),
         canonical=str(meta.get("canonical", "")),
         tags=list(meta.get("tags", [])),
+        boost=float(meta.get("boost", DEFAULT_BOOST)),
         body=body,
     )
 
