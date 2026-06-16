@@ -43,6 +43,13 @@ class SourceCodeExtension(griffe.Extension):
         if self.skip_docstringless and obj.docstring is None:
             return
 
+        # Skip individual class-member attributes (e.g. NamedTuple fields). A
+        # per-field source link is noise and would pollute structured field-doc
+        # extraction (the hook "Available data" table). Classes, functions /
+        # methods, modules and module-level attributes still get the link.
+        if obj.kind is griffe.Kind.ATTRIBUTE and obj.parent is not None and obj.parent.kind is griffe.Kind.CLASS:
+            return
+
         rel = self._repo_relative_path(obj.filepath)
         if rel is None:
             return

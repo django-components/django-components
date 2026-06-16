@@ -134,7 +134,7 @@ class ReloadMode(str, Enum):
     (HTML templates, JS, CSS) change on disk while the dev server is running.
 
     Also see [Reload dev server on component file changes](
-    ../guides/setup/development_server.md#reload-dev-server-on-component-file-changes).
+    ../guides/setup/development_server.md#hot-reloading-component-files-during-development).
 
     **Options:**
 
@@ -474,7 +474,7 @@ class ComponentsSettings(NamedTuple):
     (HTML templates, JS, CSS) change on disk while the dev server is running.
 
     See [Reload dev server on component file changes](
-    ../guides/setup/development_server.md#reload-dev-server-on-component-file-changes).
+    ../guides/setup/development_server.md#hot-reloading-component-files-during-development).
 
     **Options:**
 

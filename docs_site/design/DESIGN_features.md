@@ -182,81 +182,123 @@ Goal: feature parity with mkdocstrings on the 14 current reference pages, with t
 | # | ID | Name | Effort | Critical | Source | Status | Notes |
 |---|---|---|---|---|---|---|---|
 | **Discovery layer (Layer 1)** | | | | | | | |
-| 4.1 | `discover-kinds-adt` | `ReferencePage` / `ReferenceEntry` types | S | ✓ | 11.5 §5.1, §10 | pending | Located at `docs_site/apps/docs/discovery/kinds.py` |
-| 4.2 | `discover-layer` | Discovery orchestrator (Layer 1) | L | ✓ | 11.5 §5.1, §5.3 | pending | Foundation |
-| 4.3 | `discover-walk` | Walk script: load griffe with `force_inspection=True` | M | ✓ | 11.5 §5.1, §10 | pending | Metaclass attrs need inspection |
-| 4.4 | `discover-page-api` | API page (kinds 1-5: components, fns, decorators, instances, NamedTuples) | M | ✓ | 11.5 §3.1, §10 | pending | |
-| 4.5 | `discover-page-exceptions` | Exceptions page (kind 6) | S | ✓ | 11.5 §3.1, §9 | pending | **Proof-of-concept page**; do this first |
-| 4.6 | `discover-page-components` | Components page (kind 7: predefined Component subclasses) | M | | 11.5 §3.1, §10 | pending | |
-| 4.7 | `discover-page-settings` | Settings page (kind 8: ComponentsSettings fields) | M | | 11.5 §3.1, §10 | pending | Per-field griffe docstrings |
-| 4.8 | `discover-page-tag-formatters` | Tag formatters (kinds 9-10) | M | | 11.5 §3.1 | pending | |
-| 4.9 | `discover-page-commands` | Management commands (kind 11) | L | ✓ | 11.5 §3.1 | pending | argparse introspection |
-| 4.10 | `discover-page-template-tags` | Template tags (kind 12) | M | ✓ | 11.5 §3.1 | pending | `BaseNode._signature` via force_inspection |
-| 4.11 | `discover-page-urls` | URL patterns (kind 13) | S | | 11.5 §3.1 | pending | |
-| 4.12 | `discover-page-template-vars` | Template vars (kind 14: ComponentVars) | S | | 11.5 §3.1 | pending | |
-| 4.13 | `discover-page-testing` | Testing API (kind 15) | S | | 11.5 §3.1 | pending | |
-| 4.14 | `discover-page-extension-hooks` | Extension hooks + contexts (kinds 16-17) | M | ✓ | 11.5 §3.1 | pending | Via decorator detection |
-| 4.15 | `discover-page-extension-commands` | Extension command API (kind 18) | M | | 11.5 §3.1 | pending | |
-| 4.16 | `discover-page-extension-urls` | Extension URL API (kind 19) | M | | 11.5 §3.1 | pending | |
-| 4.17 | `discover-page-signals` | Signals placeholder (kind 20) | S | | 11.5 §3.1, §9 | pending | Markdown island for now |
+| 4.1 | `discover-kinds-adt` | `ReferencePage` / `ReferenceEntry` types | S | ✓ | 11.5 §5.1, §10 | **done** | Located at `docs_site/apps/docs/discovery/kinds.py` |
+| 4.2 | `discover-layer` | Discovery orchestrator (Layer 1) | L | ✓ | 11.5 §5.1, §5.3 | **done** | Foundation |
+| 4.3 | `discover-walk` | Walk script: load griffe with `force_inspection=True` | M | ✓ | 11.5 §5.1, §10 | **done** | via static analysis; force_inspection deferred to the template-tags page (`BaseNode._signature`) |
+| 4.4 | `discover-page-api` | API page (kinds 1-5: components, fns, decorators, instances, NamedTuples) | M | ✓ | 11.5 §3.1, §10 | **done** | |
+| 4.5 | `discover-page-exceptions` | Exceptions page (kind 6) | S | ✓ | 11.5 §3.1, §9 | **done** | **Proof-of-concept page**; do this first |
+| 4.6 | `discover-page-components` | Components page (kind 7: predefined Component subclasses) | M | | 11.5 §3.1, §10 | **done** | predefined Component subclasses from django_components.components |
+| 4.7 | `discover-page-settings` | Settings page (kind 8: ComponentsSettings fields) | M | | 11.5 §3.1, §10 | **done** | ComponentsSettings fields |
+| 4.8 | `discover-page-tag-formatters` | Tag formatters (kinds 9-10) | M | | 11.5 §3.1 | **done** | TagFormatterABC subclasses (classes) + instances (marker predicates) |
+| 4.9 | `discover-page-commands` | Management commands (kind 11) | L | ✓ | 11.5 §3.1 | **done** | argparse introspection via setup_parser_from_command; legacy startcomponent/upgradecomponent excluded (TODO_v1) |
+| 4.10 | `discover-page-template-tags` | Template tags (kind 12) | M | ✓ | 11.5 §3.1 | **done** | BaseNode subclasses from templatetags/*; runtime `_signature` (no force_inspection needed) |
+| 4.11 | `discover-page-urls` | URL patterns (kind 13) | S | | 11.5 §3.1 | done | |
+| 4.12 | `discover-page-template-vars` | Template vars (kind 14: ComponentVars) | S | | 11.5 §3.1 | **done** | ComponentVars fields |
+| 4.13 | `discover-page-testing` | Testing API (kind 15) | S | | 11.5 §3.1 | done | |
+| 4.14 | `discover-page-extension-hooks` | Extension hooks + contexts (kinds 16-17) | M | ✓ | 11.5 §3.1 | **done** | ComponentExtension on_* methods + marker-detected context classes |
+| 4.15 | `discover-page-extension-commands` | Extension command API (kind 18) | M | | 11.5 §3.1 | done | |
+| 4.16 | `discover-page-extension-urls` | Extension URL API (kind 19) | M | | 11.5 §3.1 | done | |
+| 4.17 | `discover-page-signals` | Signals placeholder (kind 20) | S | | 11.5 §3.1, §9 | done | Markdown island for now |
 | **Griffe extensions** | | | | | | | |
-| 4.18 | `griffe-ext-runtime-bases` | `RuntimeBasesExtension` ported | S | ✓ | 11.5 §8 | pending | One-line config swap |
-| 4.19 | `griffe-ext-source-code` | `SourceCodeExtension` ported | S | ✓ | 11.5 §8 | pending | Portable verbatim |
+| 4.18 | `griffe-ext-runtime-bases` | `RuntimeBasesExtension` ported | S | ✓ | 11.5 §8 | **done** | One-line config swap |
+| 4.19 | `griffe-ext-source-code` | `SourceCodeExtension` ported | S | ✓ | 11.5 §8 | **done** | Portable verbatim |
 | **Cross-ref + inventory** | | | | | | | |
-| 4.20 | `inventory-builder` | Parse stdlib + Django `objects.inv` → name→URL map | M | ✓ | 11.5 §2, §6 | pending | ~100 LOC |
-| 4.21 | `signature-crossrefs` | Walk griffe `Expr` trees → resolve `ExprName` → emit links | L | ✓ | 11.5 §2, §6 | pending | 712+ links on api.md alone |
-| 4.22 | `inventory-output` | Emit `site/objects.inv` for external linkbacks | M | ✓ | 11.5 §6 | pending | 7034 bytes |
+| 4.20 | `inventory-builder` | Parse stdlib + Django `objects.inv` → name→URL map | M | ✓ | 11.5 §2, §6 | **done** | ~100 LOC |
+| 4.21 | `signature-crossrefs` | Walk griffe `Expr` trees → resolve `ExprName` → emit links | L | ✓ | 11.5 §2, §6 | **done** | 712+ links on api.md alone |
+| 4.22 | `inventory-output` | Emit `site/objects.inv` for external linkbacks | M | ✓ | 11.5 §6 | **done** | 7034 bytes |
 | **Entry renderers (per-kind components)** | | | | | | | |
-| 4.23 | `render-ref-class` | `ReferenceClass` (kinds 1-6, 15, 18-19) | L | ✓ | 11.5 §3.2 #1 | pending | Workhorse |
-| 4.24 | `render-component-class` | `ReferenceComponentClass` (kind 7) | M | | 11.5 §3.2 #2 | pending | Filters Component base |
-| 4.25 | `render-setting` | `ReferenceSetting` (kinds 8, 14) | M | | 11.5 §3.2 #3 | pending | |
-| 4.26 | `render-tag-formatter` | `ReferenceTagFormatter` (kind 9) | S | | 11.5 §3.2 #4 | pending | |
-| 4.27 | `render-management-command` | `ReferenceManagementCommand` (kind 11) | L | ✓ | 11.5 §3.2 #5 | pending | Most bespoke layout |
-| 4.28 | `render-template-tag` | `ReferenceTemplateTag` (kind 12) | M | ✓ | 11.5 §3.2 #6 | pending | |
-| 4.29 | `render-url-pattern` | `ReferenceURLPattern` (kind 13) | S | | 11.5 §3.2 #7 | pending | Trivial bullets |
-| 4.30 | `render-extension-hook` | `ReferenceExtensionHook` (kind 16) | M | ✓ | 11.5 §3.2 #8 | pending | Custom 'Available data' table |
-| 4.31 | `render-hook-context` | `ReferenceHookContext` (kind 17) | M | ✓ | 11.5 §3.2 #9 | pending | 15 contexts |
-| 4.32 | `render-signal` | `ReferenceSignal` placeholder (kind 20) | S | | 11.5 §3.2 #10 | pending | No-op |
-| 4.33 | `render-instances-list` | `AvailableInstancesList` (kind 10) | S | | 11.5 §3.2 #11 | pending | |
-| 4.34 | `render-settings-defaults-panel` | `SettingsDefaultsPanel` companion | M | | 11.5 §3.2 #12 | pending | Page-level |
+| 4.23 | `render-ref-class` | `ReferenceClass` (kinds 1-6, 15, 18-19) | L | ✓ | 11.5 §3.2 #1 | **done** | Workhorse |
+| 4.24 | `render-component-class` | `ReferenceComponentClass` (kind 7) | M | | 11.5 §3.2 #2 | **done** | ReferenceComponentClass: heading + docstring + own members (no class signature; griffe .members is own-only) |
+| 4.25 | `render-setting` | `ReferenceSetting` (kinds 8, 14) | M | | 11.5 §3.2 #3 | **done** | ReferenceSetting: name + type + docstring, no badge (shared by settings + template vars) |
+| 4.26 | `render-tag-formatter` | `ReferenceTagFormatter` (kind 9) | S | | 11.5 §3.2 #4 | **done** | ReferenceTagFormatter: naked class card (heading + docstring; no signature/members/badge) |
+| 4.27 | `render-management-command` | `ReferenceManagementCommand` (kind 11) | L | ✓ | 11.5 §3.2 #5 | **done** | ReferenceManagementCommand: usage + arg sections + subcommand links + source |
+| 4.28 | `render-template-tag` | `ReferenceTemplateTag` (kind 12) | M | ✓ | 11.5 §3.2 #6 | **done** | ReferenceTemplateTag: `{% tag %}` block from _signature/tag/end_tag/allowed_flags + docstring + source |
+| 4.29 | `render-url-pattern` | `ReferenceURLPattern` (kind 13) | S | | 11.5 §3.2 #7 | done | Trivial bullets |
+| 4.30 | `render-extension-hook` | `ReferenceExtensionHook` (kind 16) | M | ✓ | 11.5 §3.2 #8 | **done** | ReferenceExtensionHook: signature + docstring + Available-data table from ctx |
+| 4.31 | `render-hook-context` | `ReferenceHookContext` (kind 17) | M | ✓ | 11.5 §3.2 #9 | **done** | ReferenceHookContext: docstring + fields table (griffe per-field docstrings) |
+| 4.32 | `render-signal` | `ReferenceSignal` placeholder (kind 20) | S | | 11.5 §3.2 #10 | done | No-op |
+| 4.33 | `render-instances-list` | `AvailableInstancesList` (kind 10) | S | | 11.5 §3.2 #11 | **done** | AvailableInstancesList = instance->class same-page links in the preface |
+| 4.34 | `render-settings-defaults-panel` | `SettingsDefaultsPanel` companion | M | | 11.5 §3.2 #12 | **done** | defaults panel = cleaned `--snippet:defaults--` code block in the page preface |
 | **Shared sub-components** | | | | | | | |
-| 4.35 | `sub-signature-block` | `SignatureBlock` (lang-aware fenced sig) | S | ✓ | 11.5 §4 | pending | Reused by ~8 entry templates |
-| 4.36 | `sub-source-code-link` | `SourceCodeLink` (repo file#L42 link) | S | ✓ | 11.5 §4 | pending | |
-| 4.37 | `sub-parameters-table` | `ParametersTable` (name/type/desc rows) | M | ✓ | 11.5 §4 | pending | |
-| 4.38 | `sub-docstring-body` | `DocstringBody` (Google sections + md_in_html) | M | ✓ | 11.5 §4 | pending | |
-| 4.39 | `sub-admonitions-block` | `AdmonitionsBlock` (`!!! note` in docstrings) | S | | 11.5 §4 | pending | |
-| 4.40 | `sub-examples-block` | `ExamplesBlock` (fenced code from `Examples:`) | S | | 11.5 §4 | pending | |
-| 4.41 | `sub-cross-ref` | `CrossRef` (bracket refs `[X][]` → URL) | M | ✓ | 11.5 §2, §4, §6 | pending | Merges project + inventories |
-| 4.42 | `sub-symbol-type-badge` | `SymbolTypeBadge` (`<span class="doc doc-symbol-X">`) | S | | 11.5 §4, §6 | pending | |
+| 4.35 | `sub-signature-block` | `SignatureBlock` (lang-aware fenced sig) | S | ✓ | 11.5 §4 | **done** | Reused by ~8 entry templates |
+| 4.36 | `sub-source-code-link` | `SourceCodeLink` (repo file#L42 link) | S | ✓ | 11.5 §4 | **done** | source link via `SourceCodeExtension` (`format_source_code_html`) |
+| 4.37 | `sub-parameters-table` | `ParametersTable` (name/type/desc rows) | M | ✓ | 11.5 §4 | **done** | |
+| 4.38 | `sub-docstring-body` | `DocstringBody` (Google sections + md_in_html) | M | ✓ | 11.5 §4 | **done** | |
+| 4.39 | `sub-admonitions-block` | `AdmonitionsBlock` (`!!! note` in docstrings) | S | | 11.5 §4 | **done** | |
+| 4.40 | `sub-examples-block` | `ExamplesBlock` (fenced code from `Examples:`) | S | | 11.5 §4 | **done** | |
+| 4.41 | `sub-cross-ref` | `CrossRef` (bracket refs `[X][]` → URL) | M | ✓ | 11.5 §2, §4, §6 | **done** | Merges project + inventories |
+| 4.42 | `sub-symbol-type-badge` | `SymbolTypeBadge` (`<span class="doc doc-symbol-X">`) | S | | 11.5 §4, §6 | **done** | |
 | **Page layouts** | | | | | | | |
-| 4.43 | `page-layout-api` | API page layout | M | ✓ | 11.5 §5.2 | pending | |
-| 4.44 | `page-layout-exceptions` | Exceptions page layout (POC) | S | ✓ | 11.5 §5.2 | pending | |
-| 4.45 | `page-layout-components` | Components page layout | S | | 11.5 §5.2 | pending | |
-| 4.46 | `page-layout-settings` | Settings page layout (entries + defaults panel) | M | | 11.5 §5.2 | pending | |
-| 4.47 | `page-layout-tag-formatters` | Tag formatters (classes + instances) | M | | 11.5 §5.2 | pending | Fix layout bug §7.6 |
-| 4.48 | `page-layout-commands` | Commands (command_tree layout) | M | ✓ | 11.5 §5.2 | pending | |
-| 4.49 | `page-layout-template-tags` | Template tags layout | M | ✓ | 11.5 §5.2 | pending | |
-| 4.50 | `page-layout-urls` | URL patterns layout | S | | 11.5 §5.2 | pending | |
-| 4.51 | `page-layout-template-vars` | Template variables layout | S | | 11.5 §5.2 | pending | |
-| 4.52 | `page-layout-testing` | Testing API layout | S | | 11.5 §5.2 | pending | |
-| 4.53 | `page-layout-extension-hooks` | Extension hooks + contexts (hooks_plus_objects) | M | ✓ | 11.5 §5.2 | pending | |
-| 4.54 | `page-layout-extension-commands` | Extension commands layout | S | | 11.5 §5.2 | pending | |
-| 4.55 | `page-layout-extension-urls` | Extension URLs layout | S | | 11.5 §5.2 | pending | |
-| 4.56 | `page-layout-signals` | Signals placeholder layout | S | | 11.5 §5.2 | pending | |
+| 4.43 | `page-layout-api` | API page layout | M | ✓ | 11.5 §5.2 | **done** | page = generated md + `{% docstring %}` per entry (repeater layout; no dedicated component) |
+| 4.44 | `page-layout-exceptions` | Exceptions page layout (POC) | S | ✓ | 11.5 §5.2 | **done** | same generated-md repeater approach as api |
+| 4.45 | `page-layout-components` | Components page layout | S | | 11.5 §5.2 | **done** | components layout = per-class cards (ReferenceComponentClass) |
+| 4.46 | `page-layout-settings` | Settings page layout (entries + defaults panel) | M | | 11.5 §5.2 | **done** | settings layout = defaults panel (preface) + per-field entries |
+| 4.47 | `page-layout-tag-formatters` | Tag formatters (classes + instances) | M | | 11.5 §5.2 | **done** | instances list (preface) + class-card entries; §7.6 blank-line bug avoided |
+| 4.48 | `page-layout-commands` | Commands (command_tree layout) | M | ✓ | 11.5 §5.2 | **done** | command_tree = generated md + `{% docstring %}` per command (depth-first walk) |
+| 4.49 | `page-layout-template-tags` | Template tags layout | M | ✓ | 11.5 §5.2 | **done** | single anchor (the tag name); shared runtime.py helper (with commands) |
+| 4.50 | `page-layout-urls` | URL patterns layout | S | | 11.5 §5.2 | done | |
+| 4.51 | `page-layout-template-vars` | Template variables layout | S | | 11.5 §5.2 | **done** | template-vars layout = per-field entries (ReferenceSetting) |
+| 4.52 | `page-layout-testing` | Testing API layout | S | | 11.5 §5.2 | done | |
+| 4.53 | `page-layout-extension-hooks` | Extension hooks + contexts (hooks_plus_objects) | M | ✓ | 11.5 §5.2 | **done** | hooks_plus_objects: `## Hooks` / `## Objects` sections in the generated page |
+| 4.54 | `page-layout-extension-commands` | Extension commands layout | S | | 11.5 §5.2 | done | |
+| 4.55 | `page-layout-extension-urls` | Extension URLs layout | S | | 11.5 §5.2 | done | |
+| 4.56 | `page-layout-signals` | Signals placeholder layout | S | | 11.5 §5.2 | done | |
 | **Tag + glue** | | | | | | | |
-| 4.57 | `docstring-tag` | `{% docstring "x.y.z" %}` template tag | S | ✓ | main §4.3, §11.4.E | pending | |
-| 4.58 | `anchor-scheme-legacy-compat` | Dual anchors: new `#Component` + legacy `#django_components.Component` | S | ✓ | 11.5 §7.1-7.2 | pending | Preserves 397+578 inbound links |
-| 4.59 | `routing-decorator-detection` | `@mark_extension_hook_api` decorator detection | S | ✓ | 11.5 §7.3 | pending | |
-| 4.60 | `property-docstring-griffe` | Retire `_extract_property_docstrings` for griffe access | M | ✓ | 11.5 §7.4 | pending | |
-| 4.61 | `snapshot-tests-discovery` | Snapshot tests for `ReferencePage[]` | M | | 11.5 §5.3 | pending | |
-| 4.62 | `api-symbol-forward-check` | `{% docstring %}` references must resolve | M | ✓ | 11.10 §3.4 | pending | Pass-1 check |
-| 4.63 | `api-symbol-reverse-check` | Public API symbols never referenced = warning | M | | 11.10 §3.5 | pending | Upgrades to error in `--strict` |
-| 4.64 | `anchor-alias-coverage` | Renamed symbols have legacy aliases | S | | 11.10 §3.11 | pending | Warning severity |
+| 4.57 | `docstring-tag` | `{% docstring "x.y.z" %}` template tag | S | ✓ | main §4.3, §11.4.E | **done** | |
+| 4.58 | `anchor-scheme-legacy-compat` | Dual anchors: new `#Component` + legacy `#django_components.Component` | S | ✓ | 11.5 §7.1-7.2 | **done** | Preserves 397+578 inbound links |
+| 4.59 | `routing-decorator-detection` | `@mark_extension_hook_api` decorator detection | S | ✓ | 11.5 §7.3 | **done** | via the runtime `_extension_hook_api` marker (set by @mark_extension_hook_api) |
+| 4.60 | `property-docstring-griffe` | Retire `_extract_property_docstrings` for griffe access | M | ✓ | 11.5 §7.4 | **done** | griffe per-field docstring access throughout; old `_extract_property_docstrings` not ported |
+| 4.61 | `snapshot-tests-discovery` | Snapshot tests for `ReferencePage[]` | M | | 11.5 §5.3 | **done** | |
+| 4.62 | `api-symbol-forward-check` | `{% docstring %}` references must resolve | M | ✓ | 11.10 §3.4 | **done** | Pass-1 check |
+| 4.63 | `api-symbol-reverse-check` | Public API symbols never referenced = warning | M | | 11.10 §3.5 | **done** | Upgrades to error in `--strict` |
+| 4.64 | `anchor-alias-coverage` | Renamed symbols have legacy aliases | S | | 11.10 §3.11 | **done** | Warning severity |
 | **Proof-of-concept escalation** | | | | | | | |
-| 4.65 | `proof-exceptions-page` | Build exceptions.md end-to-end first | M | ✓ | 11.5 §9 | pending | Validates contract; ~1 day |
-| 4.66 | `proof-component-page` | Build Component class entry second | L | ✓ | 11.5 §9 | pending | Exercises shared sub-components |
+| 4.65 | `proof-exceptions-page` | Build exceptions.md end-to-end first | M | ✓ | 11.5 §9 | **done** | Validates contract; ~1 day |
+| 4.66 | `proof-component-page` | Build Component class entry second | L | ✓ | 11.5 §9 | **done** | Exercises shared sub-components |
+| **Post-Phase-4 enhancements** | | | | | | | |
+| 4.67 | `toc-member-nav` | Collapsible per-member TOC on reference pages (Option C) | M | | - | **done** | Class members lifted into the right rail with class/attr/meth badges; scroll-spy auto-expands the active class, a caret pins one open. The page H1 is unwrapped from the rail (every page). Touches `toc.py` + `doc_page` + `site.css`/`site.js`; builds on 3a.16 and the Chunk-A TOC merge |
 
 **Out of scope here:** anything not on the API-reference path.
+
+### Chunk execution plan
+
+Phase 4 is executed in **vertical chunks, not horizontally by layer**: build the
+discovery -> rendering contract once, prove it end-to-end on the smallest page
+(exceptions), escalate to the hardest class (Component/api) to exercise every
+shared sub-component, then generalise to the remaining pages (mostly execution on
+the proven toolkit), and finish with the reference-specific guards. This follows
+spike 11.5 §9.
+
+Every per-page chunk shares the same shape: a discovery generator
+(`discovery/pages/<x>.py`) + any new per-kind renderer
+(`components/reference/entries/`) + wire into
+`discovery/registry.py::discover_pages()` + delete the
+`content/docs/reference/<x>.md` stub + add the URL to the nav guard's
+`GENERATED_NAV_URLS`.
+
+| Chunk | Scope | Features | Status |
+|---|---|---|---|
+| **0 — Foundation** | griffe dep, `kinds` ADT, walker, 2 griffe extensions, discovery orchestrator | P4.0, 4.1-4.3, 4.18-4.19 | **done** |
+| **A — Exceptions proof** | exceptions discovery, `ReferenceClass` v1, `{% docstring %}` tag, dual anchors, DocstringBody/SymbolTypeBadge, generated-page build hook + TOC merge + CSS | 4.5, 4.23, 4.35-4.36, 4.38-4.39, 4.42, 4.44, 4.57-4.58, 4.65 | **done** |
+| **B — Component/api proof** | api discovery, inventory (parse + emit `objects.inv`), signature cross-refs, ParametersTable, ExamplesBlock, CrossRef, members + group_by_category, `ReferenceClass` v2 | 4.4, 4.20-4.22, 4.37, 4.40-4.41, 4.43, 4.60, 4.66 | **done** |
+| **C — Commands** | argparse introspection; `ReferenceManagementCommand` (most bespoke layout). Do next per §9. | 4.9, 4.27, 4.48 | **done** |
+| **D — Extension hooks** | `ReferenceExtensionHook` (Available-data table) + `ReferenceHookContext` (15 contexts); `@mark_extension_hook_api` decorator detection | 4.14, 4.30-4.31, 4.53, 4.59 | **done** |
+| **E — Template tags** | `ReferenceTemplateTag`. `BaseNode._signature` is metaclass-set; resolved via **runtime introspection** of the live class (no force_inspection needed - the walker stays static). | 4.10, 4.28, 4.49 | **done** |
+| **F — Settings + Template vars** | `ReferenceSetting` + `SettingsDefaultsPanel` | 4.7, 4.12, 4.25, 4.34, 4.46, 4.51 | **done** |
+| **G — Tag formatters** | `ReferenceTagFormatter` + `AvailableInstancesList` | 4.8, 4.26, 4.33, 4.47 | **done** |
+| **H — Components page** | `ReferenceComponentClass` (hides `Component` base) | 4.6, 4.24, 4.45 | **done** |
+| **I — Fold-in / trivial pages** | testing / ext-commands / ext-urls reuse `ReferenceClass`; `ReferenceURLPattern` (trivial), `ReferenceSignal` (markdown island) | 4.13/4.52, 4.15/4.54, 4.16/4.55, 4.11/4.29/4.50, 4.17/4.32/4.56 | done |
+| **J — Hardening** | discovery snapshot tests; api-symbol forward/reverse checks + anchor-alias coverage (the reference-content link validation) | 4.61-4.64 | **done** |
+
+**Non-feature fixes that landed alongside the proofs** (not catalogue rows, but
+load-bearing): per-symbol render resilience (one unintrospectable symbol degrades
+to a minimal entry instead of failing the page); the static-analysis loader
+decision (resolves the full submodule tree - `force_inspection` silently missed
+the extension submodules); a stale-docstring-link codemod in `src/` (21 bare
+`[x](#tag)` and stale-anchor links -> bracket cross-refs / corrected anchors);
+and context-aware docstring heading demotion. The last two let the `anchor` and
+`headings` guards run on reference pages with **no exemption** (only the
+pre-existing `releases/*` headings exemption remains).
 
 ---
 
@@ -435,7 +477,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 2 | `{% example %}` end-to-end | 7 | 4 | **6/7 done** (2.6 dropped) |
 | 3a | Theme + core chrome | 23 | 17 | **22/23 done** (3a.9 CodeTabs deferred to when needed) |
 | 3b | Mass content port + responsive + content guardrails | 25 | 12 | **25/25 done** (Phase 3b complete) |
-| 4 | API reference (mkdocstrings replacement) | 66 | 30 | pending |
+| 4 | API reference (mkdocstrings replacement) | 67 | 30 | **67/67 done** (Chunks 0/A-J complete: all 14 reference pages + the reference guards; plus 4.67, the collapsible per-member TOC) |
 | 5a | Search v1 | 6 | 4 | pending |
 | 5b | Versioning | 17 | 12 | pending |
 | 5c | SEO + AIO + chrome polish | 19 | 0 | pending |
@@ -445,7 +487,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 8 | Search v3 (blocked on analytics target) | 1 | 0 | pending |
 | 9 | Landing page (codesign) | 1 | 0 | pending |
 | 10+ | Deferred / post-launch maintenance | 7 | 0 | pending |
-| **Total** | | **221** | **111** | **87/221 done** |
+| **Total** | | **222** | **111** | **154/222 done** |
 
 ### Phase 0 closed
 

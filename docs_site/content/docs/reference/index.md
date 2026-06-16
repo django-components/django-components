@@ -5,11 +5,8 @@ description: The django-components API reference, generated from source-code doc
 
 # API reference
 
-!!! info "This page is being rebuilt"
-
-    The API reference for the new docs site is generated from the source-code
-    docstrings by a new renderer that is still in progress. Until it lands,
-    use the [full API reference on the current docs site](https://django-components.github.io/django-components/latest/reference/api/).
+The complete API reference for django-components, generated from the
+source-code docstrings. Pick a section below.
 
 - [API](api/)
 - [Commands](commands/)

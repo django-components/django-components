@@ -125,8 +125,17 @@ def render_page(
     pass1_context = {**(context or {}), "current_path": current_path}
     expanded = _pass1_django(protected, engine=engine, context=pass1_context)
 
+    # Resolve `[text][Key]` bracket cross-refs to real relative links (the analog
+    # of the old mkdocstrings autorefs), skipping fenced code. This covers every
+    # page: content prose, generated reference prefaces, and any `[x][y]` left in
+    # Pass-1 output (docstring *bodies* resolve their own refs inside Pass 1). The
+    # .md companion keeps the source `[x][y]` form.
+    from apps.docs.reference.crossrefs import resolve_crossrefs_in_prose  # noqa: PLC0415
+
+    resolved_md, _unresolved = resolve_crossrefs_in_prose(expanded, current_url=current_path)
+
     # Pass 2: convert markdown to HTML (Pygments highlighting, admonitions, TOC, etc.)
-    content_html, toc_tokens = _pass2_markdown(expanded, source_path=source_path)
+    content_html, toc_tokens = _pass2_markdown(resolved_md, source_path=source_path)
 
     # Rewrite internal .md links to clean URLs (e.g. ./other.md -> ../other/)
     if content_dir is not None and source_path is not None:

@@ -21,6 +21,8 @@ from typing import TYPE_CHECKING
 from . import (
     alt_text,
     anchor,
+    anchor_alias,
+    api_symbols,
     asset,
     code_lang,
     example_contract,
@@ -57,9 +59,11 @@ GUARDS: list[Guard] = [
     snippet_path.check,
     nav.check,
     example_contract.check,
+    api_symbols.check,
     # --- post-build (SiteIndex) ---
     internal_link.check,
     anchor.check,
+    anchor_alias.check,
     asset.check,
     html_wellformed.check,
     single_h1.check,

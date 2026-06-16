@@ -29,7 +29,7 @@ from apps.docs.build.guards import GuardResult
 from apps.docs.build.nav import load_nav
 from apps.docs.build.paths import md_companion_path, md_to_html_path, md_to_url
 from apps.docs.build.pipeline import render_page
-from apps.docs.build.reference import generate_reference_pages
+from apps.docs.build.reference import generate_reference_pages, write_objects_inv
 from apps.docs.build.release_notes import generate_release_notes
 from apps.docs.examples import get_example_registry
 
@@ -164,6 +164,9 @@ def build_site(
         ex_rendered, ex_errors = pre_render_examples(output_dir, example_registry)
         outcome.example_files = ex_rendered
         outcome.failed += ex_errors
+
+    # Emit objects.inv so other docs sites can cross-link into our reference.
+    write_objects_inv(output_dir, version=ver)
 
     outcome.elapsed = time.monotonic() - t0
     return outcome

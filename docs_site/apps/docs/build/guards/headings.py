@@ -30,6 +30,8 @@ def check(ctx: GuardContext) -> Iterator[GuardResult]:
         # Release pages are generated verbatim from CHANGELOG.md, whose
         # historical sections legitimately jump levels (## version -> #### Feat).
         # That formatting is frozen history, so flagging it is pure noise.
+        # (Reference pages are NOT exempt: their docstring headings are demoted
+        # to nest correctly under the symbol/member structure - see docstring.py.)
         if page.label.startswith("docs/releases/"):
             continue
         prev_level = 0

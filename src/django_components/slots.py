@@ -118,14 +118,14 @@ class SlotContext(Generic[TSlotData]):
             return f"Hello, {ctx.fallback}!"
         ```
 
-    May be `None` if you call the slot fill directly, without using [`{% slot %}`](#slot) tags.
+    May be `None` if you call the slot fill directly, without using [`{% slot %}`][slot] tags.
     """
     context: Context | None = None
     """
     Django template [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
     available inside the [`{% fill %}`](template_tags.md#fill) tag.
 
-    May be `None` if you call the slot fill directly, without using [`{% slot %}`](#slot) tags.
+    May be `None` if you call the slot fill directly, without using [`{% slot %}`][slot] tags.
     """
 
 
@@ -500,7 +500,7 @@ class SlotIsFilled(dict):
 
 class SlotNode(BaseNode):
     """
-    [`{% slot %}`](#slot) tag marks a place inside a component where content can be inserted
+    [`{% slot %}`][slot] tag marks a place inside a component where content can be inserted
     from outside.
 
     [Learn more](../concepts/fundamentals/slots.md) about using slots.
@@ -513,7 +513,7 @@ class SlotNode(BaseNode):
     Args:
         name (str, required): Registered name of the component to render
         default: Optional flag. If there is a default slot, you can pass the component slot content
-            without using the [`{% fill %}`](#fill) tag. See
+            without using the [`{% fill %}`][fill] tag. See
             [Default slot](../concepts/fundamentals/slots.md#default-slot)
         required: Optional flag. Will raise an error if a slot is required but not given.
         **kwargs: Any extra kwargs will be passed as the slot data.
@@ -555,7 +555,7 @@ class SlotNode(BaseNode):
     ### Slot data
 
     Any extra kwargs will be considered as slot data, and will be accessible
-    in the [`{% fill %}`](#fill) tag via fill's `data` kwarg:
+    in the [`{% fill %}`][fill] tag via fill's `data` kwarg:
 
     Read more about [Slot data](../concepts/fundamentals/slots.md#slot-data).
 
@@ -592,7 +592,7 @@ class SlotNode(BaseNode):
     The content between the `{% slot %}..{% endslot %}` tags is the fallback content that
     will be rendered if no fill is given for the slot.
 
-    This fallback content can then be accessed from within the [`{% fill %}`](#fill) tag
+    This fallback content can then be accessed from within the [`{% fill %}`][fill] tag
     using the fill's `fallback` kwarg.
     This is useful if you need to wrap / prepend / append the original slot's content.
 
@@ -987,10 +987,10 @@ class SlotNode(BaseNode):
 
 class FillNode(BaseNode):
     """
-    Use [`{% fill %}`](#fill) tag to insert content into component's
+    Use [`{% fill %}`][fill] tag to insert content into component's
     [slots](../concepts/fundamentals/slots.md).
 
-    [`{% fill %}`](#fill) tag may be used only within a `{% component %}..{% endcomponent %}` block,
+    [`{% fill %}`][fill] tag may be used only within a `{% component %}..{% endcomponent %}` block,
     and raises a `TemplateSyntaxError` if used outside of a component.
 
     Args:
@@ -1079,7 +1079,7 @@ class FillNode(BaseNode):
     ### Using default slot
 
     To access slot data and the fallback slot content on the default slot,
-    use [`{% fill %}`](#fill) with `name` set to `"default"`:
+    use [`{% fill %}`][fill] with `name` set to `"default"`:
 
     ```django
     {% component "button" %}
@@ -1093,7 +1093,7 @@ class FillNode(BaseNode):
     ### Slot fills from Python
 
     You can pass a slot fill from Python to a component by setting the `body` kwarg
-    on the [`{% fill %}`](#fill) tag.
+    on the [`{% fill %}`][fill] tag.
 
     First pass a [`Slot`][Slot] instance to the template
     with the [`get_template_data()`][Component.get_template_data]
@@ -1109,7 +1109,7 @@ class FillNode(BaseNode):
         }
     ```
 
-    Then pass the slot to the [`{% fill %}`](#fill) tag:
+    Then pass the slot to the [`{% fill %}`][fill] tag:
 
     ```django
     {% component "table" %}
@@ -1119,7 +1119,7 @@ class FillNode(BaseNode):
 
     !!! warning
 
-        If you define both the `body` kwarg and the [`{% fill %}`](#fill) tag's body,
+        If you define both the `body` kwarg and the [`{% fill %}`][fill] tag's body,
         an error will be raised.
 
         ```django

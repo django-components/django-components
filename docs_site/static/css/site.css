@@ -252,11 +252,11 @@ body {
 }
 
 /* Show copy button on hover; hide language label to avoid overlap */
-.prose pre:hover .djc-code-copy {
+.prose .highlight:hover .djc-code-copy {
   opacity: 1;
 }
 
-.prose pre:hover .djc-code-lang {
+.prose .highlight:hover .djc-code-lang {
   opacity: 0;
 }
 
@@ -1243,6 +1243,137 @@ a.djc-sidebar__label:hover {
 }
 
 /* ------------------------------------------------------------------ */
+/* Reference TOC: collapsible class -> members, with symbol badges     */
+/* ------------------------------------------------------------------ */
+.djc-toc__row,
+.djc-toc__subitem {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Reserve a left gutter on every top-level row so labels align whether or not
+   the row has a caret (the caret sits in the gutter, absolutely positioned). */
+.djc-toc__row {
+  position: relative;
+  padding-left: 1.1rem;
+}
+
+.djc-toc__row .djc-toc__link,
+.djc-toc__subitem .djc-toc__link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.djc-toc__toggle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--c-fg-subtle);
+}
+
+.djc-toc__toggle::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid currentColor;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  transition: transform 0.15s;
+}
+
+.djc-toc__item--expanded > .djc-toc__row > .djc-toc__toggle::before {
+  transform: rotate(90deg);
+}
+
+.djc-toc__toggle:hover {
+  color: var(--c-fg);
+}
+
+.djc-toc__sublist {
+  list-style: none;
+  margin: 0.1rem 0 0.3rem;
+  padding-left: 1.2rem;
+}
+
+/* Members fold away by default; the active class (scroll-spy) or a manual toggle
+   opens them. Plain content subsections are not collapsible, so they stay shown. */
+.djc-toc__item--collapsible .djc-toc__sublist {
+  display: none;
+}
+
+.djc-toc__item--collapsible.djc-toc__item--expanded .djc-toc__sublist {
+  display: block;
+}
+
+.djc-toc__subitem {
+  margin-bottom: 0.1rem;
+}
+
+/* Symbol-type badges in the rail. Colors reuse the in-page doc-symbol vars; the
+   label comes from ::after, like the in-page badge (the <span> is empty). */
+.djc-toc .doc-symbol,
+.djc-toc-mobile .doc-symbol {
+  flex-shrink: 0;
+  display: inline-block;
+  border-radius: 0.25em;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0 0.35em;
+}
+
+.djc-toc .doc-symbol-class,
+.djc-toc-mobile .doc-symbol-class {
+  color: var(--doc-symbol-class-fg);
+  background-color: var(--doc-symbol-class-bg);
+}
+.djc-toc .doc-symbol-class::after,
+.djc-toc-mobile .doc-symbol-class::after { content: "class"; }
+
+.djc-toc .doc-symbol-function,
+.djc-toc-mobile .doc-symbol-function,
+.djc-toc .doc-symbol-method,
+.djc-toc-mobile .doc-symbol-method {
+  color: var(--doc-symbol-function-fg);
+  background-color: var(--doc-symbol-function-bg);
+}
+.djc-toc .doc-symbol-function::after,
+.djc-toc-mobile .doc-symbol-function::after { content: "func"; }
+.djc-toc .doc-symbol-method::after,
+.djc-toc-mobile .doc-symbol-method::after { content: "meth"; }
+
+.djc-toc .doc-symbol-attribute,
+.djc-toc-mobile .doc-symbol-attribute {
+  color: var(--doc-symbol-attribute-fg);
+  background-color: var(--doc-symbol-attribute-bg);
+}
+.djc-toc .doc-symbol-attribute::after,
+.djc-toc-mobile .doc-symbol-attribute::after { content: "attr"; }
+
+.djc-toc .doc-symbol-module,
+.djc-toc-mobile .doc-symbol-module {
+  color: var(--doc-symbol-module-fg);
+  background-color: var(--doc-symbol-module-bg);
+}
+.djc-toc .doc-symbol-module::after,
+.djc-toc-mobile .doc-symbol-module::after { content: "module"; }
+
+/* ------------------------------------------------------------------ */
 /* Mobile TOC: <details> disclosure shown when the right rail is gone  */
 /* ------------------------------------------------------------------ */
 .djc-toc-mobile {
@@ -1482,4 +1613,96 @@ body.djc-drawer-open .djc-drawer-overlay {
 
 .prose .doc-contents {
   margin-top: 0.5rem;
+}
+
+/* Signature block: a code-like box; long signatures wrap rather than scroll. */
+.prose .doc-signature {
+  margin: 0.5rem 0 1rem;
+}
+
+.prose .doc-signature pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.prose .doc-type-link {
+  color: var(--c-link);
+  text-decoration: none;
+}
+
+.prose .doc-type-link:hover {
+  text-decoration: underline;
+}
+
+/* Parameters table. */
+.prose .doc-params {
+  width: 100%;
+  margin: 0.5rem 0 1rem;
+}
+
+.prose .doc-params td:first-child {
+  white-space: nowrap;
+}
+
+.prose .doc-param-default {
+  color: var(--c-fg-muted);
+  font-size: 0.9em;
+}
+
+/* Returns / Raises / Examples section labels. */
+.prose .doc-section {
+  margin: 0.75rem 0;
+}
+
+.prose .doc-section-title {
+  margin-bottom: 0.25rem;
+  color: var(--c-fg-muted);
+  font-size: 0.8em;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Member grouping (Attributes / Methods / Classes). */
+.prose .doc-members {
+  margin-top: 1.5rem;
+}
+
+.prose .doc-group-label {
+  margin: 1.5rem 0 0.75rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--c-border-subtle);
+  color: var(--c-fg-muted);
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.prose .doc-member {
+  margin: 0 0 2rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--c-border-subtle);
+}
+
+.prose .doc-member-heading {
+  margin: 0.5rem 0;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  scroll-margin-top: 80px;
+}
+
+.prose .doc-label {
+  margin-left: 0.5em;
+  color: var(--c-fg-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+}
+
+.prose .doc-unresolved {
+  color: var(--c-fg-muted);
+  font-style: italic;
 }

@@ -56,8 +56,8 @@ def docstring(context: template.Context, path: str) -> str:
 
     Usage in markdown: {% docstring "django_components.Component" %}
     """
-    from apps.docs.components.reference.render import render_entry  # noqa: PLC0415
-    from apps.docs.discovery.registry import entry_index  # noqa: PLC0415
+    from apps.docs.reference.discovery.registry import entry_index  # noqa: PLC0415
+    from apps.docs.reference.render import render_entry  # noqa: PLC0415
 
     entry = entry_index().get(path)
     if entry is None:

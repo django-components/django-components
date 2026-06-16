@@ -5,9 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pygments_djc  # noqa: F401 -- register djc_py for the lexer-alias test
-from apps.docs.build.guards import code_lang, fence_validator, lexer_alias, nav, snippet_path
+from apps.docs.build.guards import api_symbols, code_lang, fence_validator, lexer_alias, nav, snippet_path
 from apps.docs.build.guards.base import GuardContext, Severity
 from apps.docs.build.guards.fence_validator import scan_fences
+from apps.docs.reference.discovery.kinds import ReferenceEntry, ReferencePage
 
 
 def make_ctx(content_dir: Path, **kw: object) -> GuardContext:
@@ -142,3 +143,35 @@ def test_nav_flags_missing_page_and_orphan(tmp_path: Path) -> None:
     assert any(r.source == "orphan.md" for r in warnings)
     # the page that IS in the nav is not flagged as an orphan
     assert not any("installation" in (r.source or "") for r in warnings)
+
+
+# --- api_symbols (forward resolve + reverse coverage) ----------------------
+
+
+def test_api_symbols_clean_against_real_discovery() -> None:
+    # Real discovery: every entry resolves and every public export is documented,
+    # so the guard is silent. This doubles as a regression test - a new
+    # undocumented export, or an entry griffe can't resolve, makes it fail.
+    assert list(api_symbols.check(make_ctx(Path()))) == []
+
+
+def test_api_symbols_forward_errors_on_unresolvable_entry(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    bad = ReferencePage(
+        slug="x",
+        title="X",
+        preface_md="",
+        entries=(
+            ReferenceEntry(kind="class", dotted_path="django_components.NoSuchSymbol", display_name="NoSuchSymbol"),
+        ),
+    )
+    monkeypatch.setattr(api_symbols, "discover_pages", lambda: (bad,))
+    results = list(api_symbols.check(make_ctx(Path())))
+    assert any(r.severity is Severity.ERROR and "does not resolve" in r.message for r in results)
+
+
+def test_api_symbols_reverse_warns_when_export_undocumented(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    # Nothing documented -> every public export is flagged as a coverage warning.
+    monkeypatch.setattr(api_symbols, "discover_pages", lambda: ())
+    results = list(api_symbols.check(make_ctx(Path())))
+    warnings = [r for r in results if r.severity is Severity.WARNING]
+    assert any("Component" in r.message for r in warnings)

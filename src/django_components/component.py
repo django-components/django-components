@@ -3040,7 +3040,7 @@ class Component(metaclass=ComponentMeta):
             {% component "button" key1=val1 key2=val2 ... %}
             ```
 
-        - `slots` - Optional. A dictionary of slot fills. This is the same as passing [`{% fill %}`](#fill)
+        - `slots` - Optional. A dictionary of slot fills. This is the same as passing [`{% fill %}`][fill]
             tags to the component.
 
             ```django
@@ -3426,7 +3426,7 @@ class ComponentNode(BaseNode):
     [`@register()`][register]
     decorator.
 
-    The [`{% component %}`](#component) tag takes:
+    The [`{% component %}`][component] tag takes:
 
     - Component's registered name as the first positional argument,
     - Followed by any number of positional and keyword arguments.
@@ -3443,8 +3443,8 @@ class ComponentNode(BaseNode):
     ### Inserting slot fills
 
     If the component defined any [slots](../concepts/fundamentals/slots.md), you can
-    "fill" these slots by placing the [`{% fill %}`](#fill) tags
-    within the [`{% component %}`](#component) tag:
+    "fill" these slots by placing the [`{% fill %}`][fill] tags
+    within the [`{% component %}`][component] tag:
 
     ```django
     {% component "my_table" rows=rows headers=headers %}
@@ -3454,7 +3454,7 @@ class ComponentNode(BaseNode):
     {% endcomponent %}
     ```
 
-    You can even nest [`{% fill %}`](#fill) tags within
+    You can even nest [`{% fill %}`][fill] tags within
     [`{% if %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#if),
     [`{% for %}`](https://docs.djangoproject.com/en/5.2/ref/templates/builtins/#for)
     and other tags:

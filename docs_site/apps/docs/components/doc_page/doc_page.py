@@ -326,18 +326,25 @@ class DocPage(Component):
                     {% if toc_items %}
                     <details class="djc-toc-mobile">
                         <summary>On this page</summary>
+                        {# No collapse on mobile: members are shown inline when the disclosure is open. #}
                         <ul class="djc-toc__list">
                             {% for item in toc_items %}
-                            <li class="djc-toc__item djc-toc__item--{{ item.level }}">
-                                <a class="djc-toc__link" href="#{{ item.id }}">{{ item.name }}</a>
+                            <li class="djc-toc__item">
+                                <span class="djc-toc__row">
+                                    {% if item.kind %}<span class="doc-symbol doc-symbol-{{ item.kind }}"></span>{% endif %}
+                                    <a class="djc-toc__link" href="#{{ item.id }}">{{ item.name }}</a>
+                                </span>
+                                {% if item.children %}
+                                <ul class="djc-toc__sublist">
+                                    {% for child in item.children %}
+                                    <li class="djc-toc__subitem">
+                                        {% if child.kind %}<span class="doc-symbol doc-symbol-{{ child.kind }}"></span>{% endif %}
+                                        <a class="djc-toc__link" href="#{{ child.id }}">{{ child.name }}</a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
                             </li>
-                            {% if item.children %}
-                            {% for child in item.children %}
-                            <li class="djc-toc__item djc-toc__item--{{ child.level }}">
-                                <a class="djc-toc__link" href="#{{ child.id }}">{{ child.name }}</a>
-                            </li>
-                            {% endfor %}
-                            {% endif %}
                             {% endfor %}
                         </ul>
                     </details>
@@ -396,16 +403,23 @@ class DocPage(Component):
                     <div class="djc-toc__label">On this page</div>
                     <ul class="djc-toc__list">
                         {% for item in toc_items %}
-                        <li class="djc-toc__item djc-toc__item--{{ item.level }}">
-                            <a class="djc-toc__link" href="#{{ item.id }}">{{ item.name }}</a>
+                        <li class="djc-toc__item{% if item.collapsible %} djc-toc__item--collapsible{% endif %}">
+                            <span class="djc-toc__row">
+                                {% if item.collapsible %}<button type="button" class="djc-toc__toggle" aria-expanded="false" aria-label="Toggle members of {{ item.name }}"></button>{% endif %}
+                                {% if item.kind %}<span class="doc-symbol doc-symbol-{{ item.kind }}"></span>{% endif %}
+                                <a class="djc-toc__link" href="#{{ item.id }}">{{ item.name }}</a>
+                            </span>
+                            {% if item.children %}
+                            <ul class="djc-toc__sublist">
+                                {% for child in item.children %}
+                                <li class="djc-toc__subitem">
+                                    {% if child.kind %}<span class="doc-symbol doc-symbol-{{ child.kind }}"></span>{% endif %}
+                                    <a class="djc-toc__link" href="#{{ child.id }}">{{ child.name }}</a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
                         </li>
-                        {% if item.children %}
-                        {% for child in item.children %}
-                        <li class="djc-toc__item djc-toc__item--{{ child.level }}">
-                            <a class="djc-toc__link" href="#{{ child.id }}">{{ child.name }}</a>
-                        </li>
-                        {% endfor %}
-                        {% endif %}
                         {% endfor %}
                     </ul>
                 </aside>
@@ -507,22 +521,36 @@ def _build_nav_view(sections: "list[NavSection]", current_path: str) -> list[dic
 
 def _flatten_toc(toc_tokens: list) -> list[dict]:
     """
-    Convert python-markdown toc_tokens into a flat list of {id, name, level, children}.
+    Convert the toc token tree into the right-rail's render model.
 
-    toc_tokens is nested: [{id, name, level, children: [{...}]}].
-    We keep children one level deep (H2 with H3 children) for the right-rail TOC.
+    The page H1 (the title) is unwrapped so its sections become the top level -
+    the rail lists sections, not the redundant page title (matching the old
+    reference TOC). Each item keeps one level of children. ``kind`` (the symbol
+    type) drives the badge; ``collapsible`` (children that carry a kind, i.e.
+    class members) drives the expand/collapse affordance, so plain content
+    subsections stay always-visible while a class's members fold away.
     """
-    items = []
+    top: list = []
     for token in toc_tokens:
-        children = []
-        for child in token.get("children", []):
-            children.append({"id": child["id"], "name": child["name"], "level": child.get("level", 3)})
+        if token.get("level") == 1:
+            top.extend(token.get("children", []))
+        else:
+            top.append(token)
+
+    items = []
+    for token in top:
+        children = [
+            {"id": c["id"], "name": c["name"], "level": c.get("level", 4), "kind": c.get("kind", "")}
+            for c in token.get("children", [])
+        ]
         items.append(
             {
                 "id": token["id"],
                 "name": token["name"],
                 "level": token.get("level", 2),
+                "kind": token.get("kind", ""),
                 "children": children,
+                "collapsible": any(c["kind"] for c in children),
             }
         )
     return items

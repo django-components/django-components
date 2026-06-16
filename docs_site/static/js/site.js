@@ -105,10 +105,62 @@
     });
   });
 
-  // Scroll active sidebar item into view
-  var activeLink = document.querySelector('.djc-sidebar__link.is-active');
-  if (activeLink) {
-    activeLink.scrollIntoView({ block: 'nearest' });
+  // Sidebar scroll persistence: keep the left-nav scroll position when moving
+  // between pages in the SAME nav section; only re-center on the active item
+  // when entering a section we have no saved position for. Without this, every
+  // click is a full page load that snaps the sidebar back near the top.
+  var sidebar = document.getElementById('djc-sidebar');
+  if (sidebar) {
+    var SIDEBAR_SCROLL_KEY = 'djc-sidebar-scroll';
+
+    // Which top-level section the active page lives in. Stable across pages (the
+    // sidebar always renders every section), so it identifies "the same nav".
+    var activeSectionSig = function () {
+      var active = sidebar.querySelector('.djc-sidebar__link.is-active');
+      var section = active && active.closest('.djc-sidebar__section');
+      if (!section) return null;
+      var sections = sidebar.querySelectorAll('.djc-sidebar__section');
+      return String(Array.prototype.indexOf.call(sections, section));
+    };
+
+    var loadScrollMap = function () {
+      try {
+        return JSON.parse(sessionStorage.getItem(SIDEBAR_SCROLL_KEY) || '{}');
+      } catch (e) {
+        return {};
+      }
+    };
+
+    // Restore this section's saved scroll, else bring the active item into view.
+    var sig = activeSectionSig();
+    var savedTop = sig !== null ? loadScrollMap()[sig] : undefined;
+    if (savedTop !== undefined) {
+      sidebar.scrollTop = savedTop;
+    } else {
+      var activeNavLink = sidebar.querySelector('.djc-sidebar__link.is-active');
+      if (activeNavLink) activeNavLink.scrollIntoView({ block: 'nearest' });
+    }
+
+    // Persist the current section's scroll (debounced while scrolling, flushed
+    // on navigate-away) so the next same-section page can restore it.
+    var persistScroll = function () {
+      var s = activeSectionSig();
+      if (s === null) return;
+      var map = loadScrollMap();
+      map[s] = sidebar.scrollTop;
+      try {
+        sessionStorage.setItem(SIDEBAR_SCROLL_KEY, JSON.stringify(map));
+      } catch (e) {
+        /* sessionStorage unavailable (private mode / quota) - skip */
+      }
+    };
+
+    var scrollTimer = null;
+    sidebar.addEventListener('scroll', function () {
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(persistScroll, 150);
+    });
+    window.addEventListener('pagehide', persistScroll);
   }
 
   // ----------------------------------------------------------------
@@ -206,6 +258,37 @@
   // ----------------------------------------------------------------
   var tocLinks = document.querySelectorAll('.djc-toc__link');
   if (tocLinks.length > 0) {
+    // Expand a collapsible class when it (or one of its members) is active, or
+    // when the reader pinned it open; collapse the rest. Keeps the rail compact
+    // on big reference pages while always revealing where you are.
+    var setExpanded = function (item, expanded) {
+      item.classList.toggle('djc-toc__item--expanded', expanded);
+      var toggle = item.querySelector('.djc-toc__toggle');
+      if (toggle) toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    };
+
+    var syncExpansion = function (activeLink) {
+      var activeItem = activeLink ? activeLink.closest('.djc-toc__item--collapsible') : null;
+      document.querySelectorAll('.djc-toc__item--collapsible').forEach(function (item) {
+        setExpanded(item, item === activeItem || item.hasAttribute('data-toc-pinned'));
+      });
+    };
+
+    // Manual toggle: pin a class open (or collapse it) regardless of scroll.
+    document.querySelectorAll('.djc-toc__toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var item = btn.closest('.djc-toc__item--collapsible');
+        if (!item) return;
+        var expand = !item.classList.contains('djc-toc__item--expanded');
+        if (expand) {
+          item.setAttribute('data-toc-pinned', '');
+        } else {
+          item.removeAttribute('data-toc-pinned');
+        }
+        setExpanded(item, expand);
+      });
+    });
+
     var headingIds = [];
     tocLinks.forEach(function (link) {
       var href = link.getAttribute('href');
@@ -230,14 +313,13 @@
           });
 
           if (activeId) {
+            var activeLink = null;
             tocLinks.forEach(function (link) {
-              var href = link.getAttribute('href');
-              if (href === '#' + activeId) {
-                link.classList.add('is-active');
-              } else {
-                link.classList.remove('is-active');
-              }
+              var isActive = link.getAttribute('href') === '#' + activeId;
+              link.classList.toggle('is-active', isActive);
+              if (isActive) activeLink = link;
             });
+            syncExpansion(activeLink);
           }
         },
         {
@@ -277,15 +359,17 @@
       }
     }
 
-    // Make the pre position-relative for absolute children
-    pre.style.position = 'relative';
+    // Anchor the label + copy button to the .highlight wrapper, NOT the <pre>.
+    // <pre> is the horizontally-scrolling element, so an absolute child of it
+    // scrolls away with the code; .highlight is the stationary box around it.
+    // (.highlight is already position:relative in site.css.)
 
     // Language label (top-right, always visible)
     if (lang) {
       var label = document.createElement('span');
       label.className = 'djc-code-lang';
       label.textContent = lang;
-      pre.appendChild(label);
+      block.appendChild(label);
     }
 
     // Copy button (top-right, visible on hover)
@@ -312,7 +396,7 @@
       });
     });
 
-    pre.appendChild(btn);
+    block.appendChild(btn);
   });
 
   // ----------------------------------------------------------------

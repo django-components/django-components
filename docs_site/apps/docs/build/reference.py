@@ -18,10 +18,10 @@ import tempfile
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from apps.docs.discovery.registry import discover_pages
+from apps.docs.reference.discovery.registry import discover_pages
 
 if TYPE_CHECKING:
-    from apps.docs.discovery.kinds import ReferencePage
+    from apps.docs.reference.discovery.kinds import ReferencePage
 
 
 def _page_markdown(page: ReferencePage) -> str:
@@ -34,13 +34,28 @@ def _page_markdown(page: ReferencePage) -> str:
     lines += ["---", "", f"# {page.title}", ""]
 
     if page.preface_md.strip():
+        # `[X][Key]` cross-refs in the preface are resolved by the render pipeline
+        # (resolve_crossrefs_in_prose), the same as for any content page.
         lines += [page.preface_md.strip(), ""]
 
+    # The hooks_plus_objects layout splits entries into "Hooks" / "Objects"
+    # sections (h2 headings), which also nest the entries in the right-rail TOC.
+    section_for = _HOOKS_PLUS_OBJECTS_SECTIONS if page.layout == "hooks_plus_objects" else {}
+    current_section: str | None = None
+
     for entry in page.entries:
+        section = section_for.get(entry.kind)
+        if section is not None and section != current_section:
+            lines += [f"## {section}", ""]
+            current_section = section
         lines.append(f'{{% docstring "{entry.dotted_path}" %}}')
         lines.append("")
 
     return "\n".join(lines) + "\n"
+
+
+# kind -> section heading, for the hooks_plus_objects page layout.
+_HOOKS_PLUS_OBJECTS_SECTIONS = {"extension_hook": "Hooks", "hook_context": "Objects"}
 
 
 def generate_reference_pages(target_dir: Path) -> list[Path]:
@@ -54,6 +69,25 @@ def generate_reference_pages(target_dir: Path) -> list[Path]:
         page_path.write_text(_page_markdown(page), encoding="utf-8")
         written.append(page_path)
     return written
+
+
+def write_objects_inv(output_dir: Path, *, version: str) -> None:
+    """
+    Emit ``objects.inv`` for our documented symbols (feature 4.22).
+
+    Lets other docs sites cross-link into ours with the same ``[X][path]``
+    convention we use internally - the inverse of consuming stdlib/Django
+    inventories.
+    """
+    from apps.docs.reference.inventory import build_objects_inv  # noqa: PLC0415
+
+    entries = [
+        (entry.dotted_path, f"docs/reference/{page.slug}/#{entry.canonical_anchor}")
+        for page in discover_pages()
+        for entry in page.entries
+    ]
+    data = build_objects_inv(entries, project="django-components", version=version)
+    (output_dir / "objects.inv").write_bytes(data)
 
 
 # Dev-server cache: a staging dir holding the generated reference pages. Unlike
