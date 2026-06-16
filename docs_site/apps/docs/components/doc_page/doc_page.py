@@ -82,6 +82,10 @@ class DocPage(Component):
                 })();
             </script>
 
+            <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+            <link rel="icon" type="image/png" href="/static/img/favicon.png">
+            <link rel="apple-touch-icon" href="/static/img/favicon.png">
+
             <link rel="stylesheet" href="/static/css/tokens.css">
             <link rel="stylesheet" href="/static/css/site.css">
             <link rel="stylesheet" href="/static/css/pygments-light.css">

@@ -9,10 +9,11 @@ Each request resolves a URL to a content markdown file and renders it.
 from __future__ import annotations
 
 from importlib.metadata import version as get_version
+from pathlib import Path
 
 import pygments_djc  # noqa: F401 -- register the djc_py Pygments lexer
 from django.conf import settings
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import FileResponse, Http404, HttpRequest, HttpResponse
 from django.test import RequestFactory
 
 from apps.docs.build.examples import examples_index_markdown
@@ -67,6 +68,13 @@ def serve_page(request: HttpRequest, url_path: str = "") -> HttpResponse:
         md_path = url_to_md(content_root, url_path)
 
     if md_path is None:
+        # Not a renderable page - it may be a content asset, e.g. an image a page
+        # references relatively (docs/images/foo.png). The static build copies
+        # these into the output; here we serve them straight from CONTENT_DIR so
+        # the live preview matches.
+        asset = _content_asset(url_path)
+        if asset is not None:
+            return FileResponse(asset.open("rb"))
         raise Http404(f"No docs page for /{url_path}")
 
     rel = md_path.relative_to(content_root)
@@ -96,6 +104,20 @@ def serve_page(request: HttpRequest, url_path: str = "") -> HttpResponse:
         current_path=page_url,
     )
     return HttpResponse(result.html)
+
+
+def _content_asset(url_path: str) -> Path | None:
+    """
+    The content file backing ``url_path`` (e.g. an image), if one exists.
+
+    Resolved under CONTENT_DIR and confined to it (no path traversal). Markdown is
+    excluded - it's rendered as a page, not served raw.
+    """
+    root = settings.CONTENT_DIR.resolve()
+    candidate = (root / url_path.strip("/")).resolve()
+    if not candidate.is_relative_to(root) or candidate.suffix == ".md":
+        return None
+    return candidate if candidate.is_file() else None
 
 
 def serve_example(request: HttpRequest, name: str) -> HttpResponse:
