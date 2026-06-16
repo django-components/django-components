@@ -29,6 +29,15 @@ class Release:
     body: str  # markdown body without the "## vX.Y.Z" header line
 
 
+# A release may carry its date in the body as an italic line. We accept the
+# long-standing "_11 Sep 2024_" form and also ISO "_2024-09-11_"; both render in
+# the title as ISO. Tried in order, first match wins.
+_DATE_FORMATS = (
+    (re.compile(r"_(\d{1,2}\s+\w{3}\s+\d{4})_"), "%d %b %Y"),
+    (re.compile(r"_(\d{4}-\d{2}-\d{2})_"), "%Y-%m-%d"),
+)
+
+
 def parse_changelog(changelog_path: Path) -> list[Release]:
     """Split CHANGELOG.md into one Release per "## vX.Y.Z" section."""
     content = changelog_path.read_text(encoding="utf-8")
@@ -43,13 +52,14 @@ def parse_changelog(changelog_path: Path) -> list[Release]:
         header_line, _, body = stripped.partition("\n")
         body = body.strip()
 
-        # Releases may carry their date in the body as "_11 Sep 2024_";
-        # move it from the body into the title.
-        date_str = None
-        date_match = re.search(r"_(\d{1,2}\s+\w{3}\s+\d{4})_", body)
-        if date_match:
-            date_str = date_match.group(1)
-            body = body.replace(date_match.group(0), "").strip()
+        # Pull the release date (if any) out of the body and into the title.
+        parsed_date = None
+        for pattern, fmt in _DATE_FORMATS:
+            date_match = pattern.search(body)
+            if date_match:
+                parsed_date = datetime.strptime(date_match.group(1), fmt)  # noqa: DTZ007 -- date-only, no tz in source
+                body = body.replace(date_match.group(0), "").strip()
+                break
 
         # Full header text, e.g. "🚨📢 v0.140.0"
         title = header_line.removeprefix("##").strip()
@@ -60,8 +70,7 @@ def parse_changelog(changelog_path: Path) -> list[Release]:
         if not slug.startswith("v"):
             slug = "v" + slug
 
-        if date_str:
-            parsed_date = datetime.strptime(date_str, "%d %b %Y")  # noqa: DTZ007 -- date-only, no tz info in source
+        if parsed_date is not None:
             title += f" ({parsed_date.strftime('%Y-%m-%d')})"
 
         releases.append(Release(slug=slug, title=title, body=body))
