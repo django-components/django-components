@@ -34,3 +34,12 @@ newest = ""
 # Which version the `latest/` alias redirects to. "" means the newest selected
 # version that actually built.
 latest = ""
+
+[publish]
+# How many of the newest release versions the DEPLOY publishes to the live site.
+# The committed versions/ tree always keeps ALL versions (for reproducibility and
+# docs_versions_check); this only bounds what `docs-assemble` mounts under /v/,
+# because GitHub Pages caps a published site at 1 GB and the frozen historical
+# builds are large (~12-36 MB each). dev and the latest alias are always
+# published. 0 = publish everything (no limit).
+window = 15

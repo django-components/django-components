@@ -48,6 +48,7 @@ class VersionsConfig:
     oldest: str = ""
     newest: str = ""
     latest_alias: str = ""  # which version `latest/` points at ("" = newest built)
+    publish_window: int = 0  # how many newest releases the deploy publishes (0 = all)
 
 
 def load_versions_config(path: Path) -> VersionsConfig:
@@ -57,6 +58,7 @@ def load_versions_config(path: Path) -> VersionsConfig:
     data = tomllib.loads(path.read_text(encoding="utf-8"))
     versions = data.get("versions", {})
     aliases = data.get("aliases", {})
+    publish = data.get("publish", {})
     defaults = VersionsConfig()
     return VersionsConfig(
         pattern=versions.get("pattern") or defaults.pattern,
@@ -65,6 +67,7 @@ def load_versions_config(path: Path) -> VersionsConfig:
         oldest=versions.get("oldest", "") or "",
         newest=versions.get("newest", "") or "",
         latest_alias=aliases.get("latest", "") or "",
+        publish_window=int(publish.get("window", 0) or 0),
     )
 
 

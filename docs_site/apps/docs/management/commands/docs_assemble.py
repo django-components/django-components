@@ -39,7 +39,9 @@ from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.docs.build.versioning import load_manifest, write_manifest
+from apps.docs._vendor.mike_versions import Versions
+from apps.docs.build.bootstrap import load_versions_config
+from apps.docs.build.versioning import load_manifest, select_published_versions, write_manifest
 
 
 class Command(BaseCommand):
@@ -86,10 +88,10 @@ class Command(BaseCommand):
         # versions.json) under /v/. Frozen imports carry their own assets; new
         # snapshots reference the shared /static at the root.
         if versions_root.is_dir():
-            dest_v = site_dir / "v"
-            shutil.copytree(versions_root, dest_v, dirs_exist_ok=True)
-            n_versions = sum(1 for d in dest_v.iterdir() if d.is_dir() and (d / "_build_info.json").is_file())
-            self.stdout.write(self.style.SUCCESS(f"Mounted {n_versions} version(s) under {dest_v}"))
+            window = load_versions_config(settings.VERSIONS_CONFIG).publish_window
+            published = self._publish_versions(versions_root, site_dir / "v", window)
+            note = f" (newest {window} of the committed tree)" if window and len(published) >= window else ""
+            self.stdout.write(self.style.SUCCESS(f"Mounted {len(published)} version(s) under {site_dir / 'v'}{note}"))
         else:
             self.stdout.write(f"No versions tree at {versions_root}; assembled current version only.")
 
@@ -102,6 +104,32 @@ class Command(BaseCommand):
             self._build_dev(site_dir, str(options["dev_title"]))
 
         self.stdout.write(self.style.SUCCESS(f"Assembled deploy artifact at {site_dir}"))
+
+    def _publish_versions(self, versions_root: Path, dest_v: Path, window: int) -> list[str]:
+        """
+        Copy the published subset of committed versions into ``dest_v`` and write a
+        trimmed served manifest. The committed tree is never modified; ``window``
+        only bounds what the deploy mounts (GitHub Pages' 1 GB cap). Returns the
+        published version list.
+        """
+        manifest = load_manifest(versions_root)
+        published = select_published_versions(manifest, window)
+        published_set = set(published)
+
+        trimmed = Versions()
+        for info in manifest:
+            version = str(info.version)
+            if version not in published_set:
+                continue
+            shutil.copytree(versions_root / version, dest_v / version, dirs_exist_ok=True)
+            trimmed.add(version, title=info.title, aliases=list(info.aliases))
+            # Copy each alias dir (e.g. latest/) whose target version is published.
+            for alias in info.aliases:
+                alias_dir = versions_root / alias
+                if alias_dir.is_dir():
+                    shutil.copytree(alias_dir, dest_v / alias, dirs_exist_ok=True)
+        write_manifest(dest_v, trimmed)
+        return published
 
     def _build_dev(self, site_dir: Path, dev_title: str) -> None:
         dest_v = site_dir / "v"

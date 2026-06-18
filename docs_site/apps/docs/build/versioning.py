@@ -70,6 +70,20 @@ def is_frozen_import(version_dir: Path) -> bool:
     return data.get("builder_version") == IMPORTED_BUILDER_VERSION
 
 
+def select_published_versions(versions: Versions, window: int) -> list[str]:
+    """
+    The newest ``window`` release versions (newest-first), or all releases when
+    ``window`` <= 0. ``dev`` is excluded (the deploy publishes it separately).
+
+    Used by the deploy to publish a bounded subset of the committed versions
+    tree: the full tree stays committed for reproducibility, but GitHub Pages
+    caps a published site at 1 GB and the frozen historical builds are large.
+    """
+    # Versions.__iter__ yields newest-first (dev sorts above releases).
+    releases = [str(v.version) for v in versions if str(v.version) != "dev"]
+    return releases[:window] if window and window > 0 else releases
+
+
 def load_manifest(versions_root: Path) -> Versions:
     """Read ``versions_root/versions.json`` into a ``Versions``; empty if absent."""
     manifest = versions_root / MANIFEST_NAME

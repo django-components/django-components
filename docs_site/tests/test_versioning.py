@@ -19,10 +19,42 @@ from apps.docs.build.versioning import (
     load_manifest,
     materialize_alias,
     render_redirect,
+    select_published_versions,
     update_manifest,
     write_build_info,
     write_manifest,
 )
+
+# -- published-version window (deploy subset) ----------------------------------
+
+
+def _mk(versions: list[str]) -> Versions:
+    out = Versions()
+    for v in versions:
+        out.add(v)
+    return out
+
+
+def test_select_published_returns_newest_n_releases() -> None:
+    versions = _mk(["0.148.0", "0.149.0", "0.150.0", "0.151.0", "dev"])
+    assert select_published_versions(versions, 2) == ["0.151.0", "0.150.0"]
+
+
+def test_select_published_excludes_dev() -> None:
+    versions = _mk(["0.150.0", "0.151.0", "dev"])
+    assert "dev" not in select_published_versions(versions, 10)
+
+
+def test_select_published_zero_or_negative_window_returns_all_releases() -> None:
+    versions = _mk(["0.149.0", "0.150.0", "0.151.0", "dev"])
+    assert select_published_versions(versions, 0) == ["0.151.0", "0.150.0", "0.149.0"]
+    assert select_published_versions(versions, -1) == ["0.151.0", "0.150.0", "0.149.0"]
+
+
+def test_select_published_window_larger_than_count_returns_all() -> None:
+    versions = _mk(["0.150.0", "0.151.0"])
+    assert select_published_versions(versions, 99) == ["0.151.0", "0.150.0"]
+
 
 # -- vendored Versions data model ----------------------------------------------
 
