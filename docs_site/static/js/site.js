@@ -17,6 +17,15 @@
 (function () {
   'use strict';
 
+  // Base path the site is served under (e.g. "/django-components" for a project
+  // Pages deploy), emitted by the build as <meta name="djc-base-path">. Empty
+  // for a root-served site (the default). Used to locate /v/versions.json from
+  // pages that aren't themselves under /v/ (e.g. the current docs at the root).
+  var BASE_PATH = (function () {
+    var m = document.querySelector('meta[name="djc-base-path"]');
+    return (m && m.getAttribute('content')) || '';
+  })();
+
   // ----------------------------------------------------------------
   // Theme picker (3-button: light / auto / dark)
   // ----------------------------------------------------------------
@@ -477,11 +486,12 @@
     if (!select) return;
     var current = picker.getAttribute('data-current');
 
-    // The page lives at <base>/v/<version>/<page>. Capture "<base>/v/" so the
-    // picker is agnostic to the site's base path (e.g. /django-components/).
+    // Locate the versions root ("<base>/v/"). On a /v/<version>/ page we capture
+    // it straight from the URL (base-path agnostic). On other pages - notably the
+    // current docs served at the root, which have no /v/ segment - fall back to
+    // the build-emitted base path, so the picker populates there too.
     var match = window.location.pathname.match(/^(.*\/v\/)[^/]+\//);
-    if (!match) return; // not under /v/<version>/ -> leave the seeded label
-    var versionsRoot = match[1];
+    var versionsRoot = match ? match[1] : BASE_PATH + '/v/';
 
     // On change, go to the selected version's home. The same page may not
     // exist across versions, so we don't try to preserve the sub-path here

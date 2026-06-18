@@ -8,13 +8,14 @@ attribute - the same markup-only + site.js split the theme picker and overflow
 menu use.
 
 Why a native ``<select>``: it is keyboard- and screen-reader-accessible for
-free, and it degrades gracefully. If the page isn't served under a
-``/v/<version>/`` prefix (e.g. the local dev server, where versions aren't
-mounted) or the manifest can't be fetched, the control just shows the current
-version and does nothing.
+free, and it degrades gracefully. If the manifest can't be fetched (e.g. the
+local dev server, where versions aren't mounted), the control just shows the
+current version and does nothing.
 
-The manifest URL and the redirect target are derived client-side from the
-page's own ``/v/<version>/`` path prefix, so the picker works regardless of the
+The manifest URL and redirect target are derived client-side: on a
+``/v/<version>/`` page from that path prefix, and on other pages (notably the
+current docs served at the root) from the build-emitted
+``<meta name="djc-base-path">``. Either way the picker works regardless of the
 site's base path (e.g. the ``/django-components/`` GitHub Pages prefix) without
 the build baking in an absolute URL.
 
