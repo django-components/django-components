@@ -418,6 +418,184 @@ the heaviest new infra (Playwright) is isolated, and the CI gates land last
 
 ---
 
+## Phase 5d — Feature-parity audit (process, not buildables)
+
+Goal: before cutover, decide port/defer/skip for every Material/Zensical feature row not yet replicated. See main doc §8 Phase 5d for the procedure.
+
+**Scope note.** This is a *parity* audit (what the new site keeps relative to the
+old Material site). Its complement, the *opportunity-cost* question (the net-new
+Zensical features we forgo by leaving the Material/Zensical ecosystem, chiefly the
+Disco search engine and the module system; the rest is moot, already rebuilt, or
+unused), is analyzed in main doc §11.2 "What we'd give up by building our own
+instead of going Zensical".
+
+**Audit completed 2026-06-18.** Method: built the three columns the procedure asks
+for - (1) what django-components' *actual* old Material site used (`mkdocs.yml`,
+not the full theoretical Material feature set), (2) the Zensical feature
+inventory, (3) the new `docs_site` capabilities - then grepped the real ported
+content (`docs_site/content/` + the `docs_old/` baseline) to separate real
+regressions from theoretical ones.
+
+**The matrix.** Full walk of the [Zensical feature inventory](https://zensical.org/compatibility/features/)
+against the *actual* old Material config (`mkdocs.yml`) and the new site.
+Legend - Material(djc): ✓ enabled / ✗ not used / `n/a` tooling-only. New:
+✓ present / ✗ absent / ◐ partial-or-different. Verdict: **have** (parity met) ·
+**ported** (this phase) · skip (unused by djc) · **defer** (tracked backlog).
+
+_Core_
+
+| Feature | Material(djc) | New | Verdict |
+|---|:--:|:--:|---|
+| pip install / create site / build / preview server | `n/a` | ✓ | have (Django mgmt cmds) |
+| MkDocs file layout / directory URLs | ✓ | ✓ | have (clean URLs) |
+| Python-Markdown dialect | ✓ | ✓ | have |
+| Jinja templates | ✓ | ✓ | have (Django/djc templates) |
+| YAML page metadata | ✓ | ✓ | have (frontmatter.py) |
+| Extra CSS / JS / templates | ✓ | ✓ | have |
+| Link validation | ✓ | ✓ | have (guard harness) |
+| Strict mode | ✓ | ✓ | have (docs_build_check, stricter) |
+
+_Site & page structure_
+
+| Feature | Material(djc) | New | Verdict |
+|---|:--:|:--:|---|
+| 60+ language support / language selector | ✗ | ✗ | skip (English-only) |
+| Header | ✓ | ✓ | have |
+| Auto-hiding header | ✗ | ✗ | skip |
+| Announcement bar | ✗ | ✗ | skip |
+| Git repo icon/link in header | ✓ | ✓ | have |
+| Code Actions (edit / view source) | ✓ both | ◐ edit only | edit have; view = skip |
+| Footer | ✓ | ✓ | have |
+| Footer navigation (prev/next) | ✓ | ✓ | have |
+| Social links | ✓ (GH/PyPI/Discord) | ✓ | **ported** (5d.2) |
+| Copyright notice | ✗ | ✗ | skip (none set) |
+| Generator notice | ✓ | ✓ | have (`<meta generator>`) |
+| Comment system | ✗ | ✗ | skip |
+| 404 page | ✓ | ✓ | have (NotFoundPage) |
+| Tags / tags in search / tag listings | ✗ | ✗ | skip |
+| Revisioning (dates / authors) | ✓ | ✓ | have (git_metadata.py) |
+
+_Appearance_
+
+| Feature | Material(djc) | New | Verdict |
+|---|:--:|:--:|---|
+| Theme | ✓ Material | ✓ custom | have (own design system) |
+| Assets & customization / template overrides | ✓ | ✓ | have (full control) |
+| Colors & palette toggle | ✓ | ✓ | have |
+| Automatic light/dark | ✓ | ✓ | have |
+| Custom colors / schemes | ✓ teal | ✓ OKLCH tokens | have |
+| Fonts | ✓ | ✓ self-hosted Inter | have |
+| Icons / favicon | ✓ | ✓ | have |
+| Emojis | ✓ (twemoji) | ✗ | skip (0 usage, old or new) |
+| Social cards | ✓ | ✓ | have (social_cards.py) |
+
+_Markdown extensions_
+
+| Feature | Material(djc) | New | Verdict |
+|---|:--:|:--:|---|
+| Abbreviations | ✓ | ✓ | have |
+| Admonitions | ✓ | ✓ | have |
+| Annotations (code.annotate) | ✓ enabled | ✗ | skip (0 usage) |
+| Attribute lists | ✓ | ✓ | have |
+| BetterEm / Buttons / Caption / Caret-Mark-Tilde / Critic / Keys / SmartSymbols | ✗ | ✗ | skip (never enabled) |
+| Code blocks / highlight / copy | ✓ | ✓ | have (no line #s / hl by choice) |
+| Content tabs | ✓ | ✓ | have (`tabs.link` sync unused → skip) |
+| Data tables | ✓ | ✓ | have |
+| Definition lists | ✓ | ✓ | have |
+| Details | ✓ | ✓ | have |
+| Diagrams (Mermaid) | ✗ | ✗ | skip (0 usage) |
+| Footnotes | ✗ | ✗ | skip (0 usage) |
+| Grids | ✗ | ✗ | skip |
+| Images | ✓ | ✓ | have (+ `{% image %}`) |
+| InlineHighlight | ✓ | ✓ | have |
+| Markdown in HTML | ✓ | ✓ | have |
+| Math (MathJax/KaTeX) | ✗ | ✗ | skip (0 usage) |
+| Snippets | ✓ | ✓ | have (+ `include_file`) |
+| Superfences | ✓ | ✓ | have |
+| Tabbed | ✓ | ✓ | have |
+| Table of contents | ✓ | ✓ | have |
+| Tasklist | ✓ | ✓ | have |
+| Tooltips | ◐ (abbr titles) | ◐ (abbr titles) | have (basic); improved tooltips skip |
+
+_Content_
+
+| Feature | Material(djc) | New | Verdict |
+|---|:--:|:--:|---|
+| Repository link | ✓ | ✓ | have |
+| Versioning | ✓ (mike) | ✓ (versions.json) | have |
+| Comment system / Blog | ✗ | ✗ | skip |
+
+_Navigation_
+
+| Feature | Material(djc) | New | Verdict |
+|---|:--:|:--:|---|
+| Explicit nav | ✓ | ✓ (_nav.yml) | have |
+| Instant loading | ✓ | ✗ | **defer** |
+| Progress indicator | ✓ | ✗ | **defer** (tied to instant loading) |
+| Instant prefetching / previews | ✗ | ✗ | skip |
+| Anchor tracking | ✓ | ◐ | have (TOC highlight; URL-hash update partial) |
+| Navigation tabs / sticky | ✓ | ✓ | have (top nav) |
+| Navigation sections | ✓ | ✓ | have |
+| Navigation expansion | ✓ | ✓ | have |
+| Navigation path (breadcrumbs) | ✗ | ✓ | have (new exceeds) |
+| Navigation pruning | ✗ | ✗ | skip |
+| Section index pages | ✓ | ✓ | have (Overview) |
+| TOC anchor following | ✓ | ✓ | have (scroll-spy) |
+| TOC integration (into sidebar) | ✗ | ✗ | skip (separate right rail) |
+| Back-to-top button | ✓ | ✓ | **ported** (5d.1) |
+| Hiding the sidebars | ✗ | ◐ | have-ish (resizable panels) |
+| Keyboard shortcuts | ✓ | ✓ | have (`/`, ⌘K, Esc) |
+| Content area width | ✗ | ◐ | have-ish (resizable) |
+| Search | ✓ (lunr) | ✓ (Pagefind) | have |
+| Search suggest / autocomplete | ✓ | ✗ | **defer → Phase 7.1** |
+
+_Optimization_
+
+| Feature | Material(djc) | New | Verdict |
+|---|:--:|:--:|---|
+| SEO | ◐ basic | ✓✓ | have (sitemap/robots/OG/JSON-LD/llms.txt - exceeds) |
+| Site analytics + feedback widget | ✗ | ✗ | skip (analytics = separate Phase 8) |
+| Cookie consent / custom cookies | ✗ | ✗ | skip |
+| Offline usage | ✗ | ✗ | skip |
+| Data privacy (self-host assets) | ✗ | ◐ | have-ish (fonts already self-hosted) |
+
+_Extensions_
+
+| Feature | Material(djc) | New | Verdict |
+|---|:--:|:--:|---|
+| Module system (Zensical roadmap, unreleased) | `n/a` | `n/a` | skip (we have Django/djc) |
+
+**Headline result: no silent content regression.** Every dropped Material
+markdown feature is used in *zero* docs pages, old or new: footnotes,
+emoji / `:material-…:` icons, code annotations `(1)!`, linked content tabs
+`=== "…"`, math (arithmatex), Mermaid, grids, keys, critic, caret/tilde,
+smartsymbols. (Several were never even enabled in `mkdocs.yml`.) The
+markdown-extension gap this gate was meant to catch is empty.
+
+**Port-now set (done in this phase):**
+
+| # | ID | Name | Old config | Status | Notes |
+|---|---|---|---|---|---|
+| 5d.1 | `back-to-top-button` | Floating back-to-top button | `navigation.top` | **done** | `.djc-back-to-top` in DocPage + reveal/scroll JS in `site.js` + CSS |
+| 5d.2 | `social-links-pypi-discord` | PyPI + Discord links | `extra.social` | **done** | `.djc-social-link` icons beside GitHub in the header; text links in the mobile overflow menu |
+| 5d.3 | `google-site-verification` | Search Console verification meta | `extra.google_site_verification` | **done** | `settings.GOOGLE_SITE_VERIFICATION` → `<meta>` in DocPage `<head>` |
+
+**Deferred / skipped (tracked backlog):**
+
+| Feature | Old config | Decision | Rationale |
+|---|---|---|---|
+| View-source button | `content.action.view` | skip | "Edit this page on GitHub" already covers source access |
+| Instant loading + progress bar | `navigation.instant[.progress]` | defer | feel-only; main §11.2 cat. A already framed these as cherry-pick. Revisit under Phase 10+ if analytics warrant |
+| Search autocomplete / suggest | `search.suggest` | defer | already tracked as Phase 7.1 (`search-v2-autocomplete`) |
+| Code line-number anchors | `anchor_linenums: true` | skip | intentional a11y deviation (empty `<a>` links fail audits); documented in `pipeline.py` |
+| Announcement bar, blog, tags, comments, i18n, cookie consent, offline | — (never used) | skip | per design default-to-skip; none used by django-components today |
+
+Remaining before cutover: main §8 step 4 "walk the live site cold" (manual
+first-time-reader pass: home → search → API page → cross-link → dark mode →
+version switch).
+
+---
+
 ## Phase 6 — Cutover
 
 Goal: merge the migration branch so the new `docs_site` build replaces the old mkdocs site. One atomic commit; never two sites deployed at once (see main §8 branch-model invariant). Inbound URLs preserved.
@@ -438,14 +616,6 @@ Goal: merge the migration branch so the new `docs_site` build replaces the old m
 | 6.10 | `devguides-relevance-review` | Review each devguide article for whether it's still relevant/accurate before keeping it as internal docs | S | | main §4.0a | pending | Content audit |
 | 6.11 | `benchmark-report-relocation` | Relocate asv report `docs_old/benchmarks/` → `benchmarks/report/`; add static-passthrough copy into the build; update `asv.conf.json` `html_dir`, `release-docs.yml`, `benchmarks/README.md` | M | | main §4.0a | pending | Static passthrough, not "serve index.html if present" |
 | 6.12 | `canonical-latest-alignment` | Implement the §2.A.1 canonical strategy properly: pages canonical to their `/latest/` (root) counterpart, not self-referential versioned URLs; pages absent from latest canonical to self + `noindex,follow`; `/latest/` (root) canonical to itself | M | ✓ | 11.12 §2.A.1 | **part a done (5c) / part b pending** | **(a) DONE in 5c:** current-version build → root canonical (`build_site(versioned_canonical=...)`), fixing the live anti-pattern §2.A.1 warns against + realigning og:url / breadcrumb / sitemap / indexing.json to root; breadcrumb builder now base-path-aware. **(b) pending (Phase 6):** old `/v/<ver>/` snapshots → `/latest/` counterpart + `noindex,follow` when absent from latest - needs the multi-version manifest (which pages exist in latest), only available at assembly. Pairs with 1.27's deferred per-version noindex |
-
----
-
-## Phase 5d — Feature-parity audit (process, not buildables)
-
-Goal: before cutover, decide port/defer/skip for every Material/Zensical feature row not yet replicated. See main doc §8 Phase 5d for the procedure.
-
-No standalone feature rows here; the audit may produce small "port now" tickets which get logged into the appropriate earlier-phase section (typically 3a / 3b / 5c) before cutover.
 
 ---
 
@@ -517,13 +687,13 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 5a | Search v1 | 6 | 4 | pending |
 | 5b | Versioning | 17 | 12 | **17/17 done** (target moved to `docs_site/versions/` per §4.0a; 5b.13 folded into the guard harness; historical bootstrap + Pages deploy deferred to post-Phase-7 / Phase 6 by design) |
 | 5c | SEO + AIO + chrome polish | 19 | 0 | **18/19 done, 1 dropped** — COMPLETE (Ch1: 5c.7/8/9/16; Ch2: 5c.1/2/11; Ch3: 5c.10; Ch4: 5c.3/4/5/6; Ch5: 5c.14/17/18 + 5c.15 dropped; Ch6: 5c.12/13/19) |
-| 5d | Feature-parity audit (process) | 0 | 0 | pending |
+| 5d | Feature-parity audit (process) | 3 | 0 | **audit complete (2026-06-18)** — no content regressions found; 3 port-now items shipped (5d.1 back-to-top, 5d.2 PyPI/Discord links, 5d.3 Google verification); rest deferred/skipped. Cold-walk (main §8 step 4) remains |
 | 6 | Cutover | 12 | 8 | pending (6.12 `canonical-latest-alignment` added - the real §2.A.1 canonical strategy 1.26 only partially shipped) |
 | 7 | Search v2 (post-cutover polish) | 4 | 0 | pending |
 | 8 | Search v3 (blocked on analytics target) | 1 | 0 | pending |
 | 9 | Landing page (codesign) | 1 | 0 | pending |
 | 10+ | Deferred / post-launch maintenance | 7 | 0 | pending |
-| **Total** | | **223** | **112** | **188/223 done** (phases 0-4 + 5b + **5c complete**: 18 done + 5c.15 dropped; 1.26 reopened as partial → 6.12) |
+| **Total** | | **226** | **112** | **191/226 done** (phases 0-4 + 5b + **5c complete** + **5d audit complete**: +3 port-now items 5d.1-5d.3; 5c.15 dropped; 1.26 reopened as partial → 6.12) |
 
 ### Phase 0 closed
 

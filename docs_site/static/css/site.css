@@ -19,10 +19,17 @@
 
 html {
   -webkit-text-size-adjust: 100%;
-  scroll-padding-top: 80px; /* clear the sticky header on anchor jumps */
+  /* Render the UI at ~90% density (Juro's preference). 90% of the user's
+     default font size scales every rem-based value at once; the structural
+     dimensions below (header, widths, sidebars) are authored in rem too so the
+     whole frame scales with it. Breakpoints and hairline borders stay in px on
+     purpose - they track the device and the pixel grid, not the text size. */
+  font-size: 90%;
+  scroll-padding-top: 5rem; /* clear the sticky header on anchor jumps */
 }
 
-/* Page side gutter: 24px mobile -> 32px tablet -> 48px desktop (spike 11.11 section 2.1) */
+/* Page side gutter: 1.5rem mobile -> 2rem tablet -> 3rem desktop (spike 11.11
+   section 2.1). In rem so it scales with the root 90% density. */
 :root {
   --page-gutter: 1.5rem;
 }
@@ -42,7 +49,7 @@ html {
 body {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: 1rem;
   line-height: 1.65;
   color: var(--c-fg-muted);
   background: var(--c-bg);
@@ -54,7 +61,7 @@ body {
 /* Prose: the content article area                                     */
 /* ------------------------------------------------------------------ */
 .prose {
-  max-width: 720px;
+  max-width: 45rem;
   word-wrap: break-word;
   overflow-wrap: break-word;
 }
@@ -558,7 +565,7 @@ body {
 }
 
 .example-card .tabbed-block > .highlight pre {
-  max-height: 500px;
+  max-height: 31.25rem;
   overflow: auto;
 }
 
@@ -573,7 +580,7 @@ body {
 
 .example-demo-frame {
   width: 100%;
-  min-height: 400px;
+  min-height: 25rem;
   border: none;
   background: var(--c-bg);
   display: block;
@@ -672,23 +679,26 @@ body {
 /* ================================================================== */
 
 /* ------------------------------------------------------------------ */
-/* Top header (sticky 64px)                                            */
+/* Top header (sticky 4rem)                                            */
 /* ------------------------------------------------------------------ */
 .djc-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  height: 4rem;
   z-index: 50;
-  background: oklch(from var(--c-bg) l c h / 80%);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* Opaque on purpose - do NOT reintroduce a translucent `backdrop-filter:
+     blur()` here. A blurred backdrop on a fixed header re-rasterizes the
+     content scrolling underneath it every frame; profiling showed that spiking
+     worst-case frame time to ~250ms during scroll (visible jank), vs ~29ms once
+     the header is opaque. The frosted-glass look is not worth the dropped frames. */
+  background: var(--c-bg);
   border-bottom: 1px solid var(--c-border);
 }
 
 .djc-header__inner {
-  max-width: 1280px;
+  max-width: 80rem;
   margin: 0 auto;
   height: 100%;
   display: flex;
@@ -827,14 +837,16 @@ body {
   pointer-events: none;
 }
 
-.djc-gh-link {
+.djc-gh-link,
+.djc-social-link {
   color: var(--c-fg-muted);
   transition: color 0.15s;
   display: flex;
   align-items: center;
 }
 
-.djc-gh-link:hover {
+.djc-gh-link:hover,
+.djc-social-link:hover {
   color: var(--c-fg);
 }
 
@@ -865,11 +877,11 @@ body {
 .djc-overflow__menu {
   position: absolute;
   right: 0;
-  top: calc(100% + 8px);
+  top: calc(100% + 0.5rem);
   display: none;
   flex-direction: column;
   gap: 0.75rem;
-  min-width: 200px;
+  min-width: 12.5rem;
   padding: 0.75rem 1rem;
   background: var(--c-bg);
   border: 1px solid var(--c-border);
@@ -917,24 +929,24 @@ body {
 /* 3-column layout                                                     */
 /* ------------------------------------------------------------------ */
 .djc-layout {
-  max-width: 1280px;
+  max-width: 80rem;
   margin: 0 auto;
-  padding-top: 64px; /* below fixed header */
+  padding-top: 4rem; /* below fixed header */
   padding-left: var(--page-gutter);
   padding-right: var(--page-gutter);
   display: flex;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 4rem);
 }
 
 /* ------------------------------------------------------------------ */
 /* Left sidebar                                                        */
 /* ------------------------------------------------------------------ */
 .djc-sidebar {
-  width: 280px;
+  width: 17.5rem;
   flex-shrink: 0;
   position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px);
+  top: 4rem;
+  height: calc(100vh - 4rem);
   overflow-y: auto;
   padding: 1.5rem 0;
 }
@@ -1147,7 +1159,7 @@ a.djc-sidebar__label:hover {
 .djc-content {
   flex: 1;
   min-width: 0;
-  max-width: 720px;
+  max-width: 45rem;
   padding: 2rem 2rem 4rem;
   margin: 0 auto;
 }
@@ -1250,11 +1262,11 @@ a.djc-sidebar__label:hover {
 /* Right-rail TOC                                                      */
 /* ------------------------------------------------------------------ */
 .djc-toc {
-  width: 240px;
+  width: 15rem;
   flex-shrink: 0;
   position: sticky;
-  top: 64px;
-  height: calc(100vh - 64px);
+  top: 4rem;
+  height: calc(100vh - 4rem);
   overflow-y: auto;
   padding: 2rem 1rem 2rem 1.5rem;
 }
@@ -1510,7 +1522,7 @@ body.djc-drawer-open .djc-drawer-overlay {
     left: 0;
     bottom: 0;
     height: 100vh;
-    width: min(320px, 85vw);
+    width: min(20rem, 85vw);
     padding: 1rem 0;
     background: var(--c-bg);
     border-right: 1px solid var(--c-border);
@@ -1543,7 +1555,8 @@ body.djc-drawer-open .djc-drawer-overlay {
   /* Header actions collapse into the overflow menu */
   .djc-header__actions > .djc-theme-picker,
   .djc-header__actions > .djc-version-picker,
-  .djc-header__actions > .djc-gh-link {
+  .djc-header__actions > .djc-gh-link,
+  .djc-header__actions > .djc-social-link {
     display: none;
   }
 
@@ -1559,6 +1572,68 @@ body.djc-drawer-open .djc-drawer-overlay {
   .djc-page-nav {
     flex-direction: column;
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Chrome icon sizing                                                  */
+/* ------------------------------------------------------------------ */
+/* Icons carry fixed px width/height attributes; size them in rem here so they
+   track the root 90% density like the rest of the UI - otherwise they'd stay
+   full-size while the text and chrome around them shrank. (The search input
+   icon is sized in search.css alongside its other modal styles.) */
+.djc-version-picker__caret {
+  width: 0.875rem; /* was 14px */
+  height: 0.875rem;
+}
+
+.djc-search-trigger__icon,
+.djc-theme-picker__btn > svg {
+  width: 1rem; /* was 16px */
+  height: 1rem;
+}
+
+.djc-hamburger > svg,
+.djc-gh-link > svg,
+.djc-social-link > svg,
+.djc-overflow__btn > svg,
+.djc-back-to-top > svg {
+  width: 1.25rem; /* was 20px */
+  height: 1.25rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Back-to-top button (revealed by site.js after scrolling down)       */
+/* ------------------------------------------------------------------ */
+.djc-back-to-top {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+  background: var(--c-surface);
+  color: var(--c-fg-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-card-hover);
+  /* Above page content, but below the mobile nav drawer's overlay (60) and the
+     search modal so they cover the button when open. */
+  z-index: 40;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+/* `hidden` toggles visibility; only lay the button out when shown, so this
+   display:flex can't override the [hidden] attribute's display:none. */
+.djc-back-to-top:not([hidden]) {
+  display: flex;
+}
+
+.djc-back-to-top:hover {
+  color: var(--c-fg);
+  border-color: var(--c-fg-subtle);
+  background: var(--c-surface-2);
 }
 
 /* ------------------------------------------------------------------ */
@@ -1754,7 +1829,7 @@ body.djc-drawer-open .djc-drawer-overlay {
   font-family: var(--font-mono);
   font-size: 1rem;
   font-weight: 600;
-  scroll-margin-top: 80px;
+  scroll-margin-top: 5rem;
 }
 
 .prose .doc-label {

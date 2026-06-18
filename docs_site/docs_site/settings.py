@@ -105,6 +105,12 @@ EXAMPLES_DIR = REPO_ROOT / "docs_old" / "examples"
 # Base URL for the published docs site on GitHub Pages
 SITE_URL = "https://django-components.github.io/django-components"
 
+# Google Search Console site-verification token (rendered as a
+# <meta name="google-site-verification"> tag in every page's <head>). Ported
+# from the old mkdocs setup's `extra.google_site_verification`. Set to "" to
+# omit the tag.
+GOOGLE_SITE_VERIFICATION = "vQA3d50F2ByQxG0eB6b0YoPnYW9gZo8xnd6HKhCyuys"
+
 # GitHub repository, used to build "See source code" links in the API reference
 # (the old mkdocs setup read this from mkdocs.yml's `repo_url`). The branch is
 # the ref those links point at.

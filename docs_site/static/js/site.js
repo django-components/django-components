@@ -11,6 +11,7 @@
  * - Code block language label + copy button
  * - Mobile nav drawer (hamburger toggle, overlay/Esc to close)
  * - Mobile header overflow menu (version + theme + GitHub)
+ * - Back-to-top button (revealed after scrolling a screenful down)
  */
 
 (function () {
@@ -505,4 +506,21 @@
       })
       .catch(function () { /* keep the seeded current-version option */ });
   });
+
+  // -- Back-to-top button ----------------------------------------------------
+  // Reveal the button once the reader is a screenful down the page, then
+  // smooth-scroll to the top on click. Mirrors Material's navigation.top.
+  var backToTop = document.querySelector('.djc-back-to-top');
+  if (backToTop) {
+    var syncBackToTop = function () {
+      backToTop.hidden = window.scrollY <= window.innerHeight;
+    };
+    syncBackToTop();
+    window.addEventListener('scroll', syncBackToTop, { passive: true });
+    backToTop.addEventListener('click', function () {
+      // Honor reduced-motion: skip the smooth animation if the OS asks for it.
+      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+    });
+  }
 })();

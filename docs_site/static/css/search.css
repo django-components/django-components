@@ -83,7 +83,7 @@ body.djc-search-open {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: min(600px, calc(100vw - 2rem));
+  width: min(37.5rem, calc(100vw - 2rem));
   max-height: 80vh;
   background: var(--c-surface);
   border: 1px solid var(--c-border);
@@ -105,6 +105,9 @@ body.djc-search-open {
 .djc-search__input-icon {
   flex-shrink: 0;
   color: var(--c-fg-subtle);
+  /* In rem so it tracks the root 90% density (was an 18px attribute) */
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 .djc-search__input {
