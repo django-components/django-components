@@ -11,11 +11,18 @@ on:
       - master
   workflow_dispatch:
 
+# Serialize runs: this job both commits version snapshots to master and deploys
+# Pages, so concurrent runs would race. Queue rather than cancel so an in-flight
+# commit/deploy is never interrupted mid-push.
+concurrency:
+  group: docs-build-deploy
+  cancel-in-progress: false
+
 jobs:
   docs:
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
-      contents: write # to let mkdocs write the new docs
+      contents: write # to commit the built version snapshots back to master
       pages: write # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
     runs-on: ubuntu-latest
@@ -152,13 +159,10 @@ jobs:
       # The new docs builder (replacing mkdocs/mike) writes a per-version snapshot
       # into docs_site/versions/<version>/ and commits it to master - no gh-pages,
       # no mike. The app-token checkout from the top of the job is reused so we can
-      # push to the protected master branch.
-      #
-      # NOTE: assembling the committed snapshots into the site/ deploy artifact and
-      # publishing it to GitHub Pages is wired in Phase 6 (feature 6.4). Until then
-      # this only builds + commits the version snapshots; the live site is still the
-      # old mkdocs build. Each docs commit carries [skip ci] so committing back to
-      # master does not re-trigger this workflow.
+      # push to the protected master branch. The committed snapshots are then
+      # assembled and deployed to GitHub Pages by the steps below (6.4). Each docs
+      # commit carries [skip ci] so committing back to master does not re-trigger
+      # this workflow.
 
       - name: Build & commit "dev" docs (push to master)
         if: github.event_name == 'push' && github.ref_type != 'tag'
@@ -188,3 +192,31 @@ jobs:
           git add docs_site/versions/
           git commit -m "docs: build ${REF_NAME} [skip ci]"
           git push origin master
+
+      ###########################################
+      # ASSEMBLE & DEPLOY TO GITHUB PAGES (6.4)
+      ###########################################
+      # The cutover deploy: assemble the full tree (current version at the root +
+      # every committed docs_site/versions/* snapshot under /v/*) and publish it
+      # to GitHub Pages. This replaces the old mkdocs/mike gh-pages deploy. Runs
+      # after the build-and-commit steps above, so the workspace already holds the
+      # freshly committed snapshots.
+      - name: Assemble deploy artifact
+        if: github.event_name != 'pull_request'
+        run: |
+          (cd docs_site && uv run --group docs python manage.py docs_assemble)
+
+      - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name != 'pull_request'
+        id: deploy-pages
+        uses: actions/deploy-pages@v4

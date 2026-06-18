@@ -326,7 +326,9 @@ ignore_missing_imports = true
 # `page.py` modules with no package markers), not the shipped library or build
 # tooling - exclude it like `sampleproject`. ("build" also matches the builder's
 # `docs_site/apps/docs/build/` tree.)
-exclude = ["build", "sampleproject", "test_structures", "_vendor", "docs_site/examples", "docs_site/versions"]
+# `^site/` (anchored so it never matches `docs_site`) is the gitignored build
+# output, which after `docs_assemble` contains the copied frozen version dirs.
+exclude = ["build", "sampleproject", "test_structures", "_vendor", "docs_site/examples", "docs_site/versions", "^site/"]
 
 [[tool.mypy.overrides]]
 module = "django_components.*"
