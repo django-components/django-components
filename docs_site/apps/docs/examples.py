@@ -1,7 +1,7 @@
 """
 Example autodiscovery and registry.
 
-Walks EXAMPLES_DIR (docs_old/examples/) and imports each example's component.py
+Walks EXAMPLES_DIR (docs_site/examples/) and imports each example's component.py
 and page.py, finding the *Page Component subclass. The registry is cached and
 shared by the build command, dev server, and {% example %} template tag.
 """

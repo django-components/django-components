@@ -163,7 +163,7 @@ Renders three tabs:
 
 **Caveats:**
 - The example name must match a directory under `EXAMPLES_DIR`
-  (currently `docs_old/examples/`) with a `component.py` and `page.py`.
+  (currently `docs_site/examples/`) with a `component.py` and `page.py`.
 - The tag output goes through `_lstrip_outside_pre()` to strip Django
   template indentation while preserving code indentation inside `<pre>`
   blocks.
@@ -182,7 +182,7 @@ Includes a file as a fenced code block. Language is inferred from the
 file extension unless explicitly set.
 
 ```markdown
-{% include_file "docs_old/examples/fragments/component.py" %}
+{% include_file "docs_site/examples/fragments/component.py" %}
 {% include_file "some/config" language="toml" %}
 ```
 
@@ -274,7 +274,7 @@ clamped to 160-500px and persisted in `localStorage`.
 The wiring has three layers:
 
 1. **Autodiscovery** ([`apps/docs/examples.py`](apps/docs/examples.py))
-   walks `EXAMPLES_DIR` (currently `docs_old/examples/`), imports each
+   walks `EXAMPLES_DIR` (currently `docs_site/examples/`), imports each
    example's `component.py` and `page.py`, finds the `*Page` Component
    subclass, and caches a registry of `ExampleInfo` objects.
 
@@ -290,10 +290,10 @@ The wiring has three layers:
 
 ### Example directory layout
 
-Each example lives in its own directory under `docs_old/examples/`:
+Each example lives in its own directory under `docs_site/examples/`:
 
 ```
-docs_old/examples/fragments/
+docs_site/examples/fragments/
     component.py              <- the components being demonstrated
     page.py                   <- a *Page Component that renders the demo
     test_example_fragments.py <- pytest tests proving the example works
@@ -352,8 +352,8 @@ no JS interceptor or runtime patching needed.
 
 ### Adding a new example
 
-1. Create `docs_old/examples/<name>/component.py` with your component(s).
-2. Create `docs_old/examples/<name>/page.py` with a `*Page` Component
+1. Create `docs_site/examples/<name>/component.py` with your component(s).
+2. Create `docs_site/examples/<name>/page.py` with a `*Page` Component
    that has `class View` with `def get(self, request)`.
 3. Add a test file `test_example_<name>.py`.
 4. If the example uses fragments, add `class DocsExample` with a

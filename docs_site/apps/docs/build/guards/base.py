@@ -56,7 +56,7 @@ class GuardContext:
     """Everything the guards need, assembled once before the suite runs."""
 
     content_dir: Path  # docs_site/content (markdown source)
-    examples_dir: Path  # docs_old/examples (runnable examples)
+    examples_dir: Path  # docs_site/examples (runnable examples)
     nav_path: Path  # content/_nav.yml
     static_dir: Path  # docs_site/static (source of /static/* assets)
     # Post-build index of the rendered site. None during pre-build-only runs.

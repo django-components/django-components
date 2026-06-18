@@ -135,16 +135,16 @@ This is how we achieve that:
 
     ```html
     <div>
-      <!-- _RENDERED "my_table_10bc2c,c020ad" -->
+      <!-- _RENDERED my_table_10bc2c,c020ad,a92ef29,bd002c3 -->
       <table>
         ...
       </table>
     </div>
-    <!-- _RENDERED "button_309dcf,31c0da" -->
+    <!-- _RENDERED button_309dcf,31c0da,4e1af0,9b2c71 -->
     <button>Click me!</button>
     ```
 
-    Each `<!-- _RENDERED -->` comment includes comma-separated data - a unique hash for the component class, e.g. `my_table_10bc2c`, and the component ID, e.g. `c020ad`.
+    Each `<!-- _RENDERED -->` comment includes comma-separated data: the component class hash (e.g. `my_table_10bc2c`), the component ID (e.g. `c020ad`), the JS data hash (from `get_js_data()`), and the CSS data hash (from `get_css_data()`).
 
     This way, we or the user can freely pass the rendered around or transform it, treating it as a string to add / remove / replace bits. As long as the `<!-- _RENDERED -->` comments remain in the rendered string, we will be able to deduce which JS and CSS dependencies the component needs.
 
@@ -176,11 +176,11 @@ This is how we achieve that:
 
     4. Generate JS script that loads the JS / CSS dependencies.
 
-    5. Insert the JS scripts either at the end of `<body>`, or in place of `{% component_dependencies %}` / `{% component_js_dependencies %}` tags.
+    5. Insert the JS scripts either at the end of `<body>`, or in place of `{% component_js_dependencies %}` tags.
 
-    6. To avoid the [flash of unstyled content](https://en.wikipedia.org/wiki/Flash_of_unstyled_content), we need place the styles into the HTML instead of dynamically loading them from within a JS script. The CSS is placed either at the end of `<head>`, or in place of `{% component_dependencies %}` / `{% component_css_dependencies %}`
+    6. To avoid the [flash of unstyled content](https://en.wikipedia.org/wiki/Flash_of_unstyled_content), we need place the styles into the HTML instead of dynamically loading them from within a JS script. The CSS is placed either at the end of `<head>`, or in place of `{% component_css_dependencies %}`
 
-    7. We cache the component's inlined JS and CSS, so they can be fetched via an URL, so the inlined JS / CSS can be treated the same way as the JS / CSS dependencies set in `Component.Media.js/css`. Dependencies can be modified before rendering (e.g. add nonce, reorder) via the [Component hook](../../concepts/advanced/hooks.md#on_dependencies) `on_dependencies` or the [extension hook][ComponentExtension.on_dependencies].
+    7. We cache the component's inlined JS and CSS, so they can be fetched via an URL, so the inlined JS / CSS can be treated the same way as the JS / CSS dependencies set in `Component.Media.js/css`. Dependencies can be modified before rendering (e.g. add nonce, reorder) via the `on_dependencies` Component hook or the matching extension hook (see `docs_site/content/docs/concepts/advanced/hooks.md`).
         - NOTE: While this is currently not entirely necessary, it opens up the doors for allowing plugins to post-process the inlined JS and CSS. Because after it has been post-processed, we need to store it somewhere.
 
 3. Server returns the post-processed HTML.

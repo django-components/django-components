@@ -164,7 +164,7 @@ namespaces = false
 ###########################################
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "docs_old/examples"]
+testpaths = ["tests", "docs_site/examples"]
 asyncio_mode = "auto"
 markers = [
     "e2e: browser-based end-to-end tests that need the Django test server",
@@ -295,7 +295,7 @@ ignore = [
     "T201",   # `print` found
     "DTZ",    # `datetime` found
 ]
-"docs_old/examples/*" = [
+"docs_site/examples/*" = [
     "ARG002", # Unused method argument
     "ANN",    # Annotations are not needed for tests
     "S101",   # Use of `assert` detected
@@ -330,7 +330,11 @@ known-first-party = ["django_components"]
 [tool.mypy]
 check_untyped_defs = true
 ignore_missing_imports = true
-exclude = ["build", "sampleproject", "test_structures", "_vendor"]
+# `docs_site/examples` holds runnable demo code (many same-named `component.py` /
+# `page.py` modules with no package markers), not the shipped library or build
+# tooling - exclude it like `sampleproject`. ("build" also matches the builder's
+# `docs_site/apps/docs/build/` tree.)
+exclude = ["build", "sampleproject", "test_structures", "_vendor", "docs_site/examples"]
 
 [[tool.mypy.overrides]]
 module = "django_components.*"

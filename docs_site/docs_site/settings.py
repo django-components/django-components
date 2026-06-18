@@ -99,8 +99,17 @@ REPO_ROOT = BASE_DIR.parent
 # Source for the generated /releases/ pages (one page per "## vX.Y.Z" section)
 CHANGELOG_PATH = REPO_ROOT / "CHANGELOG.md"
 
-# Where runnable examples live (docs_old/examples/ until Phase 6 cutover)
-EXAMPLES_DIR = REPO_ROOT / "docs_old" / "examples"
+# Where runnable examples live
+EXAMPLES_DIR = REPO_ROOT / "docs_site" / "examples"
+
+# Pre-built static directories copied verbatim into the built site (skipping the
+# markdown pipeline) at their mount path. The asv benchmark report is already
+# HTML, so it's a passthrough rather than rendered content: `benchmarks/report/`
+# (asv's `html_dir`) is served at `/benchmarks/`, matching the old mkdocs layout.
+# Each entry is (source_dir, mount_path_relative_to_site_root).
+STATIC_PASSTHROUGHS = [
+    (REPO_ROOT / "benchmarks" / "report", "benchmarks"),
+]
 
 # Base URL for the published docs site on GitHub Pages
 SITE_URL = "https://django-components.github.io/django-components"

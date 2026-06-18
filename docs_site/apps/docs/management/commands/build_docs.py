@@ -35,7 +35,7 @@ import pygments_djc  # noqa: F401 -- register the djc_py Pygments lexer
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from apps.docs.build.builder import build_site, collect_static
+from apps.docs.build.builder import build_site, collect_static, copy_passthroughs
 from apps.docs.build.llms import generate_llms_files
 from apps.docs.build.minify import minify_site
 from apps.docs.build.nav import load_nav
@@ -157,6 +157,12 @@ class Command(BaseCommand):
         if options["collectstatic"] and not version_mode:
             static_dir = collect_static(output_dir)
             self.stdout.write(self.style.SUCCESS(f"Collected static into {static_dir}"))
+
+            # Pre-built static dirs (the asv benchmark report) copied verbatim at
+            # their mount path. Like collect_static, this is root-assembly only -
+            # mounted once at the root, not duplicated into per-version snapshots.
+            for mount_path, n in copy_passthroughs(output_dir, settings.STATIC_PASSTHROUGHS):
+                self.stdout.write(self.style.SUCCESS(f"Copied passthrough '/{mount_path}/' ({n} files)"))
 
         # Versioning side-effects (only when writing into a versions/ tree):
         # stamp provenance, update the manifest, and materialize alias redirects.

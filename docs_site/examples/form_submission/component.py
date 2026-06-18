@@ -50,7 +50,7 @@ class ContactFormComponent(Component):
             </div>
         </form>
         <div id="thank-you-container"></div>
-    """  # noqa: E501
+    """
 
     class View:
         # Submit handler

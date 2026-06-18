@@ -173,4 +173,4 @@ LOGGING = {
 # CUSTOM SETTINGS
 #####################
 
-EXAMPLES_DIR = BASE_DIR.parent / "docs_old" / "examples"
+EXAMPLES_DIR = BASE_DIR.parent / "docs_site" / "examples"

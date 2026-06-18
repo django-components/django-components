@@ -81,7 +81,7 @@ class FormGridPage(Component):
           </div>
         </body>
       </html>
-    """  # noqa: E501
+    """
 
     class View:
         def get(self, request: HttpRequest):

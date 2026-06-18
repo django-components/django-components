@@ -15,7 +15,7 @@ This will produce a deeply nested structure of divs, with each level indicating 
 ## Definition
 
 ```djc_py
---8<-- "docs_old/examples/recursion/component.py"
+--8<-- "docs_site/examples/recursion/component.py"
 ```
 
 ## Example
@@ -25,7 +25,7 @@ To see the component in action, you can set up a view and a URL pattern as shown
 ### `views.py`
 
 ```djc_py
---8<-- "docs_old/examples/recursion/page.py"
+--8<-- "docs_site/examples/recursion/page.py"
 ```
 
 ### `urls.py`

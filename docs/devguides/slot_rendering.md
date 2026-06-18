@@ -183,10 +183,10 @@ This doc serves as a primer on how component slots and fills are resolved.
     | -- {% component "mycomp" %} ---
     | ---- {% fill "slot_a" %}
     | ------ STU
-    | ---- {% endslot %}
+    | ---- {% endfill %}
     | ---- {% fill "slot_b" %}
     | ------ XYZ
-    | ---- {% endslot %}
+    | ---- {% endfill %}
     | -- {% endcomponent %} ---
     ```
 
