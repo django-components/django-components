@@ -49,11 +49,13 @@ All run from `docs_site/` as `uv run python manage.py <command>`.
 | `build_docs` | Build every `.md` to `<output>/<slug>/index.html` (+ `.md` companions + Pagefind index + sitemap/robots/llms/social cards). Defaults to `./site/` |
 | `docs_build_check` | CI gate: build to a temp dir and run the full guardrail suite (links, anchors, fences, nav drift, ...) in strict mode |
 
-**Versioning** (see [Versioning](#versioning)):
+**Versioning & deploy** (see [Versioning & deploy](#versioning--deploy)):
 
 | Command | What it does |
 |---|---|
 | `build_docs --docs-version X --alias latest` | Build a committed version snapshot into `versions/X/` + update the manifest + the `latest` redirect |
+| `docs_assemble` | Assemble the full deploy artifact in `site/`: current build at the root + the published version window under `/v/*` + an ephemeral `/v/dev/`. **This is what CI deploys to Pages** |
+| `docs_import_ghpages` | One-time: mirror the old mkdocs/mike `gh-pages` versions into `versions/` (run once at cutover) |
 | `docs_build_all` | Bootstrap/rebuild every version selected by `docs_versions.toml` (a git worktree per tag); `--dry-run` to preview |
 | `docs_versions_check` | Validate the committed `versions/` tree (manifest <-> filesystem, aliases, cross-version links) |
 
@@ -401,7 +403,11 @@ the page's front-matter; leave it unset and it's the page's first paragraph.
 [`components/og_card/`](apps/docs/components/og_card/) and
 [`build/social_cards.py`](apps/docs/build/social_cards.py).)
 
-## Versioning
+## Versioning & deploy
+
+> New here? This section is the one most likely to surprise you. Read the model
+> first - the committed tree and the deployed site are deliberately *not* the
+> same set of versions.
 
 Built versions live in `docs_site/versions/<version>/` (committed to the repo),
 with a sibling `versions.json` manifest and `latest/` redirect stubs. The header
@@ -409,22 +415,88 @@ version picker reads `versions.json` client-side. There is no `gh-pages` branch
 and no `mike` dependency - only mike's manifest data model is vendored, under
 [`apps/docs/_vendor/`](apps/docs/_vendor/).
 
-- **Build one version** (what CI runs on a release tag):
-  `build_docs --docs-version 0.151.0 --alias latest`. On a push to `master` it
-  builds `dev` instead. The snapshot, manifest, and `latest/` redirects all land
-  under `versions/`.
-- **Bootstrap / rebuild many** (one-off): `docs_build_all` walks the tags
-  selected by [`docs_versions.toml`](docs_versions.toml), checks each out in a
-  worktree, and builds it. Tags that predate the docs builder are skipped -
-  rebuilding historical versions is a deferred decision.
-- **Validate** the committed tree with `docs_versions_check` (manifest <->
-  filesystem parity, alias redirects, cross-version links). It also runs in CI.
-- **Preview locally** with `docs_serve_built --versions`: it fakes a few versions
-  from the current content and serves them, so you can click through the picker
-  without needing real historical builds.
+### Two kinds of version
 
-The deploy artifact is `site/` (gitignored), assembled at build time from the
-current build plus the committed `versions/*` snapshots, mounted at `/v/<version>/`.
+- **New-builder snapshots** - each release built with `build_docs --docs-version
+  X`. They reference the single `/static/` mounted once at the site root, so a
+  snapshot is only ~9 MB (just its HTML + images).
+- **Frozen `gh-pages` imports** - the historical versions from the old
+  mkdocs + mike site, mirrored in verbatim by `docs_import_ghpages` (a one-time
+  cutover step). These are the *old* Material design and are **byte-frozen** - we
+  never rebuild them (their tags predate this builder), and their internal links
+  aren't link-checked. They're stamped `builder_version: imported-ghpages`, and
+  each is large (~12-36 MB, because mike bundled all of Material's fonts/JS/CSS
+  into *every* version).
+
+### Committed tree vs. deployed subset - and the 1 GB limit
+
+**The committed `versions/` tree always keeps every version** - for
+reproducibility and so `docs_versions_check` can validate the whole history.
+
+**The deploy publishes only a window of the newest versions.** GitHub Pages caps
+a *published* site at **1 GB**, and the frozen imports alone are ~1 GB, so the
+full tree doesn't fit. `docs_assemble` mounts only the newest N (set in
+[`docs_versions.toml`](docs_versions.toml)) and writes a *trimmed* `versions.json`
+so the picker lists exactly what's deployed (no 404s). The committed tree is
+never touched.
+
+To change how much history is published, edit the one number:
+
+```toml
+[publish]
+window = 15   # newest N releases to deploy; 0 = publish everything
+```
+
+Rough sizes today (mostly frozen mike builds): last 10 ≈ 480 MB, last 15 ≈ 600 MB,
+last 20 ≈ 760 MB, all 58 ≈ 1.1 GB (over the cap). As releases get rebuilt with the
+new builder (9 MB each, shared `/static`), the same window gets much lighter over
+time. There's no cross-version dedup on the served site (a PNG used in 20 versions
+is 20 real files); git de-dups identical blobs in the repo, but Pages serves the
+expanded files.
+
+### `dev` is built, never committed
+
+On a push to `master`, the deploy builds `dev` fresh into `/v/dev/` and adds it to
+the *served* manifest - but **never commits it** (that would churn `master` with a
+new dev snapshot every push). Only **release tags** commit an immutable snapshot
+under `versions/`.
+
+### The deploy flow ([`release-docs.yml`](../.github/workflows/release-docs.yml))
+
+- **master push** -> `docs_assemble` (build current -> root, mount the published
+  version window, build the ephemeral `/v/dev/`) -> deploy to Pages. No commit.
+- **release tag** -> `build_docs --docs-version X --alias latest` (commit the
+  snapshot) -> `docs_assemble` -> deploy.
+
+The deploy artifact is `site/` (gitignored). At the real cutover, set the repo's
+Pages source to "GitHub Actions" once.
+
+### Serving under a subpath (project Pages / fork previews)
+
+By default the site is built for a **domain root** (root-absolute `/static`,
+`/docs`, `/v` URLs). To serve it under a path - GitHub *project* Pages like
+`https://<user>.github.io/<repo>/`, e.g. a fork preview - set the base path at
+build time:
+
+```bash
+DOCS_BASE_PATH=/<repo> DOCS_SITE_URL=https://<user>.github.io/<repo> \
+  uv run python manage.py docs_assemble
+```
+
+`build/base_path.py::apply_base_path` then prefixes the root-absolute URLs and
+emits `<meta name="djc-base-path">`, which `search.js` and the version picker read
+to resolve at runtime. Empty (the default, `settings.SITE_BASE_PATH = ""`) =
+root-served, unchanged.
+
+### Bootstrapping & one-offs
+
+- `docs_import_ghpages` - one-time mirror of the old mike/`gh-pages` versions into
+  `versions/` (the cutover import; re-runnable).
+- `docs_build_all` - rebuild the tags selected by `docs_versions.toml` in a
+  worktree per tag; tags that predate this builder are skipped.
+- `docs_versions_check` - validate the committed tree (also runs in CI).
+- `docs_serve_built --versions` - fake a few versions locally to click through the
+  picker without real historical builds.
 
 ## Where to find things
 
@@ -449,19 +521,22 @@ docs_site/
                                   picker, tab switching, code copy, resize handles
         js/search.js           <- Pagefind-backed search modal
     docs_site/                 <- Django project package
-        settings.py            <- settings (REPO_ROOT, SITE_URL, CONTENT_DIR,
-                                  EXAMPLES_DIR, VERSIONS_DIR, VERSIONS_CONFIG, SITE_DIR)
+        settings.py            <- settings (REPO_ROOT, SITE_URL, SITE_BASE_PATH,
+                                  CONTENT_DIR, EXAMPLES_DIR, STATIC_PASSTHROUGHS,
+                                  VERSIONS_DIR, VERSIONS_CONFIG, SITE_DIR)
         urls.py / wsgi.py
     apps/docs/                 <- the docs app
         examples.py            <- example autodiscovery + registry
         discovery/             <- API-reference discovery (griffe-driven)
         urls.py / views.py     <- live page serving for the dev server
         build/                 <- pipeline, fence protection, front-matter, links,
-                                  nav loader, versioning, bootstrap, guards/
+                                  nav loader, versioning, bootstrap, base_path,
+                                  seo, social_cards, pagefind, guards/
         components/            <- django-components (DocPage, ExampleCard,
                                   version_picker, search_modal, reference, ...)
         management/commands/   <- docs_serve, docs_serve_built, build_docs,
-                                  docs_build_check, docs_build_all, docs_versions_check
+                                  docs_assemble, docs_build_check, docs_build_all,
+                                  docs_versions_check, docs_import_ghpages
         templatetags/          <- docs_extras.py ({% example %}, {% version %},
                                   {% docstring %}, {% include_file %}, {% image %})
         _vendor/               <- vendored mike Versions model (BSD-3)
@@ -469,8 +544,13 @@ docs_site/
 
 ## Status
 
-In-progress migration; see
-[`design/DESIGN_features.md`](design/DESIGN_features.md) for the full inventory.
-Done: Phases 0-2 (foundation, examples), 3a-3b (theme, chrome, content port,
-guardrails), 4 (API reference), 5a (search), 5b (versioning). Next: 5c
-(SEO + social cards), then Phase 6 cutover.
+Migration complete through **Phase 6 (cutover) on this branch** (not yet merged
+to `master` / deployed). Done: foundation + examples (0-2), theme + chrome +
+content port + guardrails (3a-3b), API reference (4), search (5a), versioning
+(5b), SEO/AIO/social (5c), parity audit (5d), and the cutover itself (6) -
+`docs_old/` + mkdocs removed, the old `gh-pages` versions imported, and the
+assemble/deploy wired. Pending: the actual merge + first deploy (flip Pages to
+"GitHub Actions"), search v2/v3 (7-8), the landing page (9), and most
+post-launch maintenance (10+). See
+[`design/DESIGN_features.md`](design/DESIGN_features.md) for the per-feature
+inventory.

@@ -522,17 +522,28 @@ specific versions - fake a few versions from the current content and serve them:
 uv run python manage.py docs_serve_built --versions   # demo tree (current + older + dev)
 ```
 
-The site deploys automatically via GitHub Actions: a new tag builds that version
-(committed under `docs_site/versions/<version>/`), and a push to `master`
-rebuilds the `dev` version.
+The site deploys automatically via GitHub Actions, which assemble the full tree
+(current build at the root + the published versions under `/v/*`) and publish it
+to GitHub Pages:
+
+- A **release tag** builds and commits that version's snapshot under
+  `docs_site/versions/<version>/`, then deploys.
+- A push to **`master`** builds and deploys a fresh `dev` snapshot - but `dev` is
+  *never committed* (only release tags commit).
+
+Two things worth knowing: the committed `versions/` tree keeps every version, but
+the deploy publishes only the newest N (GitHub Pages caps a site at 1 GB and the
+historical builds are large) - set by `[publish] window` in `docs_versions.toml`.
+See [`docs_site/README.md`](https://github.com/django-components/django-components/blob/master/docs_site/README.md)
+for the full versioning, deploy, 1 GB-limit, and base-path model.
 
 ### Writing docstrings
 
 Public-API docstrings ship in two places at once: a contributor's IDE-hover
-popup (VSCode/Pylance, PyCharm) and the rendered docs site (via
-[griffe](https://mkdocstrings.github.io/griffe/) + mkdocstrings). The
-following convention is what works in both, with the smallest set of rules
-worth memorizing.
+popup (VSCode/Pylance, PyCharm) and the rendered docs site (via the
+[griffe](https://mkdocstrings.github.io/griffe/)-driven API-reference generator
+under `docs_site/apps/docs/reference/`). The following convention is what works
+in both, with the smallest set of rules worth memorizing.
 
 **The 4 rules:**
 
@@ -790,13 +801,13 @@ The `generate` command will print to the terminal all the places that need updat
 
 Docs links are checked in two places:
 
-1. MkDocs validates internal links, relative links, anchors, and navigation entries during the docs build.
+1. `docs_build_check` validates internal links, relative links, anchors, code fences, and navigation entries during the docs build (the guard suite, in strict mode).
 2. The `scripts/validate_links.py` script validates external URLs and fragments, and can update URL references.
 
-Run the MkDocs check before changing documentation links:
+Run the build check before changing documentation links:
 
 ```sh
-uv run mkdocs build --strict
+cd docs_site && uv run python manage.py docs_build_check
 ```
 
 The external link checker exits with a non-zero status when it finds invalid URLs or fragments:
