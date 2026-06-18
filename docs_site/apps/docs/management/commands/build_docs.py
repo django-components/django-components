@@ -35,6 +35,7 @@ import pygments_djc  # noqa: F401 -- register the djc_py Pygments lexer
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
+from apps.docs.build.base_path import apply_base_path
 from apps.docs.build.builder import build_site, collect_static, copy_passthroughs
 from apps.docs.build.llms import generate_llms_files
 from apps.docs.build.minify import minify_site
@@ -253,3 +254,10 @@ class Command(BaseCommand):
             elif mn.before:
                 saved = 100 * (mn.before - mn.after) / mn.before
                 self.stdout.write(self.style.SUCCESS(f"Minified {mn.files} HTML files ({saved:.1f}% smaller)"))
+
+        # Subpath deploys (e.g. GitHub project Pages): prefix root-absolute URLs
+        # with the base path so the site works under /<base>/. No-op at the domain
+        # root (SITE_BASE_PATH == ""). Runs truly last, over the final HTML.
+        if settings.SITE_BASE_PATH:
+            n = apply_base_path(output_dir, settings.SITE_BASE_PATH)
+            self.stdout.write(self.style.SUCCESS(f"Applied base path '{settings.SITE_BASE_PATH}' to {n} HTML files"))

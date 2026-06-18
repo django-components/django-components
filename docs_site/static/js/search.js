@@ -23,6 +23,23 @@
 
   var isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent || '');
 
+  // Base path the site is served under (e.g. "/django-components" for a project
+  // Pages deploy), emitted by the build as <meta name="djc-base-path">. Pagefind
+  // stores result URLs as root-absolute (/docs/...), so result links must be
+  // prefixed with this. Empty for a root-served site (the default) -> no-op.
+  var BASE_PATH = (function () {
+    var m = document.querySelector('meta[name="djc-base-path"]');
+    return (m && m.getAttribute('content')) || '';
+  })();
+
+  function withBasePath(url) {
+    // Only prefix root-absolute paths we haven't already prefixed.
+    if (!BASE_PATH || !url || url.charAt(0) !== '/' || url.indexOf(BASE_PATH + '/') === 0) {
+      return url;
+    }
+    return BASE_PATH + url;
+  }
+
   // ----------------------------------------------------------------
   // In-page highlight (?h=) - runs on every page, modal or not
   // ----------------------------------------------------------------
@@ -355,7 +372,7 @@
   function buildResult(url, title, excerpt, query) {
     var a = document.createElement('a');
     a.className = 'djc-search__result';
-    a.href = withHighlight(url, query);
+    a.href = withHighlight(withBasePath(url), query);
 
     var titleEl = document.createElement('div');
     titleEl.className = 'djc-search__result-title';

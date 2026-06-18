@@ -9,6 +9,7 @@ It intentionally has no database, no auth, no admin, no middleware -
 only what's needed to run Django's template engine and django-components.
 """
 
+import os
 import secrets
 from pathlib import Path
 
@@ -111,8 +112,17 @@ STATIC_PASSTHROUGHS = [
     (REPO_ROOT / "benchmarks" / "report", "benchmarks"),
 ]
 
-# Base URL for the published docs site on GitHub Pages
-SITE_URL = "https://django-components.github.io/django-components"
+# Base URL for the published docs site on GitHub Pages. Env-overridable
+# (DOCS_SITE_URL) so a preview deploy on a fork can point canonical / og / sitemap
+# URLs at its own host without code changes.
+SITE_URL = os.environ.get("DOCS_SITE_URL", "https://django-components.github.io/django-components")
+
+# URL path the site is served under, e.g. "/django-components" for a GitHub
+# *project* Pages deploy (jurooravec.github.io/django-components/). Empty (the
+# default) means served at the domain root - which is how the chrome emits its
+# root-absolute URLs (/static, /docs, ...) today. When set (env DOCS_BASE_PATH),
+# the build prefixes those root-absolute URLs so the site works under the subpath.
+SITE_BASE_PATH = os.environ.get("DOCS_BASE_PATH", "").rstrip("/")
 
 # Google Search Console site-verification token (rendered as a
 # <meta name="google-site-verification"> tag in every page's <head>). Ported
