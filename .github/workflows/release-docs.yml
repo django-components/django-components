@@ -156,25 +156,14 @@ jobs:
       ###########################################
       # BUILD & COMMIT DOCS
       ###########################################
-      # The new docs builder (replacing mkdocs/mike) writes a per-version snapshot
-      # into docs_site/versions/<version>/ and commits it to master - no gh-pages,
-      # no mike. The app-token checkout from the top of the job is reused so we can
-      # push to the protected master branch. The committed snapshots are then
-      # assembled and deployed to GitHub Pages by the steps below (6.4). Each docs
-      # commit carries [skip ci] so committing back to master does not re-trigger
-      # this workflow.
-
-      - name: Build & commit "dev" docs (push to master)
-        if: github.event_name == 'push' && github.ref_type != 'tag'
-        run: |
-          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          (cd docs_site && uv run --group docs python manage.py build_docs --docs-version dev --title "dev (${SHORT_SHA})")
-          (cd docs_site && uv run --group docs python manage.py docs_versions_check)
-          # Keep uv.lock pristine so the docs commit carries only version snapshots.
-          git restore uv.lock 2>/dev/null || true
-          git add docs_site/versions/
-          git diff --cached --quiet || git commit -m "docs: build dev (${SHORT_SHA}) [skip ci]"
-          git push origin HEAD:master
+      # Only RELEASES (tags) are committed: the builder writes an immutable
+      # per-version snapshot into docs_site/versions/<version>/ and commits it to
+      # master - no gh-pages, no mike. The app-token checkout from the top of the
+      # job is reused to push to the protected master branch; each docs commit
+      # carries [skip ci] so committing back to master does not re-trigger this
+      # workflow. The `dev` version is NOT committed (feature 10.7) - it's built
+      # fresh into the deploy artifact by the assemble step below, so a plain
+      # master push deploys without adding any commit to master's history.
 
       - name: Build & commit docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
@@ -204,7 +193,10 @@ jobs:
       - name: Assemble deploy artifact
         if: github.event_name != 'pull_request'
         run: |
-          (cd docs_site && uv run --group docs python manage.py docs_assemble)
+          # dev is built fresh into /v/dev/ here (never committed - feature 10.7),
+          # labelled with the deploying commit's short SHA.
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          (cd docs_site && uv run --group docs python manage.py docs_assemble --dev-title "dev (${SHORT_SHA})")
 
       - name: Configure GitHub Pages
         if: github.event_name != 'pull_request'
