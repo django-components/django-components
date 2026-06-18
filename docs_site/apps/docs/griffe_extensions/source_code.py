@@ -2,7 +2,7 @@
 ``SourceCodeExtension`` - prepends a "See source code" GitHub link to docstrings.
 
 Replacement for mkdocstrings' ``show_source``. Ported from
-``docs_old/scripts/extensions.py``, with two changes:
+``the old mkdocs scripts/extensions.py``, with two changes:
 
 - The repo URL + branch come from Django settings, not ``mkdocs.yml``.
 - The file path is computed relative to ``REPO_ROOT`` from griffe's absolute

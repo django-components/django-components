@@ -1,8 +1,9 @@
 """
 Release-notes generator: CHANGELOG.md -> per-release markdown pages.
 
-Port of the old mkdocs gen-files script (docs_old/scripts/gen_release_notes.py)
-with mkdocs_gen_files swapped for plain file writes (feature 3b.5).
+Port of the old mkdocs gen-files script (scripts/gen_release_notes.py, removed
+at the Phase 6 cutover) with mkdocs_gen_files swapped for plain file writes
+(feature 3b.5).
 
 Pages are generated into a throwaway staging directory at build time and
 rendered through the same 3-pass pipeline as regular content - nothing is

@@ -70,7 +70,7 @@ IGNORED_PATHS = [
     "node_modules/",
     ".asv/",
     "__snapshots__/",
-    "docs_old/benchmarks/",
+    "benchmarks/report/",
     ".git/",
     "*.min.js",
     "*.min.css",

@@ -15,7 +15,7 @@ Commands:
     generate: Generates instructions for updating various files (tox.ini, pyproject.toml,
               GitHub Actions, documentation) based on current supported versions
 
-    check:    Compares the current compatibility table in `docs_old/overview/compatibility.md`
+    check:    Compares the current compatibility table in `docs_site/content/docs/overview/compatibility.md`
               with the latest official version information. If differences are found,
               creates a GitHub issue to track the needed updates.
 
@@ -27,11 +27,11 @@ Usage:
     GITHUB_TOKEN=your_token python scripts/supported_versions.py check
 
 Files updated by this script:
-- docs_old/overview/compatibility.md (compatibility table)
+- docs_site/content/docs/overview/compatibility.md (compatibility table)
 - tox.ini (test environments)
 - pyproject.toml (Python classifiers)
 - .github/workflows/tests.yml (CI matrix)
-- docs_old/community/development.md (development setup)
+- docs_site/content/docs/community/development.md (development setup)
 """
 
 import argparse
@@ -345,13 +345,13 @@ def command_generate() -> None:
     print()
     print()
 
-    print("Add this to docs_old/overview/compatibility.md:\n")
+    print("Add this to docs_site/content/docs/overview/compatibility.md:\n")
     readme = build_readme(python_to_django)
     print(readme)
     print()
     print()
 
-    print("Add this to docs_old/community/development.md:\n")
+    print("Add this to docs_site/content/docs/community/development.md:\n")
     pyenv = build_pyenv(python_to_django)
     print(pyenv)
     print()
@@ -486,7 +486,7 @@ def command_check(repo_owner: str = "django-components", repo_name: str = "djang
     print("🔄 Checking supported versions...")
 
     # Get current versions from markdown
-    compatibility_file = Path("docs_old/overview/compatibility.md")
+    compatibility_file = Path("docs_site/content/docs/overview/compatibility.md")
     try:
         current_python_to_django = parse_compatibility_markdown(compatibility_file)
         print(f"📖 Parsed current versions from {compatibility_file}")
@@ -707,7 +707,7 @@ def generate_issue_body(differences: VersionDifferences, _current: VersionMappin
     body += "\n\n"
 
     body += "### Files to update\n"
-    body += "- `docs_old/overview/compatibility.md`\n"
+    body += "- `docs_site/content/docs/overview/compatibility.md`\n"
     body += "- `tox.ini`\n"
     body += "- `pyproject.toml`\n"
     body += "- `.github/workflows/tests.yml`\n\n"

@@ -41,7 +41,7 @@ TClass = TypeVar("TClass", bound=type[Any])
 # HOOK TYPES
 #
 # This is the source of truth for what data is available in each hook.
-# NOTE: These types are also used in docs generation, see `docs_old/scripts/reference.py`.
+# NOTE: These types are also used in docs generation, see `docs_site/apps/docs/reference/`.
 ################################################
 
 

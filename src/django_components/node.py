@@ -108,7 +108,7 @@ class NodeMeta(type):
         validation_params = validation_params[2:]
         validation_signature = signature.replace(parameters=validation_params)
 
-        # NOTE: This is used for creating docs by `_format_tag_signature()` in `docs_old/scripts/reference.py`
+        # NOTE: This is used for creating docs by the docs-site reference generator (`docs_site/apps/docs/reference/`)
         cls._signature = validation_signature
 
         # This runs when the node's template tag is being rendered.

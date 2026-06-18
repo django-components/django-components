@@ -59,8 +59,7 @@ The package provides custom Django management commands:
 - `src/django_components/` -- main package source code
 - `tests/` -- comprehensive test suite with 1000+ tests
 - `sampleproject/` -- working Django project demonstrating component usage
-- `docs_old/` -- user-facing documentation source (uses mkdocs; being migrated to `docs_site/`)
-- `docs_site/` -- new Django-based documentation site builder (replacing mkdocs)
+- `docs_site/` -- Django-based documentation site builder + user-facing content (`docs_site/content/`); replaced the old mkdocs build at the Phase 6 cutover
 - `docs/` -- internal/contributor docs (devguides); not published
 - `pyproject.toml` -- package configuration and dependencies
 - `tox.ini` -- test environment configuration for multiple Python/Django versions

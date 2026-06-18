@@ -4,7 +4,7 @@ Discovery for the Exceptions reference page (feature 4.5).
 This is the proof-of-concept page: the smallest distinct reference page (3
 entries, all plain classes), used to validate the discovery -> rendering
 contract end-to-end before scaling to the other 13 pages. Port of
-``gen_reference_exceptions`` (``docs_old/scripts/reference.py``).
+``gen_reference_exceptions`` (``the old mkdocs scripts/reference.py``).
 """
 
 from __future__ import annotations

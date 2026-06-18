@@ -1,6 +1,6 @@
 """
 Griffe extensions for the API reference, ported from the old mkdocs setup
-(``docs_old/scripts/extensions.py``).
+(``the old mkdocs scripts/extensions.py``).
 
 Both extensions enrich griffe objects at load time by prepending HTML to their
 docstrings:

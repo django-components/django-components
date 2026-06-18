@@ -100,22 +100,11 @@ ci = [
 
 # Docs dependencies - install with `uv sync --group docs`
 docs = [
-    "markdown-exec",
-    "mike",
-    "mkdocs",
-    "mkdocs-autorefs",
-    "mkdocs-awesome-nav",
-    "mkdocs-gen-files",
-    "mkdocs-git-authors-plugin",
-    "mkdocs-git-revision-date-localized-plugin",
-    "mkdocs-include-markdown-plugin",
-    "mkdocs-macros-plugin",
-    "mkdocs-material",
-    "mkdocs-material[imaging]",
-    "mkdocs-minify-plugin",
-    "mkdocs-redirects",
-    "mkdocstrings",
-    "mkdocstrings-python",
+    # The old mkdocs / Material / mike / mkdocstrings stack was removed at the
+    # Phase 6 cutover - the docs site is now built by the `docs_site` Django
+    # project, not mkdocs. The deps below are the ones the new builder actually
+    # uses; several (griffe, lxml, verspec, pymdown-extensions) were promoted
+    # from transitive deps of the old stack so they survive its removal.
     "pymdown-extensions",
     # griffe powers the new docs-site API reference generator (the mkdocstrings
     # replacement built in the docs-site migration). Promoted from a transitive

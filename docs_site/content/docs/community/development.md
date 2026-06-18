@@ -732,7 +732,7 @@ Let's say we want to release a new version `0.141.6`. We need to:
 
         When you include the release date in the format `_YYYY-MM-DD_`, it will be displayed in the release notes.
 
-        See [`docs/scripts/gen_release_notes.py`](https://github.com/django-components/django-components/blob/master/docs/scripts/gen_release_notes.py) for more details.
+        See [`docs_site/apps/docs/build/release_notes.py`](https://github.com/django-components/django-components/blob/master/docs_site/apps/docs/build/release_notes.py) for more details.
 
         ![Example of a changelog entry](../images/release-notes-dates.png){ width="250" }
 

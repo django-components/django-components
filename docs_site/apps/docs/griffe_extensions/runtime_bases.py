@@ -4,7 +4,7 @@
 Replacement for mkdocstrings' ``show_bases: true``. Base names are taken from
 the *runtime* objects (via a real import), which resolves aliases and
 reassignments that static analysis would miss. Ported from
-``docs_old/scripts/extensions.py``.
+``the old mkdocs scripts/extensions.py``.
 """
 
 from __future__ import annotations

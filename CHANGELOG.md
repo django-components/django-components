@@ -3578,7 +3578,7 @@ _11 Sep 2024_
     - Instead of defining component directories in `STATICFILES_DIRS`, set them to [`COMPONENTS.dirs`](https://github.com/django-components/django-components#dirs).
     - You now must define `STATICFILES_FINDERS`
 
-    - [See here how to migrate your settings.py](https://github.com/django-components/django-components/blob/master/docs/migrating_from_safer_staticfiles.md)
+    - [See here how to migrate your settings.py](https://github.com/django-components/django-components/blob/master/docs_site/content/docs/migrating_from_safer_staticfiles.md)
 
 #### Feat
 

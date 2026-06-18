@@ -17,7 +17,7 @@ register = django.template.Library()
 #   or literal lists and dicts as parameters.
 # - The individual Node classes double as a source of truth for the tag's documentation.
 #
-# NOTE: The documentation generation script in `docs_old/scripts/reference.py` actually
+# NOTE: The docs-site reference generator (`docs_site/apps/docs/reference/`) actually
 #   searches this file for all `Node` classes and uses them to generate the documentation.
 #   The docstring on the Node classes is used as the tag's documentation.
 ComponentNode.register(register)
