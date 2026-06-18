@@ -1984,8 +1984,8 @@ That's the entire authoring surface for human-written docs. ~10 directives, all 
     - **Org-rename in old sitemaps** (`emilstenstrom.github.io` → `django-components.github.io`, pre-0.139) is not a real problem — GitHub's username-rename redirect keeps inbound URLs alive, and `robots.txt` only advertises `latest/sitemap.xml` anyway.
 - **Risks called out for execution:**
     - Master clone size jumps from ~108 MB to ~220 MB `.git`. Document in CONTRIBUTING; `--depth 1` and `--filter=tree:0` work for contributors.
-    - **The `dev/` deploy on the new system needs a decision.** Today it's rewritten on every master push — that's a lot of churn if it commits to `master/docs/v/dev/`. Likely answer: build `dev/` without committing to git, or commit as separate orphan. Defer to CI-workflow wiring.
-    - Old Material JS bundles ship with whatever CVEs the era had. Mitigation: optional Phase 7+ sweep to identify and selectively rebuild only versions with critical bundled-JS vulns.
+    - **The `dev/` deploy on the new system needs a decision.** Today it's rewritten on every master push — that's a lot of churn if it commits to `master/docs/v/dev/`. Likely answer: build `dev/` without committing to git, or commit as separate orphan. Defer to CI-workflow wiring. **(Resolved in feature 10.7: `dev/` is built fresh into `/v/dev/` on every deploy and added to the served manifest, but never committed - no churn.)**
+    - Old Material JS bundles ship with whatever CVEs the era had. Mitigation: optional Phase 7+ sweep to identify and selectively rebuild only versions with critical bundled-JS vulns. **(Done in feature 10.4 - see [`cve_audit_10.4.md`](cve_audit_10.4.md): the asv report's jQuery 3.3.1 / Bootstrap 3.1.1 are the carriers; residual risk accepted, no rebuild triggered.)**
 - **Recommended next move:** **none yet.** Execute the import at Phase 6 cutover. Until then, this spike is documentation.
 - **Feeds into.** §4.6 (default Phase 6 cutover plan), §11.7 (the walker is option-agnostic; this spike picks the cheap default).
 
