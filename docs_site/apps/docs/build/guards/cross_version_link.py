@@ -29,6 +29,7 @@ from pathlib import PurePosixPath
 from typing import TYPE_CHECKING
 
 from apps.docs.build.site_index import SiteIndex
+from apps.docs.build.versioning import is_frozen_import
 
 from .base import GuardResult
 
@@ -74,7 +75,21 @@ def check(ctx: GuardContext) -> Iterator[GuardResult]:
     # One index over the whole tree: cross-version links resolve against it the
     # same way the browser resolves a relative href from a clean-URL page.
     index = SiteIndex(root)
+    # Frozen gh-pages imports are historical HTML we never rebuild (old mkdocs
+    # theme templates, era-specific structures, long-dead relative links). Their
+    # internal links are whatever the old deploy shipped, so we don't link-check
+    # them - only the versions we build ourselves. Cache the per-version verdict.
+    frozen_verdict: dict[str, bool] = {}
+
+    def _is_frozen(version: str) -> bool:
+        if version not in frozen_verdict:
+            frozen_verdict[version] = is_frozen_import(root / version)
+        return frozen_verdict[version]
+
     for page in index.pages:
+        parts = PurePosixPath(page.rel_path).parts
+        if parts and _is_frozen(parts[0]):
+            continue
         for link in page.links:
             if link.is_external or link.is_anchor_only or not link.target:
                 continue

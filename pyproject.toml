@@ -195,6 +195,9 @@ exclude = [
     "test_structures",
     # Vendored third-party code, kept verbatim (see docs_site/.../_vendor/).
     "_vendor",
+    # Committed, frozen old-version doc snapshots (gh-pages import, feature 6.2):
+    # pre-built HTML plus historical example .py files, not source to lint.
+    "docs_site/versions",
 ]
 
 # See https://docs.astral.sh/ruff/linter/#rule-selection
@@ -323,7 +326,7 @@ ignore_missing_imports = true
 # `page.py` modules with no package markers), not the shipped library or build
 # tooling - exclude it like `sampleproject`. ("build" also matches the builder's
 # `docs_site/apps/docs/build/` tree.)
-exclude = ["build", "sampleproject", "test_structures", "_vendor", "docs_site/examples"]
+exclude = ["build", "sampleproject", "test_structures", "_vendor", "docs_site/examples", "docs_site/versions"]
 
 [[tool.mypy.overrides]]
 module = "django_components.*"

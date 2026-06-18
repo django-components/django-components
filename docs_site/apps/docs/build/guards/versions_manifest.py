@@ -22,7 +22,7 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from apps.docs._vendor.mike_versions import Versions
-from apps.docs.build.versioning import BUILD_INFO_NAME, MANIFEST_NAME
+from apps.docs.build.versioning import BUILD_INFO_NAME, MANIFEST_NAME, is_frozen_import
 
 from .base import GuardResult
 
@@ -82,7 +82,10 @@ def check(ctx: GuardContext) -> Iterator[GuardResult]:
                 source=version,
             )
             continue
-        if not (vdir / "index.html").is_file():
+        # New-builder versions must have a homepage; frozen gh-pages imports
+        # inherit whatever the old deploy shipped (0.111 never had a root
+        # index.html, so /v/0.111/ 404s the same as the old live site did).
+        if not is_frozen_import(vdir) and not (vdir / "index.html").is_file():
             yield GuardResult.error(
                 guard="versions_manifest",
                 message=f"{version}/ is half-built: no index.html",

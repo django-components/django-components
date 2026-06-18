@@ -1,0 +1,29 @@
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: bold !important;
+}
+
+.md-typeset h2 {
+  border-top: 1px solid var(--md-typeset-color);
+  padding-top: 40px;
+}
+
+.md-typeset h3 {
+  /* Original styling */
+  font-size: 1.25em;
+  font-weight: 400;
+  letter-spacing: -.01em;
+  line-height: 1.5;
+  margin: 1.6em 0 0.8em;
+
+  /* Custom */
+  border-top: 0.5px solid var(--md-typeset-color);
+  padding-top: 40px;
+}
+
+.md-nav__item--section {
+  margin-top: 32px;
+}

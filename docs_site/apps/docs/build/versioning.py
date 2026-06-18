@@ -40,8 +40,34 @@ DOCS_BUILDER_VERSION = "1.0.0"
 MANIFEST_NAME = "versions.json"
 BUILD_INFO_NAME = "_build_info.json"
 
+# ``builder_version`` sentinel for versions imported verbatim from the old
+# mike/gh-pages tree (Phase 6, feature 6.2). These predate the new builder and
+# can't be rebuilt, so they're frozen as-is. Guards validate that a frozen
+# import EXISTS (dir, stamp, manifest entry, alias) but not its internal link
+# integrity or homepage completeness - those are whatever the old deploy shipped
+# (e.g. 0.111 never had a root index.html), and we don't touch the HTML.
+IMPORTED_BUILDER_VERSION = "imported-ghpages"
+
 # Vendored mike redirect template (one per aliased page).
 _REDIRECT_TEMPLATE = Path(__file__).resolve().parent.parent / "_vendor" / "mike_redirect.html"
+
+
+def is_frozen_import(version_dir: Path) -> bool:
+    """
+    True if ``version_dir`` was imported verbatim from the old gh-pages tree
+    (its ``_build_info.json`` carries the imported sentinel) rather than built by
+    this builder. Frozen imports are historical HTML we never rebuild, so the
+    version guards check that they exist but not that their internal links
+    resolve or that they have a homepage.
+    """
+    stamp = version_dir / BUILD_INFO_NAME
+    if not stamp.is_file():
+        return False
+    try:
+        data = json.loads(stamp.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return data.get("builder_version") == IMPORTED_BUILDER_VERSION
 
 
 def load_manifest(versions_root: Path) -> Versions:
@@ -98,6 +124,7 @@ def write_build_info(
     source_sha: str,
     source_tag: str | None = None,
     builder_version: str = DOCS_BUILDER_VERSION,
+    built_at: str | None = None,
 ) -> dict[str, str]:
     """
     Write ``version_dir/_build_info.json`` recording how this version was built.
@@ -105,12 +132,17 @@ def write_build_info(
     The stamp is what makes ``docs-build-all`` idempotent: it compares
     ``source_sha`` against the tag's commit and skips the rebuild when they
     match. Returns the written payload (handy for tests/logging).
+
+    ``built_at`` defaults to the current UTC time. Pass an explicit ISO-8601
+    string when stamping a snapshot that was built earlier (e.g. the gh-pages
+    import, which records each version's release-tag commit date) so the stamp
+    is authentic and the import stays reproducible.
     """
     info = {
         "version": version,
         "source_sha": source_sha,
         "source_tag": source_tag if source_tag is not None else version,
-        "built_at": datetime.now(timezone.utc).isoformat(),
+        "built_at": built_at if built_at is not None else datetime.now(timezone.utc).isoformat(),
         "builder_version": builder_version,
     }
     version_dir.mkdir(parents=True, exist_ok=True)
