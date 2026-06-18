@@ -1,0 +1,65 @@
+# Lighthouse CI for the docs-site build (Phase 5c, feature 5c.13).
+#
+# Builds the new docs_site, assembles the static assets into the served tree,
+# and runs Lighthouse against 5 representative pages, asserting the SEO / a11y /
+# best-practices / performance thresholds from spike 11.12 §2.A.14.
+#
+# Config + thresholds live in .github/lighthouserc.json. SEO + best-practices are
+# hard gates (= 100). Accessibility gates at >= 0.95 (the current site scores
+# 0.95-1.00): the chrome/content/prose a11y is fixed, and the only residual is
+# contrast of Pygments *syntax-highlighting* tokens (code comments/keywords) and
+# type-links inside signature blocks - re-tuning the code theme to AA is a
+# tracked follow-up, target 1.0. Performance is a "warn" (CI run-to-run variance).
+#
+# Runs on docs PRs (so regressions surface) and on demand. Not wired into branch
+# protection yet - mark it required once the thresholds are confirmed on a real
+# CI run (the new site isn't deployed until the Phase-6 cutover).
+
+name: Docs Lighthouse
+
+on:
+  pull_request:
+    paths:
+      - "docs_site/**"
+      - ".github/workflows/maint-docs-lighthouse.yml"
+      - ".github/lighthouserc.json"
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # The git-metadata footer reads `git log` per page (feature 3b.24).
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --group docs
+
+      # Build to a served tree and collect /static into it (the mini version of
+      # the Phase-6 deploy assembly). Search + social cards are skipped: search
+      # is lazy-loaded (irrelevant to page-load Lighthouse) and the cards need a
+      # browser the build job doesn't have - the default OG image is enough here.
+      - name: Build docs site + assemble static
+        working-directory: docs_site
+        run: |
+          uv run python manage.py build_docs --no-search --no-social-cards -o "$GITHUB_WORKSPACE/lhsite"
+          uv run python manage.py collectstatic --no-input
+          mkdir -p "$GITHUB_WORKSPACE/lhsite/static"
+          cp -r staticfiles/. "$GITHUB_WORKSPACE/lhsite/static/"
+
+      - name: Run Lighthouse CI
+        run: |
+          npm install -g @lhci/cli@0.14.x
+          lhci autorun --config=.github/lighthouserc.json

@@ -1,5 +1,7 @@
 # Project-specific files
 sampleproject/staticfiles/
+# Docs-site collectstatic output (the Lighthouse workflow assembles /static here)
+docs_site/staticfiles/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -90,3 +92,6 @@ jspm_packages/
 # Cursor
 .cursorrules
 .codex
+
+# Lighthouse CI local output (the workflow runs in ephemeral CI)
+.lighthouseci/

@@ -131,6 +131,11 @@ docs = [
     # required. The `extended` extra (CJK segmentation) is unnecessary for our
     # English docs and roughly triples the binary size.
     "pagefind[bin]",
+    # minify-html (Rust-backed, MIT) is the post-build HTML minifier for the
+    # docs-site build (Phase 5c, feature 5c.14), replacing mkdocs-minify-plugin's
+    # abandoned htmlmin2 backend. Ships PyPI wheels (no toolchain). The build step
+    # imports it lazily and degrades gracefully if it's missing.
+    "minify-html",
     # verspec powers the vendored mike `Versions` class (docs-site versioning,
     # Phase 5b) - LooseVersion ordering for the versions.json manifest. Promoted
     # to a direct dep (it was transitive via mkdocs/mike) so it survives the

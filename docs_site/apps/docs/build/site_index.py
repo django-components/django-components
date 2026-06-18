@@ -84,6 +84,8 @@ class PageRecord:
     is_doc_page: bool = False  # rendered through DocPage (vs an example demo / fragment)
     is_redirect_stub: bool = False
     redirect_target: str | None = None
+    robots: str = ""  # <meta name="robots"> content, e.g. "index,follow"
+    canonical: str = ""  # <link rel="canonical"> href
     anchors: set[str] = field(default_factory=set)  # id= values
     name_aliases: set[str] = field(default_factory=set)  # legacy <a name="..."> values
     links: list[LinkRef] = field(default_factory=list)
@@ -91,6 +93,9 @@ class PageRecord:
     images: list[ImageRef] = field(default_factory=list)
     headings: list[Heading] = field(default_factory=list)
     duplicate_ids: list[str] = field(default_factory=list)
+    # Raw text of every <script type="application/ld+json"> block (for the
+    # json_ld guard, which validates the structured data).
+    jsonld_blocks: list[str] = field(default_factory=list)
 
     @property
     def h1_count(self) -> int:
@@ -167,10 +172,14 @@ class SiteIndex:
                 src = el.get("src")
                 if src:
                     record.assets.append(AssetRef(tag="script", src=src))
+                elif (el.get("type") or "").lower() == "application/ld+json":
+                    record.jsonld_blocks.append(el.text_content() or "")
             elif tag == "link":
                 href = el.get("href")
                 if href:
                     record.assets.append(AssetRef(tag="link", src=href))
+                    if (el.get("rel") or "").lower() == "canonical":
+                        record.canonical = href
             elif tag in ("h1", "h2", "h3", "h4", "h5", "h6"):
                 record.headings.append(
                     Heading(level=int(tag[1]), id=el.get("id") or "", text=(el.text_content() or "").strip())
@@ -187,6 +196,8 @@ class SiteIndex:
         # guards (single-h1, headings, alt-text) only apply to real doc pages.
         if el.get("name") == "generator" and "django-components docs builder" in (el.get("content") or ""):
             record.is_doc_page = True
+        if el.get("name") == "robots":
+            record.robots = el.get("content") or ""
         if (el.get("http-equiv") or "").lower() == "refresh":
             content = el.get("content") or ""
             _, _, url_part = content.partition("url=")

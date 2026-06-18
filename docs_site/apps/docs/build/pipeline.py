@@ -27,7 +27,7 @@ from django.template import Context, Engine
 
 from .fence_protection import protect_fences, reset_counter
 from .frontmatter import PageMeta, parse_page
-from .links import mark_external_links, rewrite_internal_md_links
+from .links import linkify_headings, mark_external_links, rewrite_internal_md_links
 from .toc import merge_html_headings_into_toc
 
 if TYPE_CHECKING:
@@ -56,7 +56,12 @@ MD_EXTENSIONS = [
 ]
 
 MD_EXTENSION_CONFIGS: dict[str, dict[str, Any]] = {
-    "pymdownx.highlight": {"anchor_linenums": True},
+    # anchor_linenums is intentionally OFF: line numbers aren't displayed
+    # (no `linenums`), so it would only emit an empty `<a href id name>` per code
+    # line - thousands of invisible, unreferenced links that fail Lighthouse's
+    # "links do not have a discernible name" a11y audit for zero benefit (nothing
+    # deep-links to a code line). Leaving it off removes that whole class.
+    "pymdownx.highlight": {"anchor_linenums": False},
     "pymdownx.magiclink": {
         "repo_url_shorthand": True,
         "user": "django-components",
@@ -149,6 +154,10 @@ def render_page(
     # markdown toc extension) into the TOC so they reach the right-rail + scroll-spy.
     toc_tokens = merge_html_headings_into_toc(content_html, toc_tokens)
 
+    # Make the whole heading the permalink (not just the trailing ¤). After the
+    # TOC merge so it reads the original heading markup for labels.
+    content_html = linkify_headings(content_html)
+
     # Pass 3: wrap in DocPage layout (full HTML page with <head>, CSS, chrome)
     if wrap_in_layout:
         page_html = _pass3_layout(
@@ -166,7 +175,9 @@ def render_page(
         html=page_html,
         toc_tokens=toc_tokens,
         meta=meta,
-        expanded_markdown=expanded,
+        # The companion (.md) and llms-full.txt are built from this, so resolve
+        # `--8<--` includes here too (Pass 2 only resolved them in the HTML).
+        expanded_markdown=expand_snippets(expanded),
     )
 
 
@@ -218,6 +229,27 @@ def _pass2_markdown(
     return html, toc_tokens
 
 
+def expand_snippets(source: str) -> str:
+    """
+    Inline pymdownx `--8<--` file includes, returning markdown (not HTML).
+
+    Pass 2 expands these when converting to HTML, but the `.md` companions (and
+    the llms-full.txt built from them) are taken from the Pass-1 output, where
+    the directives are still literal. Running just the snippet *preprocessor*
+    here - with the same repo-root base path Pass 2 uses - resolves them in place
+    so includes like `--8<-- "LICENSE"` appear as content, not as a raw directive.
+
+    This mirrors Pass 2 exactly, so the companion matches the rendered page. Note
+    that (like Pass 2, where snippets run as a preprocessor before fence parsing)
+    a `--8<--` inside a ``` code fence is still expanded, not shown literally.
+    """
+    if "--8<--" not in source:
+        return source  # fast path: nothing to expand
+    configs = {"pymdownx.snippets": {"check_paths": True, "base_path": [str(settings.REPO_ROOT)]}}
+    md = markdown.Markdown(extensions=["pymdownx.snippets"], extension_configs=configs)
+    return "\n".join(md.preprocessors["snippet"].run(source.split("\n")))
+
+
 def _pass3_layout(
     content_html: str,
     *,
@@ -247,6 +279,37 @@ def _pass3_layout(
             "current_path": current_path,
             "toc_items": toc_tokens,
             "last_updated": git_meta.last_updated if git_meta else None,
+            "created": git_meta.created if git_meta else None,
             "authors": list(git_meta.authors) if git_meta else [],
+            "og_image": _resolve_og_image(meta.og_image),
+            "edit_url": context.get("edit_url", ""),
         },
     )
+
+
+# Site-level fallback OG image. Pages render with this; build/social_cards.py
+# rewrites og:image/twitter:image to the per-page 1200x630 PNG where one was
+# generated, leaving this valid default in place otherwise (so it never 404s).
+DEFAULT_OG_IMAGE_PATH = "/static/img/favicon.png"
+
+
+def default_og_image_url() -> str:
+    """Absolute URL of the site-level fallback OG image (the social-card rewrite target)."""
+    return f"{str(settings.SITE_URL).rstrip('/')}{DEFAULT_OG_IMAGE_PATH}"
+
+
+def _resolve_og_image(og_image: str) -> str:
+    """
+    Resolve the page's OG/Twitter card image to an absolute URL.
+
+    Uses the front-matter `og_image` when set (absolute URL kept as-is, otherwise
+    treated as a site-root-relative path). Falls back to the site-level default,
+    which the social-card build step (build/social_cards.py) later swaps for the
+    page's generated 1200x630 card when one exists.
+    """
+    site_root = str(settings.SITE_URL).rstrip("/")
+    if not og_image:
+        return default_og_image_url()
+    if og_image.startswith(("http://", "https://")):
+        return og_image
+    return f"{site_root}/{og_image.lstrip('/')}"

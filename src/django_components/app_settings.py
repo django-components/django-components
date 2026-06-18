@@ -332,8 +332,8 @@ class ComponentsSettings(NamedTuple):
     > If you are migrating from BEFORE v0.67, set `context_behavior` to `"django"`.
     > From v0.67 to v0.78 (incl) the default value was `"isolated"`.
     >
-    > For v0.79 and later, the default is again `"django"`. See the rationale for change
-    > [here](https://github.com/django-components/django-components/issues/498).
+    > For v0.79 and later, the default is again `"django"`. See
+    > [the rationale for this change](https://github.com/django-components/django-components/issues/498).
     """
 
     # TODO_v1 - remove. Users should use extension defaults instead.

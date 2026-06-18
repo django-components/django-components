@@ -476,13 +476,8 @@ uv run python manage.py docs_serve_built   # builds, then serves http://127.0.0.
 
 This is the way to test anything that only works against the built site, above
 all search. Pass `--no-build` to re-serve the existing `./site/` without
-rebuilding, or `--port` to change the port.
-
-Then validate links and anchors in the built site (defaults to `./site/`):
-
-```sh
-uv run python manage.py docs_test          # add --strict to fail on warnings
-```
+rebuilding, `--port` to change the port, or `--versions` to also fake a
+multi-version tree for testing the version picker (see Versioning below).
 
 The full gate that CI runs on every pull request (and that you can run locally)
 builds the whole site to a temp dir and runs every guardrail - links, anchors,
@@ -490,12 +485,6 @@ fences, nav drift - in strict mode:
 
 ```sh
 uv run python manage.py docs_build_check
-```
-
-To debug the pipeline on one page, render it to a standalone file:
-
-```sh
-uv run python manage.py build_one content/test/pipeline_test.md -o /tmp/page.html
 ```
 
 The build pipeline renders each markdown file through four passes:
@@ -530,7 +519,7 @@ To exercise the version picker locally - switching between `latest`, `dev`, and
 specific versions - fake a few versions from the current content and serve them:
 
 ```sh
-uv run python manage.py docs_preview       # builds a demo tree, serves at :8137
+uv run python manage.py docs_serve_built --versions   # demo tree (current + older + dev)
 ```
 
 The site deploys automatically via GitHub Actions: a new tag builds that version

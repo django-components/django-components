@@ -43,6 +43,12 @@ _FIRST_PARAGRAPH = re.compile(
     r"([^\n]+(?:\n(?!#|\n)[^\n]+)*)",
 )
 
+# Version-change annotations (e.g. "_New in version 0.89_") are standalone
+# italic paragraphs that often precede the first real prose. They make a useless
+# meta/OG description ("New in version 0.89"), so the extractor skips them and
+# walks to the next paragraph. Matched after inline formatting is stripped.
+_VERSION_ANNOTATION = re.compile(r"^(New|Changed|Deprecated|Removed) in version\b", re.IGNORECASE)
+
 
 @dataclass
 class PageMeta:
@@ -129,17 +135,41 @@ def _extract_first_paragraph(body: str) -> str:
     """
     Extract the first real paragraph from markdown body for use as meta description.
 
-    Strips markdown formatting (links, bold, backticks) and caps at 155 chars
-    (the typical search-engine snippet length).
+    Walks candidate paragraphs in order, skipping ones that make a useless
+    description - version-change annotations ("New in version ..."), raw HTML
+    (tags/comments), and snippet-include directives ("--8<-- ...") - and returns
+    the first prose paragraph. Strips markdown formatting (links, bold, italic,
+    code) and caps at 155 chars (the typical search-engine snippet length).
     """
-    m = _FIRST_PARAGRAPH.search(body)
-    if not m:
-        return ""
-    text = m.group(1).strip()
-    # Strip markdown link syntax [text](url) -> text
+    for m in _FIRST_PARAGRAPH.finditer(body):
+        raw = m.group(1).strip()
+        # Raw HTML (e.g. "<img ...>", "<!-- ... -->") and snippet directives
+        # ("--8<-- \"LICENSE\"") are not prose; skip to the next paragraph.
+        if raw.startswith(("<", "--8<--")):
+            continue
+        text = _strip_inline_formatting(raw)
+        if not text or _VERSION_ANNOTATION.match(text):
+            continue
+        if len(text) > 155:
+            text = text[:152].rsplit(" ", 1)[0] + "..."
+        return text
+    return ""
+
+
+def _strip_inline_formatting(text: str) -> str:
+    """Reduce markdown inline syntax to plain text (links, bold/italic, code)."""
+    # Drop images entirely - their alt text isn't useful description prose
+    text = re.sub(r"!\[[^\]]*\]\([^)]*\)", "", text)
+    # Drop now-empty link shells, e.g. badge links [![alt](img)](url) once the
+    # inner image is gone leave "[](url)"
+    text = re.sub(r"\[\]\([^)]*\)", "", text)
+    # Reference cross-refs [text][Key] -> text (the autoref form used in docstrings)
+    text = re.sub(r"\[([^\]]+)\]\[[^\]]*\]", r"\1", text)
+    # Inline links [text](url) -> text
     text = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", text)
-    # Strip inline formatting markers
-    text = re.sub(r"[`*_]", "", text)
-    if len(text) > 155:
-        text = text[:152].rsplit(" ", 1)[0] + "..."
-    return text
+    # Strip code/bold/asterisk-italic markers
+    text = re.sub(r"[`*]", "", text)
+    # Strip emphasis underscores but keep snake_case identifiers (django_components)
+    # intact: protect any underscore flanked by word chars, drop the rest, restore.
+    text = re.sub(r"(?<=\w)_(?=\w)", "\x00", text)
+    return text.replace("_", "").replace("\x00", "_").strip()

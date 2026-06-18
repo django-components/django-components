@@ -503,7 +503,7 @@ class SlotNode(BaseNode):
     [`{% slot %}`][slot] tag marks a place inside a component where content can be inserted
     from outside.
 
-    [Learn more](../concepts/fundamentals/slots.md) about using slots.
+    [Learn more about using slots](../concepts/fundamentals/slots.md).
 
     This is similar to slots as seen in
     [Web components](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot),

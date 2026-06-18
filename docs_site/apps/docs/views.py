@@ -19,7 +19,7 @@ from django.test import RequestFactory
 from apps.docs.build.examples import examples_index_markdown
 from apps.docs.build.git_metadata import EMPTY_META, get_page_git_meta, is_excluded
 from apps.docs.build.nav import load_nav
-from apps.docs.build.paths import md_to_url, url_to_md
+from apps.docs.build.paths import edit_url_for, md_to_url, url_to_md
 from apps.docs.build.pipeline import render_page
 from apps.docs.build.reference import get_reference_staging_dir
 from apps.docs.build.release_notes import get_release_staging_dir
@@ -84,12 +84,16 @@ def serve_page(request: HttpRequest, url_path: str = "") -> HttpResponse:
     # Footer metadata from git history; mirrors the build command
     git_meta = EMPTY_META if is_excluded(rel) else get_page_git_meta(settings.REPO_ROOT, md_path)
 
-    # Mirror the build command's context so the live preview matches the build output
+    # Mirror the build command's current-version build (preview mode): canonical
+    # to the latest (root) URL, not the versioned one (the dev server previews
+    # the current-version site).
+    site_base = str(settings.SITE_URL).rstrip("/")
     ctx = {
         "version": ver,
-        "canonical": f"{settings.SITE_URL}/v/{ver}/{page_url}",
-        "site_url": f"{settings.SITE_URL}/v/{ver}",
+        "canonical": f"{site_base}/{page_url}",
+        "site_url": site_base,
         "git_meta": git_meta,
+        "edit_url": edit_url_for(md_path),
     }
 
     nav_tree = load_nav(settings.CONTENT_DIR / "_nav.yml")

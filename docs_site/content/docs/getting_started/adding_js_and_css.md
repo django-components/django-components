@@ -283,7 +283,7 @@ When you render the component, django-components will automatically:
 
 Each component instance will receive its own JS variables based on the data returned from `get_js_data()`.
 
-[Learn more](../concepts/fundamentals/html_js_css_variables.md#js-variables) about JS variables.
+[Learn more about JS variables](../concepts/fundamentals/html_js_css_variables.md#js-variables).
 
 ## 6. CSS variables
 
@@ -370,7 +370,7 @@ With a corresponding stylesheet:
 }
 ```
 
-[Learn more](../concepts/fundamentals/html_js_css_variables.md#css-variables) about CSS variables.
+[Learn more about CSS variables](../concepts/fundamentals/html_js_css_variables.md#css-variables).
 
 ---
 

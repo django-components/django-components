@@ -125,3 +125,12 @@ VERSIONS_DIR = BASE_DIR / "versions"
 # Config for `docs-build-all` (which tags to rebuild): pattern, include/exclude,
 # oldest/newest bounds, latest alias. Lives at the docs-project root.
 VERSIONS_CONFIG = BASE_DIR / "docs_versions.toml"
+
+# Phase 5c (feature 5c.12): deprecation date for the legacy dotted-path API
+# anchors (`#django_components.X`), which are emitted as aliases so old inbound
+# links keep resolving. Set this to (cutover date + 12 months) AT cutover. After
+# it, the `anchor_deprecation` guard fails the build on any content source still
+# using the long-form anchor, so internal usages get migrated before the aliases
+# are removed (a deliberate manual step). None = timer not started (guard
+# dormant). Example: `import datetime; ANCHOR_ALIAS_DEPRECATION_DATE = datetime.date(2027, 6, 1)`.
+ANCHOR_ALIAS_DEPRECATION_DATE = None

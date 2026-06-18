@@ -27,8 +27,8 @@ uv run python manage.py docs_serve   # open http://127.0.0.1:8000/
 To produce the full static site, build it and validate the links:
 
 ```sh
-uv run python manage.py build_docs   # -> ./site/ (gitignored)
-uv run python manage.py docs_test    # validate links/anchors in ./site/
+uv run python manage.py build_docs        # -> ./site/ (gitignored)
+uv run python manage.py docs_build_check  # build to a temp dir + run every guardrail
 ```
 
 ## Commands
@@ -40,15 +40,13 @@ All run from `docs_site/` as `uv run python manage.py <command>`.
 | Command | What it does |
 |---|---|
 | `docs_serve` | Dev server; renders pages live from `content/` (no search index) |
-| `docs_serve_built` | Build the full site (incl. Pagefind search + collected `/static/`) and serve it like production; `--no-build` reuses `./site/` |
-| `build_one <file> -o <out>` | Render a single page to one HTML file (handy when debugging the pipeline) |
+| `docs_serve_built` | Build the full site (incl. Pagefind search + collected `/static/`) and serve it like production; `--no-build` reuses `./site/`; `--versions` fakes a `/v/` tree to test the version picker |
 
 **Build & validate:**
 
 | Command | What it does |
 |---|---|
-| `build_docs` | Build every `.md` to `<output>/<slug>/index.html` (+ `.md` companions + Pagefind index). Defaults to `./site/` |
-| `docs_test` | Validate internal links + anchors in a build (`--strict` fails on warnings too) |
+| `build_docs` | Build every `.md` to `<output>/<slug>/index.html` (+ `.md` companions + Pagefind index + sitemap/robots/llms/social cards). Defaults to `./site/` |
 | `docs_build_check` | CI gate: build to a temp dir and run the full guardrail suite (links, anchors, fences, nav drift, ...) in strict mode |
 
 **Versioning** (see [Versioning](#versioning)):
@@ -58,7 +56,6 @@ All run from `docs_site/` as `uv run python manage.py <command>`.
 | `build_docs --docs-version X --alias latest` | Build a committed version snapshot into `versions/X/` + update the manifest + the `latest` redirect |
 | `docs_build_all` | Bootstrap/rebuild every version selected by `docs_versions.toml` (a git worktree per tag); `--dry-run` to preview |
 | `docs_versions_check` | Validate the committed `versions/` tree (manifest <-> filesystem, aliases, cross-version links) |
-| `docs_preview` | Build a few fake versions locally and serve them, to test the version picker (latest / dev / specific) |
 
 Common `build_docs` options:
 
@@ -372,16 +369,37 @@ Markdown pages may declare optional YAML front-matter
 ```yaml
 ---
 title: Page Title              # overrides the first # H1
-description: One-line summary   # meta description (falls back to first paragraph)
-og_image: /path/to/image.png
+description: One-line summary   # the page summary (falls back to the first paragraph)
+og_image: /path/to/image.png   # custom social-card image (else the generated card)
 noindex: false
 canonical: https://...
 tags: [example, advanced]
 ---
 ```
 
-All fields are optional. With no front-matter, the title comes from the first
-`# H1` and the description from the first paragraph.
+All fields are optional. With no front-matter, the `title` comes from the first
+`# H1`, and the `description` comes from the page's **first real paragraph**
+(markdown stripped, truncated to ~155 characters - see
+[`frontmatter.py`](apps/docs/build/frontmatter.py)).
+
+### The `description` is the page's one summary
+
+That single `description` value is reused everywhere a page needs a summary, so
+it's worth setting deliberately on important pages. It drives:
+
+- the `<meta name="description">` tag (search-result snippets),
+- **the subtitle on the page's social card** - the auto-generated 1200x630 OG
+  image at `/og/<page>.png` - plus the matching `og:description` /
+  `twitter:description`,
+- the page's line in [`/llms.txt`](apps/docs/build/llms.py).
+
+So the card at e.g. `/og/docs/concepts/advanced/tag_formatters.png` is just three
+fields: the **section** (top eyebrow, from the nav), the page **title**, and the
+**`description`** as the subtitle. To change the subtitle, set `description:` in
+the page's front-matter; leave it unset and it's the page's first paragraph.
+(The card template + generator live in
+[`components/og_card/`](apps/docs/components/og_card/) and
+[`build/social_cards.py`](apps/docs/build/social_cards.py).)
 
 ## Versioning
 
@@ -401,9 +419,9 @@ and no `mike` dependency - only mike's manifest data model is vendored, under
   rebuilding historical versions is a deferred decision.
 - **Validate** the committed tree with `docs_versions_check` (manifest <->
   filesystem parity, alias redirects, cross-version links). It also runs in CI.
-- **Preview locally** with `docs_preview`: it fakes a few versions from the
-  current content and serves them, so you can click through the picker without
-  needing real historical builds.
+- **Preview locally** with `docs_serve_built --versions`: it fakes a few versions
+  from the current content and serves them, so you can click through the picker
+  without needing real historical builds.
 
 The deploy artifact is `site/` (gitignored), assembled at build time from the
 current build plus the committed `versions/*` snapshots, mounted at `/v/<version>/`.
@@ -443,8 +461,7 @@ docs_site/
         components/            <- django-components (DocPage, ExampleCard,
                                   version_picker, search_modal, reference, ...)
         management/commands/   <- docs_serve, docs_serve_built, build_docs,
-                                  build_one, docs_test, docs_build_check,
-                                  docs_build_all, docs_versions_check, docs_preview
+                                  docs_build_check, docs_build_all, docs_versions_check
         templatetags/          <- docs_extras.py ({% example %}, {% version %},
                                   {% docstring %}, {% include_file %}, {% image %})
         _vendor/               <- vendored mike Versions model (BSD-3)

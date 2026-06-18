@@ -22,6 +22,7 @@ from . import (
     alt_text,
     anchor,
     anchor_alias,
+    anchor_deprecation,
     api_symbols,
     asset,
     code_lang,
@@ -31,8 +32,10 @@ from . import (
     headings,
     html_wellformed,
     internal_link,
+    json_ld,
     lexer_alias,
     nav,
+    redirect_target,
     single_h1,
     snippet_path,
     versions_manifest,
@@ -63,8 +66,10 @@ GUARDS: list[Guard] = [
     nav.check,
     example_contract.check,
     api_symbols.check,
+    anchor_deprecation.check,
     # --- post-build (SiteIndex) ---
     internal_link.check,
+    redirect_target.check,
     anchor.check,
     anchor_alias.check,
     asset.check,
@@ -72,6 +77,7 @@ GUARDS: list[Guard] = [
     single_h1.check,
     alt_text.check,
     headings.check,
+    json_ld.check,
 ]
 
 # Guards for the committed docs_site/versions/ tree (run by docs_versions_check,

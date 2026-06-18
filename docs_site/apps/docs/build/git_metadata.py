@@ -38,10 +38,12 @@ MAX_AUTHORS = 5
 @dataclass(frozen=True)
 class PageGitMeta:
     last_updated: datetime | None
+    # First-commit date: the page's creation time, used as JSON-LD datePublished.
+    created: datetime | None
     authors: tuple[str, ...]
 
 
-EMPTY_META = PageGitMeta(last_updated=None, authors=())
+EMPTY_META = PageGitMeta(last_updated=None, created=None, authors=())
 
 
 def is_excluded(rel_path: Path) -> bool:
@@ -81,7 +83,10 @@ def get_page_git_meta(repo_root: Path, page_path: Path) -> PageGitMeta:
     if not lines:
         return EMPTY_META
 
+    # Rows are newest-first, so lines[0] is the latest commit and lines[-1] the
+    # first (the page's creation).
     last_updated = datetime.fromisoformat(lines[0].split("\t", 1)[0])
+    created = datetime.fromisoformat(lines[-1].split("\t", 1)[0])
     # dict.fromkeys dedups while preserving the newest-first order
     authors = dict.fromkeys(line.split("\t", 1)[1] for line in lines if "\t" in line)
-    return PageGitMeta(last_updated=last_updated, authors=tuple(list(authors)[:MAX_AUTHORS]))
+    return PageGitMeta(last_updated=last_updated, created=created, authors=tuple(list(authors)[:MAX_AUTHORS]))

@@ -22,13 +22,15 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from django.conf import settings
+from django.contrib.staticfiles.finders import get_finders
 
 from apps.docs.build.examples import examples_index_markdown, pre_render_examples
 from apps.docs.build.git_metadata import EMPTY_META, get_page_git_meta, is_excluded
 from apps.docs.build.guards import GuardResult
 from apps.docs.build.nav import load_nav
-from apps.docs.build.paths import md_companion_path, md_to_html_path, md_to_url
+from apps.docs.build.paths import edit_url_for, md_companion_path, md_to_html_path, md_to_url
 from apps.docs.build.pipeline import render_page
+from apps.docs.build.redirects import emit_redirects
 from apps.docs.build.reference import generate_reference_pages, write_objects_inv
 from apps.docs.build.release_notes import generate_release_notes
 from apps.docs.examples import get_example_registry
@@ -63,6 +65,7 @@ def build_site(
     version: str | None = None,
     emit_companions: bool = True,
     changelog: Path | None = None,
+    versioned_canonical: bool = False,
 ) -> BuildOutcome:
     """
     Build every page in `content_dir` into `output_dir`.
@@ -70,11 +73,21 @@ def build_site(
     When `changelog` is given, per-release pages are generated from it into a
     throwaway staging dir and built under /releases/ alongside the content.
 
+    `versioned_canonical` controls the per-page `<link rel="canonical">` base.
+    The default (False) canonicals to the root/latest URL (`{SITE_URL}/<page>/`)
+    - correct for the current-version build, which IS the deployed latest site. Versioned
+    snapshot builds pass True to self-canonical to `{SITE_URL}/v/<ver>/<page>/`
+    (the §2.A.1 "canonical to the /latest/ counterpart, noindex if absent from
+    latest" rule for old versions needs the multi-version manifest and is
+    deferred to Phase 6, feature 6.12 part b).
+
     Raises ValueError if `output_dir` looks unsafe to clear (repo root, the
     content dir itself, or a filesystem root).
     """
     ver = version or get_version("django_components")
-    site_url = f"{settings.SITE_URL}/v/{ver}"
+    site_base = str(settings.SITE_URL).rstrip("/")
+    # Canonical base: root (latest) for the deployed site, versioned for snapshots.
+    canonical_base = f"{site_base}/v/{ver}" if versioned_canonical else site_base
 
     if _is_unsafe_output(output_dir, content_dir):
         raise ValueError(f"Refusing to clear unsafe output dir: {output_dir.resolve()}")
@@ -115,11 +128,18 @@ def build_site(
             rel = md_path.relative_to(content_root)
             out_path = md_to_html_path(output_dir, rel)
             page_url = md_to_url(rel)
-            canonical = f"{site_url}/{page_url}" if site_url else ""
+            canonical = f"{canonical_base}/{page_url}" if canonical_base else ""
 
             # Footer metadata from git history; skipped for generated/reference pages
             git_meta = EMPTY_META if is_excluded(rel) else get_page_git_meta(settings.REPO_ROOT, md_path)
-            ctx = {"version": ver, "canonical": canonical, "site_url": site_url, "git_meta": git_meta}
+            ctx = {
+                "version": ver,
+                "canonical": canonical,
+                "site_url": canonical_base,
+                "git_meta": git_meta,
+                # "Edit on GitHub" link, only for real content pages (see edit_url_for).
+                "edit_url": edit_url_for(md_path),
+            }
 
             try:
                 source = md_path.read_text(encoding="utf-8")
@@ -172,6 +192,11 @@ def build_site(
     # Custom 404 page at the site root (GitHub Pages serves it on any 404).
     generate_not_found(output_dir, nav_tree=nav_tree, version=ver)
 
+    # Static redirect stubs for moved pages (so old bookmarks keep resolving).
+    # Emitted in build_site (not the command) so they exist in every build and
+    # the redirect_target guard validates them in docs_build_check.
+    emit_redirects(output_dir, site_url=str(settings.SITE_URL))
+
     outcome.elapsed = time.monotonic() - t0
     return outcome
 
@@ -203,6 +228,33 @@ def generate_not_found(output_dir: Path, *, nav_tree: NavTree | None, version: s
         },
     )
     (output_dir / "404.html").write_text(page_html, encoding="utf-8")
+
+
+def collect_static(output_dir: Path) -> Path:
+    """
+    Copy Django static files into ``<output_dir>/static`` so the built site is
+    directly serveable by a plain static server.
+
+    build_site itself deliberately does NOT do this - the same build also produces
+    per-version snapshots, and collecting `/static/` into every version dir would
+    duplicate it. So static assembly belongs to the deploy / `--collectstatic`
+    step, which mounts one shared `/static/` at the output root. Returns the
+    static dir.
+
+    Copies straight from the staticfiles *finders* rather than via the
+    `collectstatic` command: that command resolves its destination from the
+    already-initialised `staticfiles_storage`, so overriding `settings.STATIC_ROOT`
+    after the storage is cached (which it is, mid-build) silently writes to the
+    wrong place.
+    """
+    static_root = output_dir / "static"
+    for finder in get_finders():
+        for rel_path, file_storage in finder.list(None):
+            dest = static_root / rel_path
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            with file_storage.open(rel_path) as src:
+                dest.write_bytes(src.read())
+    return static_root
 
 
 def _write_companion(path: Path, meta: object, expanded_markdown: str, canonical: str) -> None:

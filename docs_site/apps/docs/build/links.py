@@ -97,6 +97,46 @@ def mark_external_links(html: str) -> str:
     return _A_OPEN_RE.sub(replace, html)
 
 
+# A heading and its trailing permalink anchor. Covers both the plain markdown form
+#   <h2 id="foo">Foo<a class="headerlink" href="#foo" ...>¤</a></h2>
+# and the API-reference form, which carries extra attributes + child spans:
+#   <h2 id="X" class="doc doc-heading"><span id="legacy"></span><span class="badge">
+#   </span><span class="doc-object-name">Name</span><a class="headerlink" ...>¤</a></h2>
+# The href is backreferenced to the heading id so a heading only ever matches its
+# own permalink, and `.*?` captures just that heading's content.
+_HEADING_PERMALINK_RE = re.compile(
+    r'<h([1-6]) id="([^"]+)"([^>]*)>(.*?)<a class="headerlink" href="#\2"[^>]*>\xa4</a>\s*</h\1>',
+    re.DOTALL,
+)
+
+
+def linkify_headings(html: str) -> str:
+    """
+    Make the whole heading the permalink, not just the trailing ¤ glyph.
+
+    Markdown headings and API-reference symbol headings both render as
+    ``<h2 id="x">...Title...<a class="headerlink" ...>¤</a></h2>``, where only the
+    ¤ is clickable. We wrap the heading's content in the link (styled to underline
+    on hover, see `.heading-anchor` in site.css) so the entire heading is the
+    permalink, and drop the glyph. The reference heading's badge / legacy-anchor
+    spans go inside the link too; the CSS targets them by descendant selectors, so
+    nesting them under an ``<a>`` doesn't change their styling.
+
+    Headings whose content already contains a link are left untouched - wrapping
+    them would nest one ``<a>`` inside another (invalid HTML).
+    """
+    if "headerlink" not in html:
+        return html
+
+    def replace(match: re.Match) -> str:
+        level, hid, attrs, content = match.group(1), match.group(2), match.group(3), match.group(4)
+        if "<a " in content:  # nested link present -> keep the ¤-only heading
+            return match.group(0)
+        return f'<h{level} id="{hid}"{attrs}><a class="heading-anchor" href="#{hid}">{content}</a></h{level}>'
+
+    return _HEADING_PERMALINK_RE.sub(replace, html)
+
+
 def _is_external_url(href: str) -> bool:
     """True if href is an absolute web URL (has a host) - i.e. points off-site."""
     parsed = urlparse(href)

@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 from apps.docs.build.nav import NavTree
+from django.conf import settings
 
 from django_components import Component, register, types
 
@@ -50,7 +51,13 @@ class DocPage(Component):
         toc_items: list | None = None
         # Footer git metadata (see build/git_metadata.py); None/[] hides it
         last_updated: datetime | None = None
+        # First-commit date, used as TechArticle datePublished (None omits it)
+        created: datetime | None = None
         authors: list | None = None
+        # Absolute URL of the OG/Twitter card image (see pipeline._resolve_og_image)
+        og_image: str = ""
+        # GitHub "edit this page" URL; "" hides the link (generated pages)
+        edit_url: str = ""
 
     template: types.django_html = """
         <!DOCTYPE html>
@@ -65,16 +72,35 @@ class DocPage(Component):
             {# Per-page meta description for search engine snippets #}
             {% if description %}<meta name="description" content="{{ description }}">{% endif %}
 
-            {# Canonical URL - versioned pages point to /latest/ counterpart #}
+            {# Canonical URL - the current-version build points at the latest (root)
+               URL; versioned snapshots self-reference (see build_site / feature 6.12) #}
             {% if canonical %}<link rel="canonical" href="{{ canonical }}">{% endif %}
 
             {# noindex for old versions so they don't compete with /latest/ in search #}
             <meta name="robots" content="{{ robots }}">
             <meta name="generator" content="django-components docs builder">
 
-            {# JSON-LD BreadcrumbList for search engine rich results #}
+            {# Open Graph + Twitter card metadata for link previews on social
+               sites, chat apps, and search result cards. og:image is resolved
+               to an absolute URL in the build pipeline. #}
+            <meta property="og:type" content="article">
+            <meta property="og:site_name" content="{{ site_name }}">
+            <meta property="og:title" content="{{ title|default:site_name }}">
+            {% if description %}<meta property="og:description" content="{{ description }}">{% endif %}
+            {% if canonical %}<meta property="og:url" content="{{ canonical }}">{% endif %}
+            {% if og_image %}<meta property="og:image" content="{{ og_image }}">{% endif %}
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="{{ title|default:site_name }}">
+            {% if description %}<meta name="twitter:description" content="{{ description }}">{% endif %}
+            {% if og_image %}<meta name="twitter:image" content="{{ og_image }}">{% endif %}
+
+            {# JSON-LD structured data for search engine rich results: a
+               BreadcrumbList on every page, plus a TechArticle on content pages. #}
             {% if breadcrumb_jsonld %}
-            <script type="application/ld+json">{{ breadcrumb_jsonld }}</script>
+            <script type="application/ld+json">{{ breadcrumb_jsonld|safe }}</script>
+            {% endif %}
+            {% if article_jsonld %}
+            <script type="application/ld+json">{{ article_jsonld|safe }}</script>
             {% endif %}
 
             {# FOUC prevention: read stored theme before first paint #}
@@ -86,6 +112,9 @@ class DocPage(Component):
                     }
                 })();
             </script>
+
+            {# Point AI agents at the site's markdown index (llmstxt.org) #}
+            <link rel="alternate" type="text/markdown" href="/llms.txt" title="LLM index">
 
             <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
             <link rel="icon" type="image/png" href="/static/img/favicon.png">
@@ -426,8 +455,13 @@ class DocPage(Component):
                     </nav>
                     {% endif %}
 
-                    {% if version or last_updated %}
+                    {% if version or last_updated or edit_url %}
                     <footer class="djc-footer">
+                        {% if edit_url %}
+                        <div class="djc-footer__edit">
+                            <a href="{{ edit_url }}" target="_blank" rel="noopener">Edit this page on GitHub</a>
+                        </div>
+                        {% endif %}
                         {% if last_updated %}
                         <div class="djc-footer__meta">
                             Last updated {{ last_updated|date:"j M Y" }}{% if authors %} by {{ authors|join:", " }}{% endif %}
@@ -486,6 +520,22 @@ class DocPage(Component):
         if kwargs.canonical and kwargs.title:
             breadcrumb_jsonld = _build_breadcrumb_jsonld(kwargs.canonical, kwargs.title)
 
+        # TechArticle JSON-LD on content pages only. The homepage and community
+        # pages are navigational/policy, not articles, so they're skipped (the
+        # BreadcrumbList above still covers them).
+        path_norm = kwargs.current_path.strip("/")
+        is_article_page = bool(path_norm) and not path_norm.startswith("docs/community")
+        article_jsonld = ""
+        if is_article_page and kwargs.canonical and kwargs.title:
+            article_jsonld = _build_article_jsonld(
+                canonical=kwargs.canonical,
+                title=kwargs.title,
+                description=kwargs.description,
+                created=kwargs.created,
+                last_updated=kwargs.last_updated,
+                site_name=kwargs.site_name,
+            )
+
         if kwargs.title and kwargs.title != kwargs.site_name:
             page_title = f"{kwargs.title} - {kwargs.site_name}"
         else:
@@ -527,7 +577,11 @@ class DocPage(Component):
             "robots": robots,
             "version": kwargs.version,
             "lang": kwargs.lang,
+            "site_name": kwargs.site_name,
+            "og_image": kwargs.og_image,
+            "edit_url": kwargs.edit_url,
             "breadcrumb_jsonld": breadcrumb_jsonld,
+            "article_jsonld": article_jsonld,
             "nav_sections": nav_sections,
             "breadcrumbs": breadcrumbs,
             "prev_page": prev_page,
@@ -612,27 +666,77 @@ def _flatten_toc(toc_tokens: list) -> list[dict]:
     return items
 
 
+def _jsonld_dumps(data: dict[str, Any]) -> str:
+    """
+    Serialize a JSON-LD object for safe embedding in a `<script>` element.
+
+    The template marks the result `|safe` (so Django doesn't HTML-escape the
+    quotes, which a browser would NOT decode inside a script element, breaking
+    the JSON). To stay safe we instead escape the three characters that could
+    end the script element or be misread, as unicode escapes - the standard
+    `json_script` technique.
+    """
+    raw = json.dumps(data, ensure_ascii=False)
+    return raw.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+
+
+def _build_article_jsonld(
+    *,
+    canonical: str,
+    title: str,
+    description: str,
+    created: datetime | None,
+    last_updated: datetime | None,
+    site_name: str,
+) -> str:
+    """Generate a TechArticle JSON-LD object for a content page."""
+    org = {"@type": "Organization", "name": site_name}
+    data: dict[str, Any] = {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": title,
+        "mainEntityOfPage": canonical,
+        "url": canonical,
+        "author": org,
+        "publisher": org,
+    }
+    if description:
+        data["description"] = description
+    # Dates come from git history (omitted on pages with no tracked history).
+    if created is not None:
+        data["datePublished"] = created.isoformat()
+    if last_updated is not None:
+        data["dateModified"] = last_updated.isoformat()
+    return _jsonld_dumps(data)
+
+
 def _build_breadcrumb_jsonld(canonical: str, title: str) -> str:
     """Generate a BreadcrumbList JSON-LD object from a canonical URL."""
     parsed = urlparse(canonical)
-    path = parsed.path.strip("/")
-    segments = [s for s in path.split("/") if s]
+    segments = [s for s in parsed.path.strip("/").split("/") if s]
 
-    content_start = 0
-    for i, seg in enumerate(segments):
-        if seg == "v" and i + 1 < len(segments):
-            content_start = i + 2
-            break
+    # Strip the site's base-path prefix (the GitHub Pages project path, e.g.
+    # "django-components"), then an optional "/v/<version>/" snapshot prefix.
+    # What remains are the content path segments forming the breadcrumb trail.
+    # (We can't rely on the "/v/" marker to locate content: the current-version
+    # build's canonical has no version segment.)
+    prefix: list[str] = []
+    base_segs = [s for s in urlparse(str(settings.SITE_URL)).path.strip("/").split("/") if s]
+    if base_segs and segments[: len(base_segs)] == base_segs:
+        prefix += base_segs
+        segments = segments[len(base_segs) :]
+    if len(segments) >= 2 and segments[0] == "v":
+        prefix += segments[:2]
+        segments = segments[2:]
 
-    content_segments = segments[content_start:]
-    if not content_segments:
+    if not segments:
         return ""
 
-    base_url = f"{parsed.scheme}://{parsed.netloc}/{'/'.join(segments[:content_start])}"
+    base_url = f"{parsed.scheme}://{parsed.netloc}/{'/'.join(prefix)}".rstrip("/")
     items = []
-    for i, seg in enumerate(content_segments):
-        item_url = f"{base_url}/{'/'.join(content_segments[: i + 1])}/"
-        name = title if i == len(content_segments) - 1 else seg.replace("_", " ").title()
+    for i, seg in enumerate(segments):
+        item_url = f"{base_url}/{'/'.join(segments[: i + 1])}/"
+        name = title if i == len(segments) - 1 else seg.replace("_", " ").title()
         items.append(
             {
                 "@type": "ListItem",
@@ -642,11 +746,10 @@ def _build_breadcrumb_jsonld(canonical: str, title: str) -> str:
             }
         )
 
-    return json.dumps(
+    return _jsonld_dumps(
         {
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
             "itemListElement": items,
-        },
-        ensure_ascii=False,
+        }
     )

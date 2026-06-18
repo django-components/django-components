@@ -582,7 +582,7 @@ Since v0.140, the types must be specified as class attributes of the [Component]
 [`JsData`][Component.JsData],
 and [`CssData`][Component.CssData].
 
-This change was necessary to make it possible to subclass components. Subclassing with generics was otherwise too complicated. Read the discussion [here](https://github.com/django-components/django-components/issues/1122).
+This change was necessary to make it possible to subclass components. Subclassing with generics was otherwise too complicated. Read [the discussion on GitHub](https://github.com/django-components/django-components/issues/1122).
 
 Because of this change, the [`Component.render()`][Component.render]
 method is no longer typed.

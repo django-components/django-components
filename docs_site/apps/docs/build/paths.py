@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from django.conf import settings
+
 
 def md_to_html_path(output_dir: Path, rel: Path) -> Path:
     """Output HTML path for a content markdown file (relative to content dir)."""
@@ -35,6 +37,23 @@ def md_to_url(rel: Path) -> str:
         parent = str(rel.parent)
         return parent + "/" if parent != "." else ""
     return str(rel.with_suffix("")) + "/"
+
+
+def edit_url_for(md_path: Path) -> str:
+    """
+    GitHub "edit this page" URL for a content source file, or "" if it has none.
+
+    Only real content pages (under the repo) get a link. Generated pages
+    (release notes, API reference, examples index) are rendered from a temp
+    staging dir outside the repo, so relative_to() raises and they correctly
+    get no edit link.
+    """
+    try:
+        rel = md_path.relative_to(settings.REPO_ROOT)
+    except ValueError:
+        return ""
+    repo_url = str(settings.REPO_URL).strip("/ ")
+    return f"{repo_url}/edit/{settings.SOURCE_CODE_GIT_BRANCH}/{rel.as_posix()}"
 
 
 def url_to_md(content_dir: Path, url_path: str) -> Path | None:

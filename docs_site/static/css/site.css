@@ -131,12 +131,29 @@ body {
   color: var(--c-link);
 }
 
+/* The whole heading text is the permalink (see build/links.py::linkify_headings).
+   It looks like the heading - inherits its colour, no underline by default
+   (overriding the .prose a rule) - and underlines on hover to signal it's a link. */
+.prose .heading-anchor,
+.prose .heading-anchor:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+.prose .heading-anchor:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 /* ------------------------------------------------------------------ */
 /* Links                                                               */
 /* ------------------------------------------------------------------ */
 .prose a {
   color: var(--c-link);
-  text-decoration: none;
+  /* Underline by default: in-body links must be distinguishable by more than
+     colour (WCAG 1.4.1 / Lighthouse "links rely on color"). */
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .prose a:hover {
@@ -155,7 +172,7 @@ body {
 /* Inline code: accent-colored pill (spike 11.11 section 5.4)          */
 /* ------------------------------------------------------------------ */
 .prose :not(pre) > code {
-  color: var(--c-accent);
+  color: var(--c-code-text);
   background: var(--c-accent-dim);
   padding: 0.1em 0.35em;
   border-radius: 0.2em;
@@ -1218,6 +1235,17 @@ a.djc-sidebar__label:hover {
   gap: 0.25rem;
 }
 
+/* "Edit this page on GitHub" sits at the top of the footer, set apart from the
+   muted version/last-updated metadata below it. */
+.djc-footer__edit {
+  margin-bottom: 0.25rem;
+}
+
+.djc-footer__edit a {
+  /* accent-hover (not accent) so the link text meets WCAG AA contrast on the bg */
+  color: var(--c-accent-hover);
+}
+
 /* ------------------------------------------------------------------ */
 /* Right-rail TOC                                                      */
 /* ------------------------------------------------------------------ */
@@ -1659,7 +1687,9 @@ body.djc-drawer-open .djc-drawer-overlay {
 
 .prose .doc-type-link {
   color: var(--c-link);
-  text-decoration: none;
+  /* underline like other in-body links (WCAG "links rely on color") */
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .prose .doc-type-link:hover {

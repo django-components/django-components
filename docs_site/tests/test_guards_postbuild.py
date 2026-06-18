@@ -16,6 +16,7 @@ from apps.docs.build.guards import (
     headings,
     html_wellformed,
     internal_link,
+    json_ld,
     run_guards,
     single_h1,
 )
@@ -172,6 +173,47 @@ def test_html_wellformed_duplicate_id(tmp_path: Path) -> None:
     write_page(tmp_path, "a/index.html", '<div id="x"></div><span id="x"></span>')
     results = list(html_wellformed.check(ctx_for(tmp_path)))
     assert any("Duplicate id" in r.message for r in results)
+
+
+# --- json_ld ---------------------------------------------------------------
+
+
+def _ld(payload: str) -> str:
+    return f'<script type="application/ld+json">{payload}</script>'
+
+
+def test_json_ld_valid_blocks_pass(tmp_path: Path) -> None:
+    breadcrumb = _ld('{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [1]}')
+    article = _ld('{"@context": "https://schema.org", "@type": "TechArticle", "headline": "Hi"}')
+    write_page(tmp_path, "a/index.html", breadcrumb + article)
+    assert list(json_ld.check(ctx_for(tmp_path))) == []
+
+
+def test_json_ld_malformed_is_error(tmp_path: Path) -> None:
+    write_page(tmp_path, "a/index.html", _ld('{"@type": "TechArticle",}'))  # trailing comma
+    results = list(json_ld.check(ctx_for(tmp_path)))
+    assert len(results) == 1
+    assert results[0].severity is Severity.ERROR
+    assert "Malformed JSON-LD" in results[0].message
+
+
+def test_json_ld_missing_type_is_error(tmp_path: Path) -> None:
+    write_page(tmp_path, "a/index.html", _ld('{"@context": "https://schema.org"}'))
+    results = list(json_ld.check(ctx_for(tmp_path)))
+    assert any(r.severity is Severity.ERROR and "@type" in r.message for r in results)
+
+
+def test_json_ld_missing_required_field_is_warning(tmp_path: Path) -> None:
+    write_page(tmp_path, "a/index.html", _ld('{"@context": "https://schema.org", "@type": "TechArticle"}'))
+    results = list(json_ld.check(ctx_for(tmp_path)))
+    assert len(results) == 1
+    assert results[0].severity is Severity.WARNING
+    assert "headline" in results[0].message
+
+
+def test_json_ld_skips_non_doc_pages(tmp_path: Path) -> None:
+    write_page(tmp_path, "demo/index.html", _ld("not json"), doc_page=False)
+    assert list(json_ld.check(ctx_for(tmp_path))) == []
 
 
 # --- harness ---------------------------------------------------------------

@@ -25,6 +25,12 @@ if TYPE_CHECKING:
 
 _STATIC_PREFIX = "/static/"
 
+# Root files emitted by the build_docs command's post-build steps (seo.py /
+# llms.py), NOT by build_site - which is what docs_build_check runs. They're
+# absent from the guard's build but present on the deployed site, so a reference
+# to one (e.g. the <link rel="alternate" href="/llms.txt">) is not a broken link.
+_GENERATED_ROOT_ASSETS = frozenset({"/llms.txt", "/llms-full.txt", "/sitemap.xml", "/robots.txt"})
+
 
 def _static_asset_exists(rel: str, static_dir: Path) -> bool:
     """Resolve a /static/ path the way collectstatic will at deploy time."""
@@ -39,6 +45,8 @@ def _asset_exists(src: str, build_dir: Path, static_dir: Path, page_dir: Path) -
     path, _, _ = src.partition("#")
     path, _, _ = path.partition("?")
     if not path:
+        return True
+    if path in _GENERATED_ROOT_ASSETS:
         return True
     if path.startswith(_STATIC_PREFIX):
         return _static_asset_exists(path[len(_STATIC_PREFIX) :], static_dir)

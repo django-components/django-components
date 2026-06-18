@@ -39,7 +39,7 @@
   /* Foreground & borders — pulled away from pure black for softer feel */
   --c-fg:            oklch(25% 0.01 250);  /* ~#2a2d3d soft black */
   --c-fg-muted:      oklch(40% 0.01 250);  /* #525b6e */
-  --c-fg-subtle:     oklch(55% 0.01 250);  /* #797f8c */
+  --c-fg-subtle:     oklch(50% 0.01 250);  /* darkened from 55% for WCAG AA (~5.4:1 on --c-bg) */
   --c-border:        oklch(88% 0.005 250); /* #d0d5db */
   --c-border-subtle: oklch(92% 0.005 250); /* #dde2e7 */
 
@@ -47,9 +47,12 @@
   --c-accent:       oklch(55% 0.13 195);        /* #0d8a8a */
   --c-accent-hover: oklch(48% 0.13 195);        /* #0a7474 */
   --c-accent-dim:   oklch(55% 0.13 195 / 10%);
+  /* Inline-code text: a darker teal than --c-accent so it meets WCAG AA on the
+     --c-accent-dim pill (the brand teal itself is only ~3.4:1 there). */
+  --c-code-text:    oklch(46% 0.13 195);
 
-  /* Links: steel-blue */
-  --c-link:       oklch(55% 0.15 245);        /* #3870c5 */
+  /* Links: steel-blue (darkened from 55% to 52% L for WCAG AA, ~4.9:1 on bg) */
+  --c-link:       oklch(52% 0.15 245);
   --c-link-hover: oklch(48% 0.15 245);        /* #2a5da8 */
   --c-link-dim:   oklch(55% 0.15 245 / 10%);
 
@@ -82,6 +85,7 @@
   --c-accent:       oklch(72% 0.13 195);        /* #3eb4b4 */
   --c-accent-hover: oklch(78% 0.13 195);        /* #5cc8c8 */
   --c-accent-dim:   oklch(72% 0.13 195 / 12%);
+  --c-code-text:    oklch(72% 0.13 195);        /* bright teal already passes on the dark tint */
 
   --c-link:       oklch(72% 0.13 245);        /* #7aaae0 */
   --c-link-hover: oklch(78% 0.13 245);        /* #94c0eb */
@@ -113,6 +117,7 @@
     --c-accent:       oklch(72% 0.13 195);
     --c-accent-hover: oklch(78% 0.13 195);
     --c-accent-dim:   oklch(72% 0.13 195 / 12%);
+    --c-code-text:    oklch(72% 0.13 195);
 
     --c-link:       oklch(72% 0.13 245);
     --c-link-hover: oklch(78% 0.13 245);
