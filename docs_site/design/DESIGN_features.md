@@ -659,7 +659,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 10.1 | `selective-rebuild-policy` | Rebuild 0.148+ historical versions with new builder | M | | 11.8 §5.2 | pending | Driven by analytics |
 | 10.2 | `url-redirect-map-pre-0124` | Manual redirects for pre-0.124 broken URLs | L | | 11.8 §9 | pending | Only if traffic > threshold |
 | 10.3 | `version-pruning-policy` | Move pre-0.110 versions to `docs-archive` orphan branch | M | | 11.8 §5.2 | pending | Optional cleanup |
-| 10.4 | `cve-bundle-audit` | CVE audit on frozen Material/plugin bundles | M | | 11.8 §8.1 | pending | One-off sweep |
+| 10.4 | `cve-bundle-audit` | CVE audit on frozen Material/plugin bundles | M | | 11.8 §8.1 | **done** | Sweep complete - see [`cve_audit_10.4.md`](cve_audit_10.4.md). **Verdict: accept residual risk, no rebuild triggered.** Live docs are jQuery/Material-free (new builder). Carriers: the asv report's CDN jQuery 3.3.1 + Bootstrap 3.1.1 (EOL XSS CVEs, but only static first-party data, no URL->DOM-sink path found) and one frozen version `/v/0.92/` (Material 9.5.16, search RXSS <9.5.32; all 58 others 9.5.34+). timeago 4.0.2 / lunr / pyodide clean. Follow-ups (SRI + jQuery bump on the asv report; 0.92 rebuild via 10.1) tracked, not blocking |
 | 10.5 | `docs-versions-toml-per-version-freeze-flag` | Per-version `freeze=true` schema extension | S | | 11.8 §9 | pending | Only if needed |
 | 10.6 | `sitemap-strategy` | Sitemap-index aggregating only latest/ | S | | 11.8 §8.2 | pending | Optional |
 | 10.7 | `dev-deploy-ci-flow` | Decide whether `dev/` commits or deploys separately | M | | 11.8 §8.1 | **done** | **Decision: build + deploy, don't commit.** `dev` is rebuilt fresh into `/v/dev/` by `docs_assemble` on every deploy (labelled `dev (<sha>)`) and added to the *served* manifest, but never committed - so a plain master push deploys with zero history churn. Only releases (tags) commit immutable snapshots. `/v/dev/` is robots-disallowed (bleeding-edge, mirrors root). Dropped the old "Build & commit dev" step from `release-docs.yml`; removed the previously-committed `versions/dev/` |
@@ -692,7 +692,7 @@ Tracked so they don't get lost, NOT a checklist for any single agent session.
 | 7 | Search v2 (post-cutover polish) | 4 | 0 | pending |
 | 8 | Search v3 (blocked on analytics target) | 1 | 0 | pending |
 | 9 | Landing page (codesign) | 1 | 0 | pending |
-| 10+ | Deferred / post-launch maintenance | 7 | 0 | **1/7 done** (10.7 `dev-deploy-ci-flow`: dev builds + deploys, never committed); rest pending |
+| 10+ | Deferred / post-launch maintenance | 7 | 0 | **2/7 done** (10.4 `cve-bundle-audit`: swept, residual risk accepted; 10.7 `dev-deploy-ci-flow`: dev builds + deploys, never committed); rest pending |
 | **Total** | | **226** | **112** | **191/226 done** (phases 0-4 + 5b + **5c complete** + **5d audit complete**: +3 port-now items 5d.1-5d.3; 5c.15 dropped; 1.26 reopened as partial → 6.12) |
 
 ### Phase 0 closed
