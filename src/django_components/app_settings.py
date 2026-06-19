@@ -133,7 +133,7 @@ class ReloadMode(str, Enum):
     Configure how django_components reacts when component files
     (HTML templates, JS, CSS) change on disk while the dev server is running.
 
-    Also see [Reload dev server on component file changes](
+    Also see [Hot-reloading component files during development](
     ../guides/setup/development_server.md#hot-reloading-component-files-during-development).
 
     **Options:**
@@ -473,7 +473,7 @@ class ComponentsSettings(NamedTuple):
     Configure how django_components reacts when component files
     (HTML templates, JS, CSS) change on disk while the dev server is running.
 
-    See [Reload dev server on component file changes](
+    See [Hot-reloading component files during development](
     ../guides/setup/development_server.md#hot-reloading-component-files-during-development).
 
     **Options:**

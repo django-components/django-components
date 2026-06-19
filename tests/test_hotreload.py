@@ -177,34 +177,42 @@ class TestHotReloadSignalHandler:
     """Tests for the file_changed signal handler."""
 
     def test_hot_mode_returns_true_for_tracked_file(self):
-        cleanup = _with_hotreload(reload_mode="hot")
-        try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_file = Path(tmpdir) / "template.html"
+            fake_file.touch()
+            abs_path = str(fake_file.resolve())
 
-            class MyComp(Component):
-                template = "hello"
+            cleanup = _with_hotreload(reload_mode="hot")
+            try:
 
-            abs_path = "/some/tracked/template.html"
-            _register_component_file(abs_path, MyComp)
+                class MyComp(Component):
+                    template = "hello"
 
-            results = file_changed.send(sender=None, file_path=Path(abs_path))
-            assert any(result is True for _, result in results)
-        finally:
-            cleanup()
+                _register_component_file(abs_path, MyComp)
+
+                results = file_changed.send(sender=None, file_path=fake_file)
+                assert any(result is True for _, result in results)
+            finally:
+                cleanup()
 
     def test_restart_mode_returns_none_for_tracked_file(self):
-        cleanup = _with_hotreload(reload_mode="restart")
-        try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_file = Path(tmpdir) / "template.html"
+            fake_file.touch()
+            abs_path = str(fake_file.resolve())
 
-            class MyComp(Component):
-                template = "hello"
+            cleanup = _with_hotreload(reload_mode="restart")
+            try:
 
-            abs_path = "/some/tracked/template.html"
-            _register_component_file(abs_path, MyComp)
+                class MyComp(Component):
+                    template = "hello"
 
-            results = file_changed.send(sender=None, file_path=Path(abs_path))
-            assert not any(result is True for _, result in results)
-        finally:
-            cleanup()
+                _register_component_file(abs_path, MyComp)
+
+                results = file_changed.send(sender=None, file_path=fake_file)
+                assert not any(result is True for _, result in results)
+            finally:
+                cleanup()
 
     def test_untracked_file_returns_none(self):
         cleanup = _with_hotreload(reload_mode="hot")
@@ -218,60 +226,68 @@ class TestHotReloadSignalHandler:
             cleanup()
 
     def test_signal_resets_component_media(self):
-        cleanup = _with_hotreload(reload_mode="hot")
-        try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_file = Path(tmpdir) / "template.html"
+            fake_file.touch()
+            abs_path = str(fake_file.resolve())
 
-            class MyComp(Component):
-                template = "original"
-                js = "console.log('original');"
+            cleanup = _with_hotreload(reload_mode="hot")
+            try:
 
-            _ = MyComp.template
-            _ = MyComp.js
+                class MyComp(Component):
+                    template = "original"
+                    js = "console.log('original');"
 
-            comp_media = MyComp._component_media  # type: ignore[attr-defined]
-            assert comp_media.resolved_template is True
-            assert comp_media.resolved_files is True
+                _ = MyComp.template
+                _ = MyComp.js
 
-            abs_path = "/some/component/template.html"
-            _register_component_file(abs_path, MyComp)
+                comp_media = MyComp._component_media  # type: ignore[attr-defined]
+                assert comp_media.resolved_template is True
+                assert comp_media.resolved_files is True
 
-            file_changed.send(sender=None, file_path=Path(abs_path))
+                _register_component_file(abs_path, MyComp)
 
-            assert comp_media.resolved_template is False
-            assert comp_media.resolved_files is False
-            assert comp_media._template is UNSET
-            assert comp_media.js is UNSET
-        finally:
-            cleanup()
+                file_changed.send(sender=None, file_path=fake_file)
+
+                assert comp_media.resolved_template is False
+                assert comp_media.resolved_files is False
+                assert comp_media._template is UNSET
+                assert comp_media.js is UNSET
+            finally:
+                cleanup()
 
     def test_multiple_components_sharing_file_all_get_reset(self):
-        cleanup = _with_hotreload(reload_mode="hot")
-        try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fake_file = Path(tmpdir) / "template.html"
+            fake_file.touch()
+            abs_path = str(fake_file.resolve())
 
-            class CompA(Component):
-                template = "a"
+            cleanup = _with_hotreload(reload_mode="hot")
+            try:
 
-            class CompB(Component):
-                template = "b"
+                class CompA(Component):
+                    template = "a"
 
-            abs_path = "/shared/template.html"
-            _register_component_file(abs_path, CompA)
-            _register_component_file(abs_path, CompB)
+                class CompB(Component):
+                    template = "b"
 
-            _ = CompA.template
-            _ = CompB.template
+                _register_component_file(abs_path, CompA)
+                _register_component_file(abs_path, CompB)
 
-            media_a = CompA._component_media  # type: ignore[attr-defined]
-            media_b = CompB._component_media  # type: ignore[attr-defined]
-            assert media_a.resolved_template is True
-            assert media_b.resolved_template is True
+                _ = CompA.template
+                _ = CompB.template
 
-            file_changed.send(sender=None, file_path=Path(abs_path))
+                media_a = CompA._component_media  # type: ignore[attr-defined]
+                media_b = CompB._component_media  # type: ignore[attr-defined]
+                assert media_a.resolved_template is True
+                assert media_b.resolved_template is True
 
-            assert media_a.resolved_template is False
-            assert media_b.resolved_template is False
-        finally:
-            cleanup()
+                file_changed.send(sender=None, file_path=fake_file)
+
+                assert media_a.resolved_template is False
+                assert media_b.resolved_template is False
+            finally:
+                cleanup()
 
     def test_inlined_content_not_in_file_cache(self):
         class MyComp(Component):
@@ -352,11 +368,13 @@ class TestHotReloadEndToEnd:
                         template = "hello"
                         js_file = "test.js"
 
+                    assert JsComp.js is not None
                     assert "original" in JsComp.js
 
                     js_path.write_text("console.log('updated');")
                     file_changed.send(sender=None, file_path=js_path)
 
+                    assert JsComp.js is not None
                     assert "updated" in JsComp.js
 
                 inner()
@@ -377,11 +395,13 @@ class TestHotReloadEndToEnd:
                         template = "hello"
                         css_file = "test.css"
 
+                    assert CssComp.css is not None
                     assert "original" in CssComp.css
 
                     css_path.write_text(".updated { color: blue; }")
                     file_changed.send(sender=None, file_path=css_path)
 
+                    assert CssComp.css is not None
                     assert "updated" in CssComp.css
 
                 inner()

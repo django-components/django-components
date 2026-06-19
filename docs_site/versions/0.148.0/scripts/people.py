@@ -177,7 +177,7 @@ def main() -> None:
     if not git_exe:
         raise RuntimeError("Cannot find git executable")
 
-    settings = Settings()
+    settings = Settings()  # type: ignore[call-arg]
     logger.info("Using config: %s", settings.model_dump_json())
     g = Github(settings.github_token.get_secret_value())
     repo = g.get_repo(settings.github_repository)
