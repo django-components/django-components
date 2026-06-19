@@ -7,8 +7,8 @@ for aliases like ``latest/``. This module is the thin layer the build commands
 use to read and write that tree:
 
 - ``load_manifest`` / ``update_manifest`` - read/merge ``versions.json`` using
-  the vendored mike ``Versions`` data model (which also gives us the
-  LooseVersion ordering, with ``dev`` sorting above releases).
+  the vendored mike ``Versions`` data model (which also gives us the version
+  ordering, with ``dev`` sorting above releases).
 - ``write_build_info`` - the per-version ``_build_info.json`` stamp that lets
   ``docs-build-all`` decide whether a version dir is up to date (idempotency).
 - ``materialize_alias`` - rebuild ``<alias>/`` as ``<meta refresh>`` redirect

@@ -497,11 +497,11 @@ docs = [
     { name = "griffe" },
     { name = "lxml" },
     { name = "minify-html" },
+    { name = "packaging" },
     { name = "pagefind", extra = ["bin"] },
     { name = "pygments" },
     { name = "pygments-djc" },
     { name = "pymdown-extensions" },
-    { name = "verspec" },
 ]
 
 [package.metadata]
@@ -564,11 +564,11 @@ docs = [
     { name = "griffe", specifier = ">=1.15.0" },
     { name = "lxml" },
     { name = "minify-html" },
+    { name = "packaging" },
     { name = "pagefind", extras = ["bin"] },
     { name = "pygments", specifier = "<2.21" },
     { name = "pygments-djc" },
     { name = "pymdown-extensions" },
-    { name = "verspec" },
 ]
 
 [[package]]
@@ -1939,15 +1939,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/53/0c/06f8b233b8fd13b9e5ee11424ef85419ba0d8ba0b3138bf360be2ff56953/urllib3-2.7.0.tar.gz", hash = "sha256:231e0ec3b63ceb14667c67be60f2f2c40a518cb38b03af60abc813da26505f4c", size = 433602, upload-time = "2026-05-07T16:13:18.596Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/7f/3e/5db95bcf282c52709639744ca2a8b149baccf648e39c8cc87553df9eae0c/urllib3-2.7.0-py3-none-any.whl", hash = "sha256:9fb4c81ebbb1ce9531cce37674bbc6f1360472bc18ca9a553ede278ef7276897", size = 131087, upload-time = "2026-05-07T16:13:17.151Z" },
-]
-
-[[package]]
-name = "verspec"
-version = "0.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e7/44/8126f9f0c44319b2efc65feaad589cadef4d77ece200ae3c9133d58464d0/verspec-0.1.0.tar.gz", hash = "sha256:c4504ca697b2056cdb4bfa7121461f5a0e81809255b41c03dda4ba823637c01e", size = 27123, upload-time = "2020-11-30T02:24:09.646Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/ce/3b6fee91c85626eaf769d617f1be9d2e15c1cca027bbdeb2e0d751469355/verspec-0.1.0-py3-none-any.whl", hash = "sha256:741877d5633cc9464c45a469ae2a31e801e6dbbaa85b9675d481cda100f11c31", size = 19640, upload-time = "2020-11-30T02:24:08.387Z" },
 ]
 
 [[package]]

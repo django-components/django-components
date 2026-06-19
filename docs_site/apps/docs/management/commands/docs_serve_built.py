@@ -99,7 +99,7 @@ class Command(BaseCommand):
         return [v for v in (current, older) if v] + [DEV]
 
     def _pick_latest(self, versions: list[str]) -> str | None:
-        """The newest non-dev version (by LooseVersion), or None if only dev."""
+        """The newest non-dev version (by version ordering), or None if only dev."""
         releases = [v for v in versions if v != DEV]
         if not releases:
             return None

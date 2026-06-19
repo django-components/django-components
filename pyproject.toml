@@ -103,7 +103,7 @@ docs = [
     # The old mkdocs / Material / mike / mkdocstrings stack was removed at the
     # Phase 6 cutover - the docs site is now built by the `docs_site` Django
     # project, not mkdocs. The deps below are the ones the new builder actually
-    # uses; several (griffe, lxml, verspec, pymdown-extensions) were promoted
+    # uses; several (griffe, lxml, pymdown-extensions) were promoted
     # from transitive deps of the old stack so they survive its removal.
     "pymdown-extensions",
     # griffe powers the new docs-site API reference generator (the mkdocstrings
@@ -125,11 +125,11 @@ docs = [
     # abandoned htmlmin2 backend. Ships PyPI wheels (no toolchain). The build step
     # imports it lazily and degrades gracefully if it's missing.
     "minify-html",
-    # verspec powers the vendored mike `Versions` class (docs-site versioning,
-    # Phase 5b) - LooseVersion ordering for the versions.json manifest. Promoted
-    # to a direct dep (it was transitive via mkdocs/mike) so it survives the
-    # Phase 6 removal of the old mkdocs/mike stack.
-    "verspec",
+    # packaging backs the vendored mike `Versions` class (docs-site versioning,
+    # Phase 5b) - PEP 440 ordering for the versions.json manifest, with the `dev`
+    # sentinel sorting above releases. Declared directly because the builder
+    # imports it (it replaced the stale single-release `verspec` dep mike used).
+    "packaging",
     # Pygments 2.20 breaks mkdocstrings signature rendering by rejecting the
     # None filename value passed through pymdownx.highlight.
     "pygments<2.21",

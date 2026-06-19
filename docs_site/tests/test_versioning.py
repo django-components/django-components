@@ -75,6 +75,24 @@ def test_versions_two_part_sorts_below_three_part() -> None:
     assert [str(info.version) for info in versions] == ["0.139.1", "0.139"]
 
 
+def test_versions_ordering_is_numeric_not_lexical() -> None:
+    # The packaging-backed Version (replacing verspec's LooseVersion) compares
+    # numerically: 0.92 < 0.102 even though "0.92" > "0.102" as strings.
+    versions = Versions()
+    for v in ["0.102", "0.92", "0.110"]:
+        versions.add(v)
+    assert [str(info.version) for info in versions] == ["0.110", "0.102", "0.92"]
+
+
+def test_versions_non_pep440_label_does_not_raise_and_sorts_on_top() -> None:
+    # Non-PEP-440 identifiers (the `dev` sentinel, or any branch-style label)
+    # must not crash parsing and must sort above real releases.
+    versions = Versions()
+    for v in ["0.151.0", "my-preview"]:
+        versions.add(v)
+    assert [str(info.version) for info in versions] == ["my-preview", "0.151.0"]
+
+
 def test_alias_moves_to_newest_with_update_aliases() -> None:
     versions = Versions()
     versions.add("0.150.0", aliases=["latest"])

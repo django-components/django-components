@@ -7,18 +7,93 @@
 # Why vendored: django-components persists built docs versions to `master`
 # (under docs_site/versions/) rather than a gh-pages branch, so we don't need
 # mike's git or mkdocs machinery - only its version-manifest data model and the
-# LooseVersion-based ordering (dev/sentinel versions sort above releases). See
+# version ordering (dev/sentinel versions sort above releases). See
 # docs_site/design/DESIGN_spike_7.md section 2.
 #
 # Changes from upstream:
 #   - Removed `VersionInfo.get_property` / `set_property` and the `jsonpath`
 #     import (mike's `props` feature; unused here).
-#   - Otherwise verbatim. This file is intentionally excluded from ruff/mypy
-#     (see pyproject.toml) so it stays byte-compatible with upstream.
+#   - Replaced mike's `verspec.loose.LooseVersion` with the `Version` shim below,
+#     backed by `packaging` (already a near-universal dep, actively maintained)
+#     instead of the stale single-release `verspec`. Release versions compare as
+#     PEP 440; non-PEP-440 labels (the `dev` sentinel) fall back to string
+#     comparison and sort above releases - the same effect LooseVersion gave.
+#   - Otherwise verbatim. Excluded from ruff/mypy (see pyproject.toml) as
+#     vendored code.
 
 import json
 import re
-from verspec.loose import LooseVersion as Version
+
+from packaging.version import InvalidVersion
+from packaging.version import Version as _Pep440Version
+
+
+class Version:
+    """
+    Orders doc-version identifiers (drop-in for verspec's ``LooseVersion``).
+
+    Valid PEP 440 versions (the release tags) are parsed and compared by
+    ``packaging``. Identifiers that aren't valid PEP 440 - notably the ``dev``
+    sentinel - keep their raw string and sort *above* any real release, matching
+    the prior behavior where non-numeric labels float to the top.
+    """
+
+    _raw: str
+    _parsed: "_Pep440Version | None"
+
+    def __init__(self, version):
+        if isinstance(version, Version):
+            self._raw = version._raw
+            self._parsed = version._parsed
+            return
+        self._raw = str(version)
+        try:
+            self._parsed = _Pep440Version(self._raw)
+        except InvalidVersion:
+            self._parsed = None
+
+    def _key(self):
+        # Leading flag keeps the two classes from ever being compared directly
+        # (no PEP440-vs-str type error): non-PEP-440 (1) sorts above PEP 440 (0).
+        # The raw string is the final tiebreaker so distinct labels never collide
+        # (e.g. "0.151" vs "0.151.0", which PEP 440 considers equal).
+        if self._parsed is None:
+            return (1, self._raw)
+        return (0, self._parsed, self._raw)
+
+    def __str__(self):
+        return self._raw
+
+    def __repr__(self):
+        return "Version({!r})".format(self._raw)
+
+    def __hash__(self):
+        return hash(self._raw)
+
+    def __eq__(self, other):
+        if not isinstance(other, Version):
+            return NotImplemented
+        return self._raw == other._raw
+
+    def __lt__(self, other):
+        if not isinstance(other, Version):
+            return NotImplemented
+        return self._key() < other._key()
+
+    def __le__(self, other):
+        if not isinstance(other, Version):
+            return NotImplemented
+        return self._key() <= other._key()
+
+    def __gt__(self, other):
+        if not isinstance(other, Version):
+            return NotImplemented
+        return self._key() > other._key()
+
+    def __ge__(self, other):
+        if not isinstance(other, Version):
+            return NotImplemented
+        return self._key() >= other._key()
 
 
 def _ensure_version(version):

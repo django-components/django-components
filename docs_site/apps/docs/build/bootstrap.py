@@ -30,9 +30,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import tomllib
-from verspec.loose import LooseVersion
 
-from apps.docs._vendor.mike_versions import Versions
+from apps.docs._vendor.mike_versions import Version, Versions
 from apps.docs.build.versioning import (
     BUILD_INFO_NAME,
     materialize_alias,
@@ -76,8 +75,8 @@ def tag_to_version(tag: str) -> str:
     return tag.removeprefix("v")
 
 
-def _lv(tag: str) -> LooseVersion:
-    return LooseVersion(tag_to_version(tag))
+def _lv(tag: str) -> Version:
+    return Version(tag_to_version(tag))
 
 
 def select_tags(all_tags: list[str], config: VersionsConfig) -> list[str]:
