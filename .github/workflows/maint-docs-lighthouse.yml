@@ -63,3 +63,43 @@ jobs:
         run: |
           npm install -g @lhci/cli@0.14.x
           lhci autorun --config=.github/lighthouserc.json
+
+      # lhci's assertion output only prints the category score (e.g.
+      # "best-practices ... found 0.96"), not which audit caused it. This parses
+      # the collected reports and prints every score-affecting audit that didn't
+      # pass, with its details - so a failure is diagnosable from the log alone.
+      # Runs on success too (surfaces the perf warnings); a no-op if no reports.
+      - name: Lighthouse audit breakdown
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob, json
+          reports = sorted(glob.glob(".lighthouseci/lhr-*.json"))
+          if not reports:
+              print("No Lighthouse reports found.")
+              raise SystemExit
+          seen = set()
+          for path in reports:
+              data = json.load(open(path))
+              url = data.get("finalUrl") or data.get("requestedUrl") or path
+              if url in seen:
+                  continue  # one run per URL is enough
+              seen.add(url)
+              rows = []
+              for cat in ("performance", "accessibility", "best-practices", "seo"):
+                  category = data["categories"].get(cat)
+                  if not category:
+                      continue
+                  for ref in category["auditRefs"]:
+                      audit = data["audits"][ref["id"]]
+                      score = audit.get("score")
+                      if score is not None and score < 1 and (ref.get("weight") or 0) > 0:
+                          rows.append(f"  [{cat}] {ref['id']} (score {score}, weight {ref['weight']}): {audit.get('title')}")
+                          for item in ((audit.get("details") or {}).get("items") or [])[:5]:
+                              detail = item.get("description") or item.get("label") or (item.get("node") or {}).get("snippet") or item
+                              rows.append(f"        - {detail}")
+              if rows:
+                  print(f"\n### {url}  (best-practices={data['categories'].get('best-practices',{}).get('score')}, "
+                        f"perf={data['categories'].get('performance',{}).get('score')})")
+                  print("\n".join(rows))
+          PY

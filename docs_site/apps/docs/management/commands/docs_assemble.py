@@ -103,7 +103,37 @@ class Command(BaseCommand):
         if not options["no_dev"]:
             self._build_dev(site_dir, str(options["dev_title"]))
 
+        # Now that /v/versions.json exists, mark the root pages' version picker so
+        # its JS fetches the manifest. build_docs-only sites (local preview,
+        # Lighthouse) skip this, so their picker stays static and never 404s on a
+        # manifest that isn't there.
+        if (site_dir / "v" / "versions.json").is_file():
+            n = self._enable_root_version_picker(site_dir, settings.SITE_BASE_PATH)
+            self.stdout.write(self.style.SUCCESS(f"Enabled the root version picker on {n} page(s)"))
+
         self.stdout.write(self.style.SUCCESS(f"Assembled deploy artifact at {site_dir}"))
+
+    def _enable_root_version_picker(self, site_dir: Path, base: str) -> int:
+        """
+        Add ``data-versions-root`` to the root pages' version picker so site.js
+        fetches the manifest there (the current docs at the root have no ``/v/``
+        segment to derive it from). Only docs_assemble does this - it's the only
+        builder that produces ``/v/versions.json`` - so a plain ``build_docs`` site
+        leaves the picker static and never fetches a 404. The ``/v/<version>/``
+        pages derive the path from their own URL, so they're skipped.
+        """
+        needle = "data-version-picker"
+        replacement = f'data-version-picker data-versions-root="{base}/v/"'
+        v_dir = site_dir / "v"
+        changed = 0
+        for html in site_dir.rglob("*.html"):
+            if v_dir in html.parents:
+                continue
+            text = html.read_text(encoding="utf-8")
+            if needle in text and "data-versions-root" not in text:
+                html.write_text(text.replace(needle, replacement), encoding="utf-8")
+                changed += 1
+        return changed
 
     def _publish_versions(self, versions_root: Path, dest_v: Path, window: int) -> list[str]:
         """

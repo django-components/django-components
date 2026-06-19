@@ -8,16 +8,18 @@ attribute - the same markup-only + site.js split the theme picker and overflow
 menu use.
 
 Why a native ``<select>``: it is keyboard- and screen-reader-accessible for
-free, and it degrades gracefully. If the manifest can't be fetched (e.g. the
-local dev server, where versions aren't mounted), the control just shows the
-current version and does nothing.
+free, and it degrades gracefully - if there's no manifest to fetch, the control
+just shows the current version and does nothing.
 
-The manifest URL and redirect target are derived client-side: on a
-``/v/<version>/`` page from that path prefix, and on other pages (notably the
-current docs served at the root) from the build-emitted
-``<meta name="djc-base-path">``. Either way the picker works regardless of the
-site's base path (e.g. the ``/django-components/`` GitHub Pages prefix) without
-the build baking in an absolute URL.
+Populating the dropdown on the **root** pages (the current docs, not just the
+``/v/<version>/`` archives) is an intentional, wanted feature - keep it. site.js
+finds the manifest two ways: on a ``/v/<version>/`` page from that path prefix;
+on other pages from the ``data-versions-root`` attribute that ``docs_assemble``
+injects. That attribute is set ONLY by ``docs_assemble`` (the builder that
+actually produces ``/v/versions.json``), so a plain ``build_docs`` site - local
+preview, the Lighthouse build - has no attribute, doesn't fetch, and so never
+404s on a manifest that isn't there. Both paths are base-path agnostic (e.g. the
+``/django-components/`` GitHub Pages prefix) without baking in an absolute URL.
 
 Spec: docs_site/design/DESIGN_spike_7.md section 5; main doc section 4.6.
 """

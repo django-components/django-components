@@ -17,15 +17,6 @@
 (function () {
   'use strict';
 
-  // Base path the site is served under (e.g. "/django-components" for a project
-  // Pages deploy), emitted by the build as <meta name="djc-base-path">. Empty
-  // for a root-served site (the default). Used to locate /v/versions.json from
-  // pages that aren't themselves under /v/ (e.g. the current docs at the root).
-  var BASE_PATH = (function () {
-    var m = document.querySelector('meta[name="djc-base-path"]');
-    return (m && m.getAttribute('content')) || '';
-  })();
-
   // ----------------------------------------------------------------
   // Theme picker (3-button: light / auto / dark)
   // ----------------------------------------------------------------
@@ -488,10 +479,13 @@
 
     // Locate the versions root ("<base>/v/"). On a /v/<version>/ page we capture
     // it straight from the URL (base-path agnostic). On other pages - notably the
-    // current docs served at the root, which have no /v/ segment - fall back to
-    // the build-emitted base path, so the picker populates there too.
+    // current docs served at the root, which have no /v/ segment - use the
+    // build-emitted data-versions-root. docs_assemble sets that attribute ONLY
+    // when it has actually produced /v/versions.json, so a build_docs-only site
+    // (local preview, Lighthouse) with no /v/ doesn't fetch a 404.
     var match = window.location.pathname.match(/^(.*\/v\/)[^/]+\//);
-    var versionsRoot = match ? match[1] : BASE_PATH + '/v/';
+    var versionsRoot = match ? match[1] : picker.getAttribute('data-versions-root');
+    if (!versionsRoot) return; // no /v/ and no manifest deployed -> stay static
 
     // On change, go to the selected version's home. The same page may not
     // exist across versions, so we don't try to preserve the sub-path here
