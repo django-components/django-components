@@ -81,6 +81,15 @@ poetry.lock
 .DS_Store
 .python-version
 site
+
+# TEMPORARY (docs-migration PR): the committed historical doc-version snapshots
+# (~15k files imported from gh-pages by `docs_import_ghpages`) are excluded from
+# the migration PR so its diff is reviewable. They will be re-committed in a
+# dedicated follow-up PR that removes this entry. Re-create locally with
+# `docs_import_ghpages` if you need them on disk (they're still required for the
+# multi-version deploy).
+docs_site/versions/
+
 .direnv/
 .envrc
 .mypy_cache/
