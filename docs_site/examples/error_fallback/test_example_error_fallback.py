@@ -7,7 +7,7 @@ from django_components.testing import djc_test
 
 # Imported lazily, so we import components only once settings are set
 def _create_components():
-    from docs.examples.error_fallback.component import WeatherWidget  # noqa: PLC0415
+    from examples.error_fallback.component import WeatherWidget  # noqa: PLC0415
 
     registry.register("weather_widget", WeatherWidget)
 

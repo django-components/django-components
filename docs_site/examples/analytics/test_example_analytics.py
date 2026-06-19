@@ -7,7 +7,7 @@ from django_components.testing import djc_test
 
 # Imported lazily, so we import components only once settings are set
 def _create_components():
-    from docs.examples.analytics.component import (  # noqa: PLC0415
+    from examples.analytics.component import (  # noqa: PLC0415
         ApiWidget,
         SentryErrorTracker,
         SuccessRateTracker,

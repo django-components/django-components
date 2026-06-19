@@ -27,7 +27,7 @@ class Item:
 
 
 def _import_components():
-    from docs.examples.python_expressions.component import Button, SearchInput, UserCard  # noqa: PLC0415
+    from examples.python_expressions.component import Button, SearchInput, UserCard  # noqa: PLC0415
 
     registry.register("button", Button)
     registry.register("user_card", UserCard)

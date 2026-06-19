@@ -6,8 +6,8 @@ from django_components.testing import djc_test
 
 
 def _import_components():
-    from docs.examples.fragments.component import AlpineFragment, SimpleFragment  # noqa: PLC0415
-    from docs.examples.fragments.page import FragmentsPage  # noqa: PLC0415
+    from examples.fragments.component import AlpineFragment, SimpleFragment  # noqa: PLC0415
+    from examples.fragments.page import FragmentsPage  # noqa: PLC0415
 
     registry.register("alpine_fragment", AlpineFragment)
     registry.register("simple_fragment", SimpleFragment)

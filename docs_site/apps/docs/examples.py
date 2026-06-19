@@ -12,7 +12,7 @@ import importlib.util
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from django.conf import settings
 
@@ -99,7 +99,7 @@ def _discover_examples(examples_dir: Path) -> dict[str, ExampleInfo]:
     return registry
 
 
-def _find_page_class(module: object, component_base: type) -> type[Component] | None:
+def _find_page_class(module: object, component_base: type[Component]) -> type[Component] | None:
     for attr_name in dir(module):
         attr = getattr(module, attr_name)
         if (
@@ -108,7 +108,8 @@ def _find_page_class(module: object, component_base: type) -> type[Component] | 
             and attr is not component_base
             and attr_name.endswith("Page")
         ):
-            return attr
+            # issubclass() above doesn't narrow the `attr` type, so cast it
+            return cast("type[Component]", attr)
     return None
 
 

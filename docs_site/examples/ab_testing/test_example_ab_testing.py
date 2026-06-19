@@ -6,7 +6,7 @@ from django_components.testing import djc_test
 
 
 def _import_components():
-    from docs.examples.ab_testing.component import OfferCard, OfferCardNew, OfferCardOld  # noqa: PLC0415
+    from examples.ab_testing.component import OfferCard, OfferCardNew, OfferCardOld  # noqa: PLC0415
 
     registry.register("offer_card", OfferCard)
     registry.register("offer_card_old", OfferCardOld)

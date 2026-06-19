@@ -8,7 +8,7 @@ from django_components.testing import djc_test
 
 # Imported lazily, so we import components only once settings are set
 def _create_form_components():
-    from docs.examples.form_grid.component import FormGrid, FormGridLabel  # noqa: PLC0415
+    from examples.form_grid.component import FormGrid, FormGridLabel  # noqa: PLC0415
 
     registry.register("form_grid", FormGrid)
     registry.register("form_grid_label", FormGridLabel)

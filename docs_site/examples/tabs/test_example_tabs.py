@@ -8,7 +8,7 @@ from django_components.testing import djc_test
 
 # Imported lazily, so we import it only once settings are set
 def _create_tab_components() -> None:
-    from docs.examples.tabs.component import Tab, Tablist, _TablistImpl  # noqa: PLC0415
+    from examples.tabs.component import Tab, Tablist, _TablistImpl  # noqa: PLC0415
 
     registry.register("Tab", Tab)
     registry.register("Tablist", Tablist)

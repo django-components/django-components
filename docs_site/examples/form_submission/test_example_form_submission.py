@@ -6,7 +6,7 @@ from django_components.testing import djc_test
 
 
 def _import_components():
-    from docs.examples.form_submission.component import ContactFormComponent, ThankYouMessage  # noqa: PLC0415
+    from examples.form_submission.component import ContactFormComponent, ThankYouMessage  # noqa: PLC0415
 
     registry.register("contact_form", ContactFormComponent)
     registry.register("thank_you_message", ThankYouMessage)

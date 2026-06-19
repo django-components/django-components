@@ -6,7 +6,7 @@ from django_components.testing import djc_test
 
 
 def _import_components():
-    from docs.examples.recursion.component import Recursion  # noqa: PLC0415
+    from examples.recursion.component import Recursion  # noqa: PLC0415
 
     registry.register("recursion", Recursion)
 
