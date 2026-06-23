@@ -52,19 +52,18 @@ SlotResult: TypeAlias = str | SafeString
 """
 Type representing the result of a slot render function.
 
-**Example:**
+Examples:
+    ```python
+    from django_components import SlotContext, SlotResult
 
-```python
-from django_components import SlotContext, SlotResult
+    def my_slot_fn(ctx: SlotContext) -> SlotResult:
+        return "Hello, world!"
 
-def my_slot_fn(ctx: SlotContext) -> SlotResult:
-    return "Hello, world!"
+    my_slot = Slot(my_slot_fn)
+    html = my_slot()  # Output: Hello, world!
+    ```
 
-my_slot = Slot(my_slot_fn)
-html = my_slot()  # Output: Hello, world!
-```
-
-Read more about [Slot functions](../concepts/fundamentals/slots.md#slot-functions).
+    Read more about [Slot functions](../concepts/fundamentals/slots.md#slot-functions).
 """
 
 
@@ -75,24 +74,24 @@ class SlotContext(Generic[TSlotData]):
 
     Read more about [Slot functions](../concepts/fundamentals/slots.md#slot-class).
 
-    **Example:**
+    Examples:
+        ```python
+        from django_components import SlotContext, SlotResult
 
-    ```python
-    from django_components import SlotContext, SlotResult
+        def my_slot(ctx: SlotContext) -> SlotResult:
+            return f"Hello, {ctx.data['name']}!"
+        ```
 
-    def my_slot(ctx: SlotContext) -> SlotResult:
-        return f"Hello, {ctx.data['name']}!"
-    ```
+        You can pass a type parameter to the `SlotContext` to specify the type of the data passed to the slot:
 
-    You can pass a type parameter to the `SlotContext` to specify the type of the data passed to the slot:
+        ```python
+        class MySlotData(TypedDict):
+            name: str
 
-    ```python
-    class MySlotData(TypedDict):
-        name: str
+        def my_slot(ctx: SlotContext[MySlotData]):
+            return f"Hello, {ctx.data['name']}!"
+        ```
 
-    def my_slot(ctx: SlotContext[MySlotData]):
-        return f"Hello, {ctx.data['name']}!"
-    ```
     """
 
     data: TSlotData
@@ -101,12 +100,11 @@ class SlotContext(Generic[TSlotData]):
 
     Read more about [Slot data](../concepts/fundamentals/slots.md#slot-data).
 
-    **Example:**
-
-    ```python
-    def my_slot(ctx: SlotContext):
-        return f"Hello, {ctx.data['name']}!"
-    ```
+    Examples:
+        ```python
+        def my_slot(ctx: SlotContext):
+            return f"Hello, {ctx.data['name']}!"
+        ```
     """
     fallback: "str | SlotFallback | None" = None
     """
@@ -114,21 +112,20 @@ class SlotContext(Generic[TSlotData]):
 
     Read more about [Slot fallback](../concepts/fundamentals/slots.md#slot-fallback).
 
-    **Example:**
+    Examples:
+        ```python
+        def my_slot(ctx: SlotContext):
+            return f"Hello, {ctx.fallback}!"
+        ```
 
-    ```python
-    def my_slot(ctx: SlotContext):
-        return f"Hello, {ctx.fallback}!"
-    ```
-
-    May be `None` if you call the slot fill directly, without using [`{% slot %}`](#slot) tags.
+    May be `None` if you call the slot fill directly, without using [`{% slot %}`][slot] tags.
     """
     context: Context | None = None
     """
     Django template [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context)
     available inside the [`{% fill %}`](template_tags.md#fill) tag.
 
-    May be `None` if you call the slot fill directly, without using [`{% slot %}`](#slot) tags.
+    May be `None` if you call the slot fill directly, without using [`{% slot %}`][slot] tags.
     """
 
 
@@ -136,39 +133,37 @@ class SlotContext(Generic[TSlotData]):
 class SlotFunc(Protocol, Generic[TSlotData]):
     """
     When rendering components with
-    [`Component.render()`](api.md#django_components.Component.render)
+    [`Component.render()`][Component.render]
     or
-    [`Component.render_to_response()`](api.md#django_components.Component.render_to_response),
+    [`Component.render_to_response()`][Component.render_to_response],
     the slots can be given either as strings or as functions.
 
     If a slot is given as a function, it will have the signature of `SlotFunc`.
 
     Read more about [Slot functions](../concepts/fundamentals/slots.md#slot-functions).
 
-    **Arguments:**
-
-    * `ctx` (`SlotContext`): Single named tuple that holds the slot data and metadata.
+    Args:
+        ctx (SlotContext): Single named tuple that holds the slot data and metadata.
 
     Returns:
         (str | SafeString): The rendered slot content.
 
-    **Example:**
+    Examples:
+        ```python
+        from django_components import SlotContext, SlotResult
 
-    ```python
-    from django_components import SlotContext, SlotResult
+        def header(ctx: SlotContext) -> SlotResult:
+            if ctx.data.get("name"):
+                return f"Hello, {ctx.data['name']}!"
+            else:
+                return ctx.fallback
 
-    def header(ctx: SlotContext) -> SlotResult:
-        if ctx.data.get("name"):
-            return f"Hello, {ctx.data['name']}!"
-        else:
-            return ctx.fallback
-
-    html = MyTable.render(
-        slots={
-            "header": header,
-        },
-    )
-    ```
+        html = MyTable.render(
+            slots={
+                "header": header,
+            },
+        )
+        ```
 
     """
 
@@ -184,43 +179,43 @@ class Slot(Generic[TSlotData]):
 
     Read more about [Slot class](../concepts/fundamentals/slots.md#slot-class).
 
-    **Example:**
+    Examples:
+        Passing slots to components:
 
-    Passing slots to components:
+        ```python
+        from django_components import Slot
 
-    ```python
-    from django_components import Slot
+        slot = Slot(lambda ctx: f"Hello, {ctx.data['name']}!")
 
-    slot = Slot(lambda ctx: f"Hello, {ctx.data['name']}!")
+        MyComponent.render(
+            slots={
+                "my_slot": slot,
+            },
+        )
+        ```
 
-    MyComponent.render(
-        slots={
-            "my_slot": slot,
-        },
-    )
-    ```
+        Accessing slots inside the components:
 
-    Accessing slots inside the components:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
+        class MyComponent(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                my_slot = slots["my_slot"]
+                return {
+                    "my_slot": my_slot,
+                }
+        ```
 
-    class MyComponent(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            my_slot = slots["my_slot"]
-            return {
-                "my_slot": my_slot,
-            }
-    ```
+        Rendering slots:
 
-    Rendering slots:
+        ```python
+        from django_components import Slot
 
-    ```python
-    from django_components import Slot
+        slot = Slot(lambda ctx: f"Hello, {ctx.data['name']}!")
+        html = slot({"name": "John"})  # Output: Hello, John!
+        ```
 
-    slot = Slot(lambda ctx: f"Hello, {ctx.data['name']}!")
-    html = slot({"name": "John"})  # Output: Hello, John!
-    ```
     """
 
     contents: Any
@@ -266,10 +261,10 @@ class Slot(Generic[TSlotData]):
     fill_node: "FillNode | ComponentNode | None" = None
     """
     If the slot was created from a [`{% fill %}`](template_tags.md#fill) tag,
-    this will be the [`FillNode`](api.md#django_components.FillNode) instance.
+    this will be the [`FillNode`][FillNode] instance.
 
     If the slot was a default slot created from a [`{% component %}`](template_tags.md#component) tag,
-    this will be the [`ComponentNode`](api.md#django_components.ComponentNode) instance.
+    this will be the [`ComponentNode`][ComponentNode] instance.
 
     Otherwise, this will be `None`.
 
@@ -277,19 +272,18 @@ class Slot(Generic[TSlotData]):
 
     See [Slot metadata](../concepts/fundamentals/slots.md#slot-metadata).
 
-    **Example:**
+    Examples:
+        You can use this to find the [`Component`][Component] in whose
+        template the [`{% fill %}`](template_tags.md#fill) tag was defined:
 
-    You can use this to find the [`Component`](api.md#django_components.Component) in whose
-    template the [`{% fill %}`](template_tags.md#fill) tag was defined:
-
-    ```python
-    class MyTable(Component):
-        def get_template_data(self, args, kwargs, slots, context):
-            footer_slot = slots.get("footer")
-            if footer_slot is not None and footer_slot.fill_node is not None:
-                owner_component = footer_slot.fill_node.template_component
-                # ...
-    ```
+        ```python
+        class MyTable(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                footer_slot = slots.get("footer")
+                if footer_slot is not None and footer_slot.fill_node is not None:
+                    owner_component = footer_slot.fill_node.template_component
+                    # ...
+        ```
     """
     extra: dict[str, Any] = field(default_factory=dict)
     """
@@ -300,15 +294,14 @@ class Slot(Generic[TSlotData]):
     See [Pass slot metadata](../concepts/advanced/extensions.md#pass-slot-metadata)
     for usage for extensions.
 
-    **Example:**
+    Examples:
+        ```python
+        # Either at slot creation
+        slot = Slot(lambda ctx: "Hello, world!", extra={"foo": "bar"})
 
-    ```python
-    # Either at slot creation
-    slot = Slot(lambda ctx: "Hello, world!", extra={"foo": "bar"})
-
-    # Or later
-    slot.extra["baz"] = "qux"
-    ```
+        # Or later
+        slot.extra["baz"] = "qux"
+        ```
     """
 
     def __post_init__(self) -> None:
@@ -376,9 +369,9 @@ SlotInput: TypeAlias = SlotResult | SlotFunc[TSlotData] | Slot[TSlotData]
 """
 Type representing all forms in which slot content can be passed to a component.
 
-When rendering a component with [`Component.render()`](api.md#django_components.Component.render)
-or [`Component.render_to_response()`](api.md#django_components.Component.render_to_response),
-the slots may be given a strings, functions, or [`Slot`](api.md#django_components.Slot) instances.
+When rendering a component with [`Component.render()`][Component.render]
+or [`Component.render_to_response()`][Component.render_to_response],
+the slots may be given a strings, functions, or [`Slot`][Slot] instances.
 This type describes that union.
 
 Use this type when typing the slots in your component.
@@ -386,46 +379,45 @@ Use this type when typing the slots in your component.
 `SlotInput` accepts an optional type parameter to specify the data dictionary that will be passed to the
 slot content function.
 
-**Example:**
+Examples:
+    ```python
+    from typing import TypedDict
+    from django_components import Component, SlotInput
 
-```python
-from typing import TypedDict
-from django_components import Component, SlotInput
+    class TableFooterSlotData(TypedDict):
+        page_number: int
 
-class TableFooterSlotData(TypedDict):
-    page_number: int
+    class Table(Component):
+        class Slots:
+            header: SlotInput
+            footer: SlotInput[TableFooterSlotData]
 
-class Table(Component):
-    class Slots:
-        header: SlotInput
-        footer: SlotInput[TableFooterSlotData]
+        template = "<div>{% slot 'footer' %}</div>"
 
-    template = "<div>{% slot 'footer' %}</div>"
+    html = Table.render(
+        slots={
+            # As a string
+            "header": "Hello, World!",
 
-html = Table.render(
-    slots={
-        # As a string
-        "header": "Hello, World!",
+            # Safe string
+            "header": mark_safe("<i><am><safe>"),
 
-        # Safe string
-        "header": mark_safe("<i><am><safe>"),
+            # Function
+            "footer": lambda ctx: f"Page: {ctx.data['page_number']}!",
 
-        # Function
-        "footer": lambda ctx: f"Page: {ctx.data['page_number']}!",
+            # Slot instance
+            "footer": Slot(lambda ctx: f"Page: {ctx.data['page_number']}!"),
 
-        # Slot instance
-        "footer": Slot(lambda ctx: f"Page: {ctx.data['page_number']}!"),
-
-        # None (Same as no slot)
-        "header": None,
-    },
-)
-```
+            # None (Same as no slot)
+            "header": None,
+        },
+    )
+    ```
 """
 # TODO_V1 - REMOVE, superseded by SlotInput
 SlotContent: TypeAlias = SlotInput[TSlotData]
 """
-DEPRECATED: Use [`SlotInput`](api.md#django_components.SlotInput) instead. Will be removed in v1.
+DEPRECATED: Use [`SlotInput`][SlotInput] instead. Will be removed in v1.
 """
 
 
@@ -452,12 +444,12 @@ class SlotFallback:
 
     To force the fallback to render, coerce it to string to trigger the `__str__()` method.
 
-    **Example:**
+    Examples:
+        ```py
+        def slot_function(self, ctx: SlotContext):
+            return f"Hello, {ctx.fallback}!"
+        ```
 
-    ```py
-    def slot_function(self, ctx: SlotContext):
-        return f"Hello, {ctx.fallback}!"
-    ```
     """
 
     def __init__(self, slot: "SlotNode", context: Context) -> None:
@@ -472,7 +464,7 @@ class SlotFallback:
 # TODO_v1 - REMOVE - superseded by SlotFallback
 SlotRef: TypeAlias = SlotFallback
 """
-DEPRECATED: Use [`SlotFallback`](api.md#django_components.SlotFallback) instead. Will be removed in v1.
+DEPRECATED: Use [`SlotFallback`][SlotFallback] instead. Will be removed in v1.
 """
 
 
@@ -508,64 +500,62 @@ class SlotIsFilled(dict):
 
 class SlotNode(BaseNode):
     """
-    [`{% slot %}`](#slot) tag marks a place inside a component where content can be inserted
+    [`{% slot %}`][slot] tag marks a place inside a component where content can be inserted
     from outside.
 
-    [Learn more](../concepts/fundamentals/slots.md) about using slots.
+    [Learn more about using slots](../concepts/fundamentals/slots.md).
 
     This is similar to slots as seen in
     [Web components](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot),
     [Vue](https://vuejs.org/guide/components/slots.html)
     or [React's `children`](https://react.dev/learn/passing-props-to-a-component#passing-jsx-as-children).
 
-    **Args:**
+    Args:
+        name (str, required): Registered name of the component to render
+        default: Optional flag. If there is a default slot, you can pass the component slot content
+            without using the [`{% fill %}`][fill] tag. See
+            [Default slot](../concepts/fundamentals/slots.md#default-slot)
+        required: Optional flag. Will raise an error if a slot is required but not given.
+        **kwargs: Any extra kwargs will be passed as the slot data.
 
-    - `name` (str, required): Registered name of the component to render
-    - `default`: Optional flag. If there is a default slot, you can pass the component slot content
-        without using the [`{% fill %}`](#fill) tag. See
-        [Default slot](../concepts/fundamentals/slots.md#default-slot)
-    - `required`: Optional flag. Will raise an error if a slot is required but not given.
-    - `**kwargs`: Any extra kwargs will be passed as the slot data.
+    Examples:
+        ```djc_py
+        @register("child")
+        class Child(Component):
+            template = \"\"\"
+              <div>
+                {% slot "content" default %}
+                  This is shown if not overriden!
+                {% endslot %}
+              </div>
+              <aside>
+                {% slot "sidebar" required / %}
+              </aside>
+            \"\"\"
+        ```
 
-    **Example:**
+        ```djc_py
+        @register("parent")
+        class Parent(Component):
+            template = \"\"\"
+              <div>
+                {% component "child" %}
+                  {% fill "content" %}
+                    🗞️📰
+                  {% endfill %}
 
-    ```djc_py
-    @register("child")
-    class Child(Component):
-        template = \"\"\"
-          <div>
-            {% slot "content" default %}
-              This is shown if not overriden!
-            {% endslot %}
-          </div>
-          <aside>
-            {% slot "sidebar" required / %}
-          </aside>
-        \"\"\"
-    ```
-
-    ```djc_py
-    @register("parent")
-    class Parent(Component):
-        template = \"\"\"
-          <div>
-            {% component "child" %}
-              {% fill "content" %}
-                🗞️📰
-              {% endfill %}
-
-              {% fill "sidebar" %}
-                🍷🧉🍾
-              {% endfill %}
-            {% endcomponent %}
-          </div>
-        \"\"\"
-    ```
+                  {% fill "sidebar" %}
+                    🍷🧉🍾
+                  {% endfill %}
+                {% endcomponent %}
+              </div>
+            \"\"\"
+        ```
 
     ### Slot data
 
     Any extra kwargs will be considered as slot data, and will be accessible
-    in the [`{% fill %}`](#fill) tag via fill's `data` kwarg:
+    in the [`{% fill %}`][fill] tag via fill's `data` kwarg:
 
     Read more about [Slot data](../concepts/fundamentals/slots.md#slot-data).
 
@@ -602,7 +592,7 @@ class SlotNode(BaseNode):
     The content between the `{% slot %}..{% endslot %}` tags is the fallback content that
     will be rendered if no fill is given for the slot.
 
-    This fallback content can then be accessed from within the [`{% fill %}`](#fill) tag
+    This fallback content can then be accessed from within the [`{% fill %}`][fill] tag
     using the fill's `fallback` kwarg.
     This is useful if you need to wrap / prepend / append the original slot's content.
 
@@ -630,6 +620,7 @@ class SlotNode(BaseNode):
           {% endcomponent %}
         \"\"\"
     ```
+
     """
 
     tag = "slot"
@@ -996,30 +987,28 @@ class SlotNode(BaseNode):
 
 class FillNode(BaseNode):
     """
-    Use [`{% fill %}`](#fill) tag to insert content into component's
+    Use [`{% fill %}`][fill] tag to insert content into component's
     [slots](../concepts/fundamentals/slots.md).
 
-    [`{% fill %}`](#fill) tag may be used only within a `{% component %}..{% endcomponent %}` block,
+    [`{% fill %}`][fill] tag may be used only within a `{% component %}..{% endcomponent %}` block,
     and raises a `TemplateSyntaxError` if used outside of a component.
 
-    **Args:**
+    Args:
+        name (str, required): Name of the slot to insert this content into. Use `"default"` for
+            the [default slot](../concepts/fundamentals/slots.md#default-slot).
+        data (str, optional): This argument allows you to access the data passed to the slot
+            under the specified variable name. See [Slot data](../concepts/fundamentals/slots.md#slot-data).
+        fallback (str, optional): This argument allows you to access the original content of the slot
+            under the specified variable name. See [Slot fallback](../concepts/fundamentals/slots.md#slot-fallback).
 
-    - `name` (str, required): Name of the slot to insert this content into. Use `"default"` for
-        the [default slot](../concepts/fundamentals/slots.md#default-slot).
-    - `data` (str, optional): This argument allows you to access the data passed to the slot
-        under the specified variable name. See [Slot data](../concepts/fundamentals/slots.md#slot-data).
-    - `fallback` (str, optional): This argument allows you to access the original content of the slot
-        under the specified variable name. See [Slot fallback](../concepts/fundamentals/slots.md#slot-fallback).
-
-    **Example:**
-
-    ```django
-    {% component "my_table" %}
-      {% fill "pagination" %}
-        < 1 | 2 | 3 >
-      {% endfill %}
-    {% endcomponent %}
-    ```
+    Examples:
+        ```django
+        {% component "my_table" %}
+          {% fill "pagination" %}
+            < 1 | 2 | 3 >
+          {% endfill %}
+        {% endcomponent %}
+        ```
 
     ### Access slot fallback
 
@@ -1090,7 +1079,7 @@ class FillNode(BaseNode):
     ### Using default slot
 
     To access slot data and the fallback slot content on the default slot,
-    use [`{% fill %}`](#fill) with `name` set to `"default"`:
+    use [`{% fill %}`][fill] with `name` set to `"default"`:
 
     ```django
     {% component "button" %}
@@ -1104,10 +1093,10 @@ class FillNode(BaseNode):
     ### Slot fills from Python
 
     You can pass a slot fill from Python to a component by setting the `body` kwarg
-    on the [`{% fill %}`](#fill) tag.
+    on the [`{% fill %}`][fill] tag.
 
-    First pass a [`Slot`](api.md#django_components.Slot) instance to the template
-    with the [`get_template_data()`](api.md#django_components.Component.get_template_data)
+    First pass a [`Slot`][Slot] instance to the template
+    with the [`get_template_data()`][Component.get_template_data]
     method:
 
     ```python
@@ -1120,7 +1109,7 @@ class FillNode(BaseNode):
         }
     ```
 
-    Then pass the slot to the [`{% fill %}`](#fill) tag:
+    Then pass the slot to the [`{% fill %}`][fill] tag:
 
     ```django
     {% component "table" %}
@@ -1130,7 +1119,7 @@ class FillNode(BaseNode):
 
     !!! warning
 
-        If you define both the `body` kwarg and the [`{% fill %}`](#fill) tag's body,
+        If you define both the `body` kwarg and the [`{% fill %}`][fill] tag's body,
         an error will be raised.
 
         ```django
@@ -1140,6 +1129,7 @@ class FillNode(BaseNode):
           {% endfill %}
         {% endcomponent %}
         ```
+
     """
 
     tag = "fill"

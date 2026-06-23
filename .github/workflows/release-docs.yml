@@ -11,11 +11,18 @@ on:
       - master
   workflow_dispatch:
 
+# Serialize runs: this job both commits version snapshots to master and deploys
+# Pages, so concurrent runs would race. Queue rather than cancel so an in-flight
+# commit/deploy is never interrupted mid-push.
+concurrency:
+  group: docs-build-deploy
+  cancel-in-progress: false
+
 jobs:
   docs:
     # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
     permissions:
-      contents: write # to let mkdocs write the new docs
+      contents: write # to commit the built version snapshots back to master
       pages: write # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
     runs-on: ubuntu-latest
@@ -128,8 +135,8 @@ jobs:
           echo "Benchmarks for tag ${TAG} DONE."
 
           # Generate benchmarks site
-          # This should save it in `docs/benchmarks/`, so we can then use it when
-          # building docs site with `mkdocs`.
+          # This saves the HTML report in `benchmarks/report/` (see `asv.conf.json`),
+          # which the docs site copies verbatim as a static passthrough at build time.
           echo "Generating benchmarks site..."
           uv run asv publish
           echo "Benchmarks site DONE."
@@ -137,7 +144,7 @@ jobs:
           # Commit benchmark results
           echo "Staging and committing benchmark results..."
           git add .asv/results/
-          git add docs/benchmarks/
+          git add benchmarks/report/
           git commit -m "Add benchmark results for ${TAG}"
           echo "Benchmark results committed."
 
@@ -147,62 +154,61 @@ jobs:
           echo "Benchmark results pushed to master."
 
       ###########################################
-      # BUILD & RELEASE DOCS
+      # BUILD & COMMIT DOCS
       ###########################################
+      # Only RELEASES (tags) are committed: the builder writes an immutable
+      # per-version snapshot into docs_site/versions/<version>/ and commits it to
+      # master - no gh-pages, no mike. The app-token checkout from the top of the
+      # job is reused to push to the protected master branch; each docs commit
+      # carries [skip ci] so committing back to master does not re-trigger this
+      # workflow. The `dev` version is NOT committed (feature 10.7) - it's built
+      # fresh into the deploy artifact by the assemble step below, so a plain
+      # master push deploys without adding any commit to master's history.
 
-      # Change git authentication to Github Actions, so the rest of the
-      # workflow will have lower privileges.
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Configure git
-        run: |
-          # required for "mike deploy" command below which pushes to gh-pages
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-
-      - name: Install dependencies
-        run: |
-          # Re-install dependencies after second checkout to ensure virtual environment is available.
-          # Use --frozen so uv does not update uv.lock; otherwise `git checkout gh-pages` may fail.
-          uv sync --frozen --group docs
-
-      # Conditions make sure to select the right step, depending on the job trigger.
-      # Only one of the steps below will run at a time. The others will be skipped.
-
-      - name: Check docs in pull requests with strict mode
-        if: github.event_name == 'pull_request'
-        run: |
-          CI=false uv run mkdocs build --strict
-
-      - name: Build & deploy "dev" docs for a new commit to master
-        if: github.event_name == 'push' && github.ref_type != 'tag'
-        run: |
-          # Discard any local changes (e.g. to uv.lock) so checkout gh-pages succeeds
-          git restore uv.lock 2>/dev/null || true
-          # Fetch and checkout gh-pages to ensure we have the latest version
-          git fetch origin gh-pages
-          git checkout gh-pages
-          git pull origin gh-pages
-          git checkout master
-
-          export SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
-          CI=false uv run mike deploy --push --update-aliases --title "dev (${SHORT_SHA})" dev
-
-      - name: Build & deploy docs for a new tag
+      - name: Build & commit docs for a new tag
         if: github.ref_type == 'tag' && github.event_name == 'push'
         env:
           REF_NAME: ${{ github.ref_name }}
         run: |
-          # Discard any local changes (e.g. to uv.lock) so checkout gh-pages succeeds
-          git restore uv.lock 2>/dev/null || true
-          # Fetch and checkout gh-pages to ensure we have the latest version
-          git fetch origin gh-pages
-          git checkout gh-pages
-          git pull origin gh-pages
+          # Releases are tagged on master, so master's tip is the tagged commit.
+          # Build from master and commit the snapshot back to it.
+          git fetch origin master
           git checkout master
+          git pull --ff-only origin master
+          (cd docs_site && uv run --group docs python manage.py build_docs --docs-version "${REF_NAME}" --alias latest)
+          (cd docs_site && uv run --group docs python manage.py docs_versions_check)
+          git restore uv.lock 2>/dev/null || true
+          git add docs_site/versions/
+          git commit -m "docs: build ${REF_NAME} [skip ci]"
+          git push origin master
 
-          CI=false uv run mike deploy --push --update-aliases $REF_NAME latest
-          uv run mike set-default latest --push
+      ###########################################
+      # ASSEMBLE & DEPLOY TO GITHUB PAGES (6.4)
+      ###########################################
+      # The cutover deploy: assemble the full tree (current version at the root +
+      # every committed docs_site/versions/* snapshot under /v/*) and publish it
+      # to GitHub Pages. This replaces the old mkdocs/mike gh-pages deploy. Runs
+      # after the build-and-commit steps above, so the workspace already holds the
+      # freshly committed snapshots.
+      - name: Assemble deploy artifact
+        if: github.event_name != 'pull_request'
+        run: |
+          # dev is built fresh into /v/dev/ here (never committed - feature 10.7),
+          # labelled with the deploying commit's short SHA.
+          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          (cd docs_site && uv run --group docs python manage.py docs_assemble --dev-title "dev (${SHORT_SHA})")
+
+      - name: Configure GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy to GitHub Pages
+        if: github.event_name != 'pull_request'
+        id: deploy-pages
+        uses: actions/deploy-pages@v4

@@ -35,6 +35,6 @@ jobs:
 
       - name: Update Django Components People
         run: |
-          uv run python ./docs/scripts/people.py
+          uv run python ./scripts/people.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

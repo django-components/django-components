@@ -75,6 +75,7 @@ dev = [
     "PyGithub",
     "pyyaml",
     "beautifulsoup4>=4.14.3",
+    "python-frontmatter>=1.3.0",
 ]
 
 # CI dependencies - install with `uv sync --group ci`
@@ -99,23 +100,36 @@ ci = [
 
 # Docs dependencies - install with `uv sync --group docs`
 docs = [
-    "markdown-exec",
-    "mike",
-    "mkdocs",
-    "mkdocs-autorefs",
-    "mkdocs-awesome-nav",
-    "mkdocs-gen-files",
-    "mkdocs-git-authors-plugin",
-    "mkdocs-git-revision-date-localized-plugin",
-    "mkdocs-include-markdown-plugin",
-    "mkdocs-macros-plugin",
-    "mkdocs-material",
-    "mkdocs-material[imaging]",
-    "mkdocs-minify-plugin",
-    "mkdocs-redirects",
-    "mkdocstrings",
-    "mkdocstrings-python",
+    # The old mkdocs / Material / mike / mkdocstrings stack was removed at the
+    # Phase 6 cutover - the docs site is now built by the `docs_site` Django
+    # project, not mkdocs. The deps below are the ones the new builder actually
+    # uses; several (griffe, lxml, pymdown-extensions) were promoted
+    # from transitive deps of the old stack so they survive its removal.
     "pymdown-extensions",
+    # griffe powers the new docs-site API reference generator (the mkdocstrings
+    # replacement built in the docs-site migration). Promoted from a transitive
+    # dep of mkdocstrings-python to a direct dep so it survives the Phase 6
+    # removal of the old mkdocs/mkdocstrings stack.
+    "griffe>=1.15.0",
+    # lxml powers the docs-site build guardrails: the shared SiteIndex HTML
+    # walker and the HTML well-formedness check (recover=False parsing).
+    "lxml",
+    # pagefind builds the static search index over the built site (Phase 5a).
+    # The `[bin]` extra pulls the bundled Rust binary (pagefind-bin), so the
+    # post-build step shells out to `python -m pagefind` with no Node toolchain
+    # required. The `extended` extra (CJK segmentation) is unnecessary for our
+    # English docs and roughly triples the binary size.
+    "pagefind[bin]",
+    # minify-html (Rust-backed, MIT) is the post-build HTML minifier for the
+    # docs-site build (Phase 5c, feature 5c.14), replacing mkdocs-minify-plugin's
+    # abandoned htmlmin2 backend. Ships PyPI wheels (no toolchain). The build step
+    # imports it lazily and degrades gracefully if it's missing.
+    "minify-html",
+    # packaging backs the vendored mike `Versions` class (docs-site versioning,
+    # Phase 5b) - PEP 440 ordering for the versions.json manifest, with the `dev`
+    # sentinel sorting above releases. Declared directly because the builder
+    # imports it (it replaced the stale single-release `verspec` dep mike used).
+    "packaging",
     # Pygments 2.20 breaks mkdocstrings signature rendering by rejecting the
     # None filename value passed through pymdownx.highlight.
     "pygments<2.21",
@@ -139,7 +153,7 @@ namespaces = false
 ###########################################
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "docs/examples"]
+testpaths = ["tests", "docs_site/examples"]
 asyncio_mode = "auto"
 markers = [
     "e2e: browser-based end-to-end tests that need the Django test server",
@@ -179,6 +193,11 @@ exclude = [
     ".env",
     # From mypy
     "test_structures",
+    # Vendored third-party code, kept verbatim (see docs_site/.../_vendor/).
+    "_vendor",
+    # Committed, frozen old-version doc snapshots (gh-pages import, feature 6.2):
+    # pre-built HTML plus historical example .py files, not source to lint.
+    "docs_site/versions",
 ]
 
 # See https://docs.astral.sh/ruff/linter/#rule-selection
@@ -268,12 +287,33 @@ ignore = [
     "T201",   # `print` found
     "DTZ",    # `datetime` found
 ]
-"docs/examples/*" = [
+"docs_site/examples/*" = [
     "ARG002", # Unused method argument
     "ANN",    # Annotations are not needed for tests
     "S101",   # Use of `assert` detected
     "T201",   # `print` found
     "DTZ",    # `datetime` found
+    "RUF012", # Class-attr dicts (e.g. DocsExample.fragments) are the documented convention
+]
+# The docs site builder is internal tooling (a Django project), not the shipped
+# library, so it isn't held to the package's full annotation strictness.
+"docs_site/*" = [
+    "ARG001", # Unused function argument (e.g. a Django view's `request`)
+    "ARG002", # Unused method argument (Django / djc framework signatures)
+    "ANN",    # Full type annotations not required for internal build tooling
+    "BLE001", # Intentional broad `except` in the per-page build loop
+    "E501",   # Line length: inline SVG path data in templates can't be broken
+    "T201",   # `print` is fine for build-command progress output
+    "TC003",  # Don't force stdlib type-only imports into TYPE_CHECKING blocks
+]
+# Build-tool tests assert and touch the filesystem freely; relax test-only rules.
+"docs_site/tests/*" = [
+    "S101",   # `assert` is the whole point of a test
+    "PT",     # Project tests don't follow all pytest-style conventions
+    "PTH",    # Tests build paths directly (Path("."), os.path) for fixtures
+    "INP001", # Test dirs are intentionally not packages
+    "SLF001", # Tests may poke at internals
+    "PLR2004", # Magic values are fine in test assertions
 ]
 
 [tool.ruff.lint.isort]
@@ -282,7 +322,13 @@ known-first-party = ["django_components"]
 [tool.mypy]
 check_untyped_defs = true
 ignore_missing_imports = true
-exclude = ["build", "sampleproject", "test_structures"]
+# `docs_site/examples` holds runnable demo code (many same-named `component.py` /
+# `page.py` modules with no package markers), not the shipped library or build
+# tooling - exclude it like `sampleproject`. ("build" also matches the builder's
+# `docs_site/apps/docs/build/` tree.)
+# `^site/` (anchored so it never matches `docs_site`) is the gitignored build
+# output, which after `docs_assemble` contains the copied frozen version dirs.
+exclude = ["build", "sampleproject", "test_structures", "_vendor", "docs_site/examples", "docs_site/versions", "^site/"]
 
 [[tool.mypy.overrides]]
 module = "django_components.*"

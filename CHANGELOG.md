@@ -2,7 +2,7 @@
 
 ## v0.151.0
 
-_2026-06-03_
+_03 Jun 2026_
 
 #### Feature
 
@@ -30,7 +30,7 @@ _2026-06-03_
 
 ## v0.150.1
 
-_2026-06-01_
+_01 Jun 2026_
 
 #### Fix
 
@@ -58,7 +58,7 @@ _2026-06-01_
 
 ## v0.150.0
 
-_2026-05-02_
+_02 May 2026_
 
 #### Compatibility
 
@@ -126,6 +126,8 @@ _2026-05-02_
 
 ## v0.149.0
 
+_25 Apr 2026_
+
 #### Fix
 
 - **Django's built-in `{% cache %}` tag now works correctly inside component templates**
@@ -151,6 +153,8 @@ _2026-05-02_
     See [#1623](https://github.com/django-components/django-components/pull/1623) and [#1611](https://github.com/django-components/django-components/pull/1611).
 
 ## v0.148.0
+
+_05 Feb 2026_
 
 #### Feat
 
@@ -304,6 +308,8 @@ _2026-05-02_
     ```
 
 ## v0.147.0
+
+_02 Feb 2026_
 
 Added support for Django 6.0, JS and CSS variables, and component tree navigation.
 
@@ -501,6 +507,8 @@ Added support for Django 6.0, JS and CSS variables, and component tree navigatio
 
 ## v0.146.0
 
+_23 Jan 2026_
+
 `django-components` is now tested across all major browsers - Chromium, Firefox, WebKit.
 
 #### Deprecations 🚨📢
@@ -595,6 +603,8 @@ Added support for Django 6.0, JS and CSS variables, and component tree navigatio
 
 ## v0.145.0
 
+_21 Jan 2026_
+
 #### Perf
 
 Rendering components is now ~20% faster, thanks to:
@@ -644,6 +654,8 @@ Rendering components is now ~20% faster, thanks to:
 
 ## v0.144.0
 
+_18 Jan 2026_
+
 #### Feat
 
 - Component URLs can now be customized with route parameters.
@@ -679,12 +691,16 @@ These arguments are passed to Django's `reverse()` function.
 
 ## v0.143.2
 
+_12 Nov 2025_
+
 #### Fix
 
 - Fix KeyError when using `{% provide %}`, caused by premature cleanup
  ([#1490](https://github.com/django-components/django-components/pull/1490)).
 
 ## v0.143.1
+
+_09 Nov 2025_
 
 #### Fix
 
@@ -695,6 +711,8 @@ These arguments are passed to Django's `reverse()` function.
 - Components now raise error if template data overwrites variables from `context_processors` ([#1482](https://github.com/django-components/django-components/issues/1482))
 
 ## v0.143.0
+
+_22 Oct 2025_
 
 #### Feat
 
@@ -808,6 +826,8 @@ These arguments are passed to Django's `reverse()` function.
   This allows to call component-level extension methods outside of the normal rendering lifecycle.
 
 ## v0.142.3
+
+_17 Oct 2025_
 
 #### Fix
 
@@ -3558,7 +3578,7 @@ _11 Sep 2024_
     - Instead of defining component directories in `STATICFILES_DIRS`, set them to [`COMPONENTS.dirs`](https://github.com/django-components/django-components#dirs).
     - You now must define `STATICFILES_FINDERS`
 
-    - [See here how to migrate your settings.py](https://github.com/django-components/django-components/blob/master/docs/migrating_from_safer_staticfiles.md)
+    - [See here how to migrate your settings.py](https://github.com/django-components/django-components/blob/master/docs_site/content/docs/migrating_from_safer_staticfiles.md)
 
 #### Feat
 

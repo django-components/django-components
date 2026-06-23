@@ -1,0 +1,62 @@
+# Weekly external-link check for the docs site (Phase 5c, feature 5c.19).
+#
+# Out-of-band (scheduled, not a PR blocker): the internal_link / anchor guards
+# already validate on-site links on every PR, but external links rot over time
+# independently of our changes, so they're checked on a schedule instead.
+#
+# lychee checks only http(s) links in the built HTML, skipping our own (not-yet-
+# deployed) domain and localhost. A broken external link turns the scheduled run
+# red so a maintainer can fix or replace it.
+
+name: Docs External Links
+
+on:
+  schedule:
+    # 06:00 UTC every Monday.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  external-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: uv sync --group docs
+
+      # Minify/search/cards are irrelevant to link checking; skip for speed.
+      - name: Build docs site
+        working-directory: docs_site
+        run: uv run python manage.py build_docs --no-search --no-social-cards --no-minify -o "$GITHUB_WORKSPACE/lhsite"
+
+      - name: Check external links (lychee)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # --root-dir lets lychee resolve root-relative internal links
+          # (`/docs/...`) against the build output instead of erroring on them;
+          # --scheme then limits *checking* to outbound http(s) links (internal
+          # ones are already covered by the internal_link guard per PR). Our own
+          # domain isn't live until cutover, so it's excluded.
+          args: >-
+            --root-dir ${{ github.workspace }}/lhsite
+            --scheme https
+            --scheme http
+            --exclude 'django-components\.github\.io'
+            --exclude '^https?://localhost'
+            --max-concurrency 8
+            --accept 200,206,429
+            "lhsite/**/*.html"
+          fail: true

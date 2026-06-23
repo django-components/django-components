@@ -36,7 +36,7 @@ jobs:
       #
       # Long paths that are over the limit are because of the benchmarking data
       # created by asv, as these may look like this:
-      # docs/benchmarks/graphs/arch-x86_64/branch-master/cpu-AMD EPYC 7763 64-Core Processor/django-5.1/djc-core-html-parser/machine-fv-az1693-854/num_cpu-4/os-Linux 6.8.0-1021-azure/python-3.13/ram-16373792/isolated vs django modes.timeraw_render_lg_subsequent.json
+      # benchmarks/report/graphs/arch-x86_64/branch-master/cpu-AMD EPYC 7763 64-Core Processor/django-5.1/djc-core-html-parser/machine-fv-az1693-854/num_cpu-4/os-Linux 6.8.0-1021-azure/python-3.13/ram-16373792/isolated vs django modes.timeraw_render_lg_subsequent.json
       - name: Configure git
         run: |
           git config --global core.longpaths true
@@ -182,7 +182,7 @@ jobs:
       - name: Run linting checks
         run: uv run tox -e ruff,mypy
 
-  # Verify that docs build
+  # Verify that the docs site builds and the guardrails pass
   test_docs:
     runs-on: ubuntu-latest
     strategy:
@@ -191,6 +191,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          # The docs footer reads `git log` for each page's last-updated date and
+          # authors (feature 3b.24), so the build needs full history, not a
+          # shallow clone.
+          fetch-depth: 0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -205,8 +210,18 @@ jobs:
       - name: Install dependencies
         run: |
           uv sync --group docs
-      - name: Build documentation
-        run: CI=false uv run mkdocs build --verbose
+
+      # Build the whole site to a temp dir and run every content guardrail
+      # (links, anchors, fences, nav drift, ...) in strict mode.
+      - name: Check docs build + guardrails
+        working-directory: docs_site
+        run: uv run python manage.py docs_build_check
+
+      # Validate the committed version tree (manifest <-> filesystem parity,
+      # alias redirects, cross-version links). A no-op until versions/ exists.
+      - name: Check committed version tree
+        working-directory: docs_site
+        run: uv run python manage.py docs_versions_check
 
   # Verify that the sample project works
   test_sampleproject:

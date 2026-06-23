@@ -14,57 +14,55 @@ class DynamicComponent(Component):
 
     The args, kwargs, and slot fills are all passed down to the underlying component.
 
-    **Arguments:**
-
-    * `is` (`str | type[Component]`): Component that should be rendered. Either a registered name of a component,
-      or a [Component](./api.md#django_components.Component) class directly. Required.
-    * `registry` (`ComponentRegistry`, optional): Specify the [registry](./api.md#django_components.ComponentRegistry)
-      to search for the registered name. If omitted, all registries are searched until the first match.
-    * `*args`: Additional data passed to the component.
-    * `**kwargs`: Additional data passed to the component.
+    Args:
+        is (str | type[Component]): Component that should be rendered. Either a registered name of a component,
+            or a [Component][Component] class directly. Required.
+        registry (ComponentRegistry, optional): Specify the [registry][ComponentRegistry]
+            to search for the registered name. If omitted, all registries are searched until the first match.
+        *args: Additional data passed to the component.
+        **kwargs: Additional data passed to the component.
 
     **Slots:**
 
     * Any slots, depending on the actual component.
 
-    **Examples:**
+    Examples:
+        Django
+        ```django
+        {% component "dynamic" is=table_comp data=table_data headers=table_headers %}
+            {% fill "pagination" %}
+                {% component "pagination" / %}
+            {% endfill %}
+        {% endcomponent %}
+        ```
 
-    Django
-    ```django
-    {% component "dynamic" is=table_comp data=table_data headers=table_headers %}
-        {% fill "pagination" %}
-            {% component "pagination" / %}
-        {% endfill %}
-    {% endcomponent %}
-    ```
+        Or in case you use the `django_components.component_shorthand_formatter` tag formatter:
 
-    Or in case you use the `django_components.component_shorthand_formatter` tag formatter:
+        ```django
+        {% dynamic is=table_comp data=table_data headers=table_headers %}
+            {% fill "pagination" %}
+                {% component "pagination" / %}
+            {% endfill %}
+        {% enddynamic %}
+        ```
 
-    ```django
-    {% dynamic is=table_comp data=table_data headers=table_headers %}
-        {% fill "pagination" %}
-            {% component "pagination" / %}
-        {% endfill %}
-    {% enddynamic %}
-    ```
+        Python
+        ```py
+        from django_components import DynamicComponent
 
-    Python
-    ```py
-    from django_components import DynamicComponent
-
-    DynamicComponent.render(
-        kwargs={
-            "is": table_comp,
-            "data": table_data,
-            "headers": table_headers,
-        },
-        slots={
-            "pagination": PaginationComponent.render(
-                deps_strategy="ignore",
-            ),
-        },
-    )
-    ```
+        DynamicComponent.render(
+            kwargs={
+                "is": table_comp,
+                "data": table_data,
+                "headers": table_headers,
+            },
+            slots={
+                "pagination": PaginationComponent.render(
+                    deps_strategy="ignore",
+                ),
+            },
+        )
+        ```
 
     ## Use cases
 
@@ -78,7 +76,7 @@ class DynamicComponent(Component):
 
     By default, the dynamic component is registered under the name `"dynamic"`. In case of a conflict,
     you can set the
-    [`COMPONENTS.dynamic_component_name`](./settings.md#django_components.app_settings.ComponentsSettings.dynamic_component_name)
+    [`COMPONENTS.dynamic_component_name`][ComponentsSettings.dynamic_component_name]
     setting to change the name used for the dynamic components.
 
     ```py

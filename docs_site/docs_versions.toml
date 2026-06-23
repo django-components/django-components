@@ -1,0 +1,45 @@
+# Which git tags `docs-build-all` rebuilds into docs_site/versions/.
+#
+# `docs-build-all` is the one-off bootstrap / disaster-recovery command: it walks
+# the tags selected here, checks each out in a git worktree, and runs `docs-build`
+# against it. Day to day you never run it - each release is a single `docs-build`.
+# See docs_site/design/DESIGN_spike_7.md section 3.2.
+#
+# NOTE: a tag can only be rebuilt if its checkout contains the docs builder
+# (docs_site/). Tags from before the docs-site migration don't, so they are
+# skipped automatically. Rebuilding historical versions is a deferred decision
+# (spike section 7 / main doc section 11.8); when it's made, lower `oldest`.
+
+[versions]
+# Release tags look like `0.151.0` or `v0.151.0` (2- or 3-part).
+pattern = "^v?\\d+\\.\\d+(\\.\\d+)?$"
+
+# Extra real tags/refs to build even if they don't match `pattern`. (The `dev`
+# build is produced from the branch head by the release workflow, not by this
+# walker, so it is not listed here.)
+include = []
+
+# Known-broken or deleted historical tags to never build.
+exclude = []
+
+# Don't build versions older than this. Set to a recent release so a stray run
+# doesn't try to walk the entire tag history; lower it when the historical
+# migration policy is decided.
+oldest = "0.150.0"
+
+# Upper bound; "" means no upper bound.
+newest = ""
+
+[aliases]
+# Which version the `latest/` alias redirects to. "" means the newest selected
+# version that actually built.
+latest = ""
+
+[publish]
+# How many of the newest release versions the DEPLOY publishes to the live site.
+# The committed versions/ tree always keeps ALL versions (for reproducibility and
+# docs_versions_check); this only bounds what `docs-assemble` mounts under /v/,
+# because GitHub Pages caps a published site at 1 GB and the frozen historical
+# builds are large (~12-36 MB each). dev and the latest alias are always
+# published. 0 = publish everything (no limit).
+window = 15
