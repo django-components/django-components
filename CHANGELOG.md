@@ -1,5 +1,30 @@
 # Release notes
 
+## v0.151.1
+
+_2026-06-25_
+
+#### Fix
+
+- **A multiline string value in a component tag no longer raises `SyntaxError`**
+
+    Passing a quoted string that spans multiple lines as a component input
+    (for example an Alpine.js or hyperscript handler) raised
+    `SyntaxError: unterminated string literal`:
+
+    ```django
+    {% component "button"
+        _="on click
+            set replyForm to closest <form />"
+    %}{% endcomponent %}
+    ```
+
+    This affected plain strings only (those without `{{ }}` expressions) and
+    was a regression introduced in `djc-core` v1.3.0. Such values render
+    correctly again.
+
+    This fix requires `djc-core>=1.3.1`, which is now the minimum version.
+
 ## v0.151.0
 
 _2026-06-03_
