@@ -55,7 +55,7 @@ dev = [
     "pytest-django",
     "pytest-asyncio==1.4.0",
     "syrupy",
-    "ruff==0.15.20",
+    "ruff==0.16.0",
     "pre-commit",
     "mypy==2.3.0",
     "playwright",
