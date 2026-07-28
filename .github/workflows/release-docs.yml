@@ -25,6 +25,12 @@ jobs:
       contents: write # to commit the built version snapshots back to master
       pages: write # to deploy to Pages
       id-token: write # to verify the deployment originates from an appropriate source
+    # `actions/deploy-pages` requires the deploying job to declare the `github-pages`
+    # environment - without it the Pages API rejects the deployment with a 400
+    # ("Missing environment. Ensure your workflow's deployment job has an environment").
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy-pages.outputs.page_url }}
     runs-on: ubuntu-latest
     # Only run in original repo (not in forks)
     if: github.repository == 'django-components/django-components'
