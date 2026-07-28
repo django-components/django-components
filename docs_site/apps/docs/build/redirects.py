@@ -33,6 +33,9 @@ if TYPE_CHECKING:
 # Keys/values are clean URL paths (leading + trailing slash). The wholesale
 # preservation of *every* pre-migration URL is a separate Phase-6 concern (6.1).
 REDIRECTS: dict[str, str] = {
+    # The site root has no landing page of its own yet, so it forwards to the
+    # docs welcome page, which acts as the landing page in the meantime.
+    "/": "/docs/",
     "/README/": "/docs/",
     "/release_notes/": "/docs/releases/",
     "/concepts/fundamentals/defining_js_css_html_files/": "/docs/concepts/fundamentals/html_js_css_files/",

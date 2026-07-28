@@ -54,6 +54,14 @@ def test_emit_redirects_writes_stubs(tmp_path: Path) -> None:
     assert 'name="robots" content="noindex,follow"' in html
 
 
+def test_emit_redirects_site_root_forwards_to_welcome(tmp_path: Path) -> None:
+    """The site root has no landing page of its own; it forwards to /docs/."""
+    emit_redirects(tmp_path, site_url="https://ex.com/base")
+    html = (tmp_path / "index.html").read_text()
+    assert "url=docs/" in html  # / -> /docs/, relative so the base path is preserved
+    assert 'href="https://ex.com/base/docs/"' in html
+
+
 def test_emit_redirects_home_target_relative(tmp_path: Path) -> None:
     emit_redirects(tmp_path, site_url="https://ex.com/base")
     html = (tmp_path / "README/index.html").read_text()
