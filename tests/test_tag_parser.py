@@ -1795,6 +1795,39 @@ class TestString:
         assert args == []
         assert kwargs == [("key", "world")]
 
+    def test_string_multiline_value(self):
+        # A quoted string value that spans multiple lines but contains no
+        # `{{ }}` expressions (e.g. an Alpine.js or hyperscript handler) must
+        # compile to a valid single-line Python literal, with the newline
+        # escaped, instead of raising `SyntaxError`. Regression from djc-core
+        # 1.3.0 (djc-core PR #37).
+        tag_content = '{% component key="on click\n    set x to 1" %}'
+        tag = parse_tag(tag_content)
+
+        expected_tag = GenericTag(
+            token=token(tag_content, 0, 1, 1),
+            name=token("component", 3, 1, 4),
+            attrs=[
+                TagAttr(
+                    token=token('key="on click\n    set x to 1"', 13, 1, 14),
+                    key=token("key", 13, 1, 14),
+                    value=plain_string_value('"on click\n    set x to 1"', 17, 1, 18, None),
+                    is_flag=False,
+                ),
+            ],
+            is_self_closing=False,
+            used_variables=[],
+            assigned_variables=[],
+        )
+
+        assert tag == expected_tag
+
+        tag_func = _simple_compile_tag(tag, tag_content)
+        args, kwargs = tag_func({})
+
+        assert args == []
+        assert kwargs == [("key", "on click\n    set x to 1")]
+
     def test_string_with_filter(self):
         tag_content = "{% component 'hello'|upper %}"
         tag = parse_tag(tag_content)

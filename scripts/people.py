@@ -177,7 +177,10 @@ def main() -> None:
     if not git_exe:
         raise RuntimeError("Cannot find git executable")
 
-    settings = Settings()
+    # `Settings` inherits from pydantic-settings' `BaseSettings`, which populates every
+    # field from the environment at construction time. mypy only sees the
+    # `dataclass_transform`-synthesized `__init__` and so demands the fields as arguments.
+    settings = Settings()  # type: ignore[call-arg]
     logger.info("Using config: %s", settings.model_dump_json())
     g = Github(settings.github_token.get_secret_value())
     repo = g.get_repo(settings.github_repository)

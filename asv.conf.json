@@ -37,6 +37,15 @@
     // See asv.conf.json documentation.
     // "install_command": ["in-dir={env_dir} python -mpip install {wheel_file}"],
     // "uninstall_command": ["return-code=any python -mpip uninstall -y {project}"],
+    // NOTE: Same as asv's default build command, except for the `--no-deps` flag.
+    // Without it, `pip wheel` also drops the wheels of all dependencies into the build
+    // cache dir, and asv then fails with "Found multiple wheels ... Cannot decide correct one".
+    "build_command": [
+        "python -m pip install build",
+        "python -m build",
+        "python -mpip wheel --no-deps -w {build_cache_dir} {build_dir}"
+    ],
+
     "install_command": ["in-dir={env_dir} python -mpip install ./project"],
 
     // List of branches to benchmark. If not provided, defaults to "main"
@@ -113,9 +122,9 @@
     "matrix": {
         "req": {
             "django": [
-                "5.1"
+                "5.2"
             ],
-            "djc-core-html-parser": [""] // Empty string means the latest version
+            "djc-core": [""] // Empty string means the latest version
         }
     },
 

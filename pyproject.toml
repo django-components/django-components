@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django_components"
-version = "0.151.0"
+version = "0.151.1"
 requires-python = ">=3.10, <4.0"
 description = "A way to create simple reusable template components in Django."
 keywords = ["django", "components", "css", "js", "html"]
@@ -27,7 +27,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 # Package dependencies
-dependencies = ["Django>=5.2", "djc-core>=1.3.0", "typing-extensions>=4.12.2"]
+dependencies = ["Django>=5.2", "djc-core>=1.3.1", "typing-extensions>=4.12.2"]
 license = { text = "MIT" }
 
 # See https://docs.pypi.org/project_metadata/#icons
@@ -47,7 +47,7 @@ Donate = "https://github.com/sponsors/EmilStenstrom"
 # Dev dependencies - install with `uv sync --group dev`
 dev = [
     "django",
-    "djc-core>=1.3.0",
+    "djc-core>=1.3.1",
     "django-template-partials",
     "tox",
     "pytest",
@@ -55,9 +55,11 @@ dev = [
     "pytest-django",
     "pytest-asyncio==1.4.0",
     "syrupy",
-    "ruff==0.15.17",
+    # NOTE: Must stay in sync with the `ruff` pin in the `[testenv:ruff]` section
+    # of `tox.ini`, which is what CI actually runs.
+    "ruff==0.15.15",
     "pre-commit",
-    "mypy",
+    "mypy==2.3.0",
     "playwright",
     "requests",
     "types-requests",
@@ -69,7 +71,7 @@ dev = [
     "asv",
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
-    "virtualenv==21.5.0",
+    "virtualenv==21.7.0",
     "typing-extensions>=4.12.2",
     "pathspec",
     "PyGithub",
@@ -90,7 +92,7 @@ ci = [
     "asv",
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
-    "virtualenv==21.5.0",
+    "virtualenv==21.7.0",
     "pytest-asyncio",
     "pytest-django",
     "typing-extensions>=4.12.2",
@@ -135,7 +137,7 @@ docs = [
     "pygments<2.21",
     "pygments-djc",
     "django>=5.2",
-    "djc-core>=1.3.0",
+    "djc-core>=1.3.1",
 ]
 
 ###########################################
@@ -198,6 +200,9 @@ exclude = [
     # Committed, frozen old-version doc snapshots (gh-pages import, feature 6.2):
     # pre-built HTML plus historical example .py files, not source to lint.
     "docs_site/versions",
+    # Vendored git submodule with its own Rust crates and test fixtures - upstream
+    # code we neither own nor style. Also excluded from mypy (see `[tool.mypy]`).
+    "djc-core",
 ]
 
 # See https://docs.astral.sh/ruff/linter/#rule-selection
@@ -328,7 +333,20 @@ ignore_missing_imports = true
 # `docs_site/apps/docs/build/` tree.)
 # `^site/` (anchored so it never matches `docs_site`) is the gitignored build
 # output, which after `docs_assemble` contains the copied frozen version dirs.
-exclude = ["build", "sampleproject", "test_structures", "_vendor", "docs_site/examples", "docs_site/versions", "^site/"]
+# `^djc-core/` is the vendored git submodule. It carries its own Rust crates and
+# their test fixtures, including a directory literally named `mod with spaces` that
+# holds an `__init__.py` - mypy refuses to start at all when it walks into that
+# ("is not a valid Python package name"), so the whole submodule is skipped.
+exclude = [
+    "build",
+    "sampleproject",
+    "test_structures",
+    "_vendor",
+    "docs_site/examples",
+    "docs_site/versions",
+    "^site/",
+    "^djc-core/",
+]
 
 [[tool.mypy.overrides]]
 module = "django_components.*"
