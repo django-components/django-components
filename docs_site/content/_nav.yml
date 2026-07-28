@@ -7,9 +7,8 @@
 # Paths are relative to the content directory and map to clean URLs.
 
 sections:
-  - label: Home
-    path: /
-
+  # No "Home" entry: the site root has no landing page of its own yet and
+  # redirects here, so Welcome is the landing page (see build/redirects.py).
   - label: Welcome
     path: /docs/
 
