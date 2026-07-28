@@ -34,6 +34,12 @@ jobs:
     runs-on: ubuntu-latest
     # Only run in original repo (not in forks)
     if: github.repository == 'django-components/django-components'
+    env:
+      # The site is published at https://django-components.github.io/django-components/,
+      # i.e. under a GitHub *project* Pages subpath, not at the domain root. The build
+      # emits root-absolute URLs (/static, /docs, /v) unless told otherwise, so without
+      # this every stylesheet, script and image 404s on the deployed site.
+      DOCS_BASE_PATH: /django-components
     steps:
       ##############################
       # SETUP
