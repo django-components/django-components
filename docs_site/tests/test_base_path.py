@@ -77,3 +77,28 @@ def test_idempotent(tmp_path: Path) -> None:
     apply_base_path(tmp_path, "/django-components")  # second run must not double-prefix
     assert page.read_text(encoding="utf-8") == once
     assert "/django-components/django-components" not in once
+
+
+def test_leaves_code_blocks_alone(tmp_path: Path) -> None:
+    """
+    Docs pages show example markup like `<script src="/static/app.js">` inside code
+    blocks. That URL describes what the *reader's* app serves, so prefixing it with
+    our deploy's base path would hand them a path that only works on our docs site.
+    """
+    page = _write(
+        tmp_path,
+        "index.html",
+        "<head></head>"
+        '<link rel="stylesheet" href="/static/css/site.css">'
+        '<pre><code># &lt;script src="/static/path/to/script.js">&lt;/script></code></pre>'
+        '<p>Inline <code>&lt;img src="/static/logo.png"></code> too.</p>',
+    )
+    apply_base_path(tmp_path, "/django-components")
+    out = page.read_text(encoding="utf-8")
+    # The page's own asset still moves under the base path...
+    assert 'href="/django-components/static/css/site.css"' in out
+    # ...but the documented examples are left exactly as written.
+    assert 'src="/static/path/to/script.js"' in out
+    assert 'src="/static/logo.png"' in out
+    assert "/django-components/static/path/to/script.js" not in out
+    assert "/django-components/static/logo.png" not in out

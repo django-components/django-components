@@ -51,6 +51,25 @@ def _compile(base: str) -> re.Pattern[str]:
     return re.compile(rf'(\b(?:{attrs})=)(["\']?)/(?!/)(?!{already}/)')
 
 
+# Regions that hold *content*, not markup. A docs page can show example HTML such
+# as `<script src="/static/path/to/script.js">` inside a code block; that URL
+# describes what the reader's own app serves, so prefixing it with our deploy's
+# base path would corrupt the example. Everything inside these tags is left alone.
+_CODE_BLOCK_RE = re.compile(r"<(pre|code)\b[^>]*>.*?</\1\s*>", re.DOTALL | re.IGNORECASE)
+
+
+def _sub_outside_code(pattern: re.Pattern[str], replacement: str, text: str) -> str:
+    """Apply ``pattern`` to ``text``, leaving ``<pre>`` / ``<code>`` regions untouched."""
+    out: list[str] = []
+    last = 0
+    for match in _CODE_BLOCK_RE.finditer(text):
+        out.append(pattern.sub(replacement, text[last : match.start()]))
+        out.append(match.group(0))
+        last = match.end()
+    out.append(pattern.sub(replacement, text[last:]))
+    return "".join(out)
+
+
 def apply_base_path(output_dir: Path, base: str) -> int:
     """
     Prefix root-absolute URL attributes in every ``*.html`` under ``output_dir``
@@ -66,7 +85,7 @@ def apply_base_path(output_dir: Path, base: str) -> int:
     changed = 0
     for html in output_dir.rglob("*.html"):
         text = html.read_text(encoding="utf-8")
-        new = pattern.sub(replacement, text)
+        new = _sub_outside_code(pattern, replacement, text)
         # So base-path-aware JS (e.g. pagefind result links) can read the prefix.
         if "djc-base-path" not in new:
             new = new.replace("<head>", meta, 1)
