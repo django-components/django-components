@@ -57,7 +57,7 @@ dev = [
     "syrupy",
     "ruff==0.15.20",
     "pre-commit",
-    "mypy",
+    "mypy==2.3.0",
     "playwright",
     "requests",
     "types-requests",

@@ -146,7 +146,8 @@ class DynamicComponent(Component):
             # component class, it may see that it's callable and evaluate it. Hence, we need
             # get check if we've got class or instance.
             if inspect.isclass(comp_name_or_class):
-                component_cls = comp_name_or_class
+                # NOTE: `inspect.isclass()` narrows only to `type[object]`, so we have to cast.
+                component_cls = cast("type[Component]", comp_name_or_class)
             else:
                 component_cls = cast("type[Component]", comp_name_or_class.__class__)
 
