@@ -1,0 +1,47 @@
+# serializer version: 1
+# name: test_render_snapshots
+  dict({
+    'admonition_and_table': '''
+      <h1 id="rich"><a class="heading-anchor" href="#rich">Rich</a></h1>
+      <div class="admonition note">
+      <p class="admonition-title">Note</p>
+      <p>A note admonition body.</p>
+      </div>
+      <table>
+      <thead>
+      <tr>
+      <th>Col A</th>
+      <th>Col B</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+      <td>1</td>
+      <td>2</td>
+      </tr>
+      </tbody>
+      </table>
+    ''',
+    'code_blocks': '''
+      <h1 id="code"><a class="heading-anchor" href="#code">Code</a></h1>
+      <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">f</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+          <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
+      </code></pre></div>
+      <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Button</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
+          <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;&lt;button&gt;{{ label }}&lt;/button&gt;&quot;</span>
+      </code></pre></div>
+    ''',
+    'headings_and_prose': '''
+      <h1 id="title"><a class="heading-anchor" href="#title">Title</a></h1>
+      <p>Intro paragraph with <code>inline code</code> and a <a href="https://example.com" target="_blank" rel="noopener">link</a>.</p>
+      <h2 id="section"><a class="heading-anchor" href="#section">Section</a></h2>
+      <p>Some <strong>bold</strong> and <em>italic</em> text.</p>
+      <h3 id="subsection"><a class="heading-anchor" href="#subsection">Subsection</a></h3>
+      <ul>
+      <li>one</li>
+      <li>two</li>
+      <li>three</li>
+      </ul>
+    ''',
+  })
+# ---

@@ -1,0 +1,556 @@
+# docs_site
+
+The django-components documentation site. A Django project that uses
+django-components to render markdown pages into static HTML, pre-rendered
+at build time and deployed to GitHub Pages.
+
+This replaces the previous mkdocs/Material setup. The full design and migration
+plan live in [`design/`](design/) (start with `DESIGN.md` and
+`DESIGN_features.md`).
+
+## Quick start
+
+All commands run from inside this directory:
+
+```sh
+cd docs_site
+```
+
+While editing, run the dev server for live preview. It renders each page on the
+fly through the same pipeline as the build, so you just edit a markdown file and
+reload:
+
+```sh
+uv run python manage.py docs_serve   # open http://127.0.0.1:8000/
+```
+
+To produce the full static site, build it and validate the links:
+
+```sh
+uv run python manage.py build_docs        # -> ./site/ (gitignored)
+uv run python manage.py docs_build_check  # build to a temp dir + run every guardrail
+```
+
+## Commands
+
+All run from `docs_site/` as `uv run python manage.py <command>`.
+
+**Author & preview:**
+
+| Command | What it does |
+|---|---|
+| `docs_serve` | Dev server; renders pages live from `content/` (no search index) |
+| `docs_serve_built` | Build the full site (incl. Pagefind search + collected `/static/`) and serve it like production; `--no-build` reuses `./site/`; `--versions` fakes a `/v/` tree to test the version picker |
+
+**Build & validate:**
+
+| Command | What it does |
+|---|---|
+| `build_docs` | Build every `.md` to `<output>/<slug>/index.html` (+ `.md` companions + Pagefind index + sitemap/robots/llms/social cards). Defaults to `./site/` |
+| `docs_build_check` | CI gate: build to a temp dir and run the full guardrail suite (links, anchors, fences, nav drift, ...) in strict mode |
+
+**Versioning & deploy** (see [Versioning & deploy](#versioning--deploy)):
+
+| Command | What it does |
+|---|---|
+| `build_docs --docs-version X --alias latest` | Build a committed version snapshot into `versions/X/` + update the manifest + the `latest` redirect |
+| `docs_assemble` | Assemble the full deploy artifact in `site/`: current build at the root + the published version window under `/v/*` + an ephemeral `/v/dev/`. **This is what CI deploys to Pages** |
+| `docs_import_ghpages` | One-time: mirror the old mkdocs/mike `gh-pages` versions into `versions/` (run once at cutover) |
+| `docs_build_all` | Bootstrap/rebuild every version selected by `docs_versions.toml` (a git worktree per tag); `--dry-run` to preview |
+| `docs_versions_check` | Validate the committed `versions/` tree (manifest <-> filesystem, aliases, cross-version links) |
+
+Common `build_docs` options:
+
+- `--content <dir>` - content directory (default: `content/`)
+- `--docs-version <ver>` - version label (default: from `pyproject.toml`); switches to "version mode" (writes `versions/<ver>/` + manifest)
+- `--alias <name>` - alias (e.g. `latest`) pointed at this version; materialized as redirect stubs
+- `-o, --output <dir>` - output directory (default: `./site/`, or `versions/<ver>/` in version mode)
+- `--title <text>` - manifest display title (e.g. `dev (a1b2c3d)`)
+- `--no-manifest-update` - don't rewrite `versions.json` (used by `docs_build_all`)
+- `--no-companions` / `--no-search` - skip `.md` companions / the Pagefind index
+
+## The rendering pipeline
+
+Each markdown file is rendered through four passes
+([`apps/docs/build/pipeline.py`](apps/docs/build/pipeline.py)):
+
+1. **Fence protection** - wraps code blocks in `{% verbatim %}` so Django
+   doesn't execute template tags inside code examples
+   ([`fence_protection.py`](apps/docs/build/fence_protection.py))
+2. **Django template engine** - expands `{% version %}`, `{% component %}`,
+   `{% example %}`, `{% include_file %}`, and other tags
+3. **python-markdown + pymdownx** - converts the expanded markdown to HTML
+   (syntax highlighting, admonitions, tabs, TOC, etc.)
+4. **DocPage layout** - wraps the content in a full HTML page with `<head>`
+   metadata ([`components/doc_page/`](apps/docs/components/doc_page/))
+
+Tags that emit block-level HTML (like `{% example %}`) run in step 2.
+Their output must start at column 0 (no leading whitespace) so
+python-markdown in step 3 treats it as block-level HTML rather than a
+code block.
+
+## Sidebar navigation (`_nav.yml`)
+
+The left sidebar is driven by [`content/_nav.yml`](content/_nav.yml).
+The loader lives at [`apps/docs/build/nav.py`](apps/docs/build/nav.py).
+
+### Schema
+
+A section has EITHER `items` (1-level flat list) OR `groups` (2-level
+with collapsible sub-groups), never both. Section labels can optionally
+be links via `path`.
+
+```yaml
+sections:
+  - label: Overview
+    path: /overview/   # optional: makes the section label clickable
+
+  # 1-level: flat list of pages
+  - label: Getting Started
+    items:
+      - { title: Installation, path: /getting_started/installation/ }
+      - { title: Quick start,  path: /getting_started/quick_start/ }
+
+  # 2-level: collapsible sub-groups
+  - label: Concepts
+    groups:
+      - label: Fundamentals
+        items:
+          - { title: Render API, path: /concepts/fundamentals/render_api/ }
+          - { title: Component defaults, path: /concepts/fundamentals/component_defaults/ }
+      - label: Advanced
+        items:
+          - { title: Hooks, path: /concepts/advanced/hooks/ }
+```
+
+### Behavior
+
+- **Active highlighting**: the sidebar auto-highlights the current page
+  based on URL matching.
+- **Collapsible groups**: sub-groups start collapsed unless the current
+  page is inside them. Collapse state is saved to `localStorage`.
+- **Breadcrumbs**: generated from the nav tree by walking up from the
+  current page (section > group > page).
+- **Prev/next navigation**: computed from the document order in the nav.
+
+### Caveats
+
+- Paths in `_nav.yml` must match the clean URL slug for the page. For
+  `content/foo/bar.md` the path is `/foo/bar/`. For
+  `content/foo/index.md` the path is `/foo/`.
+- If a path doesn't match any content file, the sidebar link will be a
+  dead link (no build-time validation yet; that's Phase 3b feature
+  `nav-yaml-validity-check`).
+- A section cannot have both `items` and `groups`. The nav loader does
+  not enforce this at build time yet, but the sidebar will render incorrectly.
+
+## Template tags
+
+Custom template tags available in markdown files via the Django template
+engine (Pass 1). Defined in
+[`apps/docs/templatetags/docs_extras.py`](apps/docs/templatetags/docs_extras.py).
+
+### `{% example "name" %}`
+
+Embeds a tabbed widget showing an example's source code and live demo.
+
+```markdown
+{% example "fragments" %}
+```
+
+Renders three tabs:
+- **Live demo** - the actual rendered component in an `<iframe>`
+- **Component** - syntax-highlighted source from `component.py`
+- **Page** - syntax-highlighted source from `page.py`
+
+**Caveats:**
+- The example name must match a directory under `EXAMPLES_DIR`
+  (currently `docs_site/examples/`) with a `component.py` and `page.py`.
+- The tag output goes through `_lstrip_outside_pre()` to strip Django
+  template indentation while preserving code indentation inside `<pre>`
+  blocks.
+
+### `{% version %}`
+
+Outputs the current django-components version string (e.g. `0.151.0`).
+
+```markdown
+Install version {% version %}
+```
+
+### `{% include_file "path" %}`
+
+Includes a file as a fenced code block. Language is inferred from the
+file extension unless explicitly set.
+
+```markdown
+{% include_file "docs_site/examples/fragments/component.py" %}
+{% include_file "some/config" language="toml" %}
+```
+
+**Caveats:**
+- The path is relative to the working directory (the repo root when
+  running from `docs_site/`), not to the content file.
+
+### `{% image "src" %}`
+
+Renders an `<img>` tag with optional attributes.
+
+```markdown
+{% image "/static/screenshot.png" alt="Example" width="400" css_class="bordered" %}
+```
+
+## Tabbed content (pymdownx.tabbed)
+
+Multi-tab code blocks work via `pymdownx.tabbed` (alternate style).
+Tab switching is handled by `site.js`, not CSS-only.
+
+```markdown
+=== "uv"
+    ```bash
+    uv pip install django-components
+    ```
+
+=== "pip"
+    ```bash
+    pip install django-components
+    ```
+```
+
+**Behavior:**
+- Tabs can contain mixed content (text + code blocks), not just code.
+
+**Caveats:**
+- The `===` tab syntax must be flush-left in the markdown source (no
+  leading indentation).
+- Each tab's content must be indented 4 spaces under its `===` header.
+
+## Code blocks
+
+Fenced code blocks support language labels and copy buttons
+(injected by `site.js` at page load).
+
+```markdown
+```python
+class MyComponent(Component):
+    pass
+`` `
+
+```python title="components/calendar.py"
+class Calendar(Component):
+    pass
+`` `
+```
+
+**Features:**
+- **Language label**: auto-detected from the fence info string, shown
+  top-right in muted text.
+- **Copy button**: appears on hover (top-right), copies code to
+  clipboard, shows a checkmark for 1.5s.
+- **Filename tab**: `title="filename.py"` renders as a monospace tab
+  header above the code block (via `pymdownx.highlight`).
+
+## Theme (dark / light / auto)
+
+Three theme modes via the header picker buttons:
+- **Light** (sun icon): forces light theme
+- **System** (monitor icon): follows OS `prefers-color-scheme`
+- **Dark** (moon icon): forces dark theme
+
+The active mode is highlighted with accent color. Choice is persisted
+in `localStorage` under the key `djc-theme`.
+
+A FOUC (Flash of unstyled content) prevention `<script>` in `<head>` reads the stored value and
+sets `data-theme` on `<html>` before the first paint.
+
+## Resizable sidebars
+
+The dividers between sidebar/content and content/TOC are draggable.
+A 4x2 dot grid grip is visible at the viewport center. Widths are
+clamped to 160-500px and persisted in `localStorage`.
+
+## Examples
+
+### How it works
+
+The wiring has three layers:
+
+1. **Autodiscovery** ([`apps/docs/examples.py`](apps/docs/examples.py))
+   walks `EXAMPLES_DIR` (currently `docs_site/examples/`), imports each
+   example's `component.py` and `page.py`, finds the `*Page` Component
+   subclass, and caches a registry of `ExampleInfo` objects.
+
+2. **`{% example %}` tag**
+   ([`apps/docs/templatetags/docs_extras.py`](apps/docs/templatetags/docs_extras.py))
+   looks up the example in the registry and calls
+   `ExampleCard.render(kwargs={"name": ..., "info": ...})`.
+
+3. **ExampleCard component**
+   ([`apps/docs/components/example_card/`](apps/docs/components/example_card/))
+   reads the source files, highlights them with Pygments, renders the live
+   demo via `Component.as_view()`, and assembles the tabbed widget.
+
+### Example directory layout
+
+Each example lives in its own directory under `docs_site/examples/`:
+
+```
+docs_site/examples/fragments/
+    component.py              <- the components being demonstrated
+    page.py                   <- a *Page Component that renders the demo
+    test_example_fragments.py <- pytest tests proving the example works
+    README.md                 <- the mkdocs-era writeup (--8<-- includes)
+    images/                   <- screenshots/GIFs (optional)
+```
+
+Required conventions:
+
+- `component.py` must exist and define at least one registered Component.
+- `page.py` must define a Component subclass whose name ends in `Page`
+  (e.g. `FragmentsPage`, `TabsPage`).
+- The Page class must have a nested `class View` with at least a `get()`
+  method so it can be rendered via `Component.as_view()`.
+
+### Fragment examples
+
+Some examples (like `fragments`) use AJAX to load HTML fragments on button
+click. On a live Django server this works via `get_component_url()`, but
+on the static GitHub Pages site there's no server.
+
+The solution: **pre-render each fragment variant at build time** and use a
+**JS fetch interceptor** to redirect requests to the static files.
+
+To declare fragment variants, add a `DocsExample` inner class to the Page.
+The `fragments` dict maps each variant name (used to construct the static
+file path) to the query params dict that the live server expects:
+
+```python
+class FragmentsPage(Component):
+    class DocsExample:
+        fragments = {
+            "alpine": {"type": "alpine"},
+            "htmx": {"type": "htmx"},
+            "js": {"type": "js"},
+        }
+    ...
+```
+
+At build time, `build_docs` calls each variant through `as_view()` with the
+query params from the dict and writes the responses to static files:
+
+```
+site/examples/fragments/index.html          <- full page
+site/examples/fragments/alpine/index.html   <- alpine fragment response
+site/examples/fragments/htmx/index.html     <- htmx fragment response
+site/examples/fragments/js/index.html       <- js fragment response
+```
+
+The ExampleCard then rewrites the rendered demo HTML by replacing each
+`get_component_url()` output with the corresponding static file path.
+It calls `get_component_url(PageCls, query={"type": "alpine"})` to get
+the exact URL string that appears in the HTML, and replaces it with
+`/examples/fragments/alpine/`. This is a direct string replacement -
+no JS interceptor or runtime patching needed.
+
+### Adding a new example
+
+1. Create `docs_site/examples/<name>/component.py` with your component(s).
+2. Create `docs_site/examples/<name>/page.py` with a `*Page` Component
+   that has `class View` with `def get(self, request)`.
+3. Add a test file `test_example_<name>.py`.
+4. If the example uses fragments, add `class DocsExample` with a
+   `fragments` dict.
+5. Reference it in a markdown page with `{% example "<name>" %}`.
+6. Run `python manage.py build_docs` and verify.
+
+## Front-matter
+
+Markdown pages may declare optional YAML front-matter
+([`apps/docs/build/frontmatter.py`](apps/docs/build/frontmatter.py)):
+
+```yaml
+---
+title: Page Title              # overrides the first # H1
+description: One-line summary   # the page summary (falls back to the first paragraph)
+og_image: /path/to/image.png   # custom social-card image (else the generated card)
+noindex: false
+canonical: https://...
+tags: [example, advanced]
+---
+```
+
+All fields are optional. With no front-matter, the `title` comes from the first
+`# H1`, and the `description` comes from the page's **first real paragraph**
+(markdown stripped, truncated to ~155 characters - see
+[`frontmatter.py`](apps/docs/build/frontmatter.py)).
+
+### The `description` is the page's one summary
+
+That single `description` value is reused everywhere a page needs a summary, so
+it's worth setting deliberately on important pages. It drives:
+
+- the `<meta name="description">` tag (search-result snippets),
+- **the subtitle on the page's social card** - the auto-generated 1200x630 OG
+  image at `/og/<page>.png` - plus the matching `og:description` /
+  `twitter:description`,
+- the page's line in [`/llms.txt`](apps/docs/build/llms.py).
+
+So the card at e.g. `/og/docs/concepts/advanced/tag_formatters.png` is just three
+fields: the **section** (top eyebrow, from the nav), the page **title**, and the
+**`description`** as the subtitle. To change the subtitle, set `description:` in
+the page's front-matter; leave it unset and it's the page's first paragraph.
+(The card template + generator live in
+[`components/og_card/`](apps/docs/components/og_card/) and
+[`build/social_cards.py`](apps/docs/build/social_cards.py).)
+
+## Versioning & deploy
+
+> New here? This section is the one most likely to surprise you. Read the model
+> first - the committed tree and the deployed site are deliberately *not* the
+> same set of versions.
+
+Built versions live in `docs_site/versions/<version>/` (committed to the repo),
+with a sibling `versions.json` manifest and `latest/` redirect stubs. The header
+version picker reads `versions.json` client-side. There is no `gh-pages` branch
+and no `mike` dependency - only mike's manifest data model is vendored, under
+[`apps/docs/_vendor/`](apps/docs/_vendor/).
+
+### Two kinds of version
+
+- **New-builder snapshots** - each release built with `build_docs --docs-version
+  X`. They reference the single `/static/` mounted once at the site root, so a
+  snapshot is only ~9 MB (just its HTML + images).
+- **Frozen `gh-pages` imports** - the historical versions from the old
+  mkdocs + mike site, mirrored in verbatim by `docs_import_ghpages` (a one-time
+  cutover step). These are the *old* Material design and are **byte-frozen** - we
+  never rebuild them (their tags predate this builder), and their internal links
+  aren't link-checked. They're stamped `builder_version: imported-ghpages`, and
+  each is large (~12-36 MB, because mike bundled all of Material's fonts/JS/CSS
+  into *every* version).
+
+### Committed tree vs. deployed subset - and the 1 GB limit
+
+**The committed `versions/` tree always keeps every version** - for
+reproducibility and so `docs_versions_check` can validate the whole history.
+
+**The deploy publishes only a window of the newest versions.** GitHub Pages caps
+a *published* site at **1 GB**, and the frozen imports alone are ~1 GB, so the
+full tree doesn't fit. `docs_assemble` mounts only the newest N (set in
+[`docs_versions.toml`](docs_versions.toml)) and writes a *trimmed* `versions.json`
+so the picker lists exactly what's deployed (no 404s). The committed tree is
+never touched.
+
+To change how much history is published, edit the one number:
+
+```toml
+[publish]
+window = 15   # newest N releases to deploy; 0 = publish everything
+```
+
+Rough sizes today (mostly frozen mike builds): last 10 ≈ 480 MB, last 15 ≈ 600 MB,
+last 20 ≈ 760 MB, all 58 ≈ 1.1 GB (over the cap). As releases get rebuilt with the
+new builder (9 MB each, shared `/static`), the same window gets much lighter over
+time. There's no cross-version dedup on the served site (a PNG used in 20 versions
+is 20 real files); git de-dups identical blobs in the repo, but Pages serves the
+expanded files.
+
+### `dev` is built, never committed
+
+On a push to `master`, the deploy builds `dev` fresh into `/v/dev/` and adds it to
+the *served* manifest - but **never commits it** (that would churn `master` with a
+new dev snapshot every push). Only **release tags** commit an immutable snapshot
+under `versions/`.
+
+### The deploy flow ([`release-docs.yml`](../.github/workflows/release-docs.yml))
+
+- **master push** -> `docs_assemble` (build current -> root, mount the published
+  version window, build the ephemeral `/v/dev/`) -> deploy to Pages. No commit.
+- **release tag** -> `build_docs --docs-version X --alias latest` (commit the
+  snapshot) -> `docs_assemble` -> deploy.
+
+The deploy artifact is `site/` (gitignored). At the real cutover, set the repo's
+Pages source to "GitHub Actions" once.
+
+### Serving under a subpath (project Pages / fork previews)
+
+By default the site is built for a **domain root** (root-absolute `/static`,
+`/docs`, `/v` URLs). To serve it under a path - GitHub *project* Pages like
+`https://<user>.github.io/<repo>/`, e.g. a fork preview - set the base path at
+build time:
+
+```bash
+DOCS_BASE_PATH=/<repo> DOCS_SITE_URL=https://<user>.github.io/<repo> \
+  uv run python manage.py docs_assemble
+```
+
+`build/base_path.py::apply_base_path` then prefixes the root-absolute URLs and
+emits `<meta name="djc-base-path">`, which `search.js` and the version picker read
+to resolve at runtime. Empty (the default, `settings.SITE_BASE_PATH = ""`) =
+root-served, unchanged.
+
+### Bootstrapping & one-offs
+
+- `docs_import_ghpages` - one-time mirror of the old mike/`gh-pages` versions into
+  `versions/` (the cutover import; re-runnable).
+- `docs_build_all` - rebuild the tags selected by `docs_versions.toml` in a
+  worktree per tag; tags that predate this builder are skipped.
+- `docs_versions_check` - validate the committed tree (also runs in CI).
+- `docs_serve_built --versions` - fake a few versions locally to click through the
+  picker without real historical builds.
+
+## Where to find things
+
+```
+docs_site/
+    README.md                  <- you are here
+    manage.py                  <- Django entrypoint
+    docs_versions.toml         <- which git tags docs_build_all rebuilds
+    design/                    <- design docs + feature inventory
+    content/                   <- markdown source pages
+        _nav.yml               <- sidebar navigation tree
+        index.md               <- placeholder home page
+        docs/                  <- published pages (concepts, reference, community, ...)
+    versions/<version>/        <- committed built version snapshots + versions.json
+                                  (created when bootstrapped; not present yet)
+    static/
+        css/tokens.css         <- OKLCH design tokens (light + dark themes)
+        css/site.css           <- prose typography, layout chrome, components
+        css/pygments-*.css     <- syntax highlighting (light + dark)
+        fonts/InterVariable.woff2  <- self-hosted Inter variable font
+        js/site.js             <- theme toggle, sidebar, TOC scroll-spy, version
+                                  picker, tab switching, code copy, resize handles
+        js/search.js           <- Pagefind-backed search modal
+    docs_site/                 <- Django project package
+        settings.py            <- settings (REPO_ROOT, SITE_URL, SITE_BASE_PATH,
+                                  CONTENT_DIR, EXAMPLES_DIR, STATIC_PASSTHROUGHS,
+                                  VERSIONS_DIR, VERSIONS_CONFIG, SITE_DIR)
+        urls.py / wsgi.py
+    apps/docs/                 <- the docs app
+        examples.py            <- example autodiscovery + registry
+        discovery/             <- API-reference discovery (griffe-driven)
+        urls.py / views.py     <- live page serving for the dev server
+        build/                 <- pipeline, fence protection, front-matter, links,
+                                  nav loader, versioning, bootstrap, base_path,
+                                  seo, social_cards, pagefind, guards/
+        components/            <- django-components (DocPage, ExampleCard,
+                                  version_picker, search_modal, reference, ...)
+        management/commands/   <- docs_serve, docs_serve_built, build_docs,
+                                  docs_assemble, docs_build_check, docs_build_all,
+                                  docs_versions_check, docs_import_ghpages
+        templatetags/          <- docs_extras.py ({% example %}, {% version %},
+                                  {% docstring %}, {% include_file %}, {% image %})
+        _vendor/               <- vendored mike Versions model (BSD-3)
+```
+
+## Status
+
+Migration complete through **Phase 6 (cutover) on this branch** (not yet merged
+to `master` / deployed). Done: foundation + examples (0-2), theme + chrome +
+content port + guardrails (3a-3b), API reference (4), search (5a), versioning
+(5b), SEO/AIO/social (5c), parity audit (5d), and the cutover itself (6) -
+`docs_old/` + mkdocs removed, the old `gh-pages` versions imported, and the
+assemble/deploy wired. Pending: the actual merge + first deploy (flip Pages to
+"GitHub Actions"), search v2/v3 (7-8), the landing page (9), and most
+post-launch maintenance (10+). See
+[`design/DESIGN_features.md`](design/DESIGN_features.md) for the per-feature
+inventory.

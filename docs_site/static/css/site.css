@@ -1,0 +1,1845 @@
+/*
+ * Prose typography and content styling for the django-components docs site.
+ *
+ * Spec: docs_site/design/DESIGN_spike_11.md sections 5-6.
+ * Tokens: tokens.css (loaded before this file).
+ *
+ * Phase 3a Batch 1: typography, headings, links, inline code, code blocks,
+ * blockquotes, tables, admonitions, lists. Layout shell comes in Batch 2.
+ */
+
+/* ------------------------------------------------------------------ */
+/* Base reset & body                                                   */
+/* ------------------------------------------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  /* Render the UI at ~90% density (Juro's preference). 90% of the user's
+     default font size scales every rem-based value at once; the structural
+     dimensions below (header, widths, sidebars) are authored in rem too so the
+     whole frame scales with it. Breakpoints and hairline borders stay in px on
+     purpose - they track the device and the pixel grid, not the text size. */
+  font-size: 90%;
+  scroll-padding-top: 5rem; /* clear the sticky header on anchor jumps */
+}
+
+/* Page side gutter: 1.5rem mobile -> 2rem tablet -> 3rem desktop (spike 11.11
+   section 2.1). In rem so it scales with the root 90% density. */
+:root {
+  --page-gutter: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --page-gutter: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --page-gutter: 3rem;
+  }
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--c-fg-muted);
+  background: var(--c-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ------------------------------------------------------------------ */
+/* Prose: the content article area                                     */
+/* ------------------------------------------------------------------ */
+.prose {
+  max-width: 45rem;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ------------------------------------------------------------------ */
+/* Headings                                                            */
+/* ------------------------------------------------------------------ */
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  color: var(--c-fg);
+  font-weight: bold;
+  line-height: 1.3;
+  margin-bottom: 0.75rem;
+}
+
+.prose h1 {
+  font-size: 2.25rem;
+  margin-top: 0;
+}
+
+.prose h2 {
+  font-size: 1.75rem;
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--c-border-subtle);
+}
+
+.prose h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2rem;
+}
+
+.prose h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+}
+
+.prose h5,
+.prose h6 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+/* Anchored heading: # glyph fades in on hover */
+.prose h2,
+.prose h3,
+.prose h4 {
+  position: relative;
+}
+
+.prose .headerlink {
+  color: var(--c-fg-subtle);
+  text-decoration: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  margin-left: 0.3em;
+  font-weight: normal;
+}
+
+.prose h2:hover .headerlink,
+.prose h3:hover .headerlink,
+.prose h4:hover .headerlink {
+  opacity: 1;
+}
+
+.prose .headerlink:hover {
+  color: var(--c-link);
+}
+
+/* The whole heading text is the permalink (see build/links.py::linkify_headings).
+   It looks like the heading - inherits its colour, no underline by default
+   (overriding the .prose a rule) - and underlines on hover to signal it's a link. */
+.prose .heading-anchor,
+.prose .heading-anchor:visited {
+  color: inherit;
+  text-decoration: none;
+}
+
+.prose .heading-anchor:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+/* ------------------------------------------------------------------ */
+/* Links                                                               */
+/* ------------------------------------------------------------------ */
+.prose a {
+  color: var(--c-link);
+  /* Underline by default: in-body links must be distinguishable by more than
+     colour (WCAG 1.4.1 / Lighthouse "links rely on color"). */
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.prose a:hover {
+  color: var(--c-link-hover);
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ */
+/* Paragraphs                                                          */
+/* ------------------------------------------------------------------ */
+.prose p {
+  margin: 0 0 1rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Inline code: accent-colored pill (spike 11.11 section 5.4)          */
+/* ------------------------------------------------------------------ */
+.prose :not(pre) > code {
+  color: var(--c-code-text);
+  background: var(--c-accent-dim);
+  padding: 0.1em 0.35em;
+  border-radius: 0.2em;
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Code blocks                                                         */
+/* ------------------------------------------------------------------ */
+.prose pre {
+  background: var(--c-surface-2);
+  padding: 0.7rem 1rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid var(--c-link-dim);
+  overflow-x: auto;
+  margin: 1rem 0;
+  position: relative;
+}
+
+.prose pre code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  line-height: 1.6;
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  white-space: pre;
+  font-weight: normal;
+}
+
+/* Pygments highlight wrapper */
+.prose .highlight {
+  margin: 1rem 0;
+  position: relative;
+}
+
+.prose .highlight pre {
+  margin: 0;
+}
+
+/* Code block filename label (pymdownx.highlight title=) */
+.prose .highlight .filename {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--c-fg-muted);
+  background: var(--c-surface-3);
+  padding: 0.35rem 1rem;
+  border-radius: 0.5rem 0.5rem 0 0;
+  border-left: 3px solid var(--c-link-dim);
+  border-bottom: 1px solid var(--c-border-subtle);
+}
+
+.prose .highlight .filename + pre {
+  border-radius: 0 0 0.5rem 0.5rem;
+  border-top: none;
+}
+
+/* Code block language label (top-right, always visible) */
+.djc-code-lang {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--c-fg-subtle);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Code block copy button (top-right, visible on hover) */
+.djc-code-copy {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  background: var(--c-surface-3);
+  border: 1px solid var(--c-border);
+  border-radius: 0.25rem;
+  padding: 0.3rem;
+  cursor: pointer;
+  color: var(--c-fg-subtle);
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+/* Show copy button on hover; hide language label to avoid overlap */
+.prose .highlight:hover .djc-code-copy {
+  opacity: 1;
+}
+
+.prose .highlight:hover .djc-code-lang {
+  opacity: 0;
+}
+
+.djc-code-copy:hover {
+  color: var(--c-fg);
+  background: var(--c-surface-2);
+}
+
+/* ------------------------------------------------------------------ */
+/* Blockquotes                                                         */
+/* ------------------------------------------------------------------ */
+.prose blockquote {
+  border-left: 3px solid var(--c-link);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--c-fg-muted);
+}
+
+.prose blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tables                                                              */
+/* ------------------------------------------------------------------ */
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid var(--c-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.prose th {
+  background: var(--c-surface-2);
+  font-weight: 600;
+  color: var(--c-fg);
+}
+
+.prose table code {
+  font-size: 0.85em;
+}
+
+/* Overflow wrapper for wide tables on narrow viewports */
+.prose .table-wrapper {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.prose .table-wrapper table {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Admonitions (pymdownx/markdown admonition extension)                */
+/* ------------------------------------------------------------------ */
+.prose .admonition {
+  border-left: 3px solid var(--c-note);
+  padding: 0.75rem 1rem;
+  margin: 1.25rem 0;
+  background: oklch(from var(--c-note) l c h / 6%);
+  border-radius: 0 0.25rem 0.25rem 0;
+}
+
+.prose .admonition-title {
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.3rem;
+  color: var(--c-note);
+}
+
+.prose .admonition p:last-child {
+  margin-bottom: 0;
+}
+
+/* Admonition variants */
+.prose .admonition.warning,
+.prose .admonition.caution {
+  border-left-color: var(--c-warning);
+  background: oklch(from var(--c-warning) l c h / 6%);
+}
+
+.prose .admonition.warning .admonition-title,
+.prose .admonition.caution .admonition-title {
+  color: var(--c-warning);
+}
+
+.prose .admonition.info,
+.prose .admonition.tip {
+  border-left-color: var(--c-info);
+  background: oklch(from var(--c-info) l c h / 6%);
+}
+
+.prose .admonition.info .admonition-title,
+.prose .admonition.tip .admonition-title {
+  color: var(--c-info);
+}
+
+.prose .admonition.danger,
+.prose .admonition.error {
+  border-left-color: var(--c-danger);
+  background: oklch(from var(--c-danger) l c h / 6%);
+}
+
+.prose .admonition.danger .admonition-title,
+.prose .admonition.error .admonition-title {
+  color: var(--c-danger);
+}
+
+/* ------------------------------------------------------------------ */
+/* Lists                                                               */
+/* ------------------------------------------------------------------ */
+.prose ul,
+.prose ol {
+  padding-left: 1.5rem;
+  margin: 1rem 0;
+}
+
+.prose li {
+  margin-bottom: 0.25rem;
+}
+
+.prose li > p {
+  margin-bottom: 0.5rem;
+}
+
+.prose ul ul,
+.prose ol ol,
+.prose ul ol,
+.prose ol ul {
+  margin: 0.25rem 0;
+}
+
+/* Task lists (pymdownx.tasklist) */
+.prose .task-list-item {
+  list-style: none;
+  margin-left: -1.5rem;
+  padding-left: 1.5rem;
+}
+
+.prose .task-list-item input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Definition lists                                                    */
+/* ------------------------------------------------------------------ */
+.prose dl {
+  margin: 1rem 0;
+}
+
+.prose dt {
+  font-weight: 600;
+  color: var(--c-fg);
+  margin-top: 0.75rem;
+}
+
+.prose dd {
+  margin-left: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Horizontal rules                                                    */
+/* ------------------------------------------------------------------ */
+.prose hr {
+  border: none;
+  border-top: 1px solid var(--c-border);
+  margin: 2rem 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Images                                                              */
+/* ------------------------------------------------------------------ */
+.prose img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* pymdownx.tabbed (alternate style)                                   */
+/* ------------------------------------------------------------------ */
+.prose .tabbed-set {
+  margin: 1.25rem 0;
+  border: 1px solid var(--c-border);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.prose .tabbed-set > input {
+  display: none;
+}
+
+.prose .tabbed-set > .tabbed-labels {
+  display: flex;
+  background: var(--c-surface-2);
+  border-bottom: 1px solid var(--c-border);
+  margin: 0;
+  padding: 0 0.25rem;
+  gap: 0;
+}
+
+.prose .tabbed-set > .tabbed-labels > label {
+  padding: 0.55rem 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--c-fg-subtle);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+
+.prose .tabbed-set > .tabbed-labels > label:hover {
+  color: var(--c-fg);
+  background: var(--c-surface-3);
+}
+
+/* Active label: highlighted via JS (.is-active class) */
+.prose .tabbed-set > .tabbed-labels > label.is-active {
+  color: var(--c-accent);
+  border-bottom-color: var(--c-accent);
+  background: transparent;
+}
+
+.prose .tabbed-set > .tabbed-content {
+  padding: 0;
+}
+
+/* All tab blocks hidden by default; JS adds .is-active to show one */
+.prose .tabbed-set > .tabbed-content > .tabbed-block {
+  display: none;
+  padding: 0.75rem 1rem;
+}
+
+.prose .tabbed-set > .tabbed-content > .tabbed-block.is-active {
+  display: block;
+}
+
+/* Code blocks inside tabs: strip chrome, go edge-to-edge horizontally */
+.prose .tabbed-set .highlight {
+  margin: 0.75rem -1rem;
+}
+
+.prose .tabbed-set .highlight pre {
+  border-radius: 0;
+  border-left: none;
+  margin: 0;
+}
+
+/* Code-only tab: flush on all sides */
+.prose .tabbed-set .tabbed-block > .highlight:only-child {
+  margin: -0.75rem -1rem;
+}
+
+/* Code is first child: flush against tab header */
+.prose .tabbed-set .tabbed-block > .highlight:first-child {
+  margin-top: -0.75rem;
+}
+
+/* Code is last child: flush against container bottom */
+.prose .tabbed-set .tabbed-block > .highlight:last-child {
+  margin-bottom: -0.75rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* ExampleCard extras (layers on top of .tabbed-set)                   */
+/* ------------------------------------------------------------------ */
+.example-card {
+  margin: 1.5rem 0;
+}
+
+.example-card .tabbed-block > .highlight pre {
+  max-height: 31.25rem;
+  overflow: auto;
+}
+
+.example-card .tabbed-block pre {
+  font-size: 0.875rem;
+}
+
+/* Demo tab: no padding so the iframe fills edge-to-edge */
+.prose .tabbed-set.example-card > .tabbed-content > .tabbed-block--demo {
+  padding: 0;
+}
+
+.example-demo-frame {
+  width: 100%;
+  min-height: 25rem;
+  border: none;
+  background: var(--c-bg);
+  display: block;
+}
+
+/* ------------------------------------------------------------------ */
+/* People page: avatar grid (UserGrid component)                       */
+/* ------------------------------------------------------------------ */
+.user-list {
+  display: flex;
+  justify-content: center;
+  padding-top: 1.5rem;
+  gap: 2.5em;
+  flex-wrap: wrap;
+  text-align: center;
+}
+
+.user a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 1.05rem;
+  color: var(--c-fg);
+  text-decoration: none;
+}
+
+.user a:hover .title {
+  color: var(--c-link);
+}
+
+.user .avatar-wrapper {
+  width: 6em;
+  height: 6em;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.user .avatar-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.user .title {
+  margin: 0.5rem 0 0.25rem;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.user .info {
+  font-size: 0.85rem;
+  color: var(--c-fg-subtle);
+}
+
+/* ------------------------------------------------------------------ */
+/* pymdownx.details                                                    */
+/* ------------------------------------------------------------------ */
+.prose details {
+  margin: 1rem 0;
+  border: 1px solid var(--c-border);
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+}
+
+.prose details summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--c-fg);
+  padding: 0.25rem 0;
+}
+
+.prose details[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Abbreviations                                                       */
+/* ------------------------------------------------------------------ */
+.prose abbr[title] {
+  text-decoration: underline dotted;
+  cursor: help;
+}
+
+/* ------------------------------------------------------------------ */
+/* Selection highlight                                                 */
+/* ------------------------------------------------------------------ */
+::selection {
+  background: var(--c-accent-dim);
+  color: var(--c-fg);
+}
+
+/* ================================================================== */
+/* LAYOUT CHROME (Phase 3a Batch 2)                                    */
+/* Spec: docs_site/design/DESIGN_spike_11.md sections 2-7.             */
+/* ================================================================== */
+
+/* ------------------------------------------------------------------ */
+/* Top header (sticky 4rem)                                            */
+/* ------------------------------------------------------------------ */
+.djc-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4rem;
+  z-index: 50;
+  /* Opaque on purpose - do NOT reintroduce a translucent `backdrop-filter:
+     blur()` here. A blurred backdrop on a fixed header re-rasterizes the
+     content scrolling underneath it every frame; profiling showed that spiking
+     worst-case frame time to ~250ms during scroll (visible jank), vs ~29ms once
+     the header is opaque. The frosted-glass look is not worth the dropped frames. */
+  background: var(--c-bg);
+  border-bottom: 1px solid var(--c-border);
+}
+
+.djc-header__inner {
+  max-width: 80rem;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--page-gutter);
+  gap: 1.5rem;
+}
+
+/* Hamburger: drawer toggle, only rendered useful below 768px */
+.djc-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-fg-muted);
+  padding: 0.4rem;
+  margin-left: -0.4rem;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.djc-hamburger:hover {
+  color: var(--c-fg);
+}
+
+.djc-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--c-fg);
+  flex-shrink: 0;
+}
+
+.djc-logo__wordmark {
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.djc-header__nav {
+  display: flex;
+  gap: 1.25rem;
+  margin-left: 1.5rem;
+}
+
+.djc-header__nav a {
+  color: var(--c-fg-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.15s;
+}
+
+.djc-header__nav a:hover {
+  color: var(--c-fg);
+}
+
+.djc-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: auto;
+}
+
+/* Theme picker: 3 buttons in a pill-shaped group */
+.djc-theme-picker {
+  display: flex;
+  align-items: center;
+  background: var(--c-surface-2);
+  border-radius: 0.375rem;
+  padding: 2px;
+  gap: 1px;
+}
+
+.djc-theme-picker__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem 0.4rem;
+  border-radius: 0.25rem;
+  color: var(--c-fg-subtle);
+  transition: color 0.15s, background 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.djc-theme-picker__btn:hover {
+  color: var(--c-fg);
+}
+
+.djc-theme-picker__btn.is-active {
+  background: var(--c-bg);
+  color: var(--c-accent);
+  box-shadow: 0 1px 2px oklch(0% 0 0 / 8%);
+}
+
+/* Version picker: a native <select> styled to match the old version badge.
+   Populated from versions.json by site.js; a bare control until then. */
+.djc-version-picker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.djc-version-picker__select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--c-fg-subtle);
+  background: var(--c-surface-2);
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  padding: 0.3em 2em 0.3em 0.5em;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.djc-version-picker__select:hover {
+  color: var(--c-fg);
+  border-color: var(--c-border);
+}
+
+.djc-version-picker__select:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 1px;
+}
+
+/* Caret sits over the select's right padding; clicks pass through to the select. */
+.djc-version-picker__caret {
+  position: absolute;
+  right: 0.45em;
+  color: var(--c-fg-subtle);
+  pointer-events: none;
+}
+
+.djc-gh-link,
+.djc-social-link {
+  color: var(--c-fg-muted);
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.djc-gh-link:hover,
+.djc-social-link:hover {
+  color: var(--c-fg);
+}
+
+/* ------------------------------------------------------------------ */
+/* Header overflow menu (mobile home for version + theme + GitHub)     */
+/* ------------------------------------------------------------------ */
+.djc-overflow {
+  position: relative;
+  display: none; /* shown below 768px */
+}
+
+.djc-overflow__btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--c-fg-muted);
+  padding: 0.4rem;
+  margin-right: -0.4rem;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.djc-overflow__btn:hover {
+  color: var(--c-fg);
+}
+
+.djc-overflow__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  display: none;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 12.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: 0.5rem;
+  box-shadow: var(--shadow-card-hover);
+  z-index: 80;
+}
+
+.djc-overflow.is-open .djc-overflow__menu {
+  display: flex;
+}
+
+.djc-overflow__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.djc-overflow__label {
+  font-size: 0.8rem;
+  color: var(--c-fg-subtle);
+}
+
+.djc-overflow__link {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--c-fg-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.djc-overflow__link:hover {
+  color: var(--c-fg);
+}
+
+/* Text variant of the theme-picker buttons (used inside the overflow menu) */
+.djc-theme-picker__btn--text {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* 3-column layout                                                     */
+/* ------------------------------------------------------------------ */
+.djc-layout {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-top: 4rem; /* below fixed header */
+  padding-left: var(--page-gutter);
+  padding-right: var(--page-gutter);
+  display: flex;
+  min-height: calc(100vh - 4rem);
+}
+
+/* ------------------------------------------------------------------ */
+/* Left sidebar                                                        */
+/* ------------------------------------------------------------------ */
+.djc-sidebar {
+  width: 17.5rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 4rem;
+  height: calc(100vh - 4rem);
+  overflow-y: auto;
+  padding: 1.5rem 0;
+}
+
+.djc-sidebar__nav {
+  padding: 0 1rem;
+}
+
+/* Drawer-only top-nav links (the header nav is hidden below 768px) */
+.djc-sidebar__topnav {
+  display: none;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0 1rem 1rem;
+  padding: 0 0.75rem 1rem;
+  border-bottom: 1px solid var(--c-border);
+}
+
+.djc-sidebar__topnav a {
+  color: var(--c-fg);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.3rem 0;
+}
+
+.djc-sidebar__section {
+  margin-bottom: 1.5rem;
+}
+
+.djc-sidebar__label {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-fg-subtle);
+  margin-bottom: 0.5rem;
+  padding: 0 0.75rem;
+  font-weight: 600;
+}
+
+a.djc-sidebar__label {
+  display: block;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+a.djc-sidebar__label:hover {
+  color: var(--c-fg);
+}
+
+.djc-sidebar__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.djc-sidebar__link {
+  display: block;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.85rem;
+  color: var(--c-fg-muted);
+  text-decoration: none;
+  border-radius: 0.25rem;
+  transition: color 0.15s, background 0.15s;
+}
+
+.djc-sidebar__link:hover {
+  color: var(--c-fg);
+  background: var(--c-surface);
+}
+
+.djc-sidebar__link.is-active {
+  color: var(--c-accent);
+  background: var(--c-accent-dim);
+  font-weight: 500;
+}
+
+/* Standalone top-level page link: a section that is just a page (no children).
+   Rendered as a link, never as an uppercase category label, so appearance
+   encodes behavior - UPPERCASE = inert category, normal text = clickable page. */
+.djc-sidebar__link--top {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--c-fg);
+}
+
+/* Consecutive standalone links stack tightly; a single gap separates the
+   standalone block from the first category section that follows it. */
+.djc-sidebar__section--standalone {
+  margin-bottom: 0.1rem;
+}
+
+.djc-sidebar__section--standalone + .djc-sidebar__section:not(.djc-sidebar__section--standalone) {
+  margin-top: 1.5rem;
+}
+
+/* Sub-groups (collapsible) */
+.djc-sidebar__group {
+  margin-bottom: 0.25rem;
+}
+
+.djc-sidebar__group-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--c-fg-muted);
+  text-align: left;
+  border-radius: 0.25rem;
+  transition: color 0.15s;
+}
+
+.djc-sidebar__group-label:hover {
+  color: var(--c-fg);
+}
+
+.djc-sidebar__caret {
+  font-size: 1rem;
+  color: var(--c-fg-subtle);
+  transition: transform 0.15s;
+}
+
+.djc-sidebar__group[data-open="false"] .djc-sidebar__caret {
+  transform: rotate(-90deg);
+}
+
+/* Indent items inside a group */
+.djc-sidebar__group .djc-sidebar__items {
+  padding-left: 0.75rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Resize handles (between sidebar/content and content/TOC)            */
+/* ------------------------------------------------------------------ */
+.djc-resize-handle {
+  width: 9px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  transition: background 0.15s;
+  border-left: 1px solid var(--c-border-subtle);
+  margin-left: 4px;
+}
+
+.djc-resize-handle:hover,
+.djc-resize-handle.is-dragging {
+  background: var(--c-accent-dim);
+}
+
+/* Grip icon: 4x2 dot grid, sticky at viewport center */
+.djc-resize-handle::after {
+  content: '·\00a0·\A·\00a0·\A·\00a0·\A·\00a0·';
+  white-space: pre;
+  position: sticky;
+  top: 50vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 8px;
+  letter-spacing: 0;
+  color: var(--c-fg-subtle);
+  pointer-events: none;
+  opacity: 0.8;
+  transition: opacity 0.15s, color 0.15s;
+  transform: translate(-5px, 10px);
+}
+
+.djc-resize-handle:hover::after,
+.djc-resize-handle.is-dragging::after {
+  opacity: 1;
+  color: var(--c-accent);
+}
+
+/* Widen the hit area without affecting visual width */
+.djc-resize-handle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -3px;
+  right: -3px;
+}
+
+/* Hide resize handles when the panel they control is hidden */
+@media (max-width: 1024px) {
+  .djc-resize-handle[data-target="djc-toc"] {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .djc-resize-handle {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Content area                                                        */
+/* ------------------------------------------------------------------ */
+.djc-content {
+  flex: 1;
+  min-width: 0;
+  max-width: 45rem;
+  padding: 2rem 2rem 4rem;
+  margin: 0 auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Breadcrumbs                                                         */
+/* ------------------------------------------------------------------ */
+.djc-breadcrumbs {
+  font-size: 0.8rem;
+  color: var(--c-fg-subtle);
+  margin-bottom: 0.75rem;
+}
+
+.djc-breadcrumbs a {
+  color: var(--c-fg-subtle);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.djc-breadcrumbs a:hover {
+  color: var(--c-link);
+}
+
+.djc-breadcrumbs__sep {
+  margin: 0 0.35rem;
+  color: var(--c-fg-subtle);
+}
+
+.djc-breadcrumbs__current {
+  color: var(--c-fg-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Page nav (prev / next)                                              */
+/* ------------------------------------------------------------------ */
+.djc-page-nav {
+  display: flex;
+  gap: 1rem;
+  margin-top: 4rem;
+}
+
+.djc-page-nav__card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--c-border);
+  border-radius: 0.5rem;
+  text-decoration: none;
+  color: var(--c-fg-muted);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.djc-page-nav__card:hover {
+  border-color: var(--c-link);
+  box-shadow: var(--shadow-card-hover);
+  color: var(--c-fg);
+}
+
+.djc-page-nav__direction {
+  font-size: 0.8rem;
+  color: var(--c-fg-subtle);
+}
+
+.djc-page-nav__next {
+  text-align: right;
+}
+
+.djc-page-nav__placeholder {
+  border: none;
+}
+
+/* ------------------------------------------------------------------ */
+/* Footer                                                              */
+/* ------------------------------------------------------------------ */
+.djc-footer {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--c-border);
+  font-size: 0.85rem;
+  color: var(--c-fg-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* "Edit this page on GitHub" sits at the top of the footer, set apart from the
+   muted version/last-updated metadata below it. */
+.djc-footer__edit {
+  margin-bottom: 0.25rem;
+}
+
+.djc-footer__edit a {
+  /* accent-hover (not accent) so the link text meets WCAG AA contrast on the bg */
+  color: var(--c-accent-hover);
+}
+
+/* ------------------------------------------------------------------ */
+/* Right-rail TOC                                                      */
+/* ------------------------------------------------------------------ */
+.djc-toc {
+  width: 15rem;
+  flex-shrink: 0;
+  position: sticky;
+  top: 4rem;
+  height: calc(100vh - 4rem);
+  overflow-y: auto;
+  padding: 2rem 1rem 2rem 1.5rem;
+}
+
+.djc-toc__label {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-fg-subtle);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.djc-toc__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.djc-toc__item {
+  margin-bottom: 0.2rem;
+}
+
+.djc-toc__item--3 {
+  padding-left: 1rem;
+}
+
+.djc-toc__link {
+  display: block;
+  padding: 0.2rem 0;
+  font-size: 0.8rem;
+  color: var(--c-fg-subtle);
+  text-decoration: none;
+  transition: color 0.15s;
+  line-height: 1.4;
+}
+
+.djc-toc__link:hover {
+  color: var(--c-fg);
+}
+
+.djc-toc__link.is-active {
+  color: var(--c-accent);
+  font-weight: 500;
+}
+
+/* ------------------------------------------------------------------ */
+/* Reference TOC: collapsible class -> members, with symbol badges     */
+/* ------------------------------------------------------------------ */
+.djc-toc__row,
+.djc-toc__subitem {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+/* Reserve a left gutter on every top-level row so labels align whether or not
+   the row has a caret (the caret sits in the gutter, absolutely positioned). */
+.djc-toc__row {
+  position: relative;
+  padding-left: 1.1rem;
+}
+
+.djc-toc__row .djc-toc__link,
+.djc-toc__subitem .djc-toc__link {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.djc-toc__toggle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--c-fg-subtle);
+}
+
+.djc-toc__toggle::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-left: 4px solid currentColor;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  transition: transform 0.15s;
+}
+
+.djc-toc__item--expanded > .djc-toc__row > .djc-toc__toggle::before {
+  transform: rotate(90deg);
+}
+
+.djc-toc__toggle:hover {
+  color: var(--c-fg);
+}
+
+.djc-toc__sublist {
+  list-style: none;
+  margin: 0.1rem 0 0.3rem;
+  padding-left: 1.2rem;
+}
+
+/* Members fold away by default; the active class (scroll-spy) or a manual toggle
+   opens them. Plain content subsections are not collapsible, so they stay shown. */
+.djc-toc__item--collapsible .djc-toc__sublist {
+  display: none;
+}
+
+.djc-toc__item--collapsible.djc-toc__item--expanded .djc-toc__sublist {
+  display: block;
+}
+
+.djc-toc__subitem {
+  margin-bottom: 0.1rem;
+}
+
+/* Symbol-type badges in the rail. Colors reuse the in-page doc-symbol vars; the
+   label comes from ::after, like the in-page badge (the <span> is empty). */
+.djc-toc .doc-symbol,
+.djc-toc-mobile .doc-symbol {
+  flex-shrink: 0;
+  display: inline-block;
+  border-radius: 0.25em;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0 0.35em;
+}
+
+.djc-toc .doc-symbol-class,
+.djc-toc-mobile .doc-symbol-class {
+  color: var(--doc-symbol-class-fg);
+  background-color: var(--doc-symbol-class-bg);
+}
+.djc-toc .doc-symbol-class::after,
+.djc-toc-mobile .doc-symbol-class::after { content: "class"; }
+
+.djc-toc .doc-symbol-function,
+.djc-toc-mobile .doc-symbol-function,
+.djc-toc .doc-symbol-method,
+.djc-toc-mobile .doc-symbol-method {
+  color: var(--doc-symbol-function-fg);
+  background-color: var(--doc-symbol-function-bg);
+}
+.djc-toc .doc-symbol-function::after,
+.djc-toc-mobile .doc-symbol-function::after { content: "func"; }
+.djc-toc .doc-symbol-method::after,
+.djc-toc-mobile .doc-symbol-method::after { content: "meth"; }
+
+.djc-toc .doc-symbol-attribute,
+.djc-toc-mobile .doc-symbol-attribute {
+  color: var(--doc-symbol-attribute-fg);
+  background-color: var(--doc-symbol-attribute-bg);
+}
+.djc-toc .doc-symbol-attribute::after,
+.djc-toc-mobile .doc-symbol-attribute::after { content: "attr"; }
+
+.djc-toc .doc-symbol-module,
+.djc-toc-mobile .doc-symbol-module {
+  color: var(--doc-symbol-module-fg);
+  background-color: var(--doc-symbol-module-bg);
+}
+.djc-toc .doc-symbol-module::after,
+.djc-toc-mobile .doc-symbol-module::after { content: "module"; }
+
+/* ------------------------------------------------------------------ */
+/* Mobile TOC: <details> disclosure shown when the right rail is gone  */
+/* ------------------------------------------------------------------ */
+.djc-toc-mobile {
+  display: none;
+  margin: 0 0 1.5rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--c-border);
+  border-radius: 0.5rem;
+}
+
+.djc-toc-mobile summary {
+  cursor: pointer;
+  padding: 0.25rem 0;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--c-fg-subtle);
+  font-weight: 600;
+  user-select: none;
+}
+
+.djc-toc-mobile[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Drawer overlay (dimmed backdrop behind the open mobile drawer)      */
+/* ------------------------------------------------------------------ */
+.djc-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: oklch(0% 0 0 / 40%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+body.djc-drawer-open .djc-drawer-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ------------------------------------------------------------------ */
+/* Responsive tiers (spike 11.11 section 2.2)                          */
+/*   >= 1280px       full geometry, 48px gutters                       */
+/*   1024px - 1280px sidebar + TOC visible, content flexes             */
+/*   768px - 1024px  TOC folds into <details>; sidebar stays           */
+/*   < 768px         sidebar becomes drawer; header collapses          */
+/* ------------------------------------------------------------------ */
+@media (max-width: 1024px) {
+  .djc-toc {
+    display: none;
+  }
+
+  .djc-toc-mobile {
+    display: block;
+  }
+}
+
+@media (min-width: 768px) {
+  /* Overlay is a drawer affordance only */
+  .djc-drawer-overlay {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Sidebar becomes an off-canvas drawer, slid in via body.djc-drawer-open */
+  .djc-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    width: min(20rem, 85vw);
+    padding: 1rem 0;
+    background: var(--c-bg);
+    border-right: 1px solid var(--c-border);
+    z-index: 70;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+  }
+
+  body.djc-drawer-open .djc-sidebar {
+    transform: translateX(0);
+  }
+
+  /* Lock background scroll while the drawer is open */
+  body.djc-drawer-open {
+    overflow: hidden;
+  }
+
+  .djc-sidebar__topnav {
+    display: flex;
+  }
+
+  .djc-hamburger {
+    display: flex;
+  }
+
+  .djc-header__nav {
+    display: none;
+  }
+
+  /* Header actions collapse into the overflow menu */
+  .djc-header__actions > .djc-theme-picker,
+  .djc-header__actions > .djc-version-picker,
+  .djc-header__actions > .djc-gh-link,
+  .djc-header__actions > .djc-social-link {
+    display: none;
+  }
+
+  .djc-overflow {
+    display: block;
+  }
+
+  /* The layout gutter provides the side padding on mobile */
+  .djc-content {
+    padding: 1.5rem 0 3rem;
+  }
+
+  .djc-page-nav {
+    flex-direction: column;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Chrome icon sizing                                                  */
+/* ------------------------------------------------------------------ */
+/* Icons carry fixed px width/height attributes; size them in rem here so they
+   track the root 90% density like the rest of the UI - otherwise they'd stay
+   full-size while the text and chrome around them shrank. (The search input
+   icon is sized in search.css alongside its other modal styles.) */
+.djc-version-picker__caret {
+  width: 0.875rem; /* was 14px */
+  height: 0.875rem;
+}
+
+.djc-search-trigger__icon,
+.djc-theme-picker__btn > svg {
+  width: 1rem; /* was 16px */
+  height: 1rem;
+}
+
+.djc-hamburger > svg,
+.djc-gh-link > svg,
+.djc-social-link > svg,
+.djc-overflow__btn > svg,
+.djc-back-to-top > svg {
+  width: 1.25rem; /* was 20px */
+  height: 1.25rem;
+}
+
+/* ------------------------------------------------------------------ */
+/* Back-to-top button (revealed by site.js after scrolling down)       */
+/* ------------------------------------------------------------------ */
+.djc-back-to-top {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--c-border);
+  border-radius: 50%;
+  background: var(--c-surface);
+  color: var(--c-fg-muted);
+  cursor: pointer;
+  box-shadow: var(--shadow-card-hover);
+  /* Above page content, but below the mobile nav drawer's overlay (60) and the
+     search modal so they cover the button when open. */
+  z-index: 40;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+/* `hidden` toggles visibility; only lay the button out when shown, so this
+   display:flex can't override the [hidden] attribute's display:none. */
+.djc-back-to-top:not([hidden]) {
+  display: flex;
+}
+
+.djc-back-to-top:hover {
+  color: var(--c-fg);
+  border-color: var(--c-fg-subtle);
+  background: var(--c-surface-2);
+}
+
+/* ------------------------------------------------------------------ */
+/* API reference (griffe-rendered symbols)                            */
+/* ------------------------------------------------------------------ */
+
+/* Per-kind symbol colors, matching the old mkdocstrings/Material palette so
+   the class/func/attr/module color-coding readers know carries over. */
+:root {
+  --doc-symbol-class-fg: #0550ae;
+  --doc-symbol-class-bg: #0550ae1a;
+  --doc-symbol-function-fg: #8250df;
+  --doc-symbol-function-bg: #8250df1a;
+  --doc-symbol-attribute-fg: #953800;
+  --doc-symbol-attribute-bg: #9538001a;
+  --doc-symbol-module-fg: #5cad0f;
+  --doc-symbol-module-bg: #5cad0f1a;
+}
+
+[data-theme="dark"] {
+  --doc-symbol-class-fg: #79c0ff;
+  --doc-symbol-class-bg: #79c0ff1a;
+  --doc-symbol-function-fg: #d2a8ff;
+  --doc-symbol-function-bg: #d2a8ff1a;
+  --doc-symbol-attribute-fg: #ffa657;
+  --doc-symbol-attribute-bg: #ffa6571a;
+  --doc-symbol-module-fg: #baff79;
+  --doc-symbol-module-bg: #baff791a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --doc-symbol-class-fg: #79c0ff;
+    --doc-symbol-class-bg: #79c0ff1a;
+    --doc-symbol-function-fg: #d2a8ff;
+    --doc-symbol-function-bg: #d2a8ff1a;
+    --doc-symbol-attribute-fg: #ffa657;
+    --doc-symbol-attribute-bg: #ffa6571a;
+    --doc-symbol-module-fg: #baff79;
+    --doc-symbol-module-bg: #baff791a;
+  }
+}
+
+/* Symbol-type badge: a small monospace pill whose label comes from ::after,
+   so the empty <span> the renderer emits stays content-free. */
+.prose .doc-symbol {
+  display: inline-block;
+  border-radius: 0.25em;
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+  font-weight: 600;
+  line-height: 1.5;
+  padding: 0 0.4em;
+  vertical-align: middle;
+}
+
+.prose .doc-symbol-heading {
+  margin-right: 0.5em;
+}
+
+.prose .doc-symbol-class {
+  color: var(--doc-symbol-class-fg);
+  background-color: var(--doc-symbol-class-bg);
+}
+.prose .doc-symbol-class::after { content: "class"; }
+
+.prose .doc-symbol-function {
+  color: var(--doc-symbol-function-fg);
+  background-color: var(--doc-symbol-function-bg);
+}
+.prose .doc-symbol-function::after { content: "func"; }
+
+.prose .doc-symbol-method {
+  color: var(--doc-symbol-function-fg);
+  background-color: var(--doc-symbol-function-bg);
+}
+.prose .doc-symbol-method::after { content: "meth"; }
+
+.prose .doc-symbol-attribute {
+  color: var(--doc-symbol-attribute-fg);
+  background-color: var(--doc-symbol-attribute-bg);
+}
+.prose .doc-symbol-attribute::after { content: "attr"; }
+
+.prose .doc-symbol-module {
+  color: var(--doc-symbol-module-fg);
+  background-color: var(--doc-symbol-module-bg);
+}
+.prose .doc-symbol-module::after { content: "module"; }
+
+/* Symbol heading: the name reads as code (it is one). */
+.prose .doc-heading .doc-object-name {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+/* "Bases: ..." line and source link sit just under the heading, small + muted. */
+.prose .doc-class-bases {
+  font-size: 0.85em;
+  color: var(--c-fg-muted);
+  margin: 0.25rem 0 0;
+}
+
+.prose .doc-source-link {
+  font-size: 0.85em;
+}
+
+/* Space between consecutive symbol entries on a reference page. */
+.prose .doc-object + .doc-object {
+  margin-top: 1rem;
+}
+
+.prose .doc-contents {
+  margin-top: 0.5rem;
+}
+
+/* Signature block: a code-like box; long signatures wrap rather than scroll. */
+.prose .doc-signature {
+  margin: 0.5rem 0 1rem;
+}
+
+.prose .doc-signature pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.prose .doc-type-link {
+  color: var(--c-link);
+  /* underline like other in-body links (WCAG "links rely on color") */
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.prose .doc-type-link:hover {
+  text-decoration: underline;
+}
+
+/* Parameters table. */
+.prose .doc-params {
+  width: 100%;
+  margin: 0.5rem 0 1rem;
+}
+
+.prose .doc-params td:first-child {
+  white-space: nowrap;
+}
+
+.prose .doc-param-default {
+  color: var(--c-fg-muted);
+  font-size: 0.9em;
+}
+
+/* Returns / Raises / Examples section labels. */
+.prose .doc-section {
+  margin: 0.75rem 0;
+}
+
+.prose .doc-section-title {
+  margin-bottom: 0.25rem;
+  color: var(--c-fg-muted);
+  font-size: 0.8em;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* Member grouping (Attributes / Methods / Classes). */
+.prose .doc-members {
+  margin-top: 1.5rem;
+}
+
+.prose .doc-group-label {
+  margin: 1.5rem 0 0.75rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--c-border-subtle);
+  color: var(--c-fg-muted);
+  font-size: 0.85em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.prose .doc-member {
+  margin: 0 0 2rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--c-border-subtle);
+}
+
+.prose .doc-member-heading {
+  margin: 0.5rem 0;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  scroll-margin-top: 5rem;
+}
+
+.prose .doc-label {
+  margin-left: 0.5em;
+  color: var(--c-fg-muted);
+  font-family: var(--font-mono);
+  font-size: 0.7em;
+}
+
+.prose .doc-unresolved {
+  color: var(--c-fg-muted);
+  font-style: italic;
+}

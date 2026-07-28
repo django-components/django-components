@@ -51,7 +51,7 @@ DEPS_STRATEGIES = ("document", "fragment", "simple", "prepend", "append", "ignor
 
 DependencyKind: TypeAlias = Literal["component", "variables", "core", "extra"]
 """
-Type for the kind of [`Dependency`](api.md#django_components.Dependency) objects.
+Type for the kind of [`Dependency`][Dependency] objects.
 
 - `"core"`: Required for Django Components library to work.
 - `"component"`: Dependency from a component's `Component.js` or `Component.css`.
@@ -204,25 +204,25 @@ class Script(Dependency):
 
     If `Script.url` is set, renders as `<script src="...">`, otherwise renders as `<script>...</script>`.
 
-    **Example:**
+    Examples:
+        ```python
+        from django_components import Script
 
-    ```python
-    from django_components import Script
+        script = Script(
+            content="console.log('Hello, world!');",
+            attrs={"type": "module"},
+            wrap=False,
+        )
+        ```
 
-    script = Script(
-        content="console.log('Hello, world!');",
-        attrs={"type": "module"},
-        wrap=False,
-    )
-    ```
+        becomes
 
-    becomes
+        ```html
+        <script type="module">
+            console.log('Hello, world!');
+        </script>
+        ```
 
-    ```html
-    <script type="module">
-        console.log('Hello, world!');
-    </script>
-    ```
     """
 
     wrap: bool = True
@@ -317,22 +317,22 @@ class Style(Dependency):
     If `Style.url` is set, renders as `<link rel="stylesheet" href="...">`,
     otherwise renders as `<style>...</style>`.
 
-    **Example:**
+    Examples:
+        ```python
+        from django_components import Style
 
-    ```python
-    from django_components import Style
+        style = Style(
+            url="/static/style.css",
+            attrs={"media": "print"},
+        )
+        ```
 
-    style = Style(
-        url="/static/style.css",
-        attrs={"media": "print"},
-    )
-    ```
+        becomes
 
-    becomes
+        ```html
+        <link rel="stylesheet" href="/static/style.css" media="print">
+        ```
 
-    ```html
-    <link rel="stylesheet" href="/static/style.css" media="print">
-    ```
     """
 
     def to_json(self) -> dict:
@@ -805,63 +805,60 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
 
     See [Rendering JS / CSS](../concepts/advanced/rendering_js_css.md).
 
-    **Args:**
+    Args:
+        content (str | bytes): The rendered HTML string that is searched for components, and
+            into which we insert the JS and CSS tags. Required.
+        strategy: Optional. Configure how to handle JS and CSS dependencies. Default is
+            `"document"`. Read more about
+            [Rendering strategies](../concepts/advanced/rendering_js_css.md#dependencies-strategies).
 
-    - `content` (str | bytes): The rendered HTML string that is searched for components, and
-        into which we insert the JS and CSS tags. Required.
+            There are six strategies:
 
-    - `strategy` - Optional. Configure how to handle JS and CSS dependencies. Default is
-        ``"document"``. Read more about
-        [Rendering strategies](../concepts/advanced/rendering_js_css.md#dependencies-strategies).
+            - [`"document"`](../concepts/advanced/rendering_js_css.md#document) (default for top-level)
+                - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
+                - Inserts extra script to allow `fragment` types to work.
+                - Assumes the HTML will be rendered in a JS-enabled browser.
+            - [`"fragment"`](../concepts/advanced/rendering_js_css.md#fragment)
+                - A lightweight HTML fragment to be inserted into a document.
+                - No JS / CSS included.
+            - [`"simple"`](../concepts/advanced/rendering_js_css.md#simple)
+                - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
+                - No extra script loaded.
+            - [`"prepend"`](../concepts/advanced/rendering_js_css.md#prepend)
+                - Insert JS / CSS before the rendered HTML.
+                - No extra script loaded.
+            - [`"append"`](../concepts/advanced/rendering_js_css.md#append)
+                - Insert JS / CSS after the rendered HTML.
+                - No extra script loaded.
+            - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore) (default when nested)
+                - Returns the content unchanged (no JS / CSS inserted).
 
-        There are six strategies:
+    Examples:
+        ```python
+        def my_view(request):
+            template = Template('''
+                {% load component_tags %}
+                <!doctype html>
+                <html>
+                    <head></head>
+                    <body>
+                        <h1>{{ table_name }}</h1>
+                        {% component "table" name=table_name / %}
+                    </body>
+                </html>
+            ''')
 
-        - [`"document"`](../concepts/advanced/rendering_js_css.md#document) (default for top-level)
-            - Smartly inserts JS / CSS into placeholders or into `<head>` and `<body>` tags.
-            - Inserts extra script to allow `fragment` types to work.
-            - Assumes the HTML will be rendered in a JS-enabled browser.
-        - [`"fragment"`](../concepts/advanced/rendering_js_css.md#fragment)
-            - A lightweight HTML fragment to be inserted into a document.
-            - No JS / CSS included.
-        - [`"simple"`](../concepts/advanced/rendering_js_css.md#simple)
-            - Smartly insert JS / CSS into placeholders or into `<head>` and `<body>` tags.
-            - No extra script loaded.
-        - [`"prepend"`](../concepts/advanced/rendering_js_css.md#prepend)
-            - Insert JS / CSS before the rendered HTML.
-            - No extra script loaded.
-        - [`"append"`](../concepts/advanced/rendering_js_css.md#append)
-            - Insert JS / CSS after the rendered HTML.
-            - No extra script loaded.
-        - [`"ignore"`](../concepts/advanced/rendering_js_css.md#ignore) (default when nested)
-            - Returns the content unchanged (no JS / CSS inserted).
+            html = template.render(
+                Context({
+                    "table_name": request.GET["name"],
+                })
+            )
 
-    **Example:**
+            # This inserts components' JS and CSS
+            processed_html = render_dependencies(html)
 
-    ```python
-    def my_view(request):
-        template = Template('''
-            {% load component_tags %}
-            <!doctype html>
-            <html>
-                <head></head>
-                <body>
-                    <h1>{{ table_name }}</h1>
-                    {% component "table" name=table_name / %}
-                </body>
-            </html>
-        ''')
-
-        html = template.render(
-            Context({
-                "table_name": request.GET["name"],
-            })
-        )
-
-        # This inserts components' JS and CSS
-        processed_html = render_dependencies(html)
-
-        return HttpResponse(processed_html)
-    ```
+            return HttpResponse(processed_html)
+        ```
 
     """
     if strategy not in DEPS_STRATEGIES:

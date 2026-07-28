@@ -218,27 +218,26 @@ def format_as_ascii_table(
     """
     Format a list of dictionaries as an ASCII table.
 
-    Example:
+    Examples:
+        ```python
+        data = [
+            {"name": "ProjectPage", "full_name": "project.pages.project.ProjectPage", "path": "./project/pages/project"},
+            {"name": "ProjectDashboard", "full_name": "project.components.dashboard.ProjectDashboard", "path": "./project/components/dashboard"},
+            {"name": "ProjectDashboardAction", "full_name": "project.components.dashboard_action.ProjectDashboardAction", "path": "./project/components/dashboard_action"},
+        ]
+        headers = ["name", "full_name", "path"]
+        print(format_as_ascii_table(data, headers))
+        ```
 
-    ```python
-    data = [
-        {"name": "ProjectPage", "full_name": "project.pages.project.ProjectPage", "path": "./project/pages/project"},
-        {"name": "ProjectDashboard", "full_name": "project.components.dashboard.ProjectDashboard", "path": "./project/components/dashboard"},
-        {"name": "ProjectDashboardAction", "full_name": "project.components.dashboard_action.ProjectDashboardAction", "path": "./project/components/dashboard_action"},
-    ]
-    headers = ["name", "full_name", "path"]
-    print(format_as_ascii_table(data, headers))
-    ```
+        Which prints:
 
-    Which prints:
-
-    ```txt
-    name                      full_name                                                     path
-    ==================================================================================================
-    ProjectPage               project.pages.project.ProjectPage                             ./project/pages/project
-    ProjectDashboard          project.components.dashboard.ProjectDashboard                 ./project/components/dashboard
-    ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAction    ./project/components/dashboard_action
-    ```
+        ```txt
+        name                      full_name                                                     path
+        ==================================================================================================
+        ProjectPage               project.pages.project.ProjectPage                             ./project/pages/project
+        ProjectDashboard          project.components.dashboard.ProjectDashboard                 ./project/components/dashboard
+        ProjectDashboardAction    project.components.dashboard_action.ProjectDashboardAction    ./project/components/dashboard_action
+        ```
 
     """  # noqa: E501
     # Calculate the width of each column

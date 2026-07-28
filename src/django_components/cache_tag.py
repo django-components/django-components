@@ -58,7 +58,7 @@ into the cache:
      (Redis + a deploy), the markers reference JS/CSS variable data that no
      longer exists, and the variables silently drop from the page.
 
-User-facing docs: `docs/concepts/advanced/component_caching.md`.
+User-facing docs: `docs_site/content/docs/concepts/advanced/component_caching.md`.
 v3 fix (cache `RenderObject` instead of string): #1650.
 """
 

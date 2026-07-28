@@ -11,75 +11,74 @@ from django_components.util.misc import gen_id
 
 class ProvideNode(BaseNode):
     """
-    The [`{% provide %}`](#provide) tag is part of the "provider" part of
+    The [`{% provide %}`][provide] tag is part of the "provider" part of
     the [provide / inject feature](../concepts/advanced/provide_inject.md).
 
     Pass kwargs to this tag to define the provider's data.
 
     Any components defined within the `{% provide %}..{% endprovide %}` tags will be able to access this data
-    with [`Component.inject()`](api.md#django_components.Component.inject).
+    with [`Component.inject()`][Component.inject].
 
     This is similar to React's [`ContextProvider`](https://react.dev/learn/passing-data-deeply-with-context),
     or Vue's [`provide()`](https://vuejs.org/guide/components/provide-inject).
 
-    **Args:**
+    Args:
+        name (str, required): Provider name. This is the name you will then use in
+            [`Component.inject()`][Component.inject].
+        **kwargs: Any extra kwargs will be passed as the provided data.
 
-    - `name` (str, required): Provider name. This is the name you will then use in
-        [`Component.inject()`](api.md#django_components.Component.inject).
-    - `**kwargs`: Any extra kwargs will be passed as the provided data.
+    Examples:
+        Provide the "user_data" in parent component:
 
-    **Example:**
+        ```djc_py
+        @register("parent")
+        class Parent(Component):
+            template = \"\"\"
+              <div>
+                {% provide "user_data" user=user %}
+                  {% component "child" / %}
+                {% endprovide %}
+              </div>
+            \"\"\"
 
-    Provide the "user_data" in parent component:
+            def get_template_data(self, args, kwargs, slots, context):
+                return {
+                    "user": kwargs["user"],
+                }
+        ```
 
-    ```djc_py
-    @register("parent")
-    class Parent(Component):
-        template = \"\"\"
-          <div>
-            {% provide "user_data" user=user %}
-              {% component "child" / %}
-            {% endprovide %}
-          </div>
-        \"\"\"
+        Since the "child" component is used within the `{% provide %} / {% endprovide %}` tags,
+        we can request the "user_data" using `Component.inject("user_data")`:
 
-        def get_template_data(self, args, kwargs, slots, context):
-            return {
-                "user": kwargs["user"],
-            }
-    ```
+        ```djc_py
+        @register("child")
+        class Child(Component):
+            template = \"\"\"
+              <div>
+                User is: {{ user }}
+              </div>
+            \"\"\"
 
-    Since the "child" component is used within the `{% provide %} / {% endprovide %}` tags,
-    we can request the "user_data" using `Component.inject("user_data")`:
+            def get_template_data(self, args, kwargs, slots, context):
+                user = self.inject("user_data").user
+                return {
+                    "user": user,
+                }
+        ```
 
-    ```djc_py
-    @register("child")
-    class Child(Component):
-        template = \"\"\"
-          <div>
-            User is: {{ user }}
-          </div>
-        \"\"\"
+        Notice that the keys defined on the [`{% provide %}`][provide] tag are then accessed as attributes
+        when accessing them with [`Component.inject()`][Component.inject].
 
-        def get_template_data(self, args, kwargs, slots, context):
-            user = self.inject("user_data").user
-            return {
-                "user": user,
-            }
-    ```
+        ✅ Do this
+        ```python
+        user = self.inject("user_data").user
+        ```
 
-    Notice that the keys defined on the [`{% provide %}`](#provide) tag are then accessed as attributes
-    when accessing them with [`Component.inject()`](api.md#django_components.Component.inject).
+        ❌ Don't do this
+        ```python
+        user = self.inject("user_data")["user"]
+        ```
 
-    ✅ Do this
-    ```python
-    user = self.inject("user_data").user
-    ```
-
-    ❌ Don't do this
-    ```python
-    user = self.inject("user_data")["user"]
-    ```
     """
 
     tag = "provide"

@@ -34,25 +34,25 @@ def trace(message: str, *args: Any, **kwargs: Any) -> None:
 
     To display TRACE logs, set the logging level to 5.
 
-    Example:
-    ```py
-    LOGGING = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "handlers": {
-            "console": {
-                "class": "logging.StreamHandler",
-                "stream": sys.stdout,
+    Examples:
+        ```py
+        LOGGING = {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler",
+                    "stream": sys.stdout,
+                },
             },
-        },
-        "loggers": {
-            "django_components": {
-                "level": 5,
-                "handlers": ["console"],
+            "loggers": {
+                "django_components": {
+                    "level": 5,
+                    "handlers": ["console"],
+                },
             },
-        },
-    }
-    ```
+        }
+        ```
 
     """
     if actual_trace_level_num == -1:

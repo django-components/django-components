@@ -10,7 +10,7 @@ class TagProtectedError(Exception):
     """
     The way the [`TagFormatter`](./../concepts/advanced/tag_formatters.md) works is that,
     based on which start and end tags are used for rendering components,
-    the [`ComponentRegistry`](./api.md#django_components.ComponentRegistry) behind the scenes
+    the [`ComponentRegistry`][ComponentRegistry] behind the scenes
     [un-/registers the template tags](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#registering-the-tag)
     with the associated instance of Django's
     [`Library`](https://docs.djangoproject.com/en/5.2/howto/custom-template-tags/#code-layout).
@@ -23,7 +23,7 @@ class TagProtectedError(Exception):
     {% endtable %}
     ```
 
-    Then [`ComponentRegistry`](./api.md#django_components.ComponentRegistry)
+    Then [`ComponentRegistry`][ComponentRegistry]
     registers the tag `table` onto the Django's Library instance.
 
     However, that means that if we registered a component `"slot"`, then we would overwrite

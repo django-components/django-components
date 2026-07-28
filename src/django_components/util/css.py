@@ -10,14 +10,14 @@ def is_css_func(value: str) -> bool:
     CSS functions follow the pattern: one or more alphanumeric characters (or hyphens/underscores)
     followed by an opening parenthesis.
 
-    **Examples:**
+    Examples:
+        - `calc(100% - 20px)` -> True
+        - `var(--color)` -> True
+        - `rgba(255, 0, 0, 0.5)` -> True
+        - `linear-gradient(to right, red, blue)` -> True
+        - `Hello World` -> False
+        - `red` -> False
 
-    - `calc(100% - 20px)` -> True
-    - `var(--color)` -> True
-    - `rgba(255, 0, 0, 0.5)` -> True
-    - `linear-gradient(to right, red, blue)` -> True
-    - `Hello World` -> False
-    - `red` -> False
     """
     return bool(CSS_FUNC_PATTERN.match(value.strip()))
 

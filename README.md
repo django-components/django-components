@@ -572,7 +572,7 @@ def test_my_table():
 - **Detailed tracing logs to supply AI-agents with context**: The logs include component and slot names and IDs, and their position in the tree.
 
 <div style="text-align: center;">
-<img src="https://github.com/django-components/django-components/blob/master/docs/images/debug-highlight-slots.png?raw=true" alt="Component debugging visualization showing slot highlighting" width="500" style="margin: auto;">
+<img src="https://github.com/django-components/django-components/blob/master/docs_site/content/docs/images/debug-highlight-slots.png?raw=true" alt="Component debugging visualization showing slot highlighting" width="500" style="margin: auto;">
 </div>
 
 ### Sharing components

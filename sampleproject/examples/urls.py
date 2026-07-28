@@ -8,7 +8,7 @@ from .utils import discover_example_modules
 from .views import ExamplesIndexPage
 
 
-# For each example in `docs/examples/*`, register a URL pattern that points to the example's view.
+# For each example in `docs_site/examples/*`, register a URL pattern that points to the example's view.
 # The example will be available at `http://localhost:8000/examples/<example_name>`.
 # The view is the first Component class that we find in example's `page.py` module.
 #

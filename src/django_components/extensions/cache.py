@@ -24,17 +24,17 @@ class ComponentCache(ExtensionComponentConfig):
 
     Read more about [Component caching](../concepts/advanced/component_caching.md).
 
-    **Example:**
+    Examples:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
+        class MyComponent(Component):
+            class Cache:
+                enabled = True
+                ttl = 60 * 60 * 24  # 1 day
+                cache_name = "my_cache"
+        ```
 
-    class MyComponent(Component):
-        class Cache:
-            enabled = True
-            ttl = 60 * 60 * 24  # 1 day
-            cache_name = "my_cache"
-    ```
     """
 
     enabled: bool = False
@@ -163,19 +163,19 @@ class CacheExtension(ComponentExtension):
 
     This nested `Cache` class is used to configure component caching.
 
-    **Example:**
+    Examples:
+        ```python
+        from django_components import Component
 
-    ```python
-    from django_components import Component
-
-    class MyComponent(Component):
-        class Cache:
-            enabled = True
-            ttl = 60 * 60 * 24  # 1 day
-            cache_name = "my_cache"
-    ```
+        class MyComponent(Component):
+            class Cache:
+                enabled = True
+                ttl = 60 * 60 * 24  # 1 day
+                cache_name = "my_cache"
+        ```
 
     This extension is automatically added to all components.
+
     """
 
     name = "cache"

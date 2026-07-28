@@ -119,87 +119,88 @@ def djc_test(
     This is applied recursively to nested classes as well.
 
     Examples:
+        Applying to a function:
+        ```python
+        from django_components.testing import djc_test
 
-    Applying to a function:
-    ```python
-    from django_components.testing import djc_test
-
-    @djc_test
-    def test_my_component():
-        @register("my_component")
-        class MyComponent(Component):
-            template = "..."
-        ...
-    ```
-
-    Applying to a class:
-    ```python
-    from django_components.testing import djc_test
-
-    @djc_test
-    class TestMyComponent:
-        def test_something(self):
-            ...
-
-        class Nested:
-            def test_something_else(self):
-                ...
-    ```
-
-    Applying to a class is the same as applying the decorator to each `test_` method individually:
-    ```python
-    from django_components.testing import djc_test
-
-    class TestMyComponent:
         @djc_test
-        def test_something(self):
+        def test_my_component():
+            @register("my_component")
+            class MyComponent(Component):
+                template = "..."
             ...
+        ```
 
-        class Nested:
-            @djc_test
-            def test_something_else(self):
+        Applying to a class:
+        ```python
+        from django_components.testing import djc_test
+
+        @djc_test
+        class TestMyComponent:
+            def test_something(self):
                 ...
-    ```
 
-    To use `@djc_test`, Django must be set up first:
+            class Nested:
+                def test_something_else(self):
+                    ...
+        ```
 
-    ```python
-    import django
-    from django_components.testing import djc_test
+        Applying to a class is the same as applying the decorator to each `test_` method individually:
+        ```python
+        from django_components.testing import djc_test
 
-    django.setup()
+        class TestMyComponent:
+            @djc_test
+            def test_something(self):
+                ...
 
-    @djc_test
-    def test_my_component():
-        ...
-    ```
+            class Nested:
+                @djc_test
+                def test_something_else(self):
+                    ...
+        ```
 
-    **Arguments:**
+        To use `@djc_test`, Django must be set up first:
 
-    - `django_settings`: Django settings, a dictionary passed to Django's
-      [`@override_settings`](https://docs.djangoproject.com/en/5.2/topics/testing/tools/#django.test.override_settings).
-      The test runs within the context of these overridden settings.
+        ```python
+        import django
+        from django_components.testing import djc_test
 
-        If `django_settings` contains django-components settings (`COMPONENTS` field), these are merged.
-        Other Django settings are simply overridden.
+        django.setup()
 
-    - `components_settings`: Instead of defining django-components settings under `django_settings["COMPONENTS"]`,
-        you can simply set the Components settings here.
+        @djc_test
+        def test_my_component():
+            ...
+        ```
 
-        These settings are merged with the django-components settings from `django_settings["COMPONENTS"]`.
+    Args:
+        django_settings: Django settings, a dictionary passed to Django's
+            [`@override_settings`](https://docs.djangoproject.com/en/5.2/topics/testing/tools/#django.test.override_settings).
+            The test runs within the context of these overridden settings.
 
-        Fields in `components_settings` override fields in `django_settings["COMPONENTS"]`.
+            If `django_settings` contains django-components settings (`COMPONENTS` field), these are merged.
+            Other Django settings are simply overridden.
 
-    - `parametrize`: Parametrize the test function with
-        [`pytest.mark.parametrize`](https://docs.pytest.org/en/stable/how-to/parametrize.html#pytest-mark-parametrize).
-        This requires [pytest](https://docs.pytest.org/) to be installed.
+        components_settings: Instead of defining django-components settings under `django_settings["COMPONENTS"]`,
+            you can simply set the Components settings here.
 
-        The input is a tuple of:
+            These settings are merged with the django-components settings from `django_settings["COMPONENTS"]`.
 
-        - `(param_names, param_values)` or
-        - `(param_names, param_values, ids)`
+            Fields in `components_settings` override fields in `django_settings["COMPONENTS"]`.
 
-    Example:
+        parametrize: Parametrize the test function with
+            [`pytest.mark.parametrize`](https://docs.pytest.org/en/stable/how-to/parametrize.html#pytest-mark-parametrize).
+            This requires [pytest](https://docs.pytest.org/) to be installed.
+
+            The input is a tuple of:
+
+            - `(param_names, param_values)` or
+            - `(param_names, param_values, ids)`
+
+        gc_collect: By default `djc_test` runs garbage collection after each test to force the
+            state cleanup. Set this to `False` to skip this.
+
+    Examples:
         ```py
         from django_components.testing import djc_test
 
@@ -242,9 +243,6 @@ def djc_test(
             rendered = MyComponent.render()
             ...
         ```
-
-    - `gc_collect`: By default `djc_test` runs garbage collection after each test to force the state cleanup.
-      Set this to `False` to skip this.
 
     **Settings resolution:**
 

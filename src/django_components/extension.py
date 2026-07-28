@@ -41,7 +41,7 @@ TClass = TypeVar("TClass", bound=type[Any])
 # HOOK TYPES
 #
 # This is the source of truth for what data is available in each hook.
-# NOTE: These types are also used in docs generation, see `docs/scripts/reference.py`.
+# NOTE: These types are also used in docs generation, see `docs_site/apps/docs/reference/`.
 ################################################
 
 
@@ -229,8 +229,8 @@ class ExtensionComponentConfig:
     `ExtensionComponentConfig` is the base class for all extension component configs.
 
     Extensions can define nested classes on the component class,
-    such as [`Component.View`](./api.md#django_components.Component.View) or
-    [`Component.Cache`](./api.md#django_components.Component.Cache):
+    such as [`Component.View`][Component.View] or
+    [`Component.Cache`][Component.Cache]:
 
     ```py
     class MyComp(Component):
@@ -264,20 +264,20 @@ class ExtensionComponentConfig:
     """
 
     component_cls: type["Component"]
-    """The [`Component`](./api.md#django_components.Component) class that this extension is defined on."""
+    """The [`Component`][Component] class that this extension is defined on."""
 
     # TODO_v1 - Remove, superseded by `component_cls`
     component_class: type["Component"]
-    """The [`Component`](./api.md#django_components.Component) class that this extension is defined on."""
+    """The [`Component`][Component] class that this extension is defined on."""
 
     @property
     def component(self) -> "Component":
         """
-        When a [`Component`](./api.md#django_components.Component) is instantiated,
+        When a [`Component`][Component] is instantiated,
         also the nested extension classes (such as `Component.View`) are instantiated,
         receiving the component instance as an argument.
 
-        This attribute holds the owner [`Component`](./api.md#django_components.Component) instance
+        This attribute holds the owner [`Component`][Component] instance
         that this extension is defined on.
 
         Some extensions like Storybook run outside of the component lifecycle,
@@ -306,7 +306,7 @@ class ExtensionComponentConfig:
 BaseExtensionClass: TypeAlias = ExtensionComponentConfig
 """
 Deprecated. Will be removed in v1.0. Use
-[`ComponentConfig`](./api.md#django_components.ExtensionComponentConfig) instead.
+[`ComponentConfig`][ExtensionComponentConfig] instead.
 """
 
 
@@ -328,50 +328,50 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
     Read more on [Extensions](../concepts/advanced/extensions.md).
 
-    **Example:**
+    Examples:
+        ```python
+        class ExampleExtension(ComponentExtension):
+            name = "example"
 
-    ```python
-    class ExampleExtension(ComponentExtension):
-        name = "example"
+            # Component-level behavior and settings. User will be able to override
+            # the attributes and methods defined here on the component classes.
+            class ComponentConfig(ComponentExtension.ComponentConfig):
+                foo = "1"
+                bar = "2"
 
-        # Component-level behavior and settings. User will be able to override
-        # the attributes and methods defined here on the component classes.
-        class ComponentConfig(ComponentExtension.ComponentConfig):
-            foo = "1"
-            bar = "2"
+                def baz(cls):
+                    return "3"
 
-            def baz(cls):
-                return "3"
+            # URLs
+            urls = [
+                URLRoute(path="dummy-view/", handler=dummy_view, name="dummy"),
+                URLRoute(path="dummy-view-2/<int:id>/<str:name>/", handler=dummy_view_2, name="dummy-2"),
+            ]
 
-        # URLs
-        urls = [
-            URLRoute(path="dummy-view/", handler=dummy_view, name="dummy"),
-            URLRoute(path="dummy-view-2/<int:id>/<str:name>/", handler=dummy_view_2, name="dummy-2"),
-        ]
+            # Commands
+            commands = [
+                HelloWorldCommand,
+            ]
 
-        # Commands
-        commands = [
-            HelloWorldCommand,
-        ]
+            # Hooks
+            def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
+                print(ctx.component_cls.__name__)
 
-        # Hooks
-        def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
-            print(ctx.component_cls.__name__)
+            def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
+                print(ctx.component_cls.__name__)
+        ```
 
-        def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
-            print(ctx.component_cls.__name__)
-    ```
+        Which users then can override on a per-component basis. E.g.:
 
-    Which users then can override on a per-component basis. E.g.:
+        ```python
+        class MyComp(Component):
+            class Example:
+                foo = "overridden"
 
-    ```python
-    class MyComp(Component):
-        class Example:
-            foo = "overridden"
+                def baz(self):
+                    return "overridden baz"
+        ```
 
-            def baz(self):
-                return "overridden baz"
-    ```
     """
 
     ###########################
@@ -384,16 +384,16 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
     Name must be lowercase, and must be a valid Python identifier (e.g. `"my_extension"`).
 
-    The extension may add new features to the [`Component`](./api.md#django_components.Component)
+    The extension may add new features to the [`Component`][Component]
     class by allowing users to define and access a nested class in
-    the [`Component`](./api.md#django_components.Component) class.
+    the [`Component`][Component] class.
 
     The extension name determines the name of the nested class in
-    the [`Component`](./api.md#django_components.Component) class, and the attribute
+    the [`Component`][Component] class, and the attribute
     under which the extension will be accessible.
 
     E.g. if the extension name is `"my_extension"`, then the nested class in
-    the [`Component`](./api.md#django_components.Component) class will be
+    the [`Component`][Component] class will be
     `MyExtension`, and the extension will be accessible as `MyComp.my_extension`.
 
     ```python
@@ -410,7 +410,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     !!! info
 
         The extension class name can be customized by setting
-        the [`class_name`](./api.md#django_components.ComponentExtension.class_name) attribute.
+        the [`class_name`][ComponentExtension.class_name] attribute.
     """
 
     class_name: ClassVar[str]
@@ -418,7 +418,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
     Name of the extension class.
 
     By default, this is set automatically at class creation. The class name is the same as
-    the [`name`](./api.md#django_components.ComponentExtension.name) attribute, but with snake_case
+    the [`name`][ComponentExtension.name] attribute, but with snake_case
     converted to PascalCase.
 
     So if the extension name is `"my_extension"`, then the extension class name will be `"MyExtension"`.
@@ -433,36 +433,35 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
     The class name must be a valid Python identifier.
 
-    **Example:**
+    Examples:
+        ```python
+        class MyExt(ComponentExtension):
+            name = "my_extension"
+            class_name = "MyCustomExtension"
+        ```
 
-    ```python
-    class MyExt(ComponentExtension):
-        name = "my_extension"
-        class_name = "MyCustomExtension"
-    ```
+        This will make the extension class name `"MyCustomExtension"`.
 
-    This will make the extension class name `"MyCustomExtension"`.
-
-    ```python
-    class MyComp(Component):
-        class MyCustomExtension:  # <--- This is the extension class
-            ...
-    ```
+        ```python
+        class MyComp(Component):
+            class MyCustomExtension:  # <--- This is the extension class
+                ...
+        ```
     """
 
     ComponentConfig: ClassVar[type[ExtensionComponentConfig]] = ExtensionComponentConfig
     """
     Base class that the "component-level" extension config nested within
-    a [`Component`](./api.md#django_components.Component) class will inherit from.
+    a [`Component`][Component] class will inherit from.
 
     This is where you can define new methods and attributes that will be available to the component
     instance.
 
     Background:
 
-    The extension may add new features to the [`Component`](./api.md#django_components.Component) class
+    The extension may add new features to the [`Component`][Component] class
     by allowing users to define and access a nested class in
-    the [`Component`](./api.md#django_components.Component) class. E.g.:
+    the [`Component`][Component] class. E.g.:
 
     ```python
     class MyComp(Component):
@@ -495,57 +494,56 @@ class ComponentExtension(metaclass=ExtensionMeta):
     These commands will be available to the user as `components ext run <extension> <command>`.
 
     Commands are defined as subclasses of
-    [`ComponentCommand`](./extension_commands.md#django_components.ComponentCommand).
+    [`ComponentCommand`][ComponentCommand].
 
-    **Example:**
+    Examples:
+        This example defines an extension with a command that prints "Hello world". To run the command,
+        the user would run `components ext run hello_world hello`.
 
-    This example defines an extension with a command that prints "Hello world". To run the command,
-    the user would run `components ext run hello_world hello`.
+        ```python
+        from django_components import ComponentCommand, ComponentExtension, CommandArg, CommandArgGroup
 
-    ```python
-    from django_components import ComponentCommand, ComponentExtension, CommandArg, CommandArgGroup
+        class HelloWorldCommand(ComponentCommand):
+            name = "hello"
+            help = "Hello world command."
 
-    class HelloWorldCommand(ComponentCommand):
-        name = "hello"
-        help = "Hello world command."
+            # Allow to pass flags `--foo`, `--bar` and `--baz`.
+            # Argument parsing is managed by `argparse`.
+            arguments = [
+                CommandArg(
+                    name_or_flags="--foo",
+                    help="Foo description.",
+                ),
+                # When printing the command help message, `bar` and `baz`
+                # will be grouped under "group bar".
+                CommandArgGroup(
+                    title="group bar",
+                    description="Group description.",
+                    arguments=[
+                        CommandArg(
+                            name_or_flags="--bar",
+                            help="Bar description.",
+                        ),
+                        CommandArg(
+                            name_or_flags="--baz",
+                            help="Baz description.",
+                        ),
+                    ],
+                ),
+            ]
 
-        # Allow to pass flags `--foo`, `--bar` and `--baz`.
-        # Argument parsing is managed by `argparse`.
-        arguments = [
-            CommandArg(
-                name_or_flags="--foo",
-                help="Foo description.",
-            ),
-            # When printing the command help message, `bar` and `baz`
-            # will be grouped under "group bar".
-            CommandArgGroup(
-                title="group bar",
-                description="Group description.",
-                arguments=[
-                    CommandArg(
-                        name_or_flags="--bar",
-                        help="Bar description.",
-                    ),
-                    CommandArg(
-                        name_or_flags="--baz",
-                        help="Baz description.",
-                    ),
-                ],
-            ),
-        ]
+            # Callback that receives the parsed arguments and options.
+            def handle(self, *args, **kwargs):
+                print(f"HelloWorldCommand.handle: args={args}, kwargs={kwargs}")
 
-        # Callback that receives the parsed arguments and options.
-        def handle(self, *args, **kwargs):
-            print(f"HelloWorldCommand.handle: args={args}, kwargs={kwargs}")
+        # Associate the command with the extension
+        class HelloWorldExtension(ComponentExtension):
+            name = "hello_world"
 
-    # Associate the command with the extension
-    class HelloWorldExtension(ComponentExtension):
-        name = "hello_world"
-
-        commands = [
-            HelloWorldCommand,
-        ]
-    ```
+            commands = [
+                HelloWorldCommand,
+            ]
+        ```
     """
 
     urls: ClassVar[list[URLRoute]] = []
@@ -569,20 +567,20 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
     def on_extension_created(self, ctx: OnExtensionCreatedContext) -> None:
         """
-        Called when a new [`ComponentExtension`](./api.md#django_components.ComponentExtension) instance is created.
+        Called when a new [`ComponentExtension`][ComponentExtension] instance is created.
 
         Use this hook to perform any initialization or validation of the extension instance.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnExtensionCreatedContext
 
-        ```python
-        from django_components import ComponentExtension, OnExtensionCreatedContext
+            class MyExtension(ComponentExtension):
+                def on_extension_created(self, ctx: OnExtensionCreatedContext) -> None:
+                    # Add a new attribute to the extension instance
+                    ctx.extension.my_attr = "my_value"
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_extension_created(self, ctx: OnExtensionCreatedContext) -> None:
-                # Add a new attribute to the extension instance
-                ctx.extension.my_attr = "my_value"
-        ```
         """
 
     ###########################
@@ -591,125 +589,125 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
     def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
         """
-        Called when a new [`Component`](./api.md#django_components.Component) class is created.
+        Called when a new [`Component`][Component] class is created.
 
-        This hook is called after the [`Component`](./api.md#django_components.Component) class
+        This hook is called after the [`Component`][Component] class
         is fully defined but before it's registered.
 
         Use this hook to perform any initialization or validation of the
-        [`Component`](./api.md#django_components.Component) class.
+        [`Component`][Component] class.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnComponentClassCreatedContext
 
-        ```python
-        from django_components import ComponentExtension, OnComponentClassCreatedContext
+            class MyExtension(ComponentExtension):
+                def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
+                    # Add a new attribute to the Component class
+                    ctx.component_cls.my_attr = "my_value"
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_component_class_created(self, ctx: OnComponentClassCreatedContext) -> None:
-                # Add a new attribute to the Component class
-                ctx.component_cls.my_attr = "my_value"
-        ```
         """
 
     def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
         """
-        Called when a [`Component`](./api.md#django_components.Component) class is being deleted.
+        Called when a [`Component`][Component] class is being deleted.
 
-        This hook is called before the [`Component`](./api.md#django_components.Component) class
+        This hook is called before the [`Component`][Component] class
         is deleted from memory.
 
-        Use this hook to perform any cleanup related to the [`Component`](./api.md#django_components.Component) class.
+        Use this hook to perform any cleanup related to the [`Component`][Component] class.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnComponentClassDeletedContext
 
-        ```python
-        from django_components import ComponentExtension, OnComponentClassDeletedContext
+            class MyExtension(ComponentExtension):
+                def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
+                    # Remove Component class from the extension's cache on deletion
+                    self.cache.pop(ctx.component_cls, None)
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_component_class_deleted(self, ctx: OnComponentClassDeletedContext) -> None:
-                # Remove Component class from the extension's cache on deletion
-                self.cache.pop(ctx.component_cls, None)
-        ```
         """
 
     def on_registry_created(self, ctx: OnRegistryCreatedContext) -> None:
         """
-        Called when a new [`ComponentRegistry`](./api.md#django_components.ComponentRegistry) is created.
+        Called when a new [`ComponentRegistry`][ComponentRegistry] is created.
 
         This hook is called after a new
-        [`ComponentRegistry`](./api.md#django_components.ComponentRegistry) instance is initialized.
+        [`ComponentRegistry`][ComponentRegistry] instance is initialized.
 
         Use this hook to perform any initialization needed for the registry.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnRegistryCreatedContext
 
-        ```python
-        from django_components import ComponentExtension, OnRegistryCreatedContext
+            class MyExtension(ComponentExtension):
+                def on_registry_created(self, ctx: OnRegistryCreatedContext) -> None:
+                    # Add a new attribute to the registry
+                    ctx.registry.my_attr = "my_value"
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_registry_created(self, ctx: OnRegistryCreatedContext) -> None:
-                # Add a new attribute to the registry
-                ctx.registry.my_attr = "my_value"
-        ```
         """
 
     def on_registry_deleted(self, ctx: OnRegistryDeletedContext) -> None:
         """
-        Called when a [`ComponentRegistry`](./api.md#django_components.ComponentRegistry) is being deleted.
+        Called when a [`ComponentRegistry`][ComponentRegistry] is being deleted.
 
         This hook is called before
-        a [`ComponentRegistry`](./api.md#django_components.ComponentRegistry) instance is deleted.
+        a [`ComponentRegistry`][ComponentRegistry] instance is deleted.
 
         Use this hook to perform any cleanup related to the registry.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnRegistryDeletedContext
 
-        ```python
-        from django_components import ComponentExtension, OnRegistryDeletedContext
+            class MyExtension(ComponentExtension):
+                def on_registry_deleted(self, ctx: OnRegistryDeletedContext) -> None:
+                    # Remove registry from the extension's cache on deletion
+                    self.cache.pop(ctx.registry, None)
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_registry_deleted(self, ctx: OnRegistryDeletedContext) -> None:
-                # Remove registry from the extension's cache on deletion
-                self.cache.pop(ctx.registry, None)
-        ```
         """
 
     def on_component_registered(self, ctx: OnComponentRegisteredContext) -> None:
         """
-        Called when a [`Component`](./api.md#django_components.Component) class is
-        registered with a [`ComponentRegistry`](./api.md#django_components.ComponentRegistry).
+        Called when a [`Component`][Component] class is
+        registered with a [`ComponentRegistry`][ComponentRegistry].
 
-        This hook is called after a [`Component`](./api.md#django_components.Component) class
+        This hook is called after a [`Component`][Component] class
         is successfully registered.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnComponentRegisteredContext
 
-        ```python
-        from django_components import ComponentExtension, OnComponentRegisteredContext
+            class MyExtension(ComponentExtension):
+                def on_component_registered(self, ctx: OnComponentRegisteredContext) -> None:
+                    print(f"Component {ctx.component_cls} registered to {ctx.registry} as '{ctx.name}'")
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_component_registered(self, ctx: OnComponentRegisteredContext) -> None:
-                print(f"Component {ctx.component_cls} registered to {ctx.registry} as '{ctx.name}'")
-        ```
         """
 
     def on_component_unregistered(self, ctx: OnComponentUnregisteredContext) -> None:
         """
-        Called when a [`Component`](./api.md#django_components.Component) class is
-        unregistered from a [`ComponentRegistry`](./api.md#django_components.ComponentRegistry).
+        Called when a [`Component`][Component] class is
+        unregistered from a [`ComponentRegistry`][ComponentRegistry].
 
-        This hook is called after a [`Component`](./api.md#django_components.Component) class
+        This hook is called after a [`Component`][Component] class
         is removed from the registry.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnComponentUnregisteredContext
 
-        ```python
-        from django_components import ComponentExtension, OnComponentUnregisteredContext
+            class MyExtension(ComponentExtension):
+                def on_component_unregistered(self, ctx: OnComponentUnregisteredContext) -> None:
+                    print(f"Component {ctx.component_cls} unregistered from {ctx.registry} as '{ctx.name}'")
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_component_unregistered(self, ctx: OnComponentUnregisteredContext) -> None:
-                print(f"Component {ctx.component_cls} unregistered from {ctx.registry} as '{ctx.name}'")
-        ```
         """
 
     ###########################
@@ -718,17 +716,17 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
     def on_component_input(self, ctx: OnComponentInputContext) -> str | None:
         """
-        Called when a [`Component`](./api.md#django_components.Component) was triggered to render,
+        Called when a [`Component`][Component] was triggered to render,
         but before a component's context and data methods are invoked.
 
         Use this hook to modify or validate component inputs before they're processed.
 
         This is the first hook that is called when rendering a component. As such this hook is called before
-        [`Component.get_template_data()`](./api.md#django_components.Component.get_template_data),
-        [`Component.get_js_data()`](./api.md#django_components.Component.get_js_data),
-        and [`Component.get_css_data()`](./api.md#django_components.Component.get_css_data) methods,
+        [`Component.get_template_data()`][Component.get_template_data],
+        [`Component.get_js_data()`][Component.get_js_data],
+        and [`Component.get_css_data()`][Component.get_css_data] methods,
         and the
-        [`on_component_data`](./extension_hooks.md#django_components.extension.ComponentExtension.on_component_data)
+        [`on_component_data`][ComponentExtension.on_component_data]
         hook.
 
         This hook also allows to skip the rendering of a component altogether. If the hook returns
@@ -741,9 +739,9 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
             When any extension short-circuits a component (by returning a non-null value), the
             rest of that component's render is skipped, including
-            [`on_component_data`](./extension_hooks.md#django_components.extension.ComponentExtension.on_component_data)
+            [`on_component_data`][ComponentExtension.on_component_data]
             and
-            [`on_component_rendered`](./extension_hooks.md#django_components.extension.ComponentExtension.on_component_rendered).
+            [`on_component_rendered`][ComponentExtension.on_component_rendered].
 
             Extensions run in order, and the built-in extensions (including the cache) run before
             user extensions. So your `on_component_input` may run even when a later extension
@@ -760,66 +758,66 @@ class ComponentExtension(metaclass=ExtensionMeta):
             for your extension, or `Slot.extra`). It is then discarded automatically once the
             component is done, whether or not `on_component_rendered` runs.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnComponentInputContext
 
-        ```python
-        from django_components import ComponentExtension, OnComponentInputContext
-
-        class MyExtension(ComponentExtension):
-            def on_component_input(self, ctx: OnComponentInputContext) -> None:
-                # Add extra kwarg to all components when they are rendered
-                ctx.kwargs["my_input"] = "my_value"
-        ```
+            class MyExtension(ComponentExtension):
+                def on_component_input(self, ctx: OnComponentInputContext) -> None:
+                    # Add extra kwarg to all components when they are rendered
+                    ctx.kwargs["my_input"] = "my_value"
+            ```
 
         !!! warning
 
             In this hook, the components' inputs are still mutable.
 
-            As such, if a component defines [`Args`](./api.md#django_components.Component.Args),
-            [`Kwargs`](./api.md#django_components.Component.Kwargs),
-            [`Slots`](./api.md#django_components.Component.Slots) types, these types are NOT yet instantiated.
+            As such, if a component defines [`Args`][Component.Args],
+            [`Kwargs`][Component.Kwargs],
+            [`Slots`][Component.Slots] types, these types are NOT yet instantiated.
 
-            Instead, component fields like [`Component.args`](./api.md#django_components.Component.args),
-            [`Component.kwargs`](./api.md#django_components.Component.kwargs),
-            [`Component.slots`](./api.md#django_components.Component.slots)
+            Instead, component fields like [`Component.args`][Component.args],
+            [`Component.kwargs`][Component.kwargs],
+            [`Component.slots`][Component.slots]
             are plain `list` / `dict` objects.
+
         """
 
     def on_component_data(self, ctx: OnComponentDataContext) -> None:
         """
-        Called when a [`Component`](./api.md#django_components.Component) was triggered to render,
+        Called when a [`Component`][Component] was triggered to render,
         after a component's context and data methods have been processed.
 
         This hook is called after
-        [`Component.get_template_data()`](./api.md#django_components.Component.get_template_data),
-        [`Component.get_js_data()`](./api.md#django_components.Component.get_js_data)
-        and [`Component.get_css_data()`](./api.md#django_components.Component.get_css_data).
+        [`Component.get_template_data()`][Component.get_template_data],
+        [`Component.get_js_data()`][Component.get_js_data]
+        and [`Component.get_css_data()`][Component.get_css_data].
 
-        This hook runs after [`on_component_input`](./api.md#django_components.ComponentExtension.on_component_input).
+        This hook runs after [`on_component_input`][ComponentExtension.on_component_input].
 
         Use this hook to modify or validate the component's data before rendering.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnComponentDataContext
 
-        ```python
-        from django_components import ComponentExtension, OnComponentDataContext
+            class MyExtension(ComponentExtension):
+                def on_component_data(self, ctx: OnComponentDataContext) -> None:
+                    # Add extra template variable to all components when they are rendered
+                    ctx.template_data["my_template_var"] = "my_value"
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_component_data(self, ctx: OnComponentDataContext) -> None:
-                # Add extra template variable to all components when they are rendered
-                ctx.template_data["my_template_var"] = "my_value"
-        ```
         """
 
     def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
         """
-        Called when a [`Component`](./api.md#django_components.Component) was rendered, including
+        Called when a [`Component`][Component] was rendered, including
         all its child components.
 
         Use this hook to access or post-process the component's rendered output.
 
         This hook works similarly to
-        [`Component.on_render_after()`](./api.md#django_components.Component.on_render_after):
+        [`Component.on_render_after()`][Component.on_render_after]:
 
         1. To modify the output, return a new string from this hook. The original output or error will be ignored.
 
@@ -828,44 +826,44 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         3. If you neither raise nor return string, the original output or error will be used.
 
-        **Examples:**
+        Examples:
+            Change the final output of a component:
 
-        Change the final output of a component:
+            ```python
+            from django_components import ComponentExtension, OnComponentRenderedContext
 
-        ```python
-        from django_components import ComponentExtension, OnComponentRenderedContext
+            class MyExtension(ComponentExtension):
+                def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
+                    # Append a comment to the component's rendered output
+                    return ctx.result + "<!-- MyExtension comment -->"
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
-                # Append a comment to the component's rendered output
-                return ctx.result + "<!-- MyExtension comment -->"
-        ```
+            Cause the component to raise a new exception:
 
-        Cause the component to raise a new exception:
+            ```python
+            from django_components import ComponentExtension, OnComponentRenderedContext
 
-        ```python
-        from django_components import ComponentExtension, OnComponentRenderedContext
+            class MyExtension(ComponentExtension):
+                def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
+                    # Raise a new exception
+                    raise Exception("Error message")
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
-                # Raise a new exception
-                raise Exception("Error message")
-        ```
+            Return nothing (or `None`) to handle the result as usual:
 
-        Return nothing (or `None`) to handle the result as usual:
+            ```python
+            from django_components import ComponentExtension, OnComponentRenderedContext
 
-        ```python
-        from django_components import ComponentExtension, OnComponentRenderedContext
+            class MyExtension(ComponentExtension):
+                def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
+                    if ctx.error is not None:
+                        # The component raised an exception
+                        print(f"Error: {ctx.error}")
+                    else:
+                        # The component rendered successfully
+                        print(f"Result: {ctx.result}")
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_component_rendered(self, ctx: OnComponentRenderedContext) -> str | None:
-                if ctx.error is not None:
-                    # The component raised an exception
-                    print(f"Error: {ctx.error}")
-                else:
-                    # The component rendered successfully
-                    print(f"Result: {ctx.result}")
-        ```
         """
 
     ##########################
@@ -876,24 +874,24 @@ class ComponentExtension(metaclass=ExtensionMeta):
         """
         Called when a Component's template is loaded as a string.
 
-        This hook runs only once per [`Component`](./api.md#django_components.Component) class and works for both
-        [`Component.template`](./api.md#django_components.Component.template) and
-        [`Component.template_file`](./api.md#django_components.Component.template_file).
+        This hook runs only once per [`Component`][Component] class and works for both
+        [`Component.template`][Component.template] and
+        [`Component.template_file`][Component.template_file].
 
         Use this hook to read or modify the template before it's compiled.
 
         To modify the template, return a new string from this hook.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnTemplateLoadedContext
 
-        ```python
-        from django_components import ComponentExtension, OnTemplateLoadedContext
+            class MyExtension(ComponentExtension):
+                def on_template_loaded(self, ctx: OnTemplateLoadedContext) -> str | None:
+                    # Modify the template
+                    return ctx.content.replace("Hello", "Hi")
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_template_loaded(self, ctx: OnTemplateLoadedContext) -> str | None:
-                # Modify the template
-                return ctx.content.replace("Hello", "Hi")
-        ```
         """
 
     def on_template_compiled(self, ctx: OnTemplateCompiledContext) -> None:
@@ -901,69 +899,69 @@ class ComponentExtension(metaclass=ExtensionMeta):
         Called when a Component's template is compiled
         into a [`Template`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Template) object.
 
-        This hook runs only once per [`Component`](./api.md#django_components.Component) class and works for both
-        [`Component.template`](./api.md#django_components.Component.template) and
-        [`Component.template_file`](./api.md#django_components.Component.template_file).
+        This hook runs only once per [`Component`][Component] class and works for both
+        [`Component.template`][Component.template] and
+        [`Component.template_file`][Component.template_file].
 
         Use this hook to read or modify the template (in-place) after it's compiled.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnTemplateCompiledContext
 
-        ```python
-        from django_components import ComponentExtension, OnTemplateCompiledContext
+            class MyExtension(ComponentExtension):
+                def on_template_compiled(self, ctx: OnTemplateCompiledContext) -> None:
+                    print(f"Template origin: {ctx.template.origin.name}")
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_template_compiled(self, ctx: OnTemplateCompiledContext) -> None:
-                print(f"Template origin: {ctx.template.origin.name}")
-        ```
         """
 
     def on_css_loaded(self, ctx: OnCssLoadedContext) -> str | None:
         """
         Called when a Component's CSS is loaded as a string.
 
-        This hook runs only once per [`Component`](./api.md#django_components.Component) class and works for both
-        [`Component.css`](./api.md#django_components.Component.css) and
-        [`Component.css_file`](./api.md#django_components.Component.css_file).
+        This hook runs only once per [`Component`][Component] class and works for both
+        [`Component.css`][Component.css] and
+        [`Component.css_file`][Component.css_file].
 
         Use this hook to read or modify the CSS.
 
         To modify the CSS, return a new string from this hook.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnCssLoadedContext
 
-        ```python
-        from django_components import ComponentExtension, OnCssLoadedContext
+            class MyExtension(ComponentExtension):
+                def on_css_loaded(self, ctx: OnCssLoadedContext) -> str | None:
+                    # Modify the CSS
+                    return ctx.content.replace("Hello", "Hi")
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_css_loaded(self, ctx: OnCssLoadedContext) -> str | None:
-                # Modify the CSS
-                return ctx.content.replace("Hello", "Hi")
-        ```
         """
 
     def on_js_loaded(self, ctx: OnJsLoadedContext) -> str | None:
         """
         Called when a Component's JS is loaded as a string.
 
-        This hook runs only once per [`Component`](./api.md#django_components.Component) class and works for both
-        [`Component.js`](./api.md#django_components.Component.js) and
-        [`Component.js_file`](./api.md#django_components.Component.js_file).
+        This hook runs only once per [`Component`][Component] class and works for both
+        [`Component.js`][Component.js] and
+        [`Component.js_file`][Component.js_file].
 
         Use this hook to read or modify the JS.
 
         To modify the JS, return a new string from this hook.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnCssLoadedContext
 
-        ```python
-        from django_components import ComponentExtension, OnCssLoadedContext
+            class MyExtension(ComponentExtension):
+                def on_js_loaded(self, ctx: OnJsLoadedContext) -> str | None:
+                    # Modify the JS
+                    return ctx.content.replace("Hello", "Hi")
+            ```
 
-        class MyExtension(ComponentExtension):
-            def on_js_loaded(self, ctx: OnJsLoadedContext) -> str | None:
-                # Modify the JS
-                return ctx.content.replace("Hello", "Hi")
-        ```
         """
 
     ##########################
@@ -978,25 +976,24 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         To modify the output, return a new string from this hook.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import ComponentExtension, OnSlotRenderedContext
 
-        ```python
-        from django_components import ComponentExtension, OnSlotRenderedContext
-
-        class MyExtension(ComponentExtension):
-            def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> str | None:
-                # Append a comment to the slot's rendered output
-                return ctx.result + "<!-- MyExtension comment -->"
-        ```
+            class MyExtension(ComponentExtension):
+                def on_slot_rendered(self, ctx: OnSlotRenderedContext) -> str | None:
+                    # Append a comment to the slot's rendered output
+                    return ctx.result + "<!-- MyExtension comment -->"
+            ```
 
         **Access slot metadata:**
 
         You can access the [`{% slot %}` tag](./template_tags.md#slot)
-        node ([`SlotNode`](./api.md#django_components.SlotNode)) and its metadata using `ctx.slot_node`.
+        node ([`SlotNode`][SlotNode]) and its metadata using `ctx.slot_node`.
 
-        For example, to find the [`Component`](./api.md#django_components.Component) class to which
+        For example, to find the [`Component`][Component] class to which
         belongs the template where the [`{% slot %}`](./template_tags.md#slot) tag is defined, you can use
-        [`ctx.slot_node.template_component`](./api.md#django_components.SlotNode.template_component):
+        [`ctx.slot_node.template_component`][SlotNode.template_component]:
 
         ```python
         from django_components import ComponentExtension, OnSlotRenderedContext
@@ -1008,6 +1005,7 @@ class ComponentExtension(metaclass=ExtensionMeta):
                 slot_owner = slot_node.template_component
                 print(f"Slot owner: {slot_owner}")
         ```
+
         """
 
     ###########################
@@ -1029,60 +1027,60 @@ class ComponentExtension(metaclass=ExtensionMeta):
 
         Where:
 
-        - `scripts` is a list of [`Script`](api.md#django_components.Script) objects.
-        - `styles` is a list of [`Style`](api.md#django_components.Style) objects.
+        - `scripts` is a list of [`Script`][Script] objects.
+        - `styles` is a list of [`Style`][Style] objects.
 
-        **Example:**
+        Examples:
+            ```python
+            from django_components import (
+                ComponentExtension,
+                OnDependenciesContext,
+                Script,
+                Style,
+            )
 
-        ```python
-        from django_components import (
-            ComponentExtension,
-            OnDependenciesContext,
-            Script,
-            Style,
-        )
+            class MyExtension(ComponentExtension):
+                def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Script"], list["Style"]]:
+                    scripts = ctx.scripts
+                    styles = ctx.styles
 
-        class MyExtension(ComponentExtension):
-            def on_dependencies(self, ctx: OnDependenciesContext) -> tuple[list["Script"], list["Style"]]:
-                scripts = ctx.scripts
-                styles = ctx.styles
+                    # Modify existing scripts and styles
+                    for script in scripts:
+                        if script.kind == "extra":
+                            script.wrap = False
+                    for style in styles:
+                        if style.kind == "extra":
+                            style.attrs["media"] = "print"
 
-                # Modify existing scripts and styles
-                for script in scripts:
-                    if script.kind == "extra":
-                        script.wrap = False
-                for style in styles:
-                    if style.kind == "extra":
-                        style.attrs["media"] = "print"
-
-                # Add extra JS and CSS dependencies (inline content)
-                scripts.append(
-                    Script(
-                        content="console.log('extension-injected script');",
-                        wrap=False,
+                    # Add extra JS and CSS dependencies (inline content)
+                    scripts.append(
+                        Script(
+                            content="console.log('extension-injected script');",
+                            wrap=False,
+                        )
                     )
-                )
-                styles.append(
-                    Style(
-                        content="body { background-color: red; }",
+                    styles.append(
+                        Style(
+                            content="body { background-color: red; }",
+                        )
                     )
-                )
-                # Add extra JS and CSS dependencies (external URL)
-                scripts.append(
-                    Script(
-                        url="/static/analytics.js",
-                        content=None,
+                    # Add extra JS and CSS dependencies (external URL)
+                    scripts.append(
+                        Script(
+                            url="/static/analytics.js",
+                            content=None,
+                        )
                     )
-                )
-                styles.append(
-                    Style(
-                        url="/static/print.css",
-                        content=None,
-                        attrs={"media": "print"},
+                    styles.append(
+                        Style(
+                            url="/static/print.css",
+                            content=None,
+                            attrs={"media": "print"},
+                        )
                     )
-                )
-                return (scripts, styles)
-        ```
+                    return (scripts, styles)
+            ```
+
         """
 
 

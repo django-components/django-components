@@ -24,21 +24,21 @@ def get_component_dirs(include_apps: bool = True) -> list[Path]:
         list[Path]: A list of directories that may contain component files.
 
     `get_component_dirs()` searches for dirs set in
-    [`COMPONENTS.dirs`](settings.md#django_components.app_settings.ComponentsSettings.dirs)
+    [`COMPONENTS.dirs`][ComponentsSettings.dirs]
     settings. If none set, defaults to searching for a `"components"` app.
 
     In addition to that, also all installed Django apps are checked whether they contain
     directories as set in
-    [`COMPONENTS.app_dirs`](settings.md#django_components.app_settings.ComponentsSettings.app_dirs)
+    [`COMPONENTS.app_dirs`][ComponentsSettings.app_dirs]
     (e.g. `[app]/components`).
 
-    **Notes:**
+    Notes:
 
     - Paths that do not point to directories are ignored.
 
     - `BASE_DIR` setting is required.
 
-    - The paths in [`COMPONENTS.dirs`](settings.md#django_components.app_settings.ComponentsSettings.dirs)
+    - The paths in [`COMPONENTS.dirs`][ComponentsSettings.dirs]
         must be absolute paths.
 
     """
@@ -108,7 +108,7 @@ def get_component_dirs(include_apps: bool = True) -> list[Path]:
 
 
 class ComponentFileEntry(NamedTuple):
-    """Result returned by [`get_component_files()`](api.md#django_components.get_component_files)."""
+    """Result returned by [`get_component_files()`][get_component_files]."""
 
     dot_path: str
     """The python import path for the module. E.g. `app.components.mycomp`"""
@@ -119,7 +119,7 @@ class ComponentFileEntry(NamedTuple):
 def get_component_files(suffix: str | None = None) -> list[ComponentFileEntry]:
     """
     Search for files within the component directories (as defined in
-    [`get_component_dirs()`](api.md#django_components.get_component_dirs)).
+    [`get_component_dirs()`][get_component_dirs]).
 
     Requires `BASE_DIR` setting to be set.
 
@@ -133,13 +133,12 @@ def get_component_files(suffix: str | None = None) -> list[ComponentFileEntry]:
         list[ComponentFileEntry] A list of entries that contain both the filesystem path and \
             the python import path (dot path).
 
-    **Example:**
+    Examples:
+        ```python
+        from django_components import get_component_files
 
-    ```python
-    from django_components import get_component_files
-
-    modules = get_component_files(".py")
-    ```
+        modules = get_component_files(".py")
+        ```
 
     """
     search_glob = f"**/*{suffix}" if suffix else "**/*"
@@ -205,11 +204,11 @@ def _filepath_to_python_module(
     """
     Derive python import path from the filesystem path.
 
-    Example:
-    - If project root is `/path/to/project`
-    - And file_path is `/path/to/project/app/components/mycomp.py`
-    - Then the path relative to project root is `app/components/mycomp.py`
-    - Which we then turn into python import path `app.components.mycomp`
+    Examples:
+        - If project root is `/path/to/project`
+        - And file_path is `/path/to/project/app/components/mycomp.py`
+        - Then the path relative to project root is `app/components/mycomp.py`
+        - Which we then turn into python import path `app.components.mycomp`
 
     """
     path_cls = PureWindowsPath if os.name == "nt" else PurePosixPath

@@ -1,0 +1,214 @@
+"""
+Internal markdown-link rewriting.
+
+Existing docs author internal links as `[X](foo/bar.md)`, but the build uses
+clean URLs (`foo.md` -> `/foo/`), so every page lives one directory deeper than
+its source. A raw `.md` href would not resolve in the browser. This pass rewrites
+each internal `.md` link to a relative URL that resolves correctly under the
+clean-URL scheme.
+
+Links that are already clean URLs (`../other/`), external (`https://...`),
+anchors (`#section`), or non-`.md` are left untouched.
+
+Example, in a page built from `content/test/pipeline_test.md` (served at
+`/test/pipeline_test/`):
+
+    [another page](./other.md)   ->  [another page](../other/)
+    [another page](../other/)    ->  unchanged (already a clean URL)
+"""
+
+from __future__ import annotations
+
+import posixpath
+import re
+from pathlib import Path
+from urllib.parse import urlparse
+
+from .paths import md_to_url
+
+# Matches the href attribute of an anchor in the rendered HTML.
+# python-markdown / Pygments emit double-quoted hrefs; code examples are
+# HTML-escaped (&quot;), so this only matches real anchor attributes.
+_HREF_RE = re.compile(r'href="([^"]*)"')
+
+# Matches src attributes (images) in the rendered HTML.
+_SRC_RE = re.compile(r'src="([^"]*)"')
+
+# Opening anchor tag, so we can inspect/extend its attribute list.
+_A_OPEN_RE = re.compile(r"<a\b([^>]*)>", re.IGNORECASE)
+_TARGET_ATTR_RE = re.compile(r"\btarget\s*=", re.IGNORECASE)
+_REL_ATTR_RE = re.compile(r"\brel\s*=", re.IGNORECASE)
+
+
+def rewrite_internal_md_links(html: str, *, source_path: Path, content_dir: Path) -> str:
+    """
+    Rewrite internal `.md` links in rendered HTML to clean relative URLs.
+
+    Returns the HTML unchanged if the source file is not under content_dir
+    (e.g. when build_one is run on a file outside the content tree).
+    """
+    content_root = content_dir.resolve()
+    try:
+        page_rel = source_path.resolve().relative_to(content_root)
+    except ValueError:
+        return html
+
+    page_url = "/" + md_to_url(page_rel)  # e.g. "/test/pipeline_test/"
+    source_dir = source_path.resolve().parent
+
+    def replace_href(match: re.Match) -> str:
+        href = match.group(1)
+        rewritten = _rewrite_one(href, page_url=page_url, source_dir=source_dir, content_root=content_root)
+        return f'href="{rewritten}"'
+
+    def replace_src(match: re.Match) -> str:
+        src = match.group(1)
+        rewritten = _rewrite_asset(src, page_url=page_url, source_dir=source_dir, content_root=content_root)
+        return f'src="{rewritten}"'
+
+    html = _HREF_RE.sub(replace_href, html)
+    return _SRC_RE.sub(replace_src, html)
+
+
+def mark_external_links(html: str) -> str:
+    """
+    Make off-site links open in a new tab.
+
+    Adds `target="_blank"` (and `rel="noopener"`) to anchors whose href is an
+    absolute web URL - `https://example.com/...` or protocol-relative
+    `//example.com/...`. Internal docs links are always relative clean URLs
+    (`../foo/`, `#anchor`), so they're never matched; neither are `mailto:` /
+    `tel:` links. Anchors that already declare a `target` are left untouched,
+    and `rel` is only added when absent so existing values aren't duplicated.
+    """
+
+    def replace(match: re.Match) -> str:
+        attrs = match.group(1)
+        href_match = re.search(r'href="([^"]*)"', attrs)
+        if not href_match or not _is_external_url(href_match.group(1)):
+            return match.group(0)
+        if _TARGET_ATTR_RE.search(attrs):
+            return match.group(0)  # respect an explicit target
+        extra = ' target="_blank"'
+        if not _REL_ATTR_RE.search(attrs):
+            extra += ' rel="noopener"'
+        return f"<a{attrs}{extra}>"
+
+    return _A_OPEN_RE.sub(replace, html)
+
+
+# A heading and its trailing permalink anchor. Covers both the plain markdown form
+#   <h2 id="foo">Foo<a class="headerlink" href="#foo" ...>¤</a></h2>
+# and the API-reference form, which carries extra attributes + child spans:
+#   <h2 id="X" class="doc doc-heading"><span id="legacy"></span><span class="badge">
+#   </span><span class="doc-object-name">Name</span><a class="headerlink" ...>¤</a></h2>
+# The href is backreferenced to the heading id so a heading only ever matches its
+# own permalink, and `.*?` captures just that heading's content.
+_HEADING_PERMALINK_RE = re.compile(
+    r'<h([1-6]) id="([^"]+)"([^>]*)>(.*?)<a class="headerlink" href="#\2"[^>]*>\xa4</a>\s*</h\1>',
+    re.DOTALL,
+)
+
+
+def linkify_headings(html: str) -> str:
+    """
+    Make the whole heading the permalink, not just the trailing ¤ glyph.
+
+    Markdown headings and API-reference symbol headings both render as
+    ``<h2 id="x">...Title...<a class="headerlink" ...>¤</a></h2>``, where only the
+    ¤ is clickable. We wrap the heading's content in the link (styled to underline
+    on hover, see `.heading-anchor` in site.css) so the entire heading is the
+    permalink, and drop the glyph. The reference heading's badge / legacy-anchor
+    spans go inside the link too; the CSS targets them by descendant selectors, so
+    nesting them under an ``<a>`` doesn't change their styling.
+
+    Headings whose content already contains a link are left untouched - wrapping
+    them would nest one ``<a>`` inside another (invalid HTML).
+    """
+    if "headerlink" not in html:
+        return html
+
+    def replace(match: re.Match) -> str:
+        level, hid, attrs, content = match.group(1), match.group(2), match.group(3), match.group(4)
+        if "<a " in content:  # nested link present -> keep the ¤-only heading
+            return match.group(0)
+        return f'<h{level} id="{hid}"{attrs}><a class="heading-anchor" href="#{hid}">{content}</a></h{level}>'
+
+    return _HEADING_PERMALINK_RE.sub(replace, html)
+
+
+def _is_external_url(href: str) -> bool:
+    """True if href is an absolute web URL (has a host) - i.e. points off-site."""
+    parsed = urlparse(href)
+    # Relative links, bare anchors, and mailto:/tel: have no netloc.
+    if not parsed.netloc:
+        return False
+    return parsed.scheme in ("", "http", "https")
+
+
+def _rewrite_one(href: str, *, page_url: str, source_dir: Path, content_root: Path) -> str:
+    parsed = urlparse(href)
+
+    # Leave external links, schemes, protocol-relative, and anchor-only links alone
+    if parsed.scheme or parsed.netloc or not parsed.path:
+        return href
+
+    # Non-`.md` links: clean URLs pass through, but links that target a real
+    # asset file (e.g. a clickable screenshot) need the same depth correction
+    # as image srcs
+    if not parsed.path.endswith(".md"):
+        return _rewrite_asset(href, page_url=page_url, source_dir=source_dir, content_root=content_root)
+
+    # Resolve the target's source path (absolute links are content-root-relative)
+    if parsed.path.startswith("/"):
+        target_abs = (content_root / parsed.path.lstrip("/")).resolve()
+    else:
+        target_abs = (source_dir / parsed.path).resolve()
+
+    # If the link points outside the content tree, leave it untouched
+    try:
+        target_rel = target_abs.relative_to(content_root)
+    except ValueError:
+        return href
+
+    target_url = "/" + md_to_url(target_rel)  # e.g. "/test/other/"
+
+    # Relative href from the current page's URL directory to the target
+    rel = posixpath.relpath(target_url, page_url)
+    if target_url.endswith("/") and not rel.endswith("/"):
+        rel += "/"
+
+    if parsed.fragment:
+        rel += "#" + parsed.fragment
+
+    return rel
+
+
+def _rewrite_asset(ref: str, *, page_url: str, source_dir: Path, content_root: Path) -> str:
+    """
+    Rewrite a relative asset reference (image etc.) authored against the source
+    tree into a URL relative to the page's clean URL.
+
+    Pages live one directory deeper in the URL space than in the source tree
+    (`foo.md` -> `/foo/`), so a source-relative `../images/x.png` needs one more
+    `../` in the built page. Only refs that resolve to a real file inside the
+    content tree are touched - clean URLs, external refs, and absolute paths
+    pass through.
+    """
+    parsed = urlparse(ref)
+    if parsed.scheme or parsed.netloc or not parsed.path or parsed.path.startswith("/"):
+        return ref
+
+    target_abs = (source_dir / parsed.path).resolve()
+    if not target_abs.is_file():
+        return ref
+    try:
+        target_rel = target_abs.relative_to(content_root)
+    except ValueError:
+        return ref
+
+    target_url = "/" + target_rel.as_posix()
+    rel = posixpath.relpath(target_url, page_url)
+    if parsed.fragment:
+        rel += "#" + parsed.fragment
+    return rel

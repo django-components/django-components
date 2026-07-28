@@ -72,37 +72,36 @@ ComponentMediaInputPath: TypeAlias = (
     ]
 )
 """
-A type representing an entry in [Media.js](api.md#django_components.ComponentMediaInput.js)
-or [Media.css](api.md#django_components.ComponentMediaInput.css).
+A type representing an entry in [Media.js][ComponentMediaInput.js]
+or [Media.css][ComponentMediaInput.css].
 
 If an entry is a [SafeString](https://dev.to/doridoro/django-safestring-afj),
-a [Script](api.md#django_components.Script),
-a [Style](api.md#django_components.Style),
+a [Script][Script],
+a [Style][Style],
 or any object with `__html__` method, it is treated as
 a pre-rendered tag and output as-is. Otherwise, it's assumed to be a path to a file.
 
-**Example:**
+Examples:
+    ```py
+    from django_components import Script, Style
 
-```py
-from django_components import Script, Style
-
-class MyComponent(Component):
-    class Media:
-        js = [
-            "path/to/script.js",
-            b"script.js",
-            SafeString("<script src='path/to/script.js'></script>"),
-            Script(content="console.log('inline');"),
-            Script(url="/static/analytics.js", content=None),
-        ]
-        css = [
-            Path("path/to/style.css"),
-            lambda: "path/to/style.css",
-            lambda: Path("path/to/style.css"),
-            Style(content=".x { color: red; }"),
-            Style(url="/static/print.css", content=None, attrs={"media": "print"}),
-        ]
-```
+    class MyComponent(Component):
+        class Media:
+            js = [
+                "path/to/script.js",
+                b"script.js",
+                SafeString("<script src='path/to/script.js'></script>"),
+                Script(content="console.log('inline');"),
+                Script(url="/static/analytics.js", content=None),
+            ]
+            css = [
+                Path("path/to/style.css"),
+                lambda: "path/to/style.css",
+                lambda: Path("path/to/style.css"),
+                Style(content=".x { color: red; }"),
+                Style(url="/static/print.css", content=None, attrs={"media": "print"}),
+            ]
+    ```
 """
 
 
@@ -115,7 +114,7 @@ class MyComponent(Component):
 # ```
 class ComponentMediaInput(Protocol):
     """
-    Defines JS and CSS media files associated with a [`Component`](api.md#django_components.Component).
+    Defines JS and CSS media files associated with a [`Component`][Component].
 
     ```py
     class MyTable(Component):
@@ -142,7 +141,7 @@ class ComponentMediaInput(Protocol):
         | None
     ) = None
     """
-    CSS files associated with a [`Component`](api.md#django_components.Component).
+    CSS files associated with a [`Component`][Component].
 
     - If a string, it's assumed to be a path to a CSS file.
 
@@ -153,69 +152,69 @@ class ComponentMediaInput(Protocol):
         - A list, each entry is assumed to be a path to a CSS file.
 
     Each entry can be a string, bytes, SafeString, PathLike, or a callable that returns one of the former
-    (see [`ComponentMediaInputPath`](api.md#django_components.ComponentMediaInputPath)).
+    (see [`ComponentMediaInputPath`][ComponentMediaInputPath]).
 
     Examples:
-    ```py
-    class MyComponent(Component):
-        class Media:
-            css = "path/to/style.css"
-    ```
+        ```py
+        class MyComponent(Component):
+            class Media:
+                css = "path/to/style.css"
+        ```
 
-    ```py
-    class MyComponent(Component):
-        class Media:
-            css = ["path/to/style1.css", "path/to/style2.css"]
-    ```
+        ```py
+        class MyComponent(Component):
+            class Media:
+                css = ["path/to/style1.css", "path/to/style2.css"]
+        ```
 
-    ```py
-    class MyComponent(Component):
-        class Media:
-            css = {
-                "all": "path/to/style.css",
-                "print": "path/to/print.css",
-            }
-    ```
+        ```py
+        class MyComponent(Component):
+            class Media:
+                css = {
+                    "all": "path/to/style.css",
+                    "print": "path/to/print.css",
+                }
+        ```
 
-    ```py
-    class MyComponent(Component):
-        class Media:
-            css = {
-                "all": ["path/to/style1.css", "path/to/style2.css"],
-                "print": "path/to/print.css",
-            }
-    ```
+        ```py
+        class MyComponent(Component):
+            class Media:
+                css = {
+                    "all": ["path/to/style1.css", "path/to/style2.css"],
+                    "print": "path/to/print.css",
+                }
+        ```
     """
 
     js: ComponentMediaInputPath | list[ComponentMediaInputPath] | None = None
     """
-    JS files associated with a [`Component`](api.md#django_components.Component).
+    JS files associated with a [`Component`][Component].
 
     - If a string, it's assumed to be a path to a JS file.
 
     - If a list, each entry is assumed to be a path to a JS file.
 
     Each entry can be a string, bytes, SafeString, PathLike, or a callable that returns one of the former
-    (see [`ComponentMediaInputPath`](api.md#django_components.ComponentMediaInputPath)).
+    (see [`ComponentMediaInputPath`][ComponentMediaInputPath]).
 
     Examples:
-    ```py
-    class MyComponent(Component):
-        class Media:
-            js = "path/to/script.js"
-    ```
+        ```py
+        class MyComponent(Component):
+            class Media:
+                js = "path/to/script.js"
+        ```
 
-    ```py
-    class MyComponent(Component):
-        class Media:
-            js = ["path/to/script1.js", "path/to/script2.js"]
-    ```
+        ```py
+        class MyComponent(Component):
+            class Media:
+                js = ["path/to/script1.js", "path/to/script2.js"]
+        ```
 
-    ```py
-    class MyComponent(Component):
-        class Media:
-            js = lambda: ["path/to/script1.js", "path/to/script2.js"]
-    ```
+        ```py
+        class MyComponent(Component):
+            class Media:
+                js = lambda: ["path/to/script1.js", "path/to/script2.js"]
+        ```
     """
 
     extend: bool | list[type["Component"]] = True
@@ -228,40 +227,39 @@ class ComponentMediaInput(Protocol):
 
     Read more in [Media inheritance](../concepts/fundamentals/secondary_js_css_files.md#media-inheritance) section.
 
-    **Example:**
+    Examples:
+        Disable media inheritance:
 
-    Disable media inheritance:
+        ```python
+        class ParentComponent(Component):
+            class Media:
+                js = ["parent.js"]
 
-    ```python
-    class ParentComponent(Component):
-        class Media:
-            js = ["parent.js"]
+        class MyComponent(ParentComponent):
+            class Media:
+                extend = False  # Don't inherit parent media
+                js = ["script.js"]
 
-    class MyComponent(ParentComponent):
-        class Media:
-            extend = False  # Don't inherit parent media
-            js = ["script.js"]
+        print(MyComponent.media._js)  # ["script.js"]
+        ```
 
-    print(MyComponent.media._js)  # ["script.js"]
-    ```
+        Specify which components to inherit from. In this case, the media files are inherited ONLY
+        from the specified components, and NOT from the original parent components:
 
-    Specify which components to inherit from. In this case, the media files are inherited ONLY
-    from the specified components, and NOT from the original parent components:
+        ```python
+        class ParentComponent(Component):
+            class Media:
+                js = ["parent.js"]
 
-    ```python
-    class ParentComponent(Component):
-        class Media:
-            js = ["parent.js"]
+        class MyComponent(ParentComponent):
+            class Media:
+                # Only inherit from these, ignoring the files from the parent
+                extend = [OtherComponent1, OtherComponent2]
 
-    class MyComponent(ParentComponent):
-        class Media:
-            # Only inherit from these, ignoring the files from the parent
-            extend = [OtherComponent1, OtherComponent2]
+                js = ["script.js"]
 
-            js = ["script.js"]
-
-    print(MyComponent.media._js)  # ["script.js", "other1.js", "other2.js"]
-    ```
+        print(MyComponent.media._js)  # ["script.js", "other1.js", "other2.js"]
+        ```
     """
 
 
