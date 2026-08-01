@@ -34,7 +34,7 @@ jobs:
   lighthouse:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           # The git-metadata footer reads `git log` per page (feature 3b.24).
           fetch-depth: 0
