@@ -291,7 +291,7 @@ def _member(class_path: str, member_name: str) -> Any:
 
 def test_api_discovery_includes_classes_excludes_categorized() -> None:
     names = {entry.display_name for entry in api_page.discover().entries}
-    assert {"Component", "ComponentRegistry"} <= names
+    assert {"AttrsDict", "Component", "ComponentRegistry", "compose_attrs"} <= names
     # These live on other reference pages, not the general API page.
     assert "AlreadyRegistered" not in names  # exception -> exceptions page
     assert "DynamicComponent" not in names  # predefined component -> components page
@@ -447,7 +447,7 @@ def test_hook_context_entry_renders_fields_table() -> None:
 
 def test_template_tag_discovery_finds_tags() -> None:
     entries = tags_page.discover().entries
-    assert {"component", "fill", "slot", "provide", "html_attrs"} <= {e.display_name for e in entries}
+    assert {"attrs", "component", "fill", "slot", "provide", "html_attrs"} <= {e.display_name for e in entries}
     assert {e.kind for e in entries} == {"template_tag"}
 
 

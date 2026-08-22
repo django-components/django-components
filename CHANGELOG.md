@@ -1,5 +1,24 @@
 # Release notes
 
+## v0.152.0
+
+#### Feature
+
+- **Added `{% attrs %}` and `compose_attrs()` for composing reusable HTML attribute dictionaries**
+
+    The new `{% attrs %}` tag accepts attribute mappings and arbitrarily nested lists or tuples of mappings.
+    Ordinary attributes use the rightmost value, while `class` and `style` contributions are combined and
+    normalized. Rendered directly, the result is an escaped, space-delimited HTML attribute string.
+
+    When `{% attrs %}` is the sole node in a quoted component input, the component receives an `AttrsDict`
+    without serialization. `AttrsDict` is a `dict` subclass whose `str()` representation is the rendered HTML
+    attributes. The Python `compose_attrs()` helper returns the same type and follows the same merge rules.
+
+    The existing `{% html_attrs %}` tag and `merge_attributes()` helper retain their previous, separate merge
+    behavior. `format_attributes()` and the new composition paths now reject invalid runtime HTML attribute names.
+
+    See [#1703](https://github.com/django-components/django-components/issues/1703).
+
 ## v0.151.1
 
 _2026-06-25_

@@ -92,6 +92,62 @@ In both cases, the attributes will be merged and rendered as:
 <div id="example" class="text-red pa-4" style="color: red;" data-id="123"></div>
 ```
 
+## Composing attribute dictionaries with `{% attrs %}`
+
+_New in version 0.152.0_
+
+Use the [`{% attrs %}`](../../reference/template_tags.md#attrs) tag when your inputs are already attribute
+dictionaries and you want to compose them in a defined order:
+
+```django
+<div {% attrs [base_attrs, [theme_attrs, state_attrs]] {'class': 'local'} %}></div>
+```
+
+Each argument may be a mapping (such as a dictionary), or a list or tuple nested to any depth. Every terminal
+value must be a mapping. The mappings are applied from left to right:
+
+- Ordinary attributes use the last value.
+- All `class` values are combined and normalized.
+- All `style` values are combined by CSS property, with later properties taking precedence.
+- The first occurrence of a key determines its position in the result.
+
+For example, with these inputs:
+
+```py
+base_attrs = {"id": "first", "class": "button", "title": "Open"}
+theme_attrs = {"class": {"primary": True}}
+state_attrs = {"id": "last", "disabled": True}
+```
+
+the tag above renders:
+
+```html
+<div id="last" class="button primary local" title="Open" disabled></div>
+```
+
+Attribute values are escaped. `True` renders a bare boolean attribute, while `False` and `None` are omitted.
+Attribute names must be non-empty strings and cannot contain whitespace, `=`, `/`, `>`, `<`, or the
+template-comment opener (`{` followed by `#`).
+
+The tag can also produce a dictionary for a component input. Put it by itself in a quoted nested template,
+with no surrounding text or whitespace:
+
+```django
+{% component "table"
+    table_attrs="{% attrs [base_attrs, [theme_attrs]] {'class': 'compact'} %}"
+/ %}
+```
+
+Here, `table_attrs` is an [`AttrsDict`][AttrsDict], a `dict` subclass, rather than a string. It supports normal
+mapping operations. Calling `str(table_attrs)` produces the escaped, space-delimited HTML attributes. If the
+nested template has surrounding text, whitespace, or any other node, django-components passes the serialized
+string instead.
+
+The older [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag remains useful when attributes
+are supplied as its `attrs` / `defaults` arguments and keyword arguments. Likewise, the legacy
+[`merge_attributes()`][merge_attributes] helper retains its existing behavior of space-joining every duplicate
+ordinary attribute. Neither is an alias for `{% attrs %}`.
+
 ## Summary
 
 1. The two arguments, `attrs` and `defaults`, can be passed as positional args:
@@ -392,11 +448,30 @@ Renders:
 
 In some cases, you want to prepare HTML attributes outside of templates.
 
-To achieve the same behavior as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag, you can use the [`merge_attributes()`][merge_attributes] and [`format_attributes()`][format_attributes] helper functions.
+### Composing attributes
 
-### Merging attributes
+[`compose_attrs()`][compose_attrs] is the Python counterpart to the [`{% attrs %}`](../../reference/template_tags.md#attrs)
+tag. It accepts mappings and arbitrarily nested lists or tuples of mappings, and returns an
+[`AttrsDict`][AttrsDict]:
 
-[`merge_attributes()`][merge_attributes] accepts any number of dictionaries and merges them together, using the same merge strategy as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs).
+```python
+from django_components import compose_attrs
+
+table_attrs = compose_attrs(
+    [base_attrs, [theme_attrs, state_attrs]],
+    {"class": "compact", "aria-label": "Results"},
+)
+```
+
+Ordinary keys use the last value, while `class` and `style` are composed. Use the result as a normal dictionary,
+or call `str(table_attrs)` to serialize it as escaped HTML attributes.
+
+### Legacy merging for `{% html_attrs %}`
+
+[`merge_attributes()`][merge_attributes] accepts any number of dictionaries and merges them together, using the
+same merge strategy as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs). Unlike
+[`compose_attrs()`][compose_attrs], duplicate ordinary attributes are joined with a space instead of using the
+last value.
 
 ```python
 from django_components import merge_attributes
@@ -424,6 +499,7 @@ Which will output:
 ### Formatting attributes
 
 [`format_attributes()`][format_attributes] serializes attributes the same way as [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag does.
+It also accepts structured `class` and `style` values and validates attribute names using the rules above.
 
 ```py
 from django_components import format_attributes

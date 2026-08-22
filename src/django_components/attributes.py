@@ -3,7 +3,8 @@
 # And https://github.com/Xzya/django-web-components/blob/b43eb0c832837db939a6f8c1980334b0adfdd6e4/django_web_components/attributes.py  # noqa: E501
 
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from functools import lru_cache
 from typing import Any, Literal, TypeAlias
 
 from django.template import Context
@@ -15,6 +16,9 @@ from django_components.node import BaseNode
 ClassValue: TypeAlias = Sequence["ClassValue"] | str | dict[str, bool]
 StyleDict: TypeAlias = dict[str, str | int | Literal[False] | None]
 StyleValue: TypeAlias = Sequence["StyleValue"] | str | StyleDict
+AttrsSource: TypeAlias = Mapping[str, Any] | list["AttrsSource"] | tuple["AttrsSource", ...]
+
+_INVALID_HTML_ATTR_NAME_CHARS = frozenset(" \t\n\r=/><")
 
 
 class HtmlAttrsNode(BaseNode):
@@ -90,9 +94,190 @@ class HtmlAttrsNode(BaseNode):
         return format_attributes(final_attrs)
 
 
+class AttrsDict(dict[str, Any]):
+    """
+    A dictionary of HTML attributes that serializes to attribute markup.
+
+    `AttrsDict` has normal dictionary behavior for indexing, iteration, equality,
+    component inputs, and mapping unpacking. Calling `str()` on it formats and
+    escapes its items as HTML attributes, so the same value can also be rendered
+    directly in a template.
+
+    Create instances with [`compose_attrs()`][compose_attrs] or the
+    [`{% attrs %}`][attrs] template tag.
+
+    `AttrsDict` deliberately does not implement Django's trusted-markup protocol.
+    If it is used as an attribute value, its serialized form is escaped for that
+    surrounding context.
+    """
+
+    def __str__(self) -> str:
+        return str(format_attributes(self))
+
+
+class AttrsNode(BaseNode):
+    """
+    Compose mappings into an attribute dictionary and render it as HTML attributes.
+
+    Each argument may be a mapping or an arbitrarily nested list or tuple of
+    mappings. Sources are applied from left to right. Ordinary attributes use the
+    last value, while `class` and `style` contributions are combined using the same
+    structured values as [`normalize_class()`][normalize_class] and
+    [`normalize_style()`][normalize_style].
+
+    ```django
+    <div {% attrs [base_attrs, [state_attrs]] local_attrs %}></div>
+    ```
+
+    When the tag is the sole node in a nested template expression, it returns an
+    [`AttrsDict`][AttrsDict] without serializing it. This makes it possible to pass
+    the result directly to a component:
+
+    ```django
+    {% component "table"
+        table_attrs="{% attrs [base_attrs, {'class': 'compact'}] %}"
+    / %}
+    ```
+
+    Any surrounding text or template nodes cause the result to be serialized to
+    an escaped, space-delimited attribute string.
+
+    See [HTML attributes](../concepts/fundamentals/html_attributes.md) for details.
+    """
+
+    tag = "attrs"
+    end_tag = None
+    allowed_flags = ()
+
+    # BaseNode declares Django's string-only render contract. This tag intentionally
+    # returns a native value when called directly by TemplateExpression.
+    def render(self, context: Context, *attrs: AttrsSource) -> AttrsDict:  # type: ignore[override]  # noqa: ARG002
+        return compose_attrs(*attrs)
+
+    def render_annotated(self, context: Context) -> SafeString:
+        # Django's NodeList requires every node to render a string, while a direct
+        # render() call must retain AttrsDict for nested template expressions. Keep
+        # string conversion inside Django's exception annotation boundary so errors
+        # raised while formatting still point to this tag in debug mode.
+        try:
+            return mark_safe(str(self.render(context)))
+        except Exception as err:
+            if context.template.engine.debug:
+                culprit_node = getattr(err, "_culprit_node", None)
+                if culprit_node is None:
+                    culprit_node = self
+                    err._culprit_node = culprit_node  # type: ignore[attr-defined]
+                if (
+                    not hasattr(err, "template_debug")
+                    and context.render_context.template.origin == culprit_node.origin
+                ):
+                    template_debug = context.render_context.template.get_exception_info(err, culprit_node.token)
+                    err.template_debug = template_debug  # type: ignore[attr-defined]
+            raise
+
+
+def compose_attrs(*attrs: AttrsSource) -> AttrsDict:
+    """
+    Compose HTML attribute mappings from left to right.
+
+    Arguments may be mappings or arbitrarily nested lists or tuples whose terminal
+    values are mappings. Ordinary keys use the last value without changing their
+    first-seen order. All `class` and `style` values are collected and normalized,
+    so each source can contribute classes and style properties independently.
+
+    `None` contributes nothing to `class` and `style`. As with ordinary HTML
+    attributes, `None` and `False` values are omitted when the returned
+    [`AttrsDict`][AttrsDict] is rendered, while `True` renders a bare attribute.
+
+    Unlike the legacy [`merge_attributes()`][merge_attributes], this function does
+    not join collisions for ordinary attributes with spaces.
+
+    Examples:
+        ```python
+        compose_attrs(
+            [{"id": "first", "class": "button"}, [{"class": {"active": True}}]],
+            {"id": "last"},
+        )
+        # == {"id": "last", "class": "button active"}
+        ```
+
+    Raises:
+        TypeError: If a terminal value is not a mapping, or an attribute name is
+            not a string.
+        ValueError: If the source containers are cyclic, or an attribute name is
+            invalid.
+
+    """
+    result = AttrsDict()
+    classes: list[ClassValue] = []
+    styles: list[StyleValue] = []
+
+    for attrs_dict in _iter_attr_mappings(attrs):
+        for authored_key, value in attrs_dict.items():
+            key = _validate_html_attr_name(authored_key)
+
+            if key == "class":
+                # Reserve the key's first-seen position even when this source has
+                # no contribution. Empty normalized class values are retained in
+                # the mapping and omitted only while formatting.
+                result.setdefault(key, None)
+                if value is not None:
+                    classes.append(value)
+            elif key == "style":
+                result.setdefault(key, None)
+                if value is not None:
+                    styles.append(value)
+            else:
+                result[key] = value
+
+    if classes:
+        result["class"] = normalize_class(classes)
+    if styles:
+        result["style"] = normalize_style(styles)
+
+    return result
+
+
+def _iter_attr_mappings(sources: Sequence[AttrsSource]) -> Iterator[Mapping[str, Any]]:
+    # Use an explicit stack so supported nesting depth is not constrained by
+    # Python's recursion limit. Exit markers distinguish a real cycle from the
+    # same list or tuple being reused in separate branches.
+    stack: list[tuple[AttrsSource, bool]] = [(source, False) for source in reversed(sources)]
+    active_container_ids: set[int] = set()
+
+    while stack:
+        source, is_exit = stack.pop()
+        if is_exit:
+            active_container_ids.remove(id(source))
+            continue
+
+        if isinstance(source, Mapping):
+            yield source
+            continue
+
+        if not isinstance(source, (list, tuple)):
+            msg = (
+                "compose_attrs() arguments must be a mapping or a nested list or tuple of mappings; "
+                f"got {type(source).__name__}"
+            )
+            raise TypeError(msg)
+
+        source_id = id(source)
+        if source_id in active_container_ids:
+            raise ValueError("compose_attrs() source containers cannot contain a cycle")
+
+        active_container_ids.add(source_id)
+        stack.append((source, True))
+        stack.extend((item, False) for item in reversed(source))
+
+
 def format_attributes(attributes: Mapping[str, Any]) -> str:
     """
-    Format a dict of attributes into an HTML attributes string.
+    Format a mapping of attributes into an HTML attributes string.
+
+    Attribute names must be strings and valid HTML attribute names. `class`
+    and `style` accept structured values and are normalized before rendering.
+    Empty normalized `class` and `style` values are omitted.
 
     Read more about [HTML attributes](../concepts/fundamentals/html_attributes.md).
 
@@ -111,6 +296,19 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
     attr_list = []
 
     for key, value in attributes.items():
+        key = _validate_html_attr_name(key)  # noqa: PLW2901
+
+        if key == "class" and value is not None:
+            if not isinstance(value, str):
+                value = normalize_class(value)  # noqa: PLW2901
+            if not value:
+                continue
+        elif key == "style" and value is not None:
+            if not isinstance(value, str):
+                value = normalize_style(value)  # noqa: PLW2901
+            if not value:
+                continue
+
         if value is None or value is False:
             continue
         if value is True:
@@ -119,6 +317,34 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
             attr_list.append(format_html('{}="{}"', key, value))
 
     return mark_safe(SafeString(" ").join(attr_list))
+
+
+@lru_cache(maxsize=512)
+def _is_valid_exact_html_attr_name(name: str) -> bool:
+    return bool(name) and not any(char in _INVALID_HTML_ATTR_NAME_CHARS for char in name) and "{#" not in name
+
+
+def _validate_html_attr_name(name: Any) -> str:
+    if not isinstance(name, str):
+        msg = f"HTML attributes must use string attribute names, got {type(name).__name__} key {name!r}."
+        raise TypeError(msg)
+
+    # Avoid retaining arbitrary string subclasses or invoking their custom hash
+    # and equality implementations in the shared cache.
+    is_valid = (
+        _is_valid_exact_html_attr_name(name)
+        if type(name) is str
+        else bool(name) and not any(char in _INVALID_HTML_ATTR_NAME_CHARS for char in name) and "{#" not in name
+    )
+    if not is_valid:
+        msg = (
+            f"HTML attributes contain invalid HTML attribute name {name!r}. Attribute names must be non-empty and "
+            "cannot contain whitespace, '=', '/', '>', '<', or the template-comment opener '{#'."
+        )
+        raise ValueError(msg)
+    # Drop any custom behavior from a str subclass before using the name in
+    # escaping and formatting operations.
+    return name if type(name) is str else str.__str__(name)
 
 
 # TODO_V1 - Remove in v1, keep only `format_attributes` going forward
