@@ -298,6 +298,24 @@ Here, `page` is a string:
 {% component 'blog_post' page=" {% random_int 10 20 %} " / %}
 ```
 
+The same rule lets the [`{% attrs %}`](html_attributes.md#composing-attribute-dictionaries-with-attrs) tag pass
+an attribute dictionary directly to another component. Here, `table_attrs` is an `AttrsDict`, a `dict` subclass:
+
+```django
+{% component "table"
+    table_attrs="{% attrs [base_attrs, [theme_attrs]] {'class': 'compact'} %}"
+/ %}
+```
+
+Adding even one space inside the quoted value takes the string path instead, so `table_attrs` receives serialized
+HTML attributes:
+
+```django
+{% component "table"
+    table_attrs=" {% attrs [base_attrs, [theme_attrs]] {'class': 'compact'} %} "
+/ %}
+```
+
 And same applies to the `{{ }}` variable tags:
 
 Here, `items` is a list:

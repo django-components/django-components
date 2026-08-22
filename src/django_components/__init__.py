@@ -4,7 +4,7 @@
 # NOTE: Some of the documentation is generated based on these exports
 # isort: off
 from django_components.app_settings import ContextBehavior, ComponentsSettings, ReloadMode, ReloadModeType
-from django_components.attributes import format_attributes, merge_attributes
+from django_components.attributes import AttrsDict, compose_attrs, format_attributes, merge_attributes
 from django_components.autodiscovery import autodiscover, import_libraries
 from django_components.dependencies import Dependency, DependencyKind, Script, Style
 from django_components.util.command import (
@@ -97,6 +97,7 @@ from django_components.components import DynamicComponent, ErrorFallback
 
 __all__ = [
     "AlreadyRegistered",
+    "AttrsDict",
     "BaseNode",
     "CommandArg",
     "CommandArgGroup",
@@ -175,6 +176,7 @@ __all__ = [
     "cached_template",
     "component_formatter",
     "component_shorthand_formatter",
+    "compose_attrs",
     "format_attributes",
     "get_component_by_class_id",
     "get_component_defaults",

@@ -382,6 +382,17 @@ where you can use a dictionary to manage each class name or style property separ
 %}
 ```
 
+When attributes already live in dictionaries, use [`{% attrs %}`](concepts/fundamentals/html_attributes.md#composing-attribute-dictionaries-with-attrs)
+to compose ordinary attributes with last-value-wins behavior while still combining `class` and `style`.
+Its inputs may include lists nested to any depth:
+
+```django
+<div {% attrs [base_attrs, [theme_attrs, state_attrs]] {'class': 'local'} %}></div>
+```
+
+Used by itself inside a quoted component input, `{% attrs %}` passes the resulting dictionary without
+serializing it. It supersedes `{% html_attrs %}` for attribute composition and is preferred for new code.
+
 Read more about [HTML attributes](concepts/fundamentals/html_attributes.md).
 
 ### HTML fragment support
