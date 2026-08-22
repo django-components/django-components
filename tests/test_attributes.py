@@ -83,14 +83,20 @@ class TestFormatAttributes:
         with pytest.raises(TypeError, match="must use string attribute names"):
             format_attributes({1: "value"})  # type: ignore[dict-item]
 
-    def test_strips_custom_markup_behavior_from_attribute_name(self):
+    def test_rejects_custom_markup_behavior_in_attribute_name(self):
         class UnsafeName(str):
             __slots__ = ()
 
             def __html__(self):
                 return 'title onmouseover="unsafe"'
 
-        assert format_attributes({UnsafeName("title"): "safe"}) == 'title="safe"'
+        with pytest.raises(ValueError, match="invalid HTML attribute name") as exc_info:
+            format_attributes({UnsafeName("title"): "safe"})
+
+        assert 'title onmouseover="unsafe"' in str(exc_info.value)
+
+    def test_accepts_safe_string_attribute_name_with_unchanged_representation(self):
+        assert format_attributes({mark_safe("title"): "safe"}) == 'title="safe"'
 
 
 @djc_test

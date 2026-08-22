@@ -393,7 +393,7 @@ Its inputs may include lists nested to any depth:
 ```
 
 Used by itself inside a quoted component input, `{% attrs %}` passes the resulting dictionary without
-serializing it.
+serializing it. It supersedes `{% html_attrs %}` for attribute composition and is preferred for new code.
 
 Read more about [HTML attributes](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/).
 

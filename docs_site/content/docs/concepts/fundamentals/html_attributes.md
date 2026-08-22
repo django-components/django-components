@@ -143,10 +143,11 @@ mapping operations. Calling `str(table_attrs)` produces the escaped, space-delim
 nested template has surrounding text, whitespace, or any other node, django-components passes the serialized
 string instead.
 
-The older [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) tag remains useful when attributes
-are supplied as its `attrs` / `defaults` arguments and keyword arguments. Likewise, the legacy
+The new `{% attrs %}` tag supersedes [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs) for
+attribute composition. Prefer `{% attrs %}` in new code. `{% html_attrs %}` remains supported for backward
+compatibility, retaining its `attrs` / `defaults` and keyword-argument interface. Likewise, the legacy
 [`merge_attributes()`][merge_attributes] helper retains its existing behavior of space-joining every duplicate
-ordinary attribute. Neither is an alias for `{% attrs %}`.
+ordinary attribute; it is not an alias for `{% attrs %}`.
 
 ## Summary
 

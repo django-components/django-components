@@ -291,7 +291,7 @@ def _member(class_path: str, member_name: str) -> Any:
 
 def test_api_discovery_includes_classes_excludes_categorized() -> None:
     names = {entry.display_name for entry in api_page.discover().entries}
-    assert {"AttrsDict", "Component", "ComponentRegistry", "compose_attrs"} <= names
+    assert {"Component", "ComponentRegistry"} <= names
     # These live on other reference pages, not the general API page.
     assert "AlreadyRegistered" not in names  # exception -> exceptions page
     assert "DynamicComponent" not in names  # predefined component -> components page

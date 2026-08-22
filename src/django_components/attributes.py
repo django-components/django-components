@@ -96,21 +96,43 @@ class HtmlAttrsNode(BaseNode):
 
 class AttrsDict(dict[str, Any]):
     """
-    A dictionary of HTML attributes that serializes to attribute markup.
+    Reuse composed HTML attributes as both a dictionary and rendered markup.
 
-    `AttrsDict` has normal dictionary behavior for indexing, iteration, equality,
-    component inputs, and mapping unpacking. Calling `str()` on it formats and
-    escapes its items as HTML attributes, so the same value can also be rendered
-    directly in a template.
+    You will usually create an `AttrsDict` with [`compose_attrs()`][compose_attrs]
+    in Python or the [`{% attrs %}`][attrs] template tag. Use it like a regular
+    dictionary when passing attributes to a component, reading values, or unpacking
+    keyword arguments:
 
-    Create instances with [`compose_attrs()`][compose_attrs] or the
-    [`{% attrs %}`][attrs] template tag.
+    ```python
+    attrs = compose_attrs(
+        {"id": "save", "class": "button"},
+        {"class": {"active": True}},
+    )
 
-    `AttrsDict` deliberately does not implement Django's trusted-markup protocol.
-    If it is used as an attribute value, its serialized form is escaped for that
-    surrounding context.
+    attrs["id"]
+    # "save"
+
+    str(attrs)
+    # 'id="save" class="button active"'
+    ```
+
+    In a component template, pass the native dictionary by using `{% attrs %}` as
+    the only node in a quoted input:
+
+    ```django
+    {% component "table" table_attrs="{% attrs base_attrs local_attrs %}" / %}
+    ```
+
+    Unlike `{% html_attrs %}`, these APIs produce a reusable native dictionary in
+    addition to rendering attributes. `AttrsDict`,
+    [`compose_attrs()`][compose_attrs], and `{% attrs %}` supersede
+    `{% html_attrs %}` for attribute composition. Prefer the new APIs in new code;
+    `{% html_attrs %}` remains supported for backward compatibility.
     """
 
+    # Do not implement Django's __html__ trusted-markup protocol here. The
+    # standalone tag marks its already-escaped output safe, while an AttrsDict
+    # reused as an attribute value must still be escaped for that outer context.
     def __str__(self) -> str:
         return str(format_attributes(self))
 
@@ -141,6 +163,10 @@ class AttrsNode(BaseNode):
 
     Any surrounding text or template nodes cause the result to be serialized to
     an escaped, space-delimited attribute string.
+
+    This tag supersedes `{% html_attrs %}` for attribute composition. Prefer
+    `{% attrs %}` in new code; `{% html_attrs %}` remains supported for backward
+    compatibility.
 
     See [HTML attributes](../concepts/fundamentals/html_attributes.md) for details.
     """
@@ -329,22 +355,31 @@ def _validate_html_attr_name(name: Any) -> str:
         msg = f"HTML attributes must use string attribute names, got {type(name).__name__} key {name!r}."
         raise TypeError(msg)
 
-    # Avoid retaining arbitrary string subclasses or invoking their custom hash
-    # and equality implementations in the shared cache.
-    is_valid = (
-        _is_valid_exact_html_attr_name(name)
-        if type(name) is str
-        else bool(name) and not any(char in _INVALID_HTML_ATTR_NAME_CHARS for char in name) and "{#" not in name
-    )
-    if not is_valid:
+    # Convert subclasses to an exact string without invoking custom __str__
+    # behavior, and never retain arbitrary subclasses in the shared cache.
+    exact_name = name if type(name) is str else str.__str__(name)
+    if not _is_valid_exact_html_attr_name(exact_name):
         msg = (
-            f"HTML attributes contain invalid HTML attribute name {name!r}. Attribute names must be non-empty and "
-            "cannot contain whitespace, '=', '/', '>', '<', or the template-comment opener '{#'."
+            f"HTML attributes contain invalid HTML attribute name {exact_name!r}. Attribute names must be non-empty "
+            "and cannot contain whitespace, '=', '/', '>', '<', or the template-comment opener '{#'."
         )
         raise ValueError(msg)
-    # Drop any custom behavior from a str subclass before using the name in
-    # escaping and formatting operations.
-    return name if type(name) is str else str.__str__(name)
+
+    # A str subclass can customize __str__ or Django's __html__ trusted-markup
+    # protocol. Reject a name whose formatted representation differs from its
+    # actual string value instead of silently discarding or rendering that payload.
+    if type(name) is not str:
+        rendered_name = str(conditional_escape(name))
+        expected_name = str(conditional_escape(exact_name))
+        if rendered_name != expected_name:
+            msg = (
+                f"HTML attributes contain invalid HTML attribute name {rendered_name!r}. Attribute name objects must "
+                "render exactly as their string value and cannot contain whitespace, '=', '/', '>', '<', or the "
+                "template-comment opener '{#'."
+            )
+            raise ValueError(msg)
+
+    return exact_name
 
 
 # TODO_V1 - Remove in v1, keep only `format_attributes` going forward
