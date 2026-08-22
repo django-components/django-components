@@ -4,6 +4,13 @@
     'api': dict({
       'entries': list([
         dict({
+          'canonical_anchor': 'AttrsDict',
+          'display_name': 'AttrsDict',
+          'dotted_path': 'django_components.AttrsDict',
+          'kind': 'class',
+          'legacy_anchor': 'django_components.AttrsDict',
+        }),
+        dict({
           'canonical_anchor': 'BaseNode',
           'display_name': 'BaseNode',
           'dotted_path': 'django_components.BaseNode',
@@ -324,6 +331,13 @@
           'dotted_path': 'django_components.cached_template',
           'kind': 'class',
           'legacy_anchor': 'django_components.cached_template',
+        }),
+        dict({
+          'canonical_anchor': 'compose_attrs',
+          'display_name': 'compose_attrs',
+          'dotted_path': 'django_components.compose_attrs',
+          'kind': 'class',
+          'legacy_anchor': 'django_components.compose_attrs',
         }),
         dict({
           'canonical_anchor': 'format_attributes',
@@ -980,6 +994,13 @@
     }),
     'template_tags': dict({
       'entries': list([
+        dict({
+          'canonical_anchor': 'attrs',
+          'display_name': 'attrs',
+          'dotted_path': 'django_components.attributes.AttrsNode',
+          'kind': 'template_tag',
+          'legacy_anchor': 'attrs',
+        }),
         dict({
           'canonical_anchor': 'component',
           'display_name': 'component',

@@ -1,11 +1,14 @@
+import json
 import re
+from types import MappingProxyType
+from typing import Any
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
 from django.utils.safestring import SafeString, mark_safe
 from pytest_django.asserts import assertHTMLEqual
 
-from django_components import Component, register, types
+from django_components import AttrsDict, Component, compose_attrs, register, types
 from django_components.attributes import format_attributes, merge_attributes, parse_string_style
 from django_components.testing import djc_test
 
@@ -42,6 +45,284 @@ class TestFormatAttributes:
 
     def test_attribute_with_true_value(self):
         assert format_attributes({"required": True}) == "required"
+
+    def test_normalizes_structured_class_and_style(self):
+        assert (
+            format_attributes(
+                {
+                    "class": ["button", {"active": True}],
+                    "style": ["color: red;", {"color": "blue"}],
+                },
+            )
+            == 'class="button active" style="color: blue;"'
+        )
+
+    def test_omits_empty_structured_class_and_style(self):
+        assert format_attributes({"class": {"hidden": False}, "style": {"color": False}}) == ""
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "",
+            "bad name",
+            "bad\tname",
+            "bad\nname",
+            "bad\rname",
+            "bad=name",
+            "bad/name",
+            "bad>name",
+            "bad<name",
+            "bad{#name",
+        ],
+    )
+    def test_rejects_invalid_attribute_name(self, name):
+        with pytest.raises(ValueError, match="invalid HTML attribute name"):
+            format_attributes({name: "value"})
+
+    def test_rejects_non_string_attribute_name(self):
+        with pytest.raises(TypeError, match="must use string attribute names"):
+            format_attributes({1: "value"})  # type: ignore[dict-item]
+
+    def test_rejects_custom_markup_behavior_in_attribute_name(self):
+        class UnsafeName(str):
+            __slots__ = ()
+
+            def __html__(self):
+                return 'title onmouseover="unsafe"'
+
+        with pytest.raises(ValueError, match="invalid HTML attribute name") as exc_info:
+            format_attributes({UnsafeName("title"): "safe"})
+
+        assert 'title onmouseover="unsafe"' in str(exc_info.value)
+
+    def test_accepts_safe_string_attribute_name_with_unchanged_representation(self):
+        assert format_attributes({mark_safe("title"): "safe"}) == 'title="safe"'
+
+
+@djc_test
+class TestComposeAttrs:
+    def test_returns_attrs_dict(self):
+        result = compose_attrs({"id": "one"})
+
+        assert isinstance(result, AttrsDict)
+        assert isinstance(result, dict)
+        assert result == {"id": "one"}
+
+    def test_flattens_nested_sources_at_any_depth(self):
+        source = {"id": "first", "class": "base"}
+        nested: Any = {"title": "deep"}
+        for _ in range(1_100):
+            nested = [nested]
+
+        result = compose_attrs([source, [[{"class": "active"}]], nested], {"id": "last"})
+
+        assert result == {
+            "id": "last",
+            "class": "base active",
+            "title": "deep",
+        }
+
+    def test_accepts_nested_tuples(self):
+        result = compose_attrs(({"id": "one"}, ({"title": "two"},)), {"role": "button"})
+
+        assert result == {"id": "one", "title": "two", "role": "button"}
+
+    def test_accepts_non_dict_mapping_leaves(self):
+        result = compose_attrs([MappingProxyType({"id": "one"})])
+
+        assert result == {"id": "one"}
+
+    def test_ordinary_keys_use_last_value(self):
+        result = compose_attrs(
+            {"id": "first", "disabled": True},
+            [{"id": "last", "disabled": False}],
+        )
+
+        assert result == {"id": "last", "disabled": False}
+
+    def test_merges_class_and_style(self):
+        result = compose_attrs(
+            {
+                "class": "base removable",
+                "style": "color: red; width: 10px;",
+            },
+            [
+                {
+                    "class": {"active": True, "removable": False},
+                    "style": {"color": "blue", "width": False},
+                },
+            ],
+        )
+
+        assert result == {
+            "class": "base active",
+            "style": "color: blue;",
+        }
+
+    def test_none_class_and_style_contributions_are_ignored(self):
+        result = compose_attrs(
+            {"class": "base", "style": "color: red;"},
+            {"class": None, "style": None},
+        )
+
+        assert result == {"class": "base", "style": "color: red;"}
+
+    def test_preserves_first_seen_key_order(self):
+        result = compose_attrs(
+            {"id": "first", "class": "base"},
+            {"title": "hello", "id": "last", "class": "active"},
+        )
+
+        assert list(result) == ["id", "class", "title"]
+
+    def test_does_not_mutate_sources(self):
+        first = {"class": ["base"], "id": "one"}
+        second = {"class": {"active": True}, "id": "two"}
+
+        compose_attrs(first, second)
+
+        assert first == {"class": ["base"], "id": "one"}
+        assert second == {"class": {"active": True}, "id": "two"}
+
+    def test_rejects_non_mapping_leaf(self):
+        with pytest.raises(TypeError, match="mapping or a nested list or tuple of mappings"):
+            compose_attrs([{"id": "one"}, ["not-a-mapping"]])  # type: ignore[list-item]
+
+    def test_rejects_cyclic_sources(self):
+        cyclic: list = []
+        cyclic.append(cyclic)
+
+        with pytest.raises(ValueError, match="cannot contain a cycle"):
+            compose_attrs(cyclic)
+
+    def test_allows_reusing_the_same_source_container(self):
+        shared: Any = [{"class": "shared"}]
+
+        result = compose_attrs([shared, shared])
+
+        assert result == {"class": "shared"}
+
+
+@djc_test
+class TestAttrsDict:
+    def test_stringifies_as_escaped_html_attributes(self):
+        attrs = compose_attrs({"title": "<unsafe>", "disabled": True, "hidden": False})
+
+        assert str(attrs) == 'title="&lt;unsafe&gt;" disabled'
+
+    def test_does_not_mark_itself_safe_in_an_attribute_value(self):
+        attrs = compose_attrs({"title": "hello"})
+
+        assert format_attributes({"data-attrs": attrs}) == 'data-attrs="title=&quot;hello&quot;"'
+
+    def test_retains_mapping_behavior(self):
+        attrs = compose_attrs({"id": "one", "class": "button"})
+
+        assert {**attrs} == {"id": "one", "class": "button"}
+        assert json.loads(json.dumps(attrs)) == {"id": "one", "class": "button"}
+
+
+@djc_test
+class TestAttrsTag:
+    def test_serializes_nested_sources(self):
+        template = Template(
+            """
+            {% load component_tags %}
+            <div {% attrs [first, [second]] third %}></div>
+            """,
+        )
+
+        rendered = template.render(
+            Context(
+                {
+                    "first": {"id": "first", "class": "base"},
+                    "second": {"class": "active", "title": "<unsafe>"},
+                    "third": {"id": "last", "disabled": True},
+                },
+            ),
+        )
+
+        assertHTMLEqual(
+            rendered,
+            '<div id="last" class="base active" title="&lt;unsafe&gt;" disabled></div>',
+        )
+
+    def test_passes_attrs_dict_from_exact_nested_template(self):
+        captured = {}
+
+        @register("attrs_receiver")
+        class AttrsReceiver(Component):
+            template: types.django_html = ""
+
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["attrs"] = kwargs["attrs"]
+                return {}
+
+        template = Template(
+            """
+            {% load component_tags %}
+            {% component "attrs_receiver"
+                attrs="{% attrs [first, [second]] {'class': 'local'} %}"
+            / %}
+            """,
+        )
+
+        template.render(
+            Context(
+                {
+                    "first": {"id": "first", "class": "base"},
+                    "second": {"id": "last", "class": "active"},
+                },
+            ),
+        )
+
+        assert isinstance(captured["attrs"], AttrsDict)
+        assert captured["attrs"] == {"id": "last", "class": "base active local"}
+
+    def test_surrounding_text_stringifies_attrs(self):
+        captured = {}
+
+        @register("attrs_string_receiver")
+        class AttrsStringReceiver(Component):
+            template: types.django_html = ""
+
+            def get_template_data(self, args, kwargs, slots, context):
+                captured["attrs"] = kwargs["attrs"]
+                return {}
+
+        template = Template(
+            """
+            {% load component_tags %}
+            {% component "attrs_string_receiver"
+                attrs="prefix {% attrs {'title': '<unsafe>'} %}"
+            / %}
+            """,
+        )
+
+        template.render(Context({}))
+
+        assert captured["attrs"] == 'prefix title="&lt;unsafe&gt;"'
+
+    def test_serialization_error_is_annotated_in_debug_mode(self):
+        class ExplodingValue:
+            def __str__(self):
+                raise ValueError("cannot serialize")
+
+        template = Template(
+            """
+            {% load component_tags %}
+            <div {% attrs attrs %}></div>
+            """,
+        )
+        old_debug = template.engine.debug
+        template.engine.debug = True
+        try:
+            with pytest.raises(ValueError, match="cannot serialize") as exc_info:
+                template.render(Context({"attrs": {"title": ExplodingValue()}}))
+        finally:
+            template.engine.debug = old_debug
+
+        assert hasattr(exc_info.value, "template_debug")
 
 
 @djc_test
