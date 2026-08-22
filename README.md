@@ -389,7 +389,10 @@ to compose ordinary attributes with last-value-wins behavior while still combini
 Its inputs may include lists nested to any depth:
 
 ```django
-<div {% attrs [base_attrs, [theme_attrs, state_attrs]] {'class': 'local'} %}></div>
+<div {% attrs
+   [base_attrs, [theme_attrs, state_attrs]]
+   {'class': 'local'}
+%}></div>
 ```
 
 Used by itself inside a quoted component input, `{% attrs %}` passes the resulting dictionary without
