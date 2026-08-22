@@ -327,6 +327,7 @@ class TestProtectedTags:
     )
     def test_raises_on_overriding_our_tags(self):
         for tag in [
+            "attrs",
             "component_css_dependencies",
             "component_js_dependencies",
             "fill",

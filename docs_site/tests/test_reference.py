@@ -447,7 +447,7 @@ def test_hook_context_entry_renders_fields_table() -> None:
 
 def test_template_tag_discovery_finds_tags() -> None:
     entries = tags_page.discover().entries
-    assert {"component", "fill", "slot", "provide", "html_attrs"} <= {e.display_name for e in entries}
+    assert {"attrs", "component", "fill", "slot", "provide", "html_attrs"} <= {e.display_name for e in entries}
     assert {e.kind for e in entries} == {"template_tag"}
 
 
