@@ -1,6 +1,6 @@
 import django.template
 
-from django_components.attributes import HtmlAttrsNode
+from django_components.attributes import AttrsNode, HtmlAttrsNode
 from django_components.cache_tag import do_djc_cache
 from django_components.component import ComponentNode
 from django_components.dependencies import ComponentCssDependenciesNode, ComponentJsDependenciesNode
@@ -20,6 +20,7 @@ register = django.template.Library()
 # NOTE: The docs-site reference generator (`docs_site/apps/docs/reference/`) actually
 #   searches this file for all `Node` classes and uses them to generate the documentation.
 #   The docstring on the Node classes is used as the tag's documentation.
+AttrsNode.register(register)
 ComponentNode.register(register)
 ComponentCssDependenciesNode.register(register)
 ComponentJsDependenciesNode.register(register)
@@ -36,6 +37,7 @@ register.tag("cache", do_djc_cache)
 # For an intuitive use via Python imports, the tags are aliased to the function name.
 # E.g. so if the tag name is `slot`, one can also do:
 # `from django_components.templatetags.component_tags import slot`
+attrs = AttrsNode.parse
 component = ComponentNode.parse
 component_css_dependencies = ComponentCssDependenciesNode.parse
 component_js_dependencies = ComponentJsDependenciesNode.parse
@@ -46,6 +48,7 @@ slot = SlotNode.parse
 
 
 __all__ = [
+    "attrs",
     "component",
     "component_css_dependencies",
     "component_js_dependencies",

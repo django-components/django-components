@@ -35,6 +35,7 @@ class TagProtectedError(Exception):
 
 
 PROTECTED_TAGS = [
+    "attrs",
     "component_css_dependencies",
     "component_js_dependencies",
     "fill",
