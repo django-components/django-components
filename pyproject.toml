@@ -59,7 +59,7 @@ dev = [
     # of `tox.ini`, which is what CI actually runs.
     "ruff==0.16.4",
     "pre-commit",
-    "mypy==2.3.0",
+    "mypy==2.3.1",
     "playwright",
     "requests",
     "types-requests",
