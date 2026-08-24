@@ -134,7 +134,7 @@ docs = [
     "packaging",
     # Pygments 2.20 breaks mkdocstrings signature rendering by rejecting the
     # None filename value passed through pymdownx.highlight.
-    "pygments<2.21",
+    "pygments<2.22",
     "pygments-djc",
     "django>=5.2",
     "djc-core>=1.3.1",
