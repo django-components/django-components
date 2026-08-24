@@ -793,6 +793,23 @@ class TestComponentNesting:
         """
         assertHTMLEqual(rendered, expected)
 
+    @djc_test(components_settings={"context_behavior": "django"})
+    def test_unfilled_slot_inside_component_fill_uses_fallback(self):
+        @register("child")
+        class Child(Component):
+            template: types.django_html = '{% slot "content" / %}'
+
+        class Parent(Component):
+            template: types.django_html = """
+                {% component "child" %}
+                    {% fill "content" %}
+                        {% slot "missing" %}fallback{% endslot %}
+                    {% endfill %}
+                {% endcomponent %}
+            """
+
+        assertHTMLEqual(Parent.render(), "fallback")
+
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_component_nesting_deep_slot_inside_component_fill(self, components_settings):
         @register("complex_child")
