@@ -57,7 +57,7 @@ dev = [
     "syrupy",
     # NOTE: Must stay in sync with the `ruff` pin in the `[testenv:ruff]` section
     # of `tox.ini`, which is what CI actually runs.
-    "ruff==0.16.4",
+    "ruff==0.16.5",
     "pre-commit",
     "mypy==2.3.1",
     "playwright",
