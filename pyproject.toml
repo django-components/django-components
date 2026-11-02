@@ -53,7 +53,7 @@ dev = [
     "pytest",
     "pytest-xdist",
     "pytest-django",
-    "pytest-asyncio==1.4.0",
+    "pytest-asyncio==1.4.1",
     "syrupy",
     # NOTE: Must stay in sync with the `ruff` pin in the `[testenv:ruff]` section
     # of `tox.ini`, which is what CI actually runs.
