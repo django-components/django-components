@@ -6,6 +6,8 @@
 
 - Dropped support for Python 3.10.
 
+- `django-components` no longer installs `typing-extensions`. If your code imports `typing_extensions`, add it to your own dependencies.
+
 #### Refactor
 
 - Add support for Django 6.1 (on Python 3.12 and newer)
