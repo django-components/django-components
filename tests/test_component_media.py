@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
-from django.forms.widgets import Media
+from django.forms.widgets import Media, MediaAsset
 from django.template import Context, Template
 from django.templatetags.static import static
 from django.utils.html import format_html, html_safe
@@ -25,6 +25,14 @@ from django_components.testing import djc_test
 from .testutils import setup_test_config
 
 setup_test_config()
+
+
+def _media_item_url(media: Media, item) -> str:
+    # Django 6.1 stores each plain path as a `Script` or `Stylesheet`, while
+    # older versions keep the string, so custom `Media` classes must handle both.
+    if isinstance(item, MediaAsset):
+        return item.path
+    return media.absolute_path(item)  # type: ignore[attr-defined]
 
 
 # "Main media" refer to the HTML, JS, and CSS set on the Component class itself
@@ -357,11 +365,10 @@ class TestComponentMedia:
 
     def test_media_custom_render_js(self):
         class MyMedia(Media):
-            def render_js(self):
+            def render_js(self, *, attrs=None):
                 tags: list[str] = []
-                for path in self._js:  # type: ignore[attr-defined]
-                    abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
-                    tags.append(f'<script defer src="{abs_path}"></script>')
+                for item in self._js:  # type: ignore[attr-defined]
+                    tags.append(f'<script defer src="{_media_item_url(self, item)}"></script>')
                 return tags
 
         class SimpleComponent(Component):
@@ -381,14 +388,21 @@ class TestComponentMedia:
         assert '<script defer src="path/to/script.js"></script>' in rendered
         assert '<script defer src="path/to/script2.js"></script>' in rendered
 
+        # Components call `render_js()` directly, while `str(media)` goes through `Media.render()`.
+        media_html = str(SimpleComponent.media)
+        assert '<script defer src="path/to/script.js"></script>' in media_html
+        assert '<script defer src="path/to/script2.js"></script>' in media_html
+
     def test_media_custom_render_css(self):
         class MyMedia(Media):
-            def render_css(self):
+            def render_css(self, *, attrs=None):
                 tags: list[str] = []
                 media = sorted(self._css)  # type: ignore[attr-defined]
                 for medium in media:
-                    for path in self._css[medium]:  # type: ignore[attr-defined]
-                        tags.append(f'<link abc href="{path}" media="{medium}" rel="stylesheet" />')
+                    for item in self._css[medium]:  # type: ignore[attr-defined]
+                        tags.append(
+                            f'<link abc href="{_media_item_url(self, item)}" media="{medium}" rel="stylesheet" />'
+                        )
                 return tags
 
         class SimpleComponent(Component):
@@ -412,6 +426,12 @@ class TestComponentMedia:
         assertInHTML('<link abc href="path/to/style.css" media="all" rel="stylesheet">', rendered)
         assertInHTML('<link abc href="path/to/style2.css" media="print" rel="stylesheet">', rendered)
         assertInHTML('<link abc href="path/to/style3.css" media="screen" rel="stylesheet">', rendered)
+
+        # Components call `render_css()` directly, while `str(media)` goes through `Media.render()`.
+        media_html = str(SimpleComponent.media)
+        assertInHTML('<link abc href="path/to/style.css" media="all" rel="stylesheet">', media_html)
+        assertInHTML('<link abc href="path/to/style2.css" media="print" rel="stylesheet">', media_html)
+        assertInHTML('<link abc href="path/to/style3.css" media="screen" rel="stylesheet">', media_html)
 
     @djc_test(
         django_settings={
@@ -834,11 +854,10 @@ class TestMediaStaticfiles:
         """Test integration with Django's staticfiles app"""
 
         class MyMedia(Media):
-            def render_js(self):
+            def render_js(self, *, attrs=None):
                 tags: list[str] = []
-                for path in self._js:  # type: ignore[attr-defined]
-                    abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
-                    tags.append(f'<script defer src="{abs_path}"></script>')
+                for item in self._js:  # type: ignore[attr-defined]
+                    tags.append(f'<script defer src="{_media_item_url(self, item)}"></script>')
                 return tags
 
         class SimpleComponent(Component):
@@ -861,6 +880,10 @@ class TestMediaStaticfiles:
         assertInHTML('<link href="/static/calendar/style.css" media="all" rel="stylesheet">', rendered)
 
         assertInHTML('<script defer src="/static/calendar/script.js"></script>', rendered)
+
+        media_html = str(SimpleComponent.media)
+        assertInHTML('<link href="/static/calendar/style.css" media="all" rel="stylesheet">', media_html)
+        assertInHTML('<script defer src="/static/calendar/script.js"></script>', media_html)
 
     # For context see https://github.com/django-components/django-components/issues/522
     @djc_test(
@@ -894,11 +917,10 @@ class TestMediaStaticfiles:
         """Test integration with Django's staticfiles app and ManifestStaticFilesStorage"""
 
         class MyMedia(Media):
-            def render_js(self):
+            def render_js(self, *, attrs=None):
                 tags: list[str] = []
-                for path in self._js:  # type: ignore[attr-defined]
-                    abs_path = self.absolute_path(path)  # type: ignore[attr-defined]
-                    tags.append(f'<script defer src="{abs_path}"></script>')
+                for item in self._js:  # type: ignore[attr-defined]
+                    tags.append(f'<script defer src="{_media_item_url(self, item)}"></script>')
                 return tags
 
         class SimpleComponent(Component):
@@ -921,6 +943,10 @@ class TestMediaStaticfiles:
         assertInHTML('<link href="/static/calendar/style.0eeb72042b59.css" media="all" rel="stylesheet">', rendered)
 
         assertInHTML('<script defer src="/static/calendar/script.e1815e23e0ec.js"></script>', rendered)
+
+        media_html = str(SimpleComponent.media)
+        assertInHTML('<link href="/static/calendar/style.0eeb72042b59.css" media="all" rel="stylesheet">', media_html)
+        assertInHTML('<script defer src="/static/calendar/script.e1815e23e0ec.js"></script>', media_html)
 
 
 @djc_test
