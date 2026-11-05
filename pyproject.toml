@@ -27,7 +27,7 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
 ]
 # Package dependencies
-dependencies = ["Django>=5.2", "djc-core>=1.4.0", "typing-extensions>=4.12.2"]
+dependencies = ["Django>=5.2", "djc-core>=1.4.0"]
 license = { text = "MIT" }
 
 # See https://docs.pypi.org/project_metadata/#icons
@@ -72,7 +72,6 @@ dev = [
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
     "virtualenv==21.15.6",
-    "typing-extensions>=4.12.2",
     "pathspec",
     "pyyaml",
     "beautifulsoup4>=4.14.3",
@@ -94,7 +93,6 @@ ci = [
     "virtualenv==21.15.6",
     "pytest-asyncio",
     "pytest-django",
-    "typing-extensions>=4.12.2",
     "pathspec",
     "beautifulsoup4>=4.14.3",
 ]

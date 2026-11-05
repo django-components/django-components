@@ -79,7 +79,7 @@ or set them to `None`, the inputs will be passed as plain lists or dictionaries,
 and will not be validated.
 
 ```python
-from typing_extensions import TypedDict
+from typing import TypedDict
 from django.template import Context
 from django_components import Component, Slot, SlotInput
 
@@ -98,13 +98,13 @@ class Button(Component):
         maybe_var: int | None = None  # May be omitted
 
     class Slots:
-        # Use `SlotInput` to allow slots to be given as `Slot` instance,
-        # plain string, or a function that returns a string.
-        my_slot: SlotInput | None = None
         # Use `Slot` to allow ONLY `Slot` instances.
         # The generic is optional, and it specifies the data available
         # to the slot function.
         footer: Slot[ButtonFooterSlotData]
+        # Use `SlotInput` to allow slots to be given as `Slot`
+        # instance, plain string, or a function that returns a string.
+        my_slot: SlotInput | None = None
 
     # Add type hints to the data method
     def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
