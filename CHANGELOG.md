@@ -24,6 +24,8 @@
 
 - `ComponentMediaInputPath` now includes Django's `Script` from `django.forms.widgets`, so `django-stubs` accepts `Script("calendar/x.js", type="module")` where `ComponentMediaInputPath` is expected.
 
+- `@djc_test` no longer causes `KeyError` on imports from a component directory without `__init__.py`. The error could appear in a later test, depending on test order, for example under `pytest-xdist`.
+
 ## v0.152.0
 
 #### Feature
