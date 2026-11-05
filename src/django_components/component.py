@@ -1699,8 +1699,8 @@ class Component(metaclass=ComponentMeta):
 
         print(MyComponent.media)
         # Output:
-        # <script src="/static/path/to/script.js"></script>
         # <link href="/static/path/to/style.css" media="all" rel="stylesheet">
+        # <script src="/static/path/to/script.js"></script>
         ```
     """  # noqa: E501
 
@@ -1737,8 +1737,11 @@ class Component(metaclass=ComponentMeta):
       `media_class.render_js()` or `media_class.render_css()`.
     - A path that starts with `http`, `https`, or `/` is considered a URL, skipping the static file resolution.
       This path is still rendered to HTML with `media_class.render_js()` or `media_class.render_css()`.
-    - A `SafeString` (with `__html__` method) is considered an already-formatted HTML tag, skipping both static file
-        resolution and rendering with `media_class.render_js()` or `media_class.render_css()`.
+    - A `SafeString`, or any other object with an `__html__` method, is treated as an already-built HTML tag.
+      django-components doesn't resolve its path, and the default `media_class.render_js()` and
+      `media_class.render_css()` output what its `__html__` method returns. A custom `media_class` receives these
+      objects too, and on Django 6.1 paths also reach it as Django's `Script` and `Stylesheet` objects. See
+      [the override example](../concepts/fundamentals/secondary_js_css_files.md#change-how-every-file-is-rendered).
     - You can set [`extend`][ComponentMediaInput.extend] to configure
       whether to inherit JS / CSS from parent components. See
       [Media inheritance](../concepts/fundamentals/secondary_js_css_files.md#media-inheritance).
