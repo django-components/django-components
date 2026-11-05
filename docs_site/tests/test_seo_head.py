@@ -9,7 +9,7 @@ helpers that feed them.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from apps.docs.build.frontmatter import parse_page
@@ -119,8 +119,8 @@ def _article_block(html: str) -> dict:
 
 
 def test_techarticle_emitted_on_content_page() -> None:
-    created = datetime(2024, 1, 2, tzinfo=timezone.utc)
-    modified = datetime(2024, 5, 6, tzinfo=timezone.utc)
+    created = datetime(2024, 1, 2, tzinfo=UTC)
+    modified = datetime(2024, 5, 6, tzinfo=UTC)
     html = _render(created=created, last_updated=modified)
     article = _article_block(html)
     assert article["@context"] == "https://schema.org"

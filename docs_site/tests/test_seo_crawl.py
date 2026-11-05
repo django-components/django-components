@@ -8,7 +8,7 @@ apps/docs/build/seo.py, driven by a SiteIndex over a small synthetic build.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from apps.docs.build import seo
@@ -23,7 +23,7 @@ from apps.docs.build.site_index import SiteIndex
 from django.conf import settings
 
 DOC_META = '<meta name="generator" content="django-components docs builder">'
-GEN_AT = datetime(2026, 6, 1, tzinfo=timezone.utc)
+GEN_AT = datetime(2026, 6, 1, tzinfo=UTC)
 
 
 def write_page(build: Path, rel: str, *, robots: str = "index,follow", canonical: str = "", doc: bool = True) -> None:

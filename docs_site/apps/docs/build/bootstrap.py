@@ -25,11 +25,10 @@ from __future__ import annotations
 
 import json
 import re
+import tomllib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-
-import tomllib
 
 from apps.docs._vendor.mike_versions import Version, Versions
 from apps.docs.build.versioning import (

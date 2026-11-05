@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from apps.docs.build.guards import GuardContext, anchor_deprecation
@@ -10,7 +10,7 @@ from apps.docs.build.guards.base import Severity
 from django.test import override_settings
 
 PAST = date(2000, 1, 1)
-FUTURE = datetime.now(tz=timezone.utc).date() + timedelta(days=3650)
+FUTURE = datetime.now(tz=UTC).date() + timedelta(days=3650)
 
 
 def _ctx(content: Path) -> GuardContext:
