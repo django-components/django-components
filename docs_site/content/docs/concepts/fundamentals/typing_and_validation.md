@@ -665,11 +665,11 @@ class Button(Component):
         maybe_var: int | None = None  # May be omitted
 
     class Slots:
-        # Use `SlotInput` to allow slots to be given as `Slot` instance,
-        # plain string, or a function that returns a string.
-        my_slot: SlotInput | None = None
         # Use `Slot` to allow ONLY `Slot` instances.
         another_slot: Slot
+        # Use `SlotInput` to allow slots to be given as `Slot`
+        # instance, plain string, or a function that returns a string.
+        my_slot: SlotInput | None = None
 
     # The args, kwargs, slots are instances of the component's Args, Kwargs, and Slots classes
     def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):

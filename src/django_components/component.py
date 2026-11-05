@@ -3193,8 +3193,8 @@ class Component(metaclass=ComponentMeta):
                 age: int
 
             class Slots:
-                my_slot: SlotInput | None = None
                 footer: SlotInput
+                my_slot: SlotInput | None = None
 
         # Add type hints to the render call
         Button.render(
