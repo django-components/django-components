@@ -2,6 +2,10 @@
 
 ## v0.153.0
 
+#### Breaking changes 🚨📢
+
+- Dropped support for Python 3.10.
+
 #### Refactor
 
 - Add support for Django 6.1 (on Python 3.12 and newer)
