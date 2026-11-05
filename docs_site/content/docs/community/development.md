@@ -325,6 +325,7 @@ GitHub Actions splits the test suite across multiple jobs in [`.github/workflows
 | `benchmark_snapshots` | Ubuntu × Python 3.14 | Every push / PR | Only `@pytest.mark.benchmark_snapshot` tests. | `tox -e benchmark_snapshot` |
 | `coverage` | Ubuntu × Python 3.14 | Every push / PR | Unit-test lane with coverage, fails under 75%. | `tox -e coverage` |
 | `ruff`, `mypy` | Ubuntu × Python 3.14 | Every push / PR | Lint and type-check. | `tox -e ruff`, `tox -e mypy` |
+| `lockfile` | Ubuntu | Every push / PR | Checks that `uv.lock` matches `pyproject.toml`. If it fails, run `uv lock` and commit the result. Dependabot can bump a pin in `pyproject.toml` without updating `uv.lock`, so a failure may come from an earlier bump, not your change. | None |
 | `e2e_cross_browser` | Ubuntu × Python 3.14 × `{chromium, firefox, webkit}` | Weekly cron (Mon 06:00 UTC) + manual dispatch | E2E suite against each browser, one cell per browser. Chromium is included as a baseline. On scheduled failures, files or comments on a tracking issue labeled `ci-cross-browser-failure`. See [`tests-cross-browser.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/tests-cross-browser.yml). | `tox -e e2e` (with `DJC_TEST_BROWSERS=<browser>`) |
 
 ### When the weekly cross-browser run fails
