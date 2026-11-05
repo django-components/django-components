@@ -484,8 +484,8 @@ class Button(Component):
         maybe_var: int | None = None  # May be omitted
 
     class Slots:
-        my_slot: SlotInput | None = None
         another_slot: SlotInput
+        my_slot: SlotInput | None = None
 
     def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
         args.size  # int

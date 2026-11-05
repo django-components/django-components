@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import TYPE_CHECKING
 
 from django.conf import settings
@@ -49,7 +49,7 @@ _FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
 
 
 def _today() -> date:
-    return datetime.now(tz=timezone.utc).date()
+    return datetime.now(tz=UTC).date()
 
 
 def check(ctx: GuardContext) -> Iterator[GuardResult]:

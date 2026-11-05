@@ -27,7 +27,7 @@ import json
 import os
 import shutil
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from apps.docs._vendor.mike_versions import Versions
@@ -156,7 +156,7 @@ def write_build_info(
         "version": version,
         "source_sha": source_sha,
         "source_tag": source_tag if source_tag is not None else version,
-        "built_at": built_at if built_at is not None else datetime.now(timezone.utc).isoformat(),
+        "built_at": built_at if built_at is not None else datetime.now(UTC).isoformat(),
         "builder_version": builder_version,
     }
     version_dir.mkdir(parents=True, exist_ok=True)

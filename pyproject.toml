@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "django_components"
 version = "0.152.0"
-requires-python = ">=3.10, <4.0"
+requires-python = ">=3.11, <4.0"
 description = "A way to create simple reusable template components in Django."
 keywords = ["django", "components", "css", "js", "html"]
 readme = "README.md"
@@ -21,14 +21,13 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
 ]
 # Package dependencies
-dependencies = ["Django>=5.2", "djc-core>=1.3.1", "typing-extensions>=4.12.2"]
+dependencies = ["Django>=5.2", "djc-core>=1.3.1"]
 license = { text = "MIT" }
 
 # See https://docs.pypi.org/project_metadata/#icons
@@ -73,7 +72,6 @@ dev = [
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
     "virtualenv==21.15.1",
-    "typing-extensions>=4.12.2",
     "pathspec",
     "PyGithub",
     "pyyaml",
@@ -96,7 +94,6 @@ ci = [
     "virtualenv==21.15.1",
     "pytest-asyncio",
     "pytest-django",
-    "typing-extensions>=4.12.2",
     "pathspec",
     "beautifulsoup4>=4.14.3",
 ]
@@ -256,6 +253,7 @@ ignore = [
     "SLF001",  # Private member accessed: `_registry`
     "TRY300",  # Consider moving this statement to an `else` block
     "TRY301",  # Abstract `raise` to an inner function
+    "UP042",   # Use `StrEnum` (NOTE: Not the same, it changes what `str()` returns for public enums)
 
     # TODO: Following could be useful to start using, but might require more changes.
     "C420",    # Unnecessary dict comprehension for iterable; use `dict.fromkeys` instead

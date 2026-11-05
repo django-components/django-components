@@ -689,8 +689,8 @@ class Button(Component):
         maybe_var: int | None = None  # May be omitted
 
     class Slots:
-        my_slot: SlotInput | None = None
         footer: SlotInput
+        my_slot: SlotInput | None = None
 
     # Use the above classes to add type hints to the data method
     def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):

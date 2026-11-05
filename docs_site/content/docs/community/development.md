@@ -103,19 +103,18 @@ pytest
 The library is also tested across many versions of Python and Django. To run tests that way:
 
 ```sh
-pyenv install -s 3.10
 pyenv install -s 3.11
 pyenv install -s 3.12
 pyenv install -s 3.13
 pyenv install -s 3.14
-pyenv local 3.10 3.11 3.12 3.13 3.14
+pyenv local 3.11 3.12 3.13 3.14
 tox -p
 ```
 
 To run tests for a specific Python version, use:
 
 ```sh
-tox -e py310
+tox -e py311
 ```
 
 NOTE: See the available environments in `tox.ini`.
@@ -310,7 +309,7 @@ pytest --snapshot-update
 Or with tox:
 
 ```sh
-tox -e py310 -- --snapshot-update
+tox -e py311 -- --snapshot-update
 ```
 
 ## How CI runs your tests
@@ -321,11 +320,12 @@ GitHub Actions splits the test suite across multiple jobs in [`.github/workflows
 
 | Job | Matrix | When | What it runs | Tox env |
 | --- | --- | --- | --- | --- |
-| `build` | Ubuntu × Python 3.10–3.14, plus Windows × Python 3.10 and 3.14 | Every push / PR | Unit tests in parallel with `pytest-xdist`. Skips E2E and benchmark markers. No Playwright install. | `tox` |
+| `build` | Ubuntu × Python 3.11–3.14, plus Windows × Python 3.11 and 3.14 | Every push / PR | Unit tests in parallel with `pytest-xdist`. Skips E2E and benchmark markers. No Playwright install. | `tox` |
 | `e2e` | Ubuntu × Python 3.14 | Every push / PR | Only `@pytest.mark.e2e` tests. Installs Chromium only. Sets `DJC_TEST_BROWSERS=chromium`. | `tox -e e2e` |
 | `benchmark_snapshots` | Ubuntu × Python 3.14 | Every push / PR | Only `@pytest.mark.benchmark_snapshot` tests. | `tox -e benchmark_snapshot` |
 | `coverage` | Ubuntu × Python 3.14 | Every push / PR | Unit-test lane with coverage, fails under 75%. | `tox -e coverage` |
 | `ruff`, `mypy` | Ubuntu × Python 3.14 | Every push / PR | Lint and type-check. | `tox -e ruff`, `tox -e mypy` |
+| `lockfile` | Ubuntu | Every push / PR | Checks that `uv.lock` matches `pyproject.toml`. If it fails, run `uv lock` and commit the result. Dependabot can bump a pin in `pyproject.toml` without updating `uv.lock`, so a failure may come from an earlier bump, not your change. | None |
 | `e2e_cross_browser` | Ubuntu × Python 3.14 × `{chromium, firefox, webkit}` | Weekly cron (Mon 06:00 UTC) + manual dispatch | E2E suite against each browser, one cell per browser. Chromium is included as a baseline. On scheduled failures, files or comments on a tracking issue labeled `ci-cross-browser-failure`. See [`tests-cross-browser.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/tests-cross-browser.yml). | `tox -e e2e` (with `DJC_TEST_BROWSERS=<browser>`) |
 
 ### When the weekly cross-browser run fails
@@ -340,7 +340,7 @@ Triage flow when you see one of these issues:
 
 ### Windows coverage is smoke-only
 
-The Windows matrix runs Python 3.10 and 3.14 only, not the full Python range. The intent is to catch path-handling regressions on Windows without paying full matrix cost. A Windows-specific failure on Python 3.11/3.12/3.13 will not appear in CI.
+The Windows matrix runs Python 3.11 and 3.14 only, not the full Python range. The intent is to catch path-handling regressions on Windows without paying full matrix cost. A Windows-specific failure on Python 3.12/3.13 will not appear in CI.
 
 ### How tests get sorted into lanes
 

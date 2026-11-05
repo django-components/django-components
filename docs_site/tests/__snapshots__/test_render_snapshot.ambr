@@ -28,7 +28,7 @@
           <span class="k">return</span> <span class="n">x</span> <span class="o">+</span> <span class="mi">1</span>
       </code></pre></div>
       <div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">Button</span><span class="p">(</span><span class="n">Component</span><span class="p">):</span>
-          <span class="n">template</span> <span class="o">=</span> <span class="s2">&quot;&lt;button&gt;{{ label }}&lt;/button&gt;&quot;</span>
+          <span class="n">template</span> <span class="o">=</span> <span class="s2">"&lt;button&gt;{{ label }}&lt;/button&gt;"</span>
       </code></pre></div>
     ''',
     'headings_and_prose': '''
