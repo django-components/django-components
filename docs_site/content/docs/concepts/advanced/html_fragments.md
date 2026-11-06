@@ -92,7 +92,7 @@ MyTable.render(
 !!! warning
 
     On a page that uses a Content Security Policy nonce, a fragment must carry the nonce of the page
-    it goes into, or its JS and CSS will not load.
+    it goes into, or its JS and CSS will not load. Its scripts also need `'strict-dynamic'`, and `style-src` must allow its stylesheets.
     See [Fragments on a page with a nonce](rendering_js_css.md#fragments-on-a-page-with-a-nonce).
 
 ## Live examples

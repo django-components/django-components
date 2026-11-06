@@ -143,13 +143,13 @@
 
 #### Fix
 
-- **Injected HTML can no longer change how the dependency manager JS loads.** This matters when a page has an HTML injection problem and uses a Content Security Policy with a nonce.
+- **Injected HTML has fewer ways to change how the dependency manager JS loads.** This matters when a page has an HTML injection problem and uses a Content Security Policy with a nonce.
 
-    An injected `<base>` tag can no longer make the browser run `django_components.min.js`, or a fragment's files from `/components/cache/`, from another site. These tags now carry `integrity` and `crossorigin="anonymous"`. Run `collectstatic` when you upgrade and clear any cache of the old file, because the browser refuses a file with different bytes. A proxy that rewrites JS files breaks the same way. A `STATIC_URL` that is a full URL keeps its plain tag.
+    An injected `<base>` tag can no longer make the browser run `django_components.min.js`, or a fragment's files from `/components/cache/`, from another site. These tags now carry `integrity` and `crossorigin="anonymous"`, and the URL of `django_components.min.js` gets a `?v=` version. Run `collectstatic` when you upgrade and clear any CDN or whole-page cache, because the browser refuses a file with different bytes. A proxy that rewrites JS files breaks the same way. A `STATIC_URL` that is a full URL keeps its plain tag. If a hook compares `script.url` with the URL of this file, allow for the `?v=`.
 
-    An injected `<script data-djc>` block can no longer tell the dependency manager what to load or which components to call. When the dependency manager's tag has a nonce, it ignores a block without the same nonce.
+    On a page whose policy refuses scripts without a nonce, an injected `<script data-djc>` block no longer tells the dependency manager what to load or which components to call. When the dependency manager's tag has a nonce, it obeys only a block with the same nonce in its JSON. django-components writes that nonce for you, from the nonce your hook puts on its scripts.
 
-    **If you add a nonce with the `on_dependencies` hook and use fragments, render each fragment with the nonce of the page it goes into.** A fragment with no nonce or a different one no longer starts, and the browser console shows an error. Pages with no nonce work as before. See [Content Security Policy](https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/#content-security-policy).
+    **If you add a nonce with the `on_dependencies` hook and use fragments or swap whole pages with JS, render the new HTML with the nonce of the page it goes into.** Other HTML no longer starts, and the browser console shows an error. Pages where the dependency manager's tag has no nonce work as before. See [Content Security Policy](https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/#content-security-policy).
 
     Add `base-uri 'self'` to your policy as well. It is what protects files from `Component.Media`, which carry no hash.
 

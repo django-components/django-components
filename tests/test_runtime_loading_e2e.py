@@ -45,7 +45,12 @@ PLAIN_NONCE = f"script-src 'nonce-{NONCE}'"
 
 BASE_TAG = f'<base href="{OTHER}/">'
 REFUSED_MESSAGE = "[DjangoComponents] Ignored a <script data-djc> block"
+RUNTIME_PATH = "/static/django_components/django_components.min.js"
 RUNTIME_FILE = Path(django_components.__file__).parent / "static/django_components/django_components.min.js"
+
+
+# Another test file may have set `ROOT_URLCONF` first, and these tests need the cache URLs.
+DJANGO_SETTINGS = {"STATIC_URL": "/static/", "ROOT_URLCONF": "django_components.urls"}
 
 
 class NonceExtension(ComponentExtension):
@@ -190,9 +195,14 @@ class Visit:
     page: "Page"
     other_site_requests: list[str]
     console: list[str] = field(default_factory=list)
+    page_errors: list[str] = field(default_factory=list)
 
     def title(self) -> str:
         return self.page.title()
+
+    def outline(self) -> str:
+        """A stylesheet from the other site sets this."""
+        return self.page.evaluate("getComputedStyle(document.documentElement).outlineStyle")
 
     def widget_calls(self) -> list[dict]:
         return self.page.evaluate("window.widgetCalls || []")
@@ -222,6 +232,7 @@ def visit(browser: "Browser", html: str, csp: str | None, fragment: str = "") ->
     page = context.new_page()
     result = Visit(page=page, other_site_requests=[])
     page.on("console", lambda message: result.console.append(message.text))
+    page.on("pageerror", lambda error: result.page_errors.append(str(error)))
     client = Client()
 
     def answer(route: "Route") -> None:
@@ -233,7 +244,7 @@ def visit(browser: "Browser", html: str, csp: str | None, fragment: str = "") ->
                 status=200,
                 content_type="text/css" if path.endswith(".css") else "text/javascript",
                 headers={"Access-Control-Allow-Origin": "*"},
-                body=f"document.title = 'OTHER SITE RAN {path}';",
+                body="html { outline: 3px solid lime; }" if path.endswith(".css") else f"document.title = '{path}';",
             )
             return
 
@@ -256,10 +267,7 @@ def visit(browser: "Browser", html: str, csp: str | None, fragment: str = "") ->
     return result
 
 
-@djc_test(
-    django_settings={"STATIC_URL": "/static/"},
-    components_settings={"extensions": [NonceExtension]},
-)
+@djc_test(django_settings=DJANGO_SETTINGS, components_settings={"extensions": [NonceExtension]})
 class TestInjectedBaseTag:
     def test_page_runs_without_injection(self, sync_browser):
         # The hash has to match the shipped file, or every page would break.
@@ -278,7 +286,7 @@ class TestInjectedBaseTag:
         result.settle()
 
         # The browser did go to the other site, and then refused what it got.
-        assert result.other_site_requests == ["/static/django_components/django_components.min.js"]
+        assert [path.split("?")[0] for path in result.other_site_requests] == [RUNTIME_PATH]
         assert result.title() == "clean"
         result.page.context.close()
 
@@ -288,7 +296,7 @@ class TestInjectedBaseTag:
         result = visit(sync_browser, render_shell(BASE_TAG, render_fragment(widget)), STRICT_DYNAMIC)
         result.settle()
 
-        assert result.other_site_requests == ["/static/django_components/django_components.min.js"]
+        assert [path.split("?")[0] for path in result.other_site_requests] == [RUNTIME_PATH]
         assert result.title() == "clean"
         result.page.context.close()
 
@@ -316,15 +324,13 @@ class TestInjectedBaseTag:
 
         assert sorted(result.other_site_requests) == [f"{component_url}.css", f"{component_url}.js"]
         assert result.title() == "clean"
+        assert result.outline() == "none"
         # The fragment's call never runs, because its file did not
         assert len(result.widget_calls()) == 1
         result.page.context.close()
 
 
-@djc_test(
-    django_settings={"STATIC_URL": "/static/"},
-    components_settings={"extensions": [NonceExtension]},
-)
+@djc_test(django_settings=DJANGO_SETTINGS, components_settings={"extensions": [NonceExtension]})
 class TestForgedDataBlock:
     @pytest.mark.parametrize("position", ["before_runtime", "after_runtime"])
     def test_forged_block_loads_nothing(self, sync_browser, position: str):
@@ -378,30 +384,41 @@ class TestForgedDataBlock:
         assert result.title() == "clean"
         result.page.context.close()
 
-    def test_tag_left_open_does_not_take_the_nonce(self, sync_browser):
+    @pytest.mark.parametrize(
+        "left_open",
+        [
+            '<script type="application/json" data-djc ',
+            # The browser drops a duplicate attribute, so no `<` is left in the tag to give it away
+            '<script type="application/json" data-djc type=',
+            '<script type="application/json" data-djc data-x=1 data-x="',
+        ],
+        ids=["plain", "duplicate", "duplicate_quoted"],
+    )
+    def test_tag_left_open_does_not_take_the_nonce(self, sync_browser, left_open: str):
+        # A page's own JSON tag comes after the injected text, with text that the attacker chose.
+        # The nonce on that tag lands on the injected tag.
         register_widget()
         tag = {"tag": "script", "attrs": {"src": f"{OTHER}/forged.js"}, "content": ""}
-        data = json.dumps(
-            {
-                "cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": [],
-                "cssTags__toFetch": [],
-                "jsTags__toFetch": [_b64(tag)],
-                "componentJsVars": [],
-                "componentJsCalls": [],
-            }
-        )
-        # The page's own JSON tag follows the injected text. Its `nonce` lands on the injected tag.
-        taken_in = (
-            f'<script type="application/json" data-djc <script nonce="{NONCE}" type="application/json">{data}</script>'
-        )
-        page = render_page(tail=taken_in)
+        data = forged_block(jsTags__toFetch=[_b64(tag)]).removeprefix('<script type="application/json" data-djc>')
+        page = render_page(tail=f'{left_open}<script nonce="{NONCE}" type="application/json">{data}')
 
         result = visit(sync_browser, page, STRICT_DYNAMIC)
         result.wait_for_refusal()
         result.settle()
 
         assert result.other_site_requests == []
+        result.page.context.close()
+
+    def test_unreadable_block_does_not_stop_the_runtime(self, sync_browser):
+        register_widget()
+        page = render_page('<script type="application/json" data-djc>not json</script>', nonce=None)
+
+        result = visit(sync_browser, page, None)
+
+        result.wait_for_widget()
+        # An error tracker listens for uncaught errors, so the error must still be one
+        result.page.wait_for_timeout(50)
+        assert result.page_errors
         result.page.context.close()
 
     def test_runtime_from_the_loader_checks_blocks(self, sync_browser):
@@ -439,10 +456,7 @@ class TestForgedDataBlock:
         result.page.context.close()
 
 
-@djc_test(
-    django_settings={"STATIC_URL": "/static/"},
-    components_settings={"extensions": [NonceExtension]},
-)
+@djc_test(django_settings=DJANGO_SETTINGS, components_settings={"extensions": [NonceExtension]})
 class TestGenuineFragments:
     def test_fragment_with_the_page_nonce_starts(self, sync_browser):
         register_widget()

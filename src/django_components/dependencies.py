@@ -103,6 +103,12 @@ class _UrlPin(NamedTuple):
     integrity: str
 
 
+def _is_full_url(url: str) -> bool:
+    """Tell a URL with its own host, which `<base>` cannot move, from a relative one."""
+    parts = urlsplit(url)
+    return bool(parts.scheme or parts.netloc)
+
+
 def _pin_url(url: str, content: bytes) -> _UrlPin | None:
     """
     Hash the bytes that we serve at `url`, so the browser refuses any other bytes.
@@ -114,8 +120,7 @@ def _pin_url(url: str, content: bytes) -> _UrlPin | None:
     It also may point at a host that sends no CORS headers, and there the browser would refuse
     the file even when the hash matches. So we return `None` for it and leave the tag as it was.
     """
-    parts = urlsplit(url)
-    if parts.scheme or parts.netloc:
+    if _is_full_url(url):
         return None
     digest = base64.b64encode(sha384(content).digest()).decode("ascii")
     return _UrlPin(url=url, integrity=f"sha384-{digest}")
@@ -182,7 +187,8 @@ class Dependency:
     origin_class_id: str | None = None
     """The class ID of the component that originated this dependency."""
     # Set only for files that we serve ourselves. An init field, because `dataclasses.replace()`
-    # drops any other field, and a hook that rebuilds a tag that way would lose the hash unnoticed.
+    # drops any other field, and a hook that copies a tag that way would lose the hash unnoticed.
+    # A hook that builds a new `Script` has made its own tag, and that tag has no hash.
     _pin: _UrlPin | None = field(default=None, kw_only=True, repr=False, compare=False)
 
     def _render(self) -> tuple[str, dict[str, str | bool], str]:
@@ -209,7 +215,7 @@ class Dependency:
         if "integrity" not in declared:
             attrs["integrity"] = pin.integrity
         # The browser checks `integrity` only on a CORS response. A relative URL is same-origin
-        # unless a `<base>` tag moved it, so this needs no CORS headers from the app.
+        # unless a `<base>` tag or a redirect moves it, so most apps need no CORS headers for this.
         if "crossorigin" not in declared:
             attrs["crossorigin"] = "anonymous"
         return attrs
@@ -1135,13 +1141,21 @@ _render_dependencies = render_dependencies
 
 def _stamp_data_block_nonce(scripts: list[Script]) -> None:
     """
-    Give the `data-djc` block the nonce that a hook put on our other core script.
+    Write the page's nonce into the JSON of the `data-djc` block.
 
-    The client-side manager obeys a block only when it carries the same nonce as the manager's
-    own `<script>` tag. CSP needs no nonce on a JSON block, so a hook has no reason to add one,
-    and it may well skip the block. The app should not have to know about this rule.
+    The client-side manager obeys a block only when its JSON holds the same nonce as the manager's
+    own `<script>` tag. A nonce attribute on the block would not do: an injected tag left open
+    takes in the attributes of the real tag after it, and a duplicate attribute hides that from JS.
+    The JSON ties the nonce to the text that the manager obeys, and injected text cannot know it.
+
+    The nonce is then in the page as text, which injected CSS can style, while the browser hides
+    the attribute from CSS. That needs a policy open to the attacker's fonts and a second injection
+    to use what it learns, and the same nonce is in the page's raw HTML anyway.
+
+    The nonce comes from the hook that added it to our other core script, so the app does not
+    have to know about this rule. CSP needs no nonce on a JSON block, and a hook may well skip it.
     """
-    nonce = next(
+    core_nonce = next(
         (
             script.attrs["nonce"]
             for script in scripts
@@ -1149,11 +1163,18 @@ def _stamp_data_block_nonce(scripts: list[Script]) -> None:
         ),
         None,
     )
-    if nonce is None:
-        return
     for script in scripts:
-        if "data-djc" in script.attrs:
-            script.attrs.setdefault("nonce", nonce)
+        if "data-djc" not in script.attrs or not script.content:
+            continue
+        # Keep a nonce that a hook set on the block itself, even if it differs from the core script's
+        own_nonce = script.attrs.get("nonce")
+        nonce = own_nonce if isinstance(own_nonce, str) else core_nonce
+        if nonce is None:
+            continue
+        # Django's own nonce is a lazy object, which JSON cannot hold. And the block sits in the
+        # HTML as it is, so a `<` in the nonce must not end up there.
+        data = {**json.loads(script.content), "nonce": str(nonce)}
+        script.content = json.dumps(data).replace("<", "\\u003c")
 
 
 @cache
@@ -1167,13 +1188,31 @@ def _core_js_bytes() -> bytes:
     return (Path(__file__).parent / "static" / CORE_JS_STATIC_PATH).read_bytes()
 
 
+def _core_js_url() -> str:
+    """
+    Return the URL of the client-side manager, with a version when the URL is relative.
+
+    A browser that keeps the file of an older release would fail the `integrity` check without
+    asking the server again, and the components on the page would stop working for that visitor.
+    A new URL for each new file makes the browser fetch it.
+    """
+    url = static(CORE_JS_STATIC_PATH)
+    if _is_full_url(url):
+        return url
+    version = sha384(_core_js_bytes()).hexdigest()[:12]
+    # A `#fragment` must stay last, or the browser would not send the version to the server
+    path, hash_sign, fragment = url.partition("#")
+    separator = "&" if "?" in path else "?"
+    return f"{path}{separator}v={version}{hash_sign}{fragment}"
+
+
 def _core_js() -> Script:
     """
     Returns a `Script` object for the Django Components library's core script.
 
     This script is required for the Django Components library to work.
     """
-    url = static(CORE_JS_STATIC_PATH)
+    url = _core_js_url()
     return Script(
         kind="core",
         url=url,
@@ -1192,7 +1231,7 @@ def _pre_loader_js() -> Script:
     This script is included with every "fragment", so that the "fragments" can be rendered
     even on pages that weren't rendered with the "document" strategy.
     """
-    manager_url = static(CORE_JS_STATIC_PATH)
+    manager_url = _core_js_url()
     if '"' in manager_url:
         raise ValueError("Manager URL cannot contain quotes")
 
@@ -1342,6 +1381,9 @@ def _process_dep_declarations(
 
     warned_missing_variables: set[tuple[str, str, bool]] = set()
 
+    # Many instances of a component share the same files, so each file is read and hashed once
+    pins: dict[str, _CachedFilePin] = {}
+
     for comp_cls_id, comp_id, stored_js_hash, stored_css_hash in instance_rows:
         comp_cls = get_component_by_class_id(comp_cls_id)
         calls_on_component = is_nonempty_str(comp_cls.js) and "$onComponent" in comp_cls.js
@@ -1371,7 +1413,7 @@ def _process_dep_declarations(
         css_hash = None if css_vars_missing else stored_css_hash
 
         instance_scripts, instance_styles, scripts_mark_as_loaded, styles_mark_as_loaded = (
-            _get_instance_scripts_and_styles(comp_cls_id, comp_id, js_hash, css_hash, should_inline_scripts)
+            _get_instance_scripts_and_styles(comp_cls_id, comp_id, js_hash, css_hash, should_inline_scripts, pins)
         )
 
         # NOTE: Users may break their rendering if they remove the existing "component"
@@ -1546,6 +1588,7 @@ def _get_instance_scripts_and_styles(
     js_hash: str | None,
     css_hash: str | None,
     should_inline_scripts: bool,
+    pins: dict[str, "_CachedFilePin"],
 ) -> tuple[list[Script], list[Style], list[Script], list[Style]]:
     """
     Get the Script/Style lists for a single component instance
@@ -1581,8 +1624,9 @@ def _get_instance_scripts_and_styles(
                 comp_js_url = cast("Script", get_script_url("js", comp_cls, None))
                 scripts_mark_as_loaded.append(comp_js_url)
         else:
-            comp_js_url = cast("Script", get_script_url("js", comp_cls, None, should_pin=True))
-            instance_scripts.append(comp_js_url)
+            comp_js_tag = _get_fetched_script_url("js", comp_cls, None, pins)
+            if comp_js_tag is not None:
+                instance_scripts.append(cast("Script", comp_js_tag))
 
     # Component CSS
     if is_nonempty_str(comp_cls.css):
@@ -1593,8 +1637,9 @@ def _get_instance_scripts_and_styles(
                 comp_css_url = cast("Style", get_script_url("css", comp_cls, None))
                 styles_mark_as_loaded.append(comp_css_url)
         else:
-            comp_css_url = cast("Style", get_script_url("css", comp_cls, None, should_pin=True))
-            instance_styles.append(comp_css_url)
+            comp_css_tag = _get_fetched_script_url("css", comp_cls, None, pins)
+            if comp_css_tag is not None:
+                instance_styles.append(cast("Style", comp_css_tag))
 
     ##############################
     # Component JS/CSS variables
@@ -1610,8 +1655,9 @@ def _get_instance_scripts_and_styles(
                 comp_vars_js_url = cast("Script", get_script_url("js", comp_cls, js_hash))
                 scripts_mark_as_loaded.append(comp_vars_js_url)
         else:
-            comp_vars_js_url = cast("Script", get_script_url("js", comp_cls, js_hash, should_pin=True))
-            instance_scripts.append(comp_vars_js_url)
+            comp_vars_js_tag = _get_fetched_script_url("js", comp_cls, js_hash, pins)
+            if comp_vars_js_tag is not None:
+                instance_scripts.append(cast("Script", comp_vars_js_tag))
 
     # Variables CSS
     if css_hash is not None and is_nonempty_str(comp_cls.css):
@@ -1622,8 +1668,9 @@ def _get_instance_scripts_and_styles(
                 comp_vars_css_url = cast("Style", get_script_url("css", comp_cls, css_hash))
                 styles_mark_as_loaded.append(comp_vars_css_url)
         else:
-            comp_vars_css_url = cast("Style", get_script_url("css", comp_cls, css_hash, should_pin=True))
-            instance_styles.append(comp_vars_css_url)
+            comp_vars_css_tag = _get_fetched_script_url("css", comp_cls, css_hash, pins)
+            if comp_vars_css_tag is not None:
+                instance_styles.append(cast("Style", comp_vars_css_tag))
 
     #############################
     # JS/CSS from Component.Media.js/css
@@ -1869,14 +1916,7 @@ def get_script_url(
     script_type: ScriptType,
     comp_cls: type["Component"],
     variables_hash: str | None,
-    should_pin: bool = False,
 ) -> Script | Style:
-    """
-    Get a `Script` or `Style` that links to the cached JS or CSS of a component.
-
-    Set `should_pin` when the browser will fetch this URL. It reads the cached file to hash it,
-    and that is wasted work when the URL only marks an inlined file as already loaded.
-    """
     kind: DependencyKind = "component" if variables_hash is None else "variables"
     url = reverse(
         CACHE_ENDPOINT_NAME,
@@ -1887,14 +1927,6 @@ def get_script_url(
         },
     )
 
-    # When the entry is gone from the cache, `cached_script_view()` answers 404 for this URL,
-    # so there are no bytes to hash and the tag goes out without one.
-    pin = None
-    if should_pin:
-        cached = get_script(script_type, comp_cls, variables_hash)
-        if cached is not None and cached.content is not None:
-            pin = _pin_url(url, cached.content.encode())
-
     if script_type == "css":
         # <link href="... media="all" rel="stylesheet">
         return Style(
@@ -1903,7 +1935,6 @@ def get_script_url(
             content=None,
             origin_class_id=comp_cls.class_id,
             attrs={"media": "all", "rel": "stylesheet"},
-            _pin=pin,
         )
     elif script_type == "js":
         # <script src="...">
@@ -1912,10 +1943,55 @@ def get_script_url(
             url=url,
             content=None,
             origin_class_id=comp_cls.class_id,
-            _pin=pin,
         )
     else:
         raise ValueError(f"Invalid script type: {script_type}")
+
+
+class _CachedFilePin(NamedTuple):
+    """What one render learned about a cached file: whether it exists, and the hash of its bytes."""
+
+    is_cached: bool
+    pin: _UrlPin | None
+
+
+def _get_fetched_script_url(
+    script_type: ScriptType,
+    comp_cls: type["Component"],
+    variables_hash: str | None,
+    pins: dict[str, _CachedFilePin],
+) -> Script | Style | None:
+    """
+    Get the tag for a cached file that the browser will fetch, carrying the hash of the file.
+
+    Returns `None` when there is no file to hash, because a tag without a hash is the tag that
+    a `<base>` tag can move to another site.
+    """
+    tag = get_script_url(script_type, comp_cls, variables_hash)
+    url = cast("str", tag.url)
+    if url not in pins:
+        cached = get_script(script_type, comp_cls, variables_hash)
+
+        # A `Component.Cache` hit skips the step that stores these files, and another worker
+        # may be the one that stored them. We can write this file again, which we cannot do
+        # for JS or CSS variables: only the render that made them had the values.
+        if cached is None and variables_hash is None:
+            if script_type == "js":
+                cache_component_js(comp_cls, force=False)
+            else:
+                cache_component_css(comp_cls, force=False)
+            cached = get_script(script_type, comp_cls, variables_hash)
+
+        if cached is None or cached.content is None:
+            logger.warning(f"Left out {url} from a fragment, because it is not in the component media cache.")
+            pins[url] = _CachedFilePin(is_cached=False, pin=None)
+        else:
+            pins[url] = _CachedFilePin(is_cached=True, pin=_pin_url(url, cached.content.encode()))
+
+    if not pins[url].is_cached:
+        return None
+    tag._pin = pins[url].pin
+    return tag
 
 
 def _gen_exec_script(

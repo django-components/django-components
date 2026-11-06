@@ -170,7 +170,7 @@ await DjangoComponents.manager.waitForScriptsToLoad("js", [
 
 ### Data blocks and the page's nonce
 
-The server tells the manager what to do with `<script type="application/json" data-djc>` blocks. When the manager's own `<script>` tag has a CSP nonce, the manager ignores any block without the same nonce, and any block with `<` in an attribute. An injected tag that was left open ends up with that `<`, because it takes in the attributes of the real tag after it.
+The server tells the manager what to do with `<script type="application/json" data-djc>` blocks. When the manager's own `<script>` tag has a CSP nonce, the manager ignores any block whose JSON does not hold the same value under the `nonce` key. It reads the JSON and not the block's `nonce` attribute, because an injected tag that was left open takes in the attributes of the real tag after it.
 
 `_loadComponentScripts()` does not check this, because only code already running in the page can call it.
 

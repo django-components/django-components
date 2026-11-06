@@ -10,14 +10,18 @@ import hashlib
 import json
 import re
 from typing import ClassVar
+from unittest.mock import patch
 
 from django.test import Client
+from django.utils.functional import SimpleLazyObject
 from pytest_django.asserts import assertInHTML
 
-from django_components import Component, ComponentExtension, OnDependenciesContext, Script, types
+from django_components import Component, ComponentExtension, OnDependenciesContext, Script, render_dependencies, types
+from django_components.cache import get_component_media_cache
+from django_components.dependencies import get_script
 from django_components.testing import djc_test
 
-from .testutils import CORE_JS_INTEGRITY, setup_test_config
+from .testutils import CORE_JS_INTEGRITY, CORE_JS_URL, setup_test_config
 
 setup_test_config()
 
@@ -43,6 +47,14 @@ class FragmentComponent(Component):
 
     def get_css_data(self, args, kwargs, slots, context):
         return {"color": "red"}
+
+
+class PageFragment(Component):
+    template: types.django_html = """
+        <div>no variables</div>
+    """
+    js: types.js = "$onComponent(() => {});"
+    css: types.css = ".no-variables { color: red; }"
 
 
 class HookExtension(ComponentExtension):
@@ -77,12 +89,14 @@ class TestRuntimeIntegrity:
     def test_document_pins_the_runtime(self):
         rendered = PageComponent.render(deps_strategy="document")
 
+        assert f'src="{CORE_JS_URL}"' in rendered
         assert f'integrity="{CORE_JS_INTEGRITY}"' in rendered
         assert 'crossorigin="anonymous"' in rendered
 
     def test_fragment_loader_pins_the_runtime(self):
         rendered = FragmentComponent.render(deps_strategy="fragment")
 
+        assert f's.src = "{CORE_JS_URL}";' in rendered
         assert f's.integrity = "{CORE_JS_INTEGRITY}";' in rendered
         assert 's.crossOrigin = "anonymous";' in rendered
 
@@ -97,8 +111,16 @@ class TestRuntimeIntegrity:
         )
 
         fragment = FragmentComponent.render(deps_strategy="fragment")
+        assert 's.src = "https://cdn.example.com/static/django_components/django_components.min.js";' in fragment
         assert "s.integrity" not in fragment
         assert "s.crossOrigin" not in fragment
+
+    @djc_test(django_settings={"STATIC_URL": "/static/"})
+    def test_version_stays_before_a_url_fragment(self):
+        with patch("django_components.dependencies.static", return_value="/static/x.js#part"):
+            rendered = PageComponent.render(deps_strategy="document")
+
+        assert re.search(r'src="/static/x\.js\?v=[0-9a-f]{12}#part"', rendered)
 
     @djc_test(django_settings={"STATIC_URL": "//cdn.example.com/static/"})
     def test_protocol_relative_url_is_left_alone(self):
@@ -120,6 +142,37 @@ class TestFragmentFileIntegrity:
             assert response.status_code == 200
             assert attrs["integrity"] == _sha384(response.content)
             assert attrs["crossorigin"] == "anonymous"
+
+    def test_file_gone_from_the_cache_is_written_again(self):
+        # A `Component.Cache` hit skips the step that stores the file, and another worker may have run it
+        raw = PageFragment.render(deps_strategy="ignore")
+        get_component_media_cache().clear()
+
+        rendered = render_dependencies(raw, strategy="fragment")
+
+        tags = _tags_to_fetch(rendered)
+        assert len(tags) == 2
+        assert all("integrity" in tag["attrs"] for tag in tags)
+
+    def test_variables_gone_from_the_cache_get_no_tag(self):
+        # Only the render that made them had the values, so a tag could not carry a hash.
+        raw = FragmentComponent.render(deps_strategy="ignore")
+        get_component_media_cache().clear()
+
+        with patch("django_components.dependencies.logger") as logger:
+            rendered = render_dependencies(raw, strategy="fragment")
+
+        assert len(_tags_to_fetch(rendered)) == 2
+        assert logger.warning.call_count == 2
+
+    def test_many_instances_read_each_file_once(self):
+        rendered = "".join(FragmentComponent.render(deps_strategy="ignore") for _ in range(20))
+
+        with patch("django_components.dependencies.get_script", wraps=get_script) as spy:
+            render_dependencies(rendered, strategy="fragment")
+
+        # Component JS, JS variables, component CSS and CSS variables
+        assert spy.call_count == 4
 
     def test_media_files_get_no_hash(self):
         # We do not know the bytes of a developer's static files, see the docs on `base-uri`.
@@ -184,16 +237,41 @@ class TestDataBlockNonce:
 
         rendered = PageComponent.render(deps_strategy="document")
 
-        assert '<script type="application/json" data-djc nonce="abc">' in rendered
+        assert _data_block(rendered)["nonce"] == "abc"
 
     def test_fragment_block_gets_the_loader_nonce(self):
         HookExtension.edit = staticmethod(self._set_nonce_on_runtime)
 
         rendered = FragmentComponent.render(deps_strategy="fragment")
 
-        assert '<script type="application/json" data-djc nonce="abc">' in rendered
+        assert _data_block(rendered)["nonce"] == "abc"
 
-    def test_block_keeps_a_nonce_of_its_own(self):
+    def test_lazy_nonce_works(self):
+        # Django 6.0's nonce is a lazy object like this one
+        def edit(script: Script) -> Script:
+            if "data-djc" not in script.attrs and script.kind == "core":
+                script.attrs["nonce"] = SimpleLazyObject(lambda: "abc")
+            return script
+
+        HookExtension.edit = staticmethod(edit)
+
+        rendered = PageComponent.render(deps_strategy="document")
+
+        assert _data_block(rendered)["nonce"] == "abc"
+
+    def test_nonce_cannot_end_the_block(self):
+        def edit(script: Script) -> Script:
+            if "data-djc" not in script.attrs and script.kind == "core":
+                script.attrs["nonce"] = "</script>"
+            return script
+
+        HookExtension.edit = staticmethod(edit)
+
+        rendered = PageComponent.render(deps_strategy="document")
+
+        assert _data_block(rendered)["nonce"] == "</script>"
+
+    def test_block_uses_a_nonce_of_its_own(self):
         def edit(script: Script) -> Script:
             script.attrs["nonce"] = "own" if "data-djc" in script.attrs else "abc"
             return script
@@ -202,7 +280,7 @@ class TestDataBlockNonce:
 
         rendered = PageComponent.render(deps_strategy="document")
 
-        assert '<script type="application/json" data-djc nonce="own">' in rendered
+        assert _data_block(rendered)["nonce"] == "own"
 
     def test_no_nonce_is_added_when_the_page_has_none(self):
         HookExtension.edit = staticmethod(lambda script: script)
@@ -210,6 +288,7 @@ class TestDataBlockNonce:
         rendered = PageComponent.render(deps_strategy="document")
 
         assert "nonce" not in rendered
+        assert "nonce" not in _data_block(rendered)
 
     def test_nonce_on_a_component_script_does_not_count(self):
         # Only our own core scripts tell what the runtime tag carries.
@@ -222,4 +301,4 @@ class TestDataBlockNonce:
 
         rendered = PageComponent.render(deps_strategy="document")
 
-        assert '<script type="application/json" data-djc>' in rendered
+        assert "nonce" not in _data_block(rendered)

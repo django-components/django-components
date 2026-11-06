@@ -566,10 +566,15 @@ class NonceExtension(ComponentExtension):
         return (ctx.scripts, ctx.styles)
 ```
 
-Also add `base-uri 'self'` to your policy. The browser then ignores a `<base>` tag that an attacker injects into the page. Without it, such a tag moves every relative URL on the page to the attacker's site, and the nonce lets those scripts run:
+Here `get_current_nonce()` stands for a helper of your own. The hook gets no `request`, so have a middleware keep the request's nonce in a [`ContextVar`](https://docs.python.org/3/library/contextvars.html) for the helper to read.
+
+Use `'strict-dynamic'` in your policy if you use [fragments](html_fragments.md). A fragment's files load through the dependency manager, and this hook doesn't see them, so they carry no nonce of their own. Stylesheets get no help from `'strict-dynamic'`, so your `style-src` must allow them.
+
+Also add `base-uri 'self'` to your policy. The browser then ignores a `<base>` tag that an attacker injects into the page. Without it, such a tag moves every relative URL on the page to the attacker's site, and the nonce lets those scripts run.
+
+With Django 6.0 and newer:
 
 ```python
-# Django 6.0 and newer
 from django.utils.csp import CSP
 
 SECURE_CSP = {
@@ -584,13 +589,21 @@ If an attacker can inject HTML into your page, django-components limits what the
 
 **The dependency manager file.** The tag that loads the dependency manager carries `integrity` and `crossorigin="anonymous"`, so the browser runs only the exact file from your installed django-components. The same goes for the JS and CSS files that a fragment loads from `/components/cache/`.
 
-- Run `collectstatic` when you upgrade, and clear any cache that holds the old file. The browser refuses a file with different bytes, and component JS then does not run.
-- A proxy that rewrites JS files breaks the same way. Exclude your static files from it.
-- If `STATIC_URL` is a full URL such as `https://cdn.example.com/static/`, the tag stays as it was. A `<base>` tag cannot move a full URL.
+If the browser gets a file with other bytes, it refuses the file, and component JS does not run. So:
 
-Files from [`Component.Media`][ComponentMediaInput] carry no hash, because they are your files and django-components does not know their content. `base-uri 'self'` is what protects them.
+- Run `collectstatic` when you upgrade.
+- Clear CDN caches and whole-page caches, such as `cache_page`, when you upgrade. A cached page asks for the old file by its hash.
+- During a rolling deploy, deploy your static files before the new HTML, or use hashed file names with [`ManifestStaticFilesStorage`](https://docs.djangoproject.com/en/stable/ref/contrib/staticfiles/#manifeststaticfilesstorage). If a new page asks an old server for the file, the browser can cache the old bytes under the new URL and keep refusing them.
+- Exclude your static files from any proxy that rewrites JS.
+- If a relative `STATIC_URL` redirects to another host, or your own `<base>` tag points at one, that host must send `Access-Control-Allow-Origin`.
 
-**The JSON blocks.** A `<script data-djc>` block tells the dependency manager which files to load and which components to call. When the dependency manager's own tag has a nonce, it ignores every block without the same nonce, and logs an error in the browser console. You don't need to set this nonce yourself. django-components copies it to the block from the tag that your hook gave a nonce to.
+The URL of the dependency manager gets a `?v=` version made from its content, so a visitor's browser doesn't keep using the file from an older release.
+
+If `STATIC_URL` is a full URL such as `https://cdn.example.com/static/`, the tag stays as it was. A `<base>` tag can't move a full URL.
+
+Files from [`Component.Media`][ComponentMediaInput] carry no hash, because they are your files and django-components doesn't know their content. `base-uri 'self'` is what protects them.
+
+**The JSON blocks.** A `<script data-djc>` block tells the dependency manager which files to load and which components to call. When the dependency manager's own tag has a nonce, it obeys only a block with the same nonce in its JSON, and logs an error in the browser console for any other block. You don't need to write this nonce yourself. django-components copies it into the JSON from the tag that your hook gave a nonce to.
 
 ### Fragments on a page with a nonce
 
@@ -601,14 +614,18 @@ class MyPage(Component):
     class View:
         def get(self, request):
             # The nonce that this response sends in its policy
-            request.session["page_nonce"] = get_current_nonce()
-            return self.component_cls.render_to_response(request=request)
+            nonce = str(get_current_nonce())
+            request.session["page_nonce"] = nonce
+            return self.component_cls.render_to_response(
+                request=request,
+            )
 
 
 class Frag(Component):
     class View:
         def get(self, request):
-            # From here on, `get_current_nonce()` returns the page's nonce
+            # From here on, `get_current_nonce()` gives the page's
+            # nonce. `set_current_nonce()` is your own helper too.
             set_current_nonce(request.session["page_nonce"])
             return self.component_cls.render_to_response(
                 request=request,
@@ -618,6 +635,8 @@ class Frag(Component):
 
 A session holds one nonce, so when a user opens your site in a second tab, fragments sent to the first tab stop starting. Store one nonce per page if your users work in several tabs.
 
+Tools that swap the whole page with JS, such as `hx-boost` or Turbo, have the same limit. The dependency manager stays from the first page, so the new page needs the first page's nonce, or a full reload.
+
 ### What the nonce check can't cover
 
 The dependency manager reads the nonce from its own tag. It obeys every block in these cases, because it has no nonce to compare:
@@ -626,6 +645,8 @@ The dependency manager reads the nonce from its own tag. It obeys every block in
 - A hook renders the tag with `type="module"`. A module can't read the tag that loaded it.
 
 Under `'strict-dynamic'`, the files that such a block names then run, so give these pages a nonce on the tag.
+
+The check also relies on your policy to refuse a script tag with no nonce. If `script-src` allows `'self'` or a host that serves your static files, an attacker can inject a second copy of the dependency manager. That copy has no nonce, so it obeys every block. Prefer `'strict-dynamic'`, which makes the browser ignore `'self'` and hosts.
 
 ## HTML fragments
 

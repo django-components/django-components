@@ -54,26 +54,19 @@ const readOwnNonce = (): string => {
 const ownNonce = readOwnNonce();
 
 /**
- * Check that a `<script data-djc>` block in the page came from the server.
+ * Check that the JSON of a `<script data-djc>` block came from the server.
  *
  * A block tells us which scripts to load and which components to call with which data, and
  * under `'strict-dynamic'` the scripts we add run with no further check. So a block
- * written by injected markup could run its own code. On a page with a nonce, the server gives
- * each block that nonce, and injected markup cannot know it.
+ * written by injected markup could run its own code. On a page with a nonce, the server writes
+ * that nonce into the JSON, and injected text cannot know it.
+ *
+ * We read the nonce from the JSON and not from the tag, because an injected tag left open takes
+ * in the attributes of the real tag after it, nonce included, and keeps its own text.
  *
  * When our own tag has no nonce there is nothing to compare, and every block is allowed.
  */
-const isDataBlockAllowed = (block: HTMLScriptElement): boolean => {
-  if (!ownNonce) return true;
-  if (block.nonce !== ownNonce) return false;
-
-  // An injected tag left open, like `<script data-djc `, takes in the attributes of the real tag
-  // after it, nonce included, and so ends up with `<` in an attribute. Browsers refuse to run
-  // such a script for the same reason. We never write `<` in the attributes of a block.
-  return !block
-    .getAttributeNames()
-    .some((name) => name.includes("<") || (block.getAttribute(name) ?? "").includes("<"));
-};
+const isDataBlockAllowed = (data: { nonce?: unknown }): boolean => !ownNonce || data.nonce === ownNonce;
 
 /**
  * Usage:
@@ -736,18 +729,23 @@ export const createComponentsManager = () => {
   };
 
   const onDjcScript = (script: HTMLScriptElement) => {
-    // Log instead of throwing: a throw here would stop the blocks that come after this one,
-    // and a bad block must not be able to break the real ones.
-    if (!isDataBlockAllowed(script)) {
-      console.error(
-        "[DjangoComponents] Ignored a <script data-djc> block without the page's CSP nonce. " +
-          "If this block came from a fragment, render it with the nonce of the page it goes into.",
-      );
-      return;
+    // A throw here would stop the blocks that come after this one, and it would stop this file
+    // from starting. So catch it, and raise it again on its own, where an error tracker sees it.
+    try {
+      const data = JSON.parse(script.text);
+      if (!isDataBlockAllowed(data)) {
+        console.error(
+          "[DjangoComponents] Ignored a <script data-djc> block that did not pass the nonce check. " +
+            "If this block came from a fragment, render it with the nonce of the page it goes into.",
+        );
+        return;
+      }
+      _loadComponentScripts(data);
+    } catch (error) {
+      setTimeout(() => {
+        throw error;
+      });
     }
-
-    const data = JSON.parse(script.text);
-    _loadComponentScripts(data);
   };
 
   // Initialise the MutationObserver that watches for newly-inserted `<script>` tags

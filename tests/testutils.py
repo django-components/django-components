@@ -21,13 +21,12 @@ PARAMETRIZE_CONTEXT_BEHAVIOR = (
 _CORE_JS_PATH = (
     Path(__file__).parent.parent / "src/django_components/static/django_components/django_components.min.js"
 )
-CORE_JS_INTEGRITY = "sha384-" + base64.b64encode(hashlib.sha384(_CORE_JS_PATH.read_bytes()).digest()).decode()
+_CORE_JS_HASH = hashlib.sha384(_CORE_JS_PATH.read_bytes())
+CORE_JS_INTEGRITY = "sha384-" + base64.b64encode(_CORE_JS_HASH.digest()).decode()
+CORE_JS_URL = f"django_components/django_components.min.js?v={_CORE_JS_HASH.hexdigest()[:12]}"
 
 # How the runtime appears in a document
-CORE_JS_TAG = (
-    '<script src="django_components/django_components.min.js"'
-    f' integrity="{CORE_JS_INTEGRITY}" crossorigin="anonymous"></script>'
-)
+CORE_JS_TAG = f'<script src="{CORE_JS_URL}" integrity="{CORE_JS_INTEGRITY}" crossorigin="anonymous"></script>'
 
 # How the runtime appears in a fragment
 CORE_JS_LOADER = f"""
@@ -35,7 +34,7 @@ CORE_JS_LOADER = f"""
         const current = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript").get.call(document);
         if (!Object.prototype.hasOwnProperty.call(globalThis, "DjangoComponents")) {{
             const s = document.createElement('script');
-            s.src = "django_components/django_components.min.js";
+            s.src = "{CORE_JS_URL}";
             s.integrity = "{CORE_JS_INTEGRITY}";
             s.crossOrigin = "anonymous";
             if (current && current.nonce) s.nonce = current.nonce;
