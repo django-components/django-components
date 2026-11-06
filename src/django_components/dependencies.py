@@ -19,7 +19,7 @@ from typing import (
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseNotFound
 from django.template import Context, TemplateSyntaxError
 from django.templatetags.static import static
-from django.urls import path, reverse
+from django.urls import re_path, reverse
 from django.utils.safestring import SafeString, mark_safe
 from djc_core.html_transformer import set_html_attributes
 
@@ -1863,12 +1863,33 @@ def cached_script_view(
     return HttpResponse(content=content, content_type=content_type)
 
 
+# Only one part of each URL below is open-ended. With two or more, as in `<str:a>.<str:b>.<str:c>`,
+# the regex engine tries every way to split the path at its dots, so a path that never matches
+# takes time growing with the cube of its length, and anyone can send one.
+# Here the class ID takes whatever is left, and the parts after it have a fixed shape.
+#
+# Those fixed shapes also keep a made-up URL away from the cache. A hash of any length or content
+# would otherwise become part of a cache key, and Django's warning about an unsafe key is remembered
+# by Python for good, so each such request would add to the process's memory.
+#
+# `variables_hash` accepts 1 to 64 lowercase hexadecimal characters, which is more than
+# the hash we generate today, so that hash can grow without changing this route.
+_CACHE_SCRIPT_TYPE_REGEX = r"(?P<script_type>js|css)"
+_CACHE_VARIABLES_HASH_REGEX = r"(?P<variables_hash>[0-9a-f]{1,64})"
+
 urlpatterns = [
-    # E.g. `/components/cache/MyTable_a1b2c3.js` or `/components/cache/MyTable_a1b2c3.0ab2c3.js`
-    path(
-        "cache/<str:comp_cls_id>.<str:variables_hash>.<str:script_type>", cached_script_view, name=CACHE_ENDPOINT_NAME
+    # E.g. `/components/cache/MyTable_a1b2c3.0ab2c3.js`
+    re_path(
+        rf"^cache/(?P<comp_cls_id>[^/]+)\.{_CACHE_VARIABLES_HASH_REGEX}\.{_CACHE_SCRIPT_TYPE_REGEX}$",
+        cached_script_view,
+        name=CACHE_ENDPOINT_NAME,
     ),
-    path("cache/<str:comp_cls_id>.<str:script_type>", cached_script_view, name=CACHE_ENDPOINT_NAME),
+    # E.g. `/components/cache/MyTable_a1b2c3.js`
+    re_path(
+        rf"^cache/(?P<comp_cls_id>[^/]+)\.{_CACHE_SCRIPT_TYPE_REGEX}$",
+        cached_script_view,
+        name=CACHE_ENDPOINT_NAME,
+    ),
 ]
 
 
