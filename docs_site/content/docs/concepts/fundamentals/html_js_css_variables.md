@@ -466,6 +466,32 @@ Use the same variable names as in the dictionary returned from [`get_css_data()`
 
     This means that if you render the same component with different variables, each instance will use different CSS variables.
 
+## JS and CSS variables are public
+
+Treat everything that you return from [`get_js_data()`][Component.get_js_data] and
+[`get_css_data()`][Component.get_css_data] as public. Never return a password, a token, or anything else
+that must stay private.
+
+Django Components stores those values on the server, and serves them from a URL such as this one, so that
+the browser can load them:
+
+```
+/components/cache/MyTable_a1b2c3.1f3a9c0d7b2e4f6089a1c3d5e7f90b12.js
+```
+
+That URL needs no login, even when the page that uses it does. This is what it means for your values:
+
+- **Anyone who has the URL can read them.** The URL is in the HTML of the page, so whoever sees that HTML
+  has it, and so does anything that records the page or the URL, such as a log or a browser extension.
+- **Trying random URLs does not find them.** The long part of the URL has too many possible values to try.
+- **Someone who can guess the values can check them.** That part of the URL is calculated from the values
+  alone, so anyone can work it out for values that they guess, and a successful response confirms the guess.
+  This also works when only part of the values is unknown. If the rest can be guessed and the unknown part
+  is short, such as a 4-digit code, trying each option reveals it. So keep such values out of these methods.
+
+To show private data to a logged-in user, pass it through
+[`get_template_data()`][Component.get_template_data], so that it stays in the page that your view protects.
+
 ## Accessing component inputs
 
 The component inputs are available in 3 ways:

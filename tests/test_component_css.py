@@ -321,7 +321,7 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <div class="themed-button" data-djc-id-ca1bc3e data-djc-css-468e36>Button</div>
+            <div class="themed-button" data-djc-id-ca1bc3e data-djc-css-d3ebae662fad504c317434217b3f6fc1>Button</div>
             <style>
                 .themed-button {
                     background-color: var(--button_bg);
@@ -330,7 +330,7 @@ class TestCssVariables:
             </style>
             <style>
 /* TestComponent_0c4787 */
-[data-djc-css-468e36] {
+[data-djc-css-d3ebae662fad504c317434217b3f6fc1] {
   --button_bg: #0275d8;
   --button_color: #fff;
 }
@@ -363,7 +363,7 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <div class="sized-box" data-djc-id-ca1bc3e data-djc-css-af06fd>Box</div>
+            <div class="sized-box" data-djc-id-ca1bc3e data-djc-css-072d251ce2f1dd7b78c12cc024e0482b>Box</div>
             <style>
                 .sized-box {
                     width: var(--box_width);
@@ -372,7 +372,7 @@ class TestCssVariables:
             </style>
             <style>
 /* TestComponent_f11bca */
-[data-djc-css-af06fd] {
+[data-djc-css-072d251ce2f1dd7b78c12cc024e0482b] {
   --box_width: 100px;
   --box_height: 200px;
 }
@@ -403,7 +403,7 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <div class="colored-box" data-djc-id-ca1bc3e data-djc-css-b9e76a>Box</div>
+            <div class="colored-box" data-djc-id-ca1bc3e data-djc-css-a3c773e5fbcae9ba23dd23f08167a329>Box</div>
             <style>
                 .colored-box {
                     background-color: var(--bg_color);
@@ -411,7 +411,7 @@ class TestCssVariables:
             </style>
             <style>
 /* TestComponent_a1edd9 */
-[data-djc-css-b9e76a] {
+[data-djc-css-a3c773e5fbcae9ba23dd23f08167a329] {
   --bg_color: red;
 }
 </style>
@@ -454,10 +454,10 @@ class TestCssVariables:
             rendered,
             """
             <div id="box-red">
-                <div class="themed-box" data-djc-id-ca1bc41 data-djc-css-b9e76a>Box</div>
+                <div class="themed-box" data-djc-id-ca1bc41 data-djc-css-a3c773e5fbcae9ba23dd23f08167a329>Box</div>
             </div>
             <div id="box-green">
-                <div class="themed-box" data-djc-id-ca1bc42 data-djc-css-c5e6ab>Box</div>
+                <div class="themed-box" data-djc-id-ca1bc42 data-djc-css-2cf29dcc96cc6bc7fa058409c83bef02>Box</div>
             </div>
             <style>
                 .themed-box {
@@ -466,13 +466,13 @@ class TestCssVariables:
             </style>
             <style>
                 /* TestComponent_a0b5f2 */
-                [data-djc-css-b9e76a] {
+                [data-djc-css-a3c773e5fbcae9ba23dd23f08167a329] {
                     --bg_color: red;
                 }
             </style>
             <style>
                 /* TestComponent_a0b5f2 */
-                [data-djc-css-c5e6ab] {
+                [data-djc-css-2cf29dcc96cc6bc7fa058409c83bef02] {
                     --bg_color: green;
                 }
             </style>
@@ -544,7 +544,7 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <div class="text-box" data-djc-id-ca1bc3e data-djc-css-d335a4>Box</div>
+            <div class="text-box" data-djc-id-ca1bc3e data-djc-css-1fa9346ce6a490b386399369955385f8>Box</div>
             <style>
                 .text-box {
                     content: var(--text_content);
@@ -552,7 +552,7 @@ class TestCssVariables:
             </style>
             <style>
 /* TestComponent_961494 */
-[data-djc-css-d335a4] {
+[data-djc-css-1fa9346ce6a490b386399369955385f8] {
   --text_content: "Hello World";
 }
 </style>
@@ -586,7 +586,7 @@ class TestCssVariables:
         assertHTMLEqual(
             rendered,
             """
-            <div class="sized-box" data-djc-id-ca1bc3e data-djc-css-413e33>Box</div>
+            <div class="sized-box" data-djc-id-ca1bc3e data-djc-css-9b9beddf9d0dbb26df73d9174decf85e>Box</div>
             <style>
                 .sized-box {
                     width: var(--box_width);
@@ -596,7 +596,7 @@ class TestCssVariables:
             </style>
             <style>
 /* TestComponent_5b14a4 */
-[data-djc-css-413e33] {
+[data-djc-css-9b9beddf9d0dbb26df73d9174decf85e] {
   --box_width: calc(100% - 20px);
   --bg_gradient: linear-gradient(to right, red, blue);
   --text_color: rgba(255, 0, 0, 0.5);

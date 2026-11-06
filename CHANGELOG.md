@@ -117,6 +117,18 @@
 
     Before, `$onComponent` callbacks of that component and of every later component on the page did not run, and nothing was logged. Now only that component's callbacks are skipped, and a warning is logged.
 
+- **Values from `get_js_data()` and `get_css_data()` no longer reach the wrong visitor**
+
+    These values are stored under a key made from the values, and that key was short. Two different values could get the same key, and then a page got the values that were stored first, which could be another visitor's. Anyone could also read every stored value by trying all the keys.
+
+    The key is now 128 bits long, which puts both out of reach in practice. Pages that use these values get a little larger.
+
+    The values stay public: anyone with their URL can read them, with no login, and anyone can check whether a guess at them is right. So never return a secret from these methods. Read more in [JS and CSS variables are public](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_js_css_variables/#js-and-css-variables-are-public).
+
+    CSS variables are now written from the JSON form of the values, so `(1, 2)` gives `[1, 2]`, and a key of `True` or `None` gives `--true` or `--null`. If your CSS uses `var(--True)`, use a string key.
+
+    If you set `COMPONENTS.cache`, an entry that an older version stored can be read under its short key until that entry expires. To remove those entries sooner, clear that cache. This removes everything in it, so take care if your app uses it for other data.
+
 ## v0.152.0
 
 #### Feature

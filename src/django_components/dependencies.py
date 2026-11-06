@@ -6,7 +6,7 @@ import json
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from hashlib import md5
+from hashlib import sha256
 from typing import (
     TYPE_CHECKING,
     Literal,
@@ -564,6 +564,22 @@ def cache_component_js(comp_cls: type["Component"], force: bool) -> None:
     )
 
 
+def _gen_variables_hash(json_data: str) -> str:
+    """
+    Get the key under which we store the output of `get_js_data()` or `get_css_data()`.
+
+    The first value stored under a key is the one that every later page gets, so two different
+    values must never share a key. These values can come from your users, and one visitor would
+    then receive another visitor's data. 128 bits keep that out of reach, and also keep anyone
+    from reading every entry by trying all the keys.
+
+    This key is not a secret, and it does not control who can read the values. Anyone can
+    calculate it from values that they guess. See "JS and CSS variables are public" in the docs
+    for what this means for app authors.
+    """
+    return sha256(json_data.encode()).hexdigest()[:32]
+
+
 # NOTE: In CSS, we link the CSS vars to the component via a stylesheet that defines
 # the CSS vars under `[data-djc-css-a1b2c3]`. Because of this we define the variables
 # separately from the rest of the CSS definition.
@@ -584,7 +600,7 @@ def cache_component_js_vars(comp_cls: type["Component"], js_vars: Mapping) -> st
 
     # The hash for the file that holds the JS variables is derived from the variables themselves.
     json_data = json.dumps(js_vars)
-    variables_hash = md5(json_data.encode()).hexdigest()[0:6]  # noqa: S324
+    variables_hash = _gen_variables_hash(json_data)
 
     # Generate and cache a JS script that contains the JS variables.
     if not _is_script_in_cache(comp_cls, "js", variables_hash):
@@ -652,12 +668,17 @@ def cache_component_css_vars(comp_cls: type["Component"], css_vars: Mapping) -> 
 
     # The hash for the file that holds the CSS variables is derived from the variables themselves.
     json_data = json.dumps(css_vars)
-    variables_hash = md5(json_data.encode()).hexdigest()[0:6]  # noqa: S324
+    variables_hash = _gen_variables_hash(json_data)
 
     # Generate and cache a CSS stylesheet that contains the CSS variables.
     if not _is_script_in_cache(comp_cls, "css", variables_hash):
+        # Written from the JSON that gave the key, so one key always means one text. Python values
+        # with the same JSON, such as `Color.RED` and "red", convert to different strings, and
+        # whichever was stored first would otherwise decide what the other one's page gets.
+        stored_vars = json.loads(json_data)
         formatted_vars = [
-            f"  --{serialize_css_var_name(key)}: {serialize_css_var_value(value)};" for key, value in css_vars.items()
+            f"  --{serialize_css_var_name(key)}: {serialize_css_var_value(value)};"
+            for key, value in stored_vars.items()
         ]
 
         # ```css

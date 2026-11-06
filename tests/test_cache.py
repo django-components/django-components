@@ -148,8 +148,8 @@ class TestComponentMediaCache:
 
         # Check that we cache JS / CSS scripts generated from `get_js_data` / `get_css_data`
         # NOTE: The hashes is generated from the data.
-        js_vars_hash = "216ecc"
-        css_vars_hash = "d039a3"
+        js_vars_hash = "856212f7df18b1645f5a700daae11f88"
+        css_vars_hash = "f054e65a171af0ded523f1ea5a2952af"
 
         # Verify CSS variables are cached
         css_vars_content = test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:css:{css_vars_hash}:v2")
