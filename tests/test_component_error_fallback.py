@@ -1,6 +1,7 @@
 import pytest
 from django.template import Context, Template
 from django.template.exceptions import TemplateSyntaxError
+from django.utils.safestring import mark_safe
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, ErrorFallback, register, types
@@ -384,3 +385,56 @@ class TestErrorFallbackComponent:
                 OUTER_FALLBACK: An error occurred while rendering components error_fallback(slot:content) > error_fallback > error_fallback(slot:fallback) > broken: INNER_FALLBACK_FAIL
             """  # noqa: E501
         assertHTMLEqual(rendered3, expected3)
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_fallback_kwarg_from_variable_is_escaped(self, components_settings):
+        @register("broken")
+        class BrokenComponent(Component):
+            def on_render(self, context: Context, template: Template):
+                raise Exception("fail!")
+
+        template = Template("""
+            {% load component_tags %}
+            {% component "error_fallback" fallback=message %}
+                {% component "broken" / %}
+            {% endcomponent %}
+        """)
+        rendered = template.render(Context({"message": "<img src=x onerror=alert(1)>"}))
+        assert "<img" not in rendered
+        assert "&lt;img src=x onerror=alert(1)&gt;" in rendered
+
+    def test_fallback_kwarg_is_escaped__python(self):
+        def broken(_ctx):
+            raise ValueError("fail!")
+
+        rendered = ErrorFallback.render(
+            kwargs={"fallback": "<b>text</b>"},
+            slots={"content": broken},
+            deps_strategy="ignore",
+        )
+        assert "&lt;b&gt;text&lt;/b&gt;" in rendered
+        assert "<b" not in rendered
+
+    def test_fallback_kwarg_marked_safe_keeps_markup(self):
+        def broken(_ctx):
+            raise ValueError("fail!")
+
+        rendered = ErrorFallback.render(
+            kwargs={"fallback": mark_safe("<b>text</b>")},
+            slots={"content": broken},
+            deps_strategy="ignore",
+        )
+        assert "<b" in rendered
+
+    @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
+    def test_fallback_kwarg_with_safe_filter_keeps_markup(self, components_settings):
+        @register("broken")
+        class BrokenComponent(Component):
+            def on_render(self, context: Context, template: Template):
+                raise Exception("fail!")
+
+        template = Template("""
+            {% load component_tags %}
+            {% component "error_fallback" fallback="<b>text</b>"|safe %}{% component "broken" / %}{% endcomponent %}
+        """)
+        assert "<b" in template.render(Context({}))

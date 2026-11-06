@@ -2,6 +2,7 @@ from typing import cast
 
 from django.template import Context, Template
 from django.template.exceptions import TemplateSyntaxError
+from django.utils.html import conditional_escape
 
 from django_components import Component, OnRenderGenerator, SlotInput, types
 
@@ -16,6 +17,8 @@ class ErrorFallback(Component):
     **Parameters**:
 
     - **fallback** (str, optional): A string to display when an error occurs.
+    The string is escaped, so it is shown as text. To render HTML, use the `fallback` slot,
+    or pass a string marked safe, such as `fallback="<b>Oops</b>"|safe` or `mark_safe("<b>Oops</b>")`.
     Cannot be used together with the `fallback` slot.
 
     **Slots**:
@@ -104,7 +107,7 @@ class ErrorFallback(Component):
                     deps_strategy="ignore",
                 ),
                 # Fallback content
-                "fallback": lambda ctx: mark_safe("Oops, something went wrong: " + ctx.error),
+                "fallback": lambda ctx: format_html("Oops, something went wrong: {}", ctx.data["error"]),
             },
         )
         ```
@@ -147,7 +150,8 @@ class ErrorFallback(Component):
 
         # Error, return the fallback
         if fallback_kwarg is not None:
-            return fallback_kwarg
+            # The string can come from a variable, so treat it like `{{ fallback }}` would.
+            return conditional_escape(fallback_kwarg)
         elif fallback_slot is not None:
             # Render the template second time, this time with the error
             # So that we render the fallback slot with proper access to the outer context and whatnot.
