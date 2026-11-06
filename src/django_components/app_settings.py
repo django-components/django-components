@@ -1,5 +1,6 @@
 # ruff: noqa: N802, PLC0415
 import re
+import sys
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import Enum
@@ -296,7 +297,14 @@ class ComponentsSettings(NamedTuple):
     to be used for storing component's JS and CSS files.
 
     If `None`, a [`LocMemCache`](https://docs.djangoproject.com/en/5.2/topics/cache/#local-memory-caching)
-    is used with default settings.
+    stores each component's JS and CSS, and a separate in-memory store holds the JS and CSS variables
+    from [`get_js_data()`][Component.get_js_data] and [`get_css_data()`][Component.get_css_data].
+    [`vars_cache_max_age`][ComponentsSettings.vars_cache_max_age] and
+    [`vars_cache_max_bytes`][ComponentsSettings.vars_cache_max_bytes] limit that second store.
+
+    If set, everything goes in the named cache, and that cache's own `TIMEOUT` and limits apply.
+    Variables can hold data from your users, so set a `TIMEOUT` and a size limit on that cache.
+    With `"TIMEOUT": None` and no limit, a new value in these variables adds an entry that stays for good.
 
     Defaults to `None`.
 
@@ -695,6 +703,62 @@ class ComponentsSettings(NamedTuple):
     ```
     """
 
+    vars_cache_max_age: int | None = None
+    """
+    How many seconds to keep the JS and CSS variables from
+    [`get_js_data()`][Component.get_js_data] and [`get_css_data()`][Component.get_css_data]
+    after a render last used them.
+
+    Defaults to `86400` (24 hours).
+
+    This applies only to the default in-memory store. When you set
+    [`COMPONENTS.cache`][ComponentsSettings.cache], that cache's own `TIMEOUT` applies instead.
+
+    Pages load these variables from the server, so keep this longer than a page may wait before
+    it loads them. That includes pages or `{% cache %}` fragments that you cache yourself.
+    Once the variables are gone, a page that links them gets a 404 for that file, and a cached
+    fragment renders without them, and in both cases the components miss their variables.
+
+    Must be a positive integer of at most `sys.maxsize`. Any other value raises a `ValueError`
+    when Django starts. `None` uses the default. There is no way to turn the limit off,
+    but you can set a very large number.
+
+    ```python
+    COMPONENTS = ComponentsSettings(
+        vars_cache_max_age=7 * 24 * 60 * 60,
+    )
+    ```
+    """
+
+    vars_cache_max_bytes: int | None = None
+    """
+    How much memory each server process may use to keep the JS and CSS variables from
+    [`get_js_data()`][Component.get_js_data] and [`get_css_data()`][Component.get_css_data].
+
+    Defaults to `67108864` (64 MiB).
+
+    This applies only to the default in-memory store. When you set
+    [`COMPONENTS.cache`][ComponentsSettings.cache], that cache's own limits apply instead.
+
+    Each distinct set of variables is stored once. When the store is full, it drops the variables
+    that a render used longest ago. If a page still links them, they are missing as described in
+    [`COMPONENTS.vars_cache_max_age`][ComponentsSettings.vars_cache_max_age], until a render
+    produces the same variables again. So if your components produce many distinct values,
+    raise this limit.
+
+    Variables larger than the whole limit are not stored, and a warning is logged.
+
+    Must be a positive integer of at most `sys.maxsize`. Any other value raises a `ValueError`
+    when Django starts. `None` uses the default. There is no way to turn the limit off,
+    but you can set a very large number.
+
+    ```python
+    COMPONENTS = ComponentsSettings(
+        vars_cache_max_bytes=256 * 1024 * 1024,
+    )
+    ```
+    """
+
 
 # NOTE: Some defaults depend on the Django settings, which may not yet be
 # initialized at the time that these settings are generated. For such cases
@@ -751,6 +815,8 @@ defaults = ComponentsSettings(
     ],
     tag_formatter="django_components.component_formatter",
     template_cache_size=128,
+    vars_cache_max_age=24 * 60 * 60,
+    vars_cache_max_bytes=64 * 1024 * 1024,
 )
 # --endsnippet:defaults--
 # fmt: on
@@ -803,6 +869,14 @@ class InternalSettings:
             static_files_forbidden=self._prepare_static_files_forbidden(components_settings),
             context_behavior=self._prepare_context_behavior(components_settings),
             tag_formatter=default(components_settings.tag_formatter, defaults.tag_formatter),  # type: ignore[arg-type]
+            vars_cache_max_age=self._prepare_positive_int(
+                "vars_cache_max_age",
+                default(components_settings.vars_cache_max_age, defaults.vars_cache_max_age),
+            ),
+            vars_cache_max_bytes=self._prepare_positive_int(
+                "vars_cache_max_bytes",
+                default(components_settings.vars_cache_max_bytes, defaults.vars_cache_max_bytes),
+            ),
         )
 
     def _get_settings(self) -> ComponentsSettings:
@@ -868,6 +942,13 @@ class InternalSettings:
 
         return default(val, cast("list[str | re.Pattern]", defaults.static_files_forbidden))
 
+    def _prepare_positive_int(self, name: str, value: Any) -> int:
+        # `type()` rather than `isinstance()`, because `True` is an `int` and would pass as 1.
+        # The upper bound keeps a value from failing later, on each render, when added to the clock.
+        if type(value) is not int or not 0 < value <= sys.maxsize:
+            raise ValueError(f"COMPONENTS.{name} must be a positive integer of at most {sys.maxsize}, got {value!r}")
+        return value
+
     def _prepare_context_behavior(self, new_settings: ComponentsSettings) -> Literal["django", "isolated"]:
         raw_value = cast(
             "Literal['django', 'isolated']",
@@ -932,6 +1013,14 @@ class InternalSettings:
     @property
     def TEMPLATE_CACHE_SIZE(self) -> int:
         return self._get_settings().template_cache_size  # type: ignore[return-value]
+
+    @property
+    def VARS_CACHE_MAX_AGE(self) -> int:
+        return self._get_settings().vars_cache_max_age  # type: ignore[return-value]
+
+    @property
+    def VARS_CACHE_MAX_BYTES(self) -> int:
+        return self._get_settings().vars_cache_max_bytes  # type: ignore[return-value]
 
     @property
     def STATIC_FILES_ALLOWED(self) -> Sequence[str | re.Pattern]:

@@ -52,3 +52,26 @@ COMPONENTS = {
 ```
 
 See [`COMPONENTS.cache`][ComponentsSettings.cache] for more details about this setting.
+
+### Limits on JS and CSS variables
+
+Each distinct value from [`get_js_data()`][Component.get_js_data] or [`get_css_data()`][Component.get_css_data] adds an entry to the cache. If those values depend on your users, the entries can keep adding up, so they have limits.
+
+With the default in-memory cache, each server process keeps them for 24 hours after a render last used them, and uses at most 64 MiB of memory for them. When that memory is full, the process drops the entries that a render used longest ago. Your components' own [`Component.js`][Component.js] and [`Component.css`][Component.css] do not count toward this limit and are never dropped to make room.
+
+You can change both limits:
+
+```python
+COMPONENTS = {
+    # Keep the variables for a week
+    "vars_cache_max_age": 7 * 24 * 60 * 60,
+    # Allow up to 256 MiB in each server process
+    "vars_cache_max_bytes": 256 * 1024 * 1024,
+}
+```
+
+Both must be positive integers. Any other value raises a `ValueError` when Django starts.
+
+If an entry is gone when a page needs it, that page's components miss their variables. A page that links the variables gets a 404 for that file. A render that produces the same variables stores them again.
+
+With your own cache backend set in [`COMPONENTS.cache`][ComponentsSettings.cache], these two settings do not apply. That backend's own `TIMEOUT` and size limits decide how long entries stay, so set both. With `"TIMEOUT": None` and no limit on size, every new value adds an entry that stays for good.

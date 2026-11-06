@@ -243,6 +243,16 @@ the cached fragment refers to variable data the new process no longer has.
 to the same persistent backend you use for the fragment cache, so the
 variables survive restarts.
 
+The same thing happens without a restart when you keep a fragment for longer
+than 24 hours, because that is how long the default cache keeps these
+variables after a render last used them. It can also happen sooner on a busy
+site, because that cache uses at most 64 MiB of memory for them.
+
+✅ Do: use a persistent backend as above, or raise
+[`vars_cache_max_age`][ComponentsSettings.vars_cache_max_age] and
+[`vars_cache_max_bytes`][ComponentsSettings.vars_cache_max_bytes].
+Read more in [Caching](../../guides/setup/caching.md#limits-on-js-and-css-variables).
+
 #### Every user sees the first user's data
 
 ```django

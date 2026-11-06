@@ -89,6 +89,26 @@
     they do not check a URL in `href`. Do not pass a mapping whose keys come from a request. See
     [HTML attributes](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/).
 
+## v0.152.1
+
+#### Fix
+
+- **A long URL under `/components/cache/` no longer keeps the server busy**
+
+    The time to reject one grew with the cube of its length. These URLs now accept only the file names that django-components generates: the variables hash must be 1 to 64 lowercase hexadecimal characters, and the extension must be `js` or `css`. Other paths still give a 404.
+
+- **Long `style` values no longer keep the server busy**
+
+    In `{% html_attrs %}`, `{% attrs %}` and `parse_string_style()`, the time grew with the square of the length. It now grows in step with the length, and the parsed result does not change.
+
+- **Values from `get_js_data()` and `get_css_data()` no longer fill up the server's memory**
+
+    With the default in-memory cache, each server process now keeps them for 24 hours after a render last used them, and uses at most 64 MiB for them. Your `Component.js` and `Component.css` are not affected.
+
+    If an entry is gone when a page needs it, that page's components miss their variables until a render produces the same variables again. This can affect pages or `{% cache %}` fragments that you keep for longer than 24 hours, and very busy sites. To raise these limits, set the new `vars_cache_max_age` and `vars_cache_max_bytes` settings.
+
+    If you set `COMPONENTS.cache`, nothing changes: that cache's own `TIMEOUT` and size limits still apply. With `"TIMEOUT": None` and no size limit, these entries are never removed, so set both.
+
 ## v0.152.0
 
 #### Feature

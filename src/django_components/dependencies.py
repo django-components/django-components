@@ -24,13 +24,15 @@ from django.utils.safestring import SafeString, mark_safe
 from djc_core.html_transformer import set_html_attributes
 
 from django_components.attributes import format_author_attributes
-from django_components.cache import get_component_media_cache
+from django_components.cache import get_component_media_cache, get_component_vars_cache
 from django_components.extension import OnDependenciesContext, extensions
 from django_components.node import BaseNode
 from django_components.util.css import serialize_css_var_name, serialize_css_var_value
 from django_components.util.misc import extract_regex_matches, is_nonempty_str
 
 if TYPE_CHECKING:
+    from django.core.cache import BaseCache
+
     from django_components.component import Component
 
 
@@ -450,13 +452,18 @@ def _gen_cache_key(
     return f"__components:{comp_cls_id}:{script_type}"
 
 
+def _get_script_cache(variables_hash: str | None) -> "BaseCache":
+    # Same condition as `_gen_cache_key()`: a hash means that the script was generated from variables.
+    return get_component_vars_cache() if variables_hash else get_component_media_cache()
+
+
 def _is_script_in_cache(
     comp_cls: type["Component"],
     script_type: ScriptType,
     variables_hash: str | None,
 ) -> bool:
     cache_key = _gen_cache_key(comp_cls.class_id, script_type, variables_hash)
-    cache = get_component_media_cache()
+    cache = _get_script_cache(variables_hash)
     return cache.has_key(cache_key)
 
 
@@ -478,7 +485,7 @@ def _cache_script(
 
     # NOTE: By setting the script in the cache, we will be able to retrieve it
     # via the endpoint, e.g. when we make a request to `/components/cache/MyComp_ab0c2d.js`.
-    cache = get_component_media_cache()
+    cache = _get_script_cache(variables_hash)
     serialized_script = json.dumps(script.to_json())
     cache.set(cache_key, serialized_script)
 
@@ -1574,7 +1581,7 @@ def get_script(
     variables_hash: str | None,
 ) -> Script | Style | None:
     """Get `Script` or `Style` object from cache. Returns `None` if not found."""
-    cache = get_component_media_cache()
+    cache = _get_script_cache(variables_hash)
     cache_key = _gen_cache_key(comp_cls.class_id, script_type, variables_hash)
     cached_data = cache.get(cache_key)
 
