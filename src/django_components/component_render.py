@@ -3,7 +3,7 @@ from collections import deque
 from collections.abc import Callable, Generator, Mapping
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeAlias, cast
 from weakref import ReferenceType, WeakKeyDictionary, ref
 
@@ -143,6 +143,9 @@ class ComponentTreeContext:
     # (e.g. `generator.started = True`), because generator object does not allow setting
     # extra attributes.
     started_generators: StartedGenerators
+    # IDs of all components that were rendered in this tree, so that when the tree is done
+    # we can release whatever a failed render left in the global caches.
+    render_ids: list[str] = field(default_factory=list)
 
 
 # Internal data that are made available within the component's template
@@ -951,6 +954,10 @@ def component_post_render(
     # so we can render the component only once we know if there are any HTML attributes
     # to be applied to the resulting HTML.
     component_renderer_cache[render_id] = (renderer, component_name)
+    # `{% cache %}` runs this function as a root in the middle of a tree that is still rendering.
+    # So a root may release only what was added since it began, and not its parents.
+    own_render_ids_start = len(component_tree_context.render_ids)
+    component_tree_context.render_ids.append(render_id)
 
     # Case: Nested component
     # If component is nested, return a placeholder
@@ -1348,9 +1355,20 @@ def component_post_render(
         ),
     )
 
-    while len(process_queue):
-        curr_item = process_queue.popleft()
-        on_item(curr_item)
+    try:
+        while len(process_queue):
+            curr_item = process_queue.popleft()
+            on_item(curr_item)
+    finally:
+        # A component is removed from these caches when we reach it in the queue. An error can stop
+        # that from happening: it can end the loop early, make us skip the rest of a parent's parts,
+        # or discard the parent's HTML with the placeholder of a child that is not in the queue yet.
+        # These caches are global and hold the component instances, which hold their inputs,
+        # so whatever is left here would stay for the life of the process.
+        for own_render_id in component_tree_context.render_ids[own_render_ids_start:]:
+            component_renderer_cache.pop(own_render_id, None)
+            component_instance_cache.pop(own_render_id, None)
+        del component_tree_context.render_ids[own_render_ids_start:]
 
     # Lastly, join up all pieces of the component's HTML content
     output = "".join(content_parts)

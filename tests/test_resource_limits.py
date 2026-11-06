@@ -1,6 +1,7 @@
 """Requests and rendered data must not cost the server more work or memory than their size justifies."""
 
 import base64
+import gc
 import itertools
 import json
 import logging
@@ -8,6 +9,7 @@ import re
 import sys
 import time
 import warnings
+import weakref
 from collections.abc import Iterator
 from contextlib import contextmanager
 from unittest.mock import patch
@@ -25,6 +27,11 @@ from django_components.cache import (
     ComponentVarsCache,
     get_component_media_cache,
     get_component_vars_cache,
+)
+from django_components.component_render import (
+    component_context_cache,
+    component_instance_cache,
+    component_renderer_cache,
 )
 from django_components.dependencies import CACHE_ENDPOINT_NAME
 from django_components.dependencies import urlpatterns as dependency_urlpatterns
@@ -576,3 +583,178 @@ class TestVarsCacheInRendering:
                     assert cache._expire_info[keys[0]] == clock.now + 5
             finally:
                 cache.clear()
+
+
+def _global_cache_sizes() -> dict[str, int]:
+    return {
+        "context": len(component_context_cache),
+        "instance": len(component_instance_cache),
+        "renderer": len(component_renderer_cache),
+    }
+
+
+@djc_test
+class TestFailedRendersReleaseMemory:
+    @staticmethod
+    def _make_broken() -> None:
+        class Broken(Component):
+            template: types.django_html = """
+                <div>x</div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                raise ValueError("boom")
+
+        class Fine(Component):
+            template: types.django_html = """
+                <div>{{ data }}</div>
+            """
+
+            class Kwargs:
+                data: str = ""
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs.data}
+
+        registry.register("broken", Broken)
+        registry.register("fine", Fine)
+
+    def _assert_failures_leave_nothing(self, comp_cls: type[Component]) -> None:
+        with pytest.raises(ValueError, match="boom"):
+            comp_cls.render()
+        gc.collect()
+        before = _global_cache_sizes()
+        for _ in range(5):
+            with pytest.raises(ValueError, match="boom"):
+                comp_cls.render()
+        gc.collect()
+        assert _global_cache_sizes() == before
+
+    def test_a_child_fails_before_a_sibling_gets_its_turn(self):
+        self._make_broken()
+
+        class Parent(Component):
+            template: types.django_html = """
+                {% component "broken" / %}
+                {% component "fine" / %}
+            """
+
+        self._assert_failures_leave_nothing(Parent)
+
+    def test_a_child_fails_after_a_sibling(self):
+        self._make_broken()
+
+        class Parent(Component):
+            template: types.django_html = """
+                {% component "fine" / %}
+                {% component "broken" / %}
+            """
+
+        self._assert_failures_leave_nothing(Parent)
+
+    def test_a_parent_fails_after_a_child_tag(self):
+        # Here the child's placeholder goes down with the parent's HTML, so it never gets in the queue.
+        self._make_broken()
+
+        class Parent(Component):
+            template: types.django_html = """
+                {% component "fine" / %}
+            """
+
+            def on_render(self, context, template):
+                template.render(context)
+                raise ValueError("boom")
+
+        self._assert_failures_leave_nothing(Parent)
+
+    def test_a_child_fails_inside_a_cache_tag(self):
+        # `{% cache %}` runs as a root of its own in the middle of the tree, so what it leaves
+        # behind has to be released by the real root, and it must not release its own parents.
+        self._make_broken()
+
+        class Parent(Component):
+            template: types.django_html = """
+                {% load cache %}
+                {% component "fine" / %}
+                {% cache 60 "test_failing_fragment" %}
+                    {% component "broken" / %}
+                    {% component "fine" / %}
+                {% endcache %}
+                {% component "fine" / %}
+            """
+
+        self._assert_failures_leave_nothing(Parent)
+
+    def test_a_cache_tag_keeps_its_parents_in_the_caches(self):
+        self._make_broken()
+
+        class Parent(Component):
+            template: types.django_html = """
+                {% load cache %}
+                {% cache 60 "test_good_fragment" %}
+                    {% component "fine" data="inside" / %}
+                {% endcache %}
+                {% component "fine" data="after" / %}
+            """
+
+        rendered = Parent.render()
+        assert "inside" in rendered
+        assert "after" in rendered
+        assert not component_instance_cache
+        assert not component_renderer_cache
+
+    def test_a_recovered_error_leaves_nothing(self):
+        # The error fallback saves the render, and the broken child's sibling is skipped.
+        self._make_broken()
+
+        class Parent(Component):
+            template: types.django_html = """
+                {% component "error_fallback" %}
+                    {% fill "content" %}
+                        {% component "broken" / %}
+                        {% component "fine" / %}
+                    {% endfill %}
+                    {% fill "fallback" %}
+                        recovered
+                    {% endfill %}
+                {% endcomponent %}
+            """
+
+        assert "recovered" in Parent.render()
+        gc.collect()
+        before = _global_cache_sizes()
+        for _ in range(5):
+            assert "recovered" in Parent.render()
+        gc.collect()
+        assert _global_cache_sizes() == before
+
+    def test_inputs_of_waiting_siblings_do_not_pile_up(self):
+        self._make_broken()
+
+        class Parent(Component):
+            template: types.django_html = """
+                {% component "fine" data=data / %}
+                {% component "broken" / %}
+            """
+
+            class Kwargs:
+                data: "Payload"
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"data": kwargs.data}
+
+        refs = []
+        for _ in range(200):
+            payload = Payload()
+            refs.append(weakref.ref(payload))
+            with pytest.raises(ValueError, match="boom"):
+                Parent.render(kwargs={"data": payload})
+        del payload
+        gc.collect()
+        # A few stay alive for a while, the same as after a render that succeeds, and that number
+        # does not grow. What we must not see is one input kept for each failed render.
+        assert sum(ref() is not None for ref in refs) < 100
+
+
+class Payload:
+    """An input that a test can watch being released, as a plain string could not be."""
