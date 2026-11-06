@@ -83,6 +83,7 @@ For even more control, you can override other methods available on the [`Compone
 
     The default implementation of `Cache.hash()` simply serializes the input into a string.
     As such, it might not be suitable if you need to hash complex objects like Models.
+    Two values of the same type that convert to the same string share a cache entry.
 
 ## Caching slots
 

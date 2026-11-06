@@ -129,6 +129,12 @@
 
     If you set `COMPONENTS.cache`, an entry that an older version stored can be read under its short key until that entry expires. To remove those entries sooner, clear that cache. This removes everything in it, so take care if your app uses it for other data.
 
+- **`Component.Cache` no longer mixes up inputs that look alike**
+
+    With the default `Cache.hash()`, the inputs `name="a,role-b", role="c"` and `name="a", role="b,role-c"` shared one cache entry, so the second render returned the HTML of the first. The same happened with `None` and `"None"`, and with `1` and `"1"`.
+
+    Each entry already in your cache gets a new key, so it is rendered again once, and the old entry stays until it expires. If your `Cache.hash()` or `Cache.hash_slots()` calls `super()` and reads the result, note that `hash()` now returns two JSON arrays joined by a colon, and `hash_slots()` returns one JSON array.
+
 ## v0.152.0
 
 #### Feature

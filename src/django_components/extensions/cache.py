@@ -1,4 +1,5 @@
-from hashlib import md5
+import json
+from hashlib import sha256
 from typing import Any
 
 from django.core.cache import BaseCache, caches
@@ -14,6 +15,11 @@ from django_components.slots import Slot
 # NOTE: We allow users to override cache key generation, but then we internally
 # still prefix their key with our own prefix, so it's clear where it comes from.
 CACHE_KEY_PREFIX = "components:cache:"
+
+
+def _type_path(value: Any) -> str:
+    # With the module, `app1.models.Tag` and `app2.models.Tag` do not pass for one type.
+    return f"{type(value).__module__}.{type(value).__qualname__}"
 
 
 class ComponentCache(ExtensionComponentConfig):
@@ -127,7 +133,7 @@ class ComponentCache(ExtensionComponentConfig):
         if self.include_slots:
             cache_key += ":" + self.hash_slots(slots)
         cache_key = self.component.class_id + ":" + cache_key
-        cache_key = CACHE_KEY_PREFIX + md5(cache_key.encode()).hexdigest()  # noqa: S324
+        cache_key = CACHE_KEY_PREFIX + sha256(cache_key.encode()).hexdigest()
         return cache_key
 
     def hash(self, args: list, kwargs: dict) -> str:
@@ -135,12 +141,17 @@ class ComponentCache(ExtensionComponentConfig):
         Defines how the input (both args and kwargs) is hashed into a cache key.
 
         By default, `hash()` serializes the input into a string. As such, the default
-        implementation might NOT be suitable if you need to hash complex objects.
+        implementation might NOT be suitable if you need to hash complex objects:
+        two values of the same type with the same `str()` share a cache entry.
         """
-        args_hash = ",".join(str(arg) for arg in args)
+        # JSON escapes quotes, so text inside a value cannot pass for the next value or kwarg.
+        # A first render's HTML goes to every render with the same key, so with `a="1,b-2"` and
+        # `a="1", b="2"` sharing a key, one visitor would get the other's page.
+        # The type keeps `None` apart from a visitor's "None", which have the same `str()`.
+        args_hash = json.dumps([[_type_path(arg), str(arg)] for arg in args])
         # Sort keys to ensure consistent ordering
         sorted_items = sorted(kwargs.items())
-        kwargs_hash = ",".join(f"{k}-{v}" for k, v in sorted_items)
+        kwargs_hash = json.dumps([[key, _type_path(value), str(value)] for key, value in sorted_items])
         return f"{args_hash}:{kwargs_hash}"
 
     def hash_slots(self, slots: dict[str, Slot]) -> str:
@@ -153,8 +164,9 @@ class ComponentCache(ExtensionComponentConfig):
                     " Instead define the slot as a string or `{% fill %}` tag, or disable slot caching"
                     " with `Cache.include_slots=False`.",
                 )
-            hash_parts.append(f"{key}-{slot.contents}")
-        return ",".join(hash_parts)
+            hash_parts.append([key, str(slot.contents)])
+        # JSON for the same reason as in `hash()`.
+        return json.dumps(hash_parts)
 
 
 class CacheExtension(ComponentExtension):
