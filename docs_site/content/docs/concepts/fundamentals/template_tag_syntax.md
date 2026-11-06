@@ -69,6 +69,23 @@ You can apply Django filters to Python expressions:
 
 In the example above, `(user.name.upper())` is first evaluated as a Python expression, then the `lower` filter is applied to the result.
 
+### Formatting text
+
+To build text in an expression, use an f-string, such as `(f"Hello {name}")`.
+
+Expressions can't call `format()` or `format_map()` on text, and raise `SecurityError` if they try. These methods follow attribute paths written in the text, so the text could read values the expression is not allowed to read.
+
+Expressions also can't call any method on a Django lazy string. That is the result of `_("...")`, `gettext_lazy()` and similar. Put it in an f-string to get plain text:
+
+```django
+{% with greeting=_("Hello") %}
+    {% component "button" text=(f"{greeting} {name}") / %}
+    {% component "button" text=(f"{greeting}".upper()) / %}
+{% endwith %}
+```
+
+An f-string only places values next to the text. If the text has its own placeholders, fill them in `get_template_data()`.
+
 ### Best practices
 
 1. **Use for simple transformations**: Python expressions are best for simple conditionals, negations, and basic operations.

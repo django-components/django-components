@@ -159,6 +159,21 @@
 
     **On a page without a nonce, a fragment's `Component.Media.js` now loads only files under `STATIC_URL`. A script from a CDN or from another path on your site, such as `/jsi18n/`, doesn't load, even on a site with no policy.** With `STATIC_URL = "/"`, a `type="module"` dependency manager tag, a tag on another host that a hook gave an `integrity`, or a dependency manager file served from another folder, none of these files load. The fragment's components still run, but their JS fails where it needs the skipped script. The browser console shows an error, and the server logs a warning. Load the script on the page itself, serve it from `STATIC_URL`, or give the page a nonce. See [Pages without a nonce](https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/#pages-without-a-nonce).
 
+## v0.152.1
+
+#### Fix
+
+- **Python expressions can no longer call methods on Django lazy strings**
+
+    A lazy string is the result of `_("...")`, `gettext_lazy()` and similar. Its methods could run `format()`,
+    which follows attribute paths written in the text, so an expression could read values it must not reach,
+    such as settings. Expressions also refuse calls to `format_html()`, `format_html_join()` and `format_lazy()`.
+
+    To call a method on a lazy string, turn it into plain text with an f-string first: `(f"{text}".upper())`.
+    Format text with placeholders in `get_template_data()`.
+
+    Also upgrade to djc-core 1.4.0 or later, which refuses `format()` on plain text.
+
 ## v0.152.0
 
 #### Feature

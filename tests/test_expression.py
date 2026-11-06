@@ -1,16 +1,23 @@
 """Catch-all for tests that use template tags and don't fit other files"""
 
 import re
+from functools import partial
 
 import pytest
 from django.template import Context, Template
 from django.template.base import FilterExpression, Node, Parser, Token
+from django.utils.functional import SimpleLazyObject, lazy, lazystr
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import SafeString, mark_safe
+from django.utils.text import format_lazy
+from django.utils.translation import gettext_lazy, ngettext_lazy, pgettext_lazy
+from djc_core.safe_eval import SecurityError
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
 from django_components.expression import TemplateExpression
 from django_components.testing import djc_test
-from django_components.util.template_tag import is_aggregate_key
+from django_components.util.template_tag import is_aggregate_key, resolve_python_expression
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
@@ -937,6 +944,232 @@ class TestPythonExpressions:
             <div data-djc-id-ca1bc3f>hello</div>
             """,
         )
+
+
+class HiddenMarker:
+    """Holds a value that an expression must not be able to read."""
+
+    _hidden = "HIDDEN-MARKER"
+
+
+class ForwardingObject:
+    """Forwards attribute reads to another object, as many wrapper classes do."""
+
+    def __init__(self, target):
+        self.target = target
+
+    def __getattr__(self, name):
+        return getattr(self.target, name)
+
+
+class FormatMethodOwner:
+    """An ordinary class that happens to have a `format` method and a `format_map` field."""
+
+    format_map = "a4"
+
+    def format(self):
+        return "formatted"
+
+
+def evaluate(code, **context):
+    # The real resolver, so that these tests cover the checks the template tags use.
+    return resolve_python_expression(context, "", (0, 0), {}, {}, code)
+
+
+PATH_TEXT = "{0._hidden}"
+KEYED_PATH_TEXT = "{item._hidden}"
+
+
+@djc_test
+class TestPythonExpressionFormatting:
+    def render_show(self, template_str, context):
+        @register("show")
+        class Show(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"text": kwargs["text"]}
+
+            template: types.django_html = """
+                <div>{{ text }}</div>
+            """
+
+        return Template("{% load component_tags %}" + template_str).render(Context(context))
+
+    # Only the template text chooses the format text here: the app passes no lazy string in.
+    @pytest.mark.parametrize(
+        "text",
+        [
+            pytest.param("{0._hidden}", id="private_attribute"),
+            pytest.param("{0.__class__.__name__}", id="dunder_attribute"),
+        ],
+    )
+    def test_translation_in_template_cannot_format(self, text):
+        template_str = '{% with x=_("' + text + '") %}{% component "show" text=(x.format(obj)) / %}{% endwith %}'
+        with pytest.raises(SecurityError):
+            self.render_show(template_str, {"obj": HiddenMarker()})
+
+    def test_translation_in_template_cannot_format_itself(self):
+        # The lazy string is its own argument, so the path needs no object from the app.
+        template_str = (
+            '{% with x=_("{0.__init__.__globals__}") %}{% component "show" text=(x.format(x)) / %}{% endwith %}'
+        )
+        with pytest.raises(SecurityError):
+            self.render_show(template_str, {})
+
+    def test_lazy_string_from_context_cannot_format(self):
+        with pytest.raises(SecurityError):
+            self.render_show(
+                '{% component "show" text=(x.format(obj)) / %}',
+                {"x": gettext_lazy(PATH_TEXT), "obj": HiddenMarker()},
+            )
+
+    @pytest.mark.parametrize(
+        "make_text",
+        [
+            pytest.param(lambda: gettext_lazy(PATH_TEXT), id="gettext_lazy"),
+            pytest.param(lambda: pgettext_lazy("menu", PATH_TEXT), id="pgettext_lazy"),
+            pytest.param(lambda: ngettext_lazy(PATH_TEXT, PATH_TEXT, 1), id="ngettext_lazy_number"),
+            pytest.param(lambda: ngettext_lazy(PATH_TEXT, PATH_TEXT, "n"), id="ngettext_lazy_key"),
+            pytest.param(lambda: lazystr(PATH_TEXT), id="lazystr"),
+            pytest.param(lambda: lazy(str, str)(PATH_TEXT), id="lazy"),
+            pytest.param(lambda: mark_safe(gettext_lazy(PATH_TEXT)), id="mark_safe_of_lazy"),
+            pytest.param(lambda: format_lazy("{}", PATH_TEXT), id="format_lazy_result"),
+            pytest.param(lambda: SimpleLazyObject(lambda: gettext_lazy(PATH_TEXT)), id="simple_lazy_object"),
+            pytest.param(lambda: ForwardingObject(gettext_lazy(PATH_TEXT)), id="forwarding_object"),
+            # These count as `str` for `isinstance`, so `safe_eval` must refuse them without the
+            # hooks in `template_tag.py`.
+            pytest.param(lambda: SafeString(PATH_TEXT), id="safe_string"),
+            pytest.param(lambda: mark_safe(PATH_TEXT), id="mark_safe"),
+            pytest.param(lambda: SimpleLazyObject(lambda: PATH_TEXT), id="simple_lazy_object_of_str"),
+        ],
+    )
+    def test_format_refused_on_string_like_objects(self, make_text):
+        with pytest.raises(SecurityError):
+            evaluate("x.format(obj)", x=make_text(), obj=HiddenMarker())
+
+    @pytest.mark.parametrize(
+        "make_text",
+        [
+            pytest.param(lambda: gettext_lazy(KEYED_PATH_TEXT), id="gettext_lazy"),
+            pytest.param(lambda: SimpleLazyObject(lambda: gettext_lazy(KEYED_PATH_TEXT)), id="simple_lazy_object"),
+            pytest.param(lambda: ForwardingObject(gettext_lazy(KEYED_PATH_TEXT)), id="forwarding_object"),
+        ],
+    )
+    def test_format_map_refused_on_lazy_strings(self, make_text):
+        with pytest.raises(SecurityError):
+            evaluate("x.format_map(values)", x=make_text(), values={"item": HiddenMarker()})
+
+    # The check runs on each attribute read, so try the ways an expression can write one.
+    @pytest.mark.parametrize(
+        "code",
+        [
+            pytest.param("(lambda value: x.format(value))(obj)", id="lambda"),
+            pytest.param("[x.format(value) for value in [obj]]", id="comprehension"),
+            pytest.param("f'{x.format(obj)}'", id="f_string"),
+            pytest.param("(y := x).format(obj)", id="walrus"),
+            pytest.param("(x if True else '').format(obj)", id="conditional"),
+            pytest.param("[x][0].format(obj)", id="subscript"),
+        ],
+    )
+    def test_lazy_string_method_refused_in_each_expression_form(self, code):
+        with pytest.raises(SecurityError):
+            evaluate(code, x=gettext_lazy(PATH_TEXT), obj=HiddenMarker())
+
+    @pytest.mark.parametrize("code", ["cls.format(x, obj)", "cls.upper(x)"], ids=["format", "upper"])
+    def test_lazy_string_class_attribute_refused(self, code):
+        lazy_text = gettext_lazy(PATH_TEXT)
+        with pytest.raises(SecurityError):
+            evaluate(code, cls=type(lazy_text), x=lazy_text, obj=HiddenMarker())
+
+    @pytest.mark.parametrize("code", ["cls.format(x, obj)", "cls.upper(x)"], ids=["format", "upper"])
+    def test_lazy_string_class_inside_simple_lazy_object_attribute_refused(self, code):
+        lazy_text = gettext_lazy(PATH_TEXT)
+        cls = SimpleLazyObject(lambda: type(lazy_text))
+        with pytest.raises(SecurityError):
+            evaluate(code, cls=cls, x=lazy_text, obj=HiddenMarker())
+
+    @pytest.mark.parametrize(
+        "make_function",
+        [
+            pytest.param(lambda text: text.format, id="bound_method"),
+            pytest.param(lambda text: text.format_map, id="bound_format_map"),
+            pytest.param(lambda text: partial(text.format), id="partial"),
+            pytest.param(lambda text: partial(partial(text.format)), id="nested_partial"),
+            pytest.param(lambda text: text.upper, id="upper"),
+            pytest.param(lambda text: partial(text.upper), id="partial_of_upper"),
+        ],
+    )
+    def test_lazy_string_method_from_context_cannot_be_called(self, make_function):
+        function = make_function(gettext_lazy(PATH_TEXT))
+        with pytest.raises(SecurityError):
+            evaluate("function(obj)", function=function, obj=HiddenMarker())
+
+    @pytest.mark.parametrize(
+        ("function", "args"),
+        [
+            pytest.param(format_lazy, ("{0._hidden}", HiddenMarker()), id="format_lazy"),
+            # `format_html()` escapes its arguments, but the escaped text still has a
+            # `__html__` method, and the path can start there.
+            pytest.param(format_html, ("{0.__html__.__name__}", "text"), id="format_html"),
+            pytest.param(format_html_join, ("", "{0.__html__.__name__}", [("text",)]), id="format_html_join"),
+            pytest.param(partial(format_lazy, "{0._hidden}"), (HiddenMarker(),), id="partial_of_format_lazy"),
+        ],
+    )
+    def test_django_format_functions_cannot_be_called(self, function, args):
+        with pytest.raises(SecurityError):
+            evaluate("function(*args)", function=function, args=args)
+
+    def test_lazy_string_plain_method_is_refused(self):
+        with pytest.raises(SecurityError):
+            evaluate("x.upper()", x=gettext_lazy("hello"))
+
+    def test_lazy_string_method_cannot_be_redirected(self):
+        # A forwarding method takes a keyword that picks the method to run, so every name is refused.
+        with pytest.raises(SecurityError):
+            evaluate("x.upper(obj, __method_name='format')", x=gettext_lazy(PATH_TEXT), obj=HiddenMarker())
+
+    def test_lazy_string_redirected_method_in_template_is_refused(self):
+        template_str = (
+            '{% with x=_("{0._hidden}") %}'
+            "{% component \"show\" text=(x.upper(obj, __method_name='format')) / %}"
+            "{% endwith %}"
+        )
+        with pytest.raises(SecurityError):
+            self.render_show(template_str, {"obj": HiddenMarker()})
+
+    def test_lazy_string_operators_and_f_strings_keep_working(self):
+        text = gettext_lazy("hello")
+        assert evaluate("x + ' world'", x=text) == "hello world"
+        assert evaluate("f'{x} world'", x=text) == "hello world"
+        # An f-string gives a plain `str`, which is how to reach the string methods.
+        assert evaluate("f'{x}'.upper()", x=text) == "HELLO"
+
+    def test_lazy_string_percent_formatting_keeps_working(self):
+        assert evaluate("x % name", x=gettext_lazy("Hello %s"), name="Ann") == "Hello Ann"
+
+    def test_f_string_with_translation_in_template_keeps_working(self):
+        template_str = """
+            {% with x=_("Hello") %}
+                {% component "show" text=(f"{x} {name}") / %}
+                {% component "show" text=(f"{x}".upper()) / %}
+            {% endwith %}
+        """
+        rendered = self.render_show(template_str, {"name": "Ann"})
+        assert "Hello Ann" in rendered
+        assert "HELLO" in rendered
+
+    def test_format_of_other_objects_keeps_working(self):
+        owner = FormatMethodOwner()
+        assert evaluate("owner.format()", owner=owner) == "formatted"
+        assert evaluate("owner.format_map", owner=owner) == "a4"
+        assert evaluate("function()", function=partial(owner.format)) == "formatted"
+        assert evaluate("wrapped.format()", wrapped=SimpleLazyObject(lambda: owner)) == "formatted"
+
+    def test_lazy_object_of_any_result_class_is_refused(self):
+        # The check looks only at `Promise`, not at the type the object will produce, so a
+        # result that is not text is refused too.
+        lazy_owner = lazy(FormatMethodOwner, FormatMethodOwner)()
+        with pytest.raises(SecurityError):
+            evaluate("owner.format()", owner=lazy_owner)
 
 
 @djc_test

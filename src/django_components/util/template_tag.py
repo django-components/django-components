@@ -5,6 +5,7 @@ This file is for logic that focuses on transforming the AST of template tags
 
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Mapping
+from functools import partial
 from typing import (
     Any,
     NamedTuple,
@@ -14,6 +15,9 @@ from typing import (
 from django.template import NodeList, Variable, VariableDoesNotExist
 from django.template.base import Parser, Token
 from django.template.exceptions import TemplateSyntaxError
+from django.utils.functional import Promise
+from django.utils.html import format_html, format_html_join
+from django.utils.text import format_lazy
 from djc_core.safe_eval import safe_eval
 from djc_core.template_parser import GenericTag, ParserConfig, TagAttr, compile_tag, parse_tag
 from djc_core.template_parser.parse import TagUnion
@@ -220,6 +224,49 @@ def resolve_translation(
     return Variable(translation_var).resolve(context)
 
 
+# Django functions that follow the attribute and item paths written in the text they receive, such
+# as `{0.__class__}`, with the real `getattr`. `safe_eval` never sees those reads. They are compared
+# by identity, because a callable that a template can reach may not be hashable.
+DJANGO_FORMAT_FUNCTIONS = (format_html, format_html_join, format_lazy)
+
+
+def is_safe_expression_attribute(obj: Any, attr: str) -> bool:  # noqa: ARG001
+    """
+    Refuse reading any attribute of a Django lazy string, or of its class, in a Python expression.
+
+    `safe_eval` refuses `format` and `format_map` on `str` and `UserString`. A lazy string, such
+    as a `gettext_lazy()` result or `_("...")` in a template, is neither of those: it is a
+    `Promise` that forwards each method call to the real string.
+
+    The whole object is refused, not only those two names. A forwarding method accepts a keyword
+    argument that picks the method to run, so any of them can run `format`, and `safe_eval` does
+    not show keyword arguments to its hooks.
+    """
+    # `isinstance` looks at `__class__`, so a `SimpleLazyObject` around a lazy string matches too.
+    # The class counts as well, because its methods take the lazy string as their first argument.
+    is_lazy = issubclass(obj, Promise) if isinstance(obj, type) else isinstance(obj, Promise)
+    return not is_lazy
+
+
+def is_safe_expression_callable(func: Callable) -> bool:
+    """
+    Refuse calling a method of a Django lazy string in a Python expression.
+
+    This covers what `is_safe_expression_attribute` cannot see: a bound method that the app
+    placed in the context, one wrapped in `functools.partial`, and one handed out by an object
+    that forwards attribute reads. It also refuses the Django functions in
+    `DJANGO_FORMAT_FUNCTIONS`, which format the text they are given.
+    """
+    # A partial calls the function it wraps, so it is exactly as safe as that function.
+    while isinstance(func, partial):
+        func = func.func
+
+    if any(func is formatter for formatter in DJANGO_FORMAT_FUNCTIONS):
+        return False
+
+    return not isinstance(getattr(func, "__self__", None), Promise)
+
+
 python_expression_cache: dict[str, Callable[[Mapping[str, Any]], Any]] = {}
 
 
@@ -232,7 +279,11 @@ def resolve_python_expression(
     code: str,
 ) -> Any:
     if code not in python_expression_cache:
-        python_expression_cache[code] = safe_eval(code)
+        python_expression_cache[code] = safe_eval(
+            code,
+            validate_attribute=is_safe_expression_attribute,
+            validate_callable=is_safe_expression_callable,
+        )
 
     expr_resolver = python_expression_cache[code]
     return expr_resolver(context)
