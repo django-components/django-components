@@ -126,8 +126,8 @@ def _escape_beyond_plain_ascii(value: str) -> str:
     end a string early. On an ISO-2022-JP page, an ESC character changes how the next bytes
     are read. ASCII bytes read the same in all of these encodings.
 
-    This runs on text that is already a well-formed CSS value, and it changes how each
-    character is written, not which characters the value holds.
+    A hex escape is part of a name, even where the raw character was not, so the escaped text
+    can be split differently from the raw text. `_is_single_css_value` has to allow for that.
     """
     if all(_is_plain_css_char(char) for char in value):
         return value
@@ -156,10 +156,10 @@ def _is_single_css_value(value: str) -> bool:
     """
     Check that the browser reads this text as one value that stays inside its declaration.
 
-    This walks the text the way the CSS tokenizer does. It returns False for text that could
-    end the declaration, open or close a rule, or that the browser reads as a broken string or
-    URL token, which would swallow the text after it. A False result only makes the caller quote
-    the value, so the check leans towards False whenever a reading is uncertain.
+    This walks the text the way the browser splits CSS into pieces. It returns False for text
+    that could end the declaration, open or close a rule, or that the browser reads as a broken
+    string or URL, which would swallow the text after it. A False result only makes the caller
+    quote the value, so the check leans towards False whenever a reading is uncertain.
     """
     if _CSS_UNREADABLE_CHAR.search(value):
         return False
@@ -180,9 +180,10 @@ def _is_single_css_value(value: str) -> bool:
             index = _skip_css_string(value, index)
         elif value[index : index + 4].lower() == "url(":
             previous = value[index - 1] if index else ""
-            # CSS versions differ on which non-ASCII characters can be part of a name,
-            # so the browser may or may not start a URL token here.
-            if previous > "\x7f":
+            # A character outside plain ASCII is written as a hex escape, which is part of a
+            # name, so the `url` here would join that name in the text the browser reads.
+            # This check reads the raw text, so its answer would not hold.
+            if previous and not _is_plain_css_char(previous):
                 return False
             if (previous == "" or not (previous.isalnum() or previous in "-_#@")) and not _is_quoted_url(value, index):
                 index = _skip_css_url(value, index)
@@ -251,7 +252,7 @@ def _skip_css_url(value: str, start: int) -> int:
             while index < length and value[index] in _CSS_WHITESPACE:
                 index += 1
             return index + 1 if index < length and value[index] == ")" else -1
-        # These make the browser's bad-URL token, which drops the text up to the next `)`.
+        # These make the browser drop the text up to the next `)`.
         code = ord(char)
         if char in "\"'(" or code <= 0x08 or code in {0x0B, 0x7F} or 0x0E <= code <= 0x1F:
             return -1

@@ -111,8 +111,13 @@ class TestCssValueSerialization:
             ("calc(1", '"calc(1"'),
             ("1)", '"1)"'),
             ("([)]", '"([)]"'),
-            # Text before `url(` decides whether it starts a URL token.
+            # Text before `url(` decides whether it starts a URL token. Each of these characters
+            # is written as a hex escape, which turns `url(` into part of a longer name.
             ("\x80url(x", '"\\80 url(x"'),
+            ("\x01url(/*)", '"\\1 url(/*)"'),
+            ("\x7furl(/*)", '"\\7f url(/*)"'),
+            ("a(\x1curl(/*))", '"a(\\1c url(/*))"'),
+            ('\x01url(/*)"*/);}b{c:d}/*"', '"\\1 url(/*)\\"*/);}b{c:d}/*\\""'),
         ],
     )
     def test_quotes_text_that_could_leave_its_declaration(self, value, expected):

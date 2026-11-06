@@ -1096,6 +1096,48 @@ class TestAttributeNamesFromData:
         with pytest.raises(ValueError, match="comes from a mapping"):
             template.render(Context({"d": {"attrs:onclick": "x"}}))
 
+    @pytest.mark.parametrize(
+        "template",
+        [
+            "<div {% html_attrs ...data ...trusted %}></div>",
+            "<div {% html_attrs ...trusted ...data %}></div>",
+            '{% component "takes_kwargs" ...data ...trusted / %}',
+            '{% component "takes_kwargs" ...trusted ...data / %}',
+        ],
+    )
+    def test_spread_from_data_cannot_share_a_trusted_name(self, template):
+        @register("takes_kwargs")
+        class TakesKwargs(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <i {% html_attrs attrs %}></i>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs}
+
+        context = Context({"trusted": {TrustedAttrName("onclick"): "go()"}, "data": {"onclick": "x"}})
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            Template("{% load component_tags %}" + template).render(context)
+
+    @pytest.mark.parametrize(
+        "tag",
+        ['{% html_attrs onclick="own()" ...trusted %}', '{% html_attrs ...trusted onclick="own()" %}'],
+    )
+    def test_written_name_and_trusted_spread_merge_in_either_order(self, tag):
+        template = Template("{% load component_tags %}<div " + tag + "></div>")
+        rendered = template.render(Context({"trusted": {TrustedAttrName("onclick"): "go()"}}))
+        assert "onclick=" in rendered
+        assert "own()" in rendered
+        assert "go()" in rendered
+
+    def test_two_trusted_spreads_merge(self):
+        template = Template("{% load component_tags %}<div {% html_attrs ...one ...two %}></div>")
+        rendered = template.render(
+            Context({"one": {TrustedAttrName("onclick"): "a()"}, "two": {TrustedAttrName("onclick"): "b()"}})
+        )
+        assert rendered == '<div onclick="a() b()"></div>'
+
     def test_mapping_cannot_reuse_name_written_in_defaults(self):
         template = Template("""
             {% load component_tags %}

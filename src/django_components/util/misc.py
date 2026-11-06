@@ -59,6 +59,9 @@ class TrustedAttrName(str):
     Never wrap a name that comes from a request or from storage. The value of a trusted name
     runs in the browser, so it must not contain request data either.
 
+    The mark stays on the key when you merge mappings. In `{**trusted, **data}`, data can replace
+    the value of a trusted name, so filter data before you merge it.
+
     Names written in a template tag, as in `{% html_attrs onclick="..." %}` or
     `attrs:onclick="..."`, are trusted without this.
     """

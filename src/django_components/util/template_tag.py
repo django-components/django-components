@@ -268,11 +268,15 @@ def compile_tag_params_resolver(
         attr.key.content for attr in params if attr.key is not None and _names_script_capable_attr(attr.key.content)
     )
 
+    has_spread = any(attr.value.spread for attr in params)
+
     def resolver(context: Mapping[str, Any]) -> tuple[list[Any], list[tuple[str, Any]]]:
         args, kwargs = compiled_tag(context)
 
         if written_keys:
             kwargs = _mark_written_keys(kwargs, written_keys)
+        if has_spread:
+            kwargs = _unmark_keys_shared_with_data(kwargs)
 
         # TODO - Move these to extensions?
         if tag_name == "html_attrs":
@@ -299,9 +303,25 @@ def _mark_written_keys(kwargs: list[tuple[str, Any]], written_keys: Counter[str]
     mapping supplied the same name. The values would then be merged into one attribute, so
     none of them is marked and the name is refused, as for any other name from data.
     """
-    found = Counter(key for key, _ in kwargs if key in written_keys)
+    # A key that a spread brings with its mark is not from data, so it does not count here.
+    found = Counter(key for key, _ in kwargs if key in written_keys and not isinstance(key, TrustedAttrName))
     return [
         (TrustedAttrName(key) if key in written_keys and found[key] == written_keys[key] else key, value)
+        for key, value in kwargs
+    ]
+
+
+def _unmark_keys_shared_with_data(kwargs: list[tuple[str, Any]]) -> list[tuple[str, Any]]:
+    """
+    Remove the mark from a key that is repeated by a key without one.
+
+    Repeated keys end up as one entry, and which key object survives depends on the order.
+    A value from a `...spread` could otherwise reach the page under a name that only another
+    source was trusted to set, so the name is refused like any other name from data.
+    """
+    plain_keys = {key for key, _ in kwargs if not isinstance(key, TrustedAttrName)}
+    return [
+        (str.__str__(key) if isinstance(key, TrustedAttrName) and key in plain_keys else key, value)
         for key, value in kwargs
     ]
 
