@@ -29,14 +29,14 @@
 
 #### Fix
 
-- **Values passed to components are now safe for where they land on the page**
+- **Values passed to components now stay in the place they land on the page**
 
-    This fixes four ways for data from a request or from storage to run in the browser or change the page.
+    This fixes several ways for data from a request or from storage to run in the browser or change the page.
 
     - A `get_css_data()` value or key can no longer end its declaration, add a CSS rule, or end the `<style>`
       tag, and such a value no longer makes the page fail with a 500. Text that does not read as one CSS value
       becomes a quoted CSS string, so `red;}body{display:none}` is now plain text. A value such as `red;` or
-      `red!important` is quoted too, and no longer works as a colour.
+      `red!important` is quoted too, and no longer works as a color.
 
     - `{% html_attrs %}`, `{% attrs %}`, `format_attributes()`, `compose_attrs()` and `merge_attributes()` now
       raise `ValueError` for an attribute name in a mapping that can run code or that django-components reserves:
@@ -52,8 +52,8 @@
     **What you may need to change:**
 
     Names written in a template tag keep working, such as `{% html_attrs onclick="save()" %}` and
-    `attrs:onclick="save()"`. If your Python code puts such a name in a mapping, wrap it. The same goes for a
-    dictionary written in a tag, where you can use `attrs:onclick="..."` instead:
+    `attrs:onclick="save()"`. If your Python code puts such a name in a mapping, wrap it. For a dictionary
+    written in a tag, use `attrs:onclick="..."`, or write `onclick="..."` on the element itself:
 
     ```py
     # Before
@@ -65,14 +65,17 @@
     attrs = {TrustedAttrName("onclick"): "save()"}
     ```
 
+    A rendered page stored in a cache may lose its `get_css_data()` styles until that entry expires, because the
+    cache keys for those styles changed. Clear the cache when you upgrade if you store full renders.
+
     If your `fallback` contains HTML, mark it as safe, or use the `fallback` slot:
 
     ```django
     {% component "error_fallback" fallback="<b>Oops</b>"|safe %}
     ```
 
-    `format_attributes()` and friends do not know the names that run code in other libraries, such as `@click`
-    in Alpine.js. Do not pass a mapping whose keys come from a request. See
+    These checks do not know the names that run code in other libraries, such as `@click` in Alpine.js, and
+    they do not check a URL in `href`. Do not pass a mapping whose keys come from a request. See
     [HTML attributes](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/).
 
 ## v0.152.0

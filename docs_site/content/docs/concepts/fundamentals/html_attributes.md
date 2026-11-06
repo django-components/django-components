@@ -543,13 +543,16 @@ holds one of these names, in any letter case:
 - `data-djc`, a name that starts with `data-djc-`, or `djc-render-id`, which django-components uses to find its
   own elements
 
-Names written in a template tag are always accepted, because the template author chose them:
+Names written in a template tag are accepted, because the template author chose them, unless a `...spread` from
+data supplies the same name:
 
 ```django
 <button {% html_attrs attrs onclick="save()" %}>Save</button>
 
 {% component "button" attrs:onclick="save()" / %}
 ```
+
+The value of a name written in a tag runs in the browser too, so `onclick=user_text` is not safe.
 
 This does not cover keys of a dictionary written in a tag, such as `attrs={"onclick": "save()"}`, or keys that a
 `...spread` adds. Use `attrs:onclick="save()"`, or write `onclick="save()"` on the element itself.
@@ -565,6 +568,9 @@ attrs = {TrustedAttrName("onclick"): "save()"}
 Never wrap a name that comes from a request or from storage. The value of a trusted name runs in the browser, so
 it must not contain request data either.
 
+The mark stays on the key when you merge mappings. In `{**trusted, **data}`, data can replace the value of a
+trusted name, so filter data before you merge it. This is also true of a dictionary written in a tag.
+
 !!! warning
 
     This check knows only the names listed above. Libraries add names of their own that run code, such as
@@ -574,7 +580,7 @@ it must not contain request data either.
     So do not pass a mapping whose keys come from a request. Keep only the keys you expect:
 
     ```py
-    attrs = {key: data[key] for key in ("title", "lang") if key in data}
+    attrs = {k: data[k] for k in ("title", "lang") if k in data}
     ```
 
 ## Cheat sheet
