@@ -6,7 +6,7 @@ from pytest_django.asserts import assertHTMLEqual
 from django_components import Component, register, registry, types
 from django_components.testing import djc_test
 
-from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
+from .testutils import CORE_JS_TAG, PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config()
 
@@ -935,7 +935,8 @@ class TestComponentNesting:
             },
         )
 
-        expected = """
+        expected = (
+            """
             <!DOCTYPE html>
             <html lang="en" data-djc-id-ca1bc3e data-djc-id-ca1bc43 data-djc-id-ca1bc47><head>
                 <meta charset="UTF-8">
@@ -964,10 +965,13 @@ class TestComponentNesting:
                         CONTENT SLOT FROM FILL
                     </div>
                 </div>
-                <script src="django_components/django_components.min.js"></script>
+                """
+            + CORE_JS_TAG
+            + """
             </body>
             </html>
         """
+        )
         assertHTMLEqual(rendered, expected)
 
     # NOTE: Second arg in tuple is expected list content. In isolated mode, loops should NOT leak.

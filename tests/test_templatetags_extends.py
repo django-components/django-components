@@ -6,7 +6,7 @@ from pytest_django.asserts import assertHTMLEqual
 from django_components import Component, register, registry, types
 from django_components.testing import djc_test
 
-from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
+from .testutils import CORE_JS_TAG, PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config()
 
@@ -597,7 +597,7 @@ class TestExtendsCompat:
                 <outer>
                     <div data-djc-id-{comp_id}>Hello</div>
                 </outer>
-                <script src="django_components/django_components.min.js"></script>
+                {CORE_JS_TAG}
                 <script type="application/json" data-djc>{{"cssUrls__markAsLoaded": ["c3R5bGUuY3Nz"],
                     "jsUrls__markAsLoaded": ["c2NyaXB0Lmpz"],
                     "cssTags__toFetch": [],
@@ -661,7 +661,7 @@ class TestExtendsCompat:
                     <outer>
                         <div data-djc-id-{comp_id}>Hello</div>
                     </outer>
-                    <script src="django_components/django_components.min.js"></script>
+                    {CORE_JS_TAG}
                     <script type="application/json" data-djc>{{"cssUrls__markAsLoaded": ["c3R5bGUuY3Nz"],
                         "jsUrls__markAsLoaded": ["c2NyaXB0Lmpz"],
                         "cssTags__toFetch": [],

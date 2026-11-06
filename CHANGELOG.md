@@ -139,6 +139,20 @@
 
     Each entry already in your cache gets a new key, so it is rendered again once, and the old entry stays until it expires. If your `Cache.hash()` or `Cache.hash_slots()` calls `super()` and reads the result, note that `hash()` now returns two JSON arrays joined by a colon, and `hash_slots()` returns one JSON array.
 
+## v0.152.1
+
+#### Fix
+
+- **Injected HTML can no longer change how the dependency manager JS loads.** This matters when a page has an HTML injection problem and uses a Content Security Policy with a nonce.
+
+    An injected `<base>` tag can no longer make the browser run `django_components.min.js`, or a fragment's files from `/components/cache/`, from another site. These tags now carry `integrity` and `crossorigin="anonymous"`. Run `collectstatic` when you upgrade and clear any cache of the old file, because the browser refuses a file with different bytes. A proxy that rewrites JS files breaks the same way. A `STATIC_URL` that is a full URL keeps its plain tag.
+
+    An injected `<script data-djc>` block can no longer tell the dependency manager what to load or which components to call. When the dependency manager's tag has a nonce, it ignores a block without the same nonce.
+
+    **If you add a nonce with the `on_dependencies` hook and use fragments, render each fragment with the nonce of the page it goes into.** A fragment with no nonce or a different one no longer starts, and the browser console shows an error. Pages with no nonce work as before. See [Content Security Policy](https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/#content-security-policy).
+
+    Add `base-uri 'self'` to your policy as well. It is what protects files from `Component.Media`, which carry no hash.
+
 ## v0.152.0
 
 #### Feature

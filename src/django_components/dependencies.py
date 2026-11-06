@@ -7,6 +7,9 @@ import re
 import secrets
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
+from functools import cache
+from hashlib import sha384
+from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Literal,
@@ -15,6 +18,7 @@ from typing import (
     TypeVar,
     cast,
 )
+from urllib.parse import urlsplit
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
@@ -65,6 +69,9 @@ Type for the kind of [`Dependency`][Dependency] objects.
 - `"extra"`: Any other dependencies, e.g. from `Component.Media.js/css`.
 """
 
+# Path of the client-side manager, for `static()`
+CORE_JS_STATIC_PATH = "django_components/django_components.min.js"
+
 # JavaScript MIME type essence and legacy types (classic script).
 # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/MIME_types#textjavascript
 _JAVASCRIPT_MIME_TYPES = frozenset(
@@ -87,6 +94,31 @@ _JAVASCRIPT_MIME_TYPES = frozenset(
         "text/x-javascript",
     }
 )
+
+
+class _UrlPin(NamedTuple):
+    """The hash of the exact bytes that a URL serves."""
+
+    url: str
+    integrity: str
+
+
+def _pin_url(url: str, content: bytes) -> _UrlPin | None:
+    """
+    Hash the bytes that we serve at `url`, so the browser refuses any other bytes.
+
+    An injected `<base>` tag moves every relative URL to the attacker's site, and a nonce on
+    the tag lets the file from that site run. The hash stops that.
+
+    A full URL such as `https://cdn.example.com/x.js` ignores `<base>`, so it needs no hash.
+    It also may point at a host that sends no CORS headers, and there the browser would refuse
+    the file even when the hash matches. So we return `None` for it and leave the tag as it was.
+    """
+    parts = urlsplit(url)
+    if parts.scheme or parts.netloc:
+        return None
+    digest = base64.b64encode(sha384(content).digest()).decode("ascii")
+    return _UrlPin(url=url, integrity=f"sha384-{digest}")
 
 
 def _script_type_should_wrap(attrs: dict[str, str | bool]) -> bool:
@@ -149,10 +181,38 @@ class Dependency:
     """
     origin_class_id: str | None = None
     """The class ID of the component that originated this dependency."""
+    # Set only for files that we serve ourselves. An init field, because `dataclasses.replace()`
+    # drops any other field, and a hook that rebuilds a tag that way would lose the hash unnoticed.
+    _pin: _UrlPin | None = field(default=None, kw_only=True, repr=False, compare=False)
 
     def _render(self) -> tuple[str, dict[str, str | bool], str]:
         """Return (tag_name, all_attrs, content). Override in subclasses."""
         raise NotImplementedError
+
+    def _pin_attrs(self) -> dict[str, str | bool]:
+        """
+        Return the `integrity` and `crossorigin` attributes for a file that we serve.
+
+        Both ways of writing a tag, as HTML and as JSON for the client-side manager, go through
+        `_render()`, so this one call covers them all.
+        """
+        pin = self._pin
+        # A hook that points the tag at another URL leaves the attributes off,
+        # because we do not know the bytes at the new URL.
+        if pin is None or self.url != pin.url:
+            return {}
+
+        # HTML attribute names ignore case, so a hook's `CrossOrigin` counts. Adding ours as well
+        # would make the tag carry both.
+        declared = {name.lower() for name in self.attrs}
+        attrs: dict[str, str | bool] = {}
+        if "integrity" not in declared:
+            attrs["integrity"] = pin.integrity
+        # The browser checks `integrity` only on a CORS response. A relative URL is same-origin
+        # unless a `<base>` tag moved it, so this needs no CORS headers from the app.
+        if "crossorigin" not in declared:
+            attrs["crossorigin"] = "anonymous"
+        return attrs
 
     def render(self) -> SafeString:
         """Render as HTML tag."""
@@ -285,7 +345,7 @@ class Script(Dependency):
     def _render(self) -> tuple[str, dict[str, str | bool], str]:
         self._check_validity()
         if self.url:
-            all_attrs = {**self.attrs, "src": self.url}
+            all_attrs = {**self.attrs, "src": self.url, **self._pin_attrs()}
             content = ""
         else:
             all_attrs = self.attrs
@@ -366,7 +426,7 @@ class Style(Dependency):
         self._check_validity()
 
         if self.url:
-            all_attrs = {**self.attrs, "rel": "stylesheet", "href": self.url}
+            all_attrs = {**self.attrs, "rel": "stylesheet", "href": self.url, **self._pin_attrs()}
             tag_name = "link"
             content = ""  # <link> tags are self-closing
         else:
@@ -1007,6 +1067,7 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
             styles=styles,
         )
     )
+    _stamp_data_block_nonce(scripts)
 
     js_deps_bytes = "".join([script.render() for script in scripts]).encode("utf-8")
     css_deps_bytes = "".join([style.render() for style in styles]).encode("utf-8")
@@ -1072,18 +1133,54 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
 _render_dependencies = render_dependencies
 
 
+def _stamp_data_block_nonce(scripts: list[Script]) -> None:
+    """
+    Give the `data-djc` block the nonce that a hook put on our other core script.
+
+    The client-side manager obeys a block only when it carries the same nonce as the manager's
+    own `<script>` tag. CSP needs no nonce on a JSON block, so a hook has no reason to add one,
+    and it may well skip the block. The app should not have to know about this rule.
+    """
+    nonce = next(
+        (
+            script.attrs["nonce"]
+            for script in scripts
+            if script.kind == "core" and "data-djc" not in script.attrs and isinstance(script.attrs.get("nonce"), str)
+        ),
+        None,
+    )
+    if nonce is None:
+        return
+    for script in scripts:
+        if "data-djc" in script.attrs:
+            script.attrs.setdefault("nonce", nonce)
+
+
+@cache
+def _core_js_bytes() -> bytes:
+    """
+    Return the bytes of the client-side manager, read once.
+
+    We read our own copy of the file because `static()` gives only a URL. The file in
+    `STATIC_ROOT` must match it, so `collectstatic` has to run on every upgrade.
+    """
+    return (Path(__file__).parent / "static" / CORE_JS_STATIC_PATH).read_bytes()
+
+
 def _core_js() -> Script:
     """
     Returns a `Script` object for the Django Components library's core script.
 
     This script is required for the Django Components library to work.
     """
+    url = static(CORE_JS_STATIC_PATH)
     return Script(
         kind="core",
-        url=static("django_components/django_components.min.js"),
+        url=url,
         content=None,
         attrs={},
         origin_class_id=None,
+        _pin=_pin_url(url, _core_js_bytes()),
     )
 
 
@@ -1095,17 +1192,35 @@ def _pre_loader_js() -> Script:
     This script is included with every "fragment", so that the "fragments" can be rendered
     even on pages that weren't rendered with the "document" strategy.
     """
-    manager_url = static("django_components/django_components.min.js")
+    manager_url = static(CORE_JS_STATIC_PATH)
     if '"' in manager_url:
         raise ValueError("Manager URL cannot contain quotes")
+
+    # This tag exists only in the browser, so the hash has to be set here. See `_pin_url()`.
+    pin = _pin_url(manager_url, _core_js_bytes())
+    integrity_lines = (
+        f"""
+            s.integrity = "{pin.integrity}";
+            s.crossOrigin = "anonymous";"""
+        if pin is not None
+        else ""
+    )
+
+    # A named element such as `<form name="currentScript">` or `<div id="DjangoComponents">`
+    # changes what `document.currentScript` and `globalThis.DjangoComponents` return. The
+    # `Document.prototype` getter and the own-property check do not see such elements. The first
+    # matters most: the manager compares its nonce with every data block, and has no nonce to
+    # compare unless the nonce that let this script run is passed on to the manager's tag.
     content = f"""
-        if (!globalThis.DjangoComponents) {{
+        const current = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript").get.call(document);
+        if (!Object.prototype.hasOwnProperty.call(globalThis, "DjangoComponents")) {{
             const s = document.createElement('script');
-            s.src = "{manager_url}";
+            s.src = "{manager_url}";{integrity_lines}
+            if (current && current.nonce) s.nonce = current.nonce;
             document.head.appendChild(s);
         }}
         // Remove this loader script
-        if (document.currentScript) document.currentScript.remove();
+        if (current) current.remove();
     """
 
     return Script(
@@ -1466,7 +1581,7 @@ def _get_instance_scripts_and_styles(
                 comp_js_url = cast("Script", get_script_url("js", comp_cls, None))
                 scripts_mark_as_loaded.append(comp_js_url)
         else:
-            comp_js_url = cast("Script", get_script_url("js", comp_cls, None))
+            comp_js_url = cast("Script", get_script_url("js", comp_cls, None, should_pin=True))
             instance_scripts.append(comp_js_url)
 
     # Component CSS
@@ -1478,7 +1593,7 @@ def _get_instance_scripts_and_styles(
                 comp_css_url = cast("Style", get_script_url("css", comp_cls, None))
                 styles_mark_as_loaded.append(comp_css_url)
         else:
-            comp_css_url = cast("Style", get_script_url("css", comp_cls, None))
+            comp_css_url = cast("Style", get_script_url("css", comp_cls, None, should_pin=True))
             instance_styles.append(comp_css_url)
 
     ##############################
@@ -1495,7 +1610,7 @@ def _get_instance_scripts_and_styles(
                 comp_vars_js_url = cast("Script", get_script_url("js", comp_cls, js_hash))
                 scripts_mark_as_loaded.append(comp_vars_js_url)
         else:
-            comp_vars_js_url = cast("Script", get_script_url("js", comp_cls, js_hash))
+            comp_vars_js_url = cast("Script", get_script_url("js", comp_cls, js_hash, should_pin=True))
             instance_scripts.append(comp_vars_js_url)
 
     # Variables CSS
@@ -1507,7 +1622,7 @@ def _get_instance_scripts_and_styles(
                 comp_vars_css_url = cast("Style", get_script_url("css", comp_cls, css_hash))
                 styles_mark_as_loaded.append(comp_vars_css_url)
         else:
-            comp_vars_css_url = cast("Style", get_script_url("css", comp_cls, css_hash))
+            comp_vars_css_url = cast("Style", get_script_url("css", comp_cls, css_hash, should_pin=True))
             instance_styles.append(comp_vars_css_url)
 
     #############################
@@ -1754,7 +1869,14 @@ def get_script_url(
     script_type: ScriptType,
     comp_cls: type["Component"],
     variables_hash: str | None,
+    should_pin: bool = False,
 ) -> Script | Style:
+    """
+    Get a `Script` or `Style` that links to the cached JS or CSS of a component.
+
+    Set `should_pin` when the browser will fetch this URL. It reads the cached file to hash it,
+    and that is wasted work when the URL only marks an inlined file as already loaded.
+    """
     kind: DependencyKind = "component" if variables_hash is None else "variables"
     url = reverse(
         CACHE_ENDPOINT_NAME,
@@ -1765,6 +1887,14 @@ def get_script_url(
         },
     )
 
+    # When the entry is gone from the cache, `cached_script_view()` answers 404 for this URL,
+    # so there are no bytes to hash and the tag goes out without one.
+    pin = None
+    if should_pin:
+        cached = get_script(script_type, comp_cls, variables_hash)
+        if cached is not None and cached.content is not None:
+            pin = _pin_url(url, cached.content.encode())
+
     if script_type == "css":
         # <link href="... media="all" rel="stylesheet">
         return Style(
@@ -1773,6 +1903,7 @@ def get_script_url(
             content=None,
             origin_class_id=comp_cls.class_id,
             attrs={"media": "all", "rel": "stylesheet"},
+            _pin=pin,
         )
     elif script_type == "js":
         # <script src="...">
@@ -1781,6 +1912,7 @@ def get_script_url(
             url=url,
             content=None,
             origin_class_id=comp_cls.class_id,
+            _pin=pin,
         )
     else:
         raise ValueError(f"Invalid script type: {script_type}")

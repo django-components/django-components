@@ -4,7 +4,7 @@ from pytest_django.asserts import assertHTMLEqual
 from django_components import Component, Script, register, types
 from django_components.testing import djc_test
 
-from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
+from .testutils import CORE_JS_TAG, PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config()
 
@@ -34,7 +34,9 @@ class TestJsVariables:
         assertHTMLEqual(
             """
             <div class="interactive-button" data-djc-id-ca1bc3e="">Button</div>
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
                 "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF9hNjdmOWYuNWRlY2I0YjA0MDcyMWViYzc1MjNjOGE3ZmQ3MDkzM2UuanM=",
                     "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF9hNjdmOWYuanM="],
@@ -110,7 +112,9 @@ class TestJsVariables:
             <div class="box" data-djc-id-ca1bc41="">First</div>
             <div class="box" data-djc-id-ca1bc42="">Second</div>
 
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
                 "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0LmI2NTc3ODRhY2QzYzgzNWJiNzdlNGMzOWIxYzllMGE4Lmpz",
                     "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0LmMyMTNiZDJlZDFkYmQzODkxYzljZTllZDM5ZDBjMTI1Lmpz",
@@ -181,7 +185,9 @@ class TestJsVariables:
         assertHTMLEqual(
             """
             <div class="map-container" data-djc-id-ca1bc3e="">Map</div>
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
                 "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF8yZTY4MDYuMTg3ZDU4NjIwMzNmNDFmMmFkNGUxOGYyMGZhYjUxMDEuanM=",
                     "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF8yZTY4MDYuanM="],
@@ -233,7 +239,9 @@ class TestJsVariables:
         assertHTMLEqual(
             """
             <div class="simple" data-djc-id-ca1bc3e="">Simple</div>
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
                 "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF9hOGI3NjYuanM="],
                 "cssTags__toFetch": [],
@@ -284,7 +292,9 @@ class TestJsVariables:
         assertHTMLEqual(
             """
             <div class="user-widget" data-djc-id-ca1bc3e="">User Widget</div>
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
                 "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF84MTFlNzAuNTI2NGFiOGY4YjcyYzg4NzFmNDVmM2Y2OWJkZjNkM2UuanM=",
                     "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF84MTFlNzAuanM="],

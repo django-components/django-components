@@ -547,6 +547,86 @@ html2 = MyComponent.render(deps_strategy="document")
 assert html == html2
 ```
 
+## Content Security Policy
+
+If your site sends a [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP) with a nonce, use the [`ComponentExtension.on_dependencies`][ComponentExtension.on_dependencies] hook to put the nonce on the scripts:
+
+```python
+from django_components import ComponentExtension, OnDependenciesContext
+
+class NonceExtension(ComponentExtension):
+    name = "nonce"
+
+    def on_dependencies(self, ctx: OnDependenciesContext):
+        for script in ctx.scripts:
+            script.attrs["nonce"] = get_current_nonce()
+        for style in ctx.styles:
+            if style.content:
+                style.attrs["nonce"] = get_current_nonce()
+        return (ctx.scripts, ctx.styles)
+```
+
+Also add `base-uri 'self'` to your policy. The browser then ignores a `<base>` tag that an attacker injects into the page. Without it, such a tag moves every relative URL on the page to the attacker's site, and the nonce lets those scripts run:
+
+```python
+# Django 6.0 and newer
+from django.utils.csp import CSP
+
+SECURE_CSP = {
+    "base-uri": [CSP.SELF],
+    # ...
+}
+```
+
+### How django-components protects the page
+
+If an attacker can inject HTML into your page, django-components limits what the injected HTML can do to its own JS.
+
+**The dependency manager file.** The tag that loads the dependency manager carries `integrity` and `crossorigin="anonymous"`, so the browser runs only the exact file from your installed django-components. The same goes for the JS and CSS files that a fragment loads from `/components/cache/`.
+
+- Run `collectstatic` when you upgrade, and clear any cache that holds the old file. The browser refuses a file with different bytes, and component JS then does not run.
+- A proxy that rewrites JS files breaks the same way. Exclude your static files from it.
+- If `STATIC_URL` is a full URL such as `https://cdn.example.com/static/`, the tag stays as it was. A `<base>` tag cannot move a full URL.
+
+Files from [`Component.Media`][ComponentMediaInput] carry no hash, because they are your files and django-components does not know their content. `base-uri 'self'` is what protects them.
+
+**The JSON blocks.** A `<script data-djc>` block tells the dependency manager which files to load and which components to call. When the dependency manager's own tag has a nonce, it ignores every block without the same nonce, and logs an error in the browser console. You don't need to set this nonce yourself. django-components copies it to the block from the tag that your hook gave a nonce to.
+
+### Fragments on a page with a nonce
+
+A [fragment](html_fragments.md) needs the nonce of the page it goes into, and a fragment response is a separate request. So keep the page's nonce on the server when you render the page, and use that nonce when you render the fragment:
+
+```python
+class MyPage(Component):
+    class View:
+        def get(self, request):
+            # The nonce that this response sends in its policy
+            request.session["page_nonce"] = get_current_nonce()
+            return self.component_cls.render_to_response(request=request)
+
+
+class Frag(Component):
+    class View:
+        def get(self, request):
+            # From here on, `get_current_nonce()` returns the page's nonce
+            set_current_nonce(request.session["page_nonce"])
+            return self.component_cls.render_to_response(
+                request=request,
+                deps_strategy="fragment",
+            )
+```
+
+A session holds one nonce, so when a user opens your site in a second tab, fragments sent to the first tab stop starting. Store one nonce per page if your users work in several tabs.
+
+### What the nonce check can't cover
+
+The dependency manager reads the nonce from its own tag. It obeys every block in these cases, because it has no nonce to compare:
+
+- Your policy uses hashes or hosts, and the tag has no nonce.
+- A hook renders the tag with `type="module"`. A module can't read the tag that loaded it.
+
+Under `'strict-dynamic'`, the files that such a block names then run, so give these pages a nonce on the tag.
+
 ## HTML fragments
 
 Django-components provides a seamless integration with HTML fragments with AJAX ([HTML over the wire](https://hotwired.dev/)),
