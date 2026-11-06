@@ -42,9 +42,9 @@ class ComponentVarsCache(BaseCache):
     Django's `LocMemCache` can limit only the number of entries, which does not limit
     the memory, because a single value can be of any size.
 
-    `has_key()` is what a render calls before it links an entry into the page, so here it also
-    counts as a use. It resets the entry's age and makes it the last one to be dropped.
-    Without this, an entry in steady use would expire every so often right after a render linked it.
+    `has_key()` is what we call before we link an entry into a page, so here it also counts
+    as a use. It resets the entry's age and makes it the last one to be dropped.
+    Without this, an entry in steady use would expire every so often right after a page linked it.
     `get()` does not do this, so that requests for a file cannot keep it stored.
 
     Single-process only, like `LocMemCache`. Holds strings only, as it measures just the top-level
@@ -105,8 +105,8 @@ class ComponentVarsCache(BaseCache):
     def set(self, key: Any, value: Any, timeout: Any = DEFAULT_TIMEOUT, version: int | None = None) -> None:
         cache_key = self.make_and_validate_key(key, version=version)
         expires_at = self.get_backend_timeout(timeout)
-        # `getsizeof()` gives the memory really used. Text such as emoji takes up to 4 bytes
-        # per character for the whole string, which `len()` would not show.
+        # `getsizeof()` gives the memory really used, which `len()` does not. One character above
+        # U+00FF makes the whole string take 2 or 4 bytes per character.
         size = sys.getsizeof(cache_key) + sys.getsizeof(value) + _VARS_ENTRY_OVERHEAD_BYTES
 
         with self._lock:

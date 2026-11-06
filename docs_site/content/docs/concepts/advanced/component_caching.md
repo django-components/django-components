@@ -226,32 +226,32 @@ the number of embeddings.
 ✅ Do: use a distinct cache key per position, or only cache fragments that
 appear once per page.
 
-#### After a deploy, components silently lose their JS/CSS variables
+#### Components silently lose their JS/CSS variables
 
-If your fragment cache is a persistent backend (Redis, memcached) and your
-components define `get_js_data()` or `get_css_data()`, the data those
-methods produce can vanish from the page after a server restart. The HTML
-still renders normally and no errors are logged, but the per-instance JS
-or CSS variables are gone.
+If your components define `get_js_data()` or `get_css_data()`, the data those
+methods produce can vanish from a cached fragment. The HTML still renders, but
+the per-instance JS or CSS variables are gone, and the server logs a warning.
+A component whose JS variables are gone does not run its `$onComponent`
+callbacks.
 
 This happens because djc stores the actual variable values in a separate
-cache that is **per-process and in-memory by default**. After a restart,
-the cached fragment refers to variable data the new process no longer has.
+cache that is **per-process and in-memory by default**, so a cached fragment
+can outlive them in two ways:
+
+- A server restart clears that cache, while a persistent fragment cache
+  (Redis, memcached) keeps the fragment.
+- That cache drops values that nothing has used for 24 hours, and it drops the
+  oldest values when it reaches about 64 MiB of memory. Replaying a cached
+  fragment counts as using its values.
 
 ✅ Do: set the
 [`cache` setting][ComponentsSettings.cache]
-to the same persistent backend you use for the fragment cache, so the
-variables survive restarts.
-
-The same thing happens without a restart when you keep a fragment for longer
-than 24 hours, because that is how long the default cache keeps these
-variables after a render last used them. It can also happen sooner on a busy
-site, because that cache uses at most 64 MiB of memory for them.
-
-✅ Do: use a persistent backend as above, or raise
+to the same persistent backend you use for the fragment cache, with a
+`TIMEOUT` longer than your fragments live, so the variables survive restarts.
+Or, to keep the default cache, raise
 [`vars_cache_max_age`][ComponentsSettings.vars_cache_max_age] and
 [`vars_cache_max_bytes`][ComponentsSettings.vars_cache_max_bytes].
-Read more in [Caching](../../guides/setup/caching.md#limits-on-js-and-css-variables).
+Read more in [Caching](../../guides/setup/caching.md#limit-jscss-variables).
 
 #### Every user sees the first user's data
 

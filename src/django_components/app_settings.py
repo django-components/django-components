@@ -304,7 +304,8 @@ class ComponentsSettings(NamedTuple):
 
     If set, everything goes in the named cache, and that cache's own `TIMEOUT` and limits apply.
     Variables can hold data from your users, so set a `TIMEOUT` and a size limit on that cache.
-    With `"TIMEOUT": None` and no limit, a new value in these variables adds an entry that stays for good.
+    With `"TIMEOUT": None` and no limit, each new value that `get_js_data()` or `get_css_data()`
+    returns adds an entry that stays for good.
 
     Defaults to `None`.
 
@@ -707,21 +708,25 @@ class ComponentsSettings(NamedTuple):
     """
     How many seconds to keep the JS and CSS variables from
     [`get_js_data()`][Component.get_js_data] and [`get_css_data()`][Component.get_css_data]
-    after a render last used them.
+    after they were last used.
 
     Defaults to `86400` (24 hours).
 
     This applies only to the default in-memory store. When you set
     [`COMPONENTS.cache`][ComponentsSettings.cache], that cache's own `TIMEOUT` applies instead.
 
-    Pages load these variables from the server, so keep this longer than a page may wait before
-    it loads them. That includes pages or `{% cache %}` fragments that you cache yourself.
-    Once the variables are gone, a page that links them gets a 404 for that file, and a cached
-    fragment renders without them, and in both cases the components miss their variables.
+    Rendering a component counts as using its variables, and so does replaying its HTML from
+    [`{% cache %}`](../concepts/advanced/component_caching.md) or
+    [`Component.Cache`][Component.Cache]. A whole page that you keep in a cache of your own
+    does not count. HTML rendered with the `"fragment"` strategy fetches the variables when
+    it loads, so keep this longer than you keep such HTML.
 
-    Must be a positive integer of at most `sys.maxsize`. Any other value raises a `ValueError`
-    when Django starts. `None` uses the default. There is no way to turn the limit off,
-    but you can set a very large number.
+    When a render finds that the variables are gone, the component's `$onComponent` callbacks
+    do not run, or its CSS variables are unset, and a warning is logged.
+
+    Must be `None`, which uses the default, or a positive integer of at most `sys.maxsize`.
+    Any other value raises a `ValueError` when Django starts. There is no way to turn
+    the limit off, but you can set a very large number.
 
     ```python
     COMPONENTS = ComponentsSettings(
@@ -740,17 +745,19 @@ class ComponentsSettings(NamedTuple):
     This applies only to the default in-memory store. When you set
     [`COMPONENTS.cache`][ComponentsSettings.cache], that cache's own limits apply instead.
 
+    This is an estimate of the memory used, and it is close to the real figure.
+
     Each distinct set of variables is stored once. When the store is full, it drops the variables
-    that a render used longest ago. If a page still links them, they are missing as described in
+    that were used longest ago, and they are missing as described in
     [`COMPONENTS.vars_cache_max_age`][ComponentsSettings.vars_cache_max_age], until a render
     produces the same variables again. So if your components produce many distinct values,
     raise this limit.
 
     Variables larger than the whole limit are not stored, and a warning is logged.
 
-    Must be a positive integer of at most `sys.maxsize`. Any other value raises a `ValueError`
-    when Django starts. `None` uses the default. There is no way to turn the limit off,
-    but you can set a very large number.
+    Must be `None`, which uses the default, or a positive integer of at most `sys.maxsize`.
+    Any other value raises a `ValueError` when Django starts. There is no way to turn
+    the limit off, but you can set a very large number.
 
     ```python
     COMPONENTS = ComponentsSettings(

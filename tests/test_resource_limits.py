@@ -1,6 +1,8 @@
 """Requests and rendered data must not cost the server more work or memory than their size justifies."""
 
+import base64
 import itertools
+import json
 import logging
 import re
 import sys
@@ -15,7 +17,7 @@ from django.core.cache import caches
 from django.test import Client, override_settings
 from django.urls import Resolver404, resolve, reverse
 
-from django_components import Component, types
+from django_components import Component, registry, render_dependencies, types
 from django_components.app_settings import InternalSettings
 from django_components.attributes import _split_style_declarations, parse_string_style, style_comment_re
 from django_components.cache import (
@@ -52,6 +54,66 @@ def _make_component() -> type[Component]:
             return {"col": kwargs.col}
 
     return CachedComp
+
+
+def _make_js_vars_component() -> type[Component]:
+    class JsVarsComp(Component):
+        template: types.django_html = """
+            <div>x</div>
+        """
+        js: types.js = """
+            $onComponent(({ m }) => {
+                console.log(m);
+            });
+        """
+
+        class Kwargs:
+            m: str = "a"
+
+        def get_js_data(self, args, kwargs, slots, context):
+            return {"m": kwargs.m}
+
+    return JsVarsComp
+
+
+def _make_page(comp_cls: type[Component]) -> type[Component]:
+    registry.register("js_vars_comp", comp_cls)
+
+    class Page(Component):
+        template: types.django_html = """
+            <html><head></head><body>
+                {% component "js_vars_comp" m="first" / %}
+                {% component "js_vars_comp" m=middle / %}
+                {% component "js_vars_comp" m="third" / %}
+            </body></html>
+        """
+
+        class Kwargs:
+            middle: str
+
+        def get_template_data(self, args, kwargs, slots, context):
+            return {"middle": kwargs.middle}
+
+    return Page
+
+
+def _decode(value: str) -> str:
+    return base64.b64decode(value).decode()
+
+
+def _dependency_data(html: str) -> list[dict]:
+    """Read what the server tells the browser's dependency manager to load and run."""
+    blocks = re.findall(r"<script type=\"application/json\" data-djc>(.*?)</script>", html)
+    return [json.loads(block) for block in blocks]
+
+
+def _component_calls(html: str) -> list[list[str | None]]:
+    """Get each `$onComponent` call as class ID, render ID and variables hash."""
+    return [
+        [_decode(class_id), _decode(render_id), _decode(js_hash) if js_hash else None]
+        for data in _dependency_data(html)
+        for class_id, render_id, js_hash in data["componentJsCalls"]
+    ]
 
 
 def _vars_url(comp_cls: type[Component], rendered: str) -> str:
@@ -190,7 +252,7 @@ class TestStyleParsing:
         assert parse_string_style(css_text) == expected
 
     def test_split_follows_the_regex_rule(self):
-        # Every short string over the characters that matter, against the rule we replaced.
+        # Every short string over the characters that matter, against the rule written as a regex.
         rule = re.compile(r";(?![^(]*\))", re.DOTALL)
         for length in range(6):
             for chars in itertools.product(";()a\n", repeat=length):
@@ -208,8 +270,8 @@ class TestStyleParsing:
     )
     def test_long_values_stay_quick(self, css_text):
         # This one does use the clock, as nothing else can see the time a plain walk takes.
-        # These sizes took 15 to 40 seconds with the old regexes and take well under 0.1 seconds now,
-        # so the limit leaves a wide margin for a slow machine.
+        # These sizes take well under 0.1 seconds, and code that looks ahead from each `;` or `/*`
+        # would take 15 seconds or more, so the limit leaves a wide margin for a slow machine.
         start = time.perf_counter()
         parse_string_style(css_text)
         assert time.perf_counter() - start < 5
@@ -354,7 +416,11 @@ class TestComponentVarsCache:
     def test_wide_characters_count_the_memory_they_really_take(self):
         # One character above U+FFFF makes CPython store the whole string at four bytes per character.
         cache = ComponentVarsCache(max_age=3600, max_bytes=10_000_000)
-        assert _entry_size(cache, "k", "x" * 9_999 + "\U0001f600") > 3 * _entry_size(cache, "k", "x" * 10_000) - 1_000
+        cache.set("narrow", "x" * 10_000)
+        narrow_bytes = cache._total_bytes
+        cache.clear()
+        cache.set("narrow", "x" * 9_999 + "\U0001f600")
+        assert cache._total_bytes > 3 * narrow_bytes - 1_000
 
 
 class TestVarsCacheSettings:
@@ -430,6 +496,54 @@ class TestVarsCacheInRendering:
         assert "<div" in rendered
         assert "x" * 5_000 not in rendered
         assert "vars_cache_max_bytes" in caplog.text
+
+    @djc_test(components_settings={"vars_cache_max_bytes": 3_000})
+    def test_missing_js_variables_do_not_stop_later_components(self, caplog):
+        # The browser runs `$onComponent` calls in order and waits for each one's variables,
+        # so a call whose variables never arrive would stop every later component on the page.
+        # This test checks what the server sends. Chromium confirmed what the browser does with it.
+        comp_cls = _make_js_vars_component()
+        page = _make_page(comp_cls)
+        with caplog.at_level(logging.WARNING, logger="django_components"):
+            rendered = page.render(kwargs={"middle": "x" * 5_000}, deps_strategy="document")
+
+        calls = _component_calls(rendered)
+        assert len(calls) == 2
+        assert all(call[0] == comp_cls.class_id and call[2] is not None for call in calls)
+        assert "its `$onComponent` callbacks will not run" in caplog.text
+        assert "x" * 5_000 not in caplog.text
+
+    def test_stored_js_variables_keep_their_calls(self, caplog):
+        comp_cls = _make_js_vars_component()
+        page = _make_page(comp_cls)
+        with caplog.at_level(logging.WARNING, logger="django_components"):
+            rendered = page.render(kwargs={"middle": "second"}, deps_strategy="document")
+        assert len(_component_calls(rendered)) == 3
+        assert "no longer in the cache" not in caplog.text
+
+    def test_missing_css_variables_are_not_linked(self, caplog):
+        # The fragment strategy links its stylesheets, and a link to a missing file only gives a 404.
+        comp_cls = _make_component()
+        html = comp_cls.render(kwargs={"col": "red"}, deps_strategy="ignore")
+        get_component_vars_cache().clear()
+        with caplog.at_level(logging.WARNING, logger="django_components"):
+            rendered = render_dependencies(html, strategy="fragment")
+
+        links = [_decode(tag) for data in _dependency_data(rendered) for tag in data["cssTags__toFetch"]]
+        assert len(links) == 1
+        assert f"/components/cache/{comp_cls.class_id}.css" in links[0]
+        assert "CSS variables of component" in caplog.text
+
+    @djc_test(components_settings={"vars_cache_max_age": 100})
+    def test_replaying_html_renews_its_variables(self):
+        # HTML from `{% cache %}` or `Component.Cache` skips the render, and with it the place
+        # where an entry is stored, so a fragment in steady use must still keep its variables.
+        comp_cls = _make_js_vars_component()
+        with fake_clock() as clock:
+            html = comp_cls.render(kwargs={"m": "kept"}, deps_strategy="ignore")
+            for _ in range(5):
+                clock.now += 60
+                assert len(_component_calls(render_dependencies(html, strategy="fragment"))) == 1
 
     def test_variables_are_served_from_their_own_store(self):
         comp_cls = _make_component()

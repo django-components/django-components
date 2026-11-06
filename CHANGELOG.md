@@ -95,7 +95,7 @@
 
 - **A long URL under `/components/cache/` no longer keeps the server busy**
 
-    The time to reject one grew with the cube of its length. These URLs now accept only the file names that django-components generates: the variables hash must be 1 to 64 lowercase hexadecimal characters, and the extension must be `js` or `css`. Other paths still give a 404.
+    Rejecting a long URL took time that grew with the cube of its length. These URLs now accept only the file names that django-components generates: the part between the dots must be 1 to 64 lowercase hexadecimal characters, and the extension must be `js` or `css`. Other paths still give a 404.
 
 - **Long `style` values no longer keep the server busy**
 
@@ -103,11 +103,19 @@
 
 - **Values from `get_js_data()` and `get_css_data()` no longer fill up the server's memory**
 
-    With the default in-memory cache, each server process now keeps them for 24 hours after a render last used them, and uses at most 64 MiB for them. Your `Component.js` and `Component.css` are not affected.
+    With the default in-memory cache, each server process now keeps them for 24 hours after they were last used, and uses about 64 MiB for them at most. Your `Component.js` and `Component.css` are not affected.
 
-    If an entry is gone when a page needs it, that page's components miss their variables until a render produces the same variables again. This can affect pages or `{% cache %}` fragments that you keep for longer than 24 hours, and very busy sites. To raise these limits, set the new `vars_cache_max_age` and `vars_cache_max_bytes` settings.
+    If values are gone when a page needs them, a warning is logged, that component's `$onComponent` callbacks do not run, and its CSS variables are unset, until a render produces the same values again. This can affect `{% cache %}` fragments and `Component.Cache` entries that go unused for 24 hours, and very busy sites. To raise these limits, set the new `vars_cache_max_age` and `vars_cache_max_bytes` settings.
 
     If you set `COMPONENTS.cache`, nothing changes: that cache's own `TIMEOUT` and size limits still apply. With `"TIMEOUT": None` and no size limit, these entries are never removed, so set both.
+
+- **A failed render no longer stays in memory**
+
+    When a component raised an error while other components in the same render were still waiting their turn, those components and their inputs stayed in memory for the life of the server process.
+
+- **One component's missing JS variables no longer stop the rest of the page**
+
+    Before, `$onComponent` callbacks of that component and of every later component on the page did not run, and nothing was logged. Now only that component's callbacks are skipped, and a warning is logged.
 
 ## v0.152.0
 
