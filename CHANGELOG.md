@@ -25,6 +25,53 @@
 - `ComponentMediaInputPath` now includes Django's `Script` from `django.forms.widgets`, so `django-stubs` accepts `Script("calendar/x.js", type="module")` where `ComponentMediaInputPath` is expected.
 
 - `@djc_test` no longer causes `KeyError` on imports from a component directory without `__init__.py`. The error could appear in a later test, depending on test order, for example under `pytest-xdist`.
+## v0.152.1
+
+#### Fix
+
+- **Values passed to components are now safe for where they land on the page**
+
+    This fixes four ways for data from a request or from storage to run in the browser or change the page.
+
+    - A `get_css_data()` value or key can no longer end its declaration, add a CSS rule, or end the `<style>`
+      tag, and such a value no longer makes the page fail with a 500. Text that does not read as one CSS value
+      becomes a quoted CSS string, so `red;}body{display:none}` is now plain text. A value such as `red;` or
+      `red!important` is quoted too, and no longer works as a colour.
+
+    - `{% html_attrs %}`, `{% attrs %}`, `format_attributes()`, `compose_attrs()` and `merge_attributes()` now
+      raise `ValueError` for an attribute name in a mapping that can run code or that django-components reserves:
+      any name starting with `on`, `srcdoc`, `innerHTML`, `outerHTML`, `data-djc`, names starting with `data-djc-`,
+      and `djc-render-id`. Control characters such as a form feed and quotes are refused in every name.
+
+    - The `fallback` argument of `ErrorFallback` is now escaped.
+
+    - Component JS and CSS files served from `/components/cache/` now say `charset=utf-8`.
+
+    **What you may need to change:**
+
+    Names written in a template tag keep working, such as `{% html_attrs onclick="save()" %}` and
+    `attrs:onclick="save()"`. If your Python code puts such a name in a mapping, wrap it. The same goes for a
+    dictionary written in a tag, where you can use `attrs:onclick="..."` instead:
+
+    ```py
+    # Before
+    attrs = {"onclick": "save()"}
+
+    # After
+    from django_components import TrustedAttrName
+
+    attrs = {TrustedAttrName("onclick"): "save()"}
+    ```
+
+    If your `fallback` contains HTML, mark it as safe, or use the `fallback` slot:
+
+    ```django
+    {% component "error_fallback" fallback="<b>Oops</b>"|safe %}
+    ```
+
+    `format_attributes()` and friends do not know the names that run code in other libraries, such as `@click`
+    in Alpine.js. Do not pass a mapping whose keys come from a request. See
+    [HTML attributes](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/).
 
 ## v0.152.0
 
