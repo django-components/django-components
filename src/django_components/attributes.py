@@ -736,30 +736,35 @@ property_delimiter_re = re.compile(r":(.+)", re.DOTALL)
 
 
 def _split_style_declarations(css_text: str) -> list[str]:
-    r"""
+    """
     Split CSS text at each `;`, except one that is followed by `)` before any `(`.
 
     So `url(data:image/png;base64,...)` stays in one piece.
 
-    This is the same rule as the regex `;(?![^(]*\))`, but that regex looks ahead from every `;`
-    to the next `(` or the end of the text, which takes time growing with the square of the length.
-    So we walk the text once from the end, remembering the nearest parenthesis we have seen.
+    We walk the text once, so the time grows in step with its length. A `;` is decided only
+    by the next parenthesis, so we hold each `;` until we reach one, or the end of the text.
     """
-    cut_positions: list[int] = []
-    next_parenthesis = ""
-    for match in reversed(list(style_delimiter_re.finditer(css_text))):
-        char = match.group()
-        if char != ";":
-            next_parenthesis = char
-        elif next_parenthesis != ")":
-            cut_positions.append(match.start())
-
     pieces: list[str] = []
     start = 0
-    # We found the positions from the end of the text, so go through them backwards
-    for position in reversed(cut_positions):
-        pieces.append(css_text[start:position])
-        start = position + 1
+    undecided: list[int] = []
+
+    def cut_at_undecided() -> None:
+        nonlocal start
+        for position in undecided:
+            pieces.append(css_text[start:position])
+            start = position + 1
+
+    for match in style_delimiter_re.finditer(css_text):
+        char = match.group()
+        if char == ";":
+            undecided.append(match.start())
+            continue
+        if char == "(":
+            cut_at_undecided()
+        # Either we cut at them, or a `)` means that they were inside parentheses
+        undecided.clear()
+
+    cut_at_undecided()
     pieces.append(css_text[start:])
     return pieces
 
