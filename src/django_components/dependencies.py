@@ -23,7 +23,7 @@ from django.urls import path, reverse
 from django.utils.safestring import SafeString, mark_safe
 from djc_core.html_transformer import set_html_attributes
 
-from django_components.attributes import format_attributes
+from django_components.attributes import format_author_attributes
 from django_components.cache import get_component_media_cache
 from django_components.extension import OnDependenciesContext, extensions
 from django_components.node import BaseNode
@@ -151,7 +151,7 @@ class Dependency:
     def render(self) -> SafeString:
         """Render as HTML tag."""
         tag_name, all_attrs, content = self._render()
-        attrs_str = format_attributes(all_attrs)
+        attrs_str = format_author_attributes(all_attrs)
         attrs_prefix = " " + attrs_str if attrs_str else ""
         return mark_safe(f"<{tag_name}{attrs_prefix}>{content}</{tag_name}>")  # type: ignore[return-value]
 
@@ -371,7 +371,7 @@ class Style(Dependency):
 
     def render(self) -> SafeString:
         tag_name, all_attrs, content = self._render()
-        attrs_str = format_attributes(all_attrs)
+        attrs_str = format_author_attributes(all_attrs)
         attrs_prefix = " " + attrs_str if attrs_str else ""
 
         # Render as `<link>` tag if url is present, otherwise as `<style>` tag

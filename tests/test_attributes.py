@@ -8,7 +8,7 @@ from django.template import Context, Template, TemplateSyntaxError
 from django.utils.safestring import SafeString, mark_safe
 from pytest_django.asserts import assertHTMLEqual
 
-from django_components import AttrsDict, Component, compose_attrs, register, types
+from django_components import AttrsDict, Component, Script, Style, TrustedAttrName, compose_attrs, register, types
 from django_components.attributes import format_attributes, merge_attributes, parse_string_style
 from django_components.testing import djc_test
 
@@ -880,3 +880,238 @@ class TestParseStringStyle:
 
     def test_incomplete_style(self):
         assert parse_string_style("color: red; background-color") == {"color": "red"}
+
+
+SCRIPT_CAPABLE_NAMES = [
+    "onclick",
+    "ONCLICK",
+    "onError",
+    "onanything",
+    "srcdoc",
+    "SrcDoc",
+    "innerHTML",
+    "outerhtml",
+    "data-djc",
+    "data-djc-id-ca1b2c3",
+    "DATA-DJC-CSS-a1b2c3",
+    "djc-render-id",
+]
+
+
+@djc_test
+class TestAttributeNamesFromData:
+    @pytest.mark.parametrize("name", SCRIPT_CAPABLE_NAMES)
+    def test_format_attributes_refuses_script_capable_name(self, name):
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            format_attributes({name: "x"})
+
+    @pytest.mark.parametrize("name", SCRIPT_CAPABLE_NAMES)
+    def test_compose_attrs_refuses_script_capable_name(self, name):
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            compose_attrs({"id": "a"}, [{name: "x"}])
+
+    @pytest.mark.parametrize("name", SCRIPT_CAPABLE_NAMES)
+    def test_merge_attributes_refuses_script_capable_name(self, name):
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            merge_attributes({"id": "a"}, {name: "x"})
+
+    @pytest.mark.parametrize(
+        "template",
+        [
+            "<div {% attrs d %}></div>",
+            "<div {% attrs [d] %}></div>",
+            "<div {% html_attrs d %}></div>",
+            "<div {% html_attrs attrs=d %}></div>",
+            "<div {% html_attrs defaults=d %}></div>",
+            "<div {% html_attrs None d %}></div>",
+            "<div {% html_attrs ...d %}></div>",
+        ],
+    )
+    def test_tags_refuse_name_from_variable(self, template):
+        rendered = Template("{% load component_tags %}" + template)
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            rendered.render(Context({"d": {"onclick": "x"}}))
+
+    def test_attrs_dict_refuses_name_added_after_composing(self):
+        attrs = compose_attrs({"id": "a"})
+        attrs["onclick"] = "x"
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            str(attrs)
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "x\x0conerror",
+            "a\x00b",
+            "a\x01b",
+            "a\x1fb",
+            "a\x7fb",
+            "a\x85b",
+            'a"b',
+            "a'b",
+            "a\ufeffb",
+            "a\ud800b",
+            "a\ufdd0b",
+            "a\U0001fffeb",
+            "a\U0010ffffb",
+        ],
+    )
+    def test_refuses_character_the_browser_reads_differently(self, name):
+        with pytest.raises(ValueError, match="invalid HTML attribute name"):
+            format_attributes({name: "x"})
+        with pytest.raises(ValueError, match="invalid HTML attribute name"):
+            compose_attrs({name: "x"})
+
+    @pytest.mark.parametrize(
+        "name",
+        ["id", "@click.stop", ":class", "x-on:click.prevent", "#ref", "[target]", "(click)", "aria-label", "data-x"],
+    )
+    def test_keeps_names_that_frameworks_use(self, name):
+        assert format_attributes({name: "x"}) == f'{name}="x"'
+
+    def test_safe_string_is_not_trusted(self):
+        # `mark_safe()` says that text is safe as HTML. It says nothing about who chose it, and
+        # the output of a nested template such as `name="{{ x }}"` is a SafeString.
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            format_attributes({mark_safe("onclick"): "x"})
+
+    def test_name_from_nested_template_is_not_trusted(self):
+        @register("takes_name")
+        class TakesName(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div {% attrs d %}></div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"d": {kwargs["name"]: "x"}}
+
+        template = Template("""
+            {% load component_tags %}
+            {% component "takes_name" name="{{ data }}" / %}
+        """)
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            template.render(Context({"data": "onclick"}))
+
+    def test_str_subclass_cannot_hide_its_text(self):
+        class Hidden(str):
+            __slots__ = ()
+
+            def lower(self):
+                return "title"
+
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            format_attributes({Hidden("onclick"): "x"})
+
+    @pytest.mark.parametrize("name", SCRIPT_CAPABLE_NAMES)
+    def test_trusted_name_is_accepted(self, name):
+        trusted = TrustedAttrName(name)
+        assert format_attributes({trusted: "x"}) == f'{name}="x"'
+        assert merge_attributes({trusted: "x"}) == {name: "x"}
+        assert str(compose_attrs({trusted: "x"})) == f'{name}="x"'
+
+    def test_trusted_name_survives_composing_twice(self):
+        attrs = compose_attrs({TrustedAttrName("onclick"): "x"})
+        assert str(compose_attrs(attrs, {"id": "a"})) == 'onclick="x" id="a"'
+
+    def test_trusted_name_still_needs_valid_characters(self):
+        with pytest.raises(ValueError, match="invalid HTML attribute name"):
+            format_attributes({TrustedAttrName("onclick x"): "x"})
+
+    def test_name_from_data_does_not_reuse_trust_of_same_name(self):
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            compose_attrs({TrustedAttrName("onclick"): "safe()"}, {"onclick": "x"})
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            merge_attributes({TrustedAttrName("onclick"): "safe()"}, {"onclick": "x"})
+
+    @pytest.mark.parametrize(
+        "tag",
+        [
+            '{% html_attrs onclick="go()" %}',
+            '{% html_attrs attrs:onclick="go()" %}',
+            '{% html_attrs defaults:onclick="go()" %}',
+        ],
+    )
+    def test_name_written_in_tag_is_accepted(self, tag):
+        rendered = Template("{% load component_tags %}<div " + tag + "></div>").render(Context({}))
+        assert rendered == '<div onclick="go()"></div>'
+
+    def test_name_written_in_component_tag_reaches_element(self):
+        @register("button_attrs")
+        class ButtonAttrs(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <button {% html_attrs attrs class="btn" %}></button>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs["attrs"]}
+
+        rendered = Template("""
+            {% load component_tags %}
+            {% component "button_attrs" attrs:onclick="go()" / %}
+        """).render(Context({}))
+        assert 'onclick="go()"' in rendered
+
+    def test_written_name_passes_through_composing_and_spreading(self):
+        @register("spreads_attrs")
+        class SpreadsAttrs(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <button {% html_attrs ...attrs %}></button>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": compose_attrs(kwargs["attrs"])}
+
+        rendered = Template("""
+            {% load component_tags %}
+            {% component "spreads_attrs" attrs:onclick="go()" / %}
+        """).render(Context({}))
+        assert 'onclick="go()"' in rendered
+
+    def test_spread_cannot_reuse_name_written_in_tag(self):
+        template = Template("""
+            {% load component_tags %}
+            <div {% html_attrs onclick="go()" ...d %}></div>
+        """)
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            template.render(Context({"d": {"onclick": "x"}}))
+
+    def test_spread_cannot_add_aggregate_key(self):
+        @register("agg_attrs")
+        class AggAttrs(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <button {% html_attrs attrs %}></button>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"attrs": kwargs["attrs"]}
+
+        template = Template("""
+            {% load component_tags %}
+            {% component "agg_attrs" attrs:title="t" ...d / %}
+        """)
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            template.render(Context({"d": {"attrs:onclick": "x"}}))
+
+    def test_mapping_cannot_reuse_name_written_in_defaults(self):
+        template = Template("""
+            {% load component_tags %}
+            <div {% html_attrs d defaults:onclick="go()" %}></div>
+        """)
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            template.render(Context({"d": {"onclick": "x"}}))
+
+    def test_dict_written_in_tag_needs_trusted_name(self):
+        template = Template("""{% load component_tags %}<div {% attrs {"onclick": "go()"} %}></div>""")
+        with pytest.raises(ValueError, match="comes from a mapping"):
+            template.render(Context({}))
+
+    def test_script_and_style_keep_handler_names(self):
+        # These attributes come from `Component.Media` and from extensions, not from data.
+        script = Script(content=None, url="/a.js", attrs={"onload": "go()"})
+        style = Style(content=None, url="/a.css", attrs={"onload": "go()"})
+        assert 'onload="go()"' in script.render()
+        assert 'onload="go()"' in style.render()

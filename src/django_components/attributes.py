@@ -12,13 +12,22 @@ from django.utils.html import conditional_escape, format_html
 from django.utils.safestring import SafeString, mark_safe
 
 from django_components.node import BaseNode
+from django_components.util.misc import TrustedAttrName, is_script_capable_attr_name
 
 ClassValue: TypeAlias = Sequence["ClassValue"] | str | dict[str, bool]
 StyleDict: TypeAlias = dict[str, str | int | Literal[False] | None]
 StyleValue: TypeAlias = Sequence["StyleValue"] | str | StyleDict
 AttrsSource: TypeAlias = Mapping[str, Any] | list["AttrsSource"] | tuple["AttrsSource", ...]
 
-_INVALID_HTML_ATTR_NAME_CHARS = frozenset(" \t\n\r=/><")
+# The HTML spec forbids control characters (C0, DEL, C1), whitespace, quotes, `>`, `/`, `=` and
+# noncharacters in an attribute name; `<`, the byte-order mark and lone surrogates are refused
+# too. The browser splits a name at whitespace (a form feed included), `/`, `=` and `>`, so a
+# name with one of those would reach it as a different name, or as several.
+_INVALID_HTML_ATTR_NAME_CHAR = re.compile(
+    r"[\x00-\x20\x7f-\x9f\"'/<=>\ufeff\ud800-\udfff\ufdd0-\ufdef"
+    + "".join(rf"\U{plane:04x}fffe\U{plane:04x}ffff" for plane in range(17))
+    + "]"
+)
 
 
 class HtmlAttrsNode(BaseNode):
@@ -85,9 +94,13 @@ class HtmlAttrsNode(BaseNode):
         **kwargs: Any,
     ) -> SafeString:
         # Merge
-        final_attrs = {}
-        final_attrs.update(defaults or {})
-        final_attrs.update(attrs or {})
+        final_attrs: dict = {}
+        for source in (defaults, attrs):
+            # Check each mapping on its own. A merged dict keeps the key object it saw first,
+            # so a name from data could otherwise reuse the mark of a `defaults:onclick`.
+            source_attrs = dict(source or {})
+            _reject_script_capable_names(source_attrs)
+            final_attrs.update(source_attrs)
         final_attrs = merge_attributes(final_attrs, kwargs)
 
         # Render to HTML attributes
@@ -241,6 +254,7 @@ def compose_attrs(*attrs: AttrsSource) -> AttrsDict:
     for attrs_dict in _iter_attr_mappings(attrs):
         for authored_key, value in attrs_dict.items():
             key = _validate_html_attr_name(authored_key)
+            _reject_script_capable_name(key)
 
             if key == "class":
                 # Reserve the key's first-seen position even when this source has
@@ -305,6 +319,10 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
     and `style` accept structured values and are normalized before rendering.
     Empty normalized `class` and `style` values are omitted.
 
+    Names that run code or load a page, such as `onclick` or `srcdoc`, raise
+    `ValueError` unless wrapped in [`TrustedAttrName`][TrustedAttrName], so that
+    data cannot choose one.
+
     Read more about [HTML attributes](../concepts/fundamentals/html_attributes.md).
 
     Examples:
@@ -318,6 +336,17 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
         'class="my-class" data-id="123"'
         ```
 
+    """
+    _reject_script_capable_names(attributes)
+    return format_author_attributes(attributes)
+
+
+def format_author_attributes(attributes: Mapping[str, Any]) -> str:
+    """
+    Format attributes whose names Python code chose, not data.
+
+    `Script` and `Style` use this because their attributes come from `Component.Media` and
+    from extensions, where a name such as `onload` is a normal thing to write.
     """
     attr_list = []
 
@@ -345,9 +374,28 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
     return mark_safe(SafeString(" ").join(attr_list))
 
 
+def _reject_script_capable_names(attributes: Mapping[Any, Any]) -> None:
+    for name in attributes:
+        _reject_script_capable_name(name)
+
+
+def _reject_script_capable_name(name: Any) -> None:
+    # Non-strings are left to `_validate_html_attr_name`, which names the bad type.
+    if isinstance(name, TrustedAttrName) or not isinstance(name, str) or not is_script_capable_attr_name(name):
+        return
+
+    msg = (
+        f"HTML attribute name {name!r} comes from a mapping. A name in a mapping may not start with 'on', be "
+        "'srcdoc', 'innerHTML' or 'outerHTML', or be a name that django-components reserves, because data could "
+        'then run code in the browser. Write the name in the template tag instead, as in onclick="..." or '
+        f'attrs:onclick="...". If your code chose this name, not data, wrap it: TrustedAttrName({name!r}).'
+    )
+    raise ValueError(msg)
+
+
 @lru_cache(maxsize=512)
 def _is_valid_exact_html_attr_name(name: str) -> bool:
-    return bool(name) and not any(char in _INVALID_HTML_ATTR_NAME_CHARS for char in name) and "{#" not in name
+    return bool(name) and _INVALID_HTML_ATTR_NAME_CHAR.search(name) is None and "{#" not in name
 
 
 def _validate_html_attr_name(name: Any) -> str:
@@ -361,7 +409,8 @@ def _validate_html_attr_name(name: Any) -> str:
     if not _is_valid_exact_html_attr_name(exact_name):
         msg = (
             f"HTML attributes contain invalid HTML attribute name {exact_name!r}. Attribute names must be non-empty "
-            "and cannot contain whitespace, '=', '/', '>', '<', or the template-comment opener '{#'."
+            "and cannot contain whitespace, control characters, quotes, '=', '/', '>', '<', or the template-comment "
+            "opener '{#'."
         )
         raise ValueError(msg)
 
@@ -374,12 +423,14 @@ def _validate_html_attr_name(name: Any) -> str:
         if rendered_name != expected_name:
             msg = (
                 f"HTML attributes contain invalid HTML attribute name {rendered_name!r}. Attribute name objects must "
-                "render exactly as their string value and cannot contain whitespace, '=', '/', '>', '<', or the "
-                "template-comment opener '{#'."
+                "render exactly as their string value and cannot contain whitespace, control characters, quotes, "
+                "'=', '/', '>', '<', or the template-comment opener '{#'."
             )
             raise ValueError(msg)
 
-    return exact_name
+    # Keep the mark, so the name survives `compose_attrs()` and is accepted again when the
+    # composed attributes are formatted or merged later.
+    return TrustedAttrName(exact_name) if isinstance(name, TrustedAttrName) else exact_name
 
 
 # TODO_V1 - Remove in v1, keep only `format_attributes` going forward
@@ -472,6 +523,8 @@ def merge_attributes(*attrs: dict) -> dict:
     classes: list[ClassValue] = []
     styles: list[StyleValue] = []
     for attrs_dict in attrs:
+        # Checked per source, because `result` keeps the key object it saw first.
+        _reject_script_capable_names(attrs_dict)
         for key, value in attrs_dict.items():
             if key == "class":
                 classes.append(value)

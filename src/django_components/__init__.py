@@ -86,6 +86,7 @@ from django_components.tag_formatter import (
 from django_components.template import cached_template
 import django_components.types as types  # noqa: PLR0402
 from django_components.util.loader import ComponentFileEntry, get_component_dirs, get_component_files
+from django_components.util.misc import TrustedAttrName
 from django_components.util.routing import URLRoute, URLRouteHandler
 from django_components.util.types import Empty
 
@@ -168,6 +169,7 @@ __all__ = [
     "TagFormatterABC",
     "TagProtectedError",
     "TagResult",
+    "TrustedAttrName",
     "URLRoute",
     "URLRouteHandler",
     "all_components",

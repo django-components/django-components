@@ -126,8 +126,9 @@ the tag above renders:
 ```
 
 Attribute values are escaped. `True` renders a bare boolean attribute, while `False` and `None` are omitted.
-Attribute names must be non-empty strings and cannot contain whitespace, `=`, `/`, `>`, `<`, or the
-template-comment opener (`{` followed by `#`).
+Attribute names must be non-empty strings and cannot contain whitespace, control characters, quotes, `=`, `/`,
+`>`, `<`, or the template-comment opener (`{` followed by `#`). Names that can run code have
+[their own rule](#attribute-names-that-can-run-code).
 
 The tag can also produce a dictionary for a component input. Put it by itself in a quoted nested template,
 with no surrounding text or whitespace:
@@ -525,6 +526,56 @@ Which will output:
     Prior to v0.135, the `format_attributes()` function was named `attributes_to_string()`.
 
     This function is now deprecated and will be removed in v1.0.
+
+## Attribute names that can run code
+
+An attribute's name decides what the browser does with its value. The browser runs the value of `onclick` as
+JavaScript and loads the value of `srcdoc` as a page. So if the keys of a mapping come from a request, an attacker
+can choose a name that runs their code.
+
+To stop that, [`{% html_attrs %}`](../../reference/template_tags.md#html_attrs),
+[`{% attrs %}`](../../reference/template_tags.md#attrs), [`format_attributes()`][format_attributes],
+[`compose_attrs()`][compose_attrs] and [`merge_attributes()`][merge_attributes] raise `ValueError` when a mapping
+holds one of these names, in any letter case:
+
+- A name that starts with `on`
+- `srcdoc`, `innerHTML` or `outerHTML`
+- `data-djc`, a name that starts with `data-djc-`, or `djc-render-id`, which django-components uses to find its
+  own elements
+
+Names written in a template tag are always accepted, because the template author chose them:
+
+```django
+<button {% html_attrs attrs onclick="save()" %}>Save</button>
+
+{% component "button" attrs:onclick="save()" / %}
+```
+
+This does not cover keys of a dictionary written in a tag, such as `attrs={"onclick": "save()"}`, or keys that a
+`...spread` adds. Use `attrs:onclick="save()"`, or write `onclick="save()"` on the element itself.
+
+When your own Python code builds the mapping, wrap the name in [`TrustedAttrName`][TrustedAttrName]:
+
+```py
+from django_components import TrustedAttrName
+
+attrs = {TrustedAttrName("onclick"): "save()"}
+```
+
+Never wrap a name that comes from a request or from storage. The value of a trusted name runs in the browser, so
+it must not contain request data either.
+
+!!! warning
+
+    This check knows only the names listed above. Libraries add names of their own that run code, such as
+    `@click` and `x-init` in Alpine.js, `hx-on:click` in htmx, and `v-on:click` in Vue. A value such as
+    `javascript:...` in `href` or `src` runs code too.
+
+    So do not pass a mapping whose keys come from a request. Keep only the keys you expect:
+
+    ```py
+    attrs = {key: data[key] for key in ("title", "lang") if key in data}
+    ```
 
 ## Cheat sheet
 

@@ -3,7 +3,7 @@ This file is for logic that focuses on transforming the AST of template tags
 (as parsed from tag_parser) into a form that can be used by the Nodes.
 """
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from typing import (
     Any,
@@ -19,6 +19,7 @@ from djc_core.template_parser import GenericTag, ParserConfig, TagAttr, compile_
 from djc_core.template_parser.parse import TagUnion
 
 from django_components.expression import TemplateExpression
+from django_components.util.misc import TrustedAttrName, is_script_capable_attr_name
 
 
 # Data obj to give meaning to the parsed tag fields
@@ -260,8 +261,18 @@ def compile_tag_params_resolver(
         filter=resolve_filter,
     )
 
+    # The names the tag itself spells, such as `onclick="..."` or `attrs:onclick="..."`, were
+    # written by the template author. Only the parsed tag can tell them from `...spread` keys,
+    # which can come from data. Almost no tag has one, so most renders skip this step.
+    written_keys = Counter(
+        attr.key.content for attr in params if attr.key is not None and _names_script_capable_attr(attr.key.content)
+    )
+
     def resolver(context: Mapping[str, Any]) -> tuple[list[Any], list[tuple[str, Any]]]:
         args, kwargs = compiled_tag(context)
+
+        if written_keys:
+            kwargs = _mark_written_keys(kwargs, written_keys)
 
         # TODO - Move these to extensions?
         if tag_name == "html_attrs":
@@ -271,6 +282,28 @@ def compile_tag_params_resolver(
         return args, kwargs
 
     return resolver
+
+
+def _names_script_capable_attr(key: str) -> bool:
+    # A key may hold the name directly, or after its prefix, as in `attrs:onclick`.
+    return is_script_capable_attr_name(key) or (
+        is_aggregate_key(key) and is_script_capable_attr_name(key.split(":", 1)[1])
+    )
+
+
+def _mark_written_keys(kwargs: list[tuple[str, Any]], written_keys: Counter[str]) -> list[tuple[str, Any]]:
+    """
+    Mark the names written in the tag as trusted, so `format_attributes()` and friends accept them.
+
+    A name written in the tag is always emitted, so one more of it means that a `...spread`
+    mapping supplied the same name. The values would then be merged into one attribute, so
+    none of them is marked and the name is refused, as for any other name from data.
+    """
+    found = Counter(key for key, _ in kwargs if key in written_keys)
+    return [
+        (TrustedAttrName(key) if key in written_keys and found[key] == written_keys[key] else key, value)
+        for key, value in kwargs
+    ]
 
 
 # TODO_REMOVE_IN_V1 - Disallow specifying the same key multiple times once in v1.
@@ -390,6 +423,9 @@ def process_aggregate_kwargs(
 
         # NOTE: Trim off the outer_key from keys
         outer_key, inner_key = key.split(":", 1)
+        # `split()` returns a plain string, so a name written in the tag has to be marked again.
+        if isinstance(key, TrustedAttrName):
+            inner_key = TrustedAttrName(inner_key)
         if outer_key not in nested_kwargs:
             nested_kwargs[outer_key] = {}
         nested_kwargs[outer_key][inner_key] = value
