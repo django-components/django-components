@@ -27,7 +27,7 @@ from django_components.attributes import format_attributes
 from django_components.cache import get_component_media_cache
 from django_components.extension import OnDependenciesContext, extensions
 from django_components.node import BaseNode
-from django_components.util.css import serialize_css_var_value
+from django_components.util.css import serialize_css_var_name, serialize_css_var_value
 from django_components.util.misc import extract_regex_matches, is_nonempty_str
 
 if TYPE_CHECKING:
@@ -178,7 +178,8 @@ class Dependency:
         # e.g. JS code CANNOT contain `</script>`
         tag_name = self.__class__.__name__.lower()
         end_tag_substr = f"</{tag_name}"
-        if self.content and end_tag_substr in self.content:
+        # HTML parsers match the end tag in any letter case, so `</STYLE` ends the tag too.
+        if self.content and end_tag_substr in self.content.lower():
             raise RuntimeError(
                 f"{self._err_msg()} contains '{end_tag_substr}>' end tag. This is not allowed.",
             )
@@ -433,13 +434,19 @@ class VariableData(NamedTuple):
 # Generate keys like
 # `__components:MyButton_a78y37:js:df7c6d10`
 # `__components:MyButton_a78y37:css`
+# The hash in a variables cache key comes from the data alone, not from the text written for it.
+# Raise this when that text changes, so that a cache that outlives an upgrade (Redis, a file)
+# cannot keep serving what an older version wrote for the same data.
+_VARIABLES_CACHE_VERSION = "v2"
+
+
 def _gen_cache_key(
     comp_cls_id: str,
     script_type: ScriptType,
     variables_hash: str | None,
 ) -> str:
     if variables_hash:
-        return f"__components:{comp_cls_id}:{script_type}:{variables_hash}"
+        return f"__components:{comp_cls_id}:{script_type}:{variables_hash}:{_VARIABLES_CACHE_VERSION}"
     return f"__components:{comp_cls_id}:{script_type}"
 
 
@@ -623,7 +630,9 @@ def cache_component_css_vars(comp_cls: type["Component"], css_vars: Mapping) -> 
 
     # Generate and cache a CSS stylesheet that contains the CSS variables.
     if not _is_script_in_cache(comp_cls, "css", variables_hash):
-        formatted_vars = [f"  --{key}: {serialize_css_var_value(value)};" for key, value in css_vars.items()]
+        formatted_vars = [
+            f"  --{serialize_css_var_name(key)}: {serialize_css_var_value(value)};" for key, value in css_vars.items()
+        ]
 
         # ```css
         # [data-djc-css-f3f3eg9] {
@@ -1812,7 +1821,9 @@ def _insert_js_css_to_default_locations(
 
 
 CACHE_ENDPOINT_NAME = "components_cached_script"
-_CONTENT_TYPES = {"js": "text/javascript", "css": "text/css"}
+# The body is always encoded as UTF-8. With no charset, a browser decodes a linked file
+# with the encoding of the page that links it, so a GBK page would misread the file.
+_CONTENT_TYPES = {"js": "text/javascript; charset=utf-8", "css": "text/css; charset=utf-8"}
 
 
 def _get_content_types(script_type: ScriptType) -> str:

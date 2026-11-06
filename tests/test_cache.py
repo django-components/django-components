@@ -152,7 +152,7 @@ class TestComponentMediaCache:
         css_vars_hash = "d039a3"
 
         # Verify CSS variables are cached
-        css_vars_content = test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:css:{css_vars_hash}")
+        css_vars_content = test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:css:{css_vars_hash}:v2")
         assert css_vars_content is not None
         assert css_vars_content.strip() != ""
         # Verify the CSS contains the variable definition
@@ -160,7 +160,7 @@ class TestComponentMediaCache:
         assert f"[data-djc-css-{css_vars_hash}]" in css_vars_content
 
         # Verify JS variables are cached
-        js_vars_content = test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:js:{js_vars_hash}")
+        js_vars_content = test_cache.get(f"__components:{TestMediaAndVarsComponent.class_id}:js:{js_vars_hash}:v2")
         assert js_vars_content is not None
         assert js_vars_content.strip() != ""
         # Verify the JS contains the JSON data

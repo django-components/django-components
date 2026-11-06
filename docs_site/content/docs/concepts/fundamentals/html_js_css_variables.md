@@ -371,6 +371,15 @@ The returned dictionary will be converted to [CSS variables](https://developer.m
 
 If [`get_css_data()`][Component.get_css_data] returns `None`, an empty dictionary will be used.
 
+A value that reads as one CSS value stays as you wrote it, such as `red`, `10px`, `calc(100% - 20px)` or
+`url("/a.png")`. Any other text becomes a quoted CSS string, so `red;}body{display:none}` is text and cannot add
+a rule or end the `<style>` tag. A string with whitespace is quoted too, unless it is a CSS function.
+
+!!! warning
+
+    A value can still load a URL, such as `url(https://example.com/a.png)`. Check any URL that comes from a
+    request before you return it from [`get_css_data()`][Component.get_css_data].
+
 ```python
 class ThemeableButton(Component):
     template_file = "button.html"

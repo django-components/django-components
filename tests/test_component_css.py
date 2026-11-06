@@ -1,9 +1,13 @@
+import pytest
 from django.template import Context, Template
+from django.test import RequestFactory
 from pytest_django.asserts import assertHTMLEqual
 
-from django_components import Component, register, types
+from django_components import Component, Script, Style, register, types
+from django_components.cache import get_component_media_cache
+from django_components.dependencies import cached_script_view
 from django_components.testing import djc_test
-from django_components.util.css import is_css_func
+from django_components.util.css import is_css_func, serialize_css_var_name, serialize_css_var_value
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
@@ -30,6 +34,259 @@ class TestCssFunctionDetection:
         assert is_css_func("#ff0000") is False
         assert is_css_func("100px") is False
         assert is_css_func("") is False
+
+
+class TestCssValueSerialization:
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "red",
+            "10px",
+            "-1.5em",
+            "100%",
+            "#ff0000",
+            "calc(100% - 20px)",
+            "rgba(0, 0, 0, 0.5)",
+            "var(--a, red)",
+            "linear-gradient(to right, red, blue)",
+            "url(/a.png)",
+            "url( /a.png )",
+            "url(data:image/png;base64,AA==)",
+            'url("/a b.png")',
+            "url('/a.png')",
+            '"text"',
+            "'text'",
+            "a,b",
+            "1px/2px",
+            "calc(1;2)",
+            'f(a,"b;}c")',
+            "xurl(a)",
+            "URL(/a.png)",
+            "",
+        ],
+    )
+    def test_keeps_text_that_reads_as_one_value(self, value):
+        assert serialize_css_var_value(value) == value
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            (None, ""),
+            (1, "1"),
+            (1.5, "1.5"),
+            (True, "True"),
+            (["a", "b"], "\"['a', 'b']\""),
+            ("Hello World", '"Hello World"'),
+            ("10px 20px", '"10px 20px"'),
+            ("a\tb", '"a\\9 b"'),
+        ],
+    )
+    def test_converts_other_values(self, value, expected):
+        assert serialize_css_var_value(value) == expected
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            # A semicolon or brace would end the declaration or the rule.
+            ("red;", '"red;"'),
+            ("a;}b{c:d}", '"a;}b{c:d}"'),
+            ("red}", '"red}"'),
+            ("a{b", '"a{b"'),
+            ("red!important", '"red!important"'),
+            # A broken string or url() swallows the text after it.
+            ("O'Brien", '"O\'Brien"'),
+            ('"abc', '"\\"abc"'),
+            ("url(a;b", '"url(a;b"'),
+            ('url(a"x)y;b{c:d}z")', '"url(a\\"x)y;b{c:d}z\\")"'),
+            ("url(a b)", '"url(a b)"'),
+            ("url(a(b)", '"url(a(b)"'),
+            ("url(a\x7fb)", '"url(a\\7f b)"'),
+            # A quote inside a value with whitespace must not end the string that wraps it.
+            ('a b";}b{c:d}.x{--a:"', '"a b\\";}b{c:d}.x{--a:\\""'),
+            # A backslash could spell any character the check looks for.
+            ("\\75rl(a;b)", '"\\\\75rl(a;b)"'),
+            ("red\\", '"red\\\\"'),
+            # Comments and unbalanced brackets.
+            ("a/**/b", '"a/**/b"'),
+            ("calc(1", '"calc(1"'),
+            ("1)", '"1)"'),
+            ("([)]", '"([)]"'),
+            # Text before `url(` decides whether it starts a URL token.
+            ("\x80url(x", '"\\80 url(x"'),
+        ],
+    )
+    def test_quotes_text_that_could_leave_its_declaration(self, value, expected):
+        assert serialize_css_var_value(value) == expected
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            ("</style>", '"\\3c /style>"'),
+            ("</STYLE>", '"\\3c /STYLE>"'),
+            ("<!--", '"\\3c !--"'),
+            ('"</style>"', '"\\3c /style>"'),
+            ('"\\</style>"', '"\\3c /style>"'),
+            ('url("</style>")', 'url("\\3c /style>")'),
+            ("url(</style>)", "url(\\3c /style>)"),
+            ("red;}</STYLE><script>x</script>", '"red;}\\3c /STYLE>\\3c script>x\\3c /script>"'),
+        ],
+    )
+    def test_writes_no_raw_less_than_sign(self, value, expected):
+        assert serialize_css_var_value(value) == expected
+
+    @pytest.mark.parametrize(
+        ("value", "expected"),
+        [
+            ("caf\xe9", "caf\\e9 "),
+            ('"\xe9"', '"\\e9 "'),
+            ("a b\xe9", '"a b\\e9 "'),
+            ('"\u4e2d\\""', '"\\4e2d \\""'),
+            ('"\\\xe9"', '"\\e9 "'),
+            ("\x1b", "\\1b "),
+            ("a\x00b", '"a\\0 b"'),
+            ("a\ud800b", '"a\\d800 b"'),
+        ],
+    )
+    def test_writes_only_ascii(self, value, expected):
+        result = serialize_css_var_value(value)
+        assert result == expected
+        assert result.isascii()
+        # A lone surrogate must not fail when the cached stylesheet is encoded.
+        result.encode()
+
+    def test_str_subclass_cannot_hide_its_text(self):
+        class Hidden(str):
+            __slots__ = ()
+
+            def __str__(self):
+                return "red"
+
+        # `str()` is what writes the value, so that is the text the check must read.
+        assert serialize_css_var_value(Hidden("a;b")) == "red"
+
+    def test_object_str_is_checked(self):
+        class Evil:
+            def __str__(self):
+                return "a;}b{c:d}"
+
+        assert serialize_css_var_value(Evil()) == '"a;}b{c:d}"'
+
+    def test_number_subclass_str_is_checked(self):
+        class Evil(int):
+            def __str__(self):
+                return "1;}b{c:d}"
+
+        assert serialize_css_var_value(Evil(1)) == '"1;}b{c:d}"'
+
+    @pytest.mark.parametrize(
+        ("name", "expected"),
+        [
+            ("button_bg", "button_bg"),
+            ("a-b", "a-b"),
+            (1, "1"),
+            ("a:red;}b{c:d}", "a\\3a red\\3b \\7d b\\7b c\\3a d\\7d "),
+            ("a b", "a\\20 b"),
+            ("a\nb", "a\\a b"),
+            ("</style", "\\3c \\2f style"),
+            ("\xe9", "\\e9 "),
+            ("a\x00", "a\\0 "),
+            ("a\ud800", "a\\d800 "),
+        ],
+    )
+    def test_name_stays_one_name(self, name, expected):
+        assert serialize_css_var_name(name) == expected
+
+
+@djc_test
+class TestCssDataReachingThePage:
+    def _component(self):
+        class CssDataComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                <div class="box">x</div>
+                {% component_css_dependencies %}
+            """
+            css = """
+                .box { color: var(--col); }
+            """
+
+            def get_css_data(self, args, kwargs, slots, context):
+                return kwargs
+
+        return CssDataComponent
+
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "x</style",
+            "</STYLE><script>document.title='x'</script><style>",
+            "red;}</sTyLe ><script>document.title='x'</script>",
+        ],
+    )
+    def test_value_cannot_end_style_element_or_fail_the_render(self, value):
+        rendered = str(self._component().render(kwargs={"col": value}))
+        assert "<script" not in rendered.rpartition("</style>")[2]
+        assert rendered.lower().count("</style") == rendered.lower().count("<style")
+
+    def test_value_with_surrogate_renders(self):
+        assert "\\d800 " in str(self._component().render(kwargs={"col": "\ud800"}))
+
+    def test_key_cannot_add_a_rule(self):
+        rendered = str(self._component().render(kwargs={"a:red;}body{color:red}.x{--b": "x"}))
+        assert "body{" not in rendered
+        assert "--a\\3a red\\3b \\7d body\\7b color\\3a red\\7d \\2e x\\7b --b: x;" in rendered
+
+    def test_route_serves_the_same_text_as_utf8(self):
+        component = self._component()
+        rendered = str(component.render(kwargs={"col": 'a b";}\u4e2d'}))
+        variables_hash = rendered.partition("data-djc-css-")[2][:6]
+
+        response = cached_script_view(RequestFactory().get("/"), component.class_id, "css", variables_hash)
+
+        assert response["Content-Type"] == "text/css; charset=utf-8"
+        assert '--col: "a b\\";}\\4e2d ";' in response.content.decode("ascii")
+        assert response.content.decode("ascii") in rendered
+
+    def test_old_stylesheet_in_a_lasting_cache_is_not_used(self):
+        component = self._component()
+        value = "red;}body{color:red}"
+        rendered = str(component.render(kwargs={"col": value}))
+        variables_hash = rendered.partition("data-djc-css-")[2][:6]
+
+        # An older version stored its stylesheet under this key.
+        old_key = f"__components:{component.class_id}:css:{variables_hash}"
+        get_component_media_cache().set(old_key, "UNUSED")
+        assert "UNUSED" not in str(component.render(kwargs={"col": value}))
+
+
+class TestEndTagInScriptAndStyle:
+    @pytest.mark.parametrize("content", ["a</style>", "a</STYLE>", "a</StYlE ", "a</stYLE"])
+    def test_style_refuses_end_tag_in_any_letter_case(self, content):
+        with pytest.raises(RuntimeError, match="end tag"):
+            Style(content=content).render()
+
+    @pytest.mark.parametrize("content", ["a</script>", "a</SCRIPT>", "a</ScRiPt "])
+    def test_script_refuses_end_tag_in_any_letter_case(self, content):
+        with pytest.raises(RuntimeError, match="end tag"):
+            Script(content=content).render()
+
+
+class TestServedContentType:
+    @pytest.mark.parametrize(
+        ("script_type", "expected"),
+        [("js", "text/javascript; charset=utf-8"), ("css", "text/css; charset=utf-8")],
+    )
+    def test_names_the_charset(self, script_type, expected):
+        class ServedComponent(Component):
+            template = "<div>x</div>"
+            css = ".a { content: '\u4e2d'; }"
+            js = "console.log('\u4e2d')"
+
+        str(ServedComponent.render())
+        response = cached_script_view(RequestFactory().get("/"), ServedComponent.class_id, script_type)
+
+        assert response["Content-Type"] == expected
+        assert "\u4e2d" in response.content.decode("utf-8")
 
 
 @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
