@@ -2080,6 +2080,7 @@ class Component(metaclass=ComponentMeta):
 
         The list includes [`Component.js`][Component.js]/[`Component.css`][Component.css]
         CSS/JS variables, and [`Component.Media.js`][ComponentMediaInput.js]/[`Component.Media.css`][ComponentMediaInput.css].
+        The lists leave out variables that are no longer in the cache.
 
         Return `(new_scripts, new_styles)` to replace the list for this instance;
         return `None` (default) to keep the original list.

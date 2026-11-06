@@ -143,8 +143,8 @@ class ComponentTreeContext:
     # (e.g. `generator.started = True`), because generator object does not allow setting
     # extra attributes.
     started_generators: StartedGenerators
-    # IDs of all components that were rendered in this tree, so that when the tree is done
-    # we can release whatever a failed render left in the global caches.
+    # IDs of components in this tree that no root has released yet, so that when
+    # the tree is done we can release whatever a failed render left in the global caches.
     render_ids: list[str] = field(default_factory=list)
 
 

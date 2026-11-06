@@ -303,7 +303,7 @@ class ComponentsSettings(NamedTuple):
     [`vars_cache_max_bytes`][ComponentsSettings.vars_cache_max_bytes] limit that second store.
 
     If set, everything goes in the named cache, and that cache's own `TIMEOUT` and limits apply.
-    Variables can hold data from your users, so set a `TIMEOUT` and a size limit on that cache.
+    Variables can hold data from your users, so set a `TIMEOUT` or a size limit on that cache.
     With `"TIMEOUT": None` and no limit, each new value that `get_js_data()` or `get_css_data()`
     returns adds an entry that stays for good.
 

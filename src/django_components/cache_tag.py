@@ -57,7 +57,7 @@ into the cache:
      per-process and limited in age and bytes. If the fragment cache outlives
      an entry (Redis + a deploy, or a fragment kept for longer than the limits
      keep the entry), the markers reference JS/CSS variable data that no
-     longer exists, and the variables silently drop from the page.
+     longer exists, so the variables drop from the page and a warning is logged.
 
 User-facing docs: `docs_site/content/docs/concepts/advanced/component_caching.md`.
 v3 fix (cache `RenderObject` instead of string): #1650.

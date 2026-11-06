@@ -8,6 +8,7 @@ import logging
 import re
 import sys
 import time
+import uuid
 import warnings
 import weakref
 from collections.abc import Iterator
@@ -520,6 +521,46 @@ class TestVarsCacheInRendering:
         assert "its `$onComponent` callbacks will not run" in caplog.text
         assert "x" * 5_000 not in caplog.text
 
+    def test_a_warning_comes_once_per_component_per_page(self, caplog):
+        # A visitor can reload a page, so one line per instance would let them fill up the logs.
+        comp_cls = _make_js_vars_component()
+        registry.register("js_vars_comp", comp_cls)
+
+        class Repeated(Component):
+            template: types.django_html = """
+                {% for _ in items %}
+                    {% component "js_vars_comp" m="same" / %}
+                {% endfor %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"items": range(20)}
+
+        html = Repeated.render(deps_strategy="ignore")
+        get_component_vars_cache().clear()
+        with caplog.at_level(logging.WARNING, logger="django_components"):
+            render_dependencies(html, strategy="fragment")
+        assert caplog.text.count("no longer in the cache") == 1
+
+    def test_js_variables_without_on_component_are_not_needed(self, caplog):
+        # With no `$onComponent` nothing reads these variables, so losing them is nothing to report.
+        class PlainJs(Component):
+            template: types.django_html = """
+                <div>x</div>
+            """
+            js: types.js = """
+                console.log("no callback here");
+            """
+
+            def get_js_data(self, args, kwargs, slots, context):
+                return {"m": "a"}
+
+        html = PlainJs.render(deps_strategy="ignore")
+        get_component_vars_cache().clear()
+        with caplog.at_level(logging.WARNING, logger="django_components"):
+            render_dependencies(html, strategy="fragment")
+        assert "no longer in the cache" not in caplog.text
+
     def test_stored_js_variables_keep_their_calls(self, caplog):
         comp_cls = _make_js_vars_component()
         page = _make_page(comp_cls)
@@ -702,6 +743,42 @@ class TestFailedRendersReleaseMemory:
         assert "after" in rendered
         assert not component_instance_cache
         assert not component_renderer_cache
+
+    def test_a_cache_tag_does_not_grow_the_tree(self):
+        # A page may repeat `{% cache %}` many times, and each one runs as a root of its own.
+        self._make_broken()
+        tree_sizes = []
+
+        class Probe(Component):
+            template: types.django_html = """
+                <div>probe</div>
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                tree_sizes.append(len(component_context_cache[self.id].tree.render_ids))
+                return {}
+
+        registry.register("probe", Probe)
+
+        class Parent(Component):
+            template: types.django_html = """
+                {% load cache %}
+                {% for item in items %}
+                    {% cache 60 "test_repeated_fragment" token item %}
+                        {% component "fine" / %}
+                    {% endcache %}
+                {% endfor %}
+                {% component "probe" / %}
+            """
+
+            def get_template_data(self, args, kwargs, slots, context):
+                # The token keeps this test from reading what an earlier run left in the cache
+                return {"items": range(3), "token": uuid.uuid4().hex}
+
+        Parent.render()
+        # The parent and three times "fine", but none of the three `{% cache %}` roots.
+        # The probe reads this before it is added itself.
+        assert tree_sizes == [4]
 
     def test_a_recovered_error_leaves_nothing(self):
         # The error fallback saves the render, and the broken child's sibling is skipped.

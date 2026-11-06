@@ -458,10 +458,21 @@ def _get_script_cache(variables_hash: str | None) -> "BaseCache":
     return get_component_vars_cache() if variables_hash else get_component_media_cache()
 
 
-def _warn_about_missing_variables(comp_cls: type["Component"], kind: str, effect: str) -> None:
+def _warn_about_missing_variables(
+    comp_cls: type["Component"],
+    kind: str,
+    effect: str,
+    already_warned: set[tuple[str, str]],
+) -> None:
+    # Once per component per page. A page may repeat a component many times, and a visitor
+    # can reload that page, so one line per instance would let them fill up the logs.
+    if (comp_cls.class_id, kind) in already_warned:
+        return
+    already_warned.add((comp_cls.class_id, kind))
     logger.warning(
         f"The {kind} variables of component {comp_cls.class_id} are no longer in the cache, so {effect}. "
-        "See COMPONENTS.vars_cache_max_age and COMPONENTS.vars_cache_max_bytes."
+        "See COMPONENTS.vars_cache_max_age and COMPONENTS.vars_cache_max_bytes, "
+        "or the limits of your COMPONENTS.cache backend."
     )
 
 
@@ -1129,13 +1140,15 @@ def _process_dep_declarations(
     all_scripts_mark_as_loaded: list[Script] = []
     all_styles_mark_as_loaded: list[Style] = []
 
+    warned_missing_variables: set[tuple[str, str]] = set()
+
     for comp_cls_id, comp_id, stored_js_hash, stored_css_hash in instance_rows:
         comp_cls = get_component_by_class_id(comp_cls_id)
         calls_on_component = is_nonempty_str(comp_cls.js) and "$onComponent" in comp_cls.js
 
         # The variables may be gone by now, as the cache limits their age and size, and this HTML
-        # may come from a cache of its own. Asking also renews them, so HTML replayed from
-        # a cache keeps its variables for as long as it is in use, even though that skips the render.
+        # may come from a cache of its own. With the default store, asking also renews them, so HTML
+        # replayed from a cache keeps its variables for as long as it is in use, though it skips the render.
         js_vars_missing = (
             stored_js_hash is not None
             and calls_on_component
@@ -1147,9 +1160,11 @@ def _process_dep_declarations(
             and not _is_script_in_cache(comp_cls, "css", stored_css_hash)
         )
         if js_vars_missing:
-            _warn_about_missing_variables(comp_cls, "JS", "its `$onComponent` callbacks will not run")
+            _warn_about_missing_variables(
+                comp_cls, "JS", "its `$onComponent` callbacks will not run", warned_missing_variables
+            )
         if css_vars_missing:
-            _warn_about_missing_variables(comp_cls, "CSS", "it will render without them")
+            _warn_about_missing_variables(comp_cls, "CSS", "it will render without them", warned_missing_variables)
         js_hash = None if js_vars_missing else stored_js_hash
         css_hash = None if css_vars_missing else stored_css_hash
 
