@@ -69,6 +69,13 @@ class TestComponentHighlight:
         assert COLORS["component"].text_color in result
         assert COLORS["component"].border_color in result
 
+    def test_highlight_name_stays_inside_css_string(self):
+        # A slot name can come from a variable, and the name lands inside a <style> tag.
+        result = apply_component_highlight("slot", "<b>x</b>", 'a";}</style><script>x</script>')
+
+        assert "<script" not in result
+        assert 'content: "a\\";}\\3c /style>\\3c script>x\\3c /script>: ";' in result
+
     def test_slot_highlight_fn(self):
         # Test slot highlighting
         test_html = "<span>Slot content</span>"

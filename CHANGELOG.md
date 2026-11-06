@@ -47,6 +47,8 @@
 
     - Component JS and CSS files served from `/components/cache/` now say `charset=utf-8`.
 
+    - With debug highlighting on, a slot or component name can no longer end the `<style>` tag.
+
     **What you may need to change:**
 
     Names written in a template tag keep working, such as `{% html_attrs onclick="save()" %}` and

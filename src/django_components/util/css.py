@@ -84,6 +84,11 @@ def serialize_css_var_value(value: object) -> str:
     return _escape_beyond_plain_ascii(text)
 
 
+def serialize_css_string(value: str) -> str:
+    """Write text as a CSS string that is safe inside a `<style>` tag on a page in any encoding."""
+    return _escape_beyond_plain_ascii(_quote_css_string(value))
+
+
 def _quote_css_string(value: str) -> str:
     """Write text as a double-quoted CSS string, escaping what would end the string early."""
     parts = ['"']

@@ -8,6 +8,7 @@ from django_components.extension import (
     OnComponentRenderedContext,
     OnSlotRenderedContext,
 )
+from django_components.util.css import serialize_css_string
 from django_components.util.misc import gen_id
 
 
@@ -39,7 +40,7 @@ def apply_component_highlight(highlight_type: Literal["component", "slot"], outp
     output = f"""
         <style>
         .{highlight_type}-highlight-{highlight_id}::before {{
-            content: "{name}: ";
+            content: {serialize_css_string(f"{name}: ")};
             font-weight: bold;
             color: {color.text_color};
         }}
