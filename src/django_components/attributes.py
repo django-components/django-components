@@ -724,12 +724,44 @@ def _normalize_style(value: StyleValue) -> StyleDict:
     return res
 
 
-# Match CSS comments `/* ... */`
-style_comment_re = re.compile(r"/\*.*?\*/", re.DOTALL)
-# Split CSS properties by semicolon, but not inside parentheses
-list_delimiter_re = re.compile(r";(?![^(]*\))", re.DOTALL)
+# Match CSS comments `/* ... */`. A `/*` with no `*/` after it runs to the end of the text and is
+# kept, as nothing can close it. Otherwise the regex would search to the end again from every
+# later `/*`, which takes time growing with the square of the length.
+# Only a match that captured its closing `*/` (group 1) is a comment to remove.
+style_comment_re = re.compile(r"/\*.*?(?:(\*/)|\Z)", re.DOTALL)
+# Find the characters that decide where CSS properties end
+style_delimiter_re = re.compile(r"[();]")
 # Split CSS property name and value
 property_delimiter_re = re.compile(r":(.+)", re.DOTALL)
+
+
+def _split_style_declarations(css_text: str) -> list[str]:
+    r"""
+    Split CSS text at each `;`, except one that is followed by `)` before any `(`.
+
+    So `url(data:image/png;base64,...)` stays in one piece.
+
+    This is the same rule as the regex `;(?![^(]*\))`, but that regex looks ahead from every `;`
+    to the next `(` or the end of the text, which takes time growing with the square of the length.
+    So we walk the text once from the end, remembering the nearest parenthesis we have seen.
+    """
+    cut_positions: list[int] = []
+    next_parenthesis = ""
+    for match in reversed(list(style_delimiter_re.finditer(css_text))):
+        char = match.group()
+        if char != ";":
+            next_parenthesis = char
+        elif next_parenthesis != ")":
+            cut_positions.append(match.start())
+
+    pieces: list[str] = []
+    start = 0
+    # We found the positions from the end of the text, so go through them backwards
+    for position in reversed(cut_positions):
+        pieces.append(css_text[start:position])
+        start = position + 1
+    pieces.append(css_text[start:])
+    return pieces
 
 
 def parse_string_style(css_text: str) -> StyleDict:
@@ -748,13 +780,13 @@ def parse_string_style(css_text: str) -> StyleDict:
         ```
 
     """
-    # Remove comments
-    css_text = style_comment_re.sub("", css_text)
+    # Remove comments, and keep a `/*` that was never closed
+    css_text = style_comment_re.sub(lambda match: "" if match.group(1) else match.group(), css_text)
 
     ret: StyleDict = {}
 
     # Split by semicolon, but not inside parentheses
-    for item in list_delimiter_re.split(css_text):
+    for item in _split_style_declarations(css_text):
         if item:
             parts = property_delimiter_re.split(item)
             if len(parts) > 1:
