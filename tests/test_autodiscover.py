@@ -1,3 +1,4 @@
+import importlib
 import sys
 
 import pytest
@@ -115,8 +116,6 @@ class TestSysModulesIsolation:
     def test_modules_present_before_test_are_not_reimported(self):
         # Ensure the target module is in `sys.modules` before any @djc_test cycle
         # touches it. This is the precondition the fix must preserve.
-        import importlib
-
         importlib.import_module("tests.components.single_file")
 
         module_before = sys.modules.get("tests.components.single_file")
@@ -140,3 +139,37 @@ class TestSysModulesIsolation:
             "tests.components.single_file was re-executed across @djc_test cycles; "
             "the sys.modules snapshot in _clear_djc_global_state should have prevented this."
         )
+
+    # A directory without `__init__.py` is a namespace package. It has no `.py` file, so it's
+    # missing from the list of modules that autodiscovery records for cleanup.
+    def test_namespace_package_is_removed_with_its_parent(self, tmp_path, monkeypatch):
+        package_dir = tmp_path / "djc_cleanup_pkg"
+        (package_dir / "namespace").mkdir(parents=True)
+        (package_dir / "__init__.py").write_text("")
+        (package_dir / "namespace" / "recorded.py").write_text("VALUE = 1\n")
+        (package_dir / "namespace" / "unrecorded.py").write_text("VALUE = 2\n")
+        monkeypatch.syspath_prepend(tmp_path)
+
+        @djc_test(
+            components_settings={
+                "libraries": ["djc_cleanup_pkg", "djc_cleanup_pkg.namespace.recorded"],
+            },
+        )
+        def inner_test() -> None:
+            import_libraries()
+            # Imported directly, so it's not recorded by `import_libraries()`
+            importlib.import_module("djc_cleanup_pkg.namespace.unrecorded")
+            assert "djc_cleanup_pkg.namespace" in sys.modules
+
+        inner_test()  # type: ignore[call-arg]
+
+        leftovers = [name for name in sys.modules if name.startswith("djc_cleanup_pkg")]
+        assert leftovers == []
+
+        # With the parent package gone, a leftover namespace package raises
+        # `KeyError: 'djc_cleanup_pkg'` here, because it looks up its parent in `sys.modules`.
+        module = importlib.import_module("djc_cleanup_pkg.namespace.recorded")
+        assert module.VALUE == 1
+
+        for name in [name for name in sys.modules if name.startswith("djc_cleanup_pkg")]:
+            del sys.modules[name]
