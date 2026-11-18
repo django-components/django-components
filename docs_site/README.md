@@ -54,10 +54,10 @@ All run from `docs_site/` as `uv run python manage.py <command>`.
 | Command | What it does |
 |---|---|
 | `build_docs --docs-version X --alias latest` | Build a committed version snapshot into `versions/X/` + update the manifest + the `latest` redirect |
-| `docs_assemble` | Assemble the full deploy artifact in `site/`: current build at the root + the published version window under `/v/*` + an ephemeral `/v/dev/`. **This is what CI deploys to Pages** |
-| `docs_import_ghpages` | One-time: mirror the old mkdocs/mike `gh-pages` versions into `versions/` (run once at cutover) |
+| `docs_assemble` | Assemble the full deploy artifact in `site/`: current build at the root + the published version window under `/v/*` + an ephemeral `/v/dev/` + redirect pages for the old `/latest/` and `/dev/` URLs. **CI deploys this to Pages** |
+| `docs_import_ghpages` | One-time: mirror the old mkdocs/mike `gh-pages` versions into `versions/` (run at cutover; safe to re-run) |
 | `docs_build_all` | Bootstrap/rebuild every version selected by `docs_versions.toml` (a git worktree per tag); `--dry-run` to preview |
-| `docs_versions_check` | Validate the committed `versions/` tree (manifest <-> filesystem, aliases, cross-version links) |
+| `docs_versions_check` | Validate the committed `versions/` tree (manifest <-> filesystem, aliases, cross-version links, no file that `.gitignore` would leave out of the commit) |
 
 Common `build_docs` options:
 
@@ -471,6 +471,42 @@ under `versions/`.
 The deploy artifact is `site/` (gitignored). At the real cutover, set the repo's
 Pages source to "GitHub Actions" once.
 
+`docs_site/versions/` is under version control, so the workflow's tag step
+(`git add docs_site/versions/`) stages the new snapshot and `docs_assemble` copies
+it into `/v/` in the same run. `master` holds no snapshots until the first release tag
+adds one. The old gh-pages versions appear on the site only after you run
+`docs_import_ghpages` and commit its output. A re-run of the same tag commits the
+rebuilt snapshot again, because each page's build stamp records the build time.
+
+`git add` leaves out a file that a `.gitignore` rule matches and does not report it,
+so the last line of `.gitignore` re-includes everything under `docs_site/versions/`
+(a docs page named `build` would match the `build/` rule otherwise).
+`docs_versions_check` fails when git would still skip a file there, and the release
+workflow runs it before `git add`.
+
+### Old `/latest/` links
+
+The earlier mike-based site served the current docs at `/latest/...` and
+`/dev/...`. Published READMEs, PyPI pages and other sites still link to them.
+GitHub Pages cannot redirect on the server, so `docs_assemble` writes a small
+redirect page at each old URL
+([`build/redirects.py`](apps/docs/build/redirects.py), `emit_legacy_redirects`):
+
+- `/latest/concepts/x/` and `/dev/concepts/x/` both go to `/docs/concepts/x/`.
+- `/latest/examples/tabs/` goes to `/examples/tabs/`, because the examples keep
+  their path. `/latest/benchmarks/` goes to `/benchmarks/`.
+- A page that moved before the migration (listed in `REDIRECTS` in `redirects.py`,
+  the table of moved pages) goes to its new page, such as
+  `/latest/overview/contributing/`.
+
+The redirect page keeps the visitor's `#anchor` and query string. With JavaScript
+off, the page still redirects but drops the anchor. The pages are read from the
+built site, so each redirect points at a page that exists. Files that are not pages,
+such as `objects.inv`, `sitemap.xml` and the old search index, are not redirected.
+
+An old URL that pins a version (`/0.148.0/...`) is not redirected. Versions live
+at `/v/<version>/` now, and only the versions `docs_assemble` publishes are there.
+
 ### Serving under a subpath (project Pages / fork previews)
 
 By default the site is built for a **domain root** (root-absolute `/static`,
@@ -491,7 +527,10 @@ root-served, unchanged.
 ### Bootstrapping & one-offs
 
 - `docs_import_ghpages` - one-time mirror of the old mike/`gh-pages` versions into
-  `versions/` (the cutover import; re-runnable).
+  `versions/` (run at cutover; safe to re-run). It overwrites `versions.json` with
+  the gh-pages list, so a version committed earlier drops out of `versions.json` and
+  the version picker no longer lists it. Run it before the first release tag, or
+  rebuild that release afterwards with `build_docs --docs-version <tag> --alias latest`.
 - `docs_build_all` - rebuild the tags selected by `docs_versions.toml` in a
   worktree per tag; tags that predate this builder are skipped.
 - `docs_versions_check` - validate the committed tree (also runs in CI).
@@ -511,7 +550,7 @@ docs_site/
         index.md               <- placeholder home page
         docs/                  <- published pages (concepts, reference, community, ...)
     versions/<version>/        <- committed built version snapshots + versions.json
-                                  (created when bootstrapped; not present yet)
+                                  (the release workflow adds one per tag)
     static/
         css/tokens.css         <- OKLCH design tokens (light + dark themes)
         css/site.css           <- prose typography, layout chrome, components

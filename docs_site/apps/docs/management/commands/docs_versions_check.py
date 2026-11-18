@@ -3,8 +3,9 @@ docs-versions-check: validate the committed docs_site/versions/ tree (5b.13-5b.1
 
 The inverse of docs-build: it doesn't build anything, it checks that the
 on-disk version tree is internally consistent - manifest <-> filesystem parity,
-alias redirects resolve, build stamps are sane, and every relative link across
-the version subtrees resolves on disk. Runs the VERSION_GUARDS through the same
+alias redirects resolve, build stamps are sane, no file sits where a
+.gitignore rule would make `git add` skip it, and every relative link across the
+version subtrees resolves on disk. Runs the VERSION_GUARDS through the same
 guard harness as docs_build_check (shared GuardResult / severity / report).
 
 Use it locally (`python manage.py docs_versions_check`) and in CI on any change

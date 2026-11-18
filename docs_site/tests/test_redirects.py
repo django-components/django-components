@@ -5,11 +5,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from apps.docs.build import redirects
 from apps.docs.build.guards import GuardContext, redirect_target
 from apps.docs.build.guards.base import Severity
-from apps.docs.build.redirects import emit_redirects
+from apps.docs.build.redirects import emit_legacy_redirects, emit_redirects, legacy_redirect_map
 from apps.docs.build.site_index import SiteIndex
+from django.core.management import call_command
+from django.test import override_settings
 
 
 def _ctx(build: Path) -> GuardContext:
@@ -50,7 +53,8 @@ def test_emit_redirects_writes_stubs(tmp_path: Path) -> None:
     assert 'href="https://ex.com/base/docs/concepts/fundamentals/html_js_css_files/"' in html
     rel = "../../../docs/concepts/fundamentals/html_js_css_files/"
     assert f"url={rel}" in html
-    assert f"location.replace({json.dumps(rel)})" in html
+    # The JS target also carries the visitor's query string and #anchor.
+    assert f"location.replace({json.dumps(rel)} + window.location.search + window.location.hash)" in html
     assert 'name="robots" content="noindex,follow"' in html
 
 
@@ -66,6 +70,97 @@ def test_emit_redirects_home_target_relative(tmp_path: Path) -> None:
     emit_redirects(tmp_path, site_url="https://ex.com/base")
     html = (tmp_path / "README/index.html").read_text()
     assert "url=../docs/" in html  # /README/ -> /docs/
+
+
+# -- legacy /latest/ and /dev/ URLs ---------------------------------------------
+
+
+@pytest.fixture
+def site(tmp_path: Path) -> Path:
+    """A built root site: docs pages, root pages, assets, a version snapshot, and the root stubs."""
+    site = tmp_path / "site"
+    for rel in (
+        "docs",
+        "docs/concepts/fundamentals/slots",
+        "docs/concepts/fundamentals/html_js_css_files",
+        "docs/community/contributing",
+        "docs/community/development",
+        "docs/releases",
+        "examples/tabs",
+        "plugins",
+        "benchmarks",
+        "v/dev/docs/concepts",
+        "static/vendor",
+        "pagefind",
+    ):
+        _write_page(site, f"{rel}/index.html")
+    emit_redirects(site, site_url="https://ex.com/base")
+    return site
+
+
+def test_legacy_map_drops_docs_prefix(site: Path) -> None:
+    mapping = legacy_redirect_map(site)
+    assert mapping["/concepts/fundamentals/slots/"] == "/docs/concepts/fundamentals/slots/"
+    assert mapping["/"] == "/docs/"
+
+
+def test_legacy_map_keeps_root_pages_at_their_path(site: Path) -> None:
+    mapping = legacy_redirect_map(site)
+    assert mapping["/examples/tabs/"] == "/examples/tabs/"
+    assert mapping["/plugins/"] == "/plugins/"
+    assert mapping["/benchmarks/"] == "/benchmarks/"
+
+
+def test_legacy_map_applies_moved_page_redirects(site: Path) -> None:
+    mapping = legacy_redirect_map(site)
+    assert mapping["/overview/contributing/"] == "/docs/community/contributing/"
+    assert mapping["/overview/welcome/"] == "/docs/"
+    assert mapping["/release_notes/"] == "/docs/releases/"
+
+
+def test_legacy_map_skips_snapshots_and_assets(site: Path) -> None:
+    mapping = legacy_redirect_map(site)
+    # No key starts with /v/, /static/ or /pagefind/, and no value points into /v/.
+    assert not [old for old in mapping if old.startswith(("/v/", "/static/", "/pagefind/"))]
+    assert not [new for new in mapping.values() if new.startswith("/v/")]
+
+
+def test_emit_legacy_redirects_writes_stubs_under_both_prefixes(site: Path) -> None:
+    n = emit_legacy_redirects(site, site_url="https://ex.com/base")
+    assert n == len(legacy_redirect_map(site)) * len(redirects.LEGACY_PREFIXES)
+
+    for prefix in ("latest", "dev"):
+        html = (site / prefix / "concepts/fundamentals/slots/index.html").read_text()
+        # Canonical is absolute; refresh + JS targets are relative (base-path safe).
+        assert 'href="https://ex.com/base/docs/concepts/fundamentals/slots/"' in html
+        assert "url=../../../../docs/concepts/fundamentals/slots/" in html
+        assert 'name="robots" content="noindex,follow"' in html
+        # A link to a section of an old page keeps its anchor.
+        assert "window.location.search + window.location.hash" in html
+        assert "url=../docs/" in (site / prefix / "index.html").read_text()
+
+
+def test_emit_legacy_redirects_is_repeatable(site: Path) -> None:
+    first = emit_legacy_redirects(site, site_url="https://ex.com/base")
+    second = emit_legacy_redirects(site, site_url="https://ex.com/base")
+    # The stubs from the first run are not mistaken for pages by the second.
+    assert first == second
+    assert not (site / "latest" / "latest").exists()
+    assert not (site / "dev" / "latest").exists()
+
+
+def test_legacy_stubs_all_resolve(site: Path) -> None:
+    emit_legacy_redirects(site, site_url="https://ex.com/base")
+    assert list(redirect_target.check(_ctx(site))) == []
+
+
+def test_docs_assemble_writes_legacy_stubs(site: Path, tmp_path: Path) -> None:
+    # `no_build` assembles into the site above instead of building the real docs;
+    # the empty versions dir keeps the committed snapshots out of the test.
+    with override_settings(VERSIONS_DIR=tmp_path / "no_versions", SITE_URL="https://ex.com/base"):
+        call_command("docs_assemble", output=str(site), no_build=True, no_dev=True)
+    assert (site / "latest" / "concepts/fundamentals/slots/index.html").is_file()
+    assert (site / "dev" / "examples/tabs/index.html").is_file()
 
 
 # -- guard (5c.18) -------------------------------------------------------------

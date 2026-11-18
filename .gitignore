@@ -82,14 +82,6 @@ poetry.lock
 .python-version
 site
 
-# TEMPORARY (docs-migration PR): the committed historical doc-version snapshots
-# (~15k files imported from gh-pages by `docs_import_ghpages`) are excluded from
-# the migration PR so its diff is reviewable. They will be re-committed in a
-# dedicated follow-up PR that removes this entry. Re-create locally with
-# `docs_import_ghpages` if you need them on disk (they're still required for the
-# multi-version deploy).
-docs_site/versions/
-
 .direnv/
 .envrc
 .mypy_cache/
@@ -104,3 +96,8 @@ jspm_packages/
 
 # Lighthouse CI local output (the workflow runs in ephemeral CI)
 .lighthouseci/
+
+# The committed docs snapshots keep every file the builder wrote. A docs page named
+# `build` or `site` would otherwise match the rules above, and `git add` drops an
+# ignored file without an error. Keep this last, because the last matching rule wins.
+!docs_site/versions/**

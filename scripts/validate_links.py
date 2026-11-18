@@ -71,6 +71,8 @@ IGNORED_PATHS = [
     ".asv/",
     "__snapshots__/",
     "benchmarks/report/",
+    # Committed docs snapshots: built pages, frozen history that `--rewrite` must not edit.
+    "docs_site/versions/",
     ".git/",
     "*.min.js",
     "*.min.css",
