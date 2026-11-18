@@ -414,10 +414,10 @@ Examples:
     )
     ```
 """
-# TODO_V1 - REMOVE, superseded by SlotInput
+# TODO_V2 - REMOVE, superseded by SlotInput
 SlotContent: TypeAlias = SlotInput[TSlotData]
 """
-DEPRECATED: Use [`SlotInput`][SlotInput] instead. Will be removed in v1.
+DEPRECATED: Use [`SlotInput`][SlotInput] instead. Will be removed in 2.0.
 """
 
 
@@ -461,17 +461,17 @@ class SlotFallback:
         return mark_safe(self._slot.nodelist.render(self._context))
 
 
-# TODO_v1 - REMOVE - superseded by SlotFallback
+# TODO_V2 - REMOVE - superseded by SlotFallback
 SlotRef: TypeAlias = SlotFallback
 """
-DEPRECATED: Use [`SlotFallback`][SlotFallback] instead. Will be removed in v1.
+DEPRECATED: Use [`SlotFallback`][SlotFallback] instead. Will be removed in 2.0.
 """
 
 
 name_escape_re = re.compile(r"[^\w]")
 
 
-# TODO_v1 - Remove, superseded by `Component.slots` and `component_vars.slots`
+# TODO_V2 - Remove, superseded by `Component.slots` and `component_vars.slots`
 class SlotIsFilled(dict):
     """Dictionary that returns `True` if the slot is filled (key is found), `False` otherwise."""
 
@@ -1144,10 +1144,10 @@ class FillNode(BaseNode):
         data: str | None = None,
         fallback: str | None = None,
         body: SlotInput | None = None,
-        # TODO_V1: Use `fallback` kwarg instead of `default`
+        # TODO_V2: Use `fallback` kwarg instead of `default`
         default: str | None = None,
     ) -> str:
-        # TODO_V1: Use `fallback` kwarg instead of `default`
+        # TODO_V2: Use `fallback` kwarg instead of `default`
         if fallback is not None and default is not None:
             raise TemplateSyntaxError(
                 f"Fill tag received both 'default' and '{FILL_FALLBACK_KWARG}' kwargs. "
@@ -1623,7 +1623,7 @@ def _nodelist_to_slot(
         if index_of_last_component_layer is None:
             index_of_last_component_layer = 0
 
-        # TODO_V1: Currently there's one more layer before the `_COMPONENT_CONTEXT_KEY` layer, which is
+        # TODO_V2: Currently there's one more layer before the `_COMPONENT_CONTEXT_KEY` layer, which is
         #       pushed in `_prepare_template()` in `component.py`.
         #       That layer should be removed when `Component.get_template()` is removed, after which
         #       the following line can be removed.

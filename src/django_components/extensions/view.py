@@ -172,10 +172,10 @@ class ComponentView(ExtensionComponentConfig, View):
     # NOTE: The `component` / `component_cls` attributes are NOT user input, but still must be declared
     # on this class for Django's `View.as_view()` to allow us to pass `component` kwarg.
 
-    # TODO_v1 - Remove. Superseded by `component_cls` attribute because we don't actually have access to an instance.
+    # TODO_V2 - Remove. Superseded by `component_cls` attribute because we don't actually have access to an instance.
     component = cast("Component", None)
     """
-    DEPRECATED: Will be removed in v1.0.
+    DEPRECATED: Will be removed in 2.0.
     Use [`component_cls`][ComponentView.component_cls] instead.
 
     This is a dummy instance created solely for the View methods.
@@ -205,7 +205,7 @@ class ComponentView(ExtensionComponentConfig, View):
         ComponentExtension.ComponentConfig.__init__(self, component)
         View.__init__(self, **kwargs)
 
-        # TODO_v1 - Remove. Superseded by `component_cls`. This was used for backwards compatibility.
+        # TODO_V2 - Remove. Superseded by `component_cls`. This was used for backwards compatibility.
         self.component = component
 
     @classmethod
@@ -304,10 +304,10 @@ class ComponentView(ExtensionComponentConfig, View):
     # Each method actually delegates to the component's method of the same name.
     # E.g. When `get()` is called, it delegates to `component.get()`.
 
-    # TODO_V1 - For backwards compatibility, the HTTP methods can be defined directly on
+    # TODO_V2 - For backwards compatibility, the HTTP methods can be defined directly on
     #           the Component class, e.g. `Component.post()`.
-    #           This should be no longer supported in v1.
-    #           In v1, handlers like `get()` should be defined on the Component.View class.
+    #           This should be no longer supported in 2.0.
+    #           In 2.0, handlers like `get()` should be defined on the Component.View class.
     #           This is to align Views with the extensions API, where each extension should
     #           keep its methods in the extension class.
     #           And instead, the defaults for these methods should be something like

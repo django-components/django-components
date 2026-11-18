@@ -148,7 +148,7 @@ The difference is that:
 
 !!! note
 
-    The `get_context_data()` method will be removed in v2.
+    The `get_context_data()` method will be removed in 2.0.
 
 ## JS variables
 
@@ -610,13 +610,13 @@ class ProfileCard(Component):
             }
     ```
 
-<!-- TODO_v1 - Remove -->
+<!-- TODO_V2 - Remove -->
 
 ### `input` property (low-level)
 
 !!! warning
 
-    The `input` property is deprecated and will be removed in v1.
+    The `input` property is deprecated and will be removed in 2.0.
 
     Instead, use properties defined on the
     [`Component`][Component] class

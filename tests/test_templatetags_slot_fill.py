@@ -1368,7 +1368,7 @@ class TestSlottedTemplateRegression:
 
 @djc_test
 class TestSlotFallback:
-    # TODO_v1 - REMOVE
+    # TODO_V2 - REMOVE
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_basic_legacy(self, components_settings):
         registry.register("test", _gen_slotted_component())

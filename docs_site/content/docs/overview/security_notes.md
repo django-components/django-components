@@ -22,7 +22,7 @@ files (defined by `STATICFILES_DIRS`). That way, the Python and HTML files are N
     [`COMPONENTS.static_files_allowed`][ComponentsSettings.static_files_allowed]
     and [`COMPONENTS.static_files_forbidden`][ComponentsSettings.static_files_forbidden].
 
-<!-- # TODO_REMOVE_IN_V1 - Remove mentions of safer_staticfiles in V1 -->
+<!-- # TODO_REMOVE_IN_V2 - Remove mentions of safer_staticfiles in 2.0 -->
 
 ### Static files prior to v0.100
 

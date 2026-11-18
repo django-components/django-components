@@ -442,7 +442,7 @@ def _validate_html_attr_name(name: Any) -> str:
     return TrustedAttrName(exact_name) if isinstance(name, TrustedAttrName) else exact_name
 
 
-# TODO_V1 - Remove in v1, keep only `format_attributes` going forward
+# TODO_V2 - Remove in 2.0, keep only `format_attributes` going forward
 attributes_to_string = format_attributes
 """
 Deprecated. Use [`format_attributes`][format_attributes] instead.

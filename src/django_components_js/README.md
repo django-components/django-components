@@ -160,13 +160,13 @@ await DjangoComponents.manager.waitForScriptsToLoad("js", [
 ]);
 ```
 
-<!-- TODO_v1: Delete this section in v1 -->
+<!-- TODO_V2: Delete this section in 2.0 -->
 
 !!! note "Backwards compatibility"
 
     The dependency manager was renamed from `Components` to `DjangoComponents` in v0.146.0. See https://github.com/django-components/django-components/issues/1544.
 
-    For backwards compatibility, `Components` will remain available as an alias to `DjangoComponents` until v1.0.
+    For backwards compatibility, `Components` will remain available as an alias to `DjangoComponents` until 2.0.
 
 ### Data blocks and the page's nonce
 

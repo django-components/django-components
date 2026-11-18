@@ -228,7 +228,7 @@ def render_with_error_trace(
     deps_strategy: DependenciesStrategy | None = None,
     request: HttpRequest | None = None,
     outer_context: Context | None = None,
-    # TODO_v2 - Remove `registered_name` and `registry`
+    # TODO_V2 - Remove `registered_name` and `registry`
     registry: "ComponentRegistry | None" = None,
     registered_name: str | None = None,
     node: "ComponentNode | None" = None,
@@ -254,7 +254,7 @@ def render_with_error_trace(
                     deps_strategy=deps_strategy_with_default,
                     request=request,
                     outer_context=outer_context,
-                    # TODO_v2 - Remove `registered_name` and `registry`
+                    # TODO_V2 - Remove `registered_name` and `registry`
                     registry=registry,
                     registered_name=registered_name,
                     node=node,
@@ -275,7 +275,7 @@ def _render_impl(
     slots: Any | None = None,
     request: HttpRequest | None = None,
     outer_context: Context | None = None,
-    # TODO_v2 - Remove `registered_name` and `registry`
+    # TODO_V2 - Remove `registered_name` and `registry`
     registry: "ComponentRegistry | None" = None,
     registered_name: str | None = None,
     node: "ComponentNode | None" = None,
@@ -369,7 +369,7 @@ def _render_impl(
         request=request,
         deps_strategy=deps_strategy,
         outer_context=outer_context,
-        # TODO_v2 - Remove `registered_name` and `registry`
+        # TODO_V2 - Remove `registered_name` and `registry`
         registry=registry,
         registered_name=registered_name,
         node=node,
@@ -468,7 +468,7 @@ def _render_impl(
             component=component,
             component_cls=comp_cls,
             component_id=render_id,
-            # TODO_V1 - Remove `context_data`
+            # TODO_V2 - Remove `context_data`
             context_data=template_data,
             template_data=template_data,
             js_data=js_data,
@@ -503,7 +503,7 @@ def _render_impl(
     #       but instead can render one component at a time.
     #############################################################################
 
-    # TODO_v1 - Currently we have to pass `template_data` to `prepare_component_template()`,
+    # TODO_V2 - Currently we have to pass `template_data` to `prepare_component_template()`,
     #     so that `get_template_string()`, `get_template_name()`, and `get_template()`
     #     have access to the data from `get_template_data()`.
     #
@@ -537,12 +537,12 @@ def _render_impl(
                 COMPONENT_IS_NESTED_KEY: comp_is_nested,
                 # NOTE: Public API for variables accessible from within a component's template
                 # See https://github.com/django-components/django-components/issues/280#issuecomment-2081180940
-                # TODO_V1 - Replace this with Component instance, removing the need for ComponentVars
+                # TODO_V2 - Replace this with Component instance, removing the need for ComponentVars
                 "component_vars": ComponentVars(
                     args=component.args,
                     kwargs=component.kwargs,
                     slots=component.slots,
-                    # TODO_v1 - Remove this, superseded by `component_vars.slots`
+                    # TODO_V2 - Remove this, superseded by `component_vars.slots`
                     #
                     # For users, we expose boolean variables that they may check
                     # to see if given slot was filled, e.g.:

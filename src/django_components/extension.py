@@ -128,9 +128,9 @@ class OnComponentDataContext(NamedTuple):
     """The Component class"""
     component_id: str
     """The unique identifier for this component instance"""
-    # TODO_V1 - Remove `context_data`
+    # TODO_V2 - Remove `context_data`
     context_data: dict
-    """Deprecated. Use `template_data` instead. Will be removed in v1.0."""
+    """Deprecated. Use `template_data` instead. Will be removed in 2.0."""
     template_data: dict
     """Dictionary of template data from `Component.get_template_data()`"""
     js_data: dict
@@ -266,7 +266,7 @@ class ExtensionComponentConfig:
     component_cls: type["Component"]
     """The [`Component`][Component] class that this extension is defined on."""
 
-    # TODO_v1 - Remove, superseded by `component_cls`
+    # TODO_V2 - Remove, superseded by `component_cls`
     component_class: type["Component"]
     """The [`Component`][Component] class that this extension is defined on."""
 
@@ -302,15 +302,15 @@ class ExtensionComponentConfig:
             self._component_ref = None
 
 
-# TODO_v1 - Delete
+# TODO_V2 - Delete
 BaseExtensionClass: TypeAlias = ExtensionComponentConfig
 """
-Deprecated. Will be removed in v1.0. Use
+Deprecated. Will be removed in 2.0. Use
 [`ComponentConfig`][ExtensionComponentConfig] instead.
 """
 
 
-# TODO_V1 - Delete, meta class was needed only for backwards support for ExtensionClass.
+# TODO_V2 - Delete, meta class was needed only for backwards support for ExtensionClass.
 class ExtensionMeta(type):
     def __new__(mcs, name: Any, bases: tuple, attrs: dict) -> Any:
         # Rename `ExtensionClass` to `ComponentConfig`
@@ -1215,7 +1215,7 @@ class ExtensionManager:
             component_ext_subclass = type(
                 ext_class_name,
                 bases,
-                # TODO_v1 - Remove `component_class`, superseded by `component_cls`
+                # TODO_V2 - Remove `component_class`, superseded by `component_cls`
                 {"component_cls": component_cls, "component_class": component_cls},
             )
 

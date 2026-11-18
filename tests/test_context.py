@@ -1163,7 +1163,7 @@ class TestOuterContextProperty:
         assert "outer_value" in rendered
 
 
-# TODO_v1: Remove, superseded by `component_vars.slots`
+# TODO_V2: Remove, superseded by `component_vars.slots`
 @djc_test
 class TestContextVarsIsFilled:
     class IsFilledVarsComponent(Component):

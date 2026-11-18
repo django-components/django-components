@@ -65,7 +65,7 @@ def dummy_view_2(request: HttpRequest, id: int, name: str):  # noqa: ARG001, A00
     return HttpResponse(f"Hello, world! {id} {name}")
 
 
-# TODO_V1 - Remove
+# TODO_V2 - Remove
 class LegacyExtension(ComponentExtension):
     name = "legacy"
 
@@ -842,7 +842,7 @@ class TestExtensionDefaults:
 
 @djc_test
 class TestLegacyApi:
-    # TODO_V1 - Remove
+    # TODO_V2 - Remove
     @djc_test(
         components_settings={
             "extensions": [LegacyExtension],

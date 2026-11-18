@@ -45,7 +45,7 @@ def get_component_dirs(include_apps: bool = True) -> list[Path]:
     # Allow to configure from settings which dirs should be checked for components
     component_dirs = app_settings.DIRS
 
-    # TODO_REMOVE_IN_V1
+    # TODO_REMOVE_IN_V2
     raw_component_settings = getattr(settings, "COMPONENTS", {})
     if isinstance(raw_component_settings, dict):
         raw_dirs_value = raw_component_settings.get("dirs", None)
@@ -62,7 +62,7 @@ def get_component_dirs(include_apps: bool = True) -> list[Path]:
         # NOTE: For STATICFILES_DIRS, we use the defaults even for empty list.
         # We don't do this for COMPONENTS.dirs, so user can explicitly specify "NO dirs".
         component_dirs = settings.STATICFILES_DIRS or [settings.BASE_DIR / "components"]
-    # END TODO_REMOVE_IN_V1
+    # END TODO_REMOVE_IN_V2
 
     source = "STATICFILES_DIRS" if is_legacy_paths else "COMPONENTS.dirs"
 

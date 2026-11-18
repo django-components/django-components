@@ -49,7 +49,7 @@ class SimpleComponent(Component):
 
 @djc_test
 class TestDependenciesLegacy:
-    # TODO_v1 - Remove
+    # TODO_V2 - Remove
     def test_render_with_type_arg(self):
         rendered = SimpleComponent.render(kwargs={"variable": "foo"}, type="append")
 

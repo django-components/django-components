@@ -1,6 +1,6 @@
 ## Typing overview
 
-<!-- TODO_V1 - REMOVE IN v1 -->
+<!-- TODO_V2 - REMOVE IN 2.0 -->
 
 !!! warning
 
@@ -568,7 +568,7 @@ COMPONENTS = {
 }
 ```
 
-<!-- TODO_V1 - REMOVE IN v1 -->
+<!-- TODO_V2 - REMOVE IN 2.0 -->
 
 ## Migrating from generics to class attributes
 

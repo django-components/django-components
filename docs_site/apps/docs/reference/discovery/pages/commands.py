@@ -9,7 +9,7 @@ name and the command class's import path so the renderer can re-import it and
 introspect its argparse parser.
 
 The legacy file-based commands (``startcomponent`` / ``upgradecomponent``) are
-deliberately excluded - they're marked TODO_v1-REMOVE in the source.
+deliberately excluded - they're marked TODO_REMOVE_IN_V2 in the source.
 """
 
 from __future__ import annotations

@@ -331,7 +331,7 @@ export const createComponentsManager = () => {
     checkUrl: ((src: string) => string | null) | null,
   ) => {
     // Support both JSON string (base64 decoded) and JSON object
-    // TODO_V1: Support only JSON object
+    // TODO_V2: Support only JSON object
     const data: TagJson =
       typeof tagData === "string" ? JSON.parse(tagData) : tagData;
     const scriptNode = createScriptElement(data);
@@ -400,7 +400,7 @@ export const createComponentsManager = () => {
 
   const loadCss = (tagData: string | TagJson) => {
     // Support both JSON string (base64 decoded) and JSON object
-    // TODO_V1: Support only JSON object
+    // TODO_V2: Support only JSON object
     const data: TagJson =
       typeof tagData === "string" ? JSON.parse(tagData) : tagData;
     const linkNode = createLinkElement(data);
