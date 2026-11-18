@@ -685,19 +685,21 @@ See [`.github/workflows/maint-docs-people.yml`](https://github.com/django-compon
 
 ## Publishing
 
-We use Github actions to automatically publish new versions of django-components to PyPI when a new tag is pushed. [See the full workflow here](https://github.com/django-components/django-components/blob/master/.github/workflows/publish-to-pypi.yml).
+We use Github actions to automatically publish new versions of django-components to PyPI when a new tag is pushed. [See the full workflow here](https://github.com/django-components/django-components/blob/master/.github/workflows/release-pypi.yml).
+
+Before it publishes, the workflow builds the package with `uv`, checks the built files with `twine check`, installs the built wheel in a clean environment, and imports it. If any of these steps fails, nothing is published.
 
 ### Commands
 
 We do not manually release new versions of django-components. Commands below are shown for reference only.
 
-To package django-components into a distribution that can be published to PyPI, run `build`:
+To package django-components into a distribution that can be published to PyPI, run `uv build`:
 
 ```sh
-# Install pypa/build
-python -m pip install build --user
 # Build a binary wheel and a source tarball
-python -m build --sdist --wheel --outdir dist/ .
+uv build --out-dir dist/
+# Check that PyPI can read the package metadata
+uvx twine check dist/*.whl dist/*.tar.gz
 ```
 
 To then publish the contents of `dist/` to PyPI, use `twine` ([See Python user guide](https://packaging.python.org/en/latest/tutorials/packaging-projects/#uploading-the-distribution-archives)):
