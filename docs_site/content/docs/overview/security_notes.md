@@ -68,3 +68,7 @@ For a step-by-step guide on deploying production server with static files,
 [see the demo project](https://github.com/django-components/django-components/tree/master/sampleproject).
 
 See the older versions of the sampleproject for a setup with pre-v0.100 version.
+
+## Reporting a vulnerability
+
+Report a security problem in django-components privately through GitHub, not in a public issue. The [security policy](https://github.com/django-components/django-components/blob/master/SECURITY.md) has the steps, says which release gets security fixes, and says what to expect.
