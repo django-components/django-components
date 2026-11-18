@@ -1,0 +1,1017 @@
+---
+title: HTML / JS / CSS variables
+url: https://django-components.github.io/django-components/v/1.0.0/docs/concepts/fundamentals/html_js_css_variables/
+description: "When a component recieves input through {% component %} tag,
+or the Component.render() or Component.render_to_response() methods, you can define how..."
+---
+
+When a component recieves input through [`{% component %}`](../../reference/template_tags.md#component) tag,
+or the [`Component.render()`][Component.render] or [`Component.render_to_response()`][Component.render_to_response] methods, you can define how the input is handled, and what variables will be available to the template, JavaScript and CSS.
+
+## Overview
+
+Django Components offers three key methods for passing variables to different parts of your component:
+
+- [`get_template_data()`][Component.get_template_data] - Provides variables to your HTML template
+- [`get_js_data()`][Component.get_js_data] - Provides variables to your JavaScript code
+- [`get_css_data()`][Component.get_css_data] - Provides variables to your CSS styles
+
+These methods let you pre-process inputs before they're used in rendering.
+
+Each method handles the data independently - you can define different data for the template, JS, and CSS.
+
+To modify how JS/CSS is rendered into `<script>`, `<style>`, or `<link>` tags (e.g. add attributes,
+reorder, or inject scripts), see [Modifying JS / CSS scripts](../advanced/rendering_js_css.md#modifying-js-css-scripts).
+
+
+```python
+class ProfileCard(Component):
+    class Kwargs:
+        user_id: int
+        show_details: bool = True
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        user = User.objects.get(id=kwargs.user_id)
+        return {
+            "user": user,
+            "show_details": kwargs.show_details,
+        }
+
+    def get_js_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "user_id": kwargs.user_id,
+        }
+
+    def get_css_data(self, args, kwargs: Kwargs, slots, context):
+        text_color = "red" if kwargs.show_details else "blue"
+        return {
+            "text_color": text_color,
+        }
+```
+
+
+## Template variables
+
+The [`get_template_data()`][Component.get_template_data] method is the primary way to provide variables to your HTML template. It receives the component inputs and returns a dictionary of data that will be available in the template.
+
+If [`get_template_data()`][Component.get_template_data] returns `None`, an empty dictionary will be used.
+
+
+```python
+class ProfileCard(Component):
+    template_file = "profile_card.html"
+
+    class Kwargs:
+        user_id: int
+        show_details: bool
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        user = User.objects.get(id=kwargs.user_id)
+
+        # Process and transform inputs
+        return {
+            "user": user,
+            "show_details": kwargs.show_details,
+            "user_joined_days": (timezone.now() - user.date_joined).days,
+        }
+```
+
+
+In your template, you can then use these variables:
+
+
+```django
+<div class="profile-card">
+    <h2>{{ user.username }}</h2>
+
+    {% if show_details %}
+        <p>Member for {{ user_joined_days }} days</p>
+        <p>Email: {{ user.email }}</p>
+    {% endif %}
+</div>
+```
+
+
+### Legacy `get_context_data()`
+
+The [`get_context_data()`][Component.get_context_data] method is the legacy way to provide variables to your HTML template. It serves the same purpose as [`get_template_data()`][Component.get_template_data] - it receives the component inputs and returns a dictionary of data that will be available in the template.
+
+However, [`get_context_data()`][Component.get_context_data] has a few drawbacks:
+
+- It does NOT receive the `slots` and `context` parameters.
+- The `args` and `kwargs` parameters are given as variadic `*args` and `**kwargs` parameters. As such, they cannot be typed.
+
+
+```python
+class ProfileCard(Component):
+    template_file = "profile_card.html"
+
+    def get_context_data(self, user_id, show_details=False, *args, **kwargs):
+        user = User.objects.get(id=user_id)
+        return {
+            "user": user,
+            "show_details": show_details,
+        }
+```
+
+
+There is a slight difference between [`get_context_data()`][Component.get_context_data] and [`get_template_data()`][Component.get_template_data]
+when rendering a component with the [`{% component %}`](../../reference/template_tags.md#component) tag.
+
+For example if you have component that accepts kwarg `date`:
+
+
+```py
+class MyComponent(Component):
+    def get_context_data(self, date, *args, **kwargs):
+        return {
+            "date": date,
+        }
+
+    def get_template_data(self, args, kwargs, slots, context):
+        return {
+            "date": kwargs["date"],
+        }
+```
+
+
+The difference is that:
+
+- With [`get_context_data()`][Component.get_context_data], you can pass `date` either as arg or kwarg:
+
+
+    ```django
+    ✅
+    {% component "my_component" date=some_date %}
+    {% component "my_component" some_date %}
+    ```
+
+
+- But with [`get_template_data()`][Component.get_template_data], `date` MUST be passed as kwarg:
+
+
+    ```django
+    ✅
+    {% component "my_component" date=some_date %}
+
+    ❌
+    {% component "my_component" some_date %}
+    ```
+
+
+!!! warning
+
+    [`get_template_data()`][Component.get_template_data]
+    and [`get_context_data()`][Component.get_context_data]
+    are mutually exclusive.
+
+    If both methods return non-empty dictionaries, an error will be raised.
+
+!!! note
+
+    The `get_context_data()` method will be removed in 2.0.
+
+## JS variables
+
+You can pass dynamic data from your Python component to your JavaScript using JS variables.
+This is done using the [`get_js_data()`][Component.get_js_data] method.
+
+The dictionary returned from `get_js_data()` will be serialized to JSON and made available to your component's JavaScript code.
+
+To access these variables in your JavaScript, use the special `$onComponent()` callback function. `$onComponent()` is called when the component's JavaScript is loaded.
+
+`$onComponent()` is a special function that is only available within the component's JavaScript code ([`Component.js`][Component.js] or [`Component.js_file`][Component.js_file]).
+
+If [`get_js_data()`][Component.get_js_data] returns `None`, an empty dictionary will be used.
+
+
+```python
+from django_components import Component
+
+class Calendar(Component):
+    template_file = "calendar.html"
+    js_file = "calendar.js"
+    css_file = "calendar.css"
+
+    class Kwargs:
+        date: str = "1970-01-01"
+        theme: str = "light"
+        timezone: str = "UTC"
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "date": kwargs.date,
+        }
+
+    def get_js_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "date": kwargs.date,
+            "timezone": kwargs.timezone,
+        }
+```
+
+
+### Accessing JS variables
+
+In your JavaScript file, you can access these variables by passing a callback to a special `$onComponent()` function.
+
+The `$onComponent()` function is provided by django-components and will be called automatically when your component's JavaScript is loaded. The callback receives the data returned from [`get_js_data()`][Component.get_js_data] as its first argument.
+
+Code **outside** of `$onComponent()` will run immediately when the component's JavaScript is loaded.
+
+Code **inside** of `$onComponent()` will run when the component is initialized.
+
+
+```js
+// This code runs only once
+const someGlobalVariable = "Hello, world!";
+
+// This code runs for each instance of the component
+$onComponent(({ date, timezone }, { els }) => {
+  console.log(`Calendar initialized for date: ${date}, timezone: ${timezone}`);
+
+  const containerEl = els[0];
+
+  // Use the variables to update the component's DOM
+  const dateEl = containerEl.querySelector(".calendar-date");
+  if (dateEl) {
+    dateEl.textContent = date;
+  }
+  const tzEl = containerEl.querySelector(".calendar-timezone");
+  if (tzEl) {
+    tzEl.textContent = timezone;
+  }
+});
+```
+
+
+**Multiple instances:**
+
+If you render multiple instances of the same component with different JS data, each instance will receive its own data:
+
+
+```python
+# Render multiple instances
+{% component "Calendar" date=some_date %}{% endcomponent %}
+{% component "Calendar" date=other_date %}{% endcomponent %}
+```
+
+
+Each instance will have its `$onComponent()` callback called with the data specific to that instance's `get_js_data()` return value.
+
+!!! warn
+
+    `$onComponent()` is NOT a global function. It is a special function that is only available within the component's JavaScript code ([`Component.js`][Component.js] or [`Component.js_file`][Component.js_file]).
+
+!!! info
+
+    Multiple callbacks can be registered for the same component:
+
+
+    ```js
+    $onComponent(async (data, { id, name, els }) => {
+      // First callback
+    });
+    $onComponent(async (data, { id, name, els }) => {
+      // Second callback - will be called after the first
+    });
+    ```
+
+
+!!! info
+
+    Components' `$onComponent()` callbacks are called in the order in which the components are found in the HTML.
+
+### `$onComponent()` callback function
+
+The `$onComponent()` callback function is a special function that is only available within the component's JavaScript code (`Component.js` or `Component.js_file`).
+
+It is called when the component's JavaScript is loaded.
+
+It receives the data returned from `get_js_data()` as its first argument, and the component context as its second argument.
+
+
+```js
+$onComponent(async (data, { id, name, els }) => {
+  // ...
+});
+```
+
+
+The component context contains the following properties:
+
+- `id` - `string`: The unique ID of the component instance (e.g. `"c1a2b3c"`).
+- `name` - `string`: The name of the component class (e.g. `"MyComponent"`).
+- `els` - `HTMLElement[]`: The list of DOM elements of the component instance.
+
+### Integrating with other JavaScript libraries
+
+`$onComponent()` allows you to connect your components to other JavaScript libraries.
+
+For example, here's how you can integrate with Alpine.js:
+
+1. Define a "container" Alpine component in your JavaScript code.
+
+    This will receive the data from django-components and store it in its reactive state:
+
+
+    ```js
+    document.addEventListener("alpine:init", () => {
+      Alpine.data("alpine_test", () => ({
+        someValue: 123,
+      }));
+    });
+    ```
+
+
+2. Render your component with `x-data` directive.
+
+
+    ```html
+    <div x-data="alpine_test">
+      <button @click="() => alert('Value is: ' + someValue)">
+        Show value
+      </button>
+    </div>
+    ```
+
+
+3. Use `$onComponent()` to update the state of the "container" Alpine component.
+
+    Use the `els` parameter to access the DOM elements of the component instance.
+
+    And use the `__x` AlpineJS internal attribute to access the Alpine component's reactive data.
+
+
+    ```js
+    $onComponent(({ value }, { id, name, els }) => {
+      // els[0] is the root element of the component
+      // (e.g. the one with x-data)
+      const alpineEl = els[0];
+
+      // Pass the value from django-components
+      // to AlpineJS as component's reactive data
+      alpineEl.__x.$data.someValue = value;
+    });
+    ```
+
+
+4. Define a django-components component that puts it all together and renders the "container" Alpine component.
+
+
+    ```djc_py
+    class AlpineTest(Component):
+        template = """
+            <div x-data="alpine_test">
+                <button @click="() => { alert('Value is: ' + someValue) }">
+                    Show value
+                </button>
+            </div>
+        """
+
+        js = """
+            // Define the Alpine component
+            document.addEventListener('alpine:init', () => {
+                Alpine.data('alpine_test', () => ({
+                    someValue: 123,
+                }))
+            });
+
+            // Update the state of the "container" Alpine component.
+            // Use `$onComponent()` to access django-components' data.
+            $onComponent(({ value }, { id, name, els }) => {
+                // els[0] is the root element of the component
+                // (e.g. the one with x-data)
+                const alpineEl = els[0];
+
+                // Pass the value from django-components
+                // to AlpineJS as component's reactive data
+                alpineEl.__x.$data.someValue = value;
+            });
+        """
+
+        def get_js_data(self, args, kwargs, slots, context):
+            return {
+                "value": 456,
+            }
+    ```
+
+
+## CSS variables
+
+The [`get_css_data()`][Component.get_css_data] method lets you pass data from your Python component to your CSS code defined in
+[`Component.css`][Component.css]
+or [`Component.css_file`][Component.css_file].
+
+The returned dictionary will be converted to [CSS variables](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_cascading_variables/Using_CSS_custom_properties) where:
+
+- Keys are names of CSS variables
+- Values are serialized to string
+
+If [`get_css_data()`][Component.get_css_data] returns `None`, an empty dictionary will be used.
+
+
+```python
+class ThemeableButton(Component):
+    template_file = "button.html"
+    css_file = "button.css"
+
+    class Kwargs(NamedTuple):
+        label: str
+        theme: str
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "label": kwargs.label,
+        }
+
+    def get_css_data(self, args, kwargs: Kwargs, slots, context):
+        themes = {
+            "default": {"bg": "#f0f0f0", "color": "#333", "hover_bg": "#e0e0e0"},
+            "primary": {"bg": "#0275d8", "color": "#fff", "hover_bg": "#025aa5"},
+            "danger": {"bg": "#d9534f", "color": "#fff", "hover_bg": "#c9302c"},
+        }
+
+        chosen_theme = themes.get(kwargs.theme, themes["default"])
+
+        return {
+            "button_bg": chosen_theme["bg"],
+            "button_color": chosen_theme["color"],
+            "button_hover_bg": chosen_theme["hover_bg"],
+        }
+```
+
+
+A value that reads as one CSS value stays as you wrote it, such as `red`, `10px`, `calc(100% - 20px)` or
+`url("/a.png")`. Any other text becomes a quoted CSS string, so `red;}body{display:none}` is text and cannot add
+a rule or end the `<style>` tag. A string with whitespace is quoted too, unless it is a CSS function.
+
+!!! warning
+
+    A value can still load a URL, such as `url(https://example.com/a.png)`. Check any URL that comes from a
+    request before you return it from [`get_css_data()`][Component.get_css_data].
+
+### Accessing CSS variables
+
+In your CSS file, you can access these variables by using the [`var()`](https://developer.mozilla.org/en-US/docs/Web/CSS/var) function.
+
+Use the same variable names as in the dictionary returned from [`get_css_data()`][Component.get_css_data].
+
+
+```css
+.themed-button {
+  background-color: var(--button_bg);
+  color: var(--button_color);
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+}
+
+.themed-button:hover {
+  background-color: var(--button_hover_bg);
+}
+```
+
+
+!!! info
+
+    **How it works?**
+
+    When a component defines some CSS code, it will be added to the page as a separate stylesheet.
+    So all instances of the same Component class reuse this same stylesheet which references the variables:
+
+
+    ```css
+    .themed-button:hover {
+        background-color: var(--button_hover_bg);
+    }
+    ```
+
+
+    When a component defines some CSS variables, django-components generates a stylesheet to apply
+    the variables:
+
+
+    ```css
+    [data-djc-css-0c4e2a9f1b7d3e5a6c8f0b2d4e6a8c1f] {
+        --button_bg: #f0f0f0;
+        --button_color: #333;
+        --button_hover_bg: #e0e0e0;
+    }
+    ```
+
+
+    This stylesheet with the variables is cached on the server based on the variables' names and values,
+    and on your `SECRET_KEY`.
+
+    This stylesheet is then added to the CSS dependencies of the component (as if added to `Component.Media.css`).
+    So the variables stylesheet will be loaded with the rest of the component's CSS.
+
+    The rendered component will have a corresponding `data-djc-css-0c4e2a9f1b7d3e5a6c8f0b2d4e6a8c1f` HTML attribute, matching the hash.
+
+    Thus, the CSS variables are dynamically applied to the component, and ONLY to this single instance (or
+    other instances that have the same variables).
+
+    This means that if you render the same component with different variables, each instance will use different CSS variables.
+
+## JS and CSS variables are public
+
+Treat everything that you return from [`get_js_data()`][Component.get_js_data] and
+[`get_css_data()`][Component.get_css_data] as public. Never return a password, a token, or anything else
+that must stay private.
+
+Django Components stores those values on the server, and serves them from a URL such as this one, so that
+the browser can load them:
+
+
+```text
+/components/cache/MyTable_a1b2c3.1f3a9c0d7b2e4f6089a1c3d5e7f90b12.js
+```
+
+
+The long part of the URL is the 32 characters after the component name.
+
+That URL needs no login, even when the page that uses it does. This is what it means for your values:
+
+- **Anyone who has the URL can read them.** The URL is in the HTML of the page, so whoever sees that HTML
+  has it, and so does anything that records the page or the URL, such as a log or a browser extension.
+- **Other websites that know the URL can use it too.** Another site can load the URL in its own pages with
+  a `<script>` or `<link>` tag, and scripts in those pages can then read the values. Django Components adds
+  no `Access-Control-Allow-Origin` header, so other sites cannot read the URL with `fetch()` unless your
+  app adds that header, for example with django-cors-headers. The tags do not need that header.
+- **Trying random URLs does not find them.** The long part of the URL has too many possible values to try.
+- **Guessing the values does not find them either.** The long part of the URL is made from the values and
+  your [`SECRET_KEY`](https://docs.djangoproject.com/en/stable/ref/settings/#secret-key), so without
+  `SECRET_KEY` nobody can work it out from values that they guess.
+
+To show private data to a logged-in user, pass it through
+[`get_template_data()`][Component.get_template_data], so that it stays in the page that your view protects.
+
+When you change `SECRET_KEY`, new pages get new URLs. The URLs in pages rendered before the change keep
+working for as long as the server still has their values in its cache. If you change `SECRET_KEY` because it
+leaked, also clear [`COMPONENTS.cache`][ComponentsSettings.cache] if you set it, so that those old URLs stop
+working.
+
+If `SECRET_KEY` is empty, each server process makes a random secret of its own when it starts, so the same
+values get a different URL in each process. Pages keep working as before. If several processes share one
+cache through [`COMPONENTS.cache`][ComponentsSettings.cache], that cache then holds one copy of the same
+values for each process.
+
+Django Components 0.152.0 and earlier used 6 characters instead of 32, which anyone can guess. Django
+Components now refuses such URLs and never reads the values stored under them, even while they are still in
+the cache. So HTML that one of those versions rendered and that is still cached, for example by
+`{% cache %}` or `Component.Cache`, loses these values until it expires: a warning is logged, the
+component's `$onComponent` callbacks do not run, and its CSS variables are unset. To render those pages
+again sooner, clear the cache that holds their HTML.
+
+If you set [`COMPONENTS.cache`][ComponentsSettings.cache], the old values stay in it until they expire, and with
+`"TIMEOUT": None` they never do. Nobody can read them anymore, but they take up space. Clearing that cache
+removes them, along with everything else in it.
+
+## Accessing component inputs
+
+The component inputs are available in 3 ways:
+
+### Function arguments
+
+The data methods receive the inputs as parameters directly.
+
+
+```python
+class ProfileCard(Component):
+    # Access inputs directly as parameters
+    def get_template_data(self, args, kwargs, slots, context):
+        return {
+            "user_id": args[0],
+            "show_details": kwargs["show_details"],
+        }
+```
+
+
+!!! info
+
+    By default, the `args` parameter is a list, while `kwargs` and `slots` are dictionaries.
+
+    If you add typing to your component with
+    [`Args`][Component.Args],
+    [`Kwargs`][Component.Kwargs],
+    or [`Slots`][Component.Slots] classes,
+    the respective inputs will be given as instances of these classes.
+
+    Learn more about [Component typing](typing_and_validation.md).
+
+
+    ```py
+    class ProfileCard(Component):
+        class Args:
+            user_id: int
+
+        class Kwargs:
+            show_details: bool
+
+        # Access inputs directly as parameters
+        def get_template_data(self, args: Args, kwargs: Kwargs, slots, context):
+            return {
+                "user_id": args.user_id,
+                "show_details": kwargs.show_details,
+            }
+    ```
+
+
+### `args`, `kwargs`, `slots` properties
+
+In other methods, you can access the inputs via
+[`self.args`][Component.args],
+[`self.kwargs`][Component.kwargs],
+and [`self.slots`][Component.slots] properties:
+
+
+```py
+class ProfileCard(Component):
+    def on_render_before(self, context: Context, template: Template | None):
+        # Access inputs via self.args, self.kwargs, self.slots
+        self.args[0]
+        self.kwargs.get("show_details", False)
+        self.slots["footer"]
+```
+
+
+!!! info
+
+    These properties work the same way as `args`, `kwargs`, and `slots` parameters in the data methods:
+
+    By default, the `args` property is a list, while `kwargs` and `slots` are dictionaries.
+
+    If you add typing to your component with
+    [`Args`][Component.Args],
+    [`Kwargs`][Component.Kwargs],
+    or [`Slots`][Component.Slots] classes,
+    the respective inputs will be given as instances of these classes.
+
+    Learn more about [Component typing](typing_and_validation.md).
+
+
+    ```py
+    class ProfileCard(Component):
+        class Args:
+            user_id: int
+
+        class Kwargs:
+            show_details: bool
+
+        def get_template_data(self, args: Args, kwargs: Kwargs, slots, context):
+            return {
+                "user_id": self.args.user_id,
+                "show_details": self.kwargs.show_details,
+            }
+    ```
+
+
+<!-- TODO_V2 - Remove -->
+
+### `input` property (low-level)
+
+!!! warning
+
+    The `input` property is deprecated and will be removed in 2.0.
+
+    Instead, use properties defined on the
+    [`Component`][Component] class
+    directly like
+    [`self.context`][Component.context].
+
+    To access the unmodified inputs, use
+    [`self.raw_args`][Component.raw_args],
+    [`self.raw_kwargs`][Component.raw_kwargs],
+    and [`self.raw_slots`][Component.raw_slots] properties.
+
+The previous two approaches allow you to access only the most important inputs.
+
+There are additional settings that may be passed to components.
+If you need to access these, you can use [`self.input`][Component.input] property
+for a low-level access to all the inputs.
+
+The `input` property contains all the inputs passed to the component (instance of [`ComponentInput`][ComponentInput]).
+
+This includes:
+
+- [`input.args`][ComponentInput.args] - List of positional arguments
+- [`input.kwargs`][ComponentInput.kwargs] - Dictionary of keyword arguments
+- [`input.slots`][ComponentInput.slots] - Dictionary of slots. Values are normalized to [`Slot`][Slot] instances
+- [`input.context`][ComponentInput.context] - [`Context`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#django.template.Context) object that should be used to render the component
+- [`input.type`][ComponentInput.type] - The type of the component (document, fragment)
+- [`input.render_dependencies`][ComponentInput.render_dependencies] - Whether to render dependencies (CSS, JS)
+
+
+```python
+class ProfileCard(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        # Access positional arguments
+        user_id = self.input.args[0] if self.input.args else None
+
+        # Access keyword arguments
+        show_details = self.input.kwargs.get("show_details", False)
+
+        # Render component differently depending on the type
+        if self.input.type == "fragment":
+            ...
+
+        return {
+            "user_id": user_id,
+            "show_details": show_details,
+        }
+```
+
+
+!!! info
+
+    Unlike the parameters passed to the data methods, the `args`, `kwargs`, and `slots` in `self.input` property are always lists and dictionaries,
+    regardless of whether you added typing classes to your component (like [`Args`][Component.Args],
+    [`Kwargs`][Component.Kwargs],
+    or [`Slots`][Component.Slots]).
+
+## Default values
+
+You can use the [`Defaults`][Component.Defaults] and [`Kwargs`][Component.Kwargs] classes to provide default values for your inputs.
+
+These defaults will be applied either when:
+
+- The input is not provided at rendering time
+- The input is provided as `None`
+
+When you then access the inputs in your data methods, the default values will be already applied.
+
+Read more about [Component Defaults](./component_defaults.md).
+
+
+```py
+from django_components import Component, Default, register
+
+@register("profile_card")
+class ProfileCard(Component):
+    class Kwargs:
+        # Will be set to True if `None` or missing
+        show_details: bool = True
+
+    def get_template_data(self, args, kwargs: Kwargs, slots, context):
+        return {
+            "show_details": kwargs.show_details,
+        }
+
+    ...
+```
+
+
+## Accessing Render API
+
+All three data methods have access to the Component's [Render API](render_api.md), which includes:
+
+- [`self.args`](render_api.md#args) - The positional arguments for the current render call
+- [`self.kwargs`](render_api.md#kwargs) - The keyword arguments for the current render call
+- [`self.slots`](render_api.md#slots) - The slots for the current render call
+- [`self.raw_args`](render_api.md#args) - Unmodified positional arguments for the current render call
+- [`self.raw_kwargs`](render_api.md#kwargs) - Unmodified keyword arguments for the current render call
+- [`self.raw_slots`](render_api.md#slots) - Unmodified slots for the current render call
+- [`self.context`](render_api.md#context) - The context for the current render call
+- [`self.id`](render_api.md#component-id) - The unique ID for the current render call
+- [`self.request`](render_api.md#request-and-context-processors) - The request object
+- [`self.context_processors_data`](render_api.md#request-and-context-processors) - Data from Django's context processors
+- [`self.inject()`](render_api.md#provide-inject) - Inject data into the component
+- [`self.registry`](render_api.md#template-tag-metadata) - The [`ComponentRegistry`][ComponentRegistry] instance
+- [`self.registered_name`](render_api.md#template-tag-metadata) - The name under which the component was registered
+- [`self.outer_context`](render_api.md#template-tag-metadata) - The context outside of the [`{% component %}`](../../reference/template_tags.md#component) tag
+- [`self.parent`](render_api.md#parent) - The parent component instance (or `None` if root)
+- [`self.root`](render_api.md#root) - The root component instance (or `self` if root)
+- [`self.ancestors`](render_api.md#ancestors) - An iterator of all ancestor component instances
+- `self.deps_strategy` - The strategy for rendering dependencies
+
+## Type hints
+
+### Typing inputs
+
+You can add type hints for the component inputs to ensure that the component logic is correct.
+
+For this, define the [`Args`][Component.Args],
+[`Kwargs`][Component.Kwargs],
+and [`Slots`][Component.Slots] classes,
+and then add type hints to the data methods.
+
+This will also validate the inputs at runtime, as the type classes will be instantiated with the inputs.
+
+Read more about [Component typing](typing_and_validation.md).
+
+
+```python
+from django_components import Component, SlotInput
+
+class Button(Component):
+    class Args:
+        name: str
+
+    class Kwargs:
+        surname: str
+        maybe_var: int | None = None  # May be omitted
+
+    class Slots:
+        footer: SlotInput
+        my_slot: SlotInput | None = None
+
+    # Use the above classes to add type hints to the data method
+    def get_template_data(self, args: Args, kwargs: Kwargs, slots: Slots, context: Context):
+        # The parameters are instances of the classes we defined
+        assert isinstance(args, Button.Args)
+        assert isinstance(kwargs, Button.Kwargs)
+        assert isinstance(slots, Button.Slots)
+```
+
+
+!!! note
+
+    To access "untyped" inputs, use [`self.raw_args`][Component.raw_args],
+    [`self.raw_kwargs`][Component.raw_kwargs],
+    and [`self.raw_slots`][Component.raw_slots] properties.
+
+    These are plain lists and dictionaries, even when you added typing to your component.
+
+### Typing data
+
+In the same fashion, you can add types and validation for the data that should be RETURNED from each data method.
+
+For this, set the [`TemplateData`][Component.TemplateData],
+[`JsData`][Component.JsData],
+and [`CssData`][Component.CssData] classes on the component class.
+
+For each data method, you can either return a plain dictionary with the data, or an instance of the respective data class.
+
+
+```python
+from django_components import Component
+
+class Button(Component):
+    class TemplateData(
+        data1: str
+        data2: int
+
+    class JsData:
+        js_data1: str
+        js_data2: int
+
+    class CssData:
+        css_data1: str
+        css_data2: int
+
+    def get_template_data(self, args, kwargs, slots, context):
+        return Button.TemplateData(
+            data1="...",
+            data2=123,
+        )
+
+    def get_js_data(self, args, kwargs, slots, context):
+        return Button.JsData(
+            js_data1="...",
+            js_data2=123,
+        )
+
+    def get_css_data(self, args, kwargs, slots, context):
+        return Button.CssData(
+            css_data1="...",
+            css_data2=123,
+        )
+```
+
+
+## Pass-through kwargs
+
+It's best practice to explicitly define what args and kwargs a component accepts.
+
+However, if you want a looser setup, you can easily write components that accept any number
+of kwargs, and pass them all to the template
+(similar to [django-cotton](https://github.com/wrabit/django-cotton)).
+
+To do that, simply return the `kwargs` dictionary itself from [`get_template_data()`][Component.get_template_data]:
+
+
+```py
+class MyComponent(Component):
+    def get_template_data(self, args, kwargs, slots, context):
+        return kwargs
+```
+
+
+You can do the same for [`get_js_data()`][Component.get_js_data] and [`get_css_data()`][Component.get_css_data], if needed:
+
+
+```py
+class MyComponent(Component):
+    def get_js_data(self, args, kwargs, slots, context):
+        return kwargs
+
+    def get_css_data(self, args, kwargs, slots, context):
+        return kwargs
+```
+
+
+## Complete example
+
+Here's a comprehensive example showing all three methods working together:
+
+
+```python
+from django_components import Component
+
+class ProductCard(Component):
+    template_file = "product_card.html"
+    js_file = "product_card.js"
+    css_file = "product_card.css"
+
+    def get_template_data(self, args, kwargs, slots, context):
+        product = Product.objects.get(id=kwargs["product_id"])
+        return {
+            "product": product,
+            "show_price": kwargs.get("show_price", True),
+            "is_in_stock": product.stock_count > 0,
+        }
+
+    def get_js_data(self, args, kwargs, slots, context):
+        product = Product.objects.get(id=kwargs["product_id"])
+        return {
+            "product_id": kwargs["product_id"],
+            "price": float(product.price),
+            "api_endpoint": f"/api/products/{kwargs['product_id']}/",
+        }
+
+    def get_css_data(self, args, kwargs, slots, context):
+        theme = kwargs.get("theme", "light")
+        themes = {
+            "light": {
+                "card_bg": "#ffffff",
+                "text_color": "#333333",
+                "price_color": "#e63946",
+            },
+            "dark": {
+                "card_bg": "#242424",
+                "text_color": "#f1f1f1",
+                "price_color": "#ff6b6b",
+            },
+        }
+
+        return themes.get(theme, themes["light"])
+```
+
+
+In your template:
+
+
+```django
+<div class="product-card" data-product-id="{{ product.id }}">
+    <img src="{{ product.image_url }}" alt="{{ product.name }}">
+    <h3>{{ product.name }}</h3>
+
+    {% if show_price %}
+        <p class="price">${{ product.price }}</p>
+    {% endif %}
+
+    {% if is_in_stock %}
+        <button class="add-to-cart">Add to Cart</button>
+    {% else %}
+        <p class="out-of-stock">Out of Stock</p>
+    {% endif %}
+</div>
+```
+
+
+JavaScript:
+
+
+```javascript
+$onComponent(({ product_id, price, api_endpoint }, ctx) => {
+  const containerEl = ctx.els[0];
+  containerEl.querySelector(".add-to-cart")
+    .addEventListener("click", () => {
+      fetch(api_endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add_to_cart", price: price }),
+      });
+    });
+});
+```
+
+
+CSS:
+
+
+```css
+.product-card {
+  background-color: var(--card_bg);
+  color: var(--text_color);
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.price {
+  color: var(--price_color);
+  font-weight: bold;
+}
+```

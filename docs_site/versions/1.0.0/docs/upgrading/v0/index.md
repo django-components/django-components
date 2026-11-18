@@ -1,0 +1,101 @@
+---
+title: Upgrading from 0.x versions
+url: https://django-components.github.io/django-components/v/1.0.0/docs/upgrading/v0/
+description: "How to upgrade a project from a 0.x release of django-components to 1.x, one breaking release at a time."
+---
+
+# Upgrading from 0.x versions
+
+This page is for projects that still run a 0.x release of
+django-components. Before 1.0.0, a minor release could make breaking
+changes, so upgrade in steps. From 1.0.0 on, upgrades follow the rules in
+[Versioning and support](../overview/versioning.md).
+
+## Upgrade step by step
+
+These versions made breaking changes. Start at the first one that is
+newer than your version. At each one, install it, read its release
+notes, and change your code as they say before you go on to the next:
+
+- [v0.26](../releases/v0.26.md)
+- [v0.50](../releases/v0.50.md)
+- [v0.70](../releases/v0.70.md)
+- [v0.77](../releases/v0.77.md)
+- [v0.79](../releases/v0.79.md)
+- [v0.81](../releases/v0.81.md)
+- [v0.85](../releases/v0.85.md)
+- [v0.92](../releases/v0.92.md)
+- [v0.100](../releases/v0.100.md)
+- [v0.110](../releases/v0.110.md)
+- [v0.136](../releases/v0.136.md)
+- [v0.140.0](../releases/v0.140.0.md)
+- [v0.147.0](../releases/v0.147.0.md): drops Python 3.8 and 3.9 and
+  Django 5.1.
+- [v0.153.0](../releases/v0.153.0.md): drops Python 3.10 and stops
+  installing `typing-extensions`.
+
+Once you are on 0.153.0, upgrade to 1.x: 1.0.0 has no breaking changes
+compared with 0.153.0.
+
+The [release notes](../releases/index.md) list the changes in each
+version.
+
+<!-- # TODO_REMOVE_IN_V2 - Remove mentions of safer_staticfiles in 2.0 -->
+
+## Pre-v0.100 static files { #static-files-before-v0100 }
+
+When you upgrade to v0.100 or later, remove `safer_staticfiles` as
+[Migrating from safer_staticfiles](../migrating_from_safer_staticfiles.md)
+shows. From v0.100 on, django-components keeps your Python and HTML
+component files off your static file server (see
+[Security notes](../overview/security_notes.md#static-files)).
+
+If you stay on an older release: before v0.100,
+`django.contrib.staticfiles` treated every file the same, so your `.py`
+and `.html` files could end up on your static file server. That exposes
+your backend logic, a **potential security vulnerability**.
+
+From v0.27 until v0.100, django-components shipped with an additional
+installable app, `django_components.safer_staticfiles`. It was a drop-in
+replacement for `django.contrib.staticfiles` that behaves the same,
+except it ignores `.py` and `.html` files, so these do not end up on your
+static file server.
+
+To use it, add it to `INSTALLED_APPS` and remove
+`django.contrib.staticfiles`:
+
+
+```python
+INSTALLED_APPS = [
+    # 'django.contrib.staticfiles',   # <-- REMOVE
+    'django_components',
+    'django_components.safer_staticfiles'  # <-- ADD
+]
+```
+
+
+If you are on a pre-v0.27 version of django-components, you can instead:
+
+- pass `--ignore <pattern>` options to the `collectstatic` command, or
+- subclass Django's `StaticFilesConfig` and set `ignore_patterns`.
+
+The official
+[docs of the staticfiles app](https://docs.djangoproject.com/en/5.2/ref/contrib/staticfiles/#customizing-the-ignored-pattern-list)
+describe both routes.
+
+`safer_staticfiles` filters only the
+[collectstatic command](https://docs.djangoproject.com/en/5.2/ref/contrib/staticfiles/#collectstatic):
+
+
+```sh
+python manage.py collectstatic
+```
+
+
+It does not filter the
+[development server](https://docs.djangoproject.com/en/5.2/ref/django-admin/#runserver):
+
+
+```sh
+python manage.py runserver
+```
