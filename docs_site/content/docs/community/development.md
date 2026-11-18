@@ -762,13 +762,9 @@ Let's say we want to release a new version `0.141.6`. We need to:
 
 ### Semantic versioning
 
-We use [Semantic Versioning](https://semver.org/) for django-components.
-
-The version number is in the format `MAJOR.MINOR.PATCH` (e.g. `0.141.6`).
-
-- `MAJOR` (e.g. `1.0.0`) is reserved for significant architectural changes and breaking changes.
-- `MINOR` (e.g. `0.1.0`) is incremented for new features.
-- `PATCH` (e.g. `0.0.1`) is incremented for bug fixes or documentation changes.
+Release numbers follow [Semantic Versioning](https://semver.org/), in the
+format `MAJOR.MINOR.PATCH` (e.g. `1.0.0`). Decide which number a change
+needs by the rules in [Versioning and support](../overview/versioning.md).
 
 ## Development guides
 

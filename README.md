@@ -633,6 +633,10 @@ See the [full performance breakdown](https://django-components.github.io/django-
 Read the [Release Notes](https://github.com/django-components/django-components/tree/master/CHANGELOG.md)
 to see the latest features and fixes.
 
+[Versioning and support](https://django-components.github.io/django-components/docs/overview/versioning/) explains what a 1.x upgrade can change, which releases get fixes, and which Django and Python versions are supported.
+
+Upgrading from a 0.x release? Follow [Upgrading from 0.x versions](https://django-components.github.io/django-components/docs/upgrading/v0/).
+
 ## Community examples
 
 One of our goals with `django-components` is to make it easy to share components between projects. If you have a set of components that you think would be useful to others, please open a pull request to add them to the list below.

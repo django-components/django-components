@@ -15,6 +15,7 @@ sections:
   - label: Overview
     items:
       - { title: Compatibility, path: /docs/overview/compatibility/ }
+      - { title: Versioning and support, path: /docs/overview/versioning/ }
       - { title: "Security notes 🚨", path: /docs/overview/security_notes/ }
       - { title: Performance, path: /docs/overview/performance/ }
       - { title: License, path: /docs/overview/license/ }
@@ -94,7 +95,7 @@ sections:
 
   - label: Upgrading
     items:
-      - { title: Upgrading in pre-v1.0, path: /docs/upgrading/v0/ }
+      - { title: Upgrading from 0.x versions, path: /docs/upgrading/v0/ }
       - { title: Migrating from safer_staticfiles, path: /docs/migrating_from_safer_staticfiles/ }
 
   # NOTE: Plugins is intentionally NOT in the sidebar - it's a top-nav page
