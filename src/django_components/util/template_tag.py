@@ -340,14 +340,14 @@ def check_expression_callable(func: Callable) -> bool:
                 pending.append(owner)
         # Calling an instance runs the `__call__` that Python finds on its class and binds to the
         # instance, which may be a formatter itself, such as `__call__ = staticmethod(format_html)`.
-        # A built-in type's own `__call__` is a slot wrapper that only calls the object, so it adds
-        # nothing to check.
-        class_call = _find_class_call(step)
+        # A built-in type's own `__call__` is a C-level wrapper (`WrapperDescriptorType`) that only
+        # calls the object, so it adds nothing to check.
+        class_call = _find_on_type(step, "__call__")
         if class_call is not None and not isinstance(class_call, WrapperDescriptorType):
             pending.append(class_call)
             # Binding can give another object, as with `functools.partialmethod` or a property. A
             # plain function only becomes a bound method of itself, so it is not bound here.
-            bind = getattr(type(class_call), "__get__", None)
+            bind = _find_on_type(class_call, "__get__")
             if bind is not None and not isinstance(class_call, FunctionType):
                 pending.append(bind(class_call, step, type(step)))
     return True
@@ -395,21 +395,22 @@ def _check_one_callable(step: Any, *, is_wrapped: bool) -> None:
             raise SecurityError(f"{message}. {replacement}" if replacement else f"{message}.")
 
 
-def _find_class_call(obj: Any) -> Any:
-    # Look `__call__` up the way Python does when it calls `obj`: in the `__dict__` of each class in
-    # the method resolution order of `type(obj)`. Reading `type(obj).__call__` instead would go
-    # through the metaclass and the descriptor, which can return a different object.
-    for klass in _TYPE_MRO.__get__(type(obj)):
-        namespace = _TYPE_DICT.__get__(klass)
-        if "__call__" in namespace:
-            return namespace["__call__"]
-    return None
-
-
 # The descriptors that `type` itself uses for `__mro__` and `__dict__`, so that a metaclass can't
-# change what `_find_class_call` reads.
+# change what `_find_on_type` reads.
 _TYPE_MRO = type.__dict__["__mro__"]
 _TYPE_DICT = type.__dict__["__dict__"]
+
+
+def _find_on_type(obj: Any, name: str) -> Any:
+    # Look `name` up the way Python does when it runs a special method such as `__call__` or
+    # `__get__` on `obj`: in the `__dict__` of each class in the method resolution order of
+    # `type(obj)`. Reading `type(obj).__call__` instead would go through the metaclass and the
+    # descriptor, which can return a different object.
+    for klass in _TYPE_MRO.__get__(type(obj)):
+        namespace = _TYPE_DICT.__get__(klass)
+        if name in namespace:
+            return namespace[name]
+    return None
 
 
 def _is_lazy_object_or_class(obj: Any) -> bool:
