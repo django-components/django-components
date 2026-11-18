@@ -20,6 +20,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 
 from django.urls import URLPattern, URLResolver
+from django.urls.resolvers import RegexPattern
 
 from apps.docs.reference.discovery.kinds import ReferencePage
 from django_components.dependencies import urlpatterns as core_urlpatterns
@@ -69,5 +70,15 @@ def _list_urls(patterns: Iterable[URLPattern | URLResolver], prefix: str = "") -
         if isinstance(pattern, URLResolver):
             collected.extend(_list_urls(pattern.url_patterns, prefix + str(pattern.pattern)))
         elif isinstance(pattern, URLPattern):
-            collected.append(prefix + str(pattern.pattern))
+            collected.append(prefix + _route_text(pattern))
     return collected
+
+
+def _route_text(pattern: URLPattern) -> str:
+    """Write a route as it reads after the prefix, without the anchors of a regex route."""
+    text = str(pattern.pattern)
+    # A `re_path()` route starts with `^` and ends with `$`. After the prefix, the `^` would read
+    # as part of the URL (`components/^cache/...`), and neither anchor helps a reader.
+    if isinstance(pattern.pattern, RegexPattern):
+        text = text.removeprefix("^").removesuffix("$")
+    return text
