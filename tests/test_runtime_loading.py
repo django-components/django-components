@@ -302,3 +302,79 @@ class TestDataBlockNonce:
         rendered = PageComponent.render(deps_strategy="document")
 
         assert "nonce" not in _data_block(rendered)
+
+
+class CdnMediaFragment(Component):
+    template: types.django_html = """
+        <div>hi</div>
+    """
+    js: types.js = "$onComponent(() => {});"
+
+    class Media:
+        js = ("https://cdn.example.com/lib.js", "local.js", "/elsewhere/app.js")
+
+
+@djc_test(django_settings={"STATIC_URL": "/static/"}, components_settings={"extensions": [HookExtension]})
+class TestFragmentScriptsWithoutNonce:
+    """
+    A fragment without a nonce goes into a page without one, where the runtime loads only the
+    app's own files. The server tells the developer which scripts of a fragment it will skip.
+    """
+
+    @staticmethod
+    def _warned_urls(component: type[Component]) -> list[str]:
+        with (
+            patch("django_components.dependencies.logger") as logger,
+            patch("django_components.dependencies._warned_skipped_urls", set()),
+        ):
+            component.render(deps_strategy="fragment")
+            component.render(deps_strategy="fragment")
+        return [re.search(r"script '([^']+)'", call.args[0]).group(1) for call in logger.warning.call_args_list]
+
+    def test_warns_once_for_each_script_outside_the_app_files(self):
+        HookExtension.edit = staticmethod(lambda script: script)
+
+        # `local.js` becomes `/static/local.js`, and the component's own file is in `/components/cache/`
+        assert self._warned_urls(CdnMediaFragment) == ["https://cdn.example.com/lib.js", "/elsewhere/app.js"]
+
+    def test_no_warning_on_a_page_with_a_nonce(self):
+        # There the runtime checks the nonce, and loads every script the block names
+        HookExtension.edit = staticmethod(TestDataBlockNonce._set_nonce_on_runtime)
+
+        assert self._warned_urls(CdnMediaFragment) == []
+
+    @djc_test(django_settings={"STATIC_URL": "https://cdn.example.com/static/"})
+    def test_full_static_url_counts_as_the_static_folder(self):
+        class StaticCdnFragment(Component):
+            template: types.django_html = "<div>hi</div>"
+
+            class Media:
+                js = ("local.js", "https://cdn.example.com/lib.js", "//cdn.example.com/static/other.js")
+
+        HookExtension.edit = staticmethod(lambda script: script)
+
+        assert self._warned_urls(StaticCdnFragment) == ["https://cdn.example.com/lib.js"]
+
+    @djc_test(django_settings={"STATIC_URL": "/"})
+    def test_static_url_at_the_root_is_not_a_folder(self):
+        # The root of the page's origin would let through every path, such as uploaded files
+        class RootStaticFragment(Component):
+            template: types.django_html = "<div>hi</div>"
+
+            class Media:
+                js = ("local.js",)
+
+        HookExtension.edit = staticmethod(lambda script: script)
+
+        assert self._warned_urls(RootStaticFragment) == ["/local.js"]
+
+    def test_encoded_slash_is_not_in_the_folder(self):
+        class EncodedFragment(Component):
+            template: types.django_html = "<div>hi</div>"
+
+            class Media:
+                js = ("/static/..%2Fuploads/x.js",)
+
+        HookExtension.edit = staticmethod(lambda script: script)
+
+        assert self._warned_urls(EncodedFragment) == ["/static/..%2Fuploads/x.js"]

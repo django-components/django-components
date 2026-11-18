@@ -1074,6 +1074,8 @@ def render_dependencies(content: TContent, strategy: DependenciesStrategy = "doc
         )
     )
     _stamp_data_block_nonce(scripts)
+    if strategy == "fragment":
+        _warn_about_scripts_skipped_without_nonce(scripts)
 
     js_deps_bytes = "".join([script.render() for script in scripts]).encode("utf-8")
     css_deps_bytes = "".join([style.render() for style in styles]).encode("utf-8")
@@ -1175,6 +1177,91 @@ def _stamp_data_block_nonce(scripts: list[Script]) -> None:
         # HTML as it is, so a `<` in the nonce must not end up there.
         data = {**json.loads(script.content), "nonce": str(nonce)}
         script.content = json.dumps(data).replace("<", "\\u003c")
+
+
+# The JS files that django-components writes for each component, served by `cached_script_view`.
+# The client-side manager matches the same path in `checkBlockScriptUrl()`.
+_CACHE_FILE_PATH_RE = re.compile(r"/components/cache/[^/]+\.js$")
+
+# Each URL is logged once per process, because the same fragment renders again and again.
+_warned_skipped_urls: set[str] = set()
+
+
+def _static_folder_for_fragments() -> str | None:
+    """
+    Return the `STATIC_URL` folder, as the client-side manager works it out from its own URL.
+
+    The manager has no other way to learn it, so this follows the manager's own steps in
+    `readStaticFolder()`, and the two must match. It returns `None` where the manager accepts
+    no folder: the root of the page's own origin.
+    """
+    url = urlsplit(_core_js_url())
+    folder = url.path[: url.path.rfind("/") + 1]
+    own_folder = "/django_components/"
+    if folder.endswith(own_folder):
+        folder = folder[: len(folder) - len(own_folder) + 1]
+    if not url.netloc:
+        return None if folder == "/" else folder
+    scheme = f"{url.scheme}:" if url.scheme else ""
+    return f"{scheme}//{url.netloc}{folder}"
+
+
+def _is_loaded_without_nonce(src: str) -> bool:
+    """
+    Tell whether the client-side manager loads `src` from a fragment on a page without a nonce.
+
+    The manager compares full URLs with the page's origin, which the server does not know. So a
+    full URL counts only when `STATIC_URL` is a full URL too. A relative URL is on the page's
+    origin.
+    """
+    parts = urlsplit(src)
+    if "%2f" in parts.path.lower() or "%5c" in parts.path.lower():
+        return False
+    if not _is_full_url(src) and _CACHE_FILE_PATH_RE.search(parts.path):
+        return True
+    folder = _static_folder_for_fragments()
+    if folder is None:
+        return False
+    folder_parts = urlsplit(folder)
+    if folder_parts.netloc:
+        if parts.netloc.lower() != folder_parts.netloc.lower():
+            return False
+        # A URL that starts with `//` takes the page's scheme, so either side may leave it out
+        if parts.scheme and folder_parts.scheme and parts.scheme.lower() != folder_parts.scheme.lower():
+            return False
+    elif parts.scheme or parts.netloc or not parts.path.startswith("/"):
+        return False
+    return parts.path.startswith(folder_parts.path)
+
+
+def _warn_about_scripts_skipped_without_nonce(scripts: list[Script]) -> None:
+    """
+    Log a warning for each script of a fragment that the client-side manager will not load.
+
+    A fragment without a nonce in its JSON is meant for a page without a nonce. There, injected
+    markup can write a `<script data-djc>` block too, so the manager loads only the files that the
+    app serves itself: `/components/cache/` files on the page's origin, and files under
+    `STATIC_URL`. A script from a CDN in `Component.Media.js` is skipped, and the browser console
+    shows an error, so this tells the developer on the server as well.
+    """
+    for script in scripts:
+        if "data-djc" not in script.attrs or not script.content:
+            continue
+        data = json.loads(script.content)
+        # On a page with a nonce, the manager checks the nonce instead of the URLs
+        if "nonce" in data:
+            continue
+        for encoded_tag in data.get("jsTags__toFetch", []):
+            src = json.loads(base64.b64decode(encoded_tag))["attrs"].get("src")
+            if not isinstance(src, str) or src in _warned_skipped_urls or _is_loaded_without_nonce(src):
+                continue
+            _warned_skipped_urls.add(src)
+            logger.warning(
+                f"A fragment loads the script {src!r}, which the dependency manager JS will not load "
+                "on a page without a CSP nonce, unless the URL is on that page's origin under STATIC_URL. "
+                "Load the script on the page itself, serve it from STATIC_URL, or give the page a nonce. "
+                "See https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/#content-security-policy"
+            )
 
 
 @cache

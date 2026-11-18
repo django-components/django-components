@@ -10,7 +10,9 @@ the call to the test function, and an async test function does its work after th
 """
 
 import base64
+import hashlib
 import json
+import re
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -196,6 +198,10 @@ class Visit:
     other_site_requests: list[str]
     console: list[str] = field(default_factory=list)
     page_errors: list[str] = field(default_factory=list)
+    # Paths asked of the app from `files`, the extra files that a test serves
+    file_requests: list[str] = field(default_factory=list)
+    # Every path asked of the app
+    app_requests: list[str] = field(default_factory=list)
 
     def title(self) -> str:
         return self.page.title()
@@ -216,18 +222,33 @@ class Visit:
         raise AssertionError(f"Expected {count} widget call(s), got {self.widget_calls()}: {self.console}")
 
     def wait_for_refusal(self) -> None:
+        self.wait_for_console(REFUSED_MESSAGE)
+
+    def wait_for_console(self, message: str) -> None:
         for _ in range(250):
-            if any(REFUSED_MESSAGE in text for text in self.console):
+            if any(message in text for text in self.console):
                 return
             self.page.wait_for_timeout(20)
-        raise AssertionError(f"No refusal in the console: {self.console}")
+        raise AssertionError(f"No {message!r} in the console: {self.console}")
 
     def settle(self) -> None:
         """Give scripts that should NOT run the time they would need."""
         self.page.wait_for_timeout(300)
 
 
-def visit(browser: "Browser", html: str, csp: str | None, fragment: str = "") -> Visit:
+def visit(
+    browser: "Browser",
+    html: str,
+    csp: str | None,
+    fragment: str = "",
+    files: dict[str, str] | None = None,
+) -> Visit:
+    """
+    Open `html` at `http://app.test/` with the policy `csp`.
+
+    `files` maps more paths on the app to the JS that they serve, such as a file that a visitor
+    uploaded, or the app's own script that inserts a fragment.
+    """
     context = browser.new_context()
     page = context.new_page()
     result = Visit(page=page, other_site_requests=[])
@@ -240,6 +261,15 @@ def visit(browser: "Browser", html: str, csp: str | None, fragment: str = "") ->
         if url.startswith(OTHER):
             path = url.removeprefix(OTHER)
             result.other_site_requests.append(path)
+            if path.startswith(f"/copy{RUNTIME_PATH}"):
+                # The attacker's site can serve a copy of the runtime
+                route.fulfill(
+                    status=200,
+                    content_type="text/javascript",
+                    headers={"Access-Control-Allow-Origin": "*"},
+                    body=RUNTIME_FILE.read_bytes(),
+                )
+                return
             route.fulfill(
                 status=200,
                 content_type="text/css" if path.endswith(".css") else "text/javascript",
@@ -249,7 +279,11 @@ def visit(browser: "Browser", html: str, csp: str | None, fragment: str = "") ->
             return
 
         path = url.removeprefix(APP)
-        if path == "/":
+        result.app_requests.append(path)
+        if files and path.split("?")[0] in files:
+            result.file_requests.append(path)
+            route.fulfill(status=200, content_type="text/javascript", body=files[path.split("?")[0]])
+        elif path == "/":
             headers = {"Content-Security-Policy": csp} if csp else {}
             route.fulfill(status=200, content_type="text/html", headers=headers, body=html)
         elif path == "/fragment":
@@ -490,4 +524,247 @@ class TestGenuineFragments:
         result = visit(sync_browser, page, None, fragment=render_fragment(widget, nonce=None))
 
         result.wait_for_widget(count=2)
+        result.page.context.close()
+
+
+SKIPPED_MESSAGE = "[DjangoComponents] Did not load the script"
+# A file that a visitor uploaded, or any other file on the app's origin that the app did not
+# mean to run. The runtime's own folder and `/components/cache/` are where the app's files are.
+UPLOADED = "/uploads/evil.js"
+UPLOADED_JS = "document.title = 'uploaded';"
+# The app's own script that inserts a fragment, for a policy that refuses inline scripts.
+APP_SCRIPT = f"""
+    fetch("{APP}/fragment").then((res) => res.text()).then((html) => {{
+        document.getElementById("slot").innerHTML = html;
+    }});
+"""
+APP_SCRIPT_TAG = '<div id="slot"></div><script src="/app.js"></script>'
+MEDIA_JS = "window.mediaLoaded = (window.mediaLoaded || 0) + 1;"
+
+
+def hash_policy(html: str, *sources: str) -> str:
+    """
+    A policy that allows the page's scripts by their hashes, as an app without nonces writes it.
+
+    It lists the runtime's `integrity` and the hash of each inline script, so the page runs as
+    the app meant, and nothing else does.
+    """
+    hashes = re.findall(r'<script[^>]*src="[^"]*django_components\.min\.js[^"]*"[^>]*integrity="([^"]+)"', html)
+    for attrs, body in re.findall(r"<script([^>]*)>(.*?)</script>", html, re.DOTALL):
+        if "src=" in attrs or "application/json" in attrs:
+            continue
+        hashes.append("sha256-" + base64.b64encode(hashlib.sha256(body.encode()).digest()).decode())
+    return "script-src " + " ".join([*(f"'{value}'" for value in hashes), *sources])
+
+
+def register_media_widget(*media_js: str) -> type[Component]:
+    """A component for a fragment, whose `Media.js` names `media_js`."""
+
+    @register("media_widget")
+    class MediaWidget(Component):
+        template: types.django_html = """
+            <div class="media-widget">media widget</div>
+        """
+        js: types.js = """
+            $onComponent((data) => {
+                window.widgetCalls = window.widgetCalls || [];
+                window.widgetCalls.push({ media: window.mediaLoaded || 0 });
+            });
+        """
+
+        class Media:
+            js = media_js
+
+    return MediaWidget
+
+
+def forged_src_block(*srcs: str, attrs: dict[str, str] | None = None) -> str:
+    tags = [{"tag": "script", "attrs": {"src": src, **(attrs or {})}, "content": ""} for src in srcs]
+    return forged_block(jsTags__toFetch=[_b64(tag) for tag in tags])
+
+
+@djc_test(django_settings=DJANGO_SETTINGS, components_settings={"extensions": [NonceExtension]})
+class TestPageWithoutNonce:
+    """
+    When the runtime's tag has no nonce, injected markup can write a block that the runtime obeys.
+
+    Such a block may load only the app's own files: `/components/cache/` and `STATIC_URL`.
+    """
+
+    def test_forged_block_loads_no_script_from_another_site(self, sync_browser):
+        # With hashes and 'strict-dynamic', the scripts that the runtime adds run from any site
+        register_widget()
+        page = render_page(forged_script_block(), nonce=None)
+
+        result = visit(sync_browser, page, hash_policy(page, "'strict-dynamic'"))
+        result.wait_for_widget()
+        result.settle()
+
+        assert result.other_site_requests == []
+        assert result.title() == "clean"
+        assert any(SKIPPED_MESSAGE in text for text in result.console)
+        result.page.context.close()
+
+    def test_inserted_block_loads_no_other_file_from_the_app(self, sync_browser):
+        # Markup that page code inserts cannot run its own `<script>`, but the runtime would
+        register_widget()
+        page = render_page(tail=APP_SCRIPT_TAG, nonce=None)
+        files = {"/app.js": APP_SCRIPT, UPLOADED: UPLOADED_JS}
+
+        csp = hash_policy(page, "'self'")
+
+        result = visit(sync_browser, page, csp, fragment=forged_src_block(UPLOADED), files=files)
+        result.wait_for_widget()
+        result.wait_for_console(SKIPPED_MESSAGE)
+        result.settle()
+
+        assert result.file_requests == ["/app.js"]
+        assert result.title() == "clean"
+        result.page.context.close()
+
+    @pytest.mark.parametrize(
+        "src",
+        [
+            "/static/../uploads/evil.js",
+            "/static/%2e%2e/uploads/evil.js",
+            "/static/..%2fuploads/evil.js",
+            "/static/..%5Cuploads/evil.js",
+            "//other.test/static/evil.js",
+            f"{OTHER}/components/cache/evil.js",
+            f"{OTHER}/static/evil.js",
+            "http://user:pass@app.test/static/evil.js",
+            "/components/cache/evil.js/../../uploads/evil.js",
+            "data:text/javascript,document.title='data'",
+        ],
+    )
+    def test_forged_block_cannot_leave_the_app_files(self, sync_browser, src: str):
+        register_widget()
+        page = render_page(forged_src_block(src), nonce=None)
+
+        result = visit(sync_browser, page, hash_policy(page, "'strict-dynamic'"), files={UPLOADED: UPLOADED_JS})
+        result.wait_for_widget()
+        result.settle()
+
+        assert result.other_site_requests == []
+        assert not [path for path in result.app_requests if "evil" in path]
+        assert result.title() == "clean"
+        result.page.context.close()
+
+    def test_forged_block_cannot_name_src_twice(self, sync_browser):
+        # The tag keeps the last `src` it gets, whatever its case
+        register_widget()
+        page = render_page(forged_src_block("/static/ok.js", attrs={"SRC": f"{OTHER}/forged.js"}), nonce=None)
+
+        result = visit(sync_browser, page, hash_policy(page, "'strict-dynamic'"))
+        result.wait_for_widget()
+        result.settle()
+
+        assert result.other_site_requests == []
+        assert result.title() == "clean"
+        result.page.context.close()
+
+    def test_runtime_copy_from_another_site_loads_nothing_from_there(self, sync_browser):
+        # A policy with the runtime's hash runs a copy of it from any site, and the copy reads
+        # its own address. So an address on another site with `integrity` gives no folder.
+        register_widget()
+        integrity = re.search(r'integrity="([^"]+)"', render_page(nonce=None))
+        assert integrity is not None
+        copy_url = f"{OTHER}/copy{RUNTIME_PATH}"
+        copy = f'<script src="{copy_url}" integrity="{integrity.group(1)}" crossorigin="anonymous"></script>'
+        page = render_page(copy + forged_src_block(f"{OTHER}/copy/static/forged.js", UPLOADED), nonce=None)
+
+        result = visit(sync_browser, page, hash_policy(page, "'strict-dynamic'"), files={UPLOADED: UPLOADED_JS})
+        result.wait_for_widget()
+        result.settle()
+
+        assert result.other_site_requests == [f"/copy{RUNTIME_PATH}"]
+        assert result.file_requests == []
+        assert result.title() == "clean"
+        result.page.context.close()
+
+    def test_forged_js_variables_do_not_reach_a_component(self, sync_browser):
+        # The server never puts JS variables in a block, so on this page such a block is forged
+        widget = register_widget()
+        page = render_page(forged_call_block(widget), nonce=None)
+
+        result = visit(sync_browser, page, hash_policy(page, "'strict-dynamic'"))
+        result.wait_for_widget()
+        result.settle()
+
+        assert result.widget_calls() == [{}]
+        result.page.context.close()
+
+    @pytest.mark.parametrize("policy", ["none", "hashes"])
+    def test_fragment_loads_its_files_from_static_and_cache(self, sync_browser, policy: str):
+        register_widget()
+        widget = register_media_widget("media.js")
+        page = render_page(tail=fetch_fragment_script(nonce=None), nonce=None)
+        csp = hash_policy(page, "'strict-dynamic'") if policy == "hashes" else None
+
+        result = visit(
+            sync_browser,
+            page,
+            csp,
+            fragment=render_fragment(widget, nonce=None),
+            files={"/static/media.js": MEDIA_JS},
+        )
+        result.wait_for_widget(count=2)
+
+        assert result.widget_calls()[1] == {"media": 1}
+        assert result.file_requests == ["/static/media.js"]
+        result.page.context.close()
+
+    def test_fragment_skips_a_script_from_another_site(self, sync_browser):
+        # This is the one change for apps without a policy. The fragment's components still run.
+        register_widget()
+        widget = register_media_widget(f"{OTHER}/lib.js")
+        page = render_page(tail=fetch_fragment_script(nonce=None), nonce=None)
+
+        result = visit(sync_browser, page, None, fragment=render_fragment(widget, nonce=None))
+        result.wait_for_widget(count=2)
+        result.settle()
+
+        assert result.other_site_requests == []
+        assert any(SKIPPED_MESSAGE in text and f"{OTHER}/lib.js" in text for text in result.console)
+        result.page.context.close()
+
+    def test_script_from_another_site_already_on_the_page_is_not_needed(self, sync_browser):
+        # The documented way to keep a CDN script: a component on the page lists it, so the
+        # runtime knows that the page has it, and the fragment does not ask for it again.
+        register_widget()
+        widget = register_media_widget(f"{OTHER}/lib.js")
+        template = Template(
+            """
+            <!doctype html>
+            <html>
+                <head><title>clean</title></head>
+                <body>
+                    {% component "media_widget" / %}
+                    {% component_js_dependencies %}
+                    {{ tail|safe }}
+                </body>
+            </html>
+            """,
+        )
+        NonceExtension.nonce = None
+        page = template.render(Context({"tail": fetch_fragment_script(nonce=None)}))
+
+        result = visit(sync_browser, page, None, fragment=render_fragment(widget, nonce=None))
+        result.wait_for_widget(count=2)
+        result.settle()
+
+        assert result.other_site_requests == ["/lib.js"]
+        assert not any(SKIPPED_MESSAGE in text for text in result.console)
+        result.page.context.close()
+
+    def test_base_tag_does_not_move_checked_files(self, sync_browser):
+        # The runtime loads the full URL it checked, so a `<base>` tag added later changes nothing
+        register_widget()
+        widget = register_lazy_widget()
+        page = render_page(tail=BASE_TAG + fetch_fragment_script(nonce=None), nonce=None)
+
+        result = visit(sync_browser, page, None, fragment=render_fragment(widget, nonce=None))
+        result.wait_for_widget(count=2)
+
+        assert not [path for path in result.other_site_requests if path.endswith(".js")]
         result.page.context.close()

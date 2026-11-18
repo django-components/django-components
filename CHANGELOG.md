@@ -149,9 +149,15 @@
 
     On a page whose policy refuses scripts without a nonce, an injected `<script data-djc>` block no longer tells the dependency manager what to load or which components to call. When the dependency manager's tag has a nonce, it obeys only a block with the same nonce in its JSON. django-components writes that nonce for you, from the nonce your hook puts on its scripts.
 
-    **If you add a nonce with the `on_dependencies` hook and use fragments or swap whole pages with JS, render the new HTML with the nonce of the page it goes into.** Other HTML no longer starts, and the browser console shows an error. Pages where the dependency manager's tag has no nonce work as before. See [Content Security Policy](https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/#content-security-policy).
+    **If you add a nonce with the `on_dependencies` hook and use fragments or swap whole pages with JS, render the new HTML with the nonce of the page it goes into.** Other HTML no longer starts, and the browser console shows an error. For pages where the dependency manager's tag has no nonce, see the next item. See [Content Security Policy](https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/#content-security-policy).
 
     Add `base-uri 'self'` to your policy as well. It is what protects files from `Component.Media`, which carry no hash.
+
+- **On a page without a nonce, injected HTML can no longer make the dependency manager JS load scripts from anywhere.** This matters when a page has an HTML injection problem and its Content Security Policy lists hashes or `'self'` instead of a nonce. Under `'strict-dynamic'`, an injected `<script data-djc>` block could run a script from any site, and HTML that your own JS inserts could run any file from your site, such as one a visitor uploaded.
+
+    When the dependency manager's tag has no nonce, a `<script data-djc>` block now loads only component JS files from `/components/cache/` on the page's origin and files under `STATIC_URL`. It ignores a block that holds JS variables, which django-components never writes.
+
+    **A script from a CDN in the `Component.Media.js` of a fragment's component no longer loads on a page without a nonce, also on sites with no policy at all.** The fragment's components still run, the browser console shows an error, and the server logs a warning. Load the script on the page itself, serve it from `STATIC_URL`, or give the page a nonce. See [Pages without a nonce](https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/#pages-without-a-nonce).
 
 ## v0.152.0
 

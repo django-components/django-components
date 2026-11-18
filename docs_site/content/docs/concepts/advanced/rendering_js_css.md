@@ -637,16 +637,36 @@ A session holds one nonce, so when a user opens your site in a second tab, fragm
 
 Tools that swap the whole page with JS, such as `hx-boost` or Turbo, have the same limit. The dependency manager stays from the first page, so the new page needs the first page's nonce, or a full reload.
 
-### What the nonce check can't cover
+### Pages without a nonce
 
-The dependency manager reads the nonce from its own tag. It obeys every block in these cases, because it has no nonce to compare:
+The dependency manager reads the nonce from its own tag. When that tag has no nonce, it has nothing to compare, so it can't tell your `<script data-djc>` blocks from injected ones. This is the case when:
 
 - Your policy uses hashes or hosts, and the tag has no nonce.
+- Your site sends no policy.
 - A hook renders the tag with `type="module"`. A module can't read the tag that loaded it.
 
-Under `'strict-dynamic'`, the files that such a block names then run, so give these pages a nonce on the tag.
+On such a page, a block loads a script only when the file is one that your app serves:
 
-The check also relies on your policy to refuse a script tag with no nonce. If `script-src` allows `'self'` or a host that serves your static files, an attacker can inject a second copy of the dependency manager. That copy has no nonce, so it obeys every block. Prefer `'strict-dynamic'`, which makes the browser ignore `'self'` and hosts.
+- the JS file of a component, which django-components serves from `/components/cache/` on the page's origin;
+- a file under your `STATIC_URL`, such as a relative path in [`Component.Media.js`][ComponentMediaInput].
+
+The dependency manager finds `STATIC_URL` from its own URL, `<STATIC_URL>django_components/django_components.min.js`. It doesn't count the root of the page's origin (`STATIC_URL = "/"`), because that would include every path on your site. A `STATIC_URL` on another host, such as `https://cdn.example.com/static/`, counts when the tag has no `integrity`, which is how django-components writes the tag for such a URL.
+
+The dependency manager skips any other script, and the browser console shows an error. The fragment's components still run. When you render a fragment without a nonce, django-components also logs a warning on the server for each script it expects the dependency manager to skip, once per URL. The dependency manager also ignores a block that holds JS variables, because django-components sends them in a file of their own.
+
+It loads each file from the URL as read against the page's own address, so a `<base>` tag doesn't change where these files come from.
+
+So a script from a CDN in a fragment's `Component.Media.js` doesn't load on a page without a nonce, even on a site with no policy at all. To use it, do one of these:
+
+- Load it on the page itself. When a component on the page lists the same URL in its `Component.Media.js`, the dependency manager knows that the page has the script, and doesn't ask for it again. If you load it with a `<script>` tag of your own, also call `DjangoComponents.manager.markScriptLoaded("js", url)` from your own JS, with the URL exactly as the fragment writes it, before the fragment arrives.
+- Serve the file from your `STATIC_URL`.
+- Give the page a nonce, as described above. On a page with a nonce, a fragment loads every script it names.
+
+What this can't cover: injected HTML can still call your page's components with their own files, and load any file under `STATIC_URL`. A library there that acts on the HTML of the page, such as htmx or Alpine.js, then does what the injected HTML tells it. The same goes for a file that a visitor uploads, if your site serves it as JavaScript under `STATIC_URL` or at a path that ends in `/components/cache/<name>.js`. Give pages that receive fragments a nonce.
+
+### What the nonce check can't cover
+
+The check relies on your policy to refuse a script tag with no nonce. If `script-src` allows `'self'` or a host that serves your static files, an attacker can inject a second copy of the dependency manager. That copy has no nonce, so it treats the page as one [without a nonce](#pages-without-a-nonce) and obeys every block that names only your own files. Prefer `'strict-dynamic'`, which makes the browser ignore `'self'` and hosts.
 
 ## HTML fragments
 
