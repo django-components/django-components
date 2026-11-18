@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django_components"
-version = "0.153.0"
+version = "1.0.0"
 requires-python = ">=3.11, <4.0"
 description = "A way to create simple reusable template components in Django."
 keywords = ["django", "components", "css", "js", "html"]
@@ -14,6 +14,7 @@ authors = [
     { name = "Juro Oravec", email = "juraj.oravec.josefson@gmail.com" },
 ]
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
     "Framework :: Django",
     "Framework :: Django :: 5.2",
     "Framework :: Django :: 6.0",
