@@ -23,9 +23,13 @@ jobs:
             os: ubuntu-latest
           - python-version: "3.14"
             os: ubuntu-latest
+          - python-version: "3.15"
+            os: ubuntu-latest
           - python-version: "3.11"
             os: windows-latest
           - python-version: "3.14"
+            os: windows-latest
+          - python-version: "3.15"
             os: windows-latest
 
     steps:

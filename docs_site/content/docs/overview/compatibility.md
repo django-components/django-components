@@ -6,6 +6,9 @@ Django-components supports all supported combinations versions of [Django](https
 | 3.12           | 5.2, 6.0, 6.1  |
 | 3.13           | 5.2, 6.0, 6.1  |
 | 3.14           | 5.2, 6.0, 6.1  |
+| 3.15           | 6.1            |
+
+Python 3.15 needs Django 6.1.3 or newer. On Python 3.15, django-components requires that version, so your installer picks it for you.
 
 ## Operating systems
 
