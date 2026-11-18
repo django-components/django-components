@@ -6,7 +6,7 @@
 
 - Add support for Django 6.1 (on Python 3.12 and newer)
 
-    If you set [`Component.media_class`](https://django-components.github.io/django-components/latest/concepts/fundamentals/secondary_js_css_files/#change-how-every-file-is-rendered) to a `Media` subclass that overrides `render_js()` or `render_css()`, update it for Django 6.1:
+    If you set [`Component.media_class`](https://django-components.github.io/django-components/docs/concepts/fundamentals/secondary_js_css_files/#change-how-every-file-is-rendered) to a `Media` subclass that overrides `render_js()` or `render_css()`, update it for Django 6.1:
 
     - Accept the `attrs` keyword argument. Without it, `print(MyComponent.media)` raises `TypeError`.
 
@@ -1103,7 +1103,7 @@ _05 Oct 2025_
 
 #### Docs
 
-- New [people page](https://django-components.github.io/django-components/dev/community/people/) to celebrate the contributors and authors!
+- New [people page](https://django-components.github.io/django-components/docs/community/people/) to celebrate the contributors and authors!
 
 ## v0.141.6
 
@@ -1644,7 +1644,7 @@ Summary:
     To disable escaping, wrap the result of `slots` in
     [`mark_safe()`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.mark_safe).
 
-- Slot functions behavior has changed. See the new [Slots](https://django-components.github.io/django-components/latest/concepts/fundamentals/slots/) docs for more info.
+- Slot functions behavior has changed. See the new [Slots](https://django-components.github.io/django-components/docs/concepts/fundamentals/slots/) docs for more info.
 
     - Function signature:
 
@@ -2208,7 +2208,7 @@ Summary:
     This practically brings back input validation, because the instantiation of the types
     will raise an error if the inputs are not valid.
 
-    Read more on [Typing and validation](https://django-components.github.io/django-components/latest/concepts/fundamentals/typing_and_validation/)
+    Read more on [Typing and validation](https://django-components.github.io/django-components/docs/concepts/fundamentals/typing_and_validation/)
 
 - Render emails or other non-browser HTML with new "dependencies strategies"
 
@@ -3159,7 +3159,7 @@ _19 Dec 2024_
 
 #### Feat
 
-- Add support for HTML fragments. HTML fragments can be rendered by passing `type="fragment"` to `Component.render()` or `Component.render_to_response()`. Read more on how to [use HTML fragments with HTMX, AlpineJS, or vanillaJS](https://django-components.github.io/django-components/latest/concepts/advanced/html_fragments).
+- Add support for HTML fragments. HTML fragments can be rendered by passing `type="fragment"` to `Component.render()` or `Component.render_to_response()`. Read more on how to [use HTML fragments with HTMX, AlpineJS, or vanillaJS](https://django-components.github.io/django-components/docs/concepts/advanced/html_fragments/).
 
 ## v0.121
 
