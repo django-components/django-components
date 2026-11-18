@@ -447,7 +447,7 @@ Use the same variable names as in the dictionary returned from [`get_css_data()`
     the variables:
 
     ```css
-    [data-djc-css-b2c3d4] {
+    [data-djc-css-0c4e2a9f1b7d3e5a6c8f0b2d4e6a8c1f] {
         --button_bg: #f0f0f0;
         --button_color: #333;
         --button_hover_bg: #e0e0e0;
@@ -460,7 +460,7 @@ Use the same variable names as in the dictionary returned from [`get_css_data()`
     This stylesheet is then added to the CSS dependencies of the component (as if added to `Component.Media.css`).
     So the variables stylesheet will be loaded with the rest of the component's CSS.
 
-    The rendered component will have a corresponding `data-djc-css-b2c3d4` HTML attribute, matching the hash.
+    The rendered component will have a corresponding `data-djc-css-0c4e2a9f1b7d3e5a6c8f0b2d4e6a8c1f` HTML attribute, matching the hash.
 
     Thus, the CSS variables are dynamically applied to the component, and ONLY to this single instance (or
     other instances that have the same variables).
@@ -507,6 +507,17 @@ If `SECRET_KEY` is empty, each server process makes a random secret of its own w
 values get a different URL in each process. Pages keep working as before. If several processes share one
 cache through [`COMPONENTS.cache`][ComponentsSettings.cache], that cache then holds one copy of the same
 values for each process.
+
+Django Components 0.152.0 and earlier used 6 characters instead of 32, which anyone can guess. Django
+Components now refuses such URLs and never reads the values stored under them, even while they are still in
+the cache. So HTML that one of those versions rendered and that is still cached, for example by
+`{% cache %}` or `Component.Cache`, loses these values until it expires: a warning is logged, the
+component's `$onComponent` callbacks do not run, and its CSS variables are unset. To render those pages
+again sooner, clear the cache that holds their HTML.
+
+If you set [`COMPONENTS.cache`][ComponentsSettings.cache], the old values stay in it until they expire, and with
+`"TIMEOUT": None` they never do. Nobody can read them anymore, but they take up space. Clearing that cache
+removes them, along with everything else in it.
 
 ## Accessing component inputs
 

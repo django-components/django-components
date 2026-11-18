@@ -16,6 +16,7 @@ from django_components import Component, render_dependencies, types
 from django_components import dependencies as dependencies_module
 from django_components.cache import get_component_vars_cache
 from django_components.dependencies import (
+    Script,
     Style,
     cache_component_css_vars,
     cache_component_js_vars,
@@ -307,17 +308,91 @@ class TestKeysFromOlderVersions:
         assert "<div>x</div>" in rendered
         assert "CSS variables of component" in caplog.text
 
-    def test_an_entry_under_a_short_key_is_still_served(self):
-        # The changelog tells apps with a shared cache to clear it after an upgrade because of this.
-        comp_cls = _make_css_component()
-        style = Style(
-            kind="variables",
-            content="[x] { --note: old; }",
-            attrs={},
-            origin_class_id=comp_cls.class_id,
-        )
+    def _store(self, comp_cls: type[Component], script_type: str, name: str, content: str) -> None:
         # Written out in full, as an older version wrote it, so this stays a test of an old entry
         # if `_gen_cache_key()` changes.
-        cache_key = f"__components:{comp_cls.class_id}:css:{self.OLD_KEY}"
-        get_component_vars_cache().set(cache_key, json.dumps(style.to_json()))
-        assert Client().get(f"/components/cache/{comp_cls.class_id}.{self.OLD_KEY}.css").status_code == 200
+        cls = Script if script_type == "js" else Style
+        script = cls(kind="variables", content=content, attrs={}, origin_class_id=comp_cls.class_id)
+        cache_key = f"__components:{comp_cls.class_id}:{script_type}:{name}"
+        get_component_vars_cache().set(cache_key, json.dumps(script.to_json()))
+
+    def _record_cache_reads(self, monkeypatch) -> list[str]:
+        # Records every key that is looked up, so a test can show that a name never reached the cache.
+        cache = get_component_vars_cache()
+        reads: list[str] = []
+        original_get = cache.get
+        original_has_key = cache.has_key
+
+        def get(key, *args, **kwargs):
+            reads.append(key)
+            return original_get(key, *args, **kwargs)
+
+        def has_key(key, *args, **kwargs):
+            reads.append(key)
+            return original_has_key(key, *args, **kwargs)
+
+        monkeypatch.setattr(cache, "get", get)
+        monkeypatch.setattr(cache, "has_key", has_key)
+        return reads
+
+    @pytest.mark.parametrize("name", [OLD_KEY, "f" * 64])
+    def test_an_entry_under_a_name_of_another_length_is_never_read(self, monkeypatch, name):
+        # A 6-character name from an older version is easy to guess. Its entry must stay unreadable
+        # even while it is still in a shared cache.
+        comp_cls = _make_css_component()
+        self._store(comp_cls, "css", name, "[x] { --note: old-value; }")
+        reads = self._record_cache_reads(monkeypatch)
+
+        assert Client().get(f"/components/cache/{comp_cls.class_id}.{name}.css").status_code == 404
+        assert dependencies_module.get_script("css", comp_cls, name) is None
+        assert reads == []
+
+    def test_an_entry_under_a_32_character_name_is_served(self):
+        # The route only looks the name up, so it serves an entry that another process stored
+        # under a name made with another secret.
+        comp_cls = _make_css_component()
+        name = "1f3a9c0d7b2e4f6089a1c3d5e7f90b12"
+        self._store(comp_cls, "css", name, "[x] { --note: stored-value; }")
+
+        response = Client().get(f"/components/cache/{comp_cls.class_id}.{name}.css")
+        assert response.status_code == 200
+        assert b"stored-value" in response.content
+
+    def test_an_old_name_and_an_expired_name_on_one_page_each_get_a_warning(self, caplog):
+        # The two causes need different fixes, so one must not hide the other.
+        comp_cls = _make_css_component()
+        expired_name = "1f3a9c0d7b2e4f6089a1c3d5e7f90b12"
+        html = (
+            f"<!-- _RENDERED {comp_cls.class_id},cabc123,,{self.OLD_KEY} --><div>x</div>"
+            f"<!-- _RENDERED {comp_cls.class_id},cabc124,,{expired_name} --><div>y</div>"
+        )
+        with caplog.at_level(logging.WARNING, logger="django_components"):
+            render_dependencies(html, strategy="fragment")
+        assert "django-components 0.152.0 or earlier cached" in caplog.text
+        assert "are no longer in the cache" in caplog.text
+
+    @pytest.mark.parametrize("strategy", ["fragment", "document", "simple", "prepend", "append"])
+    @pytest.mark.parametrize(
+        ("make_component", "script_type", "kind"),
+        [(_make_css_component, "css", "CSS"), (_make_js_component, "js", "JS")],
+    )
+    def test_html_with_a_short_key_loses_the_values_still_in_the_cache(
+        self, caplog, monkeypatch, strategy, make_component, script_type, kind
+    ):
+        # Old cached HTML renders as if its values had expired: no old values and no URL with the
+        # short name. The warning says what happened, because raising the cache limits would not help.
+        comp_cls = make_component()
+        self._store(comp_cls, script_type, self.OLD_KEY, "old-value")
+        js_name, css_name = (self.OLD_KEY, "") if script_type == "js" else ("", self.OLD_KEY)
+        html = f"<!-- _RENDERED {comp_cls.class_id},cabc123,{js_name},{css_name} --><div>x</div>"
+        reads = self._record_cache_reads(monkeypatch)
+
+        with caplog.at_level(logging.WARNING, logger="django_components"):
+            rendered = render_dependencies(html, strategy=strategy)
+
+        assert "<div>x</div>" in rendered
+        assert "old-value" not in rendered
+        assert self.OLD_KEY not in rendered
+        assert f"{kind} variables of component" in caplog.text
+        assert "django-components 0.152.0 or earlier cached" in caplog.text
+        assert not [key for key in reads if key.endswith(self.OLD_KEY)]

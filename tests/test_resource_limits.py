@@ -133,6 +133,10 @@ def _vars_url(comp_cls: type[Component], rendered: str) -> str:
     return f"/components/cache/{comp_cls.class_id}.{variables_hash}.css"
 
 
+# A name of the length that this version makes.
+HASH_32 = "1f3a9c0d7b2e4f6089a1c3d5e7f90b12"
+
+
 @djc_test
 class TestCacheRoute:
     def test_each_route_has_one_open_ended_part(self):
@@ -149,23 +153,18 @@ class TestCacheRoute:
             ("Table_a1b2c3.js", {"comp_cls_id": "Table_a1b2c3", "script_type": "js"}),
             ("Table_a1b2c3.css", {"comp_cls_id": "Table_a1b2c3", "script_type": "css"}),
             (
-                "Table_a1b2c3.0ab2c3.js",
-                {"comp_cls_id": "Table_a1b2c3", "variables_hash": "0ab2c3", "script_type": "js"},
+                f"Table_a1b2c3.{HASH_32}.js",
+                {"comp_cls_id": "Table_a1b2c3", "variables_hash": HASH_32, "script_type": "js"},
             ),
-            # The hash can grow up to 64 hexadecimal characters without a change to the route.
             (
                 f"Table_a1b2c3.{'0' * 32}.css",
                 {"comp_cls_id": "Table_a1b2c3", "variables_hash": "0" * 32, "script_type": "css"},
             ),
-            (
-                f"Table_a1b2c3.{'f' * 64}.js",
-                {"comp_cls_id": "Table_a1b2c3", "variables_hash": "f" * 64, "script_type": "js"},
-            ),
             # A class ID comes from the class name, which a dynamically created class can fill with anything.
             ("a.b_a1b2c3.js", {"comp_cls_id": "a.b_a1b2c3", "script_type": "js"}),
             (
-                "a.b_a1b2c3.0ab2c3.css",
-                {"comp_cls_id": "a.b_a1b2c3", "variables_hash": "0ab2c3", "script_type": "css"},
+                f"a.b_a1b2c3.{HASH_32}.css",
+                {"comp_cls_id": "a.b_a1b2c3", "variables_hash": HASH_32, "script_type": "css"},
             ),
         ],
     )
@@ -183,7 +182,7 @@ class TestCacheRoute:
             "Table_a1b2c3.html",
             "Table_a1b2c3.js/",
             "Table_a1b2c3.js\n",
-            "Table_a1b2c3.0ab2c3.css\n",
+            f"Table_a1b2c3.{HASH_32}.css\n",
             "Table_a1b2c3.0AB2C3X.html",
             f"Table_a1b2c3.{'0' * 65}.xx",
         ],
@@ -191,6 +190,27 @@ class TestCacheRoute:
     def test_routes_reject_other_paths(self, path):
         with pytest.raises(Resolver404):
             resolve(f"/components/cache/{path}")
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            # Older versions made 6 characters, which are easy to guess.
+            "0ab2c3",
+            HASH_32[:31],
+            HASH_32 + "0",
+            "f" * 64,
+            HASH_32.upper(),
+        ],
+    )
+    def test_only_32_character_names_are_variables_names(self, name):
+        # Such a path still matches the route for `Component.js` and `Component.css`, because a class ID
+        # may contain dots. But a class ID always ends in `_` and 6 characters, so no class has
+        # an ID like `Table_a1b2c3.0ab2c3`, and the path gets a 404.
+        comp_cls = _make_component()
+        comp_cls.render()
+        path = f"/components/cache/{comp_cls.class_id}.{name}.css"
+        assert "variables_hash" not in resolve(path).kwargs
+        assert Client().get(path).status_code == 404
 
     @pytest.mark.parametrize(
         "path",

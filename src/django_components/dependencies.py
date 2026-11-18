@@ -456,6 +456,20 @@ def _gen_cache_key(
     return f"__components:{comp_cls_id}:{script_type}"
 
 
+# The name of each stored `get_js_data()` or `get_css_data()` value is exactly this many lowercase
+# hexadecimal characters. Versions 0.152.0 and earlier used 6 characters, and their entries can outlive an
+# upgrade in a shared `COMPONENTS.cache`. A 6-character name is easy to guess, so every place that takes
+# a name from a URL or from rendered HTML accepts only this length, and never reads the cache for another.
+_VARIABLES_HASH_LENGTH = 32
+_VARIABLES_HASH_PATTERN = f"[0-9a-f]{{{_VARIABLES_HASH_LENGTH}}}"
+_VARIABLES_HASH_RE = re.compile(_VARIABLES_HASH_PATTERN)
+
+
+def _is_variables_hash(variables_hash: str) -> bool:
+    # `fullmatch()` and not `match()` with `$`, because `$` also matches before a trailing newline.
+    return _VARIABLES_HASH_RE.fullmatch(variables_hash) is not None
+
+
 def _get_script_cache(variables_hash: str | None) -> "BaseCache":
     # Same condition as `_gen_cache_key()`: a hash means that the script was generated from variables.
     return get_component_vars_cache() if variables_hash else get_component_media_cache()
@@ -465,13 +479,26 @@ def _warn_about_missing_variables(
     comp_cls: type["Component"],
     kind: str,
     effect: str,
-    already_warned: set[tuple[str, str]],
+    variables_hash: str | None,
+    already_warned: set[tuple[str, str, bool]],
 ) -> None:
-    # Once per component per page. A page may repeat a component many times, and a visitor
+    # A short name comes from HTML that an older version cached. The cache limits do not explain it
+    # and raising them does not help, so that case gets its own warning, which names what does.
+    is_old_name = bool(variables_hash and not _is_variables_hash(variables_hash))
+    # Once per component per page and per cause. A page may repeat a component many times, and a visitor
     # can reload that page, so one line per instance would let them fill up the logs.
-    if (comp_cls.class_id, kind) in already_warned:
+    warning_key = (comp_cls.class_id, kind, is_old_name)
+    if warning_key in already_warned:
         return
-    already_warned.add((comp_cls.class_id, kind))
+    already_warned.add(warning_key)
+    if is_old_name:
+        logger.warning(
+            f"The {kind} variables of component {comp_cls.class_id} are named in HTML that django-components "
+            f"0.152.0 or earlier cached, and this version does not read them, so {effect}. "
+            "To render this HTML again, clear the cache that holds it, such as the one behind "
+            "{% cache %} or Component.Cache."
+        )
+        return
     logger.warning(
         f"The {kind} variables of component {comp_cls.class_id} are no longer in the cache, so {effect}. "
         "See COMPONENTS.vars_cache_max_age and COMPONENTS.vars_cache_max_bytes, "
@@ -484,6 +511,10 @@ def _is_script_in_cache(
     script_type: ScriptType,
     variables_hash: str | None,
 ) -> bool:
+    # HTML from a cache can name an entry that an older version stored under a short name.
+    # Such an entry counts as gone, so the page renders as it does when its values have expired.
+    if variables_hash and not _is_variables_hash(variables_hash):
+        return False
     cache_key = _gen_cache_key(comp_cls.class_id, script_type, variables_hash)
     cache = _get_script_cache(variables_hash)
     return cache.has_key(cache_key)
@@ -608,7 +639,7 @@ def _gen_variables_hash(json_data: str) -> str:
     here reads `SECRET_KEY_FALLBACKS`.
     """
     digest = salted_hmac(_VARIABLES_KEY_SALT, json_data, secret=_get_variables_secret(), algorithm="sha256")
-    return digest.hexdigest()[:32]
+    return digest.hexdigest()[:_VARIABLES_HASH_LENGTH]
 
 
 # NOTE: In CSS, we link the CSS vars to the component via a stylesheet that defines
@@ -862,6 +893,8 @@ COMPONENT_COMMENT_REGEX = re.compile(rb"<!--\s+_RENDERED\s+(?P<data>[\w\-,/]+?)\
 # - id - Component render ID
 # - js - Cache key for the JS data from `get_js_data()`
 # - css - Cache key for the CSS data from `get_css_data()`
+# `js` and `css` take any length, because HTML cached by an older version names its values with
+# 6 characters, and such a page must still render. The lookups then treat those names as gone.
 SCRIPT_NAME_REGEX = re.compile(
     rb"^(?P<comp_cls_id>[\w\-\./]+?),(?P<id>[\w]+?),(?P<js>[0-9a-f]*?),(?P<css>[0-9a-f]*?)$",
 )
@@ -1192,7 +1225,7 @@ def _process_dep_declarations(
     all_scripts_mark_as_loaded: list[Script] = []
     all_styles_mark_as_loaded: list[Style] = []
 
-    warned_missing_variables: set[tuple[str, str]] = set()
+    warned_missing_variables: set[tuple[str, str, bool]] = set()
 
     for comp_cls_id, comp_id, stored_js_hash, stored_css_hash in instance_rows:
         comp_cls = get_component_by_class_id(comp_cls_id)
@@ -1213,10 +1246,12 @@ def _process_dep_declarations(
         )
         if js_vars_missing:
             _warn_about_missing_variables(
-                comp_cls, "JS", "its `$onComponent` callbacks will not run", warned_missing_variables
+                comp_cls, "JS", "its `$onComponent` callbacks will not run", stored_js_hash, warned_missing_variables
             )
         if css_vars_missing:
-            _warn_about_missing_variables(comp_cls, "CSS", "it will render without them", warned_missing_variables)
+            _warn_about_missing_variables(
+                comp_cls, "CSS", "it will render without them", stored_css_hash, warned_missing_variables
+            )
         js_hash = None if js_vars_missing else stored_js_hash
         css_hash = None if css_vars_missing else stored_css_hash
 
@@ -1680,6 +1715,10 @@ def get_script(
     variables_hash: str | None,
 ) -> Script | Style | None:
     """Get `Script` or `Style` object from cache. Returns `None` if not found."""
+    # The route already refuses other names. This check also covers names read from rendered HTML,
+    # so an entry under a short, guessable name from an older version is never read.
+    if variables_hash and not _is_variables_hash(variables_hash):
+        return None
     cache = _get_script_cache(variables_hash)
     cache_key = _gen_cache_key(comp_cls.class_id, script_type, variables_hash)
     cached_data = cache.get(cache_key)
@@ -1978,13 +2017,13 @@ def cached_script_view(
 # would otherwise become part of a cache key, and Django's warning about an unsafe key is remembered
 # by Python for good, so each such request would add to the process's memory.
 #
-# `variables_hash` accepts 1 to 64 lowercase hexadecimal characters, which is more than
-# the hash we generate today, so that hash can grow without changing this route.
+# `variables_hash` accepts exactly the names that `_gen_variables_hash()` makes, so the short names that
+# older versions stored are never looked up. See `_VARIABLES_HASH_LENGTH`.
 _CACHE_SCRIPT_TYPE_REGEX = r"(?P<script_type>js|css)"
-_CACHE_VARIABLES_HASH_REGEX = r"(?P<variables_hash>[0-9a-f]{1,64})"
+_CACHE_VARIABLES_HASH_REGEX = rf"(?P<variables_hash>{_VARIABLES_HASH_PATTERN})"
 
 urlpatterns = [
-    # E.g. `/components/cache/MyTable_a1b2c3.0ab2c3.js`
+    # E.g. `/components/cache/MyTable_a1b2c3.1f3a9c0d7b2e4f6089a1c3d5e7f90b12.js`
     re_path(
         rf"^cache/(?P<comp_cls_id>[^/]+)\.{_CACHE_VARIABLES_HASH_REGEX}\.{_CACHE_SCRIPT_TYPE_REGEX}$",
         cached_script_view,

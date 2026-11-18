@@ -247,6 +247,11 @@ can lose them in three ways:
   values used longest ago when it reaches about 64 MiB of memory. Replaying a
   cached fragment counts as using its values.
 
+A fragment that django-components 0.152.0 or earlier cached also loses its
+variables, even when they are still stored, because later versions do not
+read the short names that those versions gave them. Clear the cache that
+holds the fragment to render it again.
+
 ✅ Do: set the
 [`cache` setting][ComponentsSettings.cache]
 to the same persistent backend you use for the fragment cache, so the

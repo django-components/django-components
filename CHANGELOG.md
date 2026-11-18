@@ -95,7 +95,7 @@
 
 - **A long URL under `/components/cache/` no longer keeps the server busy**
 
-    Rejecting a long URL took time that grew with the cube of its length. These URLs now accept only the file names that django-components generates: the part between the dots must be 1 to 64 lowercase hexadecimal characters, and the extension must be `js` or `css`. Other paths still give a 404.
+    Rejecting a long URL took time that grew with the cube of its length. These URLs now accept only the file names that django-components generates: the extension must be `js` or `css`, and for values from `get_js_data()` or `get_css_data()`, the part between the component ID and the extension must be exactly 32 lowercase hexadecimal characters. Other paths give a 404.
 
 - **Long `style` values no longer keep the server busy**
 
@@ -129,7 +129,9 @@
 
     CSS variables are now written from the JSON form of the values, so `(1, 2)` gives `[1, 2]`, and a key of `True` or `None` gives `--true` or `--null`. If your CSS uses `var(--True)`, use a string key.
 
-    If you set `COMPONENTS.cache`, an entry that an older version stored can be read under its short key until that entry expires. To remove those entries sooner, clear that cache. This removes everything in it, so take care if your app uses it for other data.
+    Versions 0.152.0 and earlier stored these values under a 6-character name, which anyone can guess. The server now refuses such names and never reads the values stored under them, even while they are still in the cache. So HTML that one of those versions rendered and that is still cached, for example by `{% cache %}` or `Component.Cache`, loses these values until it expires: a warning is logged, that component's `$onComponent` callbacks do not run, and its CSS variables are unset. To render those pages again sooner, clear the cache that holds their HTML.
+
+    If you set `COMPONENTS.cache`, the old values stay in it until they expire, and with `"TIMEOUT": None` they never do. Nobody can read them anymore, but they take up space, and going back to an older version would serve them again. To remove them, clear that cache. This removes everything in it, so take care if your app uses it for other data.
 
 - **`Component.Cache` no longer mixes up inputs that look alike**
 
