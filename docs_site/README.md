@@ -55,7 +55,7 @@ All run from `docs_site/` as `uv run python manage.py <command>`.
 |---|---|
 | `build_docs --docs-version X --alias latest` | Build a committed version snapshot into `versions/X/` + update the manifest + the `latest` redirect |
 | `docs_assemble` | Assemble the full deploy artifact in `site/`: current build at the root + the published version window under `/v/*` + an ephemeral `/v/dev/` + redirect pages for the old `/latest/` and `/dev/` URLs. **CI deploys this to Pages** |
-| `docs_import_ghpages` | One-time: mirror the old mkdocs/mike `gh-pages` versions into `versions/` (run at cutover; safe to re-run) |
+| `docs_import_ghpages` | Done once: copied the built docs of the old mkdocs/mike `gh-pages` versions into `versions/`. The output is committed; do not run it again (see [Bootstrapping & one-offs](#bootstrapping--one-offs)) |
 | `docs_build_all` | Bootstrap/rebuild every version selected by `docs_versions.toml` (a git worktree per tag); `--dry-run` to preview |
 | `docs_versions_check` | Validate the committed `versions/` tree (manifest <-> filesystem, aliases, cross-version links, no file that `.gitignore` would leave out of the commit) |
 
@@ -448,7 +448,7 @@ window = 15   # newest N releases to deploy; 0 = publish everything
 ```
 
 Rough sizes today (mostly frozen mike builds): last 10 ≈ 480 MB, last 15 ≈ 600 MB,
-last 20 ≈ 760 MB, all 58 ≈ 1.1 GB (over the cap). As releases get rebuilt with the
+last 20 ≈ 760 MB, all 59 imported versions ≈ 1.1 GB (over the cap). As releases get rebuilt with the
 new builder (9 MB each, shared `/static`), the same window gets much lighter over
 time. There's no cross-version dedup on the served site (a PNG used in 20 versions
 is 20 real files); git de-dups identical blobs in the repo, but Pages serves the
@@ -473,10 +473,10 @@ Pages source to "GitHub Actions" once.
 
 `docs_site/versions/` is under version control, so the workflow's tag step
 (`git add docs_site/versions/`) stages the new snapshot and `docs_assemble` copies
-it into `/v/` in the same run. `master` holds no snapshots until the first release tag
-adds one. The old gh-pages versions appear on the site only after you run
-`docs_import_ghpages` and commit its output. A re-run of the same tag commits the
-rebuilt snapshot again, because each page's build stamp records the build time.
+it into `/v/` in the same run. `master` already holds the 59 versions imported from
+the old `gh-pages` branch, and the release workflow commits one more for each tag.
+A re-run of the same tag commits the rebuilt snapshot again, because each page's
+build stamp records the build time.
 
 `git add` leaves out a file that a `.gitignore` rule matches and does not report it,
 so the last line of `.gitignore` re-includes everything under `docs_site/versions/`
@@ -526,11 +526,17 @@ root-served, unchanged.
 
 ### Bootstrapping & one-offs
 
-- `docs_import_ghpages` - one-time mirror of the old mike/`gh-pages` versions into
-  `versions/` (run at cutover; safe to re-run). It overwrites `versions.json` with
-  the gh-pages list, so a version committed earlier drops out of `versions.json` and
-  the version picker no longer lists it. Run it before the first release tag, or
-  rebuild that release afterwards with `build_docs --docs-version <tag> --alias latest`.
+- `docs_import_ghpages` - copies the built docs of the old mike/`gh-pages` versions
+  into `versions/`. It has already run, and its output is committed. Do not run it
+  again. A second run:
+  - overwrites `versions.json` with the `gh-pages` list, so every release committed
+    after the import disappears from the version picker;
+  - points `latest/` back at 0.151.1;
+  - adds a `versions/dev/` folder and a `dev` entry to `versions.json`. The deploy
+    builds `dev` fresh and never commits it, so delete both.
+
+  To bring a dropped release back, rebuild it with
+  `build_docs --docs-version <tag> --alias latest`.
 - `docs_build_all` - rebuild the tags selected by `docs_versions.toml` in a
   worktree per tag; tags that predate this builder are skipped.
 - `docs_versions_check` - validate the committed tree (also runs in CI).
