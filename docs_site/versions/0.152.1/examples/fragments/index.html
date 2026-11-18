@@ -1,0 +1,17 @@
+<html data-djc-id-ctflyhc><head><meta name="djc-base-path" content="/django-components"><title>HTML Fragments Example</title><script src=https://unpkg.com/htmx.org@2.0.7/dist/htmx.js></script></head><body class="bg-gray-100 p-8" data-alpine-url=/django-components/examples/fragments/alpine/ data-js-url=/django-components/examples/fragments/js/ hx-boost=true><div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md"><h1 class="text-2xl font-bold mb-4">HTML Fragments</h1><p class="text-gray-600 mb-6">This example shows how to load HTML fragments using different client-side techniques.</p><div class="mb-8 p-4 border rounded-lg"><h2 class="text-xl font-semibold mb-2">Vanilla JS</h2><div id=target-js>Initial content</div><button class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700" id=loader-js>Load Fragment</button></div><div class="mb-8 p-4 border rounded-lg" x-data="{
+                            htmlVar: '<div id=\'target-alpine\'>Initial content</div>',
+                        }"><h2 class="text-xl font-semibold mb-2">AlpineJS</h2><div x-html=htmlVar></div><button @click="() => {
+                                const alpineUrl = document.body.dataset.alpineUrl;
+                                fetch(alpineUrl)
+                                    .then(r => r.text())
+                                    .then(html => {
+                                        htmlVar = html;
+                                    })
+                            }" class="mt-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700" id=loader-alpine>Load Fragment</button></div><div class="p-4 border rounded-lg"><h2 class="text-xl font-semibold mb-2">HTMX</h2><div id=target-htmx>Initial content</div><button class="mt-2 px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700" hx-get=/django-components/examples/fragments/htmx/ hx-swap=outerHTML hx-target=#target-htmx id=loader-htmx>Load Fragment</button></div></div><script>document.querySelector('#loader-js').addEventListener('click', function () {
+                        const jsUrl = document.body.dataset.jsUrl;
+                        fetch(jsUrl)
+                            .then(response => response.text())
+                            .then(html => {
+                                document.querySelector('#target-js').outerHTML = html;
+                            });
+                    });</script><script src="/django-components/static/django_components/django_components.min.js?v=b2a32e3d1998" crossorigin integrity=sha384-sqMuPRmYcu87839wVwZPHXl7UW6aIAXZqFZojE7srMY0yO20CebASCyr89oKrTko></script><script data-djc type=application/json>{"cssUrls__markAsLoaded": [], "jsUrls__markAsLoaded": ["aHR0cHM6Ly9jZG4udGFpbHdpbmRjc3MuY29tP3BsdWdpbnM9Zm9ybXMsdHlwb2dyYXBoeSxhc3BlY3QtcmF0aW8sY29udGFpbmVyLXF1ZXJpZXM=", "aHR0cHM6Ly91bnBrZy5jb20vYWxwaW5lanM="], "cssTags__toFetch": [], "jsTags__toFetch": [], "componentJsVars": [], "componentJsCalls": []}</script><script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,container-queries"></script><script defer src=https://unpkg.com/alpinejs></script></body></html>
