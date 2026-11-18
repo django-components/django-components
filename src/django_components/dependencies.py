@@ -504,7 +504,7 @@ class VariableData(NamedTuple):
 
 
 # Generate keys like
-# `__components:MyButton_a78y37:js:df7c6d10`
+# `__components:MyButton_a78y37:js:3f9c1e0b7d2a4c6e8f0a1b2c3d4e5f60:v2`
 # `__components:MyButton_a78y37:css`
 # The hash in a variables cache key comes from the data alone, not from the text written for it.
 # Raise this when that text changes, so that a cache that outlives an upgrade (Redis, a file)

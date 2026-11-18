@@ -308,12 +308,18 @@ class TestKeysFromOlderVersions:
         assert "<div>x</div>" in rendered
         assert "CSS variables of component" in caplog.text
 
-    def _store(self, comp_cls: type[Component], script_type: str, name: str, content: str) -> None:
-        # Written out in full, as an older version wrote it, so this stays a test of an old entry
-        # if `_gen_cache_key()` changes.
+    def _store(
+        self, comp_cls: type[Component], script_type: str, name: str, content: str, *, as_this_version: bool = False
+    ) -> None:
+        # By default written out in full, as an older version wrote it, so this stays a test of an old
+        # entry if `_gen_cache_key()` changes. An entry that another process of this version stored
+        # takes the key that this version makes.
         cls = Script if script_type == "js" else Style
         script = cls(kind="variables", content=content, attrs={}, origin_class_id=comp_cls.class_id)
-        cache_key = f"__components:{comp_cls.class_id}:{script_type}:{name}"
+        if as_this_version:
+            cache_key = dependencies_module._gen_cache_key(comp_cls.class_id, script_type, name)  # type: ignore[arg-type]
+        else:
+            cache_key = f"__components:{comp_cls.class_id}:{script_type}:{name}"
         get_component_vars_cache().set(cache_key, json.dumps(script.to_json()))
 
     def _record_cache_reads(self, monkeypatch) -> list[str]:
@@ -352,7 +358,7 @@ class TestKeysFromOlderVersions:
         # under a name made with another secret.
         comp_cls = _make_css_component()
         name = "1f3a9c0d7b2e4f6089a1c3d5e7f90b12"
-        self._store(comp_cls, "css", name, "[x] { --note: stored-value; }")
+        self._store(comp_cls, "css", name, "[x] { --note: stored-value; }", as_this_version=True)
 
         response = Client().get(f"/components/cache/{comp_cls.class_id}.{name}.css")
         assert response.status_code == 200

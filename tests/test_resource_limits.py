@@ -128,7 +128,8 @@ def _vars_url(comp_cls: type[Component], rendered: str) -> str:
     """Get the URL of the variables stylesheet, by looking up the only variables entry."""
     keys = [key for key in get_component_vars_cache()._entries if f":{comp_cls.class_id}:" in key]  # type: ignore[attr-defined]
     assert len(keys) == 1
-    variables_hash = keys[0].rsplit(":", 1)[1]
+    # The key ends in `:css:<hash>:<version>`.
+    variables_hash = keys[0].rsplit(":", 2)[1]
     assert variables_hash in rendered
     return f"/components/cache/{comp_cls.class_id}.{variables_hash}.css"
 
@@ -638,7 +639,7 @@ class TestVarsCacheInRendering:
                 with fake_clock() as clock:
                     comp_cls.render(kwargs={"col": "red"})
                     # Only the variables have a hash after the script type in their key.
-                    keys = [key for key in cache._cache if re.search(r":css:[0-9a-f]+$", key)]
+                    keys = [key for key in cache._cache if re.search(r":css:[0-9a-f]+:v\d+$", key)]
                     assert len(keys) == 1
                     # This cache has its own `TIMEOUT`, so `vars_cache_max_age` does not apply to it.
                     assert cache._expire_info[keys[0]] == clock.now + 5

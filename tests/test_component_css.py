@@ -4,7 +4,7 @@ from django.test import RequestFactory
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, Script, Style, register, types
-from django_components.cache import get_component_media_cache
+from django_components.cache import get_component_vars_cache
 from django_components.dependencies import cached_script_view
 from django_components.testing import djc_test
 from django_components.util.css import is_css_func, serialize_css_var_name, serialize_css_var_value
@@ -244,7 +244,7 @@ class TestCssDataReachingThePage:
     def test_route_serves_the_same_text_as_utf8(self):
         component = self._component()
         rendered = str(component.render(kwargs={"col": 'a b";}\u4e2d'}))
-        variables_hash = rendered.partition("data-djc-css-")[2][:6]
+        variables_hash = rendered.partition("data-djc-css-")[2][:32]
 
         response = cached_script_view(RequestFactory().get("/"), component.class_id, "css", variables_hash)
 
@@ -256,11 +256,11 @@ class TestCssDataReachingThePage:
         component = self._component()
         value = "red;}body{color:red}"
         rendered = str(component.render(kwargs={"col": value}))
-        variables_hash = rendered.partition("data-djc-css-")[2][:6]
+        variables_hash = rendered.partition("data-djc-css-")[2][:32]
 
         # An older version stored its stylesheet under this key.
         old_key = f"__components:{component.class_id}:css:{variables_hash}"
-        get_component_media_cache().set(old_key, "UNUSED")
+        get_component_vars_cache().set(old_key, "UNUSED")
         assert "UNUSED" not in str(component.render(kwargs={"col": value}))
 
 

@@ -17,7 +17,7 @@ from django.utils.functional import SimpleLazyObject
 from pytest_django.asserts import assertInHTML
 
 from django_components import Component, ComponentExtension, OnDependenciesContext, Script, render_dependencies, types
-from django_components.cache import get_component_media_cache
+from django_components.cache import get_component_media_cache, get_component_vars_cache
 from django_components.dependencies import get_script
 from django_components.testing import djc_test
 
@@ -158,6 +158,7 @@ class TestFragmentFileIntegrity:
         # Only the render that made them had the values, so a tag could not carry a hash.
         raw = FragmentComponent.render(deps_strategy="ignore")
         get_component_media_cache().clear()
+        get_component_vars_cache().clear()
 
         with patch("django_components.dependencies.logger") as logger:
             rendered = render_dependencies(raw, strategy="fragment")
