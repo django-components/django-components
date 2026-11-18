@@ -75,6 +75,19 @@ jobs:
           git config user.name components-release-bot
           git config user.email "components-release-bot@users.noreply.github.com"
 
+      # GitHub starts a run for a push to master on the commit that push made. Runs
+      # wait in line, so by the time this one starts, master can hold newer
+      # commits, such as the docs snapshot commit of a tag run (marked [skip ci],
+      # so it starts no run of its own). Deploying the pushed commit would then
+      # publish an older site over a newer one and drop that release's snapshot.
+      # Build from the newest commit on master instead, before dependencies are
+      # installed so they match it. Tag runs do the same in their own step below.
+      - name: Use the latest master
+        if: github.ref == 'refs/heads/master'
+        run: |
+          git fetch origin master
+          git checkout --detach FETCH_HEAD
+
       - name: Install uv
         uses: astral-sh/setup-uv@v7
         with:
@@ -216,8 +229,9 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           # dev is built fresh into /v/dev/ here (never committed - feature 10.7),
-          # labelled with the deploying commit's short SHA.
-          SHORT_SHA=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          # labelled with the short SHA of the commit that was checked out and built,
+          # which can be newer than the commit that started this run.
+          SHORT_SHA=$(git rev-parse HEAD | cut -c1-7)
           (cd docs_site && uv run --group docs python manage.py docs_assemble --dev-title "dev (${SHORT_SHA})")
 
       - name: Configure GitHub Pages
