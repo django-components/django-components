@@ -650,11 +650,12 @@ On such a page, a block loads a script only when the file is one that your app s
 - the JS file of a component, which django-components serves from `/components/cache/` on the page's origin;
 - a file under your `STATIC_URL`, such as a relative path in [`Component.Media.js`][ComponentMediaInput].
 
-The dependency manager finds `STATIC_URL` from its own URL, `<STATIC_URL>django_components/django_components.min.js`. A `STATIC_URL` on another host, such as `https://cdn.example.com/static/`, counts when the tag has no `integrity`, which is how django-components writes the tag for such a URL. In these cases no `STATIC_URL` counts, and only files from `/components/cache/` load:
+The dependency manager finds `STATIC_URL` from its own URL, `<STATIC_URL>django_components/django_components.min.js`. A `STATIC_URL` on another host, such as `https://cdn.example.com/static/`, counts when the tag has no `integrity`, which is how django-components writes the tag for such a URL. The dependency manager can't work out `STATIC_URL` in these cases, so only files from `/components/cache/` load:
 
 - `STATIC_URL = "/"`, because the root of your site would include every path on it;
 - a `type="module"` tag, or a tag on another host that a hook gave an `integrity`;
-- a file name that a CDN or proxy changed, so the file is no longer in a `django_components/` folder.
+- a CDN or proxy that serves the file from another folder, so its URL has no `django_components/` folder;
+- a URL with `%` in its path.
 
 The dependency manager skips any other script, and the browser console shows an error. The fragment's components still run, but their JS fails where it needs the skipped script. When you render a fragment without a nonce, django-components also logs a warning on the server for each script it expects the dependency manager to skip, once per URL. The dependency manager also ignores a block that holds JS variables, because django-components sends them in a file of their own.
 

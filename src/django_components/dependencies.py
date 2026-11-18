@@ -1193,11 +1193,11 @@ def _static_folder_for_fragments() -> str | None:
 
     The manager has no other way to learn it, so this follows the manager's own steps in
     `readStaticFolder()`, and the two must match. It returns `None` where the manager accepts
-    no folder: a URL with an encoded slash, a file outside a `django_components/` folder, or
+    no folder: a URL with any `%` in its path, a file outside a `django_components/` folder, or
     the root of the page's own origin.
     """
     url = urlsplit(_core_js_url())
-    if "%2f" in url.path.lower() or "%5c" in url.path.lower():
+    if "%" in url.path:
         return None
     folder = url.path[: url.path.rfind("/") + 1]
     own_folder = "/django_components/"
@@ -1219,7 +1219,7 @@ def _is_loaded_without_nonce(src: str) -> bool:
     origin.
     """
     parts = urlsplit(src)
-    if "%2f" in parts.path.lower() or "%5c" in parts.path.lower():
+    if any(code in parts.path.lower() for code in ("%2f", "%5c", "%25", "%c0", "%c1")):
         return False
     if not _is_full_url(src) and _CACHE_FILE_PATH_RE.search(parts.path):
         return True
@@ -1260,11 +1260,16 @@ def _warn_about_scripts_skipped_without_nonce(scripts: list[Script]) -> None:
             if not isinstance(src, str) or src in _warned_skipped_urls or _is_loaded_without_nonce(src):
                 continue
             _warned_skipped_urls.add(src)
+            reason = (
+                "there it loads only files under STATIC_URL and component files from /components/cache/"
+                if _static_folder_for_fragments() is not None
+                else "there it loads only component files from /components/cache/: it cannot work out "
+                f"STATIC_URL from its own URL {_core_js_url()!r}"
+            )
             logger.warning(
                 f"A fragment names the script {src!r}. On a page without a CSP nonce, the dependency manager "
-                "JS skips it, because there it loads only files under STATIC_URL and component files from "
-                "/components/cache/. Load the script on the page itself, serve it from STATIC_URL, or give "
-                "the page a nonce. "
+                f"JS skips it, because {reason}. Load the script on the page itself, serve it from STATIC_URL, "
+                "or give the page a nonce. "
                 "See https://django-components.github.io/django-components/latest/concepts/advanced/rendering_js_css/#content-security-policy"
             )
 

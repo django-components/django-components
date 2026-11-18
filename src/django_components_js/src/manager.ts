@@ -107,8 +107,10 @@ interface UrlFolder {
  *   their files without us. Our tag has no `integrity` when `STATIC_URL` is a full URL.
  *
  * Some servers decode an encoded slash and then follow `..`, so a URL with one could reach our
- * real file from a folder the attacker chose. Such a URL gives no folder. The origin's root
- * folder would let through every path on the page's origin, so it does not count either.
+ * real file from a folder the attacker chose. Others decode twice, or read an overlong UTF-8
+ * byte as a slash. A real `STATIC_URL` has no `%`, so a URL with any `%` gives no folder. The
+ * origin's root folder would let through every path on the page's origin, so it does not count
+ * either.
  */
 const readStaticFolder = (script: HTMLScriptElement | null): UrlFolder | null => {
   // An inline script or a module has no URL of its own to read.
@@ -116,7 +118,7 @@ const readStaticFolder = (script: HTMLScriptElement | null): UrlFolder | null =>
   let url: URL;
   try {
     // `script.src` is our `src` attribute read against the page's base URL, which a `<base>`
-    // tag can change. Before this file runs, it is also the URL that the browser fetched.
+    // tag can change. Before this file runs, it is also the URL that the browser asked for.
     url = new URL(script.src);
   } catch {
     return null;
@@ -126,7 +128,7 @@ const readStaticFolder = (script: HTMLScriptElement | null): UrlFolder | null =>
   const isPageOrigin = url.origin === pageUrl().origin;
   if (!isPageOrigin && script.hasAttribute("integrity")) return null;
 
-  if (/%2f|%5c/i.test(url.pathname)) return null;
+  if (url.pathname.includes("%")) return null;
 
   const ownFolder = "/django_components/";
   let path = url.pathname.slice(0, url.pathname.lastIndexOf("/") + 1);
@@ -166,9 +168,10 @@ const checkBlockScriptUrl = (src: string): string | null => {
   }
   if (url.protocol !== "https:" && url.protocol !== "http:") return null;
   if (url.username || url.password) return null;
-  // The browser leaves an encoded slash in the path, and some servers decode it and then
-  // follow `..`, which could reach a file outside the folder we checked.
-  if (/%2f|%5c/i.test(url.pathname)) return null;
+  // The browser leaves an encoded slash, an encoded `%` and overlong UTF-8 bytes in the path.
+  // Some servers decode them and then follow `..`, which could reach a file outside the folder
+  // we checked.
+  if (/%2f|%5c|%25|%c0|%c1/i.test(url.pathname)) return null;
 
   if (url.origin === page.origin && CACHE_FILE_PATH.test(url.pathname)) return url.href;
   if (staticFolder && url.origin === staticFolder.origin && url.pathname.startsWith(staticFolder.path)) {
@@ -353,7 +356,10 @@ export const createComponentsManager = () => {
         console.error(
           `[DjangoComponents] Did not load the script ${JSON.stringify(declaredSrc)} from a <script data-djc> block. ` +
             "On a page whose dependency manager has no CSP nonce, a block may load only the files that " +
-            "django-components serves from /components/cache/ and the files under STATIC_URL. " +
+            "django-components serves from /components/cache/" +
+            (staticFolder
+              ? " and the files under STATIC_URL. "
+              : ". It could not work out STATIC_URL from its own URL, so files under STATIC_URL do not count. ") +
             "Load the script on the page itself, serve it from STATIC_URL, or give the page a nonce.",
         );
         return {

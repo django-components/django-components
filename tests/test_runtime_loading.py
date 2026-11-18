@@ -380,7 +380,8 @@ class TestFragmentScriptsWithoutNonce:
         assert self._warned_urls(EncodedFragment) == ["/static/..%2Fuploads/x.js"]
 
     def test_runtime_outside_its_folder_gives_no_folder(self):
-        # A CDN or proxy that renames the file leaves the runtime nothing to read `STATIC_URL` from
+        # A CDN or proxy that moves the file out of its `django_components/` folder leaves the
+        # runtime nothing to read `STATIC_URL` from
         HookExtension.edit = staticmethod(lambda script: script)
 
         with patch("django_components.dependencies.static", return_value="/static/bundle.js"):

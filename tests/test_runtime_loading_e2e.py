@@ -629,6 +629,8 @@ class TestPageWithoutNonce:
             "/static/%2e%2e/uploads/evil.js",
             "/static/..%2fuploads/evil.js",
             "/static/..%5Cuploads/evil.js",
+            "/static/%252e%252e/uploads/evil.js",
+            "/static/%c0%ae%c0%ae/uploads/evil.js",
             "//other.test/static/evil.js",
             f"{OTHER}/components/cache/evil.js",
             f"{OTHER}/static/evil.js",
@@ -690,8 +692,10 @@ class TestPageWithoutNonce:
             "/uploads/django_components.min.js",
             # A server that decodes `%2F` and then follows `..` serves the real file from here
             "/uploads/django_components/..%2f..%2fstatic%2fdjango_components%2fdjango_components.min.js",
+            # A server that decodes twice does the same
+            "/uploads/django_components/..%252f..%252fstatic%252fdjango_components%252fdjango_components.min.js",
         ],
-        ids=["uploaded", "encoded_slash"],
+        ids=["uploaded", "encoded_slash", "double_encoded_slash"],
     )
     def test_runtime_copy_on_the_app_gives_no_folder_of_its_own(self, sync_browser, copy_path: str):
         # A policy with the runtime's hash runs such a copy, and the copy reads its own address
@@ -706,7 +710,7 @@ class TestPageWithoutNonce:
         result.wait_for_widget()
         result.settle()
 
-        # The copy ran, so it asked for nothing, and the page's own runtime refused the block too
+        # The copy runs (the earlier code loaded the payload through it), but now it asks for nothing
         assert [path.split("?")[0] for path in result.file_requests] == [copy_path]
         assert result.title() == "clean"
         result.page.context.close()
