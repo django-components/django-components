@@ -5,10 +5,43 @@
 
 version: 2
 updates:
-  - package-ecosystem: "pip" # See documentation for possible values
+  # The `uv` ecosystem updates uv.lock as well as pyproject.toml. The `pip`
+  # ecosystem only edits pyproject.toml, so each pull request that bumped a
+  # pinned tool (ruff, pytest-asyncio, virtualenv) left uv.lock behind it.
+  - package-ecosystem: "uv" # See documentation for possible values
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    # These two versions in uv.lock are tied to settings in tox.ini, so a bump
+    # has to change both files by hand and Dependabot leaves them alone:
+    # - playwright: the version in uv.lock decides which browsers CI installs,
+    #   and the `playwright==` pins in tox.ini must equal it.
+    # - tox: tox.ini caps tox below 4.67.14 until tox-gh-actions loads on it
+    #   (#1754). The tox in uv.lock is the copy that runs `uv run tox`, and
+    #   a newer one fails to load tox-gh-actions. Remove this entry together
+    #   with that cap.
+    ignore:
+      - dependency-name: "playwright"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+      - dependency-name: "tox"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    groups:
+      # One pull request for all minor and patch updates, so routine tooling
+      # bumps are reviewed together. A major update still gets its own pull
+      # request. Groups cannot filter by `dependency-type` for `uv`, so this one
+      # also covers the runtime dependencies.
+      minor-and-patch:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
   - package-ecosystem: github-actions
     # This actually targets ./.github/workflows/
     # See https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference#directories-or-directory--
