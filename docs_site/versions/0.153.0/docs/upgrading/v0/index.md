@@ -1,0 +1,29 @@
+---
+title: Upgrading in pre-v1.0
+url: https://django-components.github.io/django-components/v/0.153.0/docs/upgrading/v0/
+description: "Django-components is still in active development."
+---
+
+Django-components is still in active development.
+
+Since django-components is in pre-1.0 development, the public API is not yet frozen.
+This means that there may be breaking changes between minor versions.
+We try to minimize the number of breaking changes, but sometimes it's unavoidable.
+
+When upgrading, please read the [Release notes](../releases/index.md).
+
+If you're on older pre-v1.0 versions of django-components, we recommend doing step-wise
+upgrades in the following order:
+
+- [v0.26](../releases/v0.26.md)
+- [v0.50](../releases/v0.50.md)
+- [v0.70](../releases/v0.70.md)
+- [v0.77](../releases/v0.77.md)
+- [v0.81](../releases/v0.81.md)
+- [v0.85](../releases/v0.85.md)
+- [v0.92](../releases/v0.92.md)
+- [v0.100](../releases/v0.100.md)
+- [v0.110](../releases/v0.110.md)
+- [v0.140.0](../releases/v0.140.0.md)
+
+These versions introduced breaking changes that are not backwards compatible.

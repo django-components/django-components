@@ -1,0 +1,15 @@
+<div class=frag_simple data-djc-id-c4obd25>Fragment with JS and CSS (plain). <span id=frag-text></span></div><script>(function() {
+
+        const current = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript").get.call(document);
+        if (!Object.prototype.hasOwnProperty.call(globalThis, "DjangoComponents")) {
+            const s = document.createElement('script');
+            s.src = "/static/django_components/django_components.min.js?v=b2a32e3d1998";
+            s.integrity = "sha384-sqMuPRmYcu87839wVwZPHXl7UW6aIAXZqFZojE7srMY0yO20CebASCyr89oKrTko";
+            s.crossOrigin = "anonymous";
+            if (current && current.nonce) s.nonce = current.nonce;
+            document.head.appendChild(s);
+        }
+        // Remove this loader script
+        if (current) current.remove();
+    
+})();</script><script data-djc type=application/json>{"cssUrls__markAsLoaded": [], "jsUrls__markAsLoaded": [], "cssTags__toFetch": ["eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlRnJhZ21lbnRfZjg2MGNiLmNzcyIsICJpbnRlZ3JpdHkiOiAic2hhMzg0LVNTb3RISzIyS2ZKeDc5UVlsejgvd0RDRmt3SnpzWlhISDFncDNpWWxRMmFQM29tZWhUUFNrZ3JDT0hZak1wdjYiLCAiY3Jvc3NvcmlnaW4iOiAiYW5vbnltb3VzIn0sICJjb250ZW50IjogIiJ9"], "jsTags__toFetch": ["eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlRnJhZ21lbnRfZjg2MGNiLmpzIiwgImludGVncml0eSI6ICJzaGEzODQtazBaMDBzTUc2R2tnbTZoWkw0eHNpM0VEa2FzUnI1Rkc1ci9pTEROWjc0eHFQMnhVWkR6MXhHbDJSQUYyeElkWiIsICJjcm9zc29yaWdpbiI6ICJhbm9ueW1vdXMifSwgImNvbnRlbnQiOiAiIn0=", "eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlRnJhZ21lbnRfZjg2MGNiLjQ4Y2ExNmEwMDg2ZDJlYzZkZTg0OTc5OWU4ZjJhODk4LmpzIiwgImludGVncml0eSI6ICJzaGEzODQtU1ppbVB0ci9FM3RhUkNVMldCSzdyQWdOUk5YdFdlUy9oYy96VGRnaGJJeUw2N1BDaUZCZEE1eHRXcmF3TzZQciIsICJjcm9zc29yaWdpbiI6ICJhbm9ueW1vdXMifSwgImNvbnRlbnQiOiAiIn0="], "componentJsVars": [], "componentJsCalls": [["U2ltcGxlRnJhZ21lbnRfZjg2MGNi", "YzRvQmQyNQ==", "NDhjYTE2YTAwODZkMmVjNmRlODQ5Nzk5ZThmMmE4OTg="]]}</script>
