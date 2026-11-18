@@ -9,7 +9,7 @@ import dataclasses
 import hashlib
 import json
 import re
-from typing import ClassVar
+from typing import Any, ClassVar
 from unittest.mock import patch
 
 from django.test import Client
@@ -61,7 +61,7 @@ class HookExtension(ComponentExtension):
     """Applies whatever function a test puts in `edit` to every `Script`."""
 
     name = "test_hook"
-    edit: ClassVar = None
+    edit: ClassVar[Any] = None
 
     def on_dependencies(self, ctx: OnDependenciesContext):
         scripts = [HookExtension.edit(script) for script in ctx.scripts]
@@ -330,7 +330,9 @@ class TestFragmentScriptsWithoutNonce:
         ):
             component.render(deps_strategy="fragment")
             component.render(deps_strategy="fragment")
-        return [re.search(r"script '([^']+)'", call.args[0]).group(1) for call in logger.warning.call_args_list]
+        matches = [re.search(r"script '([^']+)'", call.args[0]) for call in logger.warning.call_args_list]
+        assert all(match is not None for match in matches)
+        return [match.group(1) for match in matches if match is not None]
 
     def test_warns_once_for_each_script_outside_the_app_files(self):
         HookExtension.edit = staticmethod(lambda script: script)

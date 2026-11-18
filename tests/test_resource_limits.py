@@ -471,6 +471,7 @@ class TestVarsCacheSettings:
         internal_settings = InternalSettings()
         with override_settings(COMPONENTS={"vars_cache_max_age": None}):
             internal_settings._load_settings()
+        assert internal_settings._settings is not None
         assert internal_settings._settings.vars_cache_max_age == 86400
         assert internal_settings._settings.vars_cache_max_bytes == 64 * 1024 * 1024
 

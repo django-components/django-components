@@ -1323,14 +1323,16 @@ class TestPythonExpressionFormatting:
         "make_function",
         [
             pytest.param(lambda: lazy(str.format, str), id="lazy"),
-            pytest.param(lambda: str.format.__call__, id="call_of_unbound"),
-            pytest.param(lambda: PATH_TEXT.format.__call__, id="call_of_bound"),
+            # mypy does not know that a method has a `__call__` attribute.
+            pytest.param(lambda: str.format.__call__, id="call_of_unbound"),  # type: ignore[operator]
+            pytest.param(lambda: PATH_TEXT.format.__call__, id="call_of_bound"),  # type: ignore[operator]
         ],
     )
     def test_wrapped_str_format_cannot_be_called(self, make_function):
         # The wrapper is not refused by `safe_eval` itself, so the hook must find `str.format` in it.
         # djc-core writes the advice after the name, and 1.4.0 words it differently from 1.3.1.
-        with pytest.raises(SecurityError, match=r"because it calls '[^']*format'\. Use (an f-string|f-strings) instead"):
+        advice = r"because it calls '[^']*format'\. Use (an f-string|f-strings) instead"
+        with pytest.raises(SecurityError, match=advice):
             str(evaluate("function(text, obj)", function=make_function(), text=PATH_TEXT, obj=HiddenMarker()))
 
     @pytest.mark.parametrize(
@@ -1474,7 +1476,7 @@ class TestPythonExpressionFormatting:
         assert evaluate("function('a')", function=lru_cache(str.upper)) == "A"
         assert evaluate("function('a')", function=wraps(str.upper)(lambda text: text.upper())) == "A"
         assert evaluate("function('a')", function=partial(str.upper)) == "A"
-        assert evaluate("function('a')", function=str.upper.__call__) == "A"
+        assert evaluate("function('a')", function=str.upper.__call__) == "A"  # type: ignore[operator]
         assert evaluate("function()", function=keep_lazy(str)(lambda: "plain")) == "plain"
         assert evaluate("function()", function=type("Caller", (), {"__call__": lambda _self: "called"})()) == "called"
 
