@@ -1,9 +1,11 @@
 """Catch-all for tests that use template tags and don't fit other files"""
 
 import re
+import weakref
 from functools import lru_cache, partial, partialmethod, wraps
 from inspect import unwrap
-from types import FunctionType, MethodType
+from types import FunctionType, GenericAlias, MethodType
+from unittest.mock import patch
 
 import pytest
 from django.template import Context, Template
@@ -14,6 +16,7 @@ from django.utils.safestring import SafeString, mark_safe
 from django.utils.text import format_lazy
 from django.utils.translation import gettext_lazy, ngettext_lazy, pgettext_lazy
 from djc_core.safe_eval import SecurityError
+from djc_core.safe_eval.sandbox import is_safe_callable
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
@@ -998,6 +1001,48 @@ class FormatHtmlTextCaller(str):
     __call__ = partialmethod(format_html)
 
 
+class UnhashableCallable:
+    """A callable that can't be hashed, like an instance of a dataclass that compares by value."""
+
+    __hash__ = None  # type: ignore[assignment]
+
+    def __call__(self):
+        return "called"
+
+
+class UnhashablePartial(partial):
+    """A `functools.partial` that can't be hashed."""
+
+    __hash__ = None  # type: ignore[assignment]
+
+
+class UnhashableEvalCaller:
+    """An object that can't be hashed and whose class `__call__` is `eval`."""
+
+    __hash__ = None  # type: ignore[assignment]
+    __call__ = staticmethod(eval)
+
+
+def wrap_object(inner):
+    """A function that names `inner` as the function it wraps, as `functools.wraps` does."""
+
+    def function():
+        return "called"
+
+    function.__wrapped__ = inner  # type: ignore[attr-defined]
+    return function
+
+
+def djc_core_checks_unhashable_callables():
+    # djc-core 1.3.1 looks a callable up in dictionaries, so it raises `TypeError` for one that can't
+    # be hashed. Later versions check such a callable themselves.
+    try:
+        is_safe_callable(UnhashableCallable())
+    except TypeError:
+        return False
+    return True
+
+
 def copy_function(function):
     """A new function object with the same code, as code that rebuilds functions makes."""
     return FunctionType(function.__code__, function.__globals__, function.__name__, function.__defaults__)
@@ -1378,14 +1423,45 @@ class TestPythonExpressionFormatting:
         with pytest.raises(SecurityError, match="wraps more than 32 other functions"):
             evaluate("function('a')", function=self.wrap_times(str.upper, MAX_WRAPPED_FUNCTIONS + 1))
 
-    def test_wrapped_object_that_cannot_be_hashed_is_refused(self):
-        # djc-core can't look up an object that can't be hashed, so the hook refuses it with a message.
-        def function():
-            return "called"
+    def test_wrapped_object_that_djc_core_cannot_check_is_refused(self):
+        # djc-core 1.3.1 raises `TypeError` for an object it can't hash, and the hook turns that into a
+        # refusal with a message. This stand-in gives the hook that answer whichever djc-core is installed.
+        def is_safe_callable_1_3_1(obj):
+            hash(obj)
+            return True, None
 
-        function.__wrapped__ = {"not": "hashable"}  # type: ignore[attr-defined]
-        with pytest.raises(SecurityError, match="wraps an object that can't be checked"):
-            evaluate("function()", function=function)
+        with patch("django_components.util.template_tag.is_safe_callable", is_safe_callable_1_3_1):
+            for inner in (UnhashableCallable(), {"not": "hashable"}):
+                with pytest.raises(SecurityError, match="wraps an object that can't be checked"):
+                    evaluate("function()", function=wrap_object(inner))
+            # An object that can be hashed is still checked by djc-core's own answer.
+            assert evaluate("function()", function=wrap_object(str.upper)) == "called"
+
+    @pytest.mark.skipif(
+        not djc_core_checks_unhashable_callables(),
+        reason="djc-core 1.3.1 can't check an object it can't hash, so the hook refuses it",
+    )
+    def test_wrapped_object_that_cannot_be_hashed_is_called(self):
+        # An object that can't be hashed is not a listed function, and djc-core still checks what it passes
+        # the call on to, so the hook has nothing to refuse.
+        assert evaluate("function()", function=wrap_object(UnhashableCallable())) == "called"
+        assert evaluate("function()", function=wrap_object({"not": "hashable"})) == "called"
+        assert evaluate("function()", function=wraps(UnhashableCallable())(lambda: "wrapped")) == "wrapped"
+
+    @pytest.mark.parametrize(
+        "hidden",
+        [
+            pytest.param(lambda: weakref.proxy(eval), id="weak-proxy"),
+            pytest.param(lambda: GenericAlias(eval, ({},)), id="generic-alias-with-unhashable-argument"),  # type: ignore[arg-type]
+            pytest.param(lambda: UnhashablePartial(eval), id="partial-subclass"),
+            pytest.param(UnhashableEvalCaller, id="class-call"),
+        ],
+    )
+    def test_refused_function_hidden_in_object_that_cannot_be_hashed_is_refused(self, hidden):
+        # The hidden `eval` is refused with any djc-core: by its own check from 1.4.0 on, and by the hook's
+        # refusal of an object djc-core 1.3.1 can't check. Neither version lets the call through.
+        with pytest.raises(SecurityError, match="Expressions can't call this function, because it "):
+            evaluate("function()", function=wrap_object(hidden()))
 
     def test_wrapped_safe_functions_keep_working(self):
         assert evaluate("function('a')", function=lru_cache(str.upper)) == "A"

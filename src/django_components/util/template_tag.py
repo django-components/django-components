@@ -381,8 +381,10 @@ def _check_one_callable(step: Any, *, is_wrapped: bool) -> None:
     # `safe_eval` checks the called function itself after this hook, with its own message, so
     # only the functions that it wraps are checked here.
     if is_wrapped:
-        # djc-core looks the function up in its own tables, which fails with `TypeError` for an
-        # object that can't be hashed. Such an object can't be checked, so refuse it plainly.
+        # djc-core 1.3.1 looks the function up in its own tables, which fails with `TypeError` for
+        # an object that can't be hashed. That version can't check such an object, so refuse it
+        # plainly. Later versions check it themselves: it can't be a listed function, and what it
+        # passes the call on to is still checked, so they never raise here.
         try:
             is_safe, replacement = is_safe_callable(step)
         except TypeError:
