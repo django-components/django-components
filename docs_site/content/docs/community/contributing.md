@@ -15,7 +15,7 @@ Found a bug or typo and know how to fix it? Sweet! [Open up a PR](https://github
 
 ## Have an idea?
 
-Feature requests and suggestions are always welcome. Toss them in a [discussion](https://github.com/django-components/django-components/discussions/new) or [issue](https://github.com/django-components/django-components/issues/new/choose) - we'd love to hear what you're thinking.
+New features go to [Citry](https://citry.dev/), a Python frontend framework that grew out of django-components. Open a [Citry issue](https://github.com/citry-dev/citry/issues) with your feature request or suggestion - we'd love to hear what you're thinking.
 
 ## Feeling generous?
 
@@ -33,10 +33,8 @@ Help others by answering questions in:
 
 ## Get coding
 
-django-components is still growing and there's tons of cool stuff to build.
-
-Getting started is easy - [pick an issue from our project's Kanban board](https://github.com/orgs/django-components/projects/1/views/1) and start coding.
+Getting started is easy - pick an [open bug](https://github.com/django-components/django-components/issues?q=is%3Aissue+is%3Aopen+label%3Atype--bug) or [documentation issue](https://github.com/django-components/django-components/issues?q=is%3Aissue+is%3Aopen+label%3Atype--documentation) and start coding.
 
 First time contributing? See [the development guide](./development.md).
 
-[See here](./development.md#project-management) for how we manage the project board.
+[What we accept](./development.md#what-we-accept) lists the changes we take, in priority order.
