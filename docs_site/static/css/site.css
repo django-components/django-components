@@ -398,6 +398,21 @@ body {
   color: var(--c-danger);
 }
 
+/* A banner is an admonition whose title looks like a heading, for a notice
+   that should be the first thing on a page. Write `!!! info banner "Title"`;
+   the type (here `info`) still sets the colors. */
+.prose .admonition.banner {
+  padding: 1rem 1.25rem;
+}
+
+.prose .admonition.banner .admonition-title {
+  font-size: 1.25rem;
+  line-height: 1.3;
+  text-transform: none;
+  letter-spacing: normal;
+  margin-bottom: 0.5rem;
+}
+
 /* ------------------------------------------------------------------ */
 /* Lists                                                               */
 /* ------------------------------------------------------------------ */
