@@ -4,9 +4,9 @@
 # already validate on-site links on every PR, but external links rot over time
 # independently of our changes, so they're checked on a schedule instead.
 #
-# lychee checks only http(s) links in the built HTML, skipping our own (not-yet-
-# deployed) domain and localhost. A broken external link turns the scheduled run
-# red so a maintainer can fix or replace it.
+# lychee checks only http(s) links in the built HTML. Which links it skips, and
+# why, is written next to each setting in .github/lychee.toml. A broken external
+# link turns the scheduled run red so a maintainer can fix or replace it.
 
 name: Docs External Links
 
@@ -46,17 +46,11 @@ jobs:
         uses: lycheeverse/lychee-action@v2
         with:
           # --root-dir lets lychee resolve root-relative internal links
-          # (`/docs/...`) against the build output instead of erroring on them;
-          # --scheme then limits *checking* to outbound http(s) links (internal
-          # ones are already covered by the internal_link guard per PR). Our own
-          # domain isn't live until cutover, so it's excluded.
+          # (`/docs/...`) against the build output instead of erroring on them.
+          # It holds the runner's path, so it stays here; every other setting
+          # is in the config file.
           args: >-
+            --config .github/lychee.toml
             --root-dir ${{ github.workspace }}/lhsite
-            --scheme https
-            --scheme http
-            --exclude 'django-components\.github\.io'
-            --exclude '^https?://localhost'
-            --max-concurrency 8
-            --accept 200,206,429
             "lhsite/**/*.html"
           fail: true

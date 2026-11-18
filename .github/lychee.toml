@@ -1,0 +1,47 @@
+# Settings for the weekly external-link check, run by
+# .github/workflows/maint-docs-external-links.yml with `--config`.
+#
+# The workflow passes only what depends on the run (the folder with the built
+# site, and the files to check). Everything else is here, so each exclusion can
+# say why it is there. Lychee (0.24.2) has no setting that accepts a status
+# code for one host only, so a host that answers bots with an error is
+# excluded entirely.
+
+# Check only http and https links. Links within the docs site are already
+# checked on every pull request by the internal link guards.
+scheme = ["https", "http"]
+
+max_concurrency = 8
+
+# 206 is a partial answer to a range request. 429 means the site is rate
+# limiting the check, which says nothing about the link itself.
+accept = ["200", "206", "429"]
+
+# Example addresses of a local dev server, such as `http://127.0.0.1:8000/` in
+# the development guide. Nothing listens there when the check runs. This skips
+# `localhost`, 127.0.0.0/8 and ::1.
+exclude_loopback = true
+
+# Each entry is a regular expression. A link is skipped when it matches
+# anywhere in the URL, so the patterns anchor the start where it matters.
+exclude = [
+  # The docs site's own address is skipped because the docs are not live there
+  # yet.
+  'django-components\.github\.io',
+
+  # These sites answer automated requests with 403 Forbidden even though the
+  # page opens in a browser, so a 403 from them does not mean the link is
+  # broken. Medium, Reddit and Discord block GitHub's runners. Stack Overflow
+  # also blocks other networks.
+  '^https?://([a-z0-9-]+\.)*medium\.com/',
+  '^https?://([a-z0-9-]+\.)*stackoverflow\.com/',
+  '^https?://([a-z0-9-]+\.)*reddit\.com/',
+  '^https?://support\.discord\.com/',
+
+  # Any `github.com/<name>` link, which covers the profile links on the People
+  # page. The people workflow rebuilds that page every month from GitHub's own
+  # data, so a profile that was deleted or renamed since the last run is fixed
+  # by the next run. Until then, checking these links would only turn the
+  # weekly run red.
+  '^https://github\.com/[^/]+/?$',
+]

@@ -4,9 +4,7 @@ This logic is inspired by that of @tiangolo's (FastAPI People)
 """
 
 import logging
-import secrets
-import shutil
-import subprocess
+import os
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
@@ -14,7 +12,6 @@ from typing import Any
 
 import requests
 import yaml  # type: ignore[import-untyped]
-from github import Github
 from pydantic import BaseModel, SecretStr
 from pydantic_settings import BaseSettings
 
@@ -61,7 +58,6 @@ query Q($after: String) {
 
 class Settings(BaseSettings):
     github_token: SecretStr
-    github_repository: str
     timeout: int = 30
     sleep_interval: int = 5
 
@@ -170,24 +166,29 @@ def update_content(*, content_path: Path, new_content: Any) -> bool:
     return True
 
 
+def write_step_output(name: str, value: str) -> None:
+    """Pass a value to the later steps of the GitHub Actions job. Does nothing outside Actions."""
+    output_file = os.environ.get("GITHUB_OUTPUT")
+    if not output_file:
+        return
+    with Path(output_file).open("a", encoding="utf-8") as file:
+        file.write(f"{name}={value}\n")
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO)
-
-    git_exe = shutil.which("git")
-    if not git_exe:
-        raise RuntimeError("Cannot find git executable")
 
     # `Settings` inherits from pydantic-settings' `BaseSettings`, which populates every
     # field from the environment at construction time. mypy only sees the
     # `dataclass_transform`-synthesized `__init__` and so demands the fields as arguments.
     settings = Settings()  # type: ignore[call-arg]
     logger.info("Using config: %s", settings.model_dump_json())
-    g = Github(settings.github_token.get_secret_value())
-    repo = g.get_repo(settings.github_repository)
     contributors_data, users = get_contributors(settings=settings)
     skip_users = MAINTAINER_USERS | BOT_USERS
     maintainers = []
-    for username in MAINTAINER_USERS:
+    # Sorted because a set has no fixed order, and a reordered page would look
+    # like an update on every run.
+    for username in sorted(MAINTAINER_USERS):
         user = users[username]
         maintainers.append(
             {
@@ -215,26 +216,10 @@ def main() -> None:
     }
     updated = update_content(content_path=PEOPLE_PAGE_PATH, new_content=people)
 
-    if not updated:
-        logger.info("The data hasn't changed, finishing.")
-        return
-
-    logger.info("Setting up GitHub Actions git user")
-    subprocess.run([git_exe, "git", "config", "user.name", "github-actions"], check=True)
-    subprocess.run([git_exe, "git", "config", "user.email", "github-actions@github.com"], check=True)
-    branch_name = f"django-components-people-{secrets.token_hex(4)}"
-    logger.info("Creating a new branch %s", branch_name)
-    subprocess.run([git_exe, "git", "checkout", "-b", branch_name], check=True)
-    logger.info("Adding updated file")
-    subprocess.run([git_exe, "git", "add", str(PEOPLE_PAGE_PATH)], check=True)
-    logger.info("Committing updated file")
-    message = "👥 Update Django Components People - Experts"
-    subprocess.run([git_exe, "git", "commit", "-m", message], check=True)
-    logger.info("Pushing branch")
-    subprocess.run([git_exe, "git", "push", "origin", branch_name], check=True)
-    logger.info("Creating PR")
-    pr = repo.create_pull(title=message, body=message, base="master", head=branch_name)
-    logger.info("Created PR: %s", pr.number)
+    # The workflow reads this to decide whether to publish the page. Publishing
+    # happens in a separate job, so the packages this script uses never run
+    # next to the token that can push to `master`.
+    write_step_output("changed", str(updated).lower())
     logger.info("Finished")
 
 

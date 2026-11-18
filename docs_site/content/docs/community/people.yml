@@ -7,11 +7,11 @@ maintainers:
   url: https://github.com/JuroOravec
 contributors:
 - login: dylanjcastillo
-  avatarUrl: https://avatars.githubusercontent.com/u/7218756?u=7ace421d7ad24ea866395aa3f77fa1cfc0c9a1ac&v=4
+  avatarUrl: https://avatars.githubusercontent.com/u/7218756?u=b8200f8ba87b4664be41534c2e09ee4e60f153fb&v=4
   url: https://github.com/dylanjcastillo
   count: 12
 - login: Antoliny0919
-  avatarUrl: https://avatars.githubusercontent.com/u/100985243?u=6c2e9a424c691bda009874e89a26c45bc6af429f&v=4
+  avatarUrl: https://avatars.githubusercontent.com/u/100985243?u=cb5789ce1a4906c3ad5aa068d3848cb2b02f021b&v=4
   url: https://github.com/Antoliny0919
   count: 11
 - login: rbeard0330
@@ -30,14 +30,14 @@ contributors:
   avatarUrl: https://avatars.githubusercontent.com/u/53351186?u=eea8e215b2e0164fec312eb4e80ac99444e98cc4&v=4
   url: https://github.com/hanifbirgani
   count: 6
+- login: oliverhaas
+  avatarUrl: https://avatars.githubusercontent.com/u/4050664?u=5516136eb659cc674837d6806cdd6b7f21ac4b17&v=4
+  url: https://github.com/oliverhaas
+  count: 6
 - login: GabDug
   avatarUrl: https://avatars.githubusercontent.com/u/1116720?u=4ad25dae2c7885a146ebccfd2d24478c49d5ab7d&v=4
   url: https://github.com/GabDug
   count: 5
-- login: oliverhaas
-  avatarUrl: https://avatars.githubusercontent.com/u/4050664?u=5516136eb659cc674837d6806cdd6b7f21ac4b17&v=4
-  url: https://github.com/oliverhaas
-  count: 4
 - login: ryanhiebert
   avatarUrl: https://avatars.githubusercontent.com/u/425099?u=195682b0b11f8b5f0bf5f88a353e7536ab0f54a9&v=4
   url: https://github.com/ryanhiebert
@@ -78,9 +78,9 @@ contributors:
   avatarUrl: https://avatars.githubusercontent.com/u/43130989?v=4
   url: https://github.com/ldurey
   count: 2
-- login: telenieko
-  avatarUrl: https://avatars.githubusercontent.com/u/10505?v=4
-  url: https://github.com/telenieko
+- login: marcfargas
+  avatarUrl: https://avatars.githubusercontent.com/u/10505?u=d4e4574c736ba4de30962798dcbb05ab2949324f&v=4
+  url: https://github.com/marcfargas
   count: 1
 - login: spollard
   avatarUrl: https://avatars.githubusercontent.com/u/1459574?u=2a4addd99ffc484ba6167643cbd27d0f8423a827&v=4
@@ -99,7 +99,7 @@ contributors:
   url: https://github.com/rafae56038
   count: 1
 - login: mands
-  avatarUrl: https://avatars.githubusercontent.com/u/1010043?u=bb00beecdf6a7c9cf2ce733de3f0405608777d18&v=4
+  avatarUrl: https://avatars.githubusercontent.com/u/1010043?u=5207e9c1dcaba4b438a9c2e84c4633d8ca1bce83&v=4
   url: https://github.com/mands
   count: 1
 - login: hjalves
@@ -155,7 +155,7 @@ contributors:
   url: https://github.com/batistadasilva
   count: 1
 - login: Yaso2Go
-  avatarUrl: https://avatars.githubusercontent.com/u/74967570?u=4a4d55b4ef3820e92cde5871015ce7ff94fbf48b&v=4
+  avatarUrl: https://avatars.githubusercontent.com/u/74967570?u=93f42f6fdf12c0edd9efeb791d799786cd068bad&v=4
   url: https://github.com/Yaso2Go
   count: 1
 - login: larsent
@@ -171,7 +171,7 @@ contributors:
   url: https://github.com/lhole
   count: 1
 - login: mlissner
-  avatarUrl: https://avatars.githubusercontent.com/u/236970?v=4
+  avatarUrl: https://avatars.githubusercontent.com/u/236970?u=413ba80d74a12e5b47548b4a9bc758a1ebdfe72a&v=4
   url: https://github.com/mlissner
   count: 1
 - login: bfrangi
@@ -197,4 +197,8 @@ contributors:
 - login: barakharyati
   avatarUrl: https://avatars.githubusercontent.com/u/41957095?u=e7552569ce94efff6997805e319eff49a3f32731&v=4
   url: https://github.com/barakharyati
+  count: 1
+- login: jonathan-s
+  avatarUrl: https://avatars.githubusercontent.com/u/2124818?u=2451088bf3f7434950a62b848a188e1b30eeb3cb&v=4
+  url: https://github.com/jonathan-s
   count: 1
