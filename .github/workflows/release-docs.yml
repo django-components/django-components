@@ -14,9 +14,19 @@ on:
 # Serialize runs: this job both commits version snapshots to master and deploys
 # Pages, so concurrent runs would race. Queue rather than cancel so an in-flight
 # commit/deploy is never interrupted mid-push.
+#
+# `queue: max` lets up to 100 runs wait in line, normally in the order they
+# started waiting. Without it GitHub keeps only one waiting run per group and
+# cancels it when another run arrives. A tag run that is waiting would then be
+# cancelled by the next push to master, and that release's docs snapshot (the
+# built docs for that release) would never be committed or deployed. Every
+# master run waits its turn too, but a master run takes only a minute or two, so
+# a burst of pushes clears quickly. A run that arrives when 100 are already
+# waiting is cancelled, whatever its kind.
 concurrency:
   group: docs-build-deploy
   cancel-in-progress: false
+  queue: max
 
 jobs:
   docs:
