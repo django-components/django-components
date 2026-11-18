@@ -11,13 +11,17 @@ assembles the complete tree GitHub Pages serves:
             versions.json                                          <- the manifest
             <version>/ ...                                         <- each committed version
             latest/ ...                                            <- the `latest` alias redirects
+        latest/, dev/                                              <- old-site URLs; each page redirects to its current page
 
 It (1) runs ``build_docs`` for the current version into the site root (so it
 serves at ``/`` and ``/docs/``, with ``/static``, the Pagefind index, the SEO
 files, and the benchmark passthrough), then (2) copies ``docs_site/versions/*``
 into ``site/v/``. The current-version build's robots.txt disallows the older
 ``/v/<version>/`` dirs (see ``seo.write_robots``), so the frozen gh-pages
-imports stay out of search while their pinned URLs keep resolving.
+imports stay out of search while their pinned URLs keep resolving. It then writes
+redirect pages at the old ``/latest/...`` and ``/dev/...`` URLs (the earlier
+mike-based site served the current docs there), each pointing at the page that
+serves the same path now.
 
 CI runs this and publishes ``site/`` to GitHub Pages - this is the cutover
 deploy that replaces the old mkdocs build. ``site/`` is gitignored; nothing
@@ -41,6 +45,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.docs._vendor.mike_versions import Versions
 from apps.docs.build.bootstrap import load_versions_config
+from apps.docs.build.redirects import emit_legacy_redirects
 from apps.docs.build.versioning import load_manifest, select_published_versions, write_manifest
 
 
@@ -94,6 +99,15 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f"Mounted {len(published)} version(s) under {site_dir / 'v'}{note}"))
         else:
             self.stdout.write(f"No versions tree at {versions_root}; assembled current version only.")
+
+        # Published READMEs and other sites still link to /latest/... and /dev/...
+        # from the earlier mike-based site. GitHub Pages cannot redirect on the
+        # server, so write a redirect page for each current page. This needs the
+        # root build above, because the targets are read from it.
+        redirect_count = emit_legacy_redirects(site_dir, site_url=str(settings.SITE_URL))
+        self.stdout.write(
+            self.style.SUCCESS(f"Wrote {redirect_count} redirect page(s) for the old /latest/ and /dev/ URLs")
+        )
 
         # Build the ephemeral dev snapshot. Unlike releases, dev is NOT committed
         # (feature 10.7): it's rebuilt fresh into /v/dev/ on every deploy and

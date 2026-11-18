@@ -38,6 +38,7 @@ from . import (
     redirect_target,
     single_h1,
     snippet_path,
+    versions_ignored,
     versions_manifest,
 )
 from .base import GuardContext, GuardResult, Severity
@@ -85,6 +86,7 @@ GUARDS: list[Guard] = [
 # it is unset, so they're harmless if ever added to GUARDS.
 VERSION_GUARDS: list[Guard] = [
     versions_manifest.check,
+    versions_ignored.check,
     cross_version_link.check,
 ]
 

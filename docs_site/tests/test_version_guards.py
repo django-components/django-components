@@ -10,10 +10,13 @@ dangling links across version subtrees.
 from __future__ import annotations
 
 import shutil
+import subprocess
 from pathlib import Path
 
+import pytest
 from apps.docs.build.guards import VERSION_GUARDS, GuardContext, Severity, run_guards
 from apps.docs.build.guards.cross_version_link import check as link_check
+from apps.docs.build.guards.versions_ignored import check as ignored_check
 from apps.docs.build.guards.versions_manifest import check as manifest_check
 from apps.docs.build.versioning import (
     BUILD_INFO_NAME,
@@ -224,3 +227,46 @@ def test_run_guards_with_version_guards(tmp_path: Path) -> None:
     results, ok = run_guards(_ctx(tmp_path), strict=True, guards=VERSION_GUARDS)
     assert ok
     assert results == []
+
+
+# -- versions_ignored guard ----------------------------------------------------
+
+
+@pytest.fixture
+def repo(tmp_path: Path) -> Path:
+    """A git work tree whose .gitignore has a rule (`build/`) that a docs page folder can match."""
+    if shutil.which("git") is None:
+        pytest.skip("git is not installed")
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)  # noqa: S607
+    (tmp_path / ".gitignore").write_text("build/\n", encoding="utf-8")
+    return tmp_path
+
+
+def test_ignored_file_in_versions_tree_flagged(repo: Path) -> None:
+    root = repo / "docs_site" / "versions"
+    _clean_tree(root)
+    _build_version(root, "0.152.0", pages=("index.html", "reference/build/index.html"))
+    results = list(ignored_check(_ctx(root)))
+    assert len(results) == 1
+    assert results[0].severity is Severity.ERROR
+    assert "reference/build/index.html" in results[0].message
+
+
+def test_versions_tree_re_included_passes(repo: Path) -> None:
+    with (repo / ".gitignore").open("a", encoding="utf-8") as f:
+        f.write("!docs_site/versions/**\n")
+    root = repo / "docs_site" / "versions"
+    _clean_tree(root)
+    _build_version(root, "0.152.0", pages=("index.html", "reference/build/index.html"))
+    assert list(ignored_check(_ctx(root))) == []
+
+
+def test_ignored_guard_skips_a_tree_outside_git(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # An archive without .git has nothing to compare against, so the guard stays quiet.
+    # The ceiling keeps git from finding a repository above the temporary folder.
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path.parent))
+    _clean_tree(tmp_path)
+    page = tmp_path / "0.151.0" / "build" / "index.html"
+    page.parent.mkdir()
+    page.write_text("<html></html>", encoding="utf-8")
+    assert list(ignored_check(_ctx(tmp_path))) == []
