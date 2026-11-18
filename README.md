@@ -10,8 +10,6 @@
 
 ### <table><td>[Read the full documentation](https://django-components.github.io/django-components/docs/)</td></table>
 
-### <table><td>[See Roadmap for v1](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=milestone--v1)</td></table>
-
 `django-components` is a modular and extensible UI framework for Django.
 
 It combines Django's templating system with the modularity seen

@@ -1,7 +1,7 @@
 ## Local installation
 
 Start by forking the project by clicking the **Fork button** up in the right corner in the [GitHub](https://github.com/django-components/django-components).
-This makes a copy of the repository in your own name. Now you can clone this repository locally and start adding features:
+This makes a copy of the repository in your own name. Now you can clone this repository locally and start making changes:
 
 ```sh
 git clone https://github.com/<your GitHub username>/django-components.git
@@ -861,53 +861,26 @@ The Discord webhook URLs are stored as secrets in the GitHub repository.
 
 ## Project management
 
-### Project board
+### What we accept
 
-We use the [GitHub project board](https://github.com/orgs/django-components/projects/1/views/1) to manage the project.
+django-components is in maintenance mode. We accept these changes, in priority order:
 
-Quick overview of the columns:
+1. Security fixes. To report a vulnerability, [open a private security advisory](https://github.com/django-components/django-components/security/advisories/new) instead of a public issue.
+2. Support for new Django and Python versions.
+3. Bug fixes.
+4. Documentation fixes.
 
-- _No status_ - Issues that are not planned yet and need more discussion
-- 🔵 **Backlog** - Planned but not ready to be picked up
-- 🟢 **Ready** - Ready to be picked up
-- 🟡 **In Progress** - Someone is already working on it
-- 🟣 **Ready for release** - Completed, but not released yet
-- 🟠 **Done** - Completed and released
-
-New issues are automatically added to the _No status_ column.
-
-To pick up an issue, assign it to yourself and move it to the 🟡 **In Progress** column.
-
-![Project board](../images/project-board.png)
-
-Use the sidebar to filter the issues by different labels, milestones, and issue types:
-
-![Project board filter](../images/project-board-label-filter.png){ width="250" }
-
-### Priority
-
-Which issues should be picked up first?
-
-We suggest the following guideline:
-
-1. Bugs - First fix [bugs](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=type--bug) and documentation errors.
-2. V1 release - Then pick up issues that are part of the [v1 release milestone](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=milestone--v1).
-
-After that, pick what you like!
+New features go to [Citry](https://citry.dev/), a Python frontend framework that grew out of django-components. To request one, [open an issue in the Citry repository](https://github.com/citry-dev/citry/issues).
 
 ### Labels
 
 Labels help keep our project organized. [See the list of all labels here](https://github.com/django-components/django-components/labels).
 
-#### Milestones
-
-- [`milestone--v1`](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=milestone--v1) - Work to be done for the V1 release.
-
 #### Issue types
 
-- [`type--bug`](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=type--bug) - Bugs.
-- [`type--documentation`](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=type--documentation) - Documentation changes.
-- [`type--enhancement`](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=type--enhancement) - New features and improvements.
-- [`type--integration`](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=type--integration) - Integrating with other libraries or systems.
-- [`type--operations`](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=type--operations) - Relating to "operations" - Github Actions, processes, etc.
-- [`type--optimisation`](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=type--optimisation) - Optimizing the code for performance.
+- [`type--bug`](https://github.com/django-components/django-components/issues?q=is%3Aissue+is%3Aopen+label%3Atype--bug) - Bugs.
+- [`type--documentation`](https://github.com/django-components/django-components/issues?q=is%3Aissue+is%3Aopen+label%3Atype--documentation) - Documentation changes.
+- [`type--enhancement`](https://github.com/django-components/django-components/issues?q=is%3Aissue+is%3Aopen+label%3Atype--enhancement) - Feature requests. New features go to Citry; see [What we accept](#what-we-accept).
+- [`type--integration`](https://github.com/django-components/django-components/issues?q=is%3Aissue+is%3Aopen+label%3Atype--integration) - Integrating with other libraries or systems.
+- [`type--operations`](https://github.com/django-components/django-components/issues?q=is%3Aissue+is%3Aopen+label%3Atype--operations) - Relating to "operations" - Github Actions, processes, etc.
+- [`type--optimisation`](https://github.com/django-components/django-components/issues?q=is%3Aissue+is%3Aopen+label%3Atype--optimisation) - Optimizing the code for performance.
