@@ -101,7 +101,7 @@ class ComponentDebugHighlight(ExtensionComponentConfig):
 
     """
 
-    # TODO_v1 - Remove `DEBUG_HIGHLIGHT_COMPONENTS` and `DEBUG_HIGHLIGHT_SLOTS`
+    # TODO_V2 - Remove `DEBUG_HIGHLIGHT_COMPONENTS` and `DEBUG_HIGHLIGHT_SLOTS`
     #           Instead set this as plain boolean fields.
     highlight_components = HighlightComponentsDescriptor()
     """Whether to highlight this component in the rendered output."""
@@ -109,7 +109,7 @@ class ComponentDebugHighlight(ExtensionComponentConfig):
     """Whether to highlight slots of this component in the rendered output."""
 
 
-# TODO_v1 - Move into standalone extension (own repo?) and ask people to manually add this extension in settings.
+# TODO_V2 - Move into standalone extension (own repo?) and ask people to manually add this extension in settings.
 class DebugHighlightExtension(ComponentExtension):
     """
     This extension adds the ability to highlight components and slots in the rendered output.

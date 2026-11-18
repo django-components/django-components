@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from django_components.component import Component
 
 
-# TODO_V1 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
+# TODO_V2 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
 # Legacy logic for creating Templates from string
 def cached_template(
     template_string: str,
@@ -26,7 +26,7 @@ def cached_template(
     engine: Any | None = None,
 ) -> Template:
     """
-    DEPRECATED. Template caching will be removed in v1.
+    DEPRECATED. Template caching will be removed in 2.0.
 
     Create a Template instance that will be cached as per the
     [`COMPONENTS.template_cache_size`][ComponentsSettings.template_cache_size]
@@ -216,13 +216,13 @@ def ensure_unique_template(component_cls: type["Component"], template: Template)
 def _get_component_template(component: "Component") -> Template | None:
     trace_component_msg("COMP_LOAD", component_name=component.name, component_id=component.id, slot_name=None)
 
-    # TODO_V1 - Remove, not needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
+    # TODO_V2 - Remove, not needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
     template_sources: dict[str, str | Template | None] = {}
 
-    # TODO_V1 - Remove `get_template_name()` in v1
+    # TODO_V2 - Remove `get_template_name()` in 2.0
     template_sources["get_template_name"] = component.get_template_name(component.context)
 
-    # TODO_V1 - Remove `get_template_string()` in v1
+    # TODO_V2 - Remove `get_template_string()` in 2.0
     if hasattr(component, "get_template_string"):
         template_string_getter = component.get_template_string
         template_body_from_getter = template_string_getter(component.context)
@@ -230,7 +230,7 @@ def _get_component_template(component: "Component") -> Template | None:
         template_body_from_getter = None
     template_sources["get_template_string"] = template_body_from_getter
 
-    # TODO_V1 - Remove `get_template()` in v1
+    # TODO_V2 - Remove `get_template()` in 2.0
     template_sources["get_template"] = component.get_template(component.context)
 
     # NOTE: `component.template` should be populated whether user has set `template` or `template_file`
@@ -240,7 +240,7 @@ def _get_component_template(component: "Component") -> Template | None:
     else:
         template_sources["template"] = component.template
 
-    # TODO_V1 - Remove this check in v1
+    # TODO_V2 - Remove this check in 2.0
     # Raise if there are multiple sources for the component template
     sources_with_values = [k for k, v in template_sources.items() if v is not None]
     if len(sources_with_values) > 1:
@@ -329,7 +329,7 @@ def _create_template_from_string(
     if is_component_template:
         template = Template(template_string, name=origin.template_name, origin=origin)
     else:
-        # TODO_V1 - `cached_template()` won't be needed as there will be only 1 template per component
+        # TODO_V2 - `cached_template()` won't be needed as there will be only 1 template per component
         #           so we will be able to instead use `template_cache` to store the template
         template = cached_template(
             template_string=template_string,

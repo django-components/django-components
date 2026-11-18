@@ -109,7 +109,7 @@ def _extract_defaults(defaults: type | None, kwargs: type | None) -> list["Compo
         for default_field_key in dir(defaults):
             # Iterate only over fields set by the user (so non-dunder fields).
             # Plus ignore `component_class` because that was set by the extension system.
-            # TODO_V1 - Remove `component_class`
+            # TODO_V2 - Remove `component_class`
             if default_field_key.startswith("__") or default_field_key in {"component_class", "component_cls"}:
                 continue
 

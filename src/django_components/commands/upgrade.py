@@ -11,7 +11,7 @@ from django_components.template_loader import DjcLoader
 from django_components.util.command import CommandArg, ComponentCommand
 
 
-# TODO_V1 - Remove, no longer needed?
+# TODO_V2 - Remove, no longer needed?
 class UpgradeCommand(ComponentCommand):
     name = "upgrade"
     help = "Upgrade django components syntax from '{%% component_block ... %%}' to '{%% component ... %%}'."

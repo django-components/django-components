@@ -1773,10 +1773,10 @@ def _get_instance_scripts_and_styles(
     # JS/CSS from Component.Media.js/css
     #
     # Legacy code start
-    # TODO_V1 - Replace. Instead of using Media class to render scripts/styles to string,
+    # TODO_V2 - Replace. Instead of using Media class to render scripts/styles to string,
     # and then parsing them into Script/Style, the `Component.(Media` or `Component.Dependencies`)
     # should give us `Script/Style` objects directly.
-    # TODO_V1 - Add. Users should be given a hook/method (both on Component and Extension level)
+    # TODO_V2 - Add. Users should be given a hook/method (both on Component and Extension level)
     # to access all Script/Style objects prepared for rendering, allowing the user to modify/create/delete them.
     #############################
 
@@ -1826,7 +1826,7 @@ def _dedupe_by_url_or_content(items: Sequence[TDep]) -> list[TDep]:
     return list(dict.fromkeys(items))
 
 
-# TODO_V1: This function won't be used anymore. Remove it.
+# TODO_V2: This function won't be used anymore. Remove it.
 def _parse_dependency_from_string(
     script_type: ScriptType,
     tag: str | SafeString,
@@ -1985,7 +1985,7 @@ def get_script(
     if cached_data is None:
         return None
 
-    # TODO_V1: Keep only new format in v1. Since scripts may be stored in
+    # TODO_V2: Keep only new format in 2.0. Since scripts may be stored in
     # a cache that may be separate from the Django application, we have to
     # expect that old format may be present.
     try:

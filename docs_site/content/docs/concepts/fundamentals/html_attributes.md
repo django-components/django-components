@@ -536,7 +536,7 @@ Every value is escaped, including a value marked safe with `mark_safe()` or `for
 
     Prior to v0.135, the `format_attributes()` function was named `attributes_to_string()`.
 
-    This function is now deprecated and will be removed in v1.0.
+    This function is now deprecated and will be removed in 2.0.
 
 ## Attribute names that can run code
 

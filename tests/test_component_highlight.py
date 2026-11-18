@@ -165,7 +165,7 @@ class TestComponentHighlight:
         """
         assertHTMLEqual(rendered, expected)
 
-    # TODO_v1 - Remove this test once we've removed the `debug_highlight_components` setting.
+    # TODO_V2 - Remove this test once we've removed the `debug_highlight_components` setting.
     @djc_test(components_settings={"debug_highlight_components": True})
     def test_component_highlight_extension__legacy(self):
         template = _prepare_template()
@@ -314,7 +314,7 @@ class TestComponentHighlight:
         """
         assertHTMLEqual(rendered, expected)
 
-    # TODO_v1 - Remove this test once we've removed the `debug_highlight_slots` setting.
+    # TODO_V2 - Remove this test once we've removed the `debug_highlight_slots` setting.
     @djc_test(components_settings={"debug_highlight_slots": True})
     def test_slot_highlight_extension__legacy(self):
         template = _prepare_template()

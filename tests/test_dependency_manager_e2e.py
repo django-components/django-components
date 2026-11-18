@@ -79,7 +79,7 @@ class TestDependencyManager:
 
         await page.close()
 
-    # TODO_v1: Delete this test in v1
+    # TODO_V2: Delete this test in 2.0
     @with_playwright
     async def test_backwards_compatibility_components_alias(self, browser: "Browser", browser_name: "BrowserType"):
         if browser_name == "firefox":

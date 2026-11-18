@@ -264,7 +264,7 @@ ignore = [
     "FBT001",  # Boolean-typed positional argument in function definition
     "FBT002",  # Boolean default positional argument in function definition
     "TRY003",  # Avoid specifying long messages outside the exception class
-    # TODO_V1 - Rename error to suffix with `Error` before v1?
+    # TODO_V2 - Rename error to suffix with `Error` in 2.0?
     "N818", # Exception name `NotRegistered` should be named with an Error suffix
 ]
 

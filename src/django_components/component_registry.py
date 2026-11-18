@@ -94,10 +94,10 @@ class RegistrySettings(NamedTuple):
     setting.
     """
 
-    # TODO_REMOVE_IN_V1
+    # TODO_REMOVE_IN_V2
     CONTEXT_BEHAVIOR: ContextBehaviorType | None = None
     """
-    _Deprecated. Use `context_behavior` instead. Will be removed in v1._
+    _Deprecated. Use `context_behavior` instead. Will be removed in 2.0._
 
     Same as the global
     [`COMPONENTS.context_behavior`][ComponentsSettings.context_behavior]
@@ -119,10 +119,10 @@ class RegistrySettings(NamedTuple):
     setting.
     """
 
-    # TODO_REMOVE_IN_V1
+    # TODO_REMOVE_IN_V2
     TAG_FORMATTER: "TagFormatterABC | str | None" = None
     """
-    _Deprecated. Use `tag_formatter` instead. Will be removed in v1._
+    _Deprecated. Use `tag_formatter` instead. Will be removed in 2.0._
 
     Same as the global
     [`COMPONENTS.tag_formatter`][ComponentsSettings.tag_formatter]

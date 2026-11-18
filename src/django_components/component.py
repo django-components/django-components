@@ -57,7 +57,7 @@ from django_components.util.misc import (
 )
 from django_components.util.weakref import cached_ref
 
-# TODO_REMOVE_IN_V1 - Users should use top-level import instead
+# TODO_REMOVE_IN_V2 - Users should use top-level import instead
 # isort: off
 from django_components.component_registry import AlreadyRegistered as AlreadyRegistered  # noqa: PLC0414
 from django_components.component_registry import ComponentRegistry as ComponentRegistry  # noqa: PLC0414,F811
@@ -132,11 +132,11 @@ def get_component_by_class_id(comp_cls_id: str) -> type["Component"]:
     return comp_cls_id_mapping[comp_cls_id]
 
 
-# TODO_v1 - Remove with `Component.input`
+# TODO_V2 - Remove with `Component.input`
 @dataclass(frozen=True)
 class ComponentInput:
     """
-    Deprecated. Will be removed in v1.
+    Deprecated. Will be removed in 2.0.
 
     Object holding the inputs that were passed to [`Component.render()`][Component.render]
     or the [`{% component %}`](template_tags.md#component) template tag.
@@ -159,12 +159,12 @@ class ComponentInput:
     """Slots (as dict) passed to `Component.render()`"""
     deps_strategy: DependenciesStrategy
     """Dependencies strategy passed to `Component.render()`"""
-    # TODO_v1 - Remove, superseded by `deps_strategy`
+    # TODO_V2 - Remove, superseded by `deps_strategy`
     type: DependenciesStrategy
-    """Deprecated. Will be removed in v1. Use `deps_strategy` instead."""
-    # TODO_v1 - Remove, superseded by `deps_strategy`
+    """Deprecated. Will be removed in 2.0. Use `deps_strategy` instead."""
+    # TODO_V2 - Remove, superseded by `deps_strategy`
     render_dependencies: bool
-    """Deprecated. Will be removed in v1. Use `deps_strategy="ignore"` instead."""
+    """Deprecated. Will be removed in 2.0. Use `deps_strategy="ignore"` instead."""
 
 
 class ComponentVars(NamedTuple):
@@ -331,10 +331,10 @@ class ComponentVars(NamedTuple):
         ```
     """
 
-    # TODO_v1 - Remove, superseded by `component_vars.slots`
+    # TODO_V2 - Remove, superseded by `component_vars.slots`
     is_filled: dict[str, bool]
     """
-    Deprecated. Will be removed in v1. Use [`component_vars.slots`][ComponentVars.slots] instead.
+    Deprecated. Will be removed in 2.0. Use [`component_vars.slots`][ComponentVars.slots] instead.
     Note that `component_vars.slots` no longer escapes the slot names.
 
     Dictonary describing which component slots are filled (`True`) or are not (`False`).
@@ -425,7 +425,7 @@ class ComponentMeta(ComponentMediaMeta):
         if attrs.get("template_file"):
             cache_component_template_file(cls)
 
-        # TODO_V1 - Remove. This is only for backwards compatibility with v0.139 and earlier,
+        # TODO_V2 - Remove. This is only for backwards compatibility with v0.139 and earlier,
         #           where `on_render_after` had 4 parameters.
         on_render_after_sig = signature(cls.on_render_after)
         if len(on_render_after_sig.parameters) == 4:
@@ -738,13 +738,13 @@ class Component(metaclass=ComponentMeta):
     [`template_file`][Component.template_file].
     """
 
-    # TODO_v1 - Remove
+    # TODO_V2 - Remove
     def get_template_name(self, context: Context) -> str | None:
         """
         DEPRECATED: Use instead [`Component.template_file`][Component.template_file],
         [`Component.template`][Component.template] or
         [`Component.on_render()`][Component.on_render].
-        Will be removed in v1.
+        Will be removed in 2.0.
 
         Same as [`Component.template_file`][Component.template_file],
         but allows to dynamically resolve the template name at render time.
@@ -824,13 +824,13 @@ class Component(metaclass=ComponentMeta):
         ```
     """
 
-    # TODO_v1 - Remove
+    # TODO_V2 - Remove
     def get_template(self, context: Context) -> str | Template | None:
         """
         DEPRECATED: Use instead [`Component.template_file`][Component.template_file],
         [`Component.template`][Component.template] or
         [`Component.on_render()`][Component.on_render].
-        Will be removed in v1.
+        Will be removed in 2.0.
 
         Same as [`Component.template`][Component.template],
         but allows to dynamically resolve the template at render time.
@@ -870,11 +870,11 @@ class Component(metaclass=ComponentMeta):
         """
         return None
 
-    # TODO_V2 - Remove this in v2
+    # TODO_V2 - Remove this in 2.0
     def get_context_data(self, *_args: Any, **_kwargs: Any) -> Mapping | None:
         """
         DEPRECATED: Use [`get_template_data()`][Component.get_template_data] instead.
-        Will be removed in v2.
+        Will be removed in 2.0.
 
         Use this method to define variables that will be available in the template.
 
@@ -2284,10 +2284,10 @@ class Component(metaclass=ComponentMeta):
         ```
     """
 
-    # TODO_v1 - Remove `Component.input`
+    # TODO_V2 - Remove `Component.input`
     input: ComponentInput
     """
-    Deprecated. Will be removed in v1.
+    Deprecated. Will be removed in 2.0.
 
     Input holds the data that were passed to the current component at render time.
 
@@ -2658,10 +2658,10 @@ class Component(metaclass=ComponentMeta):
         [`Component.render()`][Component.render]
         (but you can pass in the `node` kwarg yourself).
     """
-    # TODO_v1 - Remove, superseded by `Component.slots`
+    # TODO_V2 - Remove, superseded by `Component.slots`
     is_filled: SlotIsFilled
     """
-    Deprecated. Will be removed in v1. Use [`Component.slots`][Component.slots] instead.
+    Deprecated. Will be removed in 2.0. Use [`Component.slots`][Component.slots] instead.
     Note that `Component.slots` no longer escapes the slot names.
 
     Dictionary describing which slots have or have not been filled.
@@ -2904,7 +2904,7 @@ class Component(metaclass=ComponentMeta):
             # from Django's `View` class, and adds the `component` attribute to it.
             view_cls = cast("View", cls.View)  # type: ignore[attr-defined]
 
-            # TODO_v1 - Remove `component` and use only `component_cls` instead.
+            # TODO_V2 - Remove `component` and use only `component_cls` instead.
             inner_view = view_cls.as_view(**initkwargs, component=cls(), component_cls=cls)
             return inner_view(request, *args, **kwargs)
 
@@ -2918,13 +2918,13 @@ class Component(metaclass=ComponentMeta):
         kwargs: Any | None = None,
         slots: Any | None = None,
         deps_strategy: DependenciesStrategy | None = None,
-        # TODO_v1 - Remove, superseded by `deps_strategy`
+        # TODO_V2 - Remove, superseded by `deps_strategy`
         type: DependenciesStrategy | None = None,  # noqa: A002
-        # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
+        # TODO_V2 - Remove, superseded by `deps_strategy="ignore"`
         render_dependencies: bool = True,
         request: HttpRequest | None = None,
         outer_context: Context | None = None,
-        # TODO_v2 - Remove `registered_name` and `registry`
+        # TODO_V2 - Remove `registered_name` and `registry`
         registry: ComponentRegistry | None = None,
         registered_name: str | None = None,
         node: "ComponentNode | None" = None,
@@ -2987,13 +2987,13 @@ class Component(metaclass=ComponentMeta):
             context=context,
             slots=slots,
             deps_strategy=deps_strategy,
-            # TODO_v1 - Remove, superseded by `deps_strategy`
+            # TODO_V2 - Remove, superseded by `deps_strategy`
             type=type,
-            # TODO_v1 - Remove, superseded by `deps_strategy`
+            # TODO_V2 - Remove, superseded by `deps_strategy`
             render_dependencies=render_dependencies,
             request=request,
             outer_context=outer_context,
-            # TODO_v2 - Remove `registered_name` and `registry`
+            # TODO_V2 - Remove `registered_name` and `registry`
             registry=registry,
             registered_name=registered_name,
             node=node,
@@ -3008,13 +3008,13 @@ class Component(metaclass=ComponentMeta):
         kwargs: Any | None = None,
         slots: Any | None = None,
         deps_strategy: DependenciesStrategy | None = None,
-        # TODO_v1 - Remove, superseded by `deps_strategy`
+        # TODO_V2 - Remove, superseded by `deps_strategy`
         type: DependenciesStrategy | None = None,  # noqa: A002
-        # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
+        # TODO_V2 - Remove, superseded by `deps_strategy="ignore"`
         render_dependencies: bool = True,
         request: HttpRequest | None = None,
         outer_context: Context | None = None,
-        # TODO_v2 - Remove `registered_name` and `registry`
+        # TODO_V2 - Remove `registered_name` and `registry`
         registry: ComponentRegistry | None = None,
         registered_name: str | None = None,
         node: "ComponentNode | None" = None,
@@ -3220,7 +3220,7 @@ class Component(metaclass=ComponentMeta):
         )
         ```
         """
-        # TODO_v1 - Remove, superseded by `deps_strategy`
+        # TODO_V2 - Remove, superseded by `deps_strategy`
         if type is not None:
             if deps_strategy is not None:
                 raise ValueError(
@@ -3229,7 +3229,7 @@ class Component(metaclass=ComponentMeta):
                 )
             deps_strategy = type
 
-        # TODO_v1 - Remove, superseded by `deps_strategy="ignore"`
+        # TODO_V2 - Remove, superseded by `deps_strategy="ignore"`
         if not render_dependencies:
             deps_strategy = "ignore"
 
@@ -3242,7 +3242,7 @@ class Component(metaclass=ComponentMeta):
             deps_strategy=deps_strategy,
             request=request,
             outer_context=outer_context,
-            # TODO_v2 - Remove `registered_name` and `registry`
+            # TODO_V2 - Remove `registered_name` and `registry`
             registry=registry,
             registered_name=registered_name,
             node=node,
@@ -3259,7 +3259,7 @@ class Component(metaclass=ComponentMeta):
     This is derived from the component class' module import path, e.g. `path.to.my.MyComponent`.
     """
 
-    # TODO_V1 - Remove this in v1
+    # TODO_V2 - Remove this in 2.0
     @property
     def _class_hash(self) -> str:
         """Deprecated. Use `Component.class_id` instead."""
@@ -3284,7 +3284,7 @@ class Component(metaclass=ComponentMeta):
     [`do_not_call_in_templates`](https://docs.djangoproject.com/en/5.2/ref/templates/api/#variables-and-lookups).
     """
 
-    # TODO_v1 - Change params order to match `Component.render()`
+    # TODO_V2 - Change params order to match `Component.render()`
     def __init__(
         self,
         registered_name: str | None = None,
@@ -3301,7 +3301,7 @@ class Component(metaclass=ComponentMeta):
         parent: "Component | None" = None,
         root: "Component | None" = None,
     ) -> None:
-        # TODO_v1 - Remove this whole block in v1. This is for backwards compatibility with pre-v0.140
+        # TODO_V2 - Remove this whole block in 2.0. This is for backwards compatibility with pre-v0.140
         #           where one could do:
         #           `MyComp("my_comp").render(kwargs={"a": 1})`.
         #           Instead, the new syntax is:
@@ -3353,9 +3353,9 @@ class Component(metaclass=ComponentMeta):
         self.raw_kwargs: dict[str, Any] = self.kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)
         self.raw_slots: dict[str, Slot] = self.slots if isinstance(self.slots, dict) else to_dict(self.slots)
         self.context = default(context, Context())
-        # TODO_v1 - Remove `is_filled`, superseded by `Component.slots`
+        # TODO_V2 - Remove `is_filled`, superseded by `Component.slots`
         self.is_filled = SlotIsFilled(to_dict(self.slots))
-        # TODO_v1 - Remove `Component.input`
+        # TODO_V2 - Remove `Component.input`
         self.input = ComponentInput(
             context=self.context,
             # NOTE: Convert args / kwargs / slots to plain lists / dicts
@@ -3363,9 +3363,9 @@ class Component(metaclass=ComponentMeta):
             kwargs=cast("dict", kwargs if isinstance(self.kwargs, dict) else to_dict(self.kwargs)),
             slots=cast("dict", slots if isinstance(self.slots, dict) else to_dict(self.slots)),
             deps_strategy=deps_strategy,
-            # TODO_v1 - Remove, superseded by `deps_strategy`
+            # TODO_V2 - Remove, superseded by `deps_strategy`
             type=deps_strategy,
-            # TODO_v1 - Remove, superseded by `deps_strategy`
+            # TODO_V2 - Remove, superseded by `deps_strategy`
             render_dependencies=deps_strategy != "ignore",
         )
         self.deps_strategy = deps_strategy
@@ -3396,7 +3396,7 @@ class Component(metaclass=ComponentMeta):
 
     def _call_data_methods(
         self,
-        # TODO_V2 - Remove `raw_args` and `raw_kwargs` in v2
+        # TODO_V2 - Remove `raw_args` and `raw_kwargs` in 2.0
         raw_args: list,
         raw_kwargs: dict,
     ) -> tuple[dict, dict, dict]:
@@ -3404,7 +3404,7 @@ class Component(metaclass=ComponentMeta):
         maybe_template_data = self.get_template_data(self.args, self.kwargs, self.slots, self.context)
         new_template_data = to_dict(default(maybe_template_data, {}))
 
-        # TODO_V2 - Remove this in v2
+        # TODO_V2 - Remove this in 2.0
         legacy_template_data = to_dict(default(self.get_context_data(*raw_args, **raw_kwargs), {}))
         if legacy_template_data and new_template_data:
             raise RuntimeError(

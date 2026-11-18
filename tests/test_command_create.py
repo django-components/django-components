@@ -139,7 +139,7 @@ class TestCreateComponentCommand:
 
         rmtree(temp_dir)
 
-    # TODO_V1 - REMOVE - deprecated
+    # TODO_V2 - REMOVE - deprecated
     def test_startcomponent(self):
         temp_dir = tempfile.mkdtemp()
 

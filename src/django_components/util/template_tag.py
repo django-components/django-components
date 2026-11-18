@@ -539,7 +539,7 @@ def _unmark_keys_shared_with_data(kwargs: list[tuple[str, Any]]) -> list[tuple[s
     ]
 
 
-# TODO_REMOVE_IN_V1 - Disallow specifying the same key multiple times once in v1.
+# TODO_REMOVE_IN_V2 - Disallow specifying the same key multiple times once in 2.0.
 def merge_repeated_kwargs(args: list[Any], kwargs: list[tuple[str, Any]]) -> tuple[list[Any], list[tuple[str, Any]]]:
     resolved_kwargs: list[tuple[str, Any]] = []
     # Used for detecting duplicate kwargs

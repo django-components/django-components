@@ -53,7 +53,7 @@ class CustomClient(Client):
 
 @djc_test
 class TestComponentLegacyApi:
-    # TODO_REMOVE_IN_V1 - Superseded by `self.get_template` in v1
+    # TODO_REMOVE_IN_V2 - Superseded by `self.get_template` in 2.0
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_get_template_string(self, components_settings):
         class SimpleComponent(Component):
@@ -105,7 +105,7 @@ class TestComponentLegacyApi:
             """,
         )
 
-    # TODO_REMOVE_IN_V1 - Registry and registered name should be passed to `Component.render()`,
+    # TODO_REMOVE_IN_V2 - Registry and registered name should be passed to `Component.render()`,
     #                     not to the constructor.
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_component_instantiation(self, components_settings):
@@ -154,7 +154,7 @@ class TestComponentLegacyApi:
             """,
         )
 
-    # TODO_v1 - Remove
+    # TODO_V2 - Remove
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_get_template_name(self, components_settings):
         class SvgComponent(Component):
@@ -182,7 +182,7 @@ class TestComponentLegacyApi:
             """,
         )
 
-    # TODO_v1 - Remove
+    # TODO_V2 - Remove
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_get_template__string(self, components_settings):
         class SimpleComponent(Component):
@@ -209,7 +209,7 @@ class TestComponentLegacyApi:
             """,
         )
 
-    # TODO_v1 - Remove
+    # TODO_V2 - Remove
     @djc_test(parametrize=PARAMETRIZE_CONTEXT_BEHAVIOR)
     def test_get_template__template(self, components_settings):
         class TestComponent(Component):
@@ -230,7 +230,7 @@ class TestComponentLegacyApi:
             """,
         )
 
-    # TODO_v1 - Remove
+    # TODO_V2 - Remove
     def test_get_template_is_cached(self):
         class SimpleComponent(Component):
             def get_template(self, context):
@@ -251,7 +251,7 @@ class TestComponentLegacyApi:
         template_2 = _get_component_template(comp)
         assert template_2._test_id == "123"  # type: ignore[union-attr]
 
-    # TODO_v1 - Remove
+    # TODO_V2 - Remove
     def test_input(self):
         class TestComponent(Component):
             template: types.django_html = """

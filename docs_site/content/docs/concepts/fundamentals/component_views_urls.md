@@ -62,7 +62,7 @@ class Calendar(Component):
 
     Each of these receive the [`HttpRequest`](https://docs.djangoproject.com/en/5.2/ref/request-response/#django.http.HttpRequest) object as the first argument.
 
-<!-- TODO_V1 REMOVE -->
+<!-- TODO_V2 REMOVE -->
 
 !!! warning
 
@@ -80,7 +80,7 @@ class Calendar(Component):
             )
     ```
 
-    This is deprecated from v0.137 onwards, and will be removed in v1.0.
+    This is deprecated from v0.137 onwards, and will be removed in 2.0.
 
 ### Acccessing component class
 

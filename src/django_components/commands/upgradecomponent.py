@@ -1,7 +1,7 @@
 from django_components.commands.upgrade import UpgradeCommand
 
 
-# TODO_REMOVE_IN_V1 - No longer needed?
+# TODO_REMOVE_IN_V2 - No longer needed?
 class UpgradeComponentCommand(UpgradeCommand):
     """**Deprecated**. Use [`components upgrade`](commands.md#components-upgrade) instead."""
 

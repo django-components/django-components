@@ -130,7 +130,7 @@ def get_injected_context_var(
     )
 
 
-# TODO_v2 - Once we wrap all executions of Django's Template as our Components,
+# TODO_V2 - Once we wrap all executions of Django's Template as our Components,
 #           we'll be able to store the provided data on ComponentContext instead of on Context.
 def set_provided_context_var(
     context: Context,

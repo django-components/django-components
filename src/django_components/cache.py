@@ -12,7 +12,7 @@ from django_components.app_settings import app_settings
 from django_components.util.cache import LRUCache
 from django_components.util.logger import logger
 
-# TODO_V1 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
+# TODO_V2 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
 #
 # This stores the parsed Templates. This is strictly local for now, as it stores instances.
 # NOTE: Lazily initialized so it can be configured based on user-defined settings.
@@ -156,7 +156,7 @@ class ComponentVarsCache(BaseCache):
             self._total_bytes = 0
 
 
-# TODO_V1 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
+# TODO_V2 - Remove, won't be needed once we remove `get_template_string()`, `get_template_name()`, `get_template()`
 def get_template_cache() -> LRUCache:
     global template_cache  # noqa: PLW0603
     if template_cache is None:

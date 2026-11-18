@@ -716,7 +716,7 @@ html = slot()
 
     Instead, prefer using the `data` and `fallback` attributes.
 
-    <!-- TODO_v2: Check if still applicable -->
+    <!-- TODO_V2: Check if still applicable -->
     Access to `context` may be removed in future versions (v2, v3).
 
 ### Slot metadata
@@ -1029,7 +1029,7 @@ class MyTable(Component):
     This applies for both [`{% slot %}`](../../reference/template_tags.md#slot)
     and [`{% fill %}`](../../reference/template_tags.md#fill) tags.
 
-<!-- TODO_V1: Remove this section -->
+<!-- TODO_V2: Remove this section -->
 
 ## Legacy conditional slots
 
@@ -1041,7 +1041,7 @@ class MyTable(Component):
 >
 > [`{% component_vars.slots.<name> %}`][ComponentVars.slots]
 >
-> The `component_vars.is_filled` variable is still available, but will be removed in v1.0.
+> The `component_vars.is_filled` variable is still available, but will be removed in 2.0.
 >
 > NOTE: `component_vars.slots` no longer escapes special characters in slot names.
 

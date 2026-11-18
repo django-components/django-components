@@ -4,7 +4,7 @@ import { unescapeJs } from './utils';
 
 export type * from './manager';
 
-// TODO_v1: Make `DjangoComponents` THE manager object
+// TODO_V2: Make `DjangoComponents` THE manager object
 //          - keep `createComponentsManager` as one of manager's methods (used in tests)
 //          - remove `unescapeJs` (unused)
 export const DjangoComponents = {
@@ -16,7 +16,7 @@ export const DjangoComponents = {
 // In browser, this is accessed as `DjangoComponents.manager`, etc
 globalThis.DjangoComponents = DjangoComponents;
 
-// TODO_v1: Delete this in v1, kept for backwards compatibility
+// TODO_V2: Delete this in 2.0, kept for backwards compatibility
 if (globalThis.Components === undefined) {
   globalThis.Components = DjangoComponents;
 }

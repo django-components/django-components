@@ -190,7 +190,7 @@ Goal: feature parity with mkdocstrings on the 14 current reference pages, with t
 | 4.6 | `discover-page-components` | Components page (kind 7: predefined Component subclasses) | M | | 11.5 §3.1, §10 | **done** | predefined Component subclasses from django_components.components |
 | 4.7 | `discover-page-settings` | Settings page (kind 8: ComponentsSettings fields) | M | | 11.5 §3.1, §10 | **done** | ComponentsSettings fields |
 | 4.8 | `discover-page-tag-formatters` | Tag formatters (kinds 9-10) | M | | 11.5 §3.1 | **done** | TagFormatterABC subclasses (classes) + instances (marker predicates) |
-| 4.9 | `discover-page-commands` | Management commands (kind 11) | L | ✓ | 11.5 §3.1 | **done** | argparse introspection via setup_parser_from_command; legacy startcomponent/upgradecomponent excluded (TODO_v1) |
+| 4.9 | `discover-page-commands` | Management commands (kind 11) | L | ✓ | 11.5 §3.1 | **done** | argparse introspection via setup_parser_from_command; legacy startcomponent/upgradecomponent excluded (TODO_REMOVE_IN_V2) |
 | 4.10 | `discover-page-template-tags` | Template tags (kind 12) | M | ✓ | 11.5 §3.1 | **done** | BaseNode subclasses from templatetags/*; runtime `_signature` (no force_inspection needed) |
 | 4.11 | `discover-page-urls` | URL patterns (kind 13) | S | | 11.5 §3.1 | done | |
 | 4.12 | `discover-page-template-vars` | Template vars (kind 14: ComponentVars) | S | | 11.5 §3.1 | **done** | ComponentVars fields |

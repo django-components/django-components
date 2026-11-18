@@ -142,7 +142,7 @@ class ReloadMode(str, Enum):
     - `off`: No file watching. Changes are not picked up until the server is manually restarted.
     - `hot`: Clear the in-memory component cache so the next render reads fresh content from disk.
       The dev server keeps running - no restart.
-    - `restart`: Same as `hot`, but also restarts the dev server. Deprecated, will be removed in v1.
+    - `restart`: Same as `hot`, but also restarts the dev server. Deprecated, will be removed in 2.0.
     """
 
     OFF = "off"
@@ -154,12 +154,12 @@ class ReloadMode(str, Enum):
     render reads fresh content from disk. The dev server keeps running without a restart.
     """
 
-    # TODO_REMOVE_IN_V1
+    # TODO_REMOVE_IN_V2
     RESTART = "restart"
     """
     Same cache-clearing behavior as `hot`, but also triggers a full dev server restart.
 
-    Deprecated. Use `hot` instead. Will be removed in v1.
+    Deprecated. Use `hot` instead. Will be removed in 2.0.
     """
 
 
@@ -345,12 +345,12 @@ class ComponentsSettings(NamedTuple):
     > [the rationale for this change](https://github.com/django-components/django-components/issues/498).
     """
 
-    # TODO_v1 - remove. Users should use extension defaults instead.
+    # TODO_V2 - remove. Users should use extension defaults instead.
     debug_highlight_components: bool | None = None
     """
     DEPRECATED. Use
     [`extensions_defaults`][ComponentsSettings.extensions_defaults]
-    instead. Will be removed in v1.
+    instead. Will be removed in 2.0.
 
     Enable / disable component highlighting.
     See [Troubleshooting](../guides/other/troubleshooting.md#component-and-slot-highlighting) for more details.
@@ -364,12 +364,12 @@ class ComponentsSettings(NamedTuple):
     ```
     """
 
-    # TODO_v1 - remove. Users should use extension defaults instead.
+    # TODO_V2 - remove. Users should use extension defaults instead.
     debug_highlight_slots: bool | None = None
     """
     DEPRECATED. Use
     [`extensions_defaults`][ComponentsSettings.extensions_defaults]
-    instead. Will be removed in v1.
+    instead. Will be removed in 2.0.
 
     Enable / disable slot highlighting.
     See [Troubleshooting](../guides/other/troubleshooting.md#component-and-slot-highlighting) for more details.
@@ -471,7 +471,7 @@ class ComponentsSettings(NamedTuple):
     ```
     """
 
-    # TODO_REMOVE_IN_V1
+    # TODO_REMOVE_IN_V2
     reload_on_template_change: bool | None = None
     """Deprecated. Use
     [`COMPONENTS.reload_on_file_change`][ComponentsSettings.reload_on_file_change]
@@ -492,7 +492,7 @@ class ComponentsSettings(NamedTuple):
     - `True` or `"hot"` - Clear the in-memory component cache so the next render reads fresh
       content from disk. The dev server keeps running without a restart.
     - `"restart"` - Same as `"hot"`, but also triggers a full dev server restart.
-      Deprecated, will be removed in v1.
+      Deprecated, will be removed in 2.0.
 
     Defaults to `"hot"`.
 
@@ -540,7 +540,7 @@ class ComponentsSettings(NamedTuple):
         See [Security notes](../overview/security_notes.md).
     """
 
-    # TODO_REMOVE_IN_V1
+    # TODO_REMOVE_IN_V2
     forbidden_static_files: list[str | re.Pattern] | None = None
     """Deprecated. Use
     [`COMPONENTS.static_files_forbidden`][ComponentsSettings.static_files_forbidden]
@@ -648,10 +648,10 @@ class ComponentsSettings(NamedTuple):
             ```
     """
 
-    # TODO_V1 - remove
+    # TODO_V2 - remove
     template_cache_size: int | None = None
     """
-    DEPRECATED. Template caching will be removed in v1.
+    DEPRECATED. Template caching will be removed in 2.0.
 
     Configure the maximum amount of Django templates to be cached.
 
@@ -921,13 +921,13 @@ class InternalSettings:
 
     def _prepare_reload_on_file_change(self, new_settings: ComponentsSettings) -> ReloadModeType:
         val = new_settings.reload_on_file_change
-        # TODO_REMOVE_IN_V1
+        # TODO_REMOVE_IN_V2
         if val is None:
             val = new_settings.reload_on_template_change
 
         resolved = default(val, defaults.reload_on_file_change)
 
-        # TODO_REMOVE_IN_V1 - Normalize bool to ReloadMode string
+        # TODO_REMOVE_IN_V2 - Normalize bool to ReloadMode string
         if resolved is True:
             return "hot"
         if resolved is False:
@@ -943,7 +943,7 @@ class InternalSettings:
 
     def _prepare_static_files_forbidden(self, new_settings: ComponentsSettings) -> list[str | re.Pattern]:
         val = new_settings.static_files_forbidden
-        # TODO_REMOVE_IN_V1
+        # TODO_REMOVE_IN_V2
         if val is None:
             val = new_settings.forbidden_static_files
 
