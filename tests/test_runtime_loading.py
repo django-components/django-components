@@ -166,6 +166,24 @@ class TestFragmentFileIntegrity:
         assert len(_tags_to_fetch(rendered)) == 2
         assert logger.warning.call_count == 2
 
+    def test_variables_gone_after_the_check_get_no_tag(self):
+        # The variables can expire between the check that they exist and the read that hashes
+        # them. The read must still leave out the tag, because the tag could not carry a hash.
+        raw = FragmentComponent.render(deps_strategy="ignore")
+        get_component_vars_cache().clear()
+
+        with (
+            patch("django_components.dependencies._is_script_in_cache", return_value=True),
+            patch("django_components.dependencies.logger") as logger,
+        ):
+            rendered = render_dependencies(raw, strategy="fragment")
+
+        tags = _tags_to_fetch(rendered)
+        assert len(tags) == 2
+        assert all("integrity" in tag["attrs"] for tag in tags)
+        left_out = [call.args[0] for call in logger.warning.call_args_list if call.args[0].startswith("Left out")]
+        assert len(left_out) == 2
+
     def test_many_instances_read_each_file_once(self):
         rendered = "".join(FragmentComponent.render(deps_strategy="ignore") for _ in range(20))
 
