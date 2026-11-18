@@ -52,3 +52,32 @@ COMPONENTS = {
 ```
 
 See [`COMPONENTS.cache`][ComponentsSettings.cache] for more details about this setting.
+
+### Limit JS/CSS variables
+
+The values that your [`get_js_data()`][Component.get_js_data] and [`get_css_data()`][Component.get_css_data] return are stored in this cache. Each distinct value adds an entry. If those values depend on your users, the entries can keep adding up, so they have limits.
+
+With the default in-memory cache, each server process keeps them for 24 hours after they were last used, and uses at most about 64 MiB of memory for them. When that memory is full, the process drops the entries used longest ago. Your components' own [`Component.js`][Component.js] and [`Component.css`][Component.css] do not count toward this limit and are never dropped to make room.
+
+Rendering a component counts as using its variables, and so does replaying its HTML from `{% cache %}` or [`Component.Cache`][Component.Cache]. A whole page that you keep in a cache of your own does not count.
+
+You can change both limits:
+
+```python
+COMPONENTS = {
+    # Keep the variables for a week
+    "vars_cache_max_age": 7 * 24 * 60 * 60,
+    # Allow up to 256 MiB in each server process
+    "vars_cache_max_bytes": 256 * 1024 * 1024,
+}
+```
+
+Both must be positive integers, or `None` for the default. Any other value raises a `ValueError` when Django starts.
+
+If a render finds that an entry is gone, it logs a warning. For JS variables, that component's `$onComponent` callbacks do not run. For CSS variables, the page renders with those variables unset. A render that produces the same values stores them again.
+
+With the `"fragment"` strategy, the browser fetches the variables after the render. If they are gone by then, the fetch gets a 404, which is all that the server logs. That fragment's `$onComponent` callbacks do not run, and neither do those of any fragment that comes after it, until the page reloads. So keep the limits well above how long you keep such HTML.
+
+With your own cache backend set in [`COMPONENTS.cache`][ComponentsSettings.cache], these two settings do not apply. That backend's own `TIMEOUT` and size limits decide how long entries stay, so set at least one of them. With `"TIMEOUT": None` and no limit on size, every new value adds an entry that stays for good.
+
+A `TIMEOUT` runs from when a value was first stored, and using the value does not extend it. So if you keep fragments in a cache, prefer a size limit on the backend over a `TIMEOUT`.

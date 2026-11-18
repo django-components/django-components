@@ -401,6 +401,15 @@ class ThemeableButton(Component):
         }
 ```
 
+A value that reads as one CSS value stays as you wrote it, such as `red`, `10px`, `calc(100% - 20px)` or
+`url("/a.png")`. Any other text becomes a quoted CSS string, so `red;}body{display:none}` is text and cannot add
+a rule or end the `<style>` tag. A string with whitespace is quoted too, unless it is a CSS function.
+
+!!! warning
+
+    A value can still load a URL, such as `url(https://example.com/a.png)`. Check any URL that comes from a
+    request before you return it from [`get_css_data()`][Component.get_css_data].
+
 ### Accessing CSS variables
 
 In your CSS file, you can access these variables by using the [`var()`](https://developer.mozilla.org/en-US/docs/Web/CSS/var) function.
@@ -438,24 +447,77 @@ Use the same variable names as in the dictionary returned from [`get_css_data()`
     the variables:
 
     ```css
-    [data-djc-css-b2c3d4] {
+    [data-djc-css-0c4e2a9f1b7d3e5a6c8f0b2d4e6a8c1f] {
         --button_bg: #f0f0f0;
         --button_color: #333;
         --button_hover_bg: #e0e0e0;
     }
     ```
 
-    This stylesheet with the variables is cached on the server based on the variables' names and values.
+    This stylesheet with the variables is cached on the server based on the variables' names and values,
+    and on your `SECRET_KEY`.
 
     This stylesheet is then added to the CSS dependencies of the component (as if added to `Component.Media.css`).
     So the variables stylesheet will be loaded with the rest of the component's CSS.
 
-    The rendered component will have a corresponding `data-djc-css-b2c3d4` HTML attribute, matching the hash.
+    The rendered component will have a corresponding `data-djc-css-0c4e2a9f1b7d3e5a6c8f0b2d4e6a8c1f` HTML attribute, matching the hash.
 
     Thus, the CSS variables are dynamically applied to the component, and ONLY to this single instance (or
     other instances that have the same variables).
 
     This means that if you render the same component with different variables, each instance will use different CSS variables.
+
+## JS and CSS variables are public
+
+Treat everything that you return from [`get_js_data()`][Component.get_js_data] and
+[`get_css_data()`][Component.get_css_data] as public. Never return a password, a token, or anything else
+that must stay private.
+
+Django Components stores those values on the server, and serves them from a URL such as this one, so that
+the browser can load them:
+
+```text
+/components/cache/MyTable_a1b2c3.1f3a9c0d7b2e4f6089a1c3d5e7f90b12.js
+```
+
+The long part of the URL is the 32 characters after the component name.
+
+That URL needs no login, even when the page that uses it does. This is what it means for your values:
+
+- **Anyone who has the URL can read them.** The URL is in the HTML of the page, so whoever sees that HTML
+  has it, and so does anything that records the page or the URL, such as a log or a browser extension.
+- **Other websites that know the URL can use it too.** Another site can load the URL in its own pages with
+  a `<script>` or `<link>` tag, and scripts in those pages can then read the values. Django Components adds
+  no `Access-Control-Allow-Origin` header, so other sites cannot read the URL with `fetch()` unless your
+  app adds that header, for example with django-cors-headers. The tags do not need that header.
+- **Trying random URLs does not find them.** The long part of the URL has too many possible values to try.
+- **Guessing the values does not find them either.** The long part of the URL is made from the values and
+  your [`SECRET_KEY`](https://docs.djangoproject.com/en/stable/ref/settings/#secret-key), so without
+  `SECRET_KEY` nobody can work it out from values that they guess.
+
+To show private data to a logged-in user, pass it through
+[`get_template_data()`][Component.get_template_data], so that it stays in the page that your view protects.
+
+When you change `SECRET_KEY`, new pages get new URLs. The URLs in pages rendered before the change keep
+working for as long as the server still has their values in its cache. If you change `SECRET_KEY` because it
+leaked, also clear [`COMPONENTS.cache`][ComponentsSettings.cache] if you set it, so that those old URLs stop
+working.
+
+If `SECRET_KEY` is empty, each server process makes a random secret of its own when it starts, so the same
+values get a different URL in each process. Pages keep working as before. If several processes share one
+cache through [`COMPONENTS.cache`][ComponentsSettings.cache], that cache then holds one copy of the same
+values for each process.
+
+Django Components 0.152.0 and earlier used 6 characters instead of 32, which anyone can guess. Django
+Components now refuses such URLs and never reads the values stored under them, even while they are still in
+the cache. So HTML that one of those versions rendered and that is still cached, for example by
+`{% cache %}` or `Component.Cache`, loses these values until it expires: a warning is logged, the
+component's `$onComponent` callbacks do not run, and its CSS variables are unset. To render those pages
+again sooner, clear the cache that holds their HTML.
+
+If you set [`COMPONENTS.cache`][ComponentsSettings.cache], the old values stay in it until they expire, and with
+`"TIMEOUT": None` they never do. Nobody can read them anymore, but they take up space. Clearing that cache
+removes them, along with everything else in it.
 
 ## Accessing component inputs
 

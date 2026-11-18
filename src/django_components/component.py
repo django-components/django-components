@@ -1196,7 +1196,11 @@ class Component(metaclass=ComponentMeta):
 
         The data returned from this method will be serialized to JSON.
 
-        Read more about [JavaScript variables](../concepts/fundamentals/html_js_css_variables.md).
+        Everything you return here is public. Anyone with the URL of the stored values can read them,
+        with no login.
+
+        Read more about [JavaScript variables](../concepts/fundamentals/html_js_css_variables.md)
+        and [why they are public](../concepts/fundamentals/html_js_css_variables.md#js-and-css-variables-are-public).
 
         Examples:
             ```py
@@ -1486,7 +1490,11 @@ class Component(metaclass=ComponentMeta):
 
         The data returned from this method will be serialized to string.
 
-        Read more about [CSS variables](../concepts/fundamentals/html_js_css_variables.md).
+        Everything you return here is public. Anyone with the URL of the stored values can read them,
+        with no login.
+
+        Read more about [CSS variables](../concepts/fundamentals/html_js_css_variables.md)
+        and [why they are public](../concepts/fundamentals/html_js_css_variables.md#js-and-css-variables-are-public).
 
         Examples:
             ```py
@@ -2080,6 +2088,7 @@ class Component(metaclass=ComponentMeta):
 
         The list includes [`Component.js`][Component.js]/[`Component.css`][Component.css]
         CSS/JS variables, and [`Component.Media.js`][ComponentMediaInput.js]/[`Component.Media.css`][ComponentMediaInput.css].
+        The lists leave out variables that are no longer in the cache.
 
         Return `(new_scripts, new_styles)` to replace the list for this instance;
         return `None` (default) to keep the original list.

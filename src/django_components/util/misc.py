@@ -41,6 +41,54 @@ def gen_id() -> str:
     )
 
 
+class TrustedAttrName(str):
+    """
+    Mark an HTML attribute name as chosen by a developer, not by data.
+
+    [`format_attributes()`][format_attributes], [`compose_attrs()`][compose_attrs],
+    [`merge_attributes()`][merge_attributes], `{% html_attrs %}` and `{% attrs %}` refuse a name
+    in a mapping when its value could run in the browser, such as `onclick` or `srcdoc`. Wrap
+    a name that your own code chose to allow it:
+
+    ```python
+    from django_components import TrustedAttrName
+
+    attrs = {TrustedAttrName("onclick"): "save()"}
+    ```
+
+    Never wrap a name that comes from a request or from storage. The value of a trusted name
+    runs in the browser, so it must not contain request data either.
+
+    The mark stays on the key when you merge mappings. In `{**trusted, **data}`, data can replace
+    the value of a trusted name, so filter data before you merge it.
+
+    Names written in a template tag, as in `{% html_attrs onclick="..." %}` or
+    `attrs:onclick="..."`, are trusted without this.
+    """
+
+    __slots__ = ()
+
+
+# Names that insert markup when they reach the DOM. `srcdoc` loads its value as a page, and
+# the other two matter when a page hands attributes on to a framework that sets DOM properties.
+_MARKUP_ATTR_NAMES = frozenset({"innerhtml", "outerhtml", "srcdoc"})
+# The names that this package's own code looks for, in the browser and on the server.
+_RESERVED_ATTR_NAMES = frozenset({"data-djc", "djc-render-id"})
+
+
+def is_script_capable_attr_name(name: str) -> bool:
+    """
+    Whether data must not choose this HTML attribute name.
+
+    That covers names whose value the browser runs or reads as a page (`onclick` and any other
+    `on*` name, `srcdoc`, `innerHTML`, `outerHTML`) and the names this package uses to mark
+    elements for its own code.
+    """
+    # The unbound method reads the stored text, so a str subclass gets the same answer.
+    folded = str.lower(name)
+    return folded.startswith(("on", "data-djc-")) or folded in _MARKUP_ATTR_NAMES or folded in _RESERVED_ATTR_NAMES
+
+
 def gen_component_id() -> str:
     """Generate a unique ID for a component instance (e.g. for render_id)."""
     return COMP_ID_PREFIX + gen_id()

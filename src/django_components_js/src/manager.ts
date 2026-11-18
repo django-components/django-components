@@ -36,6 +36,150 @@ export interface TagJson {
   content: string;
 }
 
+/** What a `<script data-djc>` block holds. Each string is Base64-encoded. */
+export interface ComponentScriptsInput {
+  cssUrls__markAsLoaded: string[];
+  jsUrls__markAsLoaded: string[];
+  cssTags__toFetch: string[];
+  jsTags__toFetch: string[];
+  componentJsVars: [string, string, string][];
+  componentJsCalls: [string, string, string | null][];
+}
+
+/**
+ * Find the `<script>` tag that loaded this file.
+ *
+ * This runs once when the file loads, because `document.currentScript` is empty afterwards.
+ */
+const readOwnScript = (): HTMLScriptElement | null => {
+  // A named element in the page, such as `<form name="currentScript">`, replaces
+  // `document.currentScript`, and its empty nonce would switch off the check in
+  // `isDataBlockAllowed()`. The getter on `Document.prototype` cannot be replaced by markup.
+  const getCurrentScript = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript")?.get;
+  const script = getCurrentScript?.call(document);
+  return script instanceof HTMLScriptElement ? script : null;
+};
+
+const ownScript = readOwnScript();
+
+/** The CSP nonce on the `<script>` tag that loaded this file, or `""`. */
+const ownNonce = ownScript ? ownScript.nonce || ownScript.getAttribute("nonce") || "" : "";
+
+/**
+ * Check that the JSON of a `<script data-djc>` block came from the server.
+ *
+ * A block tells us which scripts to load and which components to call with which data, and
+ * under `'strict-dynamic'` the scripts we add run with no further check. So a block
+ * written by injected markup could run its own code. On a page with a nonce, the server writes
+ * that nonce into the JSON, and injected text cannot know it.
+ *
+ * We read the nonce from the JSON and not from the tag, because an injected tag left open takes
+ * in the attributes of the real tag after it, nonce included, and keeps its own text.
+ *
+ * When our own tag has no nonce there is nothing to compare, so every block passes here, and
+ * `checkBlockScriptUrl()` limits which scripts such a block can load.
+ */
+const isDataBlockAllowed = (data: { nonce?: unknown }): boolean => !ownNonce || data.nonce === ownNonce;
+
+// The page's own address. `window.location` cannot be replaced by markup, while
+// `document.URL` can, by an element such as `<img name="URL">`.
+const pageUrl = (): URL => new URL(globalThis.location.href);
+
+interface UrlFolder {
+  origin: string;
+  path: string;
+}
+
+/**
+ * Work out the `STATIC_URL` folder from the URL that this file loaded from.
+ *
+ * The server serves this file at `<STATIC_URL>django_components/<file>.js`, so the folder above
+ * `django_components/` is `STATIC_URL`, where the app's `Component.Media` files live too.
+ *
+ * Injected markup can load a copy of this file from another address, and then that copy's
+ * folder is the one the attacker chose. So we use the folder only where a copy is hard to place:
+ *
+ * - On the page's own origin, the copy must sit in a folder named `django_components/`. An
+ *   attacker who can upload JS files into a folder of that name on the site can still pass.
+ * - On another origin, only when our tag has no `integrity`. Under a policy that lists hashes, a
+ *   copy runs only with an `integrity` that matches, and that holds for a copy from any site. A
+ *   policy that lists hosts runs a copy only from those hosts, and injected markup could load
+ *   their files without us. Our tag has no `integrity` when `STATIC_URL` is a full URL.
+ *
+ * Some servers decode an encoded slash and then follow `..`, so a URL with one could reach our
+ * real file from a folder the attacker chose. Others decode twice, or read an overlong UTF-8
+ * byte as a slash. A real `STATIC_URL` has no `%`, so a URL with any `%` gives no folder. The
+ * origin's root folder would let through every path on the page's origin, so it does not count
+ * either.
+ */
+const readStaticFolder = (script: HTMLScriptElement | null): UrlFolder | null => {
+  // An inline script or a module has no URL of its own to read.
+  if (!script || !script.getAttribute("src")) return null;
+  let url: URL;
+  try {
+    // `script.src` is our `src` attribute read against the page's base URL, which a `<base>`
+    // tag can change. Before this file runs, it is also the URL that the browser asked for.
+    url = new URL(script.src);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+
+  const isPageOrigin = url.origin === pageUrl().origin;
+  if (!isPageOrigin && script.hasAttribute("integrity")) return null;
+
+  if (url.pathname.includes("%")) return null;
+
+  const ownFolder = "/django_components/";
+  let path = url.pathname.slice(0, url.pathname.lastIndexOf("/") + 1);
+  if (!path.endsWith(ownFolder)) return null;
+  path = path.slice(0, path.length - ownFolder.length + 1);
+  if (isPageOrigin && path === "/") return null;
+  return { origin: url.origin, path };
+};
+
+const staticFolder = ownNonce ? null : readStaticFolder(ownScript);
+
+// The JS files that django-components writes for each component, served by its own view.
+const CACHE_FILE_PATH = /\/components\/cache\/[^/]+\.js$/;
+
+/**
+ * Decide whether a `<script data-djc>` block may load the script at `src`, on a page where our
+ * own tag has no nonce. Returns the full URL to load, or `null` to refuse it.
+ *
+ * Without a nonce, injected markup can write a block too, and we cannot tell it from the
+ * server's. So such a block may load only files that the app serves itself:
+ *
+ * - a component's JS file from `/components/cache/`, on the page's origin;
+ * - a file under `STATIC_URL`, as worked out by `readStaticFolder()`.
+ *
+ * Anything else, such as a script from a CDN or a file that a visitor uploaded, is refused.
+ *
+ * We resolve `src` against the page's address and load that full URL, so that a `<base>` tag
+ * cannot move the file to another site after we checked it.
+ */
+const checkBlockScriptUrl = (src: string): string | null => {
+  const page = pageUrl();
+  let url: URL;
+  try {
+    url = new URL(src, page);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+  if (url.username || url.password) return null;
+  // The browser leaves an encoded slash, an encoded `%` and overlong UTF-8 bytes in the path.
+  // Some servers decode them and then follow `..`, which could reach a file outside the folder
+  // we checked.
+  if (/%2f|%5c|%25|%c0|%c1/i.test(url.pathname)) return null;
+
+  if (url.origin === page.origin && CACHE_FILE_PATH.test(url.pathname)) return url.href;
+  if (staticFolder && url.origin === staticFolder.origin && url.pathname.startsWith(staticFolder.path)) {
+    return url.href;
+  }
+  return null;
+};
+
 /**
  * Usage:
  *
@@ -176,7 +320,16 @@ export const createComponentsManager = () => {
     return scriptNode;
   };
 
-  const loadJs = (tagData: string | TagJson) => {
+  /**
+   * Load a script, unless it is already loaded.
+   *
+   * `checkUrl` is set for a script that a `<script data-djc>` block names on a page without a
+   * nonce. It returns the full URL to load, or `null` to skip the script.
+   */
+  const loadJsChecked = (
+    tagData: string | TagJson,
+    checkUrl: ((src: string) => string | null) | null,
+  ) => {
     // Support both JSON string (base64 decoded) and JSON object
     // TODO_V1: Support only JSON object
     const data: TagJson =
@@ -190,6 +343,31 @@ export const createComponentsManager = () => {
         el: scriptNode,
         promise: Promise.resolve(),
       };
+    }
+
+    if (checkUrl) {
+      // Check the attribute that the browser will load. The block can name `src` twice in
+      // different case, and then the tag ends up with the last one, not with `data.attrs.src`.
+      const declaredSrc = scriptNode.getAttribute("src");
+      const allowedUrl = declaredSrc == null ? null : checkUrl(declaredSrc);
+      if (allowedUrl == null) {
+        // Skip only this script, so the block's components still run, for example when the
+        // page already has this script from a tag of its own.
+        console.error(
+          `[DjangoComponents] Did not load the script ${JSON.stringify(declaredSrc)} from a <script data-djc> block. ` +
+            "On a page whose dependency manager has no CSP nonce, a block may load only the files that " +
+            "django-components serves from /components/cache/" +
+            (staticFolder
+              ? " and the files under STATIC_URL. "
+              : ". It could not work out STATIC_URL from its own URL, so files under STATIC_URL do not count. ") +
+            "Load the script on the page itself, serve it from STATIC_URL, or give the page a nonce.",
+        );
+        return {
+          el: scriptNode,
+          promise: Promise.resolve(),
+        };
+      }
+      scriptNode.setAttribute("src", allowedUrl);
     }
 
     markScriptLoaded("js", src);
@@ -217,6 +395,8 @@ export const createComponentsManager = () => {
       promise,
     };
   };
+
+  const loadJs = (tagData: string | TagJson) => loadJsChecked(tagData, null);
 
   const loadCss = (tagData: string | TagJson) => {
     // Support both JSON string (base64 decoded) and JSON object
@@ -618,15 +798,16 @@ export const createComponentsManager = () => {
     return lastResult;
   };
 
-  /** Internal API - We call this when we want to load / register all JS & CSS files rendered by component(s) */
-  const _loadComponentScripts = (inputs: {
-    cssUrls__markAsLoaded: string[];
-    jsUrls__markAsLoaded: string[];
-    cssTags__toFetch: string[];
-    jsTags__toFetch: string[];
-    componentJsVars: [string, string, string][];
-    componentJsCalls: [string, string, string | null][];
-  }) => {
+  /**
+   * Load / register all JS & CSS files rendered by component(s).
+   *
+   * `checkScriptUrl` is set for a `<script data-djc>` block on a page without a nonce,
+   * see `loadJsChecked()`.
+   */
+  const loadComponentScripts = (
+    inputs: ComponentScriptsInput,
+    checkScriptUrl: ((src: string) => string | null) | null,
+  ) => {
     // Convert Base64-encoded strings back to their original values
     const cssUrls__markAsLoaded = inputs.cssUrls__markAsLoaded.map((s) => atob(s));
     const jsUrls__markAsLoaded = inputs.jsUrls__markAsLoaded.map((s) => atob(s));
@@ -663,7 +844,7 @@ export const createComponentsManager = () => {
     const jsScriptsPromise = Promise
       // NOTE: Interestingly enough, when we insert scripts into the DOM programmatically,
       // the order of execution is the same as the order of insertion.
-      .all(jsTags__toFetch.map((s) => loadJs(s).promise))
+      .all(jsTags__toFetch.map((s) => loadJsChecked(s, checkScriptUrl).promise))
       .catch(console.error);
 
     // Wait for all required JS that should be either 1. loaded already, 2. loaded by the above
@@ -696,9 +877,42 @@ export const createComponentsManager = () => {
     return _processPendingCalls();
   };
 
+  /**
+   * Internal API - We call this when we want to load / register all JS & CSS files rendered by component(s).
+   *
+   * The JS files for JS variables call this. It checks nothing, because only code already
+   * running in the page can call it.
+   */
+  const _loadComponentScripts = (inputs: ComponentScriptsInput) => loadComponentScripts(inputs, null);
+
   const onDjcScript = (script: HTMLScriptElement) => {
-    const data = JSON.parse(script.text);
-    _loadComponentScripts(data);
+    // A throw here would stop the blocks that come after this one, and it would stop this file
+    // from starting. So catch it, and raise it again on its own, where an error tracker sees it.
+    try {
+      const data = JSON.parse(script.text);
+      if (!isDataBlockAllowed(data)) {
+        console.error(
+          "[DjangoComponents] Ignored a <script data-djc> block that did not pass the nonce check. " +
+            "If this block came from a fragment, render it with the nonce of the page it goes into.",
+        );
+        return;
+      }
+      if (!ownNonce && data.componentJsVars?.length) {
+        // The server sends JS variables in their own JS file, never in a block. So on a page
+        // where we cannot tell the server's blocks from injected ones, such a block is injected,
+        // and would hand the page's own components data that the attacker chose.
+        console.error(
+          "[DjangoComponents] Ignored a <script data-djc> block with JS variables in it. " +
+            "django-components sends JS variables in their own file, so this block did not come from the server.",
+        );
+        return;
+      }
+      loadComponentScripts(data, ownNonce ? null : checkBlockScriptUrl);
+    } catch (error) {
+      setTimeout(() => {
+        throw error;
+      });
+    }
   };
 
   // Initialise the MutationObserver that watches for newly-inserted `<script>` tags

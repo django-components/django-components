@@ -89,6 +89,15 @@ MyTable.render(
 )
 ```
 
+!!! warning
+
+    On a page that uses a Content Security Policy nonce, a fragment must carry the nonce of the page
+    it goes into, or its JS and CSS will not load. Its scripts also need `'strict-dynamic'`, and `style-src` must allow its stylesheets.
+    See [Fragments on a page with a nonce](rendering_js_css.md#fragments-on-a-page-with-a-nonce).
+
+    On a page without a nonce, including a site with no policy, a fragment loads only the JS files of your components and files under `STATIC_URL`.
+    A script from a CDN, or from another path on your site, does not load. See [Pages without a nonce](rendering_js_css.md#pages-without-a-nonce).
+
 ## Live examples
 
 For live interactive examples, [start our demo project](../../community/development.md#dev-server)

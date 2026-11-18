@@ -1,3 +1,5 @@
+import base64
+import hashlib
 from pathlib import Path
 
 import django
@@ -14,6 +16,34 @@ PARAMETRIZE_CONTEXT_BEHAVIOR = (
     ],
     ["django", "isolated"],
 )
+
+# Taken from the shipped file, so that rebuilding the runtime does not touch every test
+_CORE_JS_PATH = (
+    Path(__file__).parent.parent / "src/django_components/static/django_components/django_components.min.js"
+)
+_CORE_JS_HASH = hashlib.sha384(_CORE_JS_PATH.read_bytes())
+CORE_JS_INTEGRITY = "sha384-" + base64.b64encode(_CORE_JS_HASH.digest()).decode()
+CORE_JS_URL = f"django_components/django_components.min.js?v={_CORE_JS_HASH.hexdigest()[:12]}"
+
+# How the runtime appears in a document
+CORE_JS_TAG = f'<script src="{CORE_JS_URL}" integrity="{CORE_JS_INTEGRITY}" crossorigin="anonymous"></script>'
+
+# How the runtime appears in a fragment
+CORE_JS_LOADER = f"""
+    <script>(function() {{
+        const current = Object.getOwnPropertyDescriptor(Document.prototype, "currentScript").get.call(document);
+        if (!Object.prototype.hasOwnProperty.call(globalThis, "DjangoComponents")) {{
+            const s = document.createElement('script');
+            s.src = "{CORE_JS_URL}";
+            s.integrity = "{CORE_JS_INTEGRITY}";
+            s.crossOrigin = "anonymous";
+            if (current && current.nonce) s.nonce = current.nonce;
+            document.head.appendChild(s);
+        }}
+        // Remove this loader script
+        if (current) current.remove();
+    }})();</script>
+"""
 
 
 def setup_test_config(

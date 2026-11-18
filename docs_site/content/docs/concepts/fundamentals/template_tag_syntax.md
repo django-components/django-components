@@ -69,6 +69,39 @@ You can apply Django filters to Python expressions:
 
 In the example above, `(user.name.upper())` is first evaluated as a Python expression, then the `lower` filter is applied to the result.
 
+### Formatting text
+
+To build text in an expression, use an f-string, such as `(f"Hello {name}")`.
+
+Expressions raise `SecurityError` (from `djc_core.safe_eval`) for these:
+
+- Calling `format()` or `format_map()` on text. These methods read the attributes that the placeholders name, such as `{0._secret}`, so the text could read values the expression itself can't read.
+- Calling Django's `format_html()`, `format_html_join()` or `format_lazy()`, which read placeholders the same way. This includes a function from the context that wraps one of them, for example with `functools.partial()`, `functools.lru_cache()` or Django's `lazy()`.
+- Using any attribute or method of a Django lazy object, such as a lazy string. A lazy string is the result of `_("...")`, `gettext_lazy()` and similar.
+
+To use string methods on a lazy string, put it in an f-string first, which gives plain text:
+
+```django
+{% with greeting=_("Hello") %}
+    {% component "button" text=(f"{greeting} {name}") / %}
+    {% component "button" text=(f"{greeting}".upper()) / %}
+{% endwith %}
+```
+
+An f-string can't fill in placeholders that are already in the text, such as `{name}` in a translated `"Hello {name}"`. Fill those in `get_template_data()`, and call `format_html()` there too:
+
+```python
+from django.utils.html import format_html
+from django.utils.translation import gettext as _
+
+
+def get_template_data(self, args, kwargs, slots, context):
+    greeting = format_html(_("Hello {name}"), name=kwargs["name"])
+    return {"greeting": greeting}
+```
+
+Expressions can still call your own functions from the context, and these checks don't look inside them. If such a function formats text that the template passes to it, the template chooses the placeholders, so keep that formatting in `get_template_data()` as well.
+
 ### Best practices
 
 1. **Use for simple transformations**: Python expressions are best for simple conditionals, negations, and basic operations.

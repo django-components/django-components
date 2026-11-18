@@ -1,16 +1,28 @@
 """Catch-all for tests that use template tags and don't fit other files"""
 
 import re
+import weakref
+from functools import lru_cache, partial, partialmethod, wraps
+from inspect import unwrap
+from types import FunctionType, GenericAlias, MethodType
+from unittest.mock import patch
 
 import pytest
 from django.template import Context, Template
 from django.template.base import FilterExpression, Node, Parser, Token
+from django.utils.functional import SimpleLazyObject, keep_lazy, lazy, lazystr
+from django.utils.html import format_html, format_html_join
+from django.utils.safestring import SafeString, mark_safe
+from django.utils.text import format_lazy
+from django.utils.translation import gettext_lazy, ngettext_lazy, pgettext_lazy
+from djc_core.safe_eval import SecurityError
+from djc_core.safe_eval.sandbox import is_safe_callable
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import Component, register, registry, types
 from django_components.expression import TemplateExpression
 from django_components.testing import djc_test
-from django_components.util.template_tag import is_aggregate_key
+from django_components.util.template_tag import MAX_WRAPPED_FUNCTIONS, is_aggregate_key, resolve_python_expression
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
@@ -937,6 +949,543 @@ class TestPythonExpressions:
             <div data-djc-id-ca1bc3f>hello</div>
             """,
         )
+
+
+class HiddenMarker:
+    """Holds a value that an expression must not be able to read."""
+
+    _hidden = "HIDDEN-MARKER"
+
+
+class ForwardingObject:
+    """Forwards attribute reads to another object, as many wrapper classes do."""
+
+    def __init__(self, target):
+        self.target = target
+
+    def __getattr__(self, name):
+        return getattr(self.target, name)
+
+
+class FormatMethodOwner:
+    """An ordinary class that happens to have a `format` method and a `format_map` field."""
+
+    format_map = "a4"
+
+    def format(self):
+        return "formatted"
+
+
+@wraps(format_html)
+def wrapped_format_html(*args, **kwargs):
+    """An app helper that passes its arguments on to `format_html()`."""
+    return format_html(*args, **kwargs)
+
+
+class FormatHtmlCaller:
+    """An app object that runs `format_html()` when it is called."""
+
+    __call__ = staticmethod(format_html)
+
+
+def make_lazy_method_caller(method):
+    """An object whose class `__call__` is a lazy string method, with the fields that method reads."""
+    caller_class = type("Caller", (), {"__call__": method, "_args": (PATH_TEXT,), "_kw": {}})
+    return caller_class()
+
+
+class FormatHtmlTextCaller(str):
+    """Text that runs `format_html()` on itself when it is called."""
+
+    __slots__ = ()
+    __call__ = partialmethod(format_html)
+
+
+class UnhashableCallable:
+    """A callable that can't be hashed, like an instance of a dataclass that compares by value."""
+
+    __hash__ = None  # type: ignore[assignment]
+
+    def __call__(self):
+        return "called"
+
+
+class UnhashablePartial(partial):
+    """A `functools.partial` that can't be hashed."""
+
+    __hash__ = None  # type: ignore[assignment]
+
+
+class UnhashableEvalCaller:
+    """An object that can't be hashed and whose class `__call__` is `eval`."""
+
+    __hash__ = None  # type: ignore[assignment]
+    __call__ = staticmethod(eval)
+
+
+def wrap_object(inner):
+    """A function that names `inner` as the function it wraps, as `functools.wraps` does."""
+
+    def function():
+        return "called"
+
+    function.__wrapped__ = inner  # type: ignore[attr-defined]
+    return function
+
+
+def djc_core_checks_unhashable_callables():
+    # djc-core 1.3.1 looks a callable up in dictionaries, so it raises `TypeError` for one that can't
+    # be hashed. Later versions check such a callable themselves.
+    try:
+        is_safe_callable(UnhashableCallable())
+    except TypeError:
+        return False
+    return True
+
+
+def copy_function(function):
+    """A new function object with the same code, as code that rebuilds functions makes."""
+    return FunctionType(function.__code__, function.__globals__, function.__name__, function.__defaults__)
+
+
+def evaluate(code, **context):
+    # The real resolver, so that these tests cover the checks the template tags use.
+    return resolve_python_expression(context, "", (0, 0), {}, {}, code)
+
+
+PATH_TEXT = "{0._hidden}"
+KEYED_PATH_TEXT = "{item._hidden}"
+
+# The hook's message when it refuses a wrapper around `format_html`. It starts with the hook's
+# own wording, so a refusal by djc-core alone does not match. The advice is the hook's, the
+# first form, or, from djc-core 1.4.0, for some wrappers djc-core's, the second form.
+FORMAT_HTML_ADVICE = r"Expressions can't call .*Call format_html\(\) in (get_template_data\(\)|Python)"
+
+
+@djc_test
+class TestPythonExpressionFormatting:
+    def render_show(self, template_str, context):
+        @register("show")
+        class Show(Component):
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"text": kwargs["text"]}
+
+            template: types.django_html = """
+                <div>{{ text }}</div>
+            """
+
+        return Template("{% load component_tags %}" + template_str).render(Context(context))
+
+    # Only the template text chooses the format text here: the app passes no lazy string in.
+    @pytest.mark.parametrize(
+        "text",
+        [
+            pytest.param("{0._hidden}", id="private_attribute"),
+            pytest.param("{0.__class__.__name__}", id="dunder_attribute"),
+        ],
+    )
+    def test_translation_in_template_cannot_format(self, text):
+        template_str = '{% with x=_("' + text + '") %}{% component "show" text=(x.format(obj)) / %}{% endwith %}'
+        with pytest.raises(SecurityError):
+            self.render_show(template_str, {"obj": HiddenMarker()})
+
+    def test_translation_in_template_cannot_format_itself(self):
+        # The lazy string is its own argument, so the path needs no object from the app.
+        template_str = (
+            '{% with x=_("{0.__init__.__globals__}") %}{% component "show" text=(x.format(x)) / %}{% endwith %}'
+        )
+        with pytest.raises(SecurityError):
+            self.render_show(template_str, {})
+
+    def test_lazy_string_from_context_cannot_format(self):
+        with pytest.raises(SecurityError):
+            self.render_show(
+                '{% component "show" text=(x.format(obj)) / %}',
+                {"x": gettext_lazy(PATH_TEXT), "obj": HiddenMarker()},
+            )
+
+    @pytest.mark.parametrize(
+        "make_text",
+        [
+            pytest.param(lambda: gettext_lazy(PATH_TEXT), id="gettext_lazy"),
+            pytest.param(lambda: pgettext_lazy("menu", PATH_TEXT), id="pgettext_lazy"),
+            pytest.param(lambda: ngettext_lazy(PATH_TEXT, PATH_TEXT, 1), id="ngettext_lazy_number"),
+            pytest.param(lambda: ngettext_lazy(PATH_TEXT, PATH_TEXT, "n"), id="ngettext_lazy_key"),
+            pytest.param(lambda: lazystr(PATH_TEXT), id="lazystr"),
+            pytest.param(lambda: lazy(str, str)(PATH_TEXT), id="lazy"),
+            pytest.param(lambda: mark_safe(gettext_lazy(PATH_TEXT)), id="mark_safe_of_lazy"),
+            pytest.param(lambda: format_lazy("{}", PATH_TEXT), id="format_lazy_result"),
+            pytest.param(lambda: SimpleLazyObject(lambda: gettext_lazy(PATH_TEXT)), id="simple_lazy_object"),
+            pytest.param(lambda: ForwardingObject(gettext_lazy(PATH_TEXT)), id="forwarding_object"),
+            # These count as `str` for `isinstance`, so `safe_eval` must refuse them without the
+            # hooks in `template_tag.py`.
+            pytest.param(lambda: SafeString(PATH_TEXT), id="safe_string"),
+            pytest.param(lambda: mark_safe(PATH_TEXT), id="mark_safe"),
+            pytest.param(lambda: SimpleLazyObject(lambda: PATH_TEXT), id="simple_lazy_object_of_str"),
+        ],
+    )
+    def test_format_refused_on_string_like_objects(self, make_text):
+        with pytest.raises(SecurityError):
+            evaluate("x.format(obj)", x=make_text(), obj=HiddenMarker())
+
+    @pytest.mark.parametrize(
+        "make_text",
+        [
+            pytest.param(lambda: gettext_lazy(KEYED_PATH_TEXT), id="gettext_lazy"),
+            pytest.param(lambda: SimpleLazyObject(lambda: gettext_lazy(KEYED_PATH_TEXT)), id="simple_lazy_object"),
+            pytest.param(lambda: ForwardingObject(gettext_lazy(KEYED_PATH_TEXT)), id="forwarding_object"),
+        ],
+    )
+    def test_format_map_refused_on_lazy_strings(self, make_text):
+        with pytest.raises(SecurityError):
+            evaluate("x.format_map(values)", x=make_text(), values={"item": HiddenMarker()})
+
+    # The check runs on each attribute read, so try the ways an expression can write one.
+    @pytest.mark.parametrize(
+        "code",
+        [
+            pytest.param("(lambda value: x.format(value))(obj)", id="lambda"),
+            pytest.param("[x.format(value) for value in [obj]]", id="comprehension"),
+            pytest.param("f'{x.format(obj)}'", id="f_string"),
+            pytest.param("(y := x).format(obj)", id="walrus"),
+            pytest.param("(x if True else '').format(obj)", id="conditional"),
+            pytest.param("[x][0].format(obj)", id="subscript"),
+        ],
+    )
+    def test_lazy_string_method_refused_in_each_expression_form(self, code):
+        with pytest.raises(SecurityError):
+            evaluate(code, x=gettext_lazy(PATH_TEXT), obj=HiddenMarker())
+
+    @pytest.mark.parametrize("code", ["cls.format(x, obj)", "cls.upper(x)"], ids=["format", "upper"])
+    def test_lazy_string_class_attribute_refused(self, code):
+        lazy_text = gettext_lazy(PATH_TEXT)
+        with pytest.raises(SecurityError):
+            evaluate(code, cls=type(lazy_text), x=lazy_text, obj=HiddenMarker())
+
+    @pytest.mark.parametrize("code", ["cls.format(x, obj)", "cls.upper(x)"], ids=["format", "upper"])
+    def test_lazy_string_class_inside_simple_lazy_object_attribute_refused(self, code):
+        lazy_text = gettext_lazy(PATH_TEXT)
+        cls = SimpleLazyObject(lambda: type(lazy_text))
+        with pytest.raises(SecurityError):
+            evaluate(code, cls=cls, x=lazy_text, obj=HiddenMarker())
+
+    @pytest.mark.parametrize(
+        "make_function",
+        [
+            pytest.param(lambda text: text.format, id="bound_method"),
+            pytest.param(lambda text: text.format_map, id="bound_format_map"),
+            pytest.param(lambda text: partial(text.format), id="partial"),
+            pytest.param(lambda text: partial(partial(text.format)), id="nested_partial"),
+            pytest.param(lambda text: text.upper, id="upper"),
+            pytest.param(lambda text: partial(text.upper), id="partial_of_upper"),
+        ],
+    )
+    def test_lazy_string_method_from_context_cannot_be_called(self, make_function):
+        function = make_function(gettext_lazy(PATH_TEXT))
+        with pytest.raises(SecurityError):
+            evaluate("function(obj)", function=function, obj=HiddenMarker())
+
+    @pytest.mark.parametrize(
+        ("function", "args"),
+        [
+            pytest.param(format_lazy, ("{0._hidden}", HiddenMarker()), id="format_lazy"),
+            # `format_html()` escapes its arguments, but the escaped text still has a
+            # `__html__` method, and the path can start there.
+            pytest.param(format_html, ("{0.__html__.__name__}", "text"), id="format_html"),
+            pytest.param(format_html_join, ("", "{0.__html__.__name__}", [("text",)]), id="format_html_join"),
+            pytest.param(partial(format_lazy, "{0._hidden}"), (HiddenMarker(),), id="partial_of_format_lazy"),
+        ],
+    )
+    def test_django_format_functions_cannot_be_called(self, function, args):
+        with pytest.raises(SecurityError):
+            evaluate("function(*args)", function=function, args=args)
+
+    def test_lazy_string_plain_method_is_refused(self):
+        with pytest.raises(SecurityError):
+            evaluate("x.upper()", x=gettext_lazy("hello"))
+
+    def test_lazy_string_method_cannot_be_redirected(self):
+        # A forwarding method takes a keyword that picks the method to run, so every name is refused.
+        with pytest.raises(SecurityError):
+            evaluate("x.upper(obj, __method_name='format')", x=gettext_lazy(PATH_TEXT), obj=HiddenMarker())
+
+    def test_lazy_string_redirected_method_in_template_is_refused(self):
+        template_str = (
+            '{% with x=_("{0._hidden}") %}'
+            "{% component \"show\" text=(x.upper(obj, __method_name='format')) / %}"
+            "{% endwith %}"
+        )
+        with pytest.raises(SecurityError):
+            self.render_show(template_str, {"obj": HiddenMarker()})
+
+    def test_lazy_string_operators_and_f_strings_keep_working(self):
+        text = gettext_lazy("hello")
+        assert evaluate("x + ' world'", x=text) == "hello world"
+        assert evaluate("f'{x} world'", x=text) == "hello world"
+        # An f-string gives a plain `str`, which is how to reach the string methods.
+        assert evaluate("f'{x}'.upper()", x=text) == "HELLO"
+
+    def test_lazy_string_percent_formatting_keeps_working(self):
+        assert evaluate("x % name", x=gettext_lazy("Hello %s"), name="Ann") == "Hello Ann"
+
+    def test_f_string_with_translation_in_template_keeps_working(self):
+        template_str = """
+            {% with x=_("Hello") %}
+                {% component "show" text=(f"{x} {name}") / %}
+                {% component "show" text=(f"{x}".upper()) / %}
+            {% endwith %}
+        """
+        rendered = self.render_show(template_str, {"name": "Ann"})
+        assert "Hello Ann" in rendered
+        assert "HELLO" in rendered
+
+    def test_format_of_other_objects_keeps_working(self):
+        owner = FormatMethodOwner()
+        assert evaluate("owner.format()", owner=owner) == "formatted"
+        assert evaluate("owner.format_map", owner=owner) == "a4"
+        assert evaluate("function()", function=partial(owner.format)) == "formatted"
+        assert evaluate("wrapped.format()", wrapped=SimpleLazyObject(lambda: owner)) == "formatted"
+
+    def test_lazy_object_of_any_result_class_is_refused(self):
+        # The check looks only at `Promise`, not at the type the object will produce, so a
+        # result that is not text is refused too.
+        lazy_owner = lazy(FormatMethodOwner, FormatMethodOwner)()
+        with pytest.raises(SecurityError):
+            evaluate("owner.format()", owner=lazy_owner)
+
+    # The app can place a function in the context that hides a lazy string method or a Django
+    # formatter behind a wrapper. The check follows `partial`, `__func__`, `__wrapped__` and
+    # `__call__`.
+    @pytest.mark.parametrize(
+        ("code", "make_context"),
+        [
+            pytest.param(
+                "method(x, obj, __method_name='format')",
+                lambda text: {"method": type(text).upper, "x": text},
+                id="unbound_lazy_method_redirected",
+            ),
+            pytest.param(
+                "method(x, obj)",
+                lambda text: {"method": type(text).format, "x": text},
+                id="unbound_lazy_format",
+            ),
+            pytest.param(
+                "method(x, obj, __method_name='format')",
+                lambda text: {"method": partial(type(text).upper), "x": text},
+                id="partial_of_unbound_lazy_method",
+            ),
+            pytest.param(
+                "method(obj, __method_name='format')",
+                lambda text: {"method": partial(type(text).upper, text)},
+                id="partial_of_unbound_lazy_method_with_text",
+            ),
+            pytest.param(
+                "method(obj)",
+                lambda text: {"method": text.format.__call__},
+                id="call_of_bound_lazy_method",
+            ),
+            pytest.param(
+                "method(x, obj)",
+                lambda text: {"method": type(text).format.__call__, "x": text},
+                id="call_of_unbound_lazy_method",
+            ),
+            pytest.param(
+                "method(obj)",
+                # `_args` and `_kw` are what the lazy method reads to rebuild the text.
+                lambda text: {"method": make_lazy_method_caller(type(text).format)},
+                id="lazy_method_as_class_call",
+            ),
+        ],
+    )
+    def test_wrapped_lazy_string_method_from_context_cannot_be_called(self, code, make_context):
+        context = make_context(gettext_lazy(PATH_TEXT))
+        with pytest.raises(SecurityError, match="can't call a Django lazy object's class or methods"):
+            str(evaluate(code, obj=HiddenMarker(), **context))
+
+    def test_unbound_lazy_method_in_template_cannot_be_called(self):
+        # The template supplies the text with `_()`, the app supplies only the unbound method.
+        template_str = (
+            '{% with x=_("{0._hidden}") %}'
+            "{% component \"show\" text=(method(x, obj, __method_name='format')) / %}"
+            "{% endwith %}"
+        )
+        method = type(gettext_lazy("")).upper
+        with pytest.raises(SecurityError, match="can't call a Django lazy object's class or methods"):
+            self.render_show(template_str, {"method": method, "obj": HiddenMarker()})
+
+    def test_lazy_class_cannot_be_called(self):
+        # Calling the class of a `format_lazy()` result builds one that formats the given text.
+        lazy_class = type(format_lazy("{}", "text"))
+        with pytest.raises(SecurityError, match="can't call a Django lazy object's class or methods"):
+            str(evaluate("cls((text, obj), {})", cls=lazy_class, text=PATH_TEXT, obj=HiddenMarker()))
+
+    @pytest.mark.parametrize(
+        "make_function",
+        [
+            pytest.param(lambda: lazy(str.format, str), id="lazy"),
+            # mypy does not know that a method has a `__call__` attribute.
+            pytest.param(lambda: str.format.__call__, id="call_of_unbound"),  # type: ignore[operator]
+            pytest.param(lambda: PATH_TEXT.format.__call__, id="call_of_bound"),  # type: ignore[operator]
+        ],
+    )
+    def test_wrapped_str_format_cannot_be_called(self, make_function):
+        # The wrapper is not refused by `safe_eval` itself, so the hook must find `str.format` in it.
+        # djc-core writes the advice after the name, and 1.4.0 words it differently from 1.3.1.
+        advice = r"because it calls '[^']*format'\. Use (an f-string|f-strings) instead"
+        with pytest.raises(SecurityError, match=advice):
+            str(evaluate("function(text, obj)", function=make_function(), text=PATH_TEXT, obj=HiddenMarker()))
+
+    @pytest.mark.parametrize(
+        "make_function",
+        [
+            pytest.param(lambda: lazy(format_html, str), id="lazy"),
+            pytest.param(lambda: keep_lazy(SafeString)(format_html), id="keep_lazy"),
+            pytest.param(lambda: lru_cache(format_html), id="lru_cache"),
+            pytest.param(lambda: wrapped_format_html, id="wraps"),
+            pytest.param(lambda: partial(lru_cache(format_html)), id="partial_of_lru_cache"),
+            # The bound method passes `__code__` reads on to `format_html`.
+            pytest.param(lambda: MethodType(format_html, "{0.__html__.__name__}"), id="method_type"),
+            # A bound method passes other attribute reads on to its function, but not `partial.func`,
+            # so only `__func__` leads to the partial here.
+            pytest.param(lambda: MethodType(partial(format_html), "{0.__html__.__name__}"), id="method_of_partial"),
+            pytest.param(lambda: format_html.__call__, id="call"),
+            pytest.param(lambda: lazy(format_html, str).__call__, id="call_of_lazy"),
+            # Calling the class gives the instance, which runs `format_html` when called.
+            pytest.param(FormatHtmlCaller, id="class_call"),
+            pytest.param(lambda: copy_function(format_html), id="copy_of_code"),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "make_text",
+        [
+            pytest.param(lambda: "{0.__html__.__name__}", id="plain_text"),
+            pytest.param(lambda: gettext_lazy("{0.__html__.__name__}"), id="lazy_text"),
+        ],
+    )
+    def test_wrapped_format_html_cannot_be_called(self, make_function, make_text):
+        # `__name__` of the escaped argument's `__html__` method stands for any value on the path.
+        # From djc-core 1.4.0, the hook's message for some wrappers carries djc-core's advice.
+        with pytest.raises(SecurityError, match=FORMAT_HTML_ADVICE):
+            str(evaluate("function(text, 'value')", function=make_function(), text=make_text()))
+
+    def test_classmethod_of_format_html_cannot_be_called(self):
+        # The class passes itself as the format text. The bound method passes `__code__` reads on
+        # to `format_html`, so the code comparison refuses it.
+        holder = type("Holder", (str,), {"render": classmethod(format_html)})("{0.__name__}")
+        with pytest.raises(SecurityError, match=r"Call format_html\(\) in get_template_data\(\)"):
+            str(evaluate("holder.render()", holder=holder))
+
+    def test_partialmethod_as_class_call_cannot_be_called(self):
+        # Read from the class, a `partialmethod` gives a function that hides `format_html`. Bound to
+        # the instance, as Python does when it calls the object, it gives a `partial` of it.
+        text = FormatHtmlTextCaller("{0.__html__.__name__}")
+        with pytest.raises(SecurityError, match=FORMAT_HTML_ADVICE):
+            str(evaluate("text('value')", text=text))
+
+    def test_private_format_lazy_function_cannot_be_called(self):
+        # `format_lazy` wraps a private function that does the formatting, and the app might pass that.
+        with pytest.raises(SecurityError, match=r"Call format_lazy\(\) in get_template_data\(\)"):
+            str(evaluate("function(text, obj)", function=unwrap(format_lazy), text=PATH_TEXT, obj=HiddenMarker()))
+
+    def test_lazy_string_error_says_what_to_do(self):
+        with pytest.raises(SecurityError) as exc_info:
+            evaluate("x.upper()", x=gettext_lazy("hello"))
+        message = str(exc_info.value)
+        assert message.count("Expressions can't read 'upper' on a Django lazy object") == 1
+        assert "because each of its methods can run any method of the real value" in message
+        assert 'Turn it into plain text with an f-string first, such as f"{text}".upper().' in message
+
+    def test_lazy_string_method_error_says_what_to_do(self):
+        with pytest.raises(SecurityError) as exc_info:
+            evaluate("method()", method=gettext_lazy("hello").upper)
+        message = str(exc_info.value)
+        assert message.count("Expressions can't call a Django lazy object's class or methods") == 1
+        assert "with an f-string first" in message
+
+    @pytest.mark.parametrize(
+        ("function", "expected"),
+        [
+            pytest.param(format_html, "Expressions can't call format_html(), because it", id="direct"),
+            pytest.param(
+                lru_cache(format_html),
+                "Expressions can't call this function, because it calls format_html(), which",
+                id="wrapped",
+            ),
+        ],
+    )
+    def test_format_html_error_says_what_to_do(self, function, expected):
+        with pytest.raises(SecurityError) as exc_info:
+            evaluate("function('{}', 'value')", function=function)
+        message = str(exc_info.value)
+        assert message.count(expected) == 1
+        assert "Call format_html() in get_template_data() and pass the result to the template." in message
+
+    @staticmethod
+    def wrap_times(function, times):
+        for _ in range(times):
+            function = wraps(function)(lambda *args, inner=function: inner(*args))
+        return function
+
+    def test_long_chain_of_wrapped_functions_is_refused(self):
+        # Past the limit the check cannot tell what the chain ends in, so it refuses the call.
+        assert evaluate("function('a')", function=self.wrap_times(str.upper, MAX_WRAPPED_FUNCTIONS)) == "A"
+        with pytest.raises(SecurityError, match="wraps more than 32 other functions"):
+            evaluate("function('a')", function=self.wrap_times(str.upper, MAX_WRAPPED_FUNCTIONS + 1))
+
+    def test_wrapped_object_that_djc_core_cannot_check_is_refused(self):
+        # djc-core 1.3.1 raises `TypeError` for an object it can't hash, and the hook turns that into a
+        # refusal with a message. This stand-in gives the hook that answer whichever djc-core is installed.
+        def is_safe_callable_1_3_1(obj):
+            hash(obj)
+            return True, None
+
+        with patch("django_components.util.template_tag.is_safe_callable", is_safe_callable_1_3_1):
+            for inner in (UnhashableCallable(), {"not": "hashable"}):
+                with pytest.raises(SecurityError, match="wraps an object that can't be checked"):
+                    evaluate("function()", function=wrap_object(inner))
+            # An object that can be hashed is still checked by djc-core's own answer.
+            assert evaluate("function()", function=wrap_object(str.upper)) == "called"
+
+    @pytest.mark.skipif(
+        not djc_core_checks_unhashable_callables(),
+        reason="djc-core 1.3.1 can't check an object it can't hash, so the hook refuses it",
+    )
+    def test_wrapped_object_that_cannot_be_hashed_is_called(self):
+        # An object that can't be hashed is not a listed function, and djc-core still checks what it passes
+        # the call on to, so the hook has nothing to refuse.
+        assert evaluate("function()", function=wrap_object(UnhashableCallable())) == "called"
+        assert evaluate("function()", function=wrap_object({"not": "hashable"})) == "called"
+        assert evaluate("function()", function=wraps(UnhashableCallable())(lambda: "wrapped")) == "wrapped"
+
+    @pytest.mark.parametrize(
+        "hidden",
+        [
+            pytest.param(lambda: weakref.proxy(eval), id="weak-proxy"),
+            pytest.param(lambda: GenericAlias(eval, ({},)), id="generic-alias-with-unhashable-argument"),  # type: ignore[arg-type]
+            pytest.param(lambda: UnhashablePartial(eval), id="partial-subclass"),
+            pytest.param(UnhashableEvalCaller, id="class-call"),
+        ],
+    )
+    def test_refused_function_hidden_in_object_that_cannot_be_hashed_is_refused(self, hidden):
+        # The hidden `eval` is refused with any djc-core: by its own check from 1.4.0 on, and by the hook's
+        # refusal of an object djc-core 1.3.1 can't check. Neither version lets the call through.
+        with pytest.raises(SecurityError, match="Expressions can't call this function, because it "):
+            evaluate("function()", function=wrap_object(hidden()))
+
+    def test_wrapped_safe_functions_keep_working(self):
+        assert evaluate("function('a')", function=lru_cache(str.upper)) == "A"
+        assert evaluate("function('a')", function=wraps(str.upper)(lambda text: text.upper())) == "A"
+        assert evaluate("function('a')", function=partial(str.upper)) == "A"
+        assert evaluate("function('a')", function=str.upper.__call__) == "A"  # type: ignore[operator]
+        assert evaluate("function()", function=keep_lazy(str)(lambda: "plain")) == "plain"
+        assert evaluate("function()", function=type("Caller", (), {"__call__": lambda _self: "called"})()) == "called"
+
+        # A function that names itself as the function it wraps is checked once.
+        def looped():
+            return "looped"
+
+        looped.__wrapped__ = looped  # type: ignore[attr-defined]
+        assert evaluate("function()", function=looped) == "looped"
 
 
 @djc_test

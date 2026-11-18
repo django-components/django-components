@@ -13,7 +13,7 @@ from pytest_django.asserts import assertHTMLEqual, assertInHTML
 from django_components import Component, registry, types
 from django_components.testing import djc_test
 
-from .testutils import setup_test_config
+from .testutils import CORE_JS_TAG, setup_test_config
 
 setup_test_config()
 
@@ -116,7 +116,7 @@ class TestDependencyRendering:
         rendered: str = template.render(Context({}))
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         assert rendered.count("<script") == 1  # 1 placeholder script
         assert rendered.count("<link") == 1  # 1 placeholder link
@@ -141,7 +141,7 @@ class TestDependencyRendering:
         rendered = template.render(Context({}))
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         assert rendered.count("<script") == 1  # 1 placeholder script
         assert rendered.count("<link") == 0  # No CSS
@@ -182,7 +182,7 @@ class TestDependencyRendering:
         rendered = template.render(Context({}))
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
 
         assert rendered.count('<link media="all" rel="stylesheet" href="style.css">') == 1  # Media.css
         assert rendered.count("<link") == 1
@@ -219,7 +219,7 @@ class TestDependencyRendering:
         rendered = template.render(Context({}))
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
 
         assert rendered.count('<link media="all" rel="stylesheet" href="style.css">') == 1  # Media.css
         assert rendered.count("<link") == 1
@@ -268,7 +268,7 @@ class TestDependencyRendering:
         rendered = template.render(Context({}))
 
         # Dependency manager script - NOT present
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         assert rendered.count("<link") == 1
         assert rendered.count("<style") == 0
@@ -287,7 +287,7 @@ class TestDependencyRendering:
         rendered = template.render(Context({}))
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
 
         # CSS NOT included
         assert rendered.count("<link") == 0
@@ -325,7 +325,7 @@ class TestDependencyRendering:
         rendered = template.render(Context({}))
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
 
         assert rendered.count("<link") == 2
         assert rendered.count("<style") == 0
@@ -384,7 +384,7 @@ class TestDependencyRendering:
         rendered: str = template.render(Context({}))
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         assert rendered.count("<script") == 1  # 1 placeholder script
         assert rendered.count("<link") == 1  # 1 placeholder link
@@ -417,7 +417,7 @@ class TestDependencyRendering:
 
         # Dependency manager script
         # NOTE: Should be present only ONCE!
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
 
         assert rendered.count("<script") == 7  # 2 scripts belong to the boilerplate
         assert rendered.count("<link") == 3
@@ -660,7 +660,7 @@ class TestDependencyRendering:
         rendered: str = template.render(Context({}))
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
         assertInHTML(
             """
             <script src="xyz1.js"></script>

@@ -83,6 +83,7 @@ For even more control, you can override other methods available on the [`Compone
 
     The default implementation of `Cache.hash()` simply serializes the input into a string.
     As such, it might not be suitable if you need to hash complex objects like Models.
+    Two values of the same type that convert to the same string share a cache entry.
 
 ## Caching slots
 
@@ -226,22 +227,44 @@ the number of embeddings.
 ✅ Do: use a distinct cache key per position, or only cache fragments that
 appear once per page.
 
-#### After a deploy, components silently lose their JS/CSS variables
+#### Components lose their JS/CSS variables
 
-If your fragment cache is a persistent backend (Redis, memcached) and your
-components define `get_js_data()` or `get_css_data()`, the data those
-methods produce can vanish from the page after a server restart. The HTML
-still renders normally and no errors are logged, but the per-instance JS
-or CSS variables are gone.
+If your components define `get_js_data()` or `get_css_data()`, the data those
+methods produce can vanish from a cached fragment. The HTML still renders, but
+the per-instance JS or CSS variables are gone, and the server logs a warning.
+A component whose JS variables are gone does not run its `$onComponent`
+callbacks.
 
 This happens because djc stores the actual variable values in a separate
-cache that is **per-process and in-memory by default**. After a restart,
-the cached fragment refers to variable data the new process no longer has.
+cache that is **per-process and in-memory by default**, so a cached fragment
+can lose them in three ways:
+
+- A server restart clears that cache, while a persistent fragment cache
+  (Redis, memcached) keeps the fragment.
+- Another server process replays a fragment from a shared fragment cache, but
+  it never stored those values.
+- That cache drops values that nothing has used for 24 hours, and it drops the
+  values used longest ago when it reaches about 64 MiB of memory. Replaying a
+  cached fragment counts as using its values.
+
+A fragment that django-components 0.152.0 or earlier cached also loses its
+variables, even when they are still stored, because later versions do not
+read the short names that those versions gave them. Clear the cache that
+holds the fragment to render it again.
 
 ✅ Do: set the
 [`cache` setting][ComponentsSettings.cache]
 to the same persistent backend you use for the fragment cache, so the
-variables survive restarts.
+variables survive restarts and all processes share them. Such a backend's
+`TIMEOUT` runs from when a value was first stored, and using the value does not
+extend it, so a fragment made late in that time can outlive it. Set
+`"TIMEOUT": None` and limit the size of the backend instead, as with Redis's
+`maxmemory`.
+
+To keep the default cache with one server process, raise
+[`vars_cache_max_age`][ComponentsSettings.vars_cache_max_age] and
+[`vars_cache_max_bytes`][ComponentsSettings.vars_cache_max_bytes].
+Read more in [Caching](../../guides/setup/caching.md#limit-jscss-variables).
 
 #### Every user sees the first user's data
 

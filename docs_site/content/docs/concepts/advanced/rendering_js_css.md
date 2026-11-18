@@ -547,6 +547,132 @@ html2 = MyComponent.render(deps_strategy="document")
 assert html == html2
 ```
 
+## Content Security Policy
+
+If your site sends a [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP) with a nonce, use the [`ComponentExtension.on_dependencies`][ComponentExtension.on_dependencies] hook to put the nonce on the scripts:
+
+```python
+from django_components import ComponentExtension, OnDependenciesContext
+
+class NonceExtension(ComponentExtension):
+    name = "nonce"
+
+    def on_dependencies(self, ctx: OnDependenciesContext):
+        for script in ctx.scripts:
+            script.attrs["nonce"] = get_current_nonce()
+        for style in ctx.styles:
+            if style.content:
+                style.attrs["nonce"] = get_current_nonce()
+        return (ctx.scripts, ctx.styles)
+```
+
+Here `get_current_nonce()` stands for a helper of your own. The hook gets no `request`, so have a middleware keep the request's nonce in a [`ContextVar`](https://docs.python.org/3/library/contextvars.html) for the helper to read.
+
+Use `'strict-dynamic'` in your policy if you use [fragments](html_fragments.md). A fragment's files load through the dependency manager, and this hook doesn't see them, so they carry no nonce of their own. Stylesheets get no help from `'strict-dynamic'`, so your `style-src` must allow them.
+
+Also add `base-uri 'self'` to your policy. The browser then ignores a `<base>` tag that an attacker injects into the page. Without it, such a tag moves every relative URL on the page to the attacker's site, and the nonce lets those scripts run.
+
+With Django 6.0 and newer:
+
+```python
+from django.utils.csp import CSP
+
+SECURE_CSP = {
+    "base-uri": [CSP.SELF],
+    # ...
+}
+```
+
+### How django-components protects the page
+
+If an attacker can inject HTML into your page, django-components limits what the injected HTML can do to its own JS.
+
+**The dependency manager file.** The tag that loads the dependency manager carries `integrity` and `crossorigin="anonymous"`, so the browser runs only the exact file from your installed django-components. The same goes for the JS and CSS files that a fragment loads from `/components/cache/`.
+
+If the browser gets a file with other bytes, it refuses the file, and component JS does not run. So:
+
+- Run `collectstatic` when you upgrade.
+- Clear CDN caches and whole-page caches, such as `cache_page`, when you upgrade. A cached page asks for the old file by its hash.
+- During a rolling deploy, deploy your static files before the new HTML, or use hashed file names with [`ManifestStaticFilesStorage`](https://docs.djangoproject.com/en/stable/ref/contrib/staticfiles/#manifeststaticfilesstorage). If a new page asks an old server for the file, the browser can cache the old bytes under the new URL and keep refusing them.
+- Exclude your static files from any proxy that rewrites JS.
+- If a relative `STATIC_URL` redirects to another host, or your own `<base>` tag points at one, that host must send `Access-Control-Allow-Origin`.
+
+The URL of the dependency manager gets a `?v=` version made from its content, so a visitor's browser doesn't keep using the file from an older release.
+
+If `STATIC_URL` is a full URL such as `https://cdn.example.com/static/`, the tag stays as it was. A `<base>` tag can't move a full URL.
+
+Files from [`Component.Media`][ComponentMediaInput] carry no hash, because they are your files and django-components doesn't know their content. `base-uri 'self'` is what protects them.
+
+**The JSON blocks.** A `<script data-djc>` block tells the dependency manager which files to load and which components to call. When the dependency manager's own tag has a nonce, it obeys only a block with the same nonce in its JSON, and logs an error in the browser console for any other block. You don't need to write this nonce yourself. django-components copies it into the JSON from the tag that your hook gave a nonce to.
+
+### Fragments on a page with a nonce
+
+A [fragment](html_fragments.md) needs the nonce of the page it goes into, and a fragment response is a separate request. So keep the page's nonce on the server when you render the page, and use that nonce when you render the fragment:
+
+```python
+class MyPage(Component):
+    class View:
+        def get(self, request):
+            # The nonce that this response sends in its policy
+            nonce = str(get_current_nonce())
+            request.session["page_nonce"] = nonce
+            return self.component_cls.render_to_response(
+                request=request,
+            )
+
+
+class Frag(Component):
+    class View:
+        def get(self, request):
+            # From here on, `get_current_nonce()` gives the page's
+            # nonce. `set_current_nonce()` is your own helper too.
+            set_current_nonce(request.session["page_nonce"])
+            return self.component_cls.render_to_response(
+                request=request,
+                deps_strategy="fragment",
+            )
+```
+
+A session holds one nonce, so when a user opens your site in a second tab, fragments sent to the first tab stop starting. Store one nonce per page if your users work in several tabs.
+
+Tools that swap the whole page with JS, such as `hx-boost` or Turbo, have the same limit. The dependency manager stays from the first page, so the new page needs the first page's nonce, or a full reload.
+
+### Pages without a nonce
+
+The dependency manager reads the nonce from its own tag. When that tag has no nonce, it has nothing to compare, so it can't tell your `<script data-djc>` blocks from injected ones. This is the case when:
+
+- Your policy uses hashes or hosts, and the tag has no nonce.
+- Your site sends no policy.
+- A hook renders the tag with `type="module"`. A module can't read the tag that loaded it.
+
+On such a page, a block loads a script only when the file is one that your app serves:
+
+- the JS file of a component, which django-components serves from `/components/cache/` on the page's origin;
+- a file under your `STATIC_URL`, such as a relative path in [`Component.Media.js`][ComponentMediaInput].
+
+The dependency manager finds `STATIC_URL` from its own URL, `<STATIC_URL>django_components/django_components.min.js`. A `STATIC_URL` on another host, such as `https://cdn.example.com/static/`, counts when the tag has no `integrity`, which is how django-components writes the tag for such a URL. The dependency manager can't work out `STATIC_URL` in these cases, so only files from `/components/cache/` load:
+
+- `STATIC_URL = "/"`, because the root of your site would include every path on it;
+- a `type="module"` tag, or a tag on another host that a hook gave an `integrity`;
+- a CDN or proxy that serves the file from another folder, so its URL has no `django_components/` folder;
+- a URL with `%` in its path.
+
+The dependency manager skips any other script, and the browser console shows an error. The fragment's components still run, but their JS fails where it needs the skipped script. When you render a fragment without a nonce, django-components also logs a warning on the server for each script it expects the dependency manager to skip, once per URL. The dependency manager also ignores a block that holds JS variables, because django-components sends them in a file of their own.
+
+The dependency manager loads each of these scripts from its full URL, read against the page's address, so a `<base>` tag can't move them.
+
+So on a page without a nonce, even on a site with no policy at all, a fragment's `Component.Media.js` loads only files under `STATIC_URL`. A script from a CDN, or from another path on your site such as Django's `/jsi18n/`, doesn't load. To use such a script, do one of these:
+
+- Load it on the page itself. When a component on the page lists the same URL in its `Component.Media.js`, the dependency manager knows that the page has the script, and doesn't ask for it again. If you load it with a `<script>` tag of your own, also call `DjangoComponents.manager.markScriptLoaded("js", url)` from your own JS, with the URL exactly as the fragment writes it, before the fragment arrives.
+- Serve the file from your `STATIC_URL`.
+- Give the page a nonce, as described above. On a page with a nonce, a fragment loads every script it names.
+
+What this can't cover: injected HTML can still start your page's components on elements it adds, with data files your server already wrote, and load any file under `STATIC_URL`. Those data files include ones holding `get_js_data()` values that another visitor's request chose, so a component can run with that visitor's values on the page. A library there that acts on the HTML of the page, such as htmx or Alpine.js, then does what the injected HTML tells it. If visitors can upload files that your site serves as JavaScript from its own domain, injected HTML can load those too, through a copy of the dependency manager uploaded into a folder named `django_components`. Give pages that receive fragments a nonce, and serve uploads from another domain.
+
+### What the nonce check can't cover
+
+The check relies on your policy to refuse a script tag with no nonce. If `script-src` allows `'self'` or a host that serves your static files, an attacker can inject a second copy of the dependency manager. That copy has no nonce, so it treats the page as one [without a nonce](#pages-without-a-nonce): it obeys every block, and loads the scripts that such a page allows. Prefer `'strict-dynamic'`, which makes the browser ignore `'self'` and hosts.
+
 ## HTML fragments
 
 Django-components provides a seamless integration with HTML fragments with AJAX ([HTML over the wire](https://hotwired.dev/)),

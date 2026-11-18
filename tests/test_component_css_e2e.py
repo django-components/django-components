@@ -458,7 +458,7 @@ class TestE2eCssVariables:
         assert data["height"] == "150px"
         assert "rgb(2, 117, 216)" in data["bgColor"] or "#0275d8" in data["bgColor"].lower()
         assert data["cssHash"] is not None
-        assert re.match(r"^[a-f0-9]{6}$", data["cssHash"]) is not None
+        assert re.match(r"^[a-f0-9]{32}$", data["cssHash"]) is not None
 
         await page.close()
 

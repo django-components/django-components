@@ -53,10 +53,11 @@ into the cache:
   1. Inner components' `data-djc-id-<render_id>` attributes (the first
      render's render_ids persist on every hit).
   2. The `js_hash` / `css_hash` keys in `<!-- _RENDERED ... -->` markers.
-     They look up entries in `component_media_cache`, which is `LocMemCache`
-     by default (per-process). If the fragment cache outlives the process
-     (Redis + a deploy), the markers reference JS/CSS variable data that no
-     longer exists, and the variables silently drop from the page.
+     They look up entries in `component_vars_cache`, which by default is
+     per-process and limited in age and bytes. If the fragment cache outlives
+     an entry (Redis + a deploy, or a fragment kept for longer than the limits
+     keep the entry), the markers reference JS/CSS variable data that no
+     longer exists, so the variables drop from the page and a warning is logged.
 
 User-facing docs: `docs_site/content/docs/concepts/advanced/component_caching.md`.
 v3 fix (cache `RenderObject` instead of string): #1650.

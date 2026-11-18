@@ -3,8 +3,11 @@ This file is for logic that focuses on transforming the AST of template tags
 (as parsed from tag_parser) into a form that can be used by the Nodes.
 """
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Mapping
+from functools import partial
+from inspect import unwrap
+from types import FunctionType, WrapperDescriptorType
 from typing import (
     Any,
     NamedTuple,
@@ -14,11 +17,16 @@ from typing import (
 from django.template import NodeList, Variable, VariableDoesNotExist
 from django.template.base import Parser, Token
 from django.template.exceptions import TemplateSyntaxError
-from djc_core.safe_eval import safe_eval
+from django.utils.functional import Promise, lazystr
+from django.utils.html import format_html, format_html_join
+from django.utils.text import format_lazy
+from djc_core.safe_eval import SecurityError, safe_eval
+from djc_core.safe_eval.sandbox import is_safe_callable
 from djc_core.template_parser import GenericTag, ParserConfig, TagAttr, compile_tag, parse_tag
 from djc_core.template_parser.parse import TagUnion
 
 from django_components.expression import TemplateExpression
+from django_components.util.misc import TrustedAttrName, is_script_capable_attr_name
 
 
 # Data obj to give meaning to the parsed tag fields
@@ -219,6 +227,208 @@ def resolve_translation(
     return Variable(translation_var).resolve(context)
 
 
+# Django functions that follow the attribute and item paths written in the text they receive, such
+# as `{0.__class__}`, with the real `getattr`. `safe_eval` never sees those reads. They are compared
+# by identity and by code rather than looked up in a set, because a callable that a template can
+# reach may not be hashable.
+DJANGO_FORMAT_FUNCTIONS = (format_html, format_html_join, format_lazy)
+
+# Each Django formatter with the name to show in messages and the code that does the formatting.
+# A copy of a function made from that code does the same thing, so it is refused too. `unwrap()`
+# is needed for `format_lazy`, which is a `lazy()` wrapper whose own code every `lazy()` result
+# shares, and whose `__name__` is that of the private function it wraps.
+DJANGO_FORMATTERS = tuple(
+    (name, formatter, unwrap(formatter).__code__)
+    for name, formatter in zip(
+        ("format_html", "format_html_join", "format_lazy"), DJANGO_FORMAT_FUNCTIONS, strict=True
+    )
+)
+
+# Each method that a lazy string takes from its result class, such as `upper`, is a copy of one
+# function that Django's `lazy()` builds in a loop, so all the copies share one code object. That
+# function takes a keyword argument that picks the real method to run, so any copy can run
+# `format`. Comparing the code also catches a copy taken from the class, which is not bound to a
+# lazy string.
+LAZY_STRING_METHOD_CODE = type(lazystr("")).upper.__code__
+
+# How many functions behind the called one the callable check follows before it refuses the call.
+# Real wrappers such as `lazy()`, `keep_lazy()`, `lru_cache()` or a `functools.partial` add one or
+# two steps. A callable object counts its class `__call__` as a step too.
+MAX_WRAPPED_FUNCTIONS = 32
+
+LAZY_OBJECT_REASON = (
+    "because each of its methods can run any method of the real value, such as format(). "
+    "A Django lazy string is the result of _(), gettext_lazy() and similar. "
+    'Turn it into plain text with an f-string first, such as f"{text}".upper().'
+)
+
+
+def check_expression_attribute(obj: Any, attr: str) -> bool:
+    """
+    Refuse reading any attribute of a Django lazy object, or of its class, in a Python expression.
+
+    A lazy object is a `Promise`, such as a lazy string from `gettext_lazy()` or `_("...")` in a
+    template. `safe_eval` refuses `format` and `format_map` on `str` and `UserString`, but a lazy
+    string is neither of those: it forwards each method call to the real string.
+
+    The whole object is refused, not only those two names. A forwarding method accepts a keyword
+    argument that picks the method to run, so any of them can run `format`, and `safe_eval` does
+    not show keyword arguments to its hooks.
+
+    Raises `SecurityError` with a message that says what to do instead. Returns `True` otherwise,
+    which tells `safe_eval` to go on with its own checks.
+    """
+    if _is_lazy_object_or_class(obj):
+        raise SecurityError(
+            f"Expressions can't read '{attr}' on a Django lazy object, such as a lazy string, {LAZY_OBJECT_REASON}"
+        )
+    return True
+
+
+def check_expression_callable(func: Callable) -> bool:
+    """
+    Refuse calling a method of a Django lazy object or a Django formatting function in a Python expression.
+
+    This covers what `check_expression_attribute` cannot see: a function that the app placed in the
+    context. The check follows what the function passes the call on to: the function inside a
+    `functools.partial`, the function of a bound method (`__func__`), the function that
+    `functools.wraps` names (`__wrapped__`), the object that a `__call__` method belongs to, and the
+    `__call__` of an object's class. Django's `lazy()` and `keep_lazy()` and Python's `lru_cache()`
+    hide the function they call this way. At each step it refuses:
+
+    - a lazy class, a method bound to a lazy object, or a copy of the lazy string method taken from
+      its class;
+    - a function in `DJANGO_FORMAT_FUNCTIONS`, or a copy of one, which follow paths written in the
+      text they format;
+    - anything that the `safe_eval` check itself refuses, such as `str.format`.
+
+    Raises `SecurityError` with a message that says what to do instead, and also when `func` wraps
+    more than `MAX_WRAPPED_FUNCTIONS` functions. Returns `True` otherwise, which tells `safe_eval`
+    to go on with its own checks of `func`.
+    """
+    # Keyed by `id()`, and holding each object so that its id cannot be reused by another object
+    # that a `__wrapped__` lookup creates while this check runs.
+    seen: dict[int, Any] = {}
+    pending = [func]
+    while pending:
+        step = pending.pop()
+        # A function that wraps itself, directly or further down, adds nothing new to check.
+        if id(step) in seen:
+            continue
+        seen[id(step)] = step
+        # Refuse rather than stop looking, so a long chain cannot hide a refused function. `seen`
+        # holds `func` itself as well as the functions it wraps.
+        if len(seen) > MAX_WRAPPED_FUNCTIONS + 1:
+            raise SecurityError(
+                f"Expressions can't call this function, because it wraps more than {MAX_WRAPPED_FUNCTIONS} "
+                "other functions, too many to check. Call it in get_template_data() instead."
+            )
+
+        _check_one_callable(step, is_wrapped=step is not func)
+
+        # Look at every way `step` can pass the call on, because an object may have more than one.
+        if isinstance(step, partial):
+            pending.append(step.func)
+        for name in ("__func__", "__wrapped__"):
+            inner = getattr(step, name, None)
+            if inner is not None:
+                pending.append(inner)
+        # `function.__call__` belongs to `function` and calls it, but has neither of the names above.
+        if getattr(step, "__name__", None) == "__call__":
+            owner = getattr(step, "__self__", None)
+            if owner is not None:
+                pending.append(owner)
+        # Calling an instance runs the `__call__` that Python finds on its class and binds to the
+        # instance, which may be a formatter itself, such as `__call__ = staticmethod(format_html)`.
+        # A built-in type's own `__call__` is a C-level wrapper (`WrapperDescriptorType`) that only
+        # calls the object, so it adds nothing to check.
+        class_call = _find_on_type(step, "__call__")
+        if class_call is not None and not isinstance(class_call, WrapperDescriptorType):
+            pending.append(class_call)
+            # Binding can give another object, as with `functools.partialmethod` or a property. A
+            # plain function only becomes a bound method of itself, so it is not bound here.
+            bind = _find_on_type(class_call, "__get__")
+            if bind is not None and not isinstance(class_call, FunctionType):
+                pending.append(bind(class_call, step, type(step)))
+    return True
+
+
+def _check_one_callable(step: Any, *, is_wrapped: bool) -> None:
+    # `step` is the function the expression calls, or, when `is_wrapped`, one that it wraps.
+    # Calling a lazy class builds a lazy object from the arguments, such as the text and values of
+    # `format_lazy()`, and the object formats that text when it is shown.
+    is_lazy_class = isinstance(step, type) and issubclass(step, Promise)
+    if (
+        is_lazy_class
+        or _is_lazy_object_or_class(getattr(step, "__self__", None))
+        or getattr(step, "__code__", None) is LAZY_STRING_METHOD_CODE
+    ):
+        raise SecurityError(
+            "Expressions can't call a Django lazy object's class or methods, such as those of a lazy string, "
+            f"{LAZY_OBJECT_REASON}"
+        )
+
+    code = getattr(step, "__code__", None)
+    for name, formatter, formatter_code in DJANGO_FORMATTERS:
+        if step is formatter or code is formatter_code:
+            called = f"{name}()"
+            refused = f"this function, because it calls {called}, which" if is_wrapped else f"{called}, because it"
+            raise SecurityError(
+                f"Expressions can't call {refused} follows attribute paths written in the text. "
+                f"Call {called} in get_template_data() and pass the result to the template."
+            )
+
+    # `safe_eval` checks the called function itself after this hook, with its own message, so
+    # only the functions that it wraps are checked here.
+    if is_wrapped:
+        # djc-core 1.3.1 looks the function up in its own tables, which fails with `TypeError` for
+        # an object that can't be hashed. That version can't check such an object, so refuse it
+        # plainly. Later versions check it themselves: it can't be a listed function, and what it
+        # passes the call on to is still checked, so they never raise here.
+        try:
+            is_safe, replacement = is_safe_callable(step)
+        except TypeError:
+            raise SecurityError(
+                "Expressions can't call this function, because it wraps an object that can't be checked. "
+                "Call it in get_template_data() instead."
+            ) from None
+        if not is_safe:
+            message = f"Expressions can't call this function, because it calls {_describe_callable(step)}"
+            raise SecurityError(f"{message}. {replacement}" if replacement else f"{message}.")
+
+
+# The descriptors that `type` itself uses for `__mro__` and `__dict__`, so that a metaclass can't
+# change what `_find_on_type` reads.
+_TYPE_MRO = type.__dict__["__mro__"]
+_TYPE_DICT = type.__dict__["__dict__"]
+
+
+def _find_on_type(obj: Any, name: str) -> Any:
+    # Look `name` up the way Python does when it runs a special method such as `__call__` or
+    # `__get__` on `obj`: in the `__dict__` of each class in the method resolution order of
+    # `type(obj)`. Reading `type(obj).__call__` instead would go through the metaclass and the
+    # descriptor, which can return a different object.
+    for klass in _TYPE_MRO.__get__(type(obj)):
+        namespace = _TYPE_DICT.__get__(klass)
+        if name in namespace:
+            return namespace[name]
+    return None
+
+
+def _is_lazy_object_or_class(obj: Any) -> bool:
+    # `isinstance` looks at `__class__`, so a `SimpleLazyObject` around a lazy object matches too.
+    # The class counts as well, because its methods take the lazy object as their first argument.
+    return issubclass(obj, Promise) if isinstance(obj, type) else isinstance(obj, Promise)
+
+
+def _describe_callable(obj: Any) -> str:
+    # A short name for messages, without `repr()`, which can print a long text.
+    name = getattr(obj, "__qualname__", None)
+    if not isinstance(name, str):
+        name = type(obj).__qualname__
+    return f"'{name}'"
+
+
 python_expression_cache: dict[str, Callable[[Mapping[str, Any]], Any]] = {}
 
 
@@ -231,7 +441,11 @@ def resolve_python_expression(
     code: str,
 ) -> Any:
     if code not in python_expression_cache:
-        python_expression_cache[code] = safe_eval(code)
+        python_expression_cache[code] = safe_eval(
+            code,
+            validate_attribute=check_expression_attribute,
+            validate_callable=check_expression_callable,
+        )
 
     expr_resolver = python_expression_cache[code]
     return expr_resolver(context)
@@ -260,8 +474,22 @@ def compile_tag_params_resolver(
         filter=resolve_filter,
     )
 
+    # The names the tag itself spells, such as `onclick="..."` or `attrs:onclick="..."`, were
+    # written by the template author. Only the parsed tag can tell them from `...spread` keys,
+    # which can come from data. Almost no tag has one, so most renders skip this step.
+    written_keys = Counter(
+        attr.key.content for attr in params if attr.key is not None and _names_script_capable_attr(attr.key.content)
+    )
+
+    has_spread = any(attr.value.spread for attr in params)
+
     def resolver(context: Mapping[str, Any]) -> tuple[list[Any], list[tuple[str, Any]]]:
         args, kwargs = compiled_tag(context)
+
+        if written_keys:
+            kwargs = _mark_written_keys(kwargs, written_keys)
+        if has_spread:
+            kwargs = _unmark_keys_shared_with_data(kwargs)
 
         # TODO - Move these to extensions?
         if tag_name == "html_attrs":
@@ -271,6 +499,44 @@ def compile_tag_params_resolver(
         return args, kwargs
 
     return resolver
+
+
+def _names_script_capable_attr(key: str) -> bool:
+    # A key may hold the name directly, or after its prefix, as in `attrs:onclick`.
+    return is_script_capable_attr_name(key) or (
+        is_aggregate_key(key) and is_script_capable_attr_name(key.split(":", 1)[1])
+    )
+
+
+def _mark_written_keys(kwargs: list[tuple[str, Any]], written_keys: Counter[str]) -> list[tuple[str, Any]]:
+    """
+    Mark the names written in the tag as trusted, so `format_attributes()` and friends accept them.
+
+    A name written in the tag is always emitted, so one more of it means that a `...spread`
+    mapping supplied the same name. The values would then be merged into one attribute, so
+    none of them is marked and the name is refused, as for any other name from data.
+    """
+    # A key that a spread brings with its mark is not from data, so it does not count here.
+    found = Counter(key for key, _ in kwargs if key in written_keys and not isinstance(key, TrustedAttrName))
+    return [
+        (TrustedAttrName(key) if key in written_keys and found[key] == written_keys[key] else key, value)
+        for key, value in kwargs
+    ]
+
+
+def _unmark_keys_shared_with_data(kwargs: list[tuple[str, Any]]) -> list[tuple[str, Any]]:
+    """
+    Remove the mark from a key that is repeated by a key without one.
+
+    Repeated keys end up as one entry, and which key object survives depends on the order.
+    A value from a `...spread` could otherwise reach the page under a name that only another
+    source was trusted to set, so the name is refused like any other name from data.
+    """
+    plain_keys = {key for key, _ in kwargs if not isinstance(key, TrustedAttrName)}
+    return [
+        (str.__str__(key) if isinstance(key, TrustedAttrName) and key in plain_keys else key, value)
+        for key, value in kwargs
+    ]
 
 
 # TODO_REMOVE_IN_V1 - Disallow specifying the same key multiple times once in v1.
@@ -390,6 +656,9 @@ def process_aggregate_kwargs(
 
         # NOTE: Trim off the outer_key from keys
         outer_key, inner_key = key.split(":", 1)
+        # `split()` returns a plain string, so a name written in the tag has to be marked again.
+        if isinstance(key, TrustedAttrName):
+            inner_key = TrustedAttrName(inner_key)
         if outer_key not in nested_kwargs:
             nested_kwargs[outer_key] = {}
         nested_kwargs[outer_key][inner_key] = value

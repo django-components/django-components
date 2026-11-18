@@ -16,7 +16,7 @@ from django_components import Component, registry, render_dependencies, types
 from django_components.dependencies import Script, Style
 from django_components.testing import djc_test
 
-from .testutils import setup_test_config
+from .testutils import CORE_JS_LOADER, CORE_JS_TAG, setup_test_config
 
 setup_test_config()
 
@@ -54,7 +54,7 @@ class TestDependenciesLegacy:
         rendered = SimpleComponent.render(kwargs={"variable": "foo"}, type="append")
 
         # Dependency manager script NOT present
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
@@ -98,7 +98,7 @@ class TestRenderDependencies:
         rendered = render_dependencies(rendered_raw)
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
 
         assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
         assertInHTML(
@@ -123,7 +123,7 @@ class TestRenderDependencies:
         rendered = template.render(Context({}))
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
 
         assertInHTML(
             "<style>.xyz { color: red; }</style>",
@@ -154,7 +154,7 @@ class TestRenderDependencies:
         rendered: str = template.render(Context({"DJC_DEPS_STRATEGY": "append"}))
 
         # Dependency manager script NOT included
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         assertInHTML(
             "<style>.xyz { color: red; }</style>",
@@ -204,7 +204,7 @@ class TestRenderDependencies:
         )
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
 
         assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
         assertInHTML(
@@ -241,7 +241,7 @@ class TestRenderDependencies:
         assert rendered_raw.count("_RENDERED") == 1
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered_raw, count=0)
+        assertInHTML(CORE_JS_TAG, rendered_raw, count=0)
 
         assertInHTML("<style>.xyz { color: red; }</style>", rendered_raw, count=0)  # Inlined CSS
         assertInHTML('<link href="style.css" media="all" rel="stylesheet">', rendered_raw, count=0)  # Media.css
@@ -272,7 +272,7 @@ class TestRenderDependencies:
         rendered = response.content.decode()
 
         # Dependency manager script
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=1)
+        assertInHTML(CORE_JS_TAG, rendered, count=1)
 
         assertInHTML("<style>.xyz { color: red; }</style>", rendered, count=1)  # Inlined CSS
         assertInHTML(
@@ -321,7 +321,7 @@ class TestRenderDependencies:
         rendered_body = body_re.search(rendered).group(1)  # type: ignore[union-attr]
 
         assertInHTML(
-            """<script src="django_components/django_components.min.js">""",
+            CORE_JS_TAG,
             rendered_body,
             count=1,
         )
@@ -372,7 +372,7 @@ class TestRenderDependencies:
         rendered_head = head_re.search(rendered).group(1)  # type: ignore[union-attr]
 
         assertInHTML(
-            """<script src="django_components/django_components.min.js">""",
+            CORE_JS_TAG,
             rendered_head,
             count=1,
         )
@@ -399,15 +399,9 @@ class TestRenderDependencies:
             rendered,
             """
             <thead>
-            <script>(function() {
-                if (!globalThis.DjangoComponents) {
-                    const s = document.createElement('script');
-                    s.src = "django_components/django_components.min.js";
-                    document.head.appendChild(s);
-                }
-                // Remove this loader script
-                if (document.currentScript) document.currentScript.remove();
-            })();</script>
+            """
+            + CORE_JS_LOADER
+            + """
             """,
         )
 
@@ -445,7 +439,8 @@ class TestRenderDependencies:
         rendered = render_dependencies(rendered_raw, strategy="fragment")
 
         # NOTE: Fragments adds a script to optionally load the component manager script.
-        expected = """
+        expected = (
+            """
             <table class="table-auto border-collapse divide-y divide-x divide-slate-300 w-full">
                 <!-- Table head -->
                 <thead>
@@ -466,16 +461,11 @@ class TestRenderDependencies:
                     </tr>
                 </tbody>
             </table>
-            <script>(function() {
-                if (!globalThis.DjangoComponents) {
-                    const s = document.createElement('script');
-                    s.src = "django_components/django_components.min.js";
-                    document.head.appendChild(s);
-                }
-                // Remove this loader script
-                if (document.currentScript) document.currentScript.remove();
-            })();</script>
+            """
+            + CORE_JS_LOADER
+            + """
         """
+        )
 
         assertHTMLEqual(expected, rendered)
 
@@ -524,7 +514,8 @@ class TestRenderDependencies:
         # `PHNjcmlwdCBzcmM9Ii9jb21wb25lbnRzL2NhY2hlL1NpbXBsZUNvbXBvbmVudF8zMTEwOTcuanMiPjwvc2NyaXB0Pg==` -> `<script src="/components/cache/SimpleComponent_311097.js"></script>`  # noqa: E501
         #
         # NOTE: Fragments adds a script to optionally load the component manager script.
-        expected = """
+        expected = (
+            """
             <table class="table-auto border-collapse divide-y divide-x divide-slate-300 w-full">
                 <!-- Table head -->
                 <thead>
@@ -546,25 +537,19 @@ class TestRenderDependencies:
                     </tr>
                 </tbody>
             </table>
-            <script>(function() {
-                if (!globalThis.DjangoComponents) {
-                    const s = document.createElement('script');
-                    s.src = "django_components/django_components.min.js";
-                    document.head.appendChild(s);
-                }
-                // Remove this loader script
-                if (document.currentScript) document.currentScript.remove();
-
-                })();</script>
+            """
+            + CORE_JS_LOADER
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
                 "jsUrls__markAsLoaded": [],
                 "cssTags__toFetch": ["eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAic3R5bGUuY3NzIn0sICJjb250ZW50IjogIiJ9",
-                    "eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5jc3MifSwgImNvbnRlbnQiOiAiIn0="],
+                    "eyJ0YWciOiAibGluayIsICJhdHRycyI6IHsibWVkaWEiOiAiYWxsIiwgInJlbCI6ICJzdHlsZXNoZWV0IiwgImhyZWYiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5jc3MiLCAiaW50ZWdyaXR5IjogInNoYTM4NC16NW11dEdpOUtRa3drK0o3K3ZpcU55UjhqT3NWWFpzekVHMDJHMlQwRFNmS295R2plYld2NnBRcXdQVm5zSTZpIiwgImNyb3Nzb3JpZ2luIjogImFub255bW91cyJ9LCAiY29udGVudCI6ICIifQ=="],
                 "jsTags__toFetch": ["eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAic2NyaXB0LmpzIn0sICJjb250ZW50IjogIiJ9",
-                    "eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5qcyJ9LCAiY29udGVudCI6ICIifQ=="],
+                    "eyJ0YWciOiAic2NyaXB0IiwgImF0dHJzIjogeyJzcmMiOiAiL2NvbXBvbmVudHMvY2FjaGUvU2ltcGxlQ29tcG9uZW50XzMxMTA5Ny5qcyIsICJpbnRlZ3JpdHkiOiAic2hhMzg0LVdvWmVPUFZxWlFYZXNLWmtLdHMvUVJQVFpldFQ2c1NtWW1yc2Y0a3R2Wjc1VUdlYjFoL3R0bnlKTzNTN0lLZFkiLCAiY3Jvc3NvcmlnaW4iOiAiYW5vbnltb3VzIn0sICJjb250ZW50IjogIiJ9"],
                 "componentJsVars": [],
                 "componentJsCalls": []}</script>
         """  # noqa: E501
+        )
 
         assertHTMLEqual(expected, rendered)
 
@@ -743,7 +728,7 @@ class TestDependenciesStrategyDocument:
         rendered_body = body_re.search(rendered).group(1)  # type: ignore[union-attr]
 
         assertInHTML(
-            """<script src="django_components/django_components.min.js">""",
+            CORE_JS_TAG,
             rendered_body,
             count=1,
         )
@@ -793,7 +778,7 @@ class TestDependenciesStrategyDocument:
         rendered_head = head_re.search(rendered).group(1)  # type: ignore[union-attr]
 
         assertInHTML(
-            """<script src="django_components/django_components.min.js">""",
+            CORE_JS_TAG,
             rendered_head,
             count=1,
         )
@@ -830,7 +815,7 @@ class TestDependenciesStrategySimple:
         rendered = render_dependencies(rendered_raw, strategy="simple")
 
         # Dependency manager script NOT present
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
@@ -908,7 +893,7 @@ class TestDependenciesStrategySimple:
         rendered = render_dependencies(rendered_raw, strategy="simple")
 
         # Dependency manager script NOT present
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         assert rendered.count("<script") == 6  # 3 Component.js and 3 Media.js
         assert rendered.count("<link") == 3  # Media.css
@@ -987,7 +972,7 @@ class TestDependenciesStrategyPrepend:
         rendered = render_dependencies(rendered_raw, strategy="prepend")
 
         # Dependency manager script NOT present
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
@@ -1067,7 +1052,7 @@ class TestDependenciesStrategyPrepend:
         rendered = render_dependencies(rendered_raw, strategy="prepend")
 
         # Dependency manager script NOT present
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         assert rendered.count("<script") == 6  # 3 Component.js and 3 Media.js
         assert rendered.count("<link") == 3  # Media.css
@@ -1146,7 +1131,7 @@ class TestDependenciesStrategyAppend:
         rendered = render_dependencies(rendered_raw, strategy="append")
 
         # Dependency manager script NOT present
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         # Check that it contains inlined JS and CSS, and Media.css
         assert rendered.strip() == (
@@ -1223,7 +1208,7 @@ class TestDependenciesStrategyAppend:
         rendered = render_dependencies(rendered_raw, strategy="append")
 
         # Dependency manager script NOT present
-        assertInHTML('<script src="django_components/django_components.min.js"></script>', rendered, count=0)
+        assertInHTML(CORE_JS_TAG, rendered, count=0)
 
         assert rendered.count("<script") == 6  # 3 Component.js and 3 Media.js
         assert rendered.count("<link") == 3  # Media.css

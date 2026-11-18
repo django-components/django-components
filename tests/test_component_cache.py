@@ -8,7 +8,7 @@ from django.core.cache import caches
 from django.template import Template
 from django.template.context import Context
 
-from django_components import Component, register
+from django_components import Component, register, types
 from django_components.extension import ComponentExtension, OnComponentInputContext
 from django_components.extension import extensions as extension_manager
 from django_components.testing import djc_test
@@ -16,6 +16,16 @@ from django_components.testing import djc_test
 from .testutils import setup_test_config
 
 setup_test_config()
+
+
+class _Tag:
+    def __str__(self) -> str:
+        return "tag"
+
+
+def _other_module_tag() -> object:
+    other_tag = type("_Tag", (_Tag,), {"__module__": "other.module", "__qualname__": "_Tag"})
+    return other_tag()
 
 
 # Common settings for all tests
@@ -51,7 +61,7 @@ class TestComponentCache:
 
         # Check if the cache entry is set
         cache_key = component.cache.get_cache_key([], {}, {})
-        assert cache_key == "components:cache:c98bf483e9a1937732d4542c714462ac"
+        assert cache_key == "components:cache:40b7910aa50856edfe997c7c85fed0993792b1aea0669500660617b7fc5c20b7"
         assert component.cache.get_entry(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3f,, -->Hello"
         assert caches["default"].get(cache_key) == "<!-- _RENDERED TestComponent_c9770f,ca1bc3f,, -->Hello"
 
@@ -143,7 +153,9 @@ class TestComponentCache:
 
         assert component.cache.get_cache() is caches["custom"]
         assert (
-            component.cache.get_entry("components:cache:bcb4b049d8556e06871b39e0e584e452")
+            component.cache.get_entry(
+                "components:cache:54e103a78bf39ca77a4d91ffb4250af8345c022bb0d0ece7d9352b98741e477c"
+            )
             == "<!-- _RENDERED TestComponent_90ef7a,ca1bc3f,, -->Hello"
         )
 
@@ -171,11 +183,15 @@ class TestComponentCache:
 
         assert len(cache._cache) == 2
         assert (
-            component.cache.get_entry("components:cache:3535e1d1e5f6fa5bc521e7fe203a68d0")
+            component.cache.get_entry(
+                "components:cache:1ce97588eb81c2bddb3a00d996b4d2d403e4f8aacc6b086b87480983a83b894e"
+            )
             == "<!-- _RENDERED TestComponent_648b95,ca1bc3f,, -->Hello world"
         )
         assert (
-            component.cache.get_entry("components:cache:a98a8bd5e72a544d7601798d5e777a77")
+            component.cache.get_entry(
+                "components:cache:585cdf16416eb86b50071240b45df0e1106eab3b4d4c09d45e41d39901a6ff07"
+            )
             == "<!-- _RENDERED TestComponent_648b95,ca1bc40,, -->Hello cake"
         )
 
@@ -190,8 +206,62 @@ class TestComponentCache:
         component.render(args=(1, 2), kwargs={"key": "value"})
 
         # The key consists of `component.class_id`, hashed args, and hashed kwargs
-        expected_key = "1,2:key-value"
+        expected_key = '[["builtins.int", "1"], ["builtins.int", "2"]]:[["key", "builtins.str", "value"]]'
         assert component.cache.hash([1, 2], {"key": "value"}) == expected_key
+
+    @pytest.mark.parametrize(
+        ("first", "second"),
+        [
+            # A value that holds what the old key text used between kwargs.
+            ({"name": "ann", "role": "x,role-y"}, {"name": "ann,role-x", "role": "y"}),
+            # A comma in one positional value against two positional values.
+            ({"args": ["a,b"]}, {"args": ["a", "b"]}),
+            # A value that reads like the end of the args and the start of the kwargs.
+            ({"args": ["a:b-c"]}, {"args": ["a"], "b": "c:"}),
+            # Quotes, which the JSON around each value must escape.
+            ({"args": ['a", "b']}, {"args": ["a", "b"]}),
+            # The same `str()` in two types, where only one of them can come from a visitor.
+            ({"name": None}, {"name": "None"}),
+            ({"args": [1]}, {"args": ["1"]}),
+            # Two classes that differ only in their module.
+            ({"name": _Tag()}, {"name": _other_module_tag()}),
+        ],
+    )
+    def test_inputs_that_read_alike_get_their_own_entries(self, first, second):
+        class TestComponent(Component):
+            template: types.django_html = """
+                {{ seen }}
+            """
+
+            class Cache:
+                enabled = True
+
+            def get_template_data(self, args, kwargs, slots, context):
+                return {"seen": repr((args, sorted(kwargs.items())))}
+
+        def render(inputs):
+            inputs = dict(inputs)
+            return TestComponent.render(args=inputs.pop("args", []), kwargs=inputs)
+
+        first_html = render(first)
+        second_html = render(second)
+        assert first_html.rsplit(">", 1)[-1].strip() != second_html.rsplit(">", 1)[-1].strip()
+
+    def test_slots_that_read_alike_get_their_own_entries(self):
+        class TestComponent(Component):
+            template: types.django_html = """
+                {% load component_tags %}
+                {% slot "a" / %}|{% slot "b" / %}
+            """
+
+            class Cache:
+                enabled = True
+                include_slots = True
+
+        first = TestComponent.render(slots={"a": "x,b-y", "b": "z"})
+        second = TestComponent.render(slots={"a": "x", "b": "y,b-z"})
+        assert "x,b-y|z" in first
+        assert "x|y,b-z" in second
 
     def test_override_hash_methods(self):
         class TestComponent(Component):
@@ -208,7 +278,7 @@ class TestComponentCache:
         component.render(args=(1, 2), kwargs={"key": "value"})
 
         # The key should use the custom hash methods
-        expected_key = "components:cache:3d54974c467a578c509efec189b0d14b"
+        expected_key = "components:cache:488bca17bd5c6c557fc2c9ae5637fa1c732e007a7c44d5024b807267bf497faa"
         assert component.cache.get_cache_key([1, 2], {"key": "value"}, {}) == expected_key
         assert component.cache.get_entry(expected_key) == "<!-- _RENDERED TestComponent_28880f,ca1bc3f,, -->Hello"
 
@@ -271,7 +341,9 @@ class TestComponentCache:
 
         assert len(cache._cache) == 1
         assert (
-            component.cache.get_entry("components:cache:87b9e27abdd3c6ef70982d065fc836a9")
+            component.cache.get_entry(
+                "components:cache:37c0da87a605a4b7f5e4c76afeb3a2400ee04d7ec1fd5de335229dcb0d003791"
+            )
             == '<!-- _RENDERED TestComponent_dd1dee,ca1bc3f,, -->Hello cake <div data-djc-id-ca1bc3f="">\n                ONE\n            </div>'  # noqa: E501
         )
 
@@ -285,7 +357,9 @@ class TestComponentCache:
 
         assert len(cache._cache) == 2
         assert (
-            component.cache.get_entry("components:cache:1d7e3a58972550cf9bec18f457fb1a61")
+            component.cache.get_entry(
+                "components:cache:a49d9d5b36305ad55fe8068bc199dd50ff9f83ce8a161cebf46216bd6d9078d4"
+            )
             == '<!-- _RENDERED TestComponent_dd1dee,ca1bc45,, -->Hello cake <div data-djc-id-ca1bc45="">\n                TWO\n            </div>'  # noqa: E501
         )
 
@@ -315,7 +389,9 @@ class TestComponentCache:
 
         assert len(cache._cache) == 1
         assert (
-            component.cache.get_entry("components:cache:362766726cd0e991f33b0527ef8a513c")
+            component.cache.get_entry(
+                "components:cache:974e33871b1dba491badad17dca8990afb77448b15fa573d57e637c2e069d451"
+            )
             == '<!-- _RENDERED TestComponent_34b6d1,ca1bc3e,, -->Hello cake <div data-djc-id-ca1bc3e="">ONE</div>'
         )
 
@@ -326,7 +402,9 @@ class TestComponentCache:
 
         assert len(cache._cache) == 2
         assert (
-            component.cache.get_entry("components:cache:468e3f122ac305cff5d9096a3c548faf")
+            component.cache.get_entry(
+                "components:cache:353ba6d5afec74a11c1099e365cda5fcaab852df2c4b1b1237b6df90114b7224"
+            )
             == '<!-- _RENDERED TestComponent_34b6d1,ca1bc42,, -->Hello cake <div data-djc-id-ca1bc42="">TWO</div>'
         )
 

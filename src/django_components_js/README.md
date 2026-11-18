@@ -168,6 +168,14 @@ await DjangoComponents.manager.waitForScriptsToLoad("js", [
 
     For backwards compatibility, `Components` will remain available as an alias to `DjangoComponents` until v1.0.
 
+### Data blocks and the page's nonce
+
+The server tells the manager what to do with `<script type="application/json" data-djc>` blocks. When the manager's own `<script>` tag has a CSP nonce, the manager ignores any block whose JSON does not hold the same value under the `nonce` key. It reads the JSON and not the block's `nonce` attribute, because an injected tag that was left open takes in the attributes of the real tag after it.
+
+When the manager's own tag has no nonce, it cannot tell the server's blocks from injected ones. A block then loads a script only from the files that the app serves: a component's JS file under `/components/cache/` on the page's origin, or a file under `STATIC_URL`, which the manager works out from its own URL when that URL is in a `django_components/` folder and has no `%` in its path. It skips any other script and logs an error, and it ignores a block that holds JS variables. It loads each script from its full URL as read against the page's address, so a `<base>` tag cannot move it.
+
+`_loadComponentScripts()`, `loadJs()` and `loadCss()` check none of this, because only code already running in the page can call them.
+
 ## Build
 
 1. Make sure you are inside `django_components_js`:

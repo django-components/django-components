@@ -4,7 +4,7 @@ from pytest_django.asserts import assertHTMLEqual
 from django_components import Component, Script, register, types
 from django_components.testing import djc_test
 
-from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
+from .testutils import CORE_JS_TAG, PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
 setup_test_config()
 
@@ -34,14 +34,16 @@ class TestJsVariables:
         assertHTMLEqual(
             """
             <div class="interactive-button" data-djc-id-ca1bc3e="">Button</div>
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF9hNjdmOWYuNTQ0MGU0Lmpz",
+                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF9hNjdmOWYuNWRlY2I0YjA0MDcyMWViYzc1MjNjOGE3ZmQ3MDkzM2UuanM=",
                     "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF9hNjdmOWYuanM="],
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
                 "componentJsVars": [],
-                "componentJsCalls": [["VGVzdENvbXBvbmVudF9hNjdmOWY=", "Y2ExYmMzZQ==", "NTQ0MGU0"]]}</script>
+                "componentJsCalls": [["VGVzdENvbXBvbmVudF9hNjdmOWY=", "Y2ExYmMzZQ==", "NWRlY2I0YjA0MDcyMWViYzc1MjNjOGE3ZmQ3MDkzM2U="]]}</script>
             <script>
             (function() {
                 DjangoComponents.manager.registerComponent("TestComponent_a67f9f", ({ message }) => {
@@ -55,7 +57,7 @@ class TestJsVariables:
                         "jsUrls__markAsLoaded": [],
                         "cssTags__toFetch": [],
                         "jsTags__toFetch": [],
-                        "componentJsVars": [["VGVzdENvbXBvbmVudF9hNjdmOWY=", "NTQ0MGU0", "eyJtZXNzYWdlIjogIkhlbGxvIGZyb20gSlMifQ=="]],
+                        "componentJsVars": [["VGVzdENvbXBvbmVudF9hNjdmOWY=", "NWRlY2I0YjA0MDcyMWViYzc1MjNjOGE3ZmQ3MDkzM2U=", "eyJtZXNzYWdlIjogIkhlbGxvIGZyb20gSlMifQ=="]],
                         "componentJsCalls": []});
                 })();
             </script>
@@ -110,16 +112,18 @@ class TestJsVariables:
             <div class="box" data-djc-id-ca1bc41="">First</div>
             <div class="box" data-djc-id-ca1bc42="">Second</div>
 
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0LmE2ZmY4Mi5qcw==",
-                    "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0LmMwY2FhMS5qcw==",
+                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0LmI2NTc3ODRhY2QzYzgzNWJiNzdlNGMzOWIxYzllMGE4Lmpz",
+                    "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0LmMyMTNiZDJlZDFkYmQzODkxYzljZTllZDM5ZDBjMTI1Lmpz",
                     "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0Lmpz"],
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
                 "componentJsVars": [],
-                "componentJsCalls": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0MQ==", "YTZmZjgy"],
-                    ["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0Mg==", "YzBjYWEx"]]}</script>
+                "componentJsCalls": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0MQ==", "YzIxM2JkMmVkMWRiZDM4OTFjOWNlOWVkMzlkMGMxMjU="],
+                    ["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "Y2ExYmM0Mg==", "YjY1Nzc4NGFjZDNjODM1YmI3N2U0YzM5YjFjOWUwYTg="]]}</script>
             <script>
             (function() {
                 DjangoComponents.manager.registerComponent("TestComponentRegistered_ce45d4", ({ value }) => {
@@ -133,7 +137,7 @@ class TestJsVariables:
                         "jsUrls__markAsLoaded": [],
                         "cssTags__toFetch": [],
                         "jsTags__toFetch": [],
-                        "componentJsVars": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "YTZmZjgy", "eyJ2YWx1ZSI6IDEwfQ=="]],
+                        "componentJsVars": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "YzIxM2JkMmVkMWRiZDM4OTFjOWNlOWVkMzlkMGMxMjU=", "eyJ2YWx1ZSI6IDEwfQ=="]],
                         "componentJsCalls": []});
                 })();
             </script>
@@ -143,7 +147,7 @@ class TestJsVariables:
                         "jsUrls__markAsLoaded": [],
                         "cssTags__toFetch": [],
                         "jsTags__toFetch": [],
-                        "componentJsVars": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "YzBjYWEx", "eyJ2YWx1ZSI6IDIwfQ=="]],
+                        "componentJsVars": [["VGVzdENvbXBvbmVudFJlZ2lzdGVyZWRfY2U0NWQ0", "YjY1Nzc4NGFjZDNjODM1YmI3N2U0YzM5YjFjOWUwYTg=", "eyJ2YWx1ZSI6IDIwfQ=="]],
                         "componentJsCalls": []});
                 })();
             </script>
@@ -181,14 +185,16 @@ class TestJsVariables:
         assertHTMLEqual(
             """
             <div class="map-container" data-djc-id-ca1bc3e="">Map</div>
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF8yZTY4MDYuN2FjZmI5Lmpz",
+                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF8yZTY4MDYuMTg3ZDU4NjIwMzNmNDFmMmFkNGUxOGYyMGZhYjUxMDEuanM=",
                     "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF8yZTY4MDYuanM="],
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
                 "componentJsVars": [],
-                "componentJsCalls": [["VGVzdENvbXBvbmVudF8yZTY4MDY=", "Y2ExYmMzZQ==", "N2FjZmI5"]]}</script>
+                "componentJsCalls": [["VGVzdENvbXBvbmVudF8yZTY4MDY=", "Y2ExYmMzZQ==", "MTg3ZDU4NjIwMzNmNDFmMmFkNGUxOGYyMGZhYjUxMDE="]]}</script>
             <script>
             (function() {
                 DjangoComponents.manager.registerComponent("TestComponent_2e6806", ({ lat, lng, zoom, markers }) => {
@@ -203,12 +209,12 @@ class TestJsVariables:
                         "jsUrls__markAsLoaded": [],
                         "cssTags__toFetch": [],
                         "jsTags__toFetch": [],
-                        "componentJsVars": [["VGVzdENvbXBvbmVudF8yZTY4MDY=", "N2FjZmI5",
+                        "componentJsVars": [["VGVzdENvbXBvbmVudF8yZTY4MDY=", "MTg3ZDU4NjIwMzNmNDFmMmFkNGUxOGYyMGZhYjUxMDE=",
                             "eyJsYXQiOiA0MC43MTI4LCAibG5nIjogLTc0LjAwNiwgInpvb20iOiAxMywgIm1hcmtlcnMiOiBbeyJsYXQiOiA0MC43MTI4LCAibG5nIjogLTc0LjAwNiwgInRpdGxlIjogIk1hcmtlciAxIn0sIHsibGF0IjogNDAuNzU4LCAibG5nIjogLTczLjk4NTUsICJ0aXRsZSI6ICJNYXJrZXIgMiJ9XX0="]],
                         "componentJsCalls": []});
                 })();
             </script>
-            """,
+            """,  # noqa: E501
             rendered,
         )
 
@@ -233,7 +239,9 @@ class TestJsVariables:
         assertHTMLEqual(
             """
             <div class="simple" data-djc-id-ca1bc3e="">Simple</div>
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
                 "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF9hOGI3NjYuanM="],
                 "cssTags__toFetch": [],
@@ -284,14 +292,16 @@ class TestJsVariables:
         assertHTMLEqual(
             """
             <div class="user-widget" data-djc-id-ca1bc3e="">User Widget</div>
-            <script src="django_components/django_components.min.js"></script>
+            """
+            + CORE_JS_TAG
+            + """
             <script type="application/json" data-djc>{"cssUrls__markAsLoaded": [],
-                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF84MTFlNzAuYmEyZDkxLmpz",
+                "jsUrls__markAsLoaded": ["L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF84MTFlNzAuNTI2NGFiOGY4YjcyYzg4NzFmNDVmM2Y2OWJkZjNkM2UuanM=",
                     "L2NvbXBvbmVudHMvY2FjaGUvVGVzdENvbXBvbmVudF84MTFlNzAuanM="],
                 "cssTags__toFetch": [],
                 "jsTags__toFetch": [],
                 "componentJsVars": [],
-                "componentJsCalls": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "Y2ExYmMzZQ==", "YmEyZDkx"]]}</script>
+                "componentJsCalls": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "Y2ExYmMzZQ==", "NTI2NGFiOGY4YjcyYzg4NzFmNDVmM2Y2OWJkZjNkM2U="]]}</script>
             <script>
             (function() {
                 DjangoComponents.manager.registerComponent("TestComponent_811e70", ({ user_id, api_key }) => {
@@ -307,7 +317,7 @@ class TestJsVariables:
                         "jsUrls__markAsLoaded": [],
                         "cssTags__toFetch": [],
                         "jsTags__toFetch": [],
-                        "componentJsVars": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "YmEyZDkx", "eyJ1c2VyX2lkIjogMTIzLCAiYXBpX2tleSI6ICJzZWNyZXQta2V5In0="]],
+                        "componentJsVars": [["VGVzdENvbXBvbmVudF84MTFlNzA=", "NTI2NGFiOGY4YjcyYzg4NzFmNDVmM2Y2OWJkZjNkM2U=", "eyJ1c2VyX2lkIjogMTIzLCAiYXBpX2tleSI6ICJzZWNyZXQta2V5In0="]],
                         "componentJsCalls": []});
                 })();
             </script>
