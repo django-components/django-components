@@ -73,11 +73,11 @@ In the example above, `(user.name.upper())` is first evaluated as a Python expre
 
 To build text in an expression, use an f-string, such as `(f"Hello {name}")`.
 
-Expressions raise `SecurityError` when they try one of these other ways to format text:
+Expressions raise `SecurityError` (from `djc_core.safe_eval`) for these:
 
-- `format()` or `format_map()` on text. These methods read the attributes that the placeholders name, such as `{0.secret}`, so the text could read values the expression itself can't read.
-- Django's `format_html()`, `format_html_join()` or `format_lazy()`, which read placeholders the same way. This includes a function from the context that wraps one of them, for example with `functools.partial()`, `functools.lru_cache()` or Django's `lazy()`.
-- Any method of a Django lazy string. A lazy string is the result of `_("...")`, `gettext_lazy()` and similar.
+- Calling `format()` or `format_map()` on text. These methods read the attributes that the placeholders name, such as `{0._secret}`, so the text could read values the expression itself can't read.
+- Calling Django's `format_html()`, `format_html_join()` or `format_lazy()`, which read placeholders the same way. This includes a function from the context that wraps one of them, for example with `functools.partial()`, `functools.lru_cache()` or Django's `lazy()`.
+- Using any attribute or method of a Django lazy object, such as a lazy string. A lazy string is the result of `_("...")`, `gettext_lazy()` and similar.
 
 To use string methods on a lazy string, put it in an f-string first, which gives plain text:
 
@@ -88,9 +88,13 @@ To use string methods on a lazy string, put it in an f-string first, which gives
 {% endwith %}
 ```
 
-An f-string only places values next to the text. If the text has its own placeholders, such as a translated `"Hello {name}"`, fill them in `get_template_data()`. Call `format_html()` there too:
+An f-string can't fill in placeholders that are already in the text, such as `{name}` in a translated `"Hello {name}"`. Fill those in `get_template_data()`, and call `format_html()` there too:
 
 ```python
+from django.utils.html import format_html
+from django.utils.translation import gettext as _
+
+
 def get_template_data(self, args, kwargs, slots, context):
     greeting = format_html(_("Hello {name}"), name=kwargs["name"])
     return {"greeting": greeting}

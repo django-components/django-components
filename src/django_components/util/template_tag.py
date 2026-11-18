@@ -6,6 +6,8 @@ This file is for logic that focuses on transforming the AST of template tags
 from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial
+from inspect import unwrap
+from types import WrapperDescriptorType
 from typing import (
     Any,
     NamedTuple,
@@ -230,16 +232,31 @@ def resolve_translation(
 # by identity, because a callable that a template can reach may not be hashable.
 DJANGO_FORMAT_FUNCTIONS = (format_html, format_html_join, format_lazy)
 
-# Every method of a lazy string is a copy of one function, made from one code object. It takes a
-# keyword argument that picks the real method to run, so any copy of it can run `format`. Comparing
-# the code object also catches a copy taken from the class, which is not bound to a lazy string.
+# Each Django formatter with the name to show in messages and the code that does the formatting.
+# A copy of a function made from that code does the same thing, so it is refused too. `unwrap()`
+# is needed for `format_lazy`, which is a `lazy()` wrapper whose own code every `lazy()` result
+# shares, and whose `__name__` is that of the private function it wraps.
+DJANGO_FORMATTERS = tuple(
+    (name, formatter, unwrap(formatter).__code__)
+    for name, formatter in zip(
+        ("format_html", "format_html_join", "format_lazy"), DJANGO_FORMAT_FUNCTIONS, strict=True
+    )
+)
+
+# Each method that a lazy string takes from its result class, such as `upper`, is a copy of one
+# function that Django's `lazy()` builds in a loop, so all the copies share one code object. That
+# function takes a keyword argument that picks the real method to run, so any copy can run
+# `format`. Comparing the code also catches a copy taken from the class, which is not bound to a
+# lazy string.
 LAZY_STRING_METHOD_CODE = type(lazystr("")).upper.__code__
 
-# How many wrapped functions the callable check follows before it refuses the call. Real wrappers
-# such as `lazy()`, `keep_lazy()`, `lru_cache()` or a `functools.partial` add one or two steps.
+# How many functions behind the called one the callable check follows before it refuses the call.
+# Real wrappers such as `lazy()`, `keep_lazy()`, `lru_cache()` or a `functools.partial` add one or
+# two steps.
 MAX_WRAPPED_FUNCTIONS = 32
 
-LAZY_STRING_ADVICE = (
+LAZY_OBJECT_REASON = (
+    "because its methods can fill in placeholders written in the text. "
     "A Django lazy string is the result of _(), gettext_lazy() and similar. "
     'Turn it into plain text with an f-string first, such as f"{text}".upper().'
 )
@@ -247,11 +264,11 @@ LAZY_STRING_ADVICE = (
 
 def check_expression_attribute(obj: Any, attr: str) -> bool:
     """
-    Refuse reading any attribute of a Django lazy string, or of its class, in a Python expression.
+    Refuse reading any attribute of a Django lazy object, or of its class, in a Python expression.
 
-    `safe_eval` refuses `format` and `format_map` on `str` and `UserString`. A lazy string, such
-    as a `gettext_lazy()` result or `_("...")` in a template, is neither of those: it is a
-    `Promise` that forwards each method call to the real string.
+    A lazy object is a `Promise`, such as a lazy string from `gettext_lazy()` or `_("...")` in a
+    template. `safe_eval` refuses `format` and `format_map` on `str` and `UserString`, but a lazy
+    string is neither of those: it forwards each method call to the real string.
 
     The whole object is refused, not only those two names. A forwarding method accepts a keyword
     argument that picks the method to run, so any of them can run `format`, and `safe_eval` does
@@ -260,23 +277,28 @@ def check_expression_attribute(obj: Any, attr: str) -> bool:
     Raises `SecurityError` with a message that says what to do instead. Returns `True` otherwise,
     which tells `safe_eval` to go on with its own checks.
     """
-    if _is_lazy_string_or_class(obj):
-        raise SecurityError(f"Expressions can't read '{attr}' on a Django lazy string. {LAZY_STRING_ADVICE}")
+    if _is_lazy_object_or_class(obj):
+        raise SecurityError(
+            f"Expressions can't read '{attr}' on a Django lazy object, such as a lazy string, {LAZY_OBJECT_REASON}"
+        )
     return True
 
 
 def check_expression_callable(func: Callable) -> bool:
     """
-    Refuse calling a method of a Django lazy string or a Django formatting function in a Python expression.
+    Refuse calling a method of a Django lazy object or a Django formatting function in a Python expression.
 
     This covers what `check_expression_attribute` cannot see: a function that the app placed in the
-    context. The check follows what the function wraps, through `functools.partial`, the function
-    of a bound method (`__func__`) and `functools.wraps` (`__wrapped__`), because Django's `lazy()`
-    and `keep_lazy()` and Python's `lru_cache()` hide the function they call that way. At each step
-    it refuses:
+    context. The check follows what the function passes the call on to: the function inside a
+    `functools.partial`, the function of a bound method (`__func__`), the function that
+    `functools.wraps` names (`__wrapped__`), the object that a `__call__` method belongs to, and the
+    `__call__` of an object's class. Django's `lazy()` and `keep_lazy()` and Python's `lru_cache()`
+    hide the function they call this way. At each step it refuses:
 
-    - a method bound to a lazy string, or a copy of the lazy string method taken from its class;
-    - a function in `DJANGO_FORMAT_FUNCTIONS`, which follow paths written in the text they format;
+    - a lazy class, a method bound to a lazy object, or a copy of the lazy string method taken from
+      its class;
+    - a function in `DJANGO_FORMAT_FUNCTIONS`, or a copy of one, which follow paths written in the
+      text they format;
     - anything that the `safe_eval` check itself refuses, such as `str.format`.
 
     Raises `SecurityError` with a message that says what to do instead, and also when `func` wraps
@@ -298,7 +320,7 @@ def check_expression_callable(func: Callable) -> bool:
         if len(seen) > MAX_WRAPPED_FUNCTIONS + 1:
             raise SecurityError(
                 f"Expressions can't call this function, because it wraps more than {MAX_WRAPPED_FUNCTIONS} "
-                "other functions, too many to check."
+                "other functions, too many to check. Call it in get_template_data() instead."
             )
 
         _check_one_callable(step, is_wrapped=step is not func)
@@ -310,42 +332,70 @@ def check_expression_callable(func: Callable) -> bool:
             inner = getattr(step, name, None)
             if inner is not None:
                 pending.append(inner)
+        # `function.__call__` belongs to `function` and calls it, but has neither of the names above.
+        if getattr(step, "__name__", None) == "__call__":
+            owner = getattr(step, "__self__", None)
+            if owner is not None:
+                pending.append(owner)
+        # Calling an instance runs the `__call__` of its class, which may be a formatter itself,
+        # such as `__call__ = staticmethod(format_html)`. A built-in type's own `__call__` is a
+        # slot wrapper that only calls the object, so it adds nothing to check. This reads the
+        # attribute rather than asking whether `step` is callable, which is what B004 is about.
+        class_call = getattr(type(step), "__call__", None)  # noqa: B004
+        if class_call is not None and not isinstance(class_call, WrapperDescriptorType):
+            pending.append(class_call)
     return True
 
 
 def _check_one_callable(step: Any, *, is_wrapped: bool) -> None:
     # `step` is the function the expression calls, or, when `is_wrapped`, one that it wraps.
-    if _is_lazy_string_or_class(getattr(step, "__self__", None)) or (
-        getattr(step, "__code__", None) is LAZY_STRING_METHOD_CODE
+    # Calling a lazy class builds a lazy object from the arguments, such as the text and values of
+    # `format_lazy()`, and the object formats that text when it is shown.
+    is_lazy_class = isinstance(step, type) and issubclass(step, Promise)
+    if (
+        is_lazy_class
+        or _is_lazy_object_or_class(getattr(step, "__self__", None))
+        or getattr(step, "__code__", None) is LAZY_STRING_METHOD_CODE
     ):
-        raise SecurityError(f"Expressions can't call methods of a Django lazy string. {LAZY_STRING_ADVICE}")
+        raise SecurityError(
+            f"Expressions can't call methods of a Django lazy object, such as a lazy string, {LAZY_OBJECT_REASON}"
+        )
 
-    for formatter in DJANGO_FORMAT_FUNCTIONS:
-        if step is formatter:
-            name = f"{formatter.__name__}()"
-            refused = f"this function, because it calls {name}, which" if is_wrapped else f"{name}, because it"
+    code = getattr(step, "__code__", None)
+    for name, formatter, formatter_code in DJANGO_FORMATTERS:
+        if step is formatter or code is formatter_code:
+            called = f"{name}()"
+            refused = f"this function, because it calls {called}, which" if is_wrapped else f"{called}, because it"
             raise SecurityError(
                 f"Expressions can't call {refused} follows attribute paths written in the text. "
-                f"Call {name} in get_template_data() and pass the result to the template."
+                f"Call {called} in get_template_data() and pass the result to the template."
             )
 
     # `safe_eval` checks the called function itself after this hook, with its own message, so
     # only the functions that it wraps are checked here.
     if is_wrapped:
-        is_safe, replacement = is_safe_callable(step)
+        # djc-core looks the function up in its own tables, which fails with `TypeError` for an
+        # object that can't be hashed. Such an object can't be checked, so refuse it plainly.
+        try:
+            is_safe, replacement = is_safe_callable(step)
+        except TypeError:
+            raise SecurityError(
+                "Expressions can't call this function, because it wraps an object that can't be checked. "
+                "Call it in get_template_data() instead."
+            ) from None
         if not is_safe:
             message = f"Expressions can't call this function, because it calls {_describe_callable(step)}"
             raise SecurityError(f"{message}. {replacement}" if replacement else f"{message}.")
 
 
-def _is_lazy_string_or_class(obj: Any) -> bool:
-    # `isinstance` looks at `__class__`, so a `SimpleLazyObject` around a lazy string matches too.
-    # The class counts as well, because its methods take the lazy string as their first argument.
+def _is_lazy_object_or_class(obj: Any) -> bool:
+    # `isinstance` looks at `__class__`, so a `SimpleLazyObject` around a lazy object matches too.
+    # The class counts as well, because its methods take the lazy object as their first argument.
     return issubclass(obj, Promise) if isinstance(obj, type) else isinstance(obj, Promise)
 
 
 def _describe_callable(obj: Any) -> str:
-    # A short name for messages. `repr()` could run app code and print a long text.
+    # A short name for messages, without `repr()`, which can print a long text.
     name = getattr(obj, "__qualname__", None)
     if not isinstance(name, str):
         name = type(obj).__qualname__
