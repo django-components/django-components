@@ -8,7 +8,7 @@
 
 - `django-components` no longer installs `typing-extensions`. If your code imports `typing_extensions`, add it to your own dependencies.
 
-#### Refactor
+#### Feature
 
 - Add support for Python 3.15. Python 3.15 needs Django 6.1.3 or newer, so on Python 3.15 `django-components` requires that version.
 
