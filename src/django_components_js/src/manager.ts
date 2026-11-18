@@ -97,24 +97,26 @@ interface UrlFolder {
  * `django_components/` is `STATIC_URL`, where the app's `Component.Media` files live too.
  *
  * Injected markup can load a copy of this file from another address, and then that copy's
- * folder is the one the attacker chose. So we use the folder only where the attacker cannot
- * place a copy:
+ * folder is the one the attacker chose. So we use the folder only where a copy is hard to place:
  *
- * - On the page's own origin, the attacker would need a file at a path they choose there.
+ * - On the page's own origin, the copy must sit in a folder named `django_components/`. An
+ *   attacker who can upload JS files into a folder of that name on the site can still pass.
  * - On another origin, only when our tag has no `integrity`. Under a policy that lists hashes, a
  *   copy runs only with an `integrity` that matches, and that holds for a copy from any site. A
  *   policy that lists hosts runs a copy only from those hosts, and injected markup could load
  *   their files without us. Our tag has no `integrity` when `STATIC_URL` is a full URL.
  *
- * The origin's root folder would let through every path on the page's origin, such as the
- * files that visitors upload, so it does not count.
+ * Some servers decode an encoded slash and then follow `..`, so a URL with one could reach our
+ * real file from a folder the attacker chose. Such a URL gives no folder. The origin's root
+ * folder would let through every path on the page's origin, so it does not count either.
  */
 const readStaticFolder = (script: HTMLScriptElement | null): UrlFolder | null => {
   // An inline script or a module has no URL of its own to read.
   if (!script || !script.getAttribute("src")) return null;
   let url: URL;
   try {
-    // `script.src` is where the browser loaded this file from, which a `<base>` tag can move.
+    // `script.src` is our `src` attribute read against the page's base URL, which a `<base>`
+    // tag can change. Before this file runs, it is also the URL that the browser fetched.
     url = new URL(script.src);
   } catch {
     return null;
@@ -124,9 +126,12 @@ const readStaticFolder = (script: HTMLScriptElement | null): UrlFolder | null =>
   const isPageOrigin = url.origin === pageUrl().origin;
   if (!isPageOrigin && script.hasAttribute("integrity")) return null;
 
-  let path = url.pathname.slice(0, url.pathname.lastIndexOf("/") + 1);
+  if (/%2f|%5c/i.test(url.pathname)) return null;
+
   const ownFolder = "/django_components/";
-  if (path.endsWith(ownFolder)) path = path.slice(0, path.length - ownFolder.length + 1);
+  let path = url.pathname.slice(0, url.pathname.lastIndexOf("/") + 1);
+  if (!path.endsWith(ownFolder)) return null;
+  path = path.slice(0, path.length - ownFolder.length + 1);
   if (isPageOrigin && path === "/") return null;
   return { origin: url.origin, path };
 };
@@ -348,7 +353,8 @@ export const createComponentsManager = () => {
         console.error(
           `[DjangoComponents] Did not load the script ${JSON.stringify(declaredSrc)} from a <script data-djc> block. ` +
             "On a page whose dependency manager has no CSP nonce, a block may load only the files that " +
-            "django-components serves from /components/cache/ and the files under STATIC_URL.",
+            "django-components serves from /components/cache/ and the files under STATIC_URL. " +
+            "Load the script on the page itself, serve it from STATIC_URL, or give the page a nonce.",
         );
         return {
           el: scriptNode,
@@ -889,7 +895,10 @@ export const createComponentsManager = () => {
         // The server sends JS variables in their own JS file, never in a block. So on a page
         // where we cannot tell the server's blocks from injected ones, such a block is injected,
         // and would hand the page's own components data that the attacker chose.
-        console.error("[DjangoComponents] Ignored a <script data-djc> block with JS variables in it.");
+        console.error(
+          "[DjangoComponents] Ignored a <script data-djc> block with JS variables in it. " +
+            "django-components sends JS variables in their own file, so this block did not come from the server.",
+        );
         return;
       }
       loadComponentScripts(data, ownNonce ? null : checkBlockScriptUrl);

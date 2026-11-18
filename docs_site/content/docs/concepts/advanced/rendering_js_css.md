@@ -650,23 +650,27 @@ On such a page, a block loads a script only when the file is one that your app s
 - the JS file of a component, which django-components serves from `/components/cache/` on the page's origin;
 - a file under your `STATIC_URL`, such as a relative path in [`Component.Media.js`][ComponentMediaInput].
 
-The dependency manager finds `STATIC_URL` from its own URL, `<STATIC_URL>django_components/django_components.min.js`. It doesn't count the root of the page's origin (`STATIC_URL = "/"`), because that would include every path on your site. A `STATIC_URL` on another host, such as `https://cdn.example.com/static/`, counts when the tag has no `integrity`, which is how django-components writes the tag for such a URL.
+The dependency manager finds `STATIC_URL` from its own URL, `<STATIC_URL>django_components/django_components.min.js`. A `STATIC_URL` on another host, such as `https://cdn.example.com/static/`, counts when the tag has no `integrity`, which is how django-components writes the tag for such a URL. In these cases no `STATIC_URL` counts, and only files from `/components/cache/` load:
 
-The dependency manager skips any other script, and the browser console shows an error. The fragment's components still run. When you render a fragment without a nonce, django-components also logs a warning on the server for each script it expects the dependency manager to skip, once per URL. The dependency manager also ignores a block that holds JS variables, because django-components sends them in a file of their own.
+- `STATIC_URL = "/"`, because the root of your site would include every path on it;
+- a `type="module"` tag, or a tag on another host that a hook gave an `integrity`;
+- a file name that a CDN or proxy changed, so the file is no longer in a `django_components/` folder.
 
-It loads each file from the URL as read against the page's own address, so a `<base>` tag doesn't change where these files come from.
+The dependency manager skips any other script, and the browser console shows an error. The fragment's components still run, but their JS fails where it needs the skipped script. When you render a fragment without a nonce, django-components also logs a warning on the server for each script it expects the dependency manager to skip, once per URL. The dependency manager also ignores a block that holds JS variables, because django-components sends them in a file of their own.
 
-So a script from a CDN in a fragment's `Component.Media.js` doesn't load on a page without a nonce, even on a site with no policy at all. To use it, do one of these:
+The dependency manager loads each of these scripts from its full URL, read against the page's address, so a `<base>` tag can't move them.
+
+So on a page without a nonce, even on a site with no policy at all, a fragment's `Component.Media.js` loads only files under `STATIC_URL`. A script from a CDN, or from another path on your site such as Django's `/jsi18n/`, doesn't load. To use such a script, do one of these:
 
 - Load it on the page itself. When a component on the page lists the same URL in its `Component.Media.js`, the dependency manager knows that the page has the script, and doesn't ask for it again. If you load it with a `<script>` tag of your own, also call `DjangoComponents.manager.markScriptLoaded("js", url)` from your own JS, with the URL exactly as the fragment writes it, before the fragment arrives.
 - Serve the file from your `STATIC_URL`.
 - Give the page a nonce, as described above. On a page with a nonce, a fragment loads every script it names.
 
-What this can't cover: injected HTML can still call your page's components with their own files, and load any file under `STATIC_URL`. A library there that acts on the HTML of the page, such as htmx or Alpine.js, then does what the injected HTML tells it. The same goes for a file that a visitor uploads, if your site serves it as JavaScript under `STATIC_URL` or at a path that ends in `/components/cache/<name>.js`. Give pages that receive fragments a nonce.
+What this can't cover: injected HTML can still start your page's components on elements it adds, with data files your server already wrote, and load any file under `STATIC_URL`. A library there that acts on the HTML of the page, such as htmx or Alpine.js, then does what the injected HTML tells it. If visitors can upload files that your site serves as JavaScript from its own domain, injected HTML can load those too, through a copy of the dependency manager uploaded into a folder named `django_components`. Give pages that receive fragments a nonce, and serve uploads from another domain.
 
 ### What the nonce check can't cover
 
-The check relies on your policy to refuse a script tag with no nonce. If `script-src` allows `'self'` or a host that serves your static files, an attacker can inject a second copy of the dependency manager. That copy has no nonce, so it treats the page as one [without a nonce](#pages-without-a-nonce) and obeys every block that names only your own files. Prefer `'strict-dynamic'`, which makes the browser ignore `'self'` and hosts.
+The check relies on your policy to refuse a script tag with no nonce. If `script-src` allows `'self'` or a host that serves your static files, an attacker can inject a second copy of the dependency manager. That copy has no nonce, so it treats the page as one [without a nonce](#pages-without-a-nonce): it obeys every block, and loads the scripts that such a page allows. Prefer `'strict-dynamic'`, which makes the browser ignore `'self'` and hosts.
 
 ## HTML fragments
 

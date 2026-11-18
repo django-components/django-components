@@ -651,7 +651,8 @@ class TestPageWithoutNonce:
         result.page.context.close()
 
     def test_forged_block_cannot_name_src_twice(self, sync_browser):
-        # The tag keeps the last `src` it gets, whatever its case
+        # The tag keeps the last `src` it gets, whatever its case. The runtime also sets `src` to
+        # the URL it checked, so this holds even if the check read the first one.
         register_widget()
         page = render_page(forged_src_block("/static/ok.js", attrs={"SRC": f"{OTHER}/forged.js"}), nonce=None)
 
@@ -680,6 +681,50 @@ class TestPageWithoutNonce:
         assert result.other_site_requests == [f"/copy{RUNTIME_PATH}"]
         assert result.file_requests == []
         assert result.title() == "clean"
+        result.page.context.close()
+
+    @pytest.mark.parametrize(
+        "copy_path",
+        [
+            # A visitor uploaded a copy of the runtime next to the payload
+            "/uploads/django_components.min.js",
+            # A server that decodes `%2F` and then follows `..` serves the real file from here
+            "/uploads/django_components/..%2f..%2fstatic%2fdjango_components%2fdjango_components.min.js",
+        ],
+        ids=["uploaded", "encoded_slash"],
+    )
+    def test_runtime_copy_on_the_app_gives_no_folder_of_its_own(self, sync_browser, copy_path: str):
+        # A policy with the runtime's hash runs such a copy, and the copy reads its own address
+        register_widget()
+        integrity = re.search(r'integrity="([^"]+)"', render_page(nonce=None))
+        assert integrity is not None
+        copy = f'<script src="{copy_path}" integrity="{integrity.group(1)}" crossorigin="anonymous"></script>'
+        page = render_page(copy + forged_src_block(UPLOADED), nonce=None)
+        files = {copy_path: RUNTIME_FILE.read_text(), UPLOADED: UPLOADED_JS}
+
+        result = visit(sync_browser, page, hash_policy(page, "'strict-dynamic'"), files=files)
+        result.wait_for_widget()
+        result.settle()
+
+        # The copy ran, so it asked for nothing, and the page's own runtime refused the block too
+        assert [path.split("?")[0] for path in result.file_requests] == [copy_path]
+        assert result.title() == "clean"
+        result.page.context.close()
+
+    @djc_test(django_settings={**DJANGO_SETTINGS, "STATIC_URL": "/"})
+    def test_static_url_at_the_root_is_not_a_folder(self, sync_browser):
+        # The root of the site would let through every path on it, such as uploaded files
+        register_widget()
+        widget = register_media_widget("media.js")
+        page = render_page(tail=fetch_fragment_script(nonce=None), nonce=None)
+        files = {"/django_components/django_components.min.js": RUNTIME_FILE.read_text(), "/media.js": MEDIA_JS}
+
+        result = visit(sync_browser, page, None, fragment=render_fragment(widget, nonce=None), files=files)
+        result.wait_for_widget(count=2)
+        result.settle()
+
+        assert "/media.js" not in result.file_requests
+        assert result.widget_calls()[1] == {"media": 0}
         result.page.context.close()
 
     def test_forged_js_variables_do_not_reach_a_component(self, sync_browser):
