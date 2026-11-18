@@ -1,8 +1,8 @@
 # <img src="https://raw.githubusercontent.com/django-components/django-components/master/assets/logo/logo-black-on-white.svg" alt="django-components" style="max-width: 100%; background: white; color: black;">
 
-[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](https://django-components.github.io/django-components/latest/benchmarks/)[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white)](https://discord.gg/NaQ8QPyHtD)
+[![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](https://django-components.github.io/django-components/benchmarks/)[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white)](https://discord.gg/NaQ8QPyHtD)
 
-### <table><td>[Read the full documentation](https://django-components.github.io/django-components/latest/)</td></table>
+### <table><td>[Read the full documentation](https://django-components.github.io/django-components/docs/)</td></table>
 
 ### <table><td>[See Roadmap for v1](https://github.com/orgs/django-components/projects/1/views/1?sliceBy%5Bvalue%5D=milestone--v1)</td></table>
 
@@ -211,13 +211,13 @@ class Calendar(Component):
 
 It extends Django's template tags syntax with:
 
-- [Python expressions](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
-- [Literal lists and dictionaries](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
-- [Self-closing tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#self-closing-tags) `{% mytag / %}`
-- [Multi-line template tags](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#multiline-tags)
-- [Spread operator](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#spread-operator) `...` to dynamically pass args or kwargs into the template tag
-- [Nested templates](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#nested-templates) like `"{{ first_name }} {{ last_name }}"`
-- [Flat dictionaries](https://django-components.github.io/django-components/latest/concepts/fundamentals/template_tag_syntax#flat-dictionaries) `dict:key=val`
+- [Python expressions](https://django-components.github.io/django-components/docs/concepts/fundamentals/template_tag_syntax/#python-expressions) `disabled=(not editable)` to evaluate Python code in templates
+- [Literal lists and dictionaries](https://django-components.github.io/django-components/docs/concepts/fundamentals/template_tag_syntax/#literal-lists-and-dictionaries) `headers=["Name", "Age"]` and `data=[{"name": "John"}]` to pass structured data directly
+- [Self-closing tags](https://django-components.github.io/django-components/docs/concepts/fundamentals/template_tag_syntax/#self-closing-tags) `{% mytag / %}`
+- [Multi-line template tags](https://django-components.github.io/django-components/docs/concepts/fundamentals/template_tag_syntax/#multiline-tags)
+- [Spread operator](https://django-components.github.io/django-components/docs/concepts/fundamentals/template_tag_syntax/#spread-operator) `...` to dynamically pass args or kwargs into the template tag
+- [Nested templates](https://django-components.github.io/django-components/docs/concepts/fundamentals/template_tag_syntax/#nested-templates) like `"{{ first_name }} {{ last_name }}"`
+- [Flat dictionaries](https://django-components.github.io/django-components/docs/concepts/fundamentals/template_tag_syntax/#flat-dictionaries) `dict:key=val`
 
 ```django
 {% component "table"
@@ -238,18 +238,18 @@ It extends Django's template tags syntax with:
 ```
 
 You too can define template tags with these features by using
-[`@template_tag()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.template_tag)
-or [`BaseNode`](https://django-components.github.io/django-components/latest/reference/api/#django_components.BaseNode).
+[`@template_tag()`](https://django-components.github.io/django-components/docs/reference/api/#template_tag)
+or [`BaseNode`](https://django-components.github.io/django-components/docs/reference/api/#BaseNode).
 
-Read more on [Custom template tags](https://django-components.github.io/django-components/latest/concepts/advanced/template_tags/).
+Read more on [Custom template tags](https://django-components.github.io/django-components/docs/concepts/advanced/template_tags/).
 
 ### Composition with slots
 
 - Render components inside templates with
-  [`{% component %}`](https://django-components.github.io/django-components/latest/reference/template_tags#component) tag.
-- Compose them with [`{% slot %}`](https://django-components.github.io/django-components/latest/reference/template_tags#slot)
-  and [`{% fill %}`](https://django-components.github.io/django-components/latest/reference/template_tags#fill) tags.
-- Vue-like slot system, including [scoped slots](https://django-components.github.io/django-components/latest/concepts/fundamentals/slots/#slot-data).
+  [`{% component %}`](https://django-components.github.io/django-components/docs/reference/template_tags/#component) tag.
+- Compose them with [`{% slot %}`](https://django-components.github.io/django-components/docs/reference/template_tags/#slot)
+  and [`{% fill %}`](https://django-components.github.io/django-components/docs/reference/template_tags/#fill) tags.
+- Vue-like slot system, including [scoped slots](https://django-components.github.io/django-components/docs/concepts/fundamentals/slots/#slot-data).
 
 ```django
 {% component "Layout"
@@ -285,10 +285,10 @@ Read more on [Custom template tags](https://django-components.github.io/django-c
 
 When you render a component, you can access everything about the component:
 
-- Component input: [args, kwargs, slots and context](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#component-inputs)
+- Component input: [args, kwargs, slots and context](https://django-components.github.io/django-components/docs/concepts/fundamentals/render_api/#component-inputs)
 - Component's template, CSS and JS
-- Django's [context processors](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#request-and-context-processors)
-- Unique [render ID](https://django-components.github.io/django-components/latest/concepts/fundamentals/render_api/#component-id)
+- Django's [context processors](https://django-components.github.io/django-components/docs/concepts/fundamentals/render_api/#request-and-context-processors)
+- Unique [render ID](https://django-components.github.io/django-components/docs/concepts/fundamentals/render_api/#component-id)
 
 ```python
 class Table(Component):
@@ -334,7 +334,7 @@ rendered = Table.render(
 
 ### Granular HTML attributes
 
-Use the [`{% html_attrs %}`](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/) template tag to render HTML attributes.
+Use the [`{% html_attrs %}`](https://django-components.github.io/django-components/docs/concepts/fundamentals/html_attributes/) template tag to render HTML attributes.
 
 It supports:
 
@@ -355,9 +355,9 @@ It supports:
 >
 ```
 
-[`{% html_attrs %}`](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/) offers a Vue-like granular control for
-[`class`](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/#merging-class-attributes)
-and [`style`](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/#merging-style-attributes)
+[`{% html_attrs %}`](https://django-components.github.io/django-components/docs/concepts/fundamentals/html_attributes/) offers a Vue-like granular control for
+[`class`](https://django-components.github.io/django-components/docs/concepts/fundamentals/html_attributes/#merging-class-attributes)
+and [`style`](https://django-components.github.io/django-components/docs/concepts/fundamentals/html_attributes/#merging-style-attributes)
 HTML attributes,
 where you can use a dictionary to manage each class name or style property separately.
 
@@ -384,7 +384,7 @@ where you can use a dictionary to manage each class name or style property separ
 %}
 ```
 
-When attributes already live in dictionaries, use [`{% attrs %}`](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/#composing-attribute-dictionaries-with-attrs)
+When attributes already live in dictionaries, use [`{% attrs %}`](https://django-components.github.io/django-components/docs/concepts/fundamentals/html_attributes/#composing-attribute-dictionaries-with-attrs)
 to compose ordinary attributes with last-value-wins behavior while still combining `class` and `style`.
 Its inputs may include lists nested to any depth:
 
@@ -398,17 +398,17 @@ Its inputs may include lists nested to any depth:
 Used by itself inside a quoted component input, `{% attrs %}` passes the resulting dictionary without
 serializing it. It supersedes `{% html_attrs %}` for attribute composition and is preferred for new code.
 
-Read more about [HTML attributes](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_attributes/).
+Read more about [HTML attributes](https://django-components.github.io/django-components/docs/concepts/fundamentals/html_attributes/).
 
 ### HTML fragment support
 
-`django-components` makes integration with HTMX, AlpineJS or jQuery easy by allowing components to be rendered as [HTML fragments](https://django-components.github.io/django-components/latest/concepts/advanced/html_fragments/):
+`django-components` makes integration with HTMX, AlpineJS or jQuery easy by allowing components to be rendered as [HTML fragments](https://django-components.github.io/django-components/docs/concepts/advanced/html_fragments/):
 
 - Components's JS and CSS files are loaded automatically when the fragment is inserted into the DOM.
 
-- Components can be [exposed as Django Views](https://django-components.github.io/django-components/latest/concepts/fundamentals/component_views_urls/) with `get()`, `post()`, `put()`, `patch()`, `delete()` methods
+- Components can be [exposed as Django Views](https://django-components.github.io/django-components/docs/concepts/fundamentals/component_views_urls/) with `get()`, `post()`, `put()`, `patch()`, `delete()` methods
 
-- Automatically create an endpoint for a component with [`Component.View.public`](https://django-components.github.io/django-components/latest/concepts/fundamentals/component_views_urls/#register-urls-automatically)
+- Automatically create an endpoint for a component with [`Component.View.public`](https://django-components.github.io/django-components/docs/concepts/fundamentals/component_views_urls/#register-urls-automatically)
 
 ```py
 # components/calendar/calendar.py
@@ -443,10 +443,10 @@ path("calendar/", Calendar.as_view())
 
 `django-components` supports the provide / inject pattern, similarly to React's [Context Providers](https://react.dev/learn/passing-data-deeply-with-context) or Vue's [provide / inject](https://vuejs.org/guide/components/provide-inject):
 
-- Use the [`{% provide %}`](https://django-components.github.io/django-components/latest/reference/template_tags/#provide) tag to provide data to the component tree
-- Use the [`Component.inject()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.Component.inject) method to inject data into the component
+- Use the [`{% provide %}`](https://django-components.github.io/django-components/docs/reference/template_tags/#provide) tag to provide data to the component tree
+- Use the [`Component.inject()`](https://django-components.github.io/django-components/docs/reference/api/#Component.inject) method to inject data into the component
 
-Read more about [Provide / Inject](https://django-components.github.io/django-components/latest/concepts/advanced/provide_inject).
+Read more about [Provide / Inject](https://django-components.github.io/django-components/docs/concepts/advanced/provide_inject/).
 
 ```django
 <body>
@@ -470,7 +470,7 @@ class Header(Component):
 
 ### Input validation and static type hints
 
-Avoid needless errors with [type hints and runtime input validation](https://django-components.github.io/django-components/latest/concepts/fundamentals/typing_and_validation/).
+Avoid needless errors with [type hints and runtime input validation](https://django-components.github.io/django-components/docs/concepts/fundamentals/typing_and_validation/).
 
 To opt-in to input validation, define types for component's args, kwargs, slots, and more:
 
@@ -499,8 +499,8 @@ class Button(Component):
 ```
 
 To have type hints when calling
-[`Button.render()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.Component.render) or
-[`Button.render_to_response()`](https://django-components.github.io/django-components/latest/reference/api/#django_components.Component.render_to_response),
+[`Button.render()`](https://django-components.github.io/django-components/docs/reference/api/#Component.render) or
+[`Button.render_to_response()`](https://django-components.github.io/django-components/docs/reference/api/#Component.render_to_response),
 wrap the inputs in their respective `Args`, `Kwargs`, and `Slots` classes:
 
 ```py
@@ -519,7 +519,7 @@ Button.render(
 
 ### Extensions
 
-Django-components functionality can be extended with [Extensions](https://django-components.github.io/django-components/latest/concepts/advanced/extensions/).
+Django-components functionality can be extended with [Extensions](https://django-components.github.io/django-components/docs/concepts/advanced/extensions/).
 Extensions allow for powerful customization and integrations. They can:
 
 - Tap into lifecycle events, such as when a component is created, deleted, or registered
@@ -542,7 +542,7 @@ Some of the planned extensions include:
 
 ### Caching
 
-- [Components can be cached](https://django-components.github.io/django-components/latest/concepts/advanced/component_caching/) using Django's cache framework.
+- [Components can be cached](https://django-components.github.io/django-components/docs/concepts/advanced/component_caching/) using Django's cache framework.
 - Caching rules can be configured on a per-component basis.
 - Components are cached based on their input. Or you can write custom caching logic.
 
@@ -560,7 +560,7 @@ class MyComponent(Component):
 
 ### Simple testing
 
-- Write tests for components with [`@djc_test`](https://django-components.github.io/django-components/latest/concepts/advanced/testing/) decorator.
+- Write tests for components with [`@djc_test`](https://django-components.github.io/django-components/docs/concepts/advanced/testing/) decorator.
 - The decorator manages global state, ensuring that tests don't leak.
 - If using `pytest`, the decorator allows you to parametrize Django or Components settings.
 - The decorator also serves as a stand-in for Django's [`@override_settings`](https://docs.djangoproject.com/en/5.2/topics/testing/tools/#django.test.override_settings).
@@ -605,7 +605,7 @@ def test_my_table():
 
 ## Documentation
 
-[Read the full documentation here](https://django-components.github.io/django-components/latest/).
+[Read the full documentation here](https://django-components.github.io/django-components/docs/).
 
 ... or jump right into the code, [check out the example project](https://github.com/django-components/django-components/tree/master/sampleproject).
 
@@ -620,7 +620,7 @@ As of `0.130`, `django-components` is ~4x slower than Django templates.
 | django            | 68.9±0.6ms  |
 | django-components | 259±4ms     |
 
-See the [full performance breakdown](https://django-components.github.io/django-components/latest/benchmarks/) for more information.
+See the [full performance breakdown](https://django-components.github.io/django-components/benchmarks/) for more information.
 
 ## Release notes
 
@@ -637,6 +637,6 @@ One of our goals with `django-components` is to make it easy to share components
 
 ## Contributing and development
 
-Get involved or sponsor this project - [See here](https://django-components.github.io/django-components/dev/community/contributing/)
+Get involved or sponsor this project - [See here](https://django-components.github.io/django-components/docs/community/contributing/)
 
-Running django-components locally for development - [See here](https://django-components.github.io/django-components/dev/community/development/)
+Running django-components locally for development - [See here](https://django-components.github.io/django-components/docs/community/development/)

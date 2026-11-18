@@ -679,7 +679,7 @@ Let's say we want to add an example called `form`:
 
 ### People page
 
-The [people page](https://django-components.github.io/django-components/dev/community/people/) is regularly updated with stats about the contributors and authors. This is triggered automatically once a month or manually via the Actions tab.
+The [people page](people.md) is regularly updated with stats about the contributors and authors. This is triggered automatically once a month or manually via the Actions tab.
 
 See [`.github/workflows/maint-docs-people.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/maint-docs-people.yml) for more details.
 
@@ -771,7 +771,7 @@ The version number is in the format `MAJOR.MINOR.PATCH` (e.g. `0.141.6`).
 
 ## Development guides
 
-Head over to [Dev guides](https://django-components.github.io/django-components/0.151/community/devguides/dependency_mgmt/) for a deep dive into how django_components' features are implemented.
+Head over to the [Dev guides on GitHub](https://github.com/django-components/django-components/tree/master/docs/devguides) for a deep dive into how django_components' features are implemented.
 
 ## Maintenance
 
@@ -828,6 +828,17 @@ Then, you can run the script to update the URLs in the codebase.
 ```sh
 python scripts/validate_links.py --rewrite
 ```
+
+#### Linking to the docs site
+
+A relative link such as `people.md` works only between docs pages. The README, `pyproject.toml` and `CHANGELOG.md` are also shown on GitHub and PyPI, and the benchmark report is not a docs page, so these need a full URL. Add one of these unversioned paths, which show the current docs, to the address of the [docs site](https://django-components.github.io/django-components/):
+
+- `/docs/<page>/` for a docs page, for example `/docs/community/people/`. End the path with a slash.
+- `/benchmarks/` for the benchmark report. It is the only copy the docs builder updates.
+
+GitHub Actions rebuilds these from `master` on every push to `master` and on every release, so they can describe changes that are not released yet. Released versions live under `/v/<version>/`, and the `dev` build from `master` lives under `/v/dev/`. The site has no `/latest/...` or `/dev/...` at the top level, so a link to one returns a 404.
+
+`docs_build_check` skips every absolute link (one that starts with `http` or `https`), including links to this site, so a wrong one passes the build. After you add or change one, run `scripts/validate_links.py`. It checks the live site, so a link to a page that is not deployed yet reports a 404.
 
 ## Integrations
 
