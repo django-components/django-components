@@ -4,9 +4,9 @@ import base64
 import html.parser
 import json
 import re
+import secrets
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from hashlib import sha256
 from typing import (
     TYPE_CHECKING,
     Literal,
@@ -16,10 +16,13 @@ from typing import (
     cast,
 )
 
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, HttpResponse, HttpResponseBadRequest, HttpResponseNotAllowed, HttpResponseNotFound
 from django.template import Context, TemplateSyntaxError
 from django.templatetags.static import static
 from django.urls import re_path, reverse
+from django.utils.crypto import salted_hmac
 from django.utils.safestring import SafeString, mark_safe
 from djc_core.html_transformer import set_html_attributes
 
@@ -564,20 +567,48 @@ def cache_component_js(comp_cls: type["Component"], force: bool) -> None:
     )
 
 
+# A fixed label that is mixed with `SECRET_KEY` to make the secret for these keys. Django and apps use
+# other labels with the same `SECRET_KEY`, so their secrets differ from this one.
+_VARIABLES_KEY_SALT = "django_components.dependencies.variables-name"
+
+# Used in place of an empty `SECRET_KEY`. Each process makes its own, so each process calculates a different
+# key for the same values. That still works, because the route only looks a key up in the cache and never
+# calculates one, so every process finds a key that another process stored in a shared cache.
+_PROCESS_VARIABLES_SECRET = secrets.token_hex(32)
+
+
+def _get_variables_secret() -> str | bytes:
+    # Django raises when code reads an empty `SECRET_KEY`. A project can leave it empty, and rendering
+    # these values must not fail for that reason, so such a project gets the per-process secret.
+    try:
+        secret = settings.SECRET_KEY
+    except ImproperlyConfigured:
+        return _PROCESS_VARIABLES_SECRET
+    return secret or _PROCESS_VARIABLES_SECRET
+
+
 def _gen_variables_hash(json_data: str) -> str:
     """
     Get the key under which we store the output of `get_js_data()` or `get_css_data()`.
+
+    This key is also the long part of the URL that serves the stored values, and that URL needs no login.
 
     The first value stored under a key is the one that every later page gets, so two different
     values must never share a key. These values can come from your users, and one visitor would
     then receive another visitor's data. 128 bits keep that out of reach, and also keep anyone
     from reading every entry by trying all the keys.
 
-    This key is not a secret, and it does not control who can read the values. Anyone can
-    calculate it from values that they guess. See "JS and CSS variables are public" in the docs
-    for what this means for app authors.
+    The key is an HMAC of the values: a hash that only code that knows a secret can calculate. That
+    secret comes from `SECRET_KEY` and a fixed label. Without it, anyone could calculate the key for
+    values that they guess, request that URL, and learn from the answer whether some visitor's page used
+    those values. Only code that knows `SECRET_KEY` can make this key.
+
+    After `SECRET_KEY` changes, new pages get new keys, and URLs made with the old `SECRET_KEY` keep
+    working while their entries stay in the cache, because the route only looks the key up. So nothing
+    here reads `SECRET_KEY_FALLBACKS`.
     """
-    return sha256(json_data.encode()).hexdigest()[:32]
+    digest = salted_hmac(_VARIABLES_KEY_SALT, json_data, secret=_get_variables_secret(), algorithm="sha256")
+    return digest.hexdigest()[:32]
 
 
 # NOTE: In CSS, we link the CSS vars to the component via a stylesheet that defines
@@ -598,7 +629,7 @@ def cache_component_js_vars(comp_cls: type["Component"], js_vars: Mapping) -> st
     if not is_nonempty_str(comp_cls.js):
         return None
 
-    # The hash for the file that holds the JS variables is derived from the variables themselves.
+    # The hash for the file that holds the JS variables is made from the variables and `SECRET_KEY`.
     json_data = json.dumps(js_vars)
     variables_hash = _gen_variables_hash(json_data)
 
@@ -666,7 +697,7 @@ def cache_component_css_vars(comp_cls: type["Component"], css_vars: Mapping) -> 
     if not is_nonempty_str(comp_cls.css):
         return None
 
-    # The hash for the file that holds the CSS variables is derived from the variables themselves.
+    # The hash for the file that holds the CSS variables is made from the variables and `SECRET_KEY`.
     json_data = json.dumps(css_vars)
     variables_hash = _gen_variables_hash(json_data)
 

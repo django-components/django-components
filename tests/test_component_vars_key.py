@@ -8,9 +8,12 @@ import logging
 import re
 
 import pytest
-from django.test import Client
+from django.conf import settings
+from django.test import Client, override_settings
+from django.utils.crypto import salted_hmac
 
 from django_components import Component, render_dependencies, types
+from django_components import dependencies as dependencies_module
 from django_components.cache import get_component_vars_cache
 from django_components.dependencies import (
     Style,
@@ -68,8 +71,33 @@ def _old_key(data: dict) -> str:
     return hashlib.md5(json.dumps(data).encode()).hexdigest()[:6]  # noqa: S324
 
 
-def _new_key(data: dict) -> str:
+# Written out here rather than imported, so a change to the label or the algorithm fails these tests.
+KEY_LABEL = "django_components.dependencies.variables-name"
+
+
+def _new_key(data: dict, secret: str | None = None) -> str:
+    secret = settings.SECRET_KEY if secret is None else secret
+    return salted_hmac(KEY_LABEL, json.dumps(data), secret=secret, algorithm="sha256").hexdigest()[:32]
+
+
+def _plain_key(data: dict) -> str:
+    # The key that anyone could calculate from a guess, without the secret.
     return hashlib.sha256(json.dumps(data).encode()).hexdigest()[:32]
+
+
+# Made-up secrets for the tests that change SECRET_KEY.
+OLD_SECRET_KEY = "old-secret-key"  # noqa: S105
+NEW_SECRET_KEY = "new-secret-key"  # noqa: S105
+WRONG_SECRET_KEY = "wrong-secret-key"  # noqa: S105
+
+SHARED_CACHE_SETTINGS = {
+    "CACHES": {
+        "shared": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "vars-key-shared",
+        },
+    },
+}
 
 
 def _vars_url(comp_cls: type[Component], data: dict, ext: str) -> str:
@@ -115,11 +143,11 @@ class TestVariablesKey:
         assert _holds(second_body, second)
         assert not _holds(second_body, first)
 
-    def test_the_css_key_is_the_start_of_a_sha256(self):
+    def test_the_css_key_is_an_hmac_under_the_secret_key(self):
         data = {"note": "x"}
         assert cache_component_css_vars(_make_css_component(), data) == _new_key(data)
 
-    def test_the_js_key_is_the_start_of_a_sha256(self):
+    def test_the_js_key_is_an_hmac_under_the_secret_key(self):
         data = {"note": "x"}
         assert cache_component_js_vars(_make_js_component(), data) == _new_key(data)
 
@@ -172,16 +200,95 @@ class TestVariablesRouteIsPublic:
         assert response.status_code == 200
         assert b"shared" in response.content
 
-    def test_a_guess_of_the_values_can_be_checked(self):
-        # The docs warn app authors about this. A hit confirms a guess, so with a short
-        # unknown field, trying each option reveals that field.
+    def test_the_route_sends_no_cors_header(self):
+        # The docs say that other sites can still load the URL with a tag, but cannot read it with fetch().
+        # The 404 counts too, as with that header another site could read which URLs exist.
         comp_cls = _make_css_component()
-        comp_cls.render(kwargs={"data": {"note": "x"}})
+        url = _vars_url(comp_cls, {"note": "shared"}, "css")
         client = Client()
-        right = client.get(f"/components/cache/{comp_cls.class_id}.{_new_key({'note': 'x'})}.css")
-        wrong = client.get(f"/components/cache/{comp_cls.class_id}.{_new_key({'note': 'y'})}.css")
-        assert right.status_code == 200
-        assert wrong.status_code == 404
+        found = client.get(url, headers={"Origin": "https://other.example"})
+        missing = client.get(
+            f"/components/cache/{comp_cls.class_id}.{'0' * 32}.css", headers={"Origin": "https://other.example"}
+        )
+        assert found.status_code == 200
+        assert missing.status_code == 404
+        assert "Access-Control-Allow-Origin" not in found.headers
+        assert "Access-Control-Allow-Origin" not in missing.headers
+
+    @pytest.mark.parametrize(
+        ("make_component", "ext"),
+        [(_make_css_component, "css"), (_make_js_component, "js")],
+    )
+    def test_a_guess_of_the_values_cannot_be_checked_without_the_secret_key(self, make_component, ext):
+        # Without `SECRET_KEY`, anyone could calculate the URL for values they guessed, and a 200 would
+        # confirm the guess. A short unknown field could then be found by trying each option.
+        comp_cls = make_component()
+        data = {"note": "x"}
+        page_url = _vars_url(comp_cls, data, ext)
+        client = Client()
+        assert client.get(page_url).status_code == 200
+
+        # The values are guessed right, but the key is calculated without `SECRET_KEY` or with a wrong one.
+        for guessed_key in (_plain_key(data), _new_key(data, secret=""), _new_key(data, secret=WRONG_SECRET_KEY)):
+            assert guessed_key not in page_url
+            assert client.get(f"/components/cache/{comp_cls.class_id}.{guessed_key}.{ext}").status_code == 404
+
+
+@djc_test
+class TestVariablesKeyAndSecretKey:
+    """The key comes from `SECRET_KEY`, so changing or leaving out `SECRET_KEY` must not break pages."""
+
+    @pytest.mark.parametrize(
+        ("make_component", "ext"),
+        [(_make_css_component, "css"), (_make_js_component, "js")],
+    )
+    def test_a_url_made_before_a_secret_key_change_keeps_working(self, make_component, ext):
+        comp_cls = make_component()
+        data = {"note": "rotated"}
+        with override_settings(SECRET_KEY=OLD_SECRET_KEY):
+            old_url = _vars_url(comp_cls, data, ext)
+
+        # Django's way to change `SECRET_KEY`: set the new value and list the old one in `SECRET_KEY_FALLBACKS`.
+        with override_settings(SECRET_KEY=NEW_SECRET_KEY, SECRET_KEY_FALLBACKS=[OLD_SECRET_KEY]):
+            new_url = _vars_url(comp_cls, data, ext)
+            client = Client()
+            # A page rendered before the change, or kept in a cache, still gets its values.
+            assert client.get(old_url).status_code == 200
+            assert client.get(new_url).status_code == 200
+        assert old_url != new_url
+        assert _new_key(data, secret=OLD_SECRET_KEY) in old_url
+        assert _new_key(data, secret=NEW_SECRET_KEY) in new_url
+
+    @pytest.mark.parametrize(
+        ("make_component", "ext"),
+        [(_make_css_component, "css"), (_make_js_component, "js")],
+    )
+    def test_an_empty_secret_key_does_not_break_renders(self, make_component, ext):
+        # Django raises when code reads an empty SECRET_KEY, so reading it carelessly here would
+        # make every render with these values fail in projects that leave it empty.
+        comp_cls = make_component()
+        data = {"note": "no-secret"}
+        with override_settings(SECRET_KEY=""):
+            url = _vars_url(comp_cls, data, ext)
+            assert Client().get(url).status_code == 200
+        # Everyone knows an empty secret, so the key must not be made with it.
+        assert _plain_key(data) not in url
+        assert _new_key(data, secret="") not in url
+
+    @djc_test(components_settings={"cache": "shared"}, django_settings=SHARED_CACHE_SETTINGS)
+    def test_with_an_empty_secret_key_each_process_finds_the_names_of_the_others(self, monkeypatch):
+        # Each process makes its own secret, so two processes calculate different keys for the same values.
+        # The route only looks a key up in the shared cache, so both keys keep working.
+        comp_cls = _make_css_component()
+        data = {"note": "two-processes"}
+        with override_settings(SECRET_KEY=""):
+            first_url = _vars_url(comp_cls, data, "css")
+            monkeypatch.setattr(dependencies_module, "_PROCESS_VARIABLES_SECRET", "another-process")
+            second_url = _vars_url(comp_cls, data, "css")
+            client = Client()
+            assert first_url != second_url
+            assert client.get(first_url).status_code == 200
+            assert client.get(second_url).status_code == 200
 
 
 @djc_test

@@ -123,7 +123,9 @@
 
     The key is now 128 bits long, which puts both out of reach in practice. Pages that use these values get a little larger.
 
-    The values stay public: anyone with their URL can read them, with no login, and anyone can check whether a guess at them is right. So never return a secret from these methods. Read more in [JS and CSS variables are public](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_js_css_variables/#js-and-css-variables-are-public).
+    Nobody can check a guess at your values through their URL anymore. Before, anyone could work out the URL for values that they guessed, and the response from that URL told them whether some visitor's page used those values. The URL now depends on your `SECRET_KEY`. After you change `SECRET_KEY`, new pages get new URLs, and the URLs in older pages keep working for as long as the server still has their values in its cache. If `SECRET_KEY` is empty, each server process makes its own random secret, and pages keep working. Tests that compare rendered HTML with these URLs need a fixed `SECRET_KEY`.
+
+    The values stay public: anyone with their URL can read them, with no login, and so can other websites that load the URL in a page. So never return a secret from these methods. Read more in [JS and CSS variables are public](https://django-components.github.io/django-components/latest/concepts/fundamentals/html_js_css_variables/#js-and-css-variables-are-public).
 
     CSS variables are now written from the JSON form of the values, so `(1, 2)` gives `[1, 2]`, and a key of `True` or `None` gives `--true` or `--null`. If your CSS uses `var(--True)`, use a string key.
 

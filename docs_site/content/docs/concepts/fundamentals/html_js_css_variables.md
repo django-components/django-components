@@ -454,7 +454,8 @@ Use the same variable names as in the dictionary returned from [`get_css_data()`
     }
     ```
 
-    This stylesheet with the variables is cached on the server based on the variables' names and values.
+    This stylesheet with the variables is cached on the server based on the variables' names and values,
+    and on your `SECRET_KEY`.
 
     This stylesheet is then added to the CSS dependencies of the component (as if added to `Component.Media.css`).
     So the variables stylesheet will be loaded with the rest of the component's CSS.
@@ -479,18 +480,33 @@ the browser can load them:
 /components/cache/MyTable_a1b2c3.1f3a9c0d7b2e4f6089a1c3d5e7f90b12.js
 ```
 
+The long part of the URL is the 32 characters after the component name.
+
 That URL needs no login, even when the page that uses it does. This is what it means for your values:
 
 - **Anyone who has the URL can read them.** The URL is in the HTML of the page, so whoever sees that HTML
   has it, and so does anything that records the page or the URL, such as a log or a browser extension.
+- **Other websites that know the URL can use it too.** Another site can load the URL in its own pages with
+  a `<script>` or `<link>` tag, and scripts in those pages can then read the values. Django Components adds
+  no `Access-Control-Allow-Origin` header, so other sites cannot read the URL with `fetch()` unless your
+  app adds that header, for example with django-cors-headers. The tags do not need that header.
 - **Trying random URLs does not find them.** The long part of the URL has too many possible values to try.
-- **Someone who can guess the values can check them.** That part of the URL is calculated from the values
-  alone, so anyone can work it out for values that they guess, and a successful response confirms the guess.
-  This also works when only part of the values is unknown. If the rest can be guessed and the unknown part
-  is short, such as a 4-digit code, trying each option reveals it. So keep such values out of these methods.
+- **Guessing the values does not find them either.** The long part of the URL is made from the values and
+  your [`SECRET_KEY`](https://docs.djangoproject.com/en/stable/ref/settings/#secret-key), so without
+  `SECRET_KEY` nobody can work it out from values that they guess.
 
 To show private data to a logged-in user, pass it through
 [`get_template_data()`][Component.get_template_data], so that it stays in the page that your view protects.
+
+When you change `SECRET_KEY`, new pages get new URLs. The URLs in pages rendered before the change keep
+working for as long as the server still has their values in its cache. If you change `SECRET_KEY` because it
+leaked, also clear [`COMPONENTS.cache`][ComponentsSettings.cache] if you set it, so that those old URLs stop
+working.
+
+If `SECRET_KEY` is empty, each server process makes a random secret of its own when it starts, so the same
+values get a different URL in each process. Pages keep working as before. If several processes share one
+cache through [`COMPONENTS.cache`][ComponentsSettings.cache], that cache then holds one copy of the same
+values for each process.
 
 ## Accessing component inputs
 
