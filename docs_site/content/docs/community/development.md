@@ -866,7 +866,7 @@ The Discord webhook URLs are stored as secrets in the GitHub repository.
 
 django-components is in maintenance mode. We accept these changes, in priority order:
 
-1. Security fixes. To report a vulnerability, [open a private security advisory](https://github.com/django-components/django-components/security/advisories/new) instead of a public issue.
+1. Security fixes. To report a vulnerability, [open a private security advisory](https://github.com/django-components/django-components/security/advisories/new) instead of a public issue. The [security policy](https://github.com/django-components/django-components/blob/master/SECURITY.md) has the details.
 2. Support for new Django and Python versions.
 3. Bug fixes.
 4. Documentation fixes.

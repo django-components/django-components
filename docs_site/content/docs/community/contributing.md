@@ -4,6 +4,11 @@ django-components is what it is today because of awesome people like you who've 
 
 Want to get involved? Here's how:
 
+## Found a vulnerability?
+
+Please don't open a public issue. [Report it privately](https://github.com/django-components/django-components/security/advisories/new) instead.
+The [security policy](https://github.com/django-components/django-components/blob/master/SECURITY.md) lists what to include and what happens next.
+
 ## Found a bug?
 
 Just drop us [an issue](https://github.com/django-components/django-components/issues/new/choose)
