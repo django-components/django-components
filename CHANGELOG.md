@@ -43,6 +43,13 @@
       any name starting with `on`, `srcdoc`, `innerHTML`, `outerHTML`, `data-djc`, names starting with `data-djc-`,
       and `djc-render-id`. Control characters such as a form feed and quotes are refused in every name.
 
+    - `{% html_attrs %}`, `{% attrs %}`, `AttrsDict`, `format_attributes()` and `Script` and `Style` tags now
+      escape an attribute value marked safe, such as the result of `mark_safe()` or `format_html()`. Before, a `"`
+      in it ended the attribute and could add another one, such as `onmouseover`. django-components first turns
+      the character references in such a value back into characters, so `mark_safe("Tom &amp; Jerry")` still
+      shows `Tom & Jerry`. An ESC character in any attribute value is now written as `&#27;`, so a page read as
+      ISO-2022-JP keeps its quotes.
+
     - The `fallback` argument of `ErrorFallback` is now escaped.
 
     - Component JS and CSS files served from `/components/cache/` now say `charset=utf-8`.
@@ -67,6 +74,10 @@
 
     A rendered page stored in a cache may lose its `get_css_data()` styles until that entry expires, because the
     cache keys for those styles changed. Clear the cache when you upgrade if you store full renders.
+
+    If you used one value marked safe to write several attributes, such as `mark_safe('a" data-x="b')`, pass
+    each attribute as its own key instead. The browser reads other marked-safe values as before, but the HTML
+    may be spelled differently, for example `&#x27;` for `'`, so HTML snapshots in your tests may need updating.
 
     If your `fallback` contains HTML, mark it as safe, or use the `fallback` slot:
 

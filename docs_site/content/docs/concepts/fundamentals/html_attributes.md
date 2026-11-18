@@ -126,6 +126,9 @@ the tag above renders:
 ```
 
 Attribute values are escaped. `True` renders a bare boolean attribute, while `False` and `None` are omitted.
+A value marked safe, such as the result of `mark_safe()` or `format_html()`, is escaped too, because a `"` in it
+would end the attribute. Such a value is HTML, so django-components first turns its character references back
+into characters: `mark_safe("Tom &amp; Jerry")` still shows `Tom & Jerry`, not `Tom &amp; Jerry`.
 Attribute names must be non-empty strings and cannot contain whitespace, control characters, quotes, `=`, `/`,
 `>`, `<`, or the template-comment opener (`{` followed by `#`). Names that can run code have
 [their own rule](#attribute-names-that-can-run-code).
@@ -520,6 +523,14 @@ Which will output:
 ```python
 'class="my-class text-red pa-4" data-id="123" required'
 ```
+
+Every value is escaped, including a value marked safe with `mark_safe()` or `format_html()`.
+
+!!! warning
+
+    Django's own `{{ }}` does not escape a value marked safe, so `<div title="{{ value }}">` lets a `"` in
+    marked-safe text end the attribute. To write such a value into an attribute, use `{% attrs %}`,
+    `{% html_attrs %}` or `format_attributes()`.
 
 !!! note
 

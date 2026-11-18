@@ -8,10 +8,11 @@ from functools import lru_cache
 from typing import Any, Literal, TypeAlias
 
 from django.template import Context
-from django.utils.html import conditional_escape, format_html
+from django.utils.html import conditional_escape
 from django.utils.safestring import SafeString, mark_safe
 
 from django_components.node import BaseNode
+from django_components.util.html_escape import escape_attribute_value
 from django_components.util.misc import TrustedAttrName, is_script_capable_attr_name
 
 ClassValue: TypeAlias = Sequence["ClassValue"] | str | dict[str, bool]
@@ -319,6 +320,11 @@ def format_attributes(attributes: Mapping[str, Any]) -> str:
     and `style` accept structured values and are normalized before rendering.
     Empty normalized `class` and `style` values are omitted.
 
+    Every value is escaped, including a value marked safe with `mark_safe()` or `format_html()`,
+    because a `"` in it would end the attribute. Such a value is HTML, so its character references
+    are first turned back into characters: `format_attributes({"title": mark_safe("Tom &amp; Jerry")})`
+    returns `'title="Tom &amp; Jerry"'`, not `'title="Tom &amp;amp; Jerry"'`.
+
     Names that run code or load a page, such as `onclick` or `srcdoc`, raise
     `ValueError` unless wrapped in [`TrustedAttrName`][TrustedAttrName], so that
     data cannot choose one.
@@ -369,7 +375,10 @@ def format_author_attributes(attributes: Mapping[str, Any]) -> str:
         if value is True:
             attr_list.append(conditional_escape(key))
         else:
-            attr_list.append(format_html('{}="{}"', key, value))
+            # Escape the value even when it is marked safe. `format_html()` and
+            # `conditional_escape()` pass a `SafeString` through, so a `"` in it would end the
+            # attribute and add new ones.
+            attr_list.append(f'{conditional_escape(key)}="{escape_attribute_value(value)}"')
 
     return mark_safe(SafeString(" ").join(attr_list))
 

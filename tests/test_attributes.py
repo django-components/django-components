@@ -1,16 +1,21 @@
 import json
 import re
+from html.parser import HTMLParser
 from types import MappingProxyType
 from typing import Any
 
 import pytest
 from django.template import Context, Template, TemplateSyntaxError
+from django.utils.functional import lazy
+from django.utils.html import format_html
 from django.utils.safestring import SafeString, mark_safe
+from django.utils.translation import gettext_lazy
 from pytest_django.asserts import assertHTMLEqual
 
 from django_components import AttrsDict, Component, Script, Style, TrustedAttrName, compose_attrs, register, types
 from django_components.attributes import format_attributes, merge_attributes, parse_string_style
 from django_components.testing import djc_test
+from django_components.util.html_escape import decode_attribute_entities
 
 from .testutils import PARAMETRIZE_CONTEXT_BEHAVIOR, setup_test_config
 
@@ -30,8 +35,9 @@ class TestFormatAttributes:
             format_attributes({"x-on:click": "bar", "@click": "'baz'"}) == 'x-on:click="bar" @click="&#x27;baz&#x27;"'
         )
 
-    def test_does_not_escape_special_characters_if_safe_string(self):
-        assert format_attributes({"foo": mark_safe("'bar'")}) == "foo=\"'bar'\""
+    def test_escapes_special_characters_if_safe_string(self):
+        # A value marked safe is still text inside the quotes, so it is escaped too.
+        assert format_attributes({"foo": mark_safe("'bar'")}) == 'foo="&#x27;bar&#x27;"'
 
     def test_result_is_safe_string(self):
         result = format_attributes({"foo": mark_safe("'bar'")})
@@ -1157,3 +1163,206 @@ class TestAttributeNamesFromData:
         style = Style(content=None, url="/a.css", attrs={"onload": "go()"})
         assert 'onload="go()"' in script.render()
         assert 'onload="go()"' in style.render()
+
+
+# A value marked safe that tries to end the attribute it is written into and add another one.
+SAFE_BREAKOUT = '<b title="x">ok</b>" data-marker="added'
+
+
+class _HasHtml:
+    def __html__(self) -> str:
+        return SAFE_BREAKOUT
+
+
+class _StrIsSafe:
+    def __str__(self) -> str:
+        return mark_safe(SAFE_BREAKOUT)
+
+
+class _SafeStringOverrides(SafeString):
+    # A marked-safe string whose methods try to hand the escape something other than its text.
+    def replace(self, *args: Any, **kwargs: Any) -> "_SafeStringOverrides":
+        return self
+
+    def __str__(self) -> str:
+        return self
+
+    def __html__(self) -> "_SafeStringOverrides":
+        return self
+
+
+def _start_tag_attrs(html: str) -> list[tuple[str, str | None]]:
+    # Read the first start tag the way an HTML parser does, to see which attributes it really has.
+    found: list[list[tuple[str, str | None]]] = []
+
+    class _Parser(HTMLParser):
+        def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+            found.append(attrs)
+
+    _Parser().feed(html)
+    return found[0]
+
+
+@djc_test
+class TestAttributeValuesMarkedSafe:
+    @pytest.mark.parametrize(
+        "value",
+        [
+            mark_safe(SAFE_BREAKOUT),
+            format_html("{}" + SAFE_BREAKOUT, "x"),
+            mark_safe(gettext_lazy(SAFE_BREAKOUT)),
+            lazy(lambda: mark_safe(SAFE_BREAKOUT), str)(),
+            lazy(lambda: mark_safe(SAFE_BREAKOUT), SafeString)(),
+            _HasHtml(),
+            _StrIsSafe(),
+            _SafeStringOverrides(SAFE_BREAKOUT),
+        ],
+        ids=[
+            "mark_safe",
+            "format_html",
+            "mark_safe_gettext_lazy",
+            "lazy_str",
+            "lazy_safe_string",
+            "has_html",
+            "str_is_safe",
+            "safe_string_overrides",
+        ],
+    )
+    def test_value_cannot_end_the_attribute(self, value):
+        rendered = f"<div {format_attributes({'title': value})}></div>"
+
+        attrs = _start_tag_attrs(rendered)
+        assert [name for name, _ in attrs] == ["title"]
+        assert (attrs[0][1] or "").endswith(SAFE_BREAKOUT)
+
+    @pytest.mark.parametrize(
+        "template",
+        [
+            "<div {% html_attrs attrs %}></div>",
+            "<div {% html_attrs title=v %}></div>",
+            "<div {% html_attrs ...attrs %}></div>",
+            "<div {% attrs attrs %}></div>",
+            "<div {% attrs {'class': v} %}></div>",
+            "<div {% html_attrs class=v %}></div>",
+        ],
+    )
+    def test_tags_escape_value_marked_safe(self, template):
+        value = mark_safe(SAFE_BREAKOUT)
+        rendered = Template("{% load component_tags %}" + template).render(
+            Context({"attrs": {"title": value}, "v": value})
+        )
+
+        attrs = dict(_start_tag_attrs(rendered))
+        assert "data-marker" not in attrs
+        assert SAFE_BREAKOUT in attrs.values()
+
+    def test_class_string_marked_safe_is_escaped(self):
+        # The tags turn `class` into plain text first, but `format_attributes()` keeps a string as it is.
+        attrs = _start_tag_attrs(f"<div {format_attributes({'class': mark_safe(SAFE_BREAKOUT)})}></div>")
+
+        assert attrs == [("class", SAFE_BREAKOUT)]
+
+    def test_merge_attributes_value_marked_safe_is_escaped_when_formatted(self):
+        merged = merge_attributes({"title": mark_safe(SAFE_BREAKOUT)}, {"id": "a"})
+
+        attrs = _start_tag_attrs(f"<div {format_attributes(merged)}></div>")
+        assert attrs == [("title", SAFE_BREAKOUT), ("id", "a")]
+
+    def test_script_and_style_attrs_escape_value_marked_safe(self):
+        value = mark_safe(SAFE_BREAKOUT)
+        script = Script(content=None, url=mark_safe('/a.js" data-marker="added'), attrs={"title": value})
+        style = Style(content=None, url=mark_safe('/a.css" data-marker="added'), attrs={"title": value})
+
+        assert _start_tag_attrs(script.render()) == [("title", SAFE_BREAKOUT), ("src", '/a.js" data-marker="added')]
+        assert _start_tag_attrs(style.render()) == [
+            ("title", SAFE_BREAKOUT),
+            ("rel", "stylesheet"),
+            ("href", '/a.css" data-marker="added'),
+        ]
+
+    def test_component_media_tags_escape_value_marked_safe(self):
+        # `Component.Media` tags are parsed and written again, so a value in them goes through the same escape.
+        class MediaComponent(Component):
+            template = """
+                {% load component_tags %}
+                {% component_js_dependencies %}
+                {% component_css_dependencies %}
+            """
+
+            class Media:
+                js = [
+                    '/a.js?x="y"&z=1',
+                    Script(content=None, url=mark_safe('/b.js" data-marker="added')),
+                ]
+                css = [Style(content=None, url="/c.css", attrs={"title": mark_safe(SAFE_BREAKOUT)})]
+
+        rendered = MediaComponent.render()
+
+        assert 'src="/a.js?x=&quot;y&quot;&amp;z=1"' in rendered
+        assert 'src="/b.js&quot; data-marker=&quot;added"' in rendered
+        assert 'title="&lt;b title=&quot;x&quot;&gt;ok&lt;/b&gt;&quot; data-marker=&quot;added"' in rendered
+
+    def test_carriage_return_reference_still_reads_as_carriage_return(self):
+        # The browser turns a raw CR into LF, so a CR written as `&#13;` must stay a reference.
+        value = mark_safe("a&#13;&#10;b\r\nc\rd")
+
+        assert format_attributes({"title": value}) == 'title="a&#13;\nb\nc\nd"'
+
+    def test_esc_is_written_as_reference(self):
+        # A raw ESC can change how a page read as ISO-2022-JP decodes the closing quote.
+        assert format_attributes({"a": "x\x1by", "b": mark_safe("x&#27;y")}) == 'a="x&#27;y" b="x&#27;y"'
+
+    def test_entities_in_value_marked_safe_are_not_escaped_twice(self):
+        # Marked-safe text is HTML, so `&amp;` already means `&`. The browser must read the same text.
+        value = mark_safe("Tom &amp; Jerry &quot;quoted&quot; &#x26; &copy;")
+
+        assert format_attributes({"title": value}) == 'title="Tom &amp; Jerry &quot;quoted&quot; &amp; \u00a9"'
+
+    def test_nested_template_value_is_escaped_once(self):
+        # A quoted value with surrounding text renders as a template, which escapes `{{ name }}`
+        # and marks the result safe.
+        template = Template('{% load component_tags %}<div {% html_attrs title="Hi {{ name }}" %}></div>')
+
+        rendered = template.render(Context({"name": 'Tom & "J"'}))
+
+        assert rendered == '<div title="Hi Tom &amp; &quot;J&quot;"></div>'
+        assert _start_tag_attrs(rendered) == [("title", 'Hi Tom & "J"')]
+
+    def test_plain_values_are_escaped_as_before(self):
+        # Text that is not marked safe is escaped as it is, so `&amp;` in it shows as `&amp;`.
+        assert format_attributes({"title": "Tom &amp; Jerry", "data-n": 5}) == (
+            'title="Tom &amp;amp; Jerry" data-n="5"'
+        )
+
+
+@djc_test
+class TestDecodeAttributeEntities:
+    @pytest.mark.parametrize(
+        ("html", "expected"),
+        [
+            ("plain", "plain"),
+            ("a &amp; b", "a & b"),
+            ("&lt;&gt;&quot;&#39;&#x27;", "<>\"''"),
+            # A legacy name without `;` stays as typed before `=` or a letter or digit, as in a URL.
+            ("?a=1&copy=2", "?a=1&copy=2"),
+            ("&copyx", "&copyx"),
+            ("&copy x", "\u00a9 x"),
+            ("&amp", "&"),
+            # Numeric references read as the browser reads them.
+            ("&#0;", "\ufffd"),
+            ("&#x110000;", "\ufffd"),
+            ("&#xd800;", "\ufffd"),
+            ("&#128;", "\u20ac"),
+            ("&#129;", "\x81"),
+            ("&#1;", "\x01"),
+            ("&#" + "0" * 5000 + "106;", "j"),
+            ("&#" + "9" * 5000 + ";", "\ufffd"),
+            ("&unknown;", "&unknown;"),
+        ],
+    )
+    def test_decodes_as_the_browser_does(self, html, expected):
+        assert decode_attribute_entities(html) == expected
+
+    def test_returns_exact_str(self):
+        assert type(decode_attribute_entities(mark_safe("a"))) is str
+        assert type(decode_attribute_entities(mark_safe("a &amp; b"))) is str
