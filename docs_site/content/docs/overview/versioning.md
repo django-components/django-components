@@ -38,9 +38,10 @@ release, with two exceptions:
 
 - A minor release can drop a Django or Python version that has reached
   its end of life (see [Django and Python](#django-and-python)).
-- A security fix can refuse input that earlier releases accepted, when
-  that is needed to close a security hole. The release notes for that
-  release say so.
+- A security fix can refuse input that earlier releases accepted, or
+  handle it differently (for example, render it escaped), when that is
+  needed to close a security hole. The release notes for that release
+  say so.
 
 Any other change that would break the public API waits for 2.0.0.
 
