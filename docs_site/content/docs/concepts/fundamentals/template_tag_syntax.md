@@ -73,9 +73,13 @@ In the example above, `(user.name.upper())` is first evaluated as a Python expre
 
 To build text in an expression, use an f-string, such as `(f"Hello {name}")`.
 
-Expressions can't call `format()` or `format_map()` on text, and raise `SecurityError` if they try. These methods follow attribute paths written in the text, so the text could read values the expression is not allowed to read.
+Expressions raise `SecurityError` when they try one of these other ways to format text:
 
-Expressions also can't call any method on a Django lazy string. That is the result of `_("...")`, `gettext_lazy()` and similar. Put it in an f-string to get plain text:
+- `format()` or `format_map()` on text. These methods read the attributes that the placeholders name, such as `{0.secret}`, so the text could read values the expression itself can't read.
+- Django's `format_html()`, `format_html_join()` or `format_lazy()`, which read placeholders the same way. This includes a function from the context that wraps one of them, for example with `functools.partial()`, `functools.lru_cache()` or Django's `lazy()`.
+- Any method of a Django lazy string. A lazy string is the result of `_("...")`, `gettext_lazy()` and similar.
+
+To use string methods on a lazy string, put it in an f-string first, which gives plain text:
 
 ```django
 {% with greeting=_("Hello") %}
@@ -84,7 +88,15 @@ Expressions also can't call any method on a Django lazy string. That is the resu
 {% endwith %}
 ```
 
-An f-string only places values next to the text. If the text has its own placeholders, fill them in `get_template_data()`.
+An f-string only places values next to the text. If the text has its own placeholders, such as a translated `"Hello {name}"`, fill them in `get_template_data()`. Call `format_html()` there too:
+
+```python
+def get_template_data(self, args, kwargs, slots, context):
+    greeting = format_html(_("Hello {name}"), name=kwargs["name"])
+    return {"greeting": greeting}
+```
+
+Expressions can still call your own functions from the context, and these checks don't look inside them. If such a function formats text that the template passes to it, the template chooses the placeholders, so keep that formatting in `get_template_data()` as well.
 
 ### Best practices
 

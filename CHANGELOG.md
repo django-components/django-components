@@ -163,14 +163,18 @@
 
 #### Fix
 
-- **Python expressions can no longer call methods on Django lazy strings**
+- **Python expressions refuse Django lazy string methods and Django's formatting functions**
 
-    A lazy string is the result of `_("...")`, `gettext_lazy()` and similar. Its methods could run `format()`,
-    which follows attribute paths written in the text, so an expression could read values it must not reach,
-    such as settings. Expressions also refuse calls to `format_html()`, `format_html_join()` and `format_lazy()`.
+    Calling `format()` on text reads the attributes that its placeholders name, so the text could read values
+    such as settings. djc-core refuses `format()` on plain text, but a Django lazy string, the result of
+    `_("...")`, `gettext_lazy()` and similar, could still run it through any of its methods. Expressions now
+    raise `SecurityError` when they call a method of a lazy string, or `format_html()`, `format_html_join()`
+    or `format_lazy()`. This includes a function from the context that wraps one of these, for example with
+    `functools.partial()`, `functools.lru_cache()` or Django's `lazy()`.
 
-    To call a method on a lazy string, turn it into plain text with an f-string first: `(f"{text}".upper())`.
-    Format text with placeholders in `get_template_data()`.
+    To use string methods on a lazy string, put it in an f-string first: `(f"{text}".upper())`. To fill in
+    placeholders, or to call `format_html()`, do it in `get_template_data()`. The error message says which
+    of these to do.
 
     Also upgrade to djc-core 1.4.0 or later, which refuses `format()` on plain text.
 

@@ -15,10 +15,11 @@ from typing import (
 from django.template import NodeList, Variable, VariableDoesNotExist
 from django.template.base import Parser, Token
 from django.template.exceptions import TemplateSyntaxError
-from django.utils.functional import Promise
+from django.utils.functional import Promise, lazystr
 from django.utils.html import format_html, format_html_join
 from django.utils.text import format_lazy
-from djc_core.safe_eval import safe_eval
+from djc_core.safe_eval import SecurityError, safe_eval
+from djc_core.safe_eval.sandbox import is_safe_callable
 from djc_core.template_parser import GenericTag, ParserConfig, TagAttr, compile_tag, parse_tag
 from djc_core.template_parser.parse import TagUnion
 
@@ -229,8 +230,22 @@ def resolve_translation(
 # by identity, because a callable that a template can reach may not be hashable.
 DJANGO_FORMAT_FUNCTIONS = (format_html, format_html_join, format_lazy)
 
+# Every method of a lazy string is a copy of one function, made from one code object. It takes a
+# keyword argument that picks the real method to run, so any copy of it can run `format`. Comparing
+# the code object also catches a copy taken from the class, which is not bound to a lazy string.
+LAZY_STRING_METHOD_CODE = type(lazystr("")).upper.__code__
 
-def is_safe_expression_attribute(obj: Any, attr: str) -> bool:  # noqa: ARG001
+# How many wrapped functions the callable check follows before it refuses the call. Real wrappers
+# such as `lazy()`, `keep_lazy()`, `lru_cache()` or a `functools.partial` add one or two steps.
+MAX_WRAPPED_FUNCTIONS = 32
+
+LAZY_STRING_ADVICE = (
+    "A Django lazy string is the result of _(), gettext_lazy() and similar. "
+    'Turn it into plain text with an f-string first, such as f"{text}".upper().'
+)
+
+
+def check_expression_attribute(obj: Any, attr: str) -> bool:
     """
     Refuse reading any attribute of a Django lazy string, or of its class, in a Python expression.
 
@@ -241,30 +256,100 @@ def is_safe_expression_attribute(obj: Any, attr: str) -> bool:  # noqa: ARG001
     The whole object is refused, not only those two names. A forwarding method accepts a keyword
     argument that picks the method to run, so any of them can run `format`, and `safe_eval` does
     not show keyword arguments to its hooks.
+
+    Raises `SecurityError` with a message that says what to do instead. Returns `True` otherwise,
+    which tells `safe_eval` to go on with its own checks.
     """
+    if _is_lazy_string_or_class(obj):
+        raise SecurityError(f"Expressions can't read '{attr}' on a Django lazy string. {LAZY_STRING_ADVICE}")
+    return True
+
+
+def check_expression_callable(func: Callable) -> bool:
+    """
+    Refuse calling a method of a Django lazy string or a Django formatting function in a Python expression.
+
+    This covers what `check_expression_attribute` cannot see: a function that the app placed in the
+    context. The check follows what the function wraps, through `functools.partial`, the function
+    of a bound method (`__func__`) and `functools.wraps` (`__wrapped__`), because Django's `lazy()`
+    and `keep_lazy()` and Python's `lru_cache()` hide the function they call that way. At each step
+    it refuses:
+
+    - a method bound to a lazy string, or a copy of the lazy string method taken from its class;
+    - a function in `DJANGO_FORMAT_FUNCTIONS`, which follow paths written in the text they format;
+    - anything that the `safe_eval` check itself refuses, such as `str.format`.
+
+    Raises `SecurityError` with a message that says what to do instead, and also when `func` wraps
+    more than `MAX_WRAPPED_FUNCTIONS` functions. Returns `True` otherwise, which tells `safe_eval`
+    to go on with its own checks of `func`.
+    """
+    # Keyed by `id()`, and holding each object so that its id cannot be reused by another object
+    # that a `__wrapped__` lookup creates while this check runs.
+    seen: dict[int, Any] = {}
+    pending = [func]
+    while pending:
+        step = pending.pop()
+        # A function that wraps itself, directly or further down, adds nothing new to check.
+        if id(step) in seen:
+            continue
+        seen[id(step)] = step
+        # Refuse rather than stop looking, so a long chain cannot hide a refused function. `seen`
+        # holds `func` itself as well as the functions it wraps.
+        if len(seen) > MAX_WRAPPED_FUNCTIONS + 1:
+            raise SecurityError(
+                f"Expressions can't call this function, because it wraps more than {MAX_WRAPPED_FUNCTIONS} "
+                "other functions, too many to check."
+            )
+
+        _check_one_callable(step, is_wrapped=step is not func)
+
+        # Look at every way `step` can pass the call on, because an object may have more than one.
+        if isinstance(step, partial):
+            pending.append(step.func)
+        for name in ("__func__", "__wrapped__"):
+            inner = getattr(step, name, None)
+            if inner is not None:
+                pending.append(inner)
+    return True
+
+
+def _check_one_callable(step: Any, *, is_wrapped: bool) -> None:
+    # `step` is the function the expression calls, or, when `is_wrapped`, one that it wraps.
+    if _is_lazy_string_or_class(getattr(step, "__self__", None)) or (
+        getattr(step, "__code__", None) is LAZY_STRING_METHOD_CODE
+    ):
+        raise SecurityError(f"Expressions can't call methods of a Django lazy string. {LAZY_STRING_ADVICE}")
+
+    for formatter in DJANGO_FORMAT_FUNCTIONS:
+        if step is formatter:
+            name = f"{formatter.__name__}()"
+            refused = f"this function, because it calls {name}, which" if is_wrapped else f"{name}, because it"
+            raise SecurityError(
+                f"Expressions can't call {refused} follows attribute paths written in the text. "
+                f"Call {name} in get_template_data() and pass the result to the template."
+            )
+
+    # `safe_eval` checks the called function itself after this hook, with its own message, so
+    # only the functions that it wraps are checked here.
+    if is_wrapped:
+        is_safe, replacement = is_safe_callable(step)
+        if not is_safe:
+            message = f"Expressions can't call this function, because it calls {_describe_callable(step)}"
+            raise SecurityError(f"{message}. {replacement}" if replacement else f"{message}.")
+
+
+def _is_lazy_string_or_class(obj: Any) -> bool:
     # `isinstance` looks at `__class__`, so a `SimpleLazyObject` around a lazy string matches too.
     # The class counts as well, because its methods take the lazy string as their first argument.
-    is_lazy = issubclass(obj, Promise) if isinstance(obj, type) else isinstance(obj, Promise)
-    return not is_lazy
+    return issubclass(obj, Promise) if isinstance(obj, type) else isinstance(obj, Promise)
 
 
-def is_safe_expression_callable(func: Callable) -> bool:
-    """
-    Refuse calling a method of a Django lazy string in a Python expression.
-
-    This covers what `is_safe_expression_attribute` cannot see: a bound method that the app
-    placed in the context, one wrapped in `functools.partial`, and one handed out by an object
-    that forwards attribute reads. It also refuses the Django functions in
-    `DJANGO_FORMAT_FUNCTIONS`, which format the text they are given.
-    """
-    # A partial calls the function it wraps, so it is exactly as safe as that function.
-    while isinstance(func, partial):
-        func = func.func
-
-    if any(func is formatter for formatter in DJANGO_FORMAT_FUNCTIONS):
-        return False
-
-    return not isinstance(getattr(func, "__self__", None), Promise)
+def _describe_callable(obj: Any) -> str:
+    # A short name for messages. `repr()` could run app code and print a long text.
+    name = getattr(obj, "__qualname__", None)
+    if not isinstance(name, str):
+        name = type(obj).__qualname__
+    return f"'{name}'"
 
 
 python_expression_cache: dict[str, Callable[[Mapping[str, Any]], Any]] = {}
@@ -281,8 +366,8 @@ def resolve_python_expression(
     if code not in python_expression_cache:
         python_expression_cache[code] = safe_eval(
             code,
-            validate_attribute=is_safe_expression_attribute,
-            validate_callable=is_safe_expression_callable,
+            validate_attribute=check_expression_attribute,
+            validate_callable=check_expression_callable,
         )
 
     expr_resolver = python_expression_cache[code]
