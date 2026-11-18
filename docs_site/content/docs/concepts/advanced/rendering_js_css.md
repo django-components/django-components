@@ -667,7 +667,7 @@ So on a page without a nonce, even on a site with no policy at all, a fragment's
 - Serve the file from your `STATIC_URL`.
 - Give the page a nonce, as described above. On a page with a nonce, a fragment loads every script it names.
 
-What this can't cover: injected HTML can still start your page's components on elements it adds, with data files your server already wrote, and load any file under `STATIC_URL`. A library there that acts on the HTML of the page, such as htmx or Alpine.js, then does what the injected HTML tells it. If visitors can upload files that your site serves as JavaScript from its own domain, injected HTML can load those too, through a copy of the dependency manager uploaded into a folder named `django_components`. Give pages that receive fragments a nonce, and serve uploads from another domain.
+What this can't cover: injected HTML can still start your page's components on elements it adds, with data files your server already wrote, and load any file under `STATIC_URL`. Those data files include ones holding `get_js_data()` values that another visitor's request chose, so a component can run with that visitor's values on the page. A library there that acts on the HTML of the page, such as htmx or Alpine.js, then does what the injected HTML tells it. If visitors can upload files that your site serves as JavaScript from its own domain, injected HTML can load those too, through a copy of the dependency manager uploaded into a folder named `django_components`. Give pages that receive fragments a nonce, and serve uploads from another domain.
 
 ### What the nonce check can't cover
 
