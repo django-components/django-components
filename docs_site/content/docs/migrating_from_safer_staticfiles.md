@@ -4,7 +4,7 @@ This guide is for you if you're upgrating django_components to v0.100 or later
 from older versions.
 
 In version 0.100, we changed how components' static JS and CSS files are handled.
-See more in the ["Static files" section](https://github.com/django-components/django-components/tree/master/sampleproject).
+See more in the ["Static files" section](overview/security_notes.md#static-files) of the security notes.
 
 Migration steps:
 
