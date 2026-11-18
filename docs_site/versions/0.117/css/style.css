@@ -1,0 +1,16 @@
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: bold !important;
+}
+
+.md-typeset h2 {
+  border-top: 1px solid var(--md-typeset-color);
+  padding-top: 40px;
+}
+
+.md-nav__item--section {
+  margin-top: 32px;
+}
