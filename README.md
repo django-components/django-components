@@ -1,3 +1,9 @@
+> ## Citry, a Python frontend framework, is the successor to django-components
+>
+> In Citry, as in django-components, a component is a Python class with its own template, JavaScript, and CSS. Templates use HTML tags such as `<c-if>` and `<c-for>` instead of Django template tags. Citry has reached 1.0.0 and works with Django. django-components will still receive security updates and stay compatible with supported Django and Python versions. The migration guide shows how to move a project to Citry one component at a time, rewriting each template as you go.
+>
+> **[Read about Citry](https://citry.dev/)** · **[Migrate from django-components](https://citry.dev/guides/migrate-from-django-components/)**
+
 # <img src="https://raw.githubusercontent.com/django-components/django-components/master/assets/logo/logo-black-on-white.svg" alt="django-components" style="max-width: 100%; background: white; color: black;">
 
 [![PyPI - Version](https://img.shields.io/pypi/v/django-components)](https://pypi.org/project/django-components/) [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/django-components)](https://pypi.org/project/django-components/) [![PyPI - License](https://img.shields.io/pypi/l/django-components)](https://github.com/django-components/django-components/blob/master/LICENSE/) [![PyPI - Downloads](https://img.shields.io/pypi/dm/django-components)](https://pypistats.org/packages/django-components) [![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/django-components/django-components/tests.yml)](https://github.com/django-components/django-components/actions/workflows/tests.yml) [![asv](https://img.shields.io/badge/benchmarked%20by-asv-blue.svg?style=flat)](https://django-components.github.io/django-components/benchmarks/)[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?logo=discord&logoColor=white)](https://discord.gg/NaQ8QPyHtD)
