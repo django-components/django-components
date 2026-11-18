@@ -1,6 +1,13 @@
 ---
 title: Welcome to Django Components
+description: django-components combines Django's templating system with the modularity seen in modern frontend frameworks like Vue or React.
 ---
+
+!!! info banner "Citry, a Python frontend framework, is the successor to django-components"
+
+    In Citry, as in django-components, a component is a Python class with its own template, JavaScript, and CSS. Templates use HTML tags such as `<c-if>` and `<c-for>` instead of Django template tags. Citry has reached 1.0.0 and works with Django. The migration guide shows how to move a project to Citry one component at a time, rewriting each template as you go.
+
+    **[Read about Citry](https://citry.dev/)** · **[Migrate from django-components](https://citry.dev/guides/migrate-from-django-components/)**
 
 <img src="https://raw.githubusercontent.com/django-components/django-components/master/assets/logo/logo-black-on-white.svg" alt="django-components" style="max-width: 100%; background: white; color: black;">
 
