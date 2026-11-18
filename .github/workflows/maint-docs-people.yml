@@ -12,12 +12,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  update-people:
+  # Builds the page. It installs and runs third-party packages, so it has no
+  # secrets and only reads the repository. It hands the finished page to the
+  # next job as an artifact.
+  generate:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
+    outputs:
+      changed: ${{ steps.people.outputs.changed }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -33,8 +40,121 @@ jobs:
         run: |
           uv sync --group dev
 
+      # Fetches the contributors and rewrites the people page. It sets the
+      # output `changed` to say whether the page is different now.
       - name: Update Django Components People
+        id: people
         run: |
           uv run python ./scripts/people.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload the page
+        if: steps.people.outputs.changed == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: people-page
+          path: docs_site/content/docs/community/people.yml
+          if-no-files-found: error
+          retention-days: 1
+
+  # Commits the page and pushes it to the branch this run started on (`master`
+  # for the monthly run). A ruleset on `master` requires passing tests before a
+  # commit lands there. It lets the release bot GitHub App skip that, as
+  # `release-docs.yml` does. The job's own token cannot push there, and neither
+  # token can open a pull request instead: the app gets a 403, and the
+  # repository setting that lets Actions open them is off.
+  #
+  # This job runs none of the Python packages that `uv sync` installs. It starts
+  # from a fresh checkout, and the only thing it takes from the first job is the
+  # page, which it checks line by line before committing it.
+  publish:
+    needs: generate
+    if: needs.generate.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      # The file that the script writes, as a path in the repository.
+      PEOPLE_PAGE: docs_site/content/docs/community/people.yml
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: people-page
+          path: ${{ runner.temp }}/people
+
+      - name: Check and commit the page
+        id: commit
+        env:
+          # Makes grep read bytes, not characters, so the locale cannot change
+          # what a pattern matches.
+          LC_ALL: C
+        run: |
+          downloaded="$RUNNER_TEMP/people/people.yml"
+          # The artifact must hold exactly one entry, a plain file.
+          test "$(find "$RUNNER_TEMP/people" -mindepth 1 | wc -l)" -eq 1
+          test -f "$downloaded"
+          test ! -L "$downloaded"
+          test -s "$downloaded"
+          # Not every tool treats a carriage return or a NUL byte as part of a
+          # line, so the line checks below could miss one.
+          if [ "$(tr -cd '\r\0' < "$downloaded" | wc -c)" -ne 0 ]; then
+            echo "::error::The page has a carriage return or a NUL byte."
+            exit 1
+          fi
+
+          # Every line must have one of the shapes the script writes, so
+          # nothing else can reach `master` through the artifact. grep prints
+          # any line that does not match. It exits 0 if it printed one, 1 if
+          # every line matched, and 2 on an error, so only 1 passes.
+          grep_status=0
+          grep -vE \
+            -e '^(maintainers|contributors):$' \
+            -e "^- login: ([A-Za-z0-9-]+|'[A-Za-z0-9-]+')\$" \
+            -e '^  avatarUrl: https://avatars\.githubusercontent\.com/[A-Za-z0-9/_.?=&-]+$' \
+            -e '^  url: https://github\.com/(apps/)?[A-Za-z0-9-]+$' \
+            -e '^  count: [0-9]+$' \
+            "$downloaded" || grep_status=$?
+          if [ "$grep_status" -ne 1 ]; then
+            echo "::error::The page has lines the script does not write."
+            exit 1
+          fi
+
+          cp "$downloaded" "$PEOPLE_PAGE"
+          # The branch may already have this page, for example if it was
+          # updated after the first job started.
+          if git diff --quiet -- "$PEOPLE_PAGE"; then
+            echo "The branch already has this page."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add -- "$PEOPLE_PAGE"
+          git commit -m "👥 Update Django Components People - Experts" -- "$PEOPLE_PAGE"
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      # The token is created last, so no earlier step has it. It is limited to
+      # the one permission the push needs.
+      - uses: actions/create-github-app-token@v3
+        if: steps.commit.outputs.ready == 'true'
+        id: app-token
+        with:
+          app-id: ${{ vars.RELEASE_BOT_APP_ID }}
+          private-key: ${{ secrets.RELEASE_BOT_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Push the page
+        if: steps.commit.outputs.ready == 'true'
+        env:
+          PUSH_TOKEN: ${{ steps.app-token.outputs.token }}
+          REPOSITORY: ${{ github.repository }}
+          # A manual run from another branch commits to that branch, not master.
+          TARGET_BRANCH: ${{ github.ref_name }}
+        run: |
+          # `refs/heads/` makes git push to that branch even if a tag has the same name.
+          git push "https://x-access-token:${PUSH_TOKEN}@github.com/${REPOSITORY}.git" "HEAD:refs/heads/${TARGET_BRANCH}"

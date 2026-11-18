@@ -679,7 +679,7 @@ Let's say we want to add an example called `form`:
 
 ### People page
 
-The [people page](people.md) is regularly updated with stats about the contributors and authors. This is triggered automatically once a month or manually via the Actions tab.
+The [people page](people.md) is regularly updated with stats about the contributors and authors. This is triggered automatically once a month or manually via the Actions tab. The job commits the updated `people.yml` to `master`, using the release bot GitHub App (the app the release workflow also uses). A manual run commits to the branch you start it from.
 
 See [`.github/workflows/maint-docs-people.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/maint-docs-people.yml) for more details.
 
@@ -802,10 +802,11 @@ The `generate` command will print to the terminal all the places that need updat
 
 ### Updating link references
 
-Docs links are checked in two places:
+Docs links are checked in three places:
 
 1. `docs_build_check` validates internal links, relative links, anchors, code fences, and navigation entries during the docs build (the guard suite, in strict mode).
 2. The `scripts/validate_links.py` script validates external URLs and fragments, and can update URL references.
+3. A weekly GitHub Actions run ([`maint-docs-external-links.yml`](https://github.com/django-components/django-components/blob/master/.github/workflows/maint-docs-external-links.yml)) builds the docs site and checks the links to other sites with [lychee](https://github.com/lycheeverse/lychee). It skips links that would always fail in this check, such as example `localhost` addresses and sites that block automated requests. The list is in `.github/lychee.toml`, with the reason for each entry.
 
 Run the build check before changing documentation links:
 
