@@ -476,7 +476,7 @@ that must stay private.
 Django Components stores those values on the server, and serves them from a URL such as this one, so that
 the browser can load them:
 
-```
+```text
 /components/cache/MyTable_a1b2c3.1f3a9c0d7b2e4f6089a1c3d5e7f90b12.js
 ```
 
