@@ -1,0 +1,12 @@
+{#
+  Theme override: inject Google site verification meta tag.
+  Uses documented extrahead block from Material for MkDocs.
+  If token changes, update in mkdocs.yml under extra.google_site_verification.
+#}
+{% extends "base.html" %}
+{% block extrahead %}
+  {{ super() }}
+  {% if config.extra.google_site_verification %}
+    <meta name="google-site-verification" content="{{ config.extra.google_site_verification }}" />
+  {% endif %}
+{% endblock %}
