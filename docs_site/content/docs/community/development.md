@@ -836,7 +836,7 @@ A relative link such as `people.md` works only between docs pages. The README, `
 - `/docs/<page>/` for a docs page, for example `/docs/community/people/`. End the path with a slash.
 - `/benchmarks/` for the benchmark report. It is the only copy the docs builder updates.
 
-GitHub Actions rebuilds these from `master` on every push to `master` and on every release, so they can describe changes that are not released yet. Released versions live under `/v/<version>/`, and the `dev` build from `master` lives under `/v/dev/`. Links to the old `/latest/...` and `/dev/...` addresses redirect to the matching page, so links published before the site changed keep working. Use the paths above in new links.
+GitHub Actions rebuilds these from `master` on every push to `master` and on every release, so they can describe changes that are not released yet. Released versions live under `/v/<version>/`, and the `dev` build from `master` lives under `/v/dev/`. Links published before the site changed keep working. `/latest/...` and `/dev/...` go to the matching page, and `/0.148.0/...` goes to `/v/0.148.0/...`. The deploy hosts only the newest versions, so a link to an older one goes to the matching page in the current docs, or to the docs home page when there is none. That page can differ from the version the link meant. Use the paths above in new links.
 
 `docs_build_check` skips every absolute link (one that starts with `http` or `https`), including links to this site, so a wrong one passes the build. After you add or change one, run `scripts/validate_links.py`. It checks the live site, so a link to a page that is not deployed yet reports a 404.
 

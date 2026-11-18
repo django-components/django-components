@@ -12,6 +12,7 @@ assembles the complete tree GitHub Pages serves:
             <version>/ ...                                         <- each committed version
             latest/ ...                                            <- the `latest` alias redirects
         latest/, dev/                                              <- old-site URLs; each page redirects to its current page
+        <version>/ ...                                             <- old-site URLs; redirect to /v/<version>/ or /docs/
 
 It (1) runs ``build_docs`` for the current version into the site root (so it
 serves at ``/`` and ``/docs/``, with ``/static``, the Pagefind index, the SEO
@@ -21,7 +22,9 @@ into ``site/v/``. The current-version build's robots.txt disallows the older
 imports stay out of search while their pinned URLs keep resolving. It then writes
 redirect pages at the old ``/latest/...`` and ``/dev/...`` URLs (the earlier
 mike-based site served the current docs there), each pointing at the page that
-serves the same path now.
+serves the same path now. It does the same for the old ``/<version>/...`` URLs:
+each page of a mounted version points at the same page under ``/v/<version>/``,
+and each page of a version the deploy does not mount points at the current docs.
 
 CI runs this and publishes ``site/`` to GitHub Pages - this is the cutover
 deploy that replaces the old mkdocs build. ``site/`` is gitignored; nothing
@@ -45,7 +48,7 @@ from django.core.management.base import BaseCommand, CommandError
 
 from apps.docs._vendor.mike_versions import Versions
 from apps.docs.build.bootstrap import load_versions_config
-from apps.docs.build.redirects import emit_legacy_redirects
+from apps.docs.build.redirects import emit_legacy_redirects, emit_version_redirects
 from apps.docs.build.versioning import load_manifest, select_published_versions, write_manifest
 
 
@@ -108,6 +111,17 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(f"Wrote {redirect_count} redirect page(s) for the old /latest/ and /dev/ URLs")
         )
+
+        # Changelogs and other sites also link to /<version>/..., where the earlier
+        # site served each release. A mounted version's pages go to /v/<version>/;
+        # the committed versions the deploy does not mount go to the current docs.
+        # This runs after the mount above, because a version counts as published when
+        # its folder exists under site/v/. With no versions tree there is nothing to redirect.
+        if versions_root.is_dir():
+            version_redirect_count = emit_version_redirects(site_dir, versions_root, site_url=str(settings.SITE_URL))
+            self.stdout.write(
+                self.style.SUCCESS(f"Wrote {version_redirect_count} redirect page(s) for the old /<version>/ URLs")
+            )
 
         # Build the ephemeral dev snapshot. Unlike releases, dev is NOT committed
         # (feature 10.7): it's rebuilt fresh into /v/dev/ on every deploy and

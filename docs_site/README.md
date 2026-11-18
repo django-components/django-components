@@ -54,7 +54,7 @@ All run from `docs_site/` as `uv run python manage.py <command>`.
 | Command | What it does |
 |---|---|
 | `build_docs --docs-version X --alias latest` | Build a committed version snapshot into `versions/X/` + update the manifest + the `latest` redirect |
-| `docs_assemble` | Assemble the full deploy artifact in `site/`: current build at the root + the published version window under `/v/*` + an ephemeral `/v/dev/` + redirect pages for the old `/latest/` and `/dev/` URLs. **CI deploys this to Pages** |
+| `docs_assemble` | Assemble the full deploy artifact in `site/`: current build at the root + the published version window under `/v/*` + an ephemeral `/v/dev/` + redirect pages for the old `/latest/`, `/dev/` and `/<version>/` URLs. **CI deploys this to Pages** |
 | `docs_import_ghpages` | Done once: copied the built docs of the old mkdocs/mike `gh-pages` versions into `versions/`. The output is committed; do not run it again (see [Bootstrapping & one-offs](#bootstrapping--one-offs)) |
 | `docs_build_all` | Bootstrap/rebuild every version selected by `docs_versions.toml` (a git worktree per tag); `--dry-run` to preview |
 | `docs_versions_check` | Validate the committed `versions/` tree (manifest <-> filesystem, aliases, cross-version links, no file that `.gitignore` would leave out of the commit) |
@@ -504,8 +504,26 @@ off, the page still redirects but drops the anchor. The pages are read from the
 built site, so each redirect points at a page that exists. Files that are not pages,
 such as `objects.inv`, `sitemap.xml` and the old search index, are not redirected.
 
-An old URL that pins a version (`/0.148.0/...`) is not redirected. Versions live
-at `/v/<version>/` now, and only the versions `docs_assemble` publishes are there.
+### Old `/<version>/` links
+
+The earlier mike-based site served each release at a URL such as `/0.148.0/`, and
+changelogs and other sites link to those pages. `docs_assemble` writes a small
+redirect page for each page of each committed version
+([`build/redirects.py`](apps/docs/build/redirects.py), `emit_version_redirects`). It
+keeps the query string and the `#anchor`, as above:
+
+- A version the deploy publishes: `/0.148.0/concepts/x/` goes to
+  `/v/0.148.0/concepts/x/`, the same page.
+- A version that is committed but not published (older than the newest `window`
+  releases in `docs_versions.toml`): the page goes to the page that `/latest/<path>/`
+  goes to (see above), or to `/docs/` when the current docs have no such page. The
+  anchor is kept, but it may not exist on the newer page. The redirect page says the
+  version is no longer hosted, but it redirects at once, so most visitors do not read it.
+
+Each page is read from the files that exist, so every target exists. A file that is
+not a page, such as an image or `objects.inv`, is not redirected, and neither is a
+version that has no folder on the old site (`0.147.0`). A page that already exists at
+an address and is not a redirect page is left alone.
 
 ### Serving under a subpath (project Pages / fork previews)
 
