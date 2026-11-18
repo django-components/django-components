@@ -656,6 +656,13 @@ def _global_cache_sizes() -> dict[str, int]:
     }
 
 
+def _assert_no_cache_grew(before: dict[str, int]) -> None:
+    # An earlier test in the same worker can leave entries that a later render removes, so a
+    # store may shrink while a test runs. Only growth means that failed renders are kept.
+    after = _global_cache_sizes()
+    assert all(after[name] <= before[name] for name in before), (before, after)
+
+
 @djc_test
 class TestFailedRendersReleaseMemory:
     @staticmethod
@@ -691,7 +698,7 @@ class TestFailedRendersReleaseMemory:
             with pytest.raises(ValueError, match="boom"):
                 comp_cls.render()
         gc.collect()
-        assert _global_cache_sizes() == before
+        _assert_no_cache_grew(before)
 
     def test_a_child_fails_before_a_sibling_gets_its_turn(self):
         self._make_broken()
@@ -825,7 +832,7 @@ class TestFailedRendersReleaseMemory:
         for _ in range(5):
             assert "recovered" in Parent.render()
         gc.collect()
-        assert _global_cache_sizes() == before
+        _assert_no_cache_grew(before)
 
     def test_inputs_of_waiting_siblings_do_not_pile_up(self):
         self._make_broken()
