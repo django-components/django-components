@@ -101,7 +101,7 @@ This release fixes several security problems. Most of them matter only when data
     `functools.partial()`, `functools.lru_cache()` or Django's `lazy()`. These could fill in placeholders that
     read values such as settings.
 
-    django-components now requires djc-core 1.4.0 or later, which closes related gaps in its own checks, and also refuses tag values nested more than 64 levels deep.
+    django-components now requires djc-core 1.4.0 or later, which closes related gaps in its own checks, and also refuses tag values nested more than 16 levels deep (lists, dicts, parentheses and filters each count as a level).
 
 - `ComponentMediaInputPath` now includes Django's `Script` from `django.forms.widgets`, so `django-stubs` accepts `Script("calendar/x.js", type="module")` where `ComponentMediaInputPath` is expected.
 
