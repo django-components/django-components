@@ -1,5 +1,4 @@
 import logging
-import sys
 from typing import Any, Literal
 
 DEFAULT_TRACE_LEVEL_NUM = 5  # NOTE: MUST be lower than DEBUG which is 10
@@ -12,20 +11,13 @@ def setup_logging() -> None:
     # Check if "TRACE" level was already defined. And if so, use its log level.
     # See https://docs.python.org/3/howto/logging.html#custom-levels
     global actual_trace_level_num  # noqa: PLW0603
-    log_levels = _get_log_levels()
+    log_levels = logging.getLevelNamesMapping()
 
     if "TRACE" in log_levels:
         actual_trace_level_num = log_levels["TRACE"]
     else:
         actual_trace_level_num = DEFAULT_TRACE_LEVEL_NUM
         logging.addLevelName(actual_trace_level_num, "TRACE")
-
-
-def _get_log_levels() -> dict[str, int]:
-    # Use official API if possible
-    if sys.version_info >= (3, 11):
-        return logging.getLevelNamesMapping()
-    return logging._nameToLevel.copy()
 
 
 def trace(message: str, *args: Any, **kwargs: Any) -> None:

@@ -1,5 +1,13 @@
 # Release notes
 
+## v0.153.0
+
+#### Breaking changes 🚨📢
+
+- Dropped support for Python 3.10.
+
+- `django-components` no longer installs `typing-extensions`. If your code imports `typing_extensions`, add it to your own dependencies.
+
 ## v0.152.1
 
 This release fixes several security problems. Most of them matter only when data from a request or from storage reaches a component, or when a page already has an HTML injection problem. Some fixes change behavior: read "What you may need to change" below before you upgrade.

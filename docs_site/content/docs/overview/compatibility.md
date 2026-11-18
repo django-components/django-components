@@ -2,7 +2,6 @@ Django-components supports all supported combinations versions of [Django](https
 
 | Python version | Django version |
 | -------------- | -------------- |
-| 3.10           | 5.2            |
 | 3.11           | 5.2            |
 | 3.12           | 5.2, 6.0, 6.1  |
 | 3.13           | 5.2, 6.0, 6.1  |

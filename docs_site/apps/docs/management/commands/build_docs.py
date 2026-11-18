@@ -28,6 +28,7 @@ Usage:
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from importlib.metadata import version as get_version
 from pathlib import Path
 
@@ -187,12 +188,10 @@ class Command(BaseCommand):
         # snapshots don't get their own root sitemap; assembling them is Phase 6
         # (feature 6.4). Runs before pagefind so its SiteIndex sees only doc pages.
         if not options["no_seo"] and not version_mode:
-            from datetime import datetime, timezone  # noqa: PLC0415
-
             seo = generate_seo_files(
                 output_dir,
                 version=version or get_version("django_components"),
-                generated_at=datetime.now(timezone.utc),
+                generated_at=datetime.now(UTC),
                 versions_root=settings.VERSIONS_DIR,
             )
             self.stdout.write(
