@@ -1,13 +1,12 @@
 # Build, check and publish django-components to PyPI.
 #
-# Pushing a tag runs three jobs in order: `build` makes the sdist and wheel and
-# checks their metadata, `smoke-test` installs the built wheel in a clean
-# environment and imports it, and `publish` uploads the files to PyPI. A manual
-# run from the Actions tab runs the first two jobs and never publishes.
+# Pushing a tag runs three jobs in order: `build` makes the source tarball and
+# the wheel and checks their metadata, `smoke-test` installs the built wheel in
+# a clean environment and imports it, and `publish` uploads the files to PyPI.
+# A manual run from the Actions tab runs the first two jobs and never publishes.
 #
-# No job here restores or saves a GitHub Actions cache. Other workflows can
-# save caches on master, so a release job that restored one would let them
-# change the released files.
+# Release jobs do not use the GitHub Actions cache, so nothing saved by an
+# earlier workflow run can end up in the released files.
 name: Publish to PyPI
 
 on:
@@ -23,7 +22,7 @@ permissions:
 
 env:
   # Pinned so that a new uv release cannot change how a release is built.
-  # Raise it on purpose.
+  # Change this number by hand when you want a newer uv.
   UV_VERSION: "0.13.5"
   PYTHON_VERSION: "3.13"
 
@@ -37,7 +36,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Setup python
+      - name: Set up Python
         uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -49,11 +48,11 @@ jobs:
           enable-cache: false
 
       # By default uv builds the source tarball first and then the wheel from
-      # that tarball, so the wheel holds only what the tarball holds.
+      # that tarball, so the wheel matches what a source install would get.
       - name: Build a binary wheel and a source tarball
         run: uv build --out-dir dist/
 
-      # Fails when PyPI could not read the package metadata or show the README.
+      # Fails when PyPI cannot read the package metadata or display the README.
       - name: Check the built files
         run: uvx --from twine==6.2.0 twine check dist/*.whl dist/*.tar.gz
 
@@ -76,7 +75,7 @@ jobs:
           name: distributions
           path: dist
 
-      - name: Setup python
+      - name: Set up Python
         uses: actions/setup-python@v7
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -120,7 +119,7 @@ jobs:
       # PYPI_API_TOKEN secret is set.
       id-token: write
     steps:
-      - name: Download the checked files
+      - name: Download the built files
         uses: actions/download-artifact@v8
         with:
           name: distributions
