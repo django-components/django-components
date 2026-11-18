@@ -1,7 +1,7 @@
 """Catch-all for tests that use template tags and don't fit other files"""
 
 import re
-from functools import lru_cache, partial, wraps
+from functools import lru_cache, partial, partialmethod, wraps
 from inspect import unwrap
 from types import FunctionType, MethodType
 
@@ -985,6 +985,19 @@ class FormatHtmlCaller:
     __call__ = staticmethod(format_html)
 
 
+def make_lazy_method_caller(method):
+    """An object whose class `__call__` is a lazy string method, with the fields that method reads."""
+    caller_class = type("Caller", (), {"__call__": method, "_args": (PATH_TEXT,), "_kw": {}})
+    return caller_class()
+
+
+class FormatHtmlTextCaller(str):
+    """Text that runs `format_html()` on itself when it is called."""
+
+    __slots__ = ()
+    __call__ = partialmethod(format_html)
+
+
 def copy_function(function):
     """A new function object with the same code, as code that rebuilds functions makes."""
     return FunctionType(function.__code__, function.__globals__, function.__name__, function.__defaults__)
@@ -1228,14 +1241,15 @@ class TestPythonExpressionFormatting:
             ),
             pytest.param(
                 "method(obj)",
-                lambda text: {"method": type("Caller", (), {"__call__": type(text).format})(), "text": text},
+                # `_args` and `_kw` are what the lazy method reads to rebuild the text.
+                lambda text: {"method": make_lazy_method_caller(type(text).format)},
                 id="lazy_method_as_class_call",
             ),
         ],
     )
     def test_wrapped_lazy_string_method_from_context_cannot_be_called(self, code, make_context):
         context = make_context(gettext_lazy(PATH_TEXT))
-        with pytest.raises(SecurityError, match="can't call methods of a Django lazy object"):
+        with pytest.raises(SecurityError, match="can't call a Django lazy object's class or methods"):
             str(evaluate(code, obj=HiddenMarker(), **context))
 
     def test_unbound_lazy_method_in_template_cannot_be_called(self):
@@ -1246,13 +1260,13 @@ class TestPythonExpressionFormatting:
             "{% endwith %}"
         )
         method = type(gettext_lazy("")).upper
-        with pytest.raises(SecurityError, match="can't call methods of a Django lazy object"):
+        with pytest.raises(SecurityError, match="can't call a Django lazy object's class or methods"):
             self.render_show(template_str, {"method": method, "obj": HiddenMarker()})
 
     def test_lazy_class_cannot_be_called(self):
         # Calling the class of a `format_lazy()` result builds one that formats the given text.
         lazy_class = type(format_lazy("{}", "text"))
-        with pytest.raises(SecurityError, match="can't call methods of a Django lazy object"):
+        with pytest.raises(SecurityError, match="can't call a Django lazy object's class or methods"):
             str(evaluate("cls((text, obj), {})", cls=lazy_class, text=PATH_TEXT, obj=HiddenMarker()))
 
     @pytest.mark.parametrize(
@@ -1276,6 +1290,7 @@ class TestPythonExpressionFormatting:
             pytest.param(lambda: lru_cache(format_html), id="lru_cache"),
             pytest.param(lambda: wrapped_format_html, id="wraps"),
             pytest.param(lambda: partial(lru_cache(format_html)), id="partial_of_lru_cache"),
+            # The bound method passes `__code__` reads on to `format_html`.
             pytest.param(lambda: MethodType(format_html, "{0.__html__.__name__}"), id="method_type"),
             # A bound method passes other attribute reads on to its function, but not `partial.func`,
             # so only `__func__` leads to the partial here.
@@ -1300,10 +1315,18 @@ class TestPythonExpressionFormatting:
             str(evaluate("function(text, 'value')", function=make_function(), text=make_text()))
 
     def test_classmethod_of_format_html_cannot_be_called(self):
-        # The class passes itself as the format text, and `__func__` leads to `format_html`.
+        # The class passes itself as the format text. The bound method passes `__code__` reads on
+        # to `format_html`, so the code comparison refuses it.
         holder = type("Holder", (str,), {"render": classmethod(format_html)})("{0.__name__}")
         with pytest.raises(SecurityError, match=r"Call format_html\(\) in get_template_data\(\)"):
             str(evaluate("holder.render()", holder=holder))
+
+    def test_partialmethod_as_class_call_cannot_be_called(self):
+        # Read from the class, a `partialmethod` gives a function that hides `format_html`. Bound to
+        # the instance, as Python does when it calls the object, it gives a `partial` of it.
+        text = FormatHtmlTextCaller("{0.__html__.__name__}")
+        with pytest.raises(SecurityError, match=r"Call format_html\(\) in get_template_data\(\)"):
+            str(evaluate("text('value')", text=text))
 
     def test_private_format_lazy_function_cannot_be_called(self):
         # `format_lazy` wraps a private function that does the formatting, and the app might pass that.
@@ -1315,14 +1338,14 @@ class TestPythonExpressionFormatting:
             evaluate("x.upper()", x=gettext_lazy("hello"))
         message = str(exc_info.value)
         assert message.count("Expressions can't read 'upper' on a Django lazy object") == 1
-        assert "because its methods can fill in placeholders written in the text" in message
+        assert "because each of its methods can run any method of the real value" in message
         assert 'Turn it into plain text with an f-string first, such as f"{text}".upper().' in message
 
     def test_lazy_string_method_error_says_what_to_do(self):
         with pytest.raises(SecurityError) as exc_info:
             evaluate("method()", method=gettext_lazy("hello").upper)
         message = str(exc_info.value)
-        assert message.count("Expressions can't call methods of a Django lazy object") == 1
+        assert message.count("Expressions can't call a Django lazy object's class or methods") == 1
         assert "with an f-string first" in message
 
     @pytest.mark.parametrize(

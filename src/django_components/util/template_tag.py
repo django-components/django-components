@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial
 from inspect import unwrap
-from types import WrapperDescriptorType
+from types import FunctionType, WrapperDescriptorType
 from typing import (
     Any,
     NamedTuple,
@@ -229,7 +229,8 @@ def resolve_translation(
 
 # Django functions that follow the attribute and item paths written in the text they receive, such
 # as `{0.__class__}`, with the real `getattr`. `safe_eval` never sees those reads. They are compared
-# by identity, because a callable that a template can reach may not be hashable.
+# by identity and by code rather than looked up in a set, because a callable that a template can
+# reach may not be hashable.
 DJANGO_FORMAT_FUNCTIONS = (format_html, format_html_join, format_lazy)
 
 # Each Django formatter with the name to show in messages and the code that does the formatting.
@@ -252,11 +253,11 @@ LAZY_STRING_METHOD_CODE = type(lazystr("")).upper.__code__
 
 # How many functions behind the called one the callable check follows before it refuses the call.
 # Real wrappers such as `lazy()`, `keep_lazy()`, `lru_cache()` or a `functools.partial` add one or
-# two steps.
+# two steps. A callable object counts its class `__call__` as a step too.
 MAX_WRAPPED_FUNCTIONS = 32
 
 LAZY_OBJECT_REASON = (
-    "because its methods can fill in placeholders written in the text. "
+    "because each of its methods can run any method of the real value, such as format(). "
     "A Django lazy string is the result of _(), gettext_lazy() and similar. "
     'Turn it into plain text with an f-string first, such as f"{text}".upper().'
 )
@@ -337,13 +338,18 @@ def check_expression_callable(func: Callable) -> bool:
             owner = getattr(step, "__self__", None)
             if owner is not None:
                 pending.append(owner)
-        # Calling an instance runs the `__call__` of its class, which may be a formatter itself,
-        # such as `__call__ = staticmethod(format_html)`. A built-in type's own `__call__` is a
-        # slot wrapper that only calls the object, so it adds nothing to check. This reads the
-        # attribute rather than asking whether `step` is callable, which is what B004 is about.
-        class_call = getattr(type(step), "__call__", None)  # noqa: B004
+        # Calling an instance runs the `__call__` that Python finds on its class and binds to the
+        # instance, which may be a formatter itself, such as `__call__ = staticmethod(format_html)`.
+        # A built-in type's own `__call__` is a slot wrapper that only calls the object, so it adds
+        # nothing to check.
+        class_call = _find_class_call(step)
         if class_call is not None and not isinstance(class_call, WrapperDescriptorType):
             pending.append(class_call)
+            # Binding can give another object, as with `functools.partialmethod` or a property. A
+            # plain function only becomes a bound method of itself, so it is not bound here.
+            bind = getattr(type(class_call), "__get__", None)
+            if bind is not None and not isinstance(class_call, FunctionType):
+                pending.append(bind(class_call, step, type(step)))
     return True
 
 
@@ -358,7 +364,8 @@ def _check_one_callable(step: Any, *, is_wrapped: bool) -> None:
         or getattr(step, "__code__", None) is LAZY_STRING_METHOD_CODE
     ):
         raise SecurityError(
-            f"Expressions can't call methods of a Django lazy object, such as a lazy string, {LAZY_OBJECT_REASON}"
+            "Expressions can't call a Django lazy object's class or methods, such as those of a lazy string, "
+            f"{LAZY_OBJECT_REASON}"
         )
 
     code = getattr(step, "__code__", None)
@@ -386,6 +393,23 @@ def _check_one_callable(step: Any, *, is_wrapped: bool) -> None:
         if not is_safe:
             message = f"Expressions can't call this function, because it calls {_describe_callable(step)}"
             raise SecurityError(f"{message}. {replacement}" if replacement else f"{message}.")
+
+
+def _find_class_call(obj: Any) -> Any:
+    # Look `__call__` up the way Python does when it calls `obj`: in the `__dict__` of each class in
+    # the method resolution order of `type(obj)`. Reading `type(obj).__call__` instead would go
+    # through the metaclass and the descriptor, which can return a different object.
+    for klass in _TYPE_MRO.__get__(type(obj)):
+        namespace = _TYPE_DICT.__get__(klass)
+        if "__call__" in namespace:
+            return namespace["__call__"]
+    return None
+
+
+# The descriptors that `type` itself uses for `__mro__` and `__dict__`, so that a metaclass can't
+# change what `_find_class_call` reads.
+_TYPE_MRO = type.__dict__["__mro__"]
+_TYPE_DICT = type.__dict__["__dict__"]
 
 
 def _is_lazy_object_or_class(obj: Any) -> bool:
