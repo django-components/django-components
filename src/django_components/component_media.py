@@ -21,6 +21,7 @@ from weakref import ReferenceType, WeakKeyDictionary, ref
 from django.contrib.staticfiles import finders
 from django.core.exceptions import ImproperlyConfigured
 from django.forms.widgets import Media as MediaCls
+from django.forms.widgets import Script as DjangoScript
 from django.template import Template
 from django.utils.safestring import SafeData
 
@@ -66,9 +67,10 @@ ComponentMediaInputPath: TypeAlias = (
     | os.PathLike
     | Script
     | Style
+    | DjangoScript
     | Callable[
         [],
-        str | bytes | SafeData | Path | os.PathLike | Script | Style,
+        str | bytes | SafeData | Path | os.PathLike | Script | Style | DjangoScript,
     ]
 )
 """
@@ -78,8 +80,12 @@ or [Media.css][ComponentMediaInput.css].
 If an entry is a [SafeString](https://dev.to/doridoro/django-safestring-afj),
 a [Script][Script],
 a [Style][Style],
-or any object with `__html__` method, it is treated as
-a pre-rendered tag and output as-is. Otherwise, it's assumed to be a path to a file.
+Django's `Script` from `django.forms.widgets`,
+or any object with `__html__` method, django-components doesn't resolve it, and the default
+`Media` class outputs what its `__html__` method returns. Otherwise, it's assumed to be a path to a file.
+
+Django's `Script` applies `{% static %}` to its path when it renders, so give it the path that
+`{% static %}` expects, not a path relative to the component's directory.
 
 Examples:
     ```py
@@ -151,8 +157,8 @@ class ComponentMediaInput(Protocol):
         - A string, assumed to be a path to a CSS file.
         - A list, each entry is assumed to be a path to a CSS file.
 
-    Each entry can be a string, bytes, SafeString, PathLike, or a callable that returns one of the former
-    (see [`ComponentMediaInputPath`][ComponentMediaInputPath]).
+    Each entry can be a string, bytes, SafeString, PathLike, [`Style`][Style], or a callable
+    that returns one of the former (see [`ComponentMediaInputPath`][ComponentMediaInputPath]).
 
     Examples:
         ```py
@@ -194,8 +200,8 @@ class ComponentMediaInput(Protocol):
 
     - If a list, each entry is assumed to be a path to a JS file.
 
-    Each entry can be a string, bytes, SafeString, PathLike, or a callable that returns one of the former
-    (see [`ComponentMediaInputPath`][ComponentMediaInputPath]).
+    Each entry can be a string, bytes, SafeString, PathLike, [`Script`][Script], Django's `Script`,
+    or a callable that returns one of the former (see [`ComponentMediaInputPath`][ComponentMediaInputPath]).
 
     Examples:
         ```py
@@ -240,7 +246,8 @@ class ComponentMediaInput(Protocol):
                 extend = False  # Don't inherit parent media
                 js = ["script.js"]
 
-        print(MyComponent.media._js)  # ["script.js"]
+        print(MyComponent.media.render_js())
+        # ['<script src="/static/script.js"></script>']
         ```
 
         Specify which components to inherit from. In this case, the media files are inherited ONLY
@@ -258,7 +265,10 @@ class ComponentMediaInput(Protocol):
 
                 js = ["script.js"]
 
-        print(MyComponent.media._js)  # ["script.js", "other1.js", "other2.js"]
+        print(MyComponent.media.render_js())
+        # ['<script src="/static/script.js"></script>',
+        #  '<script src="/static/other2.js"></script>',
+        #  '<script src="/static/other1.js"></script>']
         ```
     """
 
@@ -633,7 +643,7 @@ def _load_media(
 
     ```py
     class MyMedia(Media):
-        def render_js(self):
+        def render_js(self, *, attrs=None):
             ...
 
     class MyComponent(Component):

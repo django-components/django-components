@@ -1,5 +1,31 @@
 # Release notes
 
+## v0.153.0
+
+#### Refactor
+
+- Add support for Django 6.1 (on Python 3.12 and newer)
+
+    If you set [`Component.media_class`](https://django-components.github.io/django-components/latest/concepts/fundamentals/secondary_js_css_files/#change-how-every-file-is-rendered) to a `Media` subclass that overrides `render_js()` or `render_css()`, update it for Django 6.1:
+
+    - Accept the `attrs` keyword argument. Without it, `print(MyComponent.media)` raises `TypeError`.
+
+        ```py
+        class MyMedia(Media):
+            def render_js(self, *, attrs=None):
+                ...
+        ```
+
+    - Handle Django's `Script` and `Stylesheet` objects, which `self._js` and `self._css` now hold instead of strings. Otherwise `absolute_path()` raises `AttributeError`, or your custom tags are lost with no error.
+
+    The docs show overrides that work on Django 5.2, 6.0 and 6.1.
+
+#### Fix
+
+- `ComponentMediaInputPath` now includes Django's `Script` from `django.forms.widgets`, so `django-stubs` accepts `Script("calendar/x.js", type="module")` where `ComponentMediaInputPath` is expected.
+
+- `@djc_test` no longer causes `KeyError` on imports from a component directory without `__init__.py`. The error could appear in a later test, depending on test order, for example under `pytest-xdist`.
+
 ## v0.152.0
 
 #### Feature

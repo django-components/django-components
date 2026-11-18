@@ -61,8 +61,10 @@ This `Media` class behaves similarly to
 - **HTML tags** - Both static paths and URLs are rendered to `<script>` and `<link>` HTML tags with
   `media_class.render_js()` and `media_class.render_css()`.
 - **Bypass formatting** - A [`SafeString`](https://docs.djangoproject.com/en/5.2/ref/utils/#django.utils.safestring.SafeString),
-  or a function (with `__html__` method) is considered an already-formatted HTML tag, skipping both static file
-  resolution and rendering with `media_class.render_js()` or `media_class.render_css()`.
+  or any other object with an `__html__` method, is treated as an already-built HTML tag. django-components
+  doesn't resolve its path, and the default `media_class.render_js()` and `media_class.render_css()` output
+  what its `__html__` method returns. Django's `Script` is one of these objects, and it still applies
+  `{% static %}` to its path.
 - **Inheritance** - You can set [`extend`][ComponentMediaInput.extend] to configure
   whether to inherit JS / CSS from parent components. See [Media inheritance](#media-inheritance).
 
@@ -161,8 +163,12 @@ class MyComponent(ParentComponent):
     class Media:
         js = ["script.js"]
 
-print(MyComponent.media._js)  # ["parent.js", "script.js"]
+print(MyComponent.media.render_js())
+# ['<script src="/static/script.js"></script>',
+#  '<script src="/static/parent.js"></script>']
 ```
+
+The component's own files come first, then the parent's. Django's `Media` class does the opposite.
 
 You can set the component NOT to inherit from the parent component by setting the [`extend`][ComponentMediaInput.extend] attribute to `False`:
 
@@ -176,7 +182,8 @@ class MyComponent(ParentComponent):
         extend = False  # Don't inherit parent media
         js = ["script.js"]
 
-print(MyComponent.media._js)  # ["script.js"]
+print(MyComponent.media.render_js())
+# ['<script src="/static/script.js"></script>']
 ```
 
 Alternatively, you can specify which components to inherit from. In such case, the media files are inherited ONLY from the specified components, and NOT from the original parent components:
@@ -193,16 +200,24 @@ class MyComponent(ParentComponent):
 
         js = ["script.js"]
 
-print(MyComponent.media._js)  # ["script.js", "other1.js", "other2.js"]
+print(MyComponent.media.render_js())
+# ['<script src="/static/script.js"></script>',
+#  '<script src="/static/other2.js"></script>',
+#  '<script src="/static/other1.js"></script>']
 ```
+
+Don't rely on the order of the files that come from the classes in `extend`. If one file must load
+before another, list both in the same `js` list, in the order you need. For example, a component can list
+`["parent.js", "script.js"]` even though its parent also declares `parent.js`.
 
 !!! info
 
     The `extend` behaves consistently with
     [Django's Media class](https://docs.djangoproject.com/en/5.2/topics/forms/media/#extend),
-    with one exception:
+    with two exceptions:
 
     - When you set `extend` to a list, the list is expected to contain Component classes (or other classes that have a nested `Media` class).
+    - The component's own files come before the files it inherits.
 
 ### Accessing Media files
 
@@ -220,8 +235,8 @@ class MyComponent(Component):
 
 print(MyComponent.media)
 # Output:
-# <script src="/static/path/to/script.js"></script>
 # <link href="/static/path/to/style.css" media="all" rel="stylesheet">
+# <script src="/static/path/to/script.js"></script>
 ```
 
 When working with component media files, it is important to understand the difference:
@@ -248,7 +263,9 @@ class ChildComponent(ParentComponent):
 print(ChildComponent.Media.js)  # ["child.js"]
 
 # Access all inherited media
-print(ChildComponent.media._js)  # ["parent.js", "child.js"]
+print(ChildComponent.media.render_js())
+# ['<script src="/static/child.js"></script>',
+#  '<script src="/static/parent.js"></script>']
 ```
 
 !!! note
@@ -257,7 +274,7 @@ print(ChildComponent.media._js)  # ["parent.js", "child.js"]
 
 If you want to modify the class that is instantiated for [`Component.media`][Component.media],
 you can configure [`Component.media_class`][Component.media_class]
-([See example](#rendering-paths)).
+([See example](#change-how-every-file-is-rendered)).
 
 ## File paths
 
@@ -369,8 +386,8 @@ File paths can be any of:
 - `bytes`
 - `PathLike` (`__fspath__` method)
 - `SafeData` (`__html__` method)
-- `Script`
-- `Style`
+- `Script` and `Style` from `django_components`
+- `Script` from `django.forms.widgets` (Django's class, see [Add attributes to a single script](#add-attributes-to-a-single-script))
 - `Callable` that returns any of the above, evaluated at class creation (`__new__`)
 
 To help with typing the union, use [`ComponentMediaInputPath`][ComponentMediaInputPath].
@@ -418,7 +435,13 @@ nor relative to [`COMPONENTS.dirs`][ComponentsSettings.dirs]. It is assumed that
 In the example below, we make use of "safe" strings to add `type="module"` to the script tag that will fetch `calendar/script2.js`.
 In this case, we implemented a "safe" string by defining a `__html__` method.
 
+To add attributes to one file, you usually don't need a custom class. See [Add attributes to a single script](#add-attributes-to-a-single-script).
+
 ```py
+from django.templatetags.static import static
+from django.utils.html import format_html
+from django_components import Component, register
+
 # Path object
 class ModuleJsPath:
     def __init__(self, static_path: str) -> None:
@@ -428,7 +451,8 @@ class ModuleJsPath:
     def __html__(self):
         full_path = static(self.static_path)
         return format_html(
-            f'<script type="module" src="{full_path}"></script>'
+            '<script type="module" src="{}"></script>',
+            full_path,
         )
 
 @register("calendar")
@@ -477,31 +501,81 @@ See [Modifying JS / CSS scripts](../advanced/rendering_js_css.md#modifying-js-cs
 
 As part of the rendering process, the secondary JS / CSS files are resolved and rendered into `<link>` and `<script>` HTML tags, so they can be inserted into the render.
 
-In the [Paths as objects](#paths-as-objects) section, we saw that we can use that to selectively change
-how the HTML tags are constructed.
+You can change these tags for one file, or for all files of a component.
 
-However, if you need to change how ALL CSS and JS files are rendered for a given component,
-you can provide your own subclass of [Django's `Media` class](https://docs.djangoproject.com/en/5.2/topics/forms/media) to the [`Component.media_class`][Component.media_class] attribute.
+#### Add attributes to a single script
 
-To change how the tags are constructed, you can override the [`Media.render_js()` and `Media.render_css()` methods](https://github.com/django/django/blob/fa7848146738a9fe1d415ee4808664e54739eeb7/django/forms/widgets.py#L102):
+To add attributes such as `type="module"` to one JS file, use Django's
+[`Script`](https://docs.djangoproject.com/en/5.2/topics/forms/media/#script-objects) class
+in [`Media.js`][ComponentMediaInput.js]. You don't need a custom `media_class`, and this works on
+every Django version that django-components supports.
+
+django-components has its own [`Script`][Script] class with the same name. Choose by what you have:
+
+- Use Django's `Script`, from `django.forms.widgets`, for a file in your static directories.
+  Django applies `{% static %}` to the path.
+- Use [`Script`][Script] from `django_components` for inline JS, or for a URL that is ready to use.
+  It outputs `url` unchanged.
 
 ```py
-from django.forms.widgets import Media
+from django.forms.widgets import Script
+from django_components import Component, register
+
+@register("calendar")
+class Calendar(Component):
+    template_file = "calendar/template.html"
+
+    class Media:
+        css = "calendar/style1.css"
+        js = [
+            "calendar/script1.js",
+            # Renders with type="module"
+            Script("calendar/script2.js", type="module"),
+        ]
+```
+
+django-components resolves a path relative to the component's directory only when it is a string,
+`bytes` or a `Path`. It doesn't do this for Django's `Script`, so give the path that `{% static %}` expects.
+In the example above, that is `"calendar/script2.js"`, even if `script2.js` is next to the component's Python file.
+
+To use both `Script` classes in one file, rename one: `from django.forms.widgets import Script as DjangoScript`.
+
+For a stylesheet, use [`Style`][Style] with `url` and `attrs`, as shown in
+[`Script` and `Style` in Media](#script-and-style-in-media). `Style` outputs `url` unchanged, so give it
+a full URL, such as the result of `static()`.
+
+#### Change how every file is rendered
+
+If you need to change how ALL CSS and JS files are rendered for a given component,
+you can provide your own subclass of [Django's `Media` class](https://docs.djangoproject.com/en/5.2/topics/forms/media) to the [`Component.media_class`][Component.media_class] attribute.
+
+To change how the tags are constructed, you can override the [`Media.render_js()` and `Media.render_css()` methods](https://github.com/django/django/blob/6.1/django/forms/widgets.py#L194).
+
+This example adds `type="module"` to each tag built from a path in `Media.js`, and works on Django 5.2, 6.0 and 6.1.
+Tags from `mark_safe()` strings and from [`Script`][Script] in `django_components` stay as they are,
+and so does the component's own `js_file`.
+
+```py
+from django.forms.utils import flatatt
+from django.forms.widgets import Media, Script
+from django.utils.html import format_html
 from django_components import Component, register
 
 class MyMedia(Media):
-    # Same as original Media.render_js, except
-    # the `<script>` tag has also `type="module"`
-    def render_js(self):
+    def render_js(self, *, attrs=None):
         tags = []
-        for path in self._js:
-            if hasattr(path, "__html__"):
-                tag = path.__html__()
+        for item in self._js:
+            if isinstance(item, Script):
+                url = item.path
+            elif hasattr(item, "__html__"):
+                tags.append(item.__html__())
+                continue
             else:
-                tag = format_html(
-                    '<script type="module" src="{}"></script>',
-                    self.absolute_path(path)
-                )
+                url = self.absolute_path(item)
+            tags.append(format_html(
+                '<script type="module" src="{}"{}></script>',
+                url, flatatt(attrs or {}),
+            ))
         return tags
 
 @register("calendar")
@@ -516,4 +590,51 @@ class Calendar(Component):
 
     # Override the behavior of Media class
     media_class = MyMedia
+```
+
+Four parts of this override matter:
+
+- **It accepts `attrs`.** Django 6.1 passes this keyword argument to `render_js()` and `render_css()`
+  when something calls `Media.render()`, for example when you print `Calendar.media`.
+  Without it, you get a `TypeError`. Rendering a component doesn't call `Media.render()`, so a page can
+  render fine and this error appears only when you print the media.
+- **It checks for `Script` before `__html__`.** On Django 6.1, `self._js` holds a Django `Script` object
+  for each path. On Django 5.2 and 6.0, it holds a string. `Script` objects also have an `__html__` method,
+  so if you check `__html__` first, every tag keeps Django's default form and you lose `type="module"` with no error.
+- **It doesn't pass a `Script` to `absolute_path()`.** On Django 6.1, that raises
+  `AttributeError: 'Script' object has no attribute 'startswith'` when the component renders.
+- **It rebuilds `Script` tags.** Other attributes set on a Django `Script` object in `Media.js`,
+  such as `defer=True` or `integrity`, are not rendered. To keep them, read `item.attributes` in the
+  `Script` branch and pass them to `flatatt()` too.
+
+If your override calls `super().render_js()`, pass `attrs` only on Django 6.1. Django 5.2 and 6.0 don't accept it.
+
+`render_css()` needs the same changes. On Django 6.1, `self._css` holds `Stylesheet` objects.
+That class doesn't exist in Django 5.2 and 6.0, so check for the `path` attribute instead.
+This example adds `fetchpriority="high"` to each `<link>` tag. Put the method in the same `Media` subclass
+as `render_js()`:
+
+```py
+from django.forms.utils import flatatt
+from django.forms.widgets import Media
+from django.utils.html import format_html
+
+class MyMedia(Media):
+    def render_css(self, *, attrs=None):
+        tags = []
+        for medium in sorted(self._css):
+            for item in self._css[medium]:
+                if hasattr(item, "path"):
+                    url = item.path
+                elif hasattr(item, "__html__"):
+                    tags.append(item.__html__())
+                    continue
+                else:
+                    url = self.absolute_path(item)
+                tags.append(format_html(
+                    '<link href="{}" media="{}" rel="stylesheet"'
+                    ' fetchpriority="high"{}>',
+                    url, medium, flatatt(attrs or {}),
+                ))
+        return tags
 ```
