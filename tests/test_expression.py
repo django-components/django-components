@@ -1056,6 +1056,11 @@ def evaluate(code, **context):
 PATH_TEXT = "{0._hidden}"
 KEYED_PATH_TEXT = "{item._hidden}"
 
+# The hook's message when it refuses a wrapper around `format_html`. It starts with the hook's
+# own wording, so a refusal by djc-core alone does not match. The advice is the hook's, the
+# first form, or, from djc-core 1.4.0, for some wrappers djc-core's, the second form.
+FORMAT_HTML_ADVICE = r"Expressions can't call .*Call format_html\(\) in (get_template_data\(\)|Python)"
+
 
 @djc_test
 class TestPythonExpressionFormatting:
@@ -1324,7 +1329,8 @@ class TestPythonExpressionFormatting:
     )
     def test_wrapped_str_format_cannot_be_called(self, make_function):
         # The wrapper is not refused by `safe_eval` itself, so the hook must find `str.format` in it.
-        with pytest.raises(SecurityError, match=r"because it calls '[^']*format'\. Use f-strings instead\."):
+        # djc-core writes the advice after the name, and 1.4.0 words it differently from 1.3.1.
+        with pytest.raises(SecurityError, match=r"because it calls '[^']*format'\. Use (an f-string|f-strings) instead"):
             str(evaluate("function(text, obj)", function=make_function(), text=PATH_TEXT, obj=HiddenMarker()))
 
     @pytest.mark.parametrize(
@@ -1356,7 +1362,8 @@ class TestPythonExpressionFormatting:
     )
     def test_wrapped_format_html_cannot_be_called(self, make_function, make_text):
         # `__name__` of the escaped argument's `__html__` method stands for any value on the path.
-        with pytest.raises(SecurityError, match=r"Call format_html\(\) in get_template_data\(\)"):
+        # From djc-core 1.4.0, the hook's message for some wrappers carries djc-core's advice.
+        with pytest.raises(SecurityError, match=FORMAT_HTML_ADVICE):
             str(evaluate("function(text, 'value')", function=make_function(), text=make_text()))
 
     def test_classmethod_of_format_html_cannot_be_called(self):
@@ -1370,7 +1377,7 @@ class TestPythonExpressionFormatting:
         # Read from the class, a `partialmethod` gives a function that hides `format_html`. Bound to
         # the instance, as Python does when it calls the object, it gives a `partial` of it.
         text = FormatHtmlTextCaller("{0.__html__.__name__}")
-        with pytest.raises(SecurityError, match=r"Call format_html\(\) in get_template_data\(\)"):
+        with pytest.raises(SecurityError, match=FORMAT_HTML_ADVICE):
             str(evaluate("text('value')", text=text))
 
     def test_private_format_lazy_function_cannot_be_called(self):
