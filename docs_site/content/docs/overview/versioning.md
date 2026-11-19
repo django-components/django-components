@@ -5,20 +5,18 @@ description: What a django-components 1.x upgrade can change in your project, wh
 
 # Versioning and support
 
-Allow any 1.x release, and an upgrade will not break code that uses the
-documented API, apart from the [two exceptions](#what-1x-promises) below:
+## Maintenance mode
 
-```toml
-# pyproject.toml
-[project]
-dependencies = [
-    "django-components>=1.0.0,<2",
-]
-```
+django-components is in maintenance mode. New releases bring:
 
-django-components is in [maintenance mode](#maintenance-mode): new
-releases bring fixes and support for new Django and Python versions, and
-new features go to Citry.
+- security fixes,
+- support for new Django and Python versions,
+- bug fixes.
+
+New features go to [Citry](https://citry.dev/), a Python frontend
+framework that grew out of django-components and works with Django. To
+move a project over one component at a time, follow the
+[migration guide](https://citry.dev/guides/migrate-from-django-components/).
 
 ## Kinds of release
 
@@ -92,16 +90,3 @@ upgrade Django or Python to keep getting them.
 
 The [Compatibility](compatibility.md) page lists the Python and Django
 versions that the current release supports.
-
-## Maintenance mode
-
-django-components is in maintenance mode. New releases bring:
-
-- security fixes,
-- support for new Django and Python versions,
-- bug fixes.
-
-New features go to [Citry](https://citry.dev/), a Python frontend
-framework that grew out of django-components and works with Django. To
-move a project over one component at a time, follow the
-[migration guide](https://citry.dev/guides/migrate-from-django-components/).
