@@ -75,7 +75,7 @@ dev = [
     "asv",
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
-    "virtualenv==21.15.6",
+    "virtualenv==21.15.8",
     "pathspec",
     "pyyaml",
     "beautifulsoup4>=4.14.3",
@@ -94,7 +94,7 @@ ci = [
     "asv",
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
-    "virtualenv==21.15.6",
+    "virtualenv==21.15.8",
     "pytest-asyncio",
     "pytest-django",
     "pathspec",
