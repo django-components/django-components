@@ -61,7 +61,7 @@ dev = [
     "syrupy",
     # NOTE: Must stay in sync with the `ruff` pin in the `[testenv:ruff]` section
     # of `tox.ini`, which is what CI actually runs.
-    "ruff==0.17.5",
+    "ruff==0.17.6",
     "pre-commit",
     "mypy==2.4.1",
     "playwright>=1.61.0",
@@ -75,7 +75,7 @@ dev = [
     "asv",
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
-    "virtualenv==21.15.8",
+    "virtualenv==21.15.13",
     "pathspec",
     "pyyaml",
     "beautifulsoup4>=4.14.3",
@@ -94,7 +94,7 @@ ci = [
     "asv",
     # NOTE: pin virtualenv to <20.31 until asv fixes integration
     # See https://github.com/airspeed-velocity/asv/issues/1484
-    "virtualenv==21.15.8",
+    "virtualenv==21.15.13",
     "pytest-asyncio",
     "pytest-django",
     "pathspec",
